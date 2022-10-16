@@ -12,7 +12,6 @@
 <div id="gameGrid" style="display: flex;">
     <div class="videoPlayer" style="flex: 50%">
         <video src="@_currentSong?.Data" id="video" width="400px" height="300px" autoplay="autoplay">
-            @* <source src="/Video/@srcFilename"/> *@
         </video>
     </div>
     <div style="flex: 50%;">
@@ -39,11 +38,15 @@
 
     private readonly HttpClient _client = new();
 
-    private int plus = 1;
+    private int preloadAmount = 1;
 
-    private List<string> _debug = new() { "" };
+    private readonly List<string> _debug = new() { "" };
 
-    private List<Song?> _songs = new() { new Song { Name = "dummySong0", Data = "", Url = "" }, new Song { Name = "dummySong1", Data = "", Url = "" } };
+    private List<Song?> _songs = new()
+    {
+        new Song { Name = "dummySong0", Data = "", Url = "" },
+        new Song { Name = "dummySong1", Data = "", Url = "" }
+    };
 
     private int _index;
 
@@ -79,26 +82,32 @@
             },
             new()
             {
-                Name = "burst",
-                Url = "https://files.catbox.moe/b4b5wl.mp3",
-                Data = ""
-            },
-            new()
-            {
-                Name = "inukami",
-                Url = "https://files.catbox.moe/kk3ndn.mp3",
-                Data = ""
-            },
-            new()
-            {
                 Name = "gintama",
                 Url = "https://files.catbox.moe/ftvkr9.mp3",
                 Data = ""
             },
             new()
             {
-                Name = "shuffle",
-                Url = "https://files.catbox.moe/8sxb1b.webm",
+                Name = "lovehina",
+                Url = "https://files.catbox.moe/pwuc9j.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "akunohana",
+                Url = "https://files.catbox.moe/dupkk6.webm",
+                Data = ""
+            },
+            new()
+            {
+                Name = "fsn",
+                Url = "https://files.catbox.moe/d1boaz.webm",
+                Data = ""
+            },
+            new()
+            {
+                Name = "h2o",
+                Url = "https://files.catbox.moe/tf82bf.webm",
                 Data = ""
             },
         };
@@ -109,7 +118,7 @@
 
     private async Task SwapSongs()
     {
-        if (_index + plus < _songs.Count)
+        if (_index + 1 < _songs.Count)
         {
             _debug.Add("oldSong: " + _songs[_index]!.Name);
 
@@ -119,10 +128,7 @@
             _currentSong = _songs.ElementAtOrDefault(_index);
             _debug.Add("newSong: " + _currentSong?.Name);
 
-            if (_index + plus < _songs.Count)
-            {
-                await Preload();
-            }
+            await Preload(_index, preloadAmount);
         }
         else
         {
@@ -135,53 +141,41 @@
         _index = 0;
 
         Song dledSong = await DlSong(_songs[_index]!);
-    // await _jsRuntime.InvokeAsync<object>("log", $"dledSongAny: {dledSong.Data.Any()}");
         _currentSong = dledSong;
         StateHasChanged();
 
-        await Preload();
+        await Preload(_index);
         StateHasChanged();
     }
 
-    private async Task Preload() // todo take song as param
+    private async Task Preload(int index, int amount = 1) // todo take song as param?
     {
-        if (_index + plus < _songs.Count)
+        for (int i = 1; i <= amount; i++)
         {
-            Song song = await DlSong(_songs[_index + plus]!);
-            _songs[_index + plus] = song;
-            _debug.Add($"{song.Name} is ready");
-        }
-        else
-        {
-            _logger.LogError("no song to preload (should never have gotten here)");
+            if (index + i < _songs.Count)
+            {
+                Song song = await DlSong(_songs[index + i]!);
+                _songs[index + i] = song;
+                _debug.Add($"{song.Name} is ready");
+            }
+            else
+            {
+                _logger.LogWarning("no song to preload");
+            }
         }
     }
 
     private async Task<Song> DlSong(Song song)
     {
-        Song ret = null;
-    // await Task.Run(async () =>
-    // {
-        using (var dl = _client.GetByteArrayAsync(song.Url))
-        {
-            byte[] bytes = await dl;
-            _debug.Add("dled " + song.Name);
-            var str = Convert.ToBase64String(bytes);
-    // debug += str;
-            _debug.Add("converted " + song.Name);
-            string mediaType = song.Url.EndsWith(".mp3") ? "data:audio/mp3;base64," : "data:video/webm;base64,";
-            var s = new Song
-            {
-                Name = song.Name,
-                Url = song.Url,
-    // todo createObjectURL js method -- doesn't seem to work?
-                Data = mediaType +
-                       str
-            };
+        _debug.Add($"downloading {song.Name}");
+        string data = await _jsRuntime.InvokeAsync<string>("fetchObjectUrl", song.Url);
 
-            ret = s;
-        }
-    // });
+        var ret = new Song
+        {
+            Name = song.Name,
+            Url = song.Url,
+            Data = data
+        };
 
         return ret;
     }

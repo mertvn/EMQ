@@ -28,20 +28,28 @@
         console.log(param)
     }
 
-    window.createObjectURL = async (param) => {
-        return URL.createObjectURL(param)
+    // window.createObjectURL = async (param) => {
+    //     return URL.createObjectURL(param)
+    // }
+
+    window.fetchObjectUrl = async (src) => {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        console.log("dled");
+        return URL.createObjectURL(blob); // todo revoke
     }
 
-    window.reloadVideo = async () => {
-        console.log("here")
-        try {
-            const video = document.getElementById('video');
-            console.log(video)
-            await video.play();
-        } catch (err) {
-            console.log(err)
-        }
-    }
+    //
+    // window.reloadVideo = async () => {
+    //     console.log("here")
+    //     try {
+    //         const video = document.getElementById('video');
+    //         console.log(video)
+    //         await video.play();
+    //     } catch (err) {
+    //         console.log(err)
+    //     }
+    // }
 </script>
 
 </body>
