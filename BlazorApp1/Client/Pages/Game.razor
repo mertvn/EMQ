@@ -128,6 +128,11 @@
             _currentSong = _songs.ElementAtOrDefault(_index);
             _debug.Add("newSong: " + _currentSong?.Name);
 
+            if (string.IsNullOrEmpty(_currentSong?.Data)) // todo put this on a timer instead?
+            {
+                await LoadMissingSong(_index);
+            }
+
             await Preload(_index, preloadAmount);
         }
         else
@@ -136,13 +141,20 @@
         }
     }
 
+    private async Task LoadMissingSong(int index)
+    {
+        // todo prevent double downloads
+        _debug.Add("Downloading missing song: " + _songs[index]!.Name);
+        Song dledSong = await DlSong(_songs[index]!);
+        _currentSong = dledSong;
+        StateHasChanged();
+    }
+
     private async Task ResetToStart()
     {
         _index = 0;
 
-        Song dledSong = await DlSong(_songs[_index]!);
-        _currentSong = dledSong;
-        StateHasChanged();
+        await LoadMissingSong(_index);
 
         await Preload(_index);
         StateHasChanged();
