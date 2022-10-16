@@ -1,0 +1,189 @@
+﻿@page "/Game"
+@using Microsoft.Extensions.Logging
+@inject IJSRuntime _jsRuntime
+@inject ILogger<Game> _logger
+
+<PageTitle>EMQ</PageTitle>
+
+<h3>Game</h3>
+
+<button class="btn btn-primary" @onclick="SwapSongs">Swap Songs</button>
+
+<div id="gameGrid" style="display: flex;">
+    <div class="videoPlayer" style="flex: 50%">
+        <video src="@_currentSong?.Data" id="video" width="400px" height="300px" autoplay="autoplay">
+            @* <source src="/Video/@srcFilename"/> *@
+        </video>
+    </div>
+    <div style="flex: 50%;">
+        @foreach (var debug in _debug)
+        {
+            <p style="padding: 0;margin:0">@debug</p>
+        }
+    </div>
+</div>
+
+@* <p>@_songs[_index]?.Name</p> *@
+@* <p>@_songs[_index + 1]?.Name</p> *@
+
+@code {
+
+    class Song
+    {
+        public string Name { get; set; }
+
+        public string Url { get; set; }
+
+        public string Data { get; set; }
+    }
+
+    private readonly HttpClient _client = new();
+
+    private int plus = 1;
+
+    private List<string> _debug = new() { "" };
+
+    private List<Song?> _songs = new() { new Song { Name = "dummySong0", Data = "", Url = "" }, new Song { Name = "dummySong1", Data = "", Url = "" } };
+
+    private int _index;
+
+    private Song? _currentSong;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _debug.Add("init");
+        var songs = new List<Song?>
+        {
+            new()
+            {
+                Name = "burst",
+                Url = "https://files.catbox.moe/b4b5wl.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "shuffle",
+                Url = "https://files.catbox.moe/8sxb1b.webm",
+                Data = ""
+            },
+            new()
+            {
+                Name = "inukami",
+                Url = "https://files.catbox.moe/kk3ndn.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "burst",
+                Url = "https://files.catbox.moe/b4b5wl.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "inukami",
+                Url = "https://files.catbox.moe/kk3ndn.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "gintama",
+                Url = "https://files.catbox.moe/ftvkr9.mp3",
+                Data = ""
+            },
+            new()
+            {
+                Name = "shuffle",
+                Url = "https://files.catbox.moe/8sxb1b.webm",
+                Data = ""
+            },
+        };
+        _songs = songs;
+
+        await ResetToStart();
+    }
+
+    private async Task SwapSongs()
+    {
+        if (_index + plus < _songs.Count)
+        {
+            _debug.Add("oldSong: " + _songs[_index]!.Name);
+
+            _index += 1;
+            _debug.Add("index: " + _index);
+
+            _currentSong = _songs.ElementAtOrDefault(_index);
+            _debug.Add("newSong: " + _currentSong?.Name);
+
+            if (_index + plus < _songs.Count)
+            {
+                await Preload();
+            }
+        }
+        else
+        {
+            await ResetToStart();
+        }
+    }
+
+    private async Task ResetToStart()
+    {
+        _index = 0;
+
+        Song dledSong = await DlSong(_songs[_index]!);
+    // await _jsRuntime.InvokeAsync<object>("log", $"dledSongAny: {dledSong.Data.Any()}");
+        _currentSong = dledSong;
+        StateHasChanged();
+
+        await Preload();
+        StateHasChanged();
+    }
+
+    private async Task Preload() // todo take song as param
+    {
+        if (_index + plus < _songs.Count)
+        {
+            Song song = await DlSong(_songs[_index + plus]!);
+            _songs[_index + plus] = song;
+            _debug.Add($"{song.Name} is ready");
+        }
+        else
+        {
+            _logger.LogError("no song to preload (should never have gotten here)");
+        }
+    }
+
+    private async Task<Song> DlSong(Song song)
+    {
+        Song ret = null;
+    // await Task.Run(async () =>
+    // {
+        using (var dl = _client.GetByteArrayAsync(song.Url))
+        {
+            byte[] bytes = await dl;
+            _debug.Add("dled " + song.Name);
+            var str = Convert.ToBase64String(bytes);
+    // debug += str;
+            _debug.Add("converted " + song.Name);
+            string mediaType = song.Url.EndsWith(".mp3") ? "data:audio/mp3;base64," : "data:video/webm;base64,";
+            var s = new Song
+            {
+                Name = song.Name,
+                Url = song.Url,
+    // todo createObjectURL js method -- doesn't seem to work?
+                Data = mediaType +
+                       str
+            };
+
+            ret = s;
+        }
+    // });
+
+        return ret;
+    }
+
+}
