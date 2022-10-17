@@ -10,7 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+// builder.Services.AddCors(options =>
+// {
+//     options.AddDefaultPolicy(policyBuilder =>
+//         policyBuilder.WithOrigins("https://localhost:7021")
+//             .AllowAnyMethod()
+//             .AllowAnyHeader()
+//             .AllowCredentials());
+// });
+
 var app = builder.Build();
+
+// app.UseCors();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -30,7 +41,6 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
-
 
 app.MapRazorPages();
 app.MapControllers();

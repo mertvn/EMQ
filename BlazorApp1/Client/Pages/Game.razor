@@ -1,29 +1,40 @@
 ﻿@page "/Game"
 @using Microsoft.Extensions.Logging
+@using System.Timers
 @inject IJSRuntime _jsRuntime
 @inject ILogger<Game> _logger
 
-<PageTitle>EMQ</PageTitle>
-
 <h3>Game</h3>
 
-<button class="btn btn-primary" @onclick="SwapSongs">Swap Songs</button>
+@* <button class="btn btn-primary" @onclick="SwapSongs">Swap Songs</button> *@
 
-<div id="gameGrid" style="display: flex;">
-    <div class="videoPlayer" style="flex: 50%">
-        <video src="@_currentSong?.Data" id="video" width="400px" height="300px" autoplay="autoplay">
-        </video>
+<div id="gameGrid">
+    <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
+        <div class="videoPlayer" style="visibility: @Bool2Vis(videoPlayerVisibility)">
+            <video src="@_currentSong?.Data" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+            </video>
+            @* TODO: Make this work *@
+            @* @if (videoPlayerVisibility) *@
+            @* { *@
+            @*     <p style="position: absolute; top: 40%; right: 40%; font-size: xx-large; color: white; z-index: -1">Sound only</p>  *@
+            @* } *@
+        </div>
+
+        @if (!videoPlayerVisibility)
+        {
+@* TODO: properly center this *@
+            <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                @_countdown
+            </div>
+        }
     </div>
-    <div style="flex: 50%;">
+    <div style="float:right;">
         @foreach (var debug in _debug)
         {
-            <p style="padding: 0;margin:0">@debug</p>
+            <p style="padding: 0; margin:0;">@debug</p>
         }
     </div>
 </div>
-
-@* <p>@_songs[_index]?.Name</p> *@
-@* <p>@_songs[_index + 1]?.Name</p> *@
 
 @code {
 
@@ -36,6 +47,20 @@
         public string Data { get; set; }
     }
 
+    public string Bool2Vis(bool b) => b ? "visible" : "hidden";
+
+    private static int guessTime = 7;
+
+    private static int resultsTime = 3;
+
+    private bool videoPlayerVisibility { get; set; } = false;
+
+    private static int phase; // 0: guess 1: results
+
+    private static int elapsedSeconds;
+    private static int _countdown = guessTime;
+    private readonly Timer _timer = new();
+
     private readonly HttpClient _client = new();
 
     private int preloadAmount = 1;
@@ -44,8 +69,8 @@
 
     private List<Song?> _songs = new()
     {
-        new Song { Name = "dummySong0", Data = "", Url = "" },
-        new Song { Name = "dummySong1", Data = "", Url = "" }
+    // new Song { Name = "dummySong0", Data = "", Url = "" },
+    // new Song { Name = "dummySong1", Data = "", Url = "" }
     };
 
     private int _index;
@@ -113,22 +138,74 @@
         };
         _songs = songs;
 
+        SetTimer();
         await ResetToStart();
+    }
+
+    private void SetTimer()
+    {
+        _timer.Stop();
+        _timer.Elapsed -= OnTimedEvent;
+
+        _timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        _timer.Elapsed += OnTimedEvent;
+        _timer.AutoReset = true;
+        _timer.Start();
+    }
+
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        switch (phase)
+        {
+            case 0:
+                _countdown = guessTime - elapsedSeconds;
+                break;
+            case 1:
+                _countdown = resultsTime - elapsedSeconds;
+                break;
+        }
+
+        StateHasChanged();
+        elapsedSeconds += 1;
+
+        if (_countdown < 0)
+        {
+            elapsedSeconds = 0;
+
+            if (phase == 0)
+            {
+                phase = 1;
+
+                _countdown = resultsTime - elapsedSeconds;
+                videoPlayerVisibility = true;
+                StateHasChanged();
+            }
+            else if (phase == 1)
+            {
+                phase = 0;
+
+                _countdown = guessTime - elapsedSeconds;
+                videoPlayerVisibility = false;
+                StateHasChanged();
+
+                await SwapSongs();
+            }
+
+    // SetTimer();
+        }
     }
 
     private async Task SwapSongs()
     {
         if (_index + 1 < _songs.Count)
         {
-            _debug.Add("oldSong: " + _songs[_index]!.Name);
-
             _index += 1;
             _debug.Add("index: " + _index);
 
-            _currentSong = _songs.ElementAtOrDefault(_index);
-            _debug.Add("newSong: " + _currentSong?.Name);
+    // _currentSong = _songs.ElementAtOrDefault(_index);
+            _currentSong = _songs[_index];
 
-            if (string.IsNullOrEmpty(_currentSong?.Data)) // todo put this on a timer instead?
+            if (string.IsNullOrEmpty(_currentSong!.Data)) // todo put this on a timer instead?
             {
                 await LoadMissingSong(_index);
             }
@@ -143,8 +220,8 @@
 
     private async Task LoadMissingSong(int index)
     {
-        // todo prevent double downloads
-        _debug.Add("Downloading missing song: " + _songs[index]!.Name);
+    // todo prevent double downloads
+        _debug.Add("Missing song: " + _songs[index]!.Name);
         Song dledSong = await DlSong(_songs[index]!);
         _currentSong = dledSong;
         StateHasChanged();
@@ -152,10 +229,9 @@
 
     private async Task ResetToStart()
     {
-        _index = 0;
+        _index = -1;
 
-        await LoadMissingSong(_index);
-
+        await SwapSongs();
         await Preload(_index);
         StateHasChanged();
     }
