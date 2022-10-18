@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
+@inject NavigationManager Navigation
 
 <h3>Hotel</h3>
 
@@ -26,6 +27,7 @@
         roomIds.Add(id);
         _logger.LogInformation("room id: " + id);
     // todo join room with the id
+        Navigation.NavigateTo("/QuizPage");
     }
 
 }
