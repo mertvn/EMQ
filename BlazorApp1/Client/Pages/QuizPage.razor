@@ -15,10 +15,7 @@
 @implements IAsyncDisposable
 
 <h3>Quiz</h3>
-<p>@IsConnected</p>
-<p>@faz</p>
-
-@* <button class="btn btn-primary" @onclick="SwapSongs">Swap Songs</button> *@
+<p>Connected: @IsConnected</p>
 
 <div>
     <p>Phase: @_quizState.Phase</p>
@@ -55,7 +52,6 @@
 </div>
 
 @code {
-    private string faz = "-1";
     private HubConnection? hubConnection;
 
     public bool IsConnected =>
@@ -85,12 +81,12 @@
     {
         public readonly List<string> _debug = new() { "" };
 
-        public bool VideoPlayerVisibility { get; set; } = false; // todo? _quizState.Phase == 1
+        public bool VideoPlayerVisibility { get; set; } = false;
         public int Countdown { get; set; } = _quizSettings.GuessTime;
         public Timer Timer { get; set; } = new();
     }
 
-    // todo
+    // Todo: need to receive this from server at quiz start
     private static QuizSettings _quizSettings { get; set; } = new()
     {
         GuessTime = 7,
@@ -101,11 +97,7 @@
 
     private static ClientState _clientState { get; set; } = new() { };
 
-    private List<Song?> _clientSongs = new(new Song[_quizState.NumSongs])
-    {
-    // new Song { Name = "dummySong0", Data = "", Url = "" },
-    // new Song { Name = "dummySong1", Data = "", Url = "" }
-    };
+    private List<Song?> _clientSongs = new(new Song[_quizState.NumSongs]) { };
 
     private Song? _currentSong;
 
@@ -140,10 +132,7 @@
     // todo send playerID
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
-        await hubConnection.SendAsync("SendPlayerIsReady", 0);
-    //
-    // SetTimer();
-    // await ResetToStart();
+        await hubConnection!.SendAsync("SendPlayerIsReady", 0);
     }
 
     private void SetTimer()
@@ -181,9 +170,6 @@
 
     public async Task OnReceivePhaseChanged(int phase)
     {
-        faz = phase.ToString();
-        StateHasChanged();
-
         await SyncWithServer();
         switch (phase)
         {
@@ -193,6 +179,8 @@
                 StateHasChanged();
 
                 await SwapSongs(_quizState.sp);
+                StateHasChanged();
+                await Preload(_quizState.sp, _quizSettings.PreloadAmount);
                 break;
             case 1:
     // todo show players' guesses
@@ -212,8 +200,6 @@
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-    // await SyncWithServer();
-
         if (_clientState.Countdown > 0)
         {
             _clientState.Countdown -= 1;
@@ -226,23 +212,18 @@
     {
         if (index < _clientSongs.Count)
         {
-    // index += 1;
             _clientState._debug.Add("index: " + index);
     // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_currentSong));
-    // _currentSong = _songs.ElementAtOrDefault(_index);
             _currentSong = _clientSongs[index];
 
             if (string.IsNullOrEmpty(_currentSong!.Data)) // todo put this on a timer instead?
             {
                 await LoadMissingSong(index);
             }
-
-            await Preload(index, _quizSettings.PreloadAmount);
         }
         else
         {
-    // todo gameover screen
-    // await ResetToStart();
+            _logger.LogError("Attempted to swap to a song that does not exist -- probably desynchronized");
         }
     }
 
@@ -255,15 +236,6 @@
         StateHasChanged();
     }
 
-    // private async Task ResetToStart()
-    // {
-    //     int index = 0;
-    //
-    //     await SwapSongs(index);
-    //     await Preload(index);
-    //     StateHasChanged();
-    // }
-
     private async Task Preload(int index, int amount = 1) // todo take song as param?
     {
         for (int i = 1; i <= amount; i++)
@@ -274,7 +246,7 @@
                 if (song is not null)
                 {
                     _clientSongs[index + i] = song;
-                    _clientState._debug.Add($"{song.Url} is ready");
+                    _clientState._debug.Add($"preloaded: {song.Url}");
                 }
                 else
                 {

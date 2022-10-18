@@ -47,33 +47,36 @@ public class Quiz
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        if (QuizState.RemainingSeconds >= 0)
+        if (QuizState.Active)
         {
-            QuizState.RemainingSeconds -= 1;
-        }
-
-        if (QuizState.RemainingSeconds < 0)
-        {
-            Timer.Stop();
-
-            if (QuizState.Phase == 0)
+            if (QuizState.RemainingSeconds >= 0)
             {
-                await EnterJudgementPhase();
-            }
-            else if (QuizState.Phase == 1)
-            {
-                await EnterResultsPhase();
-            }
-            else if (QuizState.Phase == 2)
-            {
-                await EnterGuessingPhase();
-            }
-            else if (QuizState.Phase == 3)
-            {
-                // should never get here?
+                QuizState.RemainingSeconds -= 1;
             }
 
-            Timer.Start();
+            if (QuizState.RemainingSeconds < 0)
+            {
+                Timer.Stop();
+
+                if (QuizState.Phase == 0)
+                {
+                    await EnterJudgementPhase();
+                }
+                else if (QuizState.Phase == 1)
+                {
+                    await EnterResultsPhase();
+                }
+                else if (QuizState.Phase == 2)
+                {
+                    await EnterGuessingPhase();
+                }
+                else if (QuizState.Phase == 3)
+                {
+                    // should never get here?
+                }
+
+                Timer.Start();
+            }
         }
     }
 
@@ -98,7 +101,7 @@ public class Quiz
         QuizState.RemainingSeconds = QuizSettings.ResultsTime;
         await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 2);
 
-        if (QuizState.sp + 1 == QuizState.NumSongs)
+        if (QuizState.sp + 1 == Songs.Count)
         {
             await EndQuiz();
         }
@@ -114,6 +117,8 @@ public class Quiz
         // todo other cleanup
         QuizState.Active = false;
         Timer.Stop();
+        Timer.Elapsed -= OnTimedEvent;
+
 
         // todo not sure if we should treat game ending as a phase or not
         await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 3);
