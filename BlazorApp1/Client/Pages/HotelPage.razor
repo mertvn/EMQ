@@ -1,0 +1,31 @@
+﻿@page "/HotelPage"
+@using Microsoft.Extensions.Logging
+@inject HttpClient Client
+@inject ILogger<HotelPage> _logger
+
+<h3>Hotel</h3>
+
+<p>Welcome to EMQ Hotel, please reserve a room in order to start a quiz.</p>
+<button class="btn btn-primary" @onclick="CreateRoom">Reserve Room</button>
+
+<div style="float:right;">
+    @foreach (var roomId in roomIds)
+    {
+        <p style="padding: 0; margin:0;">@roomId</p>
+    }
+</div>
+
+@code {
+
+    private List<int> roomIds = new();
+
+    private async Task CreateRoom()
+    {
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", "");
+        int id = await res.Content.ReadFromJsonAsync<int>();
+        roomIds.Add(id);
+        _logger.LogInformation("room id: " + id);
+    // todo join room with the id
+    }
+
+}

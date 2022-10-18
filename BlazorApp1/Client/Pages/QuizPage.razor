@@ -1,0 +1,307 @@
+﻿@page "/QuizPage"
+@using Microsoft.Extensions.Logging
+@using System.Timers
+@using BlazorApp1.Shared.Quiz
+@using BlazorApp1.Shared.Quiz.Dto.Response
+@using BlazorApp1.Shared.UI
+@using System.Text.Json
+@using BlazorApp1.Shared.Quiz.Dto.Request
+@using System.Text
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IJSRuntime _jsRuntime
+@inject ILogger<QuizPage> _logger
+@inject HttpClient Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<h3>Quiz</h3>
+<p>@IsConnected</p>
+<p>@faz</p>
+
+@* <button class="btn btn-primary" @onclick="SwapSongs">Swap Songs</button> *@
+
+<div>
+    <p>Phase: @_quizState.Phase</p>
+    <p>Remaining: @_quizState.RemainingSeconds</p>
+    <p>sp: @_quizState.sp</p>
+</div>
+
+<div id="quizGrid">
+    <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
+        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(_clientState.VideoPlayerVisibility)">
+            <video src="@_currentSong?.Data" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+            </video>
+            @* TODO: Make this work *@
+            @* @if (videoPlayerVisibility) *@
+            @* { *@
+            @*     <p style="position: absolute; top: 40%; right: 40%; font-size: xx-large; color: white; z-index: -1">Sound only</p>  *@
+            @* } *@
+        </div>
+
+        @if (!_clientState.VideoPlayerVisibility)
+        {
+@* TODO: properly center this *@
+            <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                @_clientState.Countdown
+            </div>
+        }
+    </div>
+    <div style="float:right;">
+        @foreach (var debug in _clientState._debug)
+        {
+            <p style="padding: 0; margin:0;">@debug</p>
+        }
+    </div>
+</div>
+
+@code {
+    private string faz = "-1";
+    private HubConnection? hubConnection;
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"))
+            .Build();
+
+        hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
+        hubConnection.On<bool>("ReceiveQuizStarted", async active => { await OnReceiveQuizStarted(); });
+
+        await hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    public class ClientState
+    {
+        public readonly List<string> _debug = new() { "" };
+
+        public bool VideoPlayerVisibility { get; set; } = false; // todo? _quizState.Phase == 1
+        public int Countdown { get; set; } = _quizSettings.GuessTime;
+        public Timer Timer { get; set; } = new();
+    }
+
+    // todo
+    private static QuizSettings _quizSettings { get; set; } = new()
+    {
+        GuessTime = 7,
+        ResultsTime = 3,
+    };
+
+    private static QuizState _quizState { get; set; } = new() { };
+
+    private static ClientState _clientState { get; set; } = new() { };
+
+    private List<Song?> _clientSongs = new(new Song[_quizState.NumSongs])
+    {
+    // new Song { Name = "dummySong0", Data = "", Url = "" },
+    // new Song { Name = "dummySong1", Data = "", Url = "" }
+    };
+
+    private Song? _currentSong;
+
+    public async Task<Song?> NextSong(int index)
+    {
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(78, index));
+
+        if (res.IsSuccessStatusCode)
+        {
+            ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
+            if (nextSong is not null)
+            {
+                Song song = await DlSong(new Song { Url = nextSong.Url });
+                return song;
+            }
+        }
+        else
+        {
+    // todo
+        }
+        return null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _clientState._debug.Add("init");
+    // todo send playerID
+        var nextSong = await NextSong(0);
+        _clientSongs[0] = nextSong;
+        await hubConnection.SendAsync("SendPlayerIsReady", 0);
+    //
+    // SetTimer();
+    // await ResetToStart();
+    }
+
+    private void SetTimer()
+    {
+        _clientState.Timer.Stop();
+        _clientState.Timer.Elapsed -= OnTimedEvent;
+
+        _clientState.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        _clientState.Timer.Elapsed += OnTimedEvent;
+        _clientState.Timer.AutoReset = true;
+        _clientState.Timer.Start();
+    }
+
+    private async Task SyncWithServer()
+    {
+        QuizState? sync = await Client.GetFromJsonAsync<QuizState>("Quiz/SyncQuizState");
+        if (sync is not null)
+        {
+            _quizState = sync;
+        }
+        else
+        {
+    // todo
+            _logger.LogError("Desynchronized");
+        }
+    }
+
+    private async Task OnReceiveQuizStarted()
+    {
+        await SyncWithServer();
+        _clientState.Countdown = _quizState.RemainingSeconds;
+        StateHasChanged();
+        SetTimer();
+    }
+
+    public async Task OnReceivePhaseChanged(int phase)
+    {
+        faz = phase.ToString();
+        StateHasChanged();
+
+        await SyncWithServer();
+        switch (phase)
+        {
+            case 0:
+                _clientState.VideoPlayerVisibility = false;
+                _clientState.Countdown = _quizState.RemainingSeconds;
+                StateHasChanged();
+
+                await SwapSongs(_quizState.sp);
+                break;
+            case 1:
+    // todo show players' guesses
+                _clientState.Countdown = 0;
+                StateHasChanged();
+                break;
+            case 2:
+    // TODO: restart song (option?)
+                _clientState.VideoPlayerVisibility = true;
+                StateHasChanged();
+                break;
+            case 3:
+    // TODO: do endgame stuff
+                break;
+        }
+    }
+
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+    // await SyncWithServer();
+
+        if (_clientState.Countdown > 0)
+        {
+            _clientState.Countdown -= 1;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SwapSongs(int index)
+    {
+        if (index < _clientSongs.Count)
+        {
+    // index += 1;
+            _clientState._debug.Add("index: " + index);
+    // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_currentSong));
+    // _currentSong = _songs.ElementAtOrDefault(_index);
+            _currentSong = _clientSongs[index];
+
+            if (string.IsNullOrEmpty(_currentSong!.Data)) // todo put this on a timer instead?
+            {
+                await LoadMissingSong(index);
+            }
+
+            await Preload(index, _quizSettings.PreloadAmount);
+        }
+        else
+        {
+    // todo gameover screen
+    // await ResetToStart();
+        }
+    }
+
+    private async Task LoadMissingSong(int index)
+    {
+    // todo prevent double downloads
+        _clientState._debug.Add("Missing song: " + _clientSongs[index]!.Name);
+        var nextSong = await NextSong(index);
+        _currentSong = nextSong;
+        StateHasChanged();
+    }
+
+    // private async Task ResetToStart()
+    // {
+    //     int index = 0;
+    //
+    //     await SwapSongs(index);
+    //     await Preload(index);
+    //     StateHasChanged();
+    // }
+
+    private async Task Preload(int index, int amount = 1) // todo take song as param?
+    {
+        for (int i = 1; i <= amount; i++)
+        {
+            if (index + i < _clientSongs.Count)
+            {
+                var song = await NextSong(index + i);
+                if (song is not null)
+                {
+                    _clientSongs[index + i] = song;
+                    _clientState._debug.Add($"{song.Url} is ready");
+                }
+                else
+                {
+                    _logger.LogWarning("preload failed");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("no song to preload");
+            }
+        }
+    }
+
+    private async Task<Song> DlSong(Song song)
+    {
+        _clientState._debug.Add($"downloading {song.Url}");
+        string data = await _jsRuntime.InvokeAsync<string>("fetchObjectUrl", song.Url);
+
+        var ret = new Song
+        {
+            Name = song.Name,
+            Url = song.Url,
+            Data = data
+        };
+
+        return ret;
+    }
+
+
+}
