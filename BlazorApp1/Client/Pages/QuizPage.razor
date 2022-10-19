@@ -7,6 +7,7 @@
 @using System.Text.Json
 @using BlazorApp1.Shared.Quiz.Dto.Request
 @using System.Text
+@using BlazorApp1.Shared.Quiz.Concrete
 @using Microsoft.AspNetCore.SignalR.Client
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
@@ -192,9 +193,10 @@
     {
         await SyncWithServer();
 
-        switch (phase)
+        QuizPhaseKind phaseKind = (QuizPhaseKind) phase;
+        switch (phaseKind)
         {
-            case 0:
+            case QuizPhaseKind.Guess:
                 _clientState.VideoPlayerVisibility = false;
                 _clientState.Countdown = _quizState.RemainingSeconds;
                 StateHasChanged();
@@ -203,16 +205,18 @@
                 StateHasChanged();
                 await Preload(_quizState.sp, _quizSettings.PreloadAmount);
                 break;
-            case 1:
+            case QuizPhaseKind.Judgement:
     // todo show players' guesses
                 _clientState.Countdown = 0;
                 StateHasChanged();
                 break;
-            case 2:
+            case QuizPhaseKind.Results:
     // TODO: restart song (option?)
                 _clientState.VideoPlayerVisibility = true;
                 StateHasChanged();
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 

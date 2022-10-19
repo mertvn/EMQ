@@ -4,5 +4,5 @@ namespace BlazorApp1.Shared.Quiz.Concrete;
 
 public class GuessPhase : IQuizPhase
 {
-    public int Id { get; } = 0;
+    public QuizPhaseKind Kind { get; } = QuizPhaseKind.Guess;
 }

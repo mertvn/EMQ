@@ -88,13 +88,13 @@ public class Quiz
         QuizState.Phase = new GuessPhase();
         QuizState.RemainingSeconds = QuizSettings.GuessTime;
         QuizState.sp += 1;
-        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
+        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Kind);
     }
 
     private async Task EnterJudgementPhase()
     {
         QuizState.Phase = new JudgementPhase();
-        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
+        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Kind);
         await JudgeGuesses();
     }
 
@@ -102,7 +102,7 @@ public class Quiz
     {
         QuizState.Phase = new ResultsPhase();
         QuizState.RemainingSeconds = QuizSettings.ResultsTime;
-        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
+        await _hubContext.Clients.Clients(ConnectionIds).SendAsync("ReceivePhaseChanged", QuizState.Phase.Kind);
 
         if (QuizState.sp + 1 == Songs.Count)
         {
