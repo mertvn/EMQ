@@ -14,7 +14,7 @@ namespace BlazorApp1.Server.Hubs
         public override Task OnConnectedAsync()
         {
             var session =
-                AuthController.Sessions.Find(x => Context.GetHttpContext().Request.QueryString.Value.Contains(x.Token));
+                AuthController.Sessions.Find(x => Context.GetHttpContext().Request.Query["access_token"] == x.Token);
             if (session != null)
             {
                 session.ConnectionId = Context.ConnectionId;
