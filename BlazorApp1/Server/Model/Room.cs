@@ -7,5 +7,9 @@ public class Room
 {
     public int Id { get; set; } = -1;
 
+    public string Name { get; set; } = "";
+
+    public string Password { get; set; } = "";
+
     public Quiz? Quiz { get; set; }
 }

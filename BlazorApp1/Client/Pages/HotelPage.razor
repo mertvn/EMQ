@@ -1,5 +1,7 @@
 ﻿@page "/HotelPage"
 @using Microsoft.Extensions.Logging
+@using BlazorApp1.Shared.Quiz.Dto.Request
+@using BlazorApp1.Shared.Quiz
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -7,6 +9,14 @@
 <h3>Hotel</h3>
 
 <p>Welcome to EMQ Hotel, please reserve a room in order to start a quiz.</p>
+
+<div>
+    Name:<br/>
+    <input @bind="Name" type="text" name="Name"/><br/>
+    Password:<br/>
+    <input @bind="Password" type="password" name="Password"/><br/>
+</div>
+
 <button class="btn btn-primary" @onclick="CreateRoom">Reserve Room</button>
 
 <div style="float:right;">
@@ -17,17 +27,32 @@
 </div>
 
 @code {
+    private string Name { get; set; } = "";
+
+    private string Password { get; set; } = "";
+
+    // TODO allow user to change settings
+    private QuizSettings QuizSettings { get; set; } = new()
+    {
+        GuessTime = 7,
+        ResultsTime = 8
+    };
 
     private List<int> roomIds = new();
 
     private async Task CreateRoom()
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", "");
-        int id = await res.Content.ReadFromJsonAsync<int>();
-        roomIds.Add(id);
-        _logger.LogInformation("room id: " + id);
-    // todo join room with the id
-        Navigation.NavigateTo("/QuizPage");
+        ReqCreateRoom req = new(Name, Password, QuizSettings);
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
+        int roomId = await res.Content.ReadFromJsonAsync<int>();
+        roomIds.Add(roomId);
+
+        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session.PlayerId));
+        if (res1.IsSuccessStatusCode)
+        {
+            Globals.Session.RoomId = roomId;
+            Navigation.NavigateTo("/QuizPage");
+        }
     }
 
 }

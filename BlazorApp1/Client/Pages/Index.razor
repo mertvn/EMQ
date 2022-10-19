@@ -1,15 +1,56 @@
 ﻿@page "/"
+@using BlazorApp1.Shared.Auth
+@using BlazorApp1.Shared.Auth.Dto.Request
+@using BlazorApp1.Shared.Quiz.Dto.Response
+@using Microsoft.Extensions.Logging
 @inject NavigationManager Navigation
+@inject HttpClient Client
+@inject ILogger<Index> _logger
 
-<h1>Hello, world!</h1>
+<h1>Hello, EMQ!</h1>
 
-Welcome to your new app.
+<p>Welcome to EMQ, please login.</p>
+
+<div>
+    Username:<br/>
+    <input @bind="Username" type="text" name="Username"/><br/>
+    Password:<br/>
+    <input @bind="Password" type="password" name="Password"/><br/>
+    <button @onclick="Login">Login</button>
+</div>
 
 @code
 {
+    private string Username { get; set; } = "";
+
+    private string Password { get; set; } = "";
+
     protected override async Task OnInitializedAsync()
     {
     // await Globals.InitGlobals();
-        Navigation.NavigateTo("/HotelPage");
+    }
+
+    private async Task Login()
+    {
+        if (Globals.Session is null)
+        {
+    // todo proper auth
+            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession", new ReqCreateSession(Username, Password));
+            if (res.IsSuccessStatusCode)
+            {
+                ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
+                if (resCreateSession != null)
+                {
+                    _logger.LogInformation("token: " + resCreateSession.Token);
+
+                    Globals.Session = new Session(resCreateSession.PlayerId, resCreateSession.Token);
+                    Navigation.NavigateTo("/HotelPage");
+                }
+            }
+            else
+            {
+    // todo
+            }
+        }
     }
 }

@@ -55,34 +55,44 @@
 </div>
 
 @code {
-    private HubConnection? hubConnection;
+    // private HubConnection? hubConnection;
 
     public bool IsConnected =>
-        hubConnection?.State == HubConnectionState.Connected;
+        Globals.Session!.hubConnection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"))
-            .ConfigureLogging(logging =>
-            {
-                logging.AddProvider(_logger.AsLoggerProvider());
-                logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
-            })
-            .Build();
+    // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
+        if (Globals.Session!.hubConnection is null)
+        {
+            Globals.Session!.hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"),
+                    options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
+                .ConfigureLogging(logging =>
+                {
+                    logging.AddProvider(_logger.AsLoggerProvider());
+                    logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
+                })
+                .Build();
 
-        hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-        hubConnection.On<bool>("ReceiveQuizStarted", async active => { await OnReceiveQuizStarted(); });
-        hubConnection.On<bool>("ReceiveQuizEnded", async active => { await OnReceiveQuizEnded(); });
+            Globals.Session!.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
+            Globals.Session!.hubConnection.On<bool>("ReceiveQuizStarted", async active => { await OnReceiveQuizStarted(); });
+            Globals.Session!.hubConnection.On<bool>("ReceiveQuizEnded", async active => { await OnReceiveQuizEnded(); });
 
-        await hubConnection.StartAsync();
+            await Globals.Session!.hubConnection.StartAsync();
+        }
+
+        _clientState._debug.Add("init");
+        var nextSong = await NextSong(0);
+        _clientSongs[0] = nextSong;
+        await Globals.Session!.hubConnection!.SendAsync("SendPlayerIsReady", Globals.Session.PlayerId);
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
+        if (Globals.Session!.hubConnection is not null)
         {
-            await hubConnection.DisposeAsync();
+            await Globals.Session!.hubConnection.DisposeAsync();
         }
     }
 
@@ -112,8 +122,7 @@
 
     public async Task<Song?> NextSong(int index)
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(78, index));
-
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session.RoomId.Value, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -130,20 +139,6 @@
         return null;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        _clientState._debug.Add("init");
-    // todo send playerID
-        var nextSong = await NextSong(0);
-        _clientSongs[0] = nextSong;
-        await hubConnection!.SendAsync("SendPlayerIsReady", 0);
-    }
-
     private void SetTimer()
     {
         _clientState.Timer.Stop();
@@ -157,10 +152,19 @@
 
     private async Task SyncWithServer()
     {
-        QuizState? sync = await Client.GetFromJsonAsync<QuizState>("Quiz/SyncQuizState");
-        if (sync is not null)
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncQuizState", Globals.Session.RoomId);
+        if (res.IsSuccessStatusCode)
         {
-            _quizState = sync;
+            QuizState? sync = await res.Content.ReadFromJsonAsync<QuizState>().ConfigureAwait(false);
+            if (sync is not null)
+            {
+                _quizState = sync;
+            }
+            else
+            {
+    // todo
+                _logger.LogError("Desynchronized");
+            }
         }
         else
         {

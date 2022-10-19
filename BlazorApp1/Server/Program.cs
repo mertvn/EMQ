@@ -1,5 +1,7 @@
+using System;
 using System.Linq;
 using BlazorApp1.Server.Hubs;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,15 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//     .AddCookie(options =>
+//     {
+//         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+//         options.SlidingExpiration = true;
+//         options.AccessDeniedPath = "/Forbidden/";
+//     });
+
 
 builder.Services.AddSignalR()
 //     .AddJsonProtocol(options =>
@@ -70,6 +81,9 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
