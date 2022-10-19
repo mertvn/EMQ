@@ -18,10 +18,13 @@
 <p>Connected: @IsConnected</p>
 
 <div>
-    <p>Phase: @_quizState.Phase</p>
-    <p>Remaining: @_quizState.RemainingSeconds</p>
+    <p>Game is active: @_quizState.IsActive</p>
+    @* <p>Phase: @_quizState.Phase</p> *@
+    <p>RemainingSeconds: @_quizState.RemainingSeconds</p>
     <p>sp: @_quizState.sp</p>
 </div>
+
+<input/>
 
 <div id="quizGrid">
     <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
@@ -61,10 +64,16 @@
     {
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"))
+            .ConfigureLogging(logging =>
+            {
+                logging.AddProvider(_logger.AsLoggerProvider());
+                logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
+            })
             .Build();
 
         hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
         hubConnection.On<bool>("ReceiveQuizStarted", async active => { await OnReceiveQuizStarted(); });
+        hubConnection.On<bool>("ReceiveQuizEnded", async active => { await OnReceiveQuizEnded(); });
 
         await hubConnection.StartAsync();
     }
@@ -168,9 +177,17 @@
         SetTimer();
     }
 
+    private async Task OnReceiveQuizEnded()
+    {
+        await SyncWithServer();
+
+    // TODO: do endgame stuff
+    }
+
     public async Task OnReceivePhaseChanged(int phase)
     {
         await SyncWithServer();
+
         switch (phase)
         {
             case 0:
@@ -191,9 +208,6 @@
     // TODO: restart song (option?)
                 _clientState.VideoPlayerVisibility = true;
                 StateHasChanged();
-                break;
-            case 3:
-    // TODO: do endgame stuff
                 break;
         }
     }

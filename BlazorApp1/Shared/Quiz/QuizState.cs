@@ -1,10 +1,14 @@
-﻿namespace BlazorApp1.Shared.Quiz;
+﻿using System.Text.Json.Serialization;
+using BlazorApp1.Shared.Quiz.Abstract;
+using BlazorApp1.Shared.Quiz.Concrete;
+
+namespace BlazorApp1.Shared.Quiz;
 
 public class QuizState
 {
-    public bool Active { get; set; }
+    public bool IsActive { get; set; }
 
-    public int Phase { get; set; } // 0: guess 1: waiting for judgement 2: results // todo: abstraction
+    [JsonIgnore] public IQuizPhase Phase { get; set; } = new GuessPhase();
 
     // public int ElapsedSeconds { get; set; }
 
@@ -13,5 +17,5 @@ public class QuizState
     // "Song Pointer" (Current Song Index)
     public int sp { get; set; } = -1;
 
-    public int NumSongs { get; set; } = 10; // todo hook this up
+    public int NumSongs { get; set; } = 9; // todo hook this up
 }

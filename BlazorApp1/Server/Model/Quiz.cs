@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using BlazorApp1.Server.Hubs;
 using BlazorApp1.Shared.Quiz;
+using BlazorApp1.Shared.Quiz.Concrete;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BlazorApp1.Server.Model;
@@ -47,7 +48,7 @@ public class Quiz
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        if (QuizState.Active)
+        if (QuizState.IsActive)
         {
             if (QuizState.RemainingSeconds >= 0)
             {
@@ -58,21 +59,17 @@ public class Quiz
             {
                 Timer.Stop();
 
-                if (QuizState.Phase == 0)
+                if (QuizState.Phase is GuessPhase)
                 {
                     await EnterJudgementPhase();
                 }
-                else if (QuizState.Phase == 1)
+                else if (QuizState.Phase is JudgementPhase)
                 {
                     await EnterResultsPhase();
                 }
-                else if (QuizState.Phase == 2)
+                else if (QuizState.Phase is ResultsPhase)
                 {
                     await EnterGuessingPhase();
-                }
-                else if (QuizState.Phase == 3)
-                {
-                    // should never get here?
                 }
 
                 Timer.Start();
@@ -82,24 +79,24 @@ public class Quiz
 
     private async Task EnterGuessingPhase()
     {
-        QuizState.Phase = 0;
+        QuizState.Phase = new GuessPhase();
         QuizState.RemainingSeconds = QuizSettings.GuessTime;
         QuizState.sp += 1;
-        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 0);
+        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
     }
 
     private async Task EnterJudgementPhase()
     {
-        QuizState.Phase = 1;
-        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 1);
+        QuizState.Phase = new JudgementPhase();
+        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
         await JudgeGuesses();
     }
 
     private async Task EnterResultsPhase()
     {
-        QuizState.Phase = 2;
+        QuizState.Phase = new ResultsPhase();
         QuizState.RemainingSeconds = QuizSettings.ResultsTime;
-        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 2);
+        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", QuizState.Phase.Id);
 
         if (QuizState.sp + 1 == Songs.Count)
         {
@@ -115,20 +112,17 @@ public class Quiz
     public async Task EndQuiz()
     {
         // todo other cleanup
-        QuizState.Active = false;
+        QuizState.IsActive = false;
         Timer.Stop();
         Timer.Elapsed -= OnTimedEvent;
 
-
-        // todo not sure if we should treat game ending as a phase or not
-        await _hubContext.Clients.All.SendAsync("ReceivePhaseChanged", 3);
-        //await _hubContext.Clients.All.SendAsync("ReceiveQuizEnded", QuizState.Active);
+        await _hubContext.Clients.All.SendAsync("ReceiveQuizEnded", QuizState.IsActive);
     }
 
     public async Task StartQuiz()
     {
-        QuizState.Active = true;
-        await _hubContext.Clients.All.SendAsync("ReceiveQuizStarted", QuizState.Active);
+        QuizState.IsActive = true;
+        await _hubContext.Clients.All.SendAsync("ReceiveQuizStarted", QuizState.IsActive);
         await EnterGuessingPhase();
         SetTimer();
     }
@@ -136,7 +130,7 @@ public class Quiz
     public async Task OnSendPlayerIsReady()
     {
         // TODO: only start quiz if all? players ready
-        if (!QuizState.Active)
+        if (!QuizState.IsActive)
         {
             await StartQuiz();
         }
