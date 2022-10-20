@@ -12,9 +12,14 @@ public class QuizState
 
     // public int ElapsedSeconds { get; set; }
 
+    /// <summary>
+    ///  The remaining time for current phase in seconds
+    /// </summary>
     public int RemainingSeconds { get; set; }
 
-    // "Song Pointer" (Current Song Index)
+    /// <summary>
+    ///  "Song Pointer" (a.k.a. Current Song Index)
+    /// </summary>
     public int sp { get; set; } = -1;
 
     public int NumSongs { get; set; } = 9; // todo hook this up

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using BlazorApp1.Server.Controllers;
 using BlazorApp1.Shared.Quiz;
 
 namespace BlazorApp1.Server.Model;
@@ -12,4 +14,10 @@ public class Room
     public string Password { get; set; } = "";
 
     public Quiz? Quiz { get; set; }
+
+    public List<Player> Players { get; set; } = new();
+
+    public string[] ConnectionIds =>
+        AuthController.Sessions.Where(x => Players.Select(y => y.Id).Contains(x.PlayerId)).Select(x => x.ConnectionId!)
+            .ToArray();
 }

@@ -14,7 +14,7 @@ namespace BlazorApp1.Server.Hubs
         public override Task OnConnectedAsync()
         {
             var session =
-                AuthController.Sessions.Find(x => Context.GetHttpContext().Request.Query["access_token"] == x.Token);
+                AuthController.Sessions.Find(x => Context.GetHttpContext()!.Request.Query["access_token"] == x.Token);
             if (session != null)
             {
                 session.ConnectionId = Context.ConnectionId;
@@ -33,7 +33,7 @@ namespace BlazorApp1.Server.Hubs
             var session = AuthController.Sessions.Find(x => x.ConnectionId == Context.ConnectionId);
             if (session != null)
             {
-                var room = QuizController.Rooms.SingleOrDefault(x => x.Quiz.Players.Any(y => y.Id == session.PlayerId));
+                var room = QuizController.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.PlayerId));
                 if (room?.Quiz != null)
                 {
                     await room.Quiz.OnSendPlayerIsReady(session.PlayerId);

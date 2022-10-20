@@ -66,7 +66,7 @@
     // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
         if (Globals.Session!.hubConnection is null)
         {
-            Globals.Session!.hubConnection = new HubConnectionBuilder()
+            Globals.Session.hubConnection = new HubConnectionBuilder()
                 .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"),
                     options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
                 .ConfigureLogging(logging =>
@@ -76,24 +76,24 @@
                 })
                 .Build();
 
-            Globals.Session!.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-            Globals.Session!.hubConnection.On<bool>("ReceiveQuizStarted", async active => { await OnReceiveQuizStarted(); });
-            Globals.Session!.hubConnection.On<bool>("ReceiveQuizEnded", async active => { await OnReceiveQuizEnded(); });
+            Globals.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
+            Globals.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
+            Globals.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
 
-            await Globals.Session!.hubConnection.StartAsync();
+            await Globals.Session.hubConnection.StartAsync();
         }
 
         _clientState._debug.Add("init");
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
-        await Globals.Session!.hubConnection!.SendAsync("SendPlayerIsReady", Globals.Session.PlayerId);
+        await Globals.Session.hubConnection!.SendAsync("SendPlayerIsReady", Globals.Session.PlayerId);
     }
 
     public async ValueTask DisposeAsync()
     {
         if (Globals.Session!.hubConnection is not null)
         {
-            await Globals.Session!.hubConnection.DisposeAsync();
+            await Globals.Session.hubConnection.DisposeAsync();
         }
     }
 
@@ -101,9 +101,9 @@
     {
         public readonly List<string> _debug = new() { "" };
 
-        public bool VideoPlayerVisibility { get; set; } = false;
-        public int Countdown { get; set; } = _quizSettings.GuessTime;
-        public Timer Timer { get; set; } = new();
+        public bool VideoPlayerVisibility { get; set; }
+        public int Countdown { get; set; }
+        public Timer Timer { get; } = new();
     }
 
     // Todo: need to receive this from server at quiz start
@@ -117,13 +117,13 @@
 
     private static ClientState _clientState { get; set; } = new() { };
 
-    private List<Song?> _clientSongs = new(new Song[_quizState.NumSongs]) { };
+    private readonly List<Song?> _clientSongs = new(new Song[_quizState.NumSongs]) { };
 
     private Song? _currentSong;
 
     public async Task<Song?> NextSong(int index)
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session.RoomId.Value, index));
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -153,7 +153,7 @@
 
     private async Task SyncWithServer()
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncQuizState", Globals.Session.RoomId);
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncQuizState", Globals.Session!.RoomId);
         if (res.IsSuccessStatusCode)
         {
             QuizState? sync = await res.Content.ReadFromJsonAsync<QuizState>().ConfigureAwait(false);
@@ -163,13 +163,13 @@
             }
             else
             {
-    // todo
+    // todo warn user and require reload
                 _logger.LogError("Desynchronized");
             }
         }
         else
         {
-    // todo
+    // todo warn user and require reload
             _logger.LogError("Desynchronized");
         }
     }
@@ -220,7 +220,7 @@
         }
     }
 
-    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
         if (_clientState.Countdown > 0)
         {
@@ -238,7 +238,7 @@
     // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_currentSong));
             _currentSong = _clientSongs[index];
 
-            if (string.IsNullOrEmpty(_currentSong!.Data)) // todo put this on a timer instead?
+            if (string.IsNullOrEmpty(_currentSong!.Data))
             {
                 await LoadMissingSong(index);
             }
@@ -258,7 +258,7 @@
         StateHasChanged();
     }
 
-    private async Task Preload(int index, int amount = 1) // todo take song as param?
+    private async Task Preload(int index, int amount = 1)
     {
         for (int i = 1; i <= amount; i++)
         {

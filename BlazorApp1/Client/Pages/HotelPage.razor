@@ -47,7 +47,7 @@
         int roomId = await res.Content.ReadFromJsonAsync<int>();
         roomIds.Add(roomId);
 
-        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session.PlayerId));
+        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.PlayerId));
         if (res1.IsSuccessStatusCode)
         {
             Globals.Session.RoomId = roomId;

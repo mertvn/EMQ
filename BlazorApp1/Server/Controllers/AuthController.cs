@@ -24,21 +24,22 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("CreateSession")]
-    public ResCreateSession CreateSession([FromBody] ReqCreateSession request)
+    public ResCreateSession CreateSession([FromBody] ReqCreateSession req)
     {
         // todo: authenticate with db and get playerId
         int playerId = -1;
 
-        if (request.Username == "" && request.Password == "")
+        if (req.Username == "" && req.Password == "")
         {
             playerId = 69;
         }
 
-        if (request.Username == "test" && request.Password == "")
+        if (req.Username == "test" && req.Password == "")
         {
             playerId = 1001;
         }
 
+        _logger.LogInformation("Created new session for playerId " + playerId);
         string token = Guid.NewGuid().ToString();
         Sessions.Add(new Session(playerId, token));
 

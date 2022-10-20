@@ -53,49 +53,74 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("NextSong")]
-    public ResNextSong NextSong([FromBody] ReqNextSong request)
+    public ResNextSong? NextSong([FromBody] ReqNextSong req)
     {
         // todo? verify user belongs in room
-        // todo check that request.SongIndex is less than sp+preloadAmount
-        var room = Rooms.SingleOrDefault(x => x.Id == request.RoomId);
+        var room = Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
-        // todo
-        // if (room is not null)
-        // {
-        var url = room.Quiz.Songs[request.SongIndex].Url;
-        return new ResNextSong(request.SongIndex, url);
-        // }
+        if (room is not null)
+        {
+            if (room.Quiz != null)
+            {
+                if (req.SongIndex <= room.Quiz.QuizState.sp + room.Quiz.QuizSettings.PreloadAmount)
+                {
+                    if (req.SongIndex < room.Quiz.Songs.Count)
+                    {
+                        string url = room.Quiz.Songs[req.SongIndex].Url;
+                        return new ResNextSong(req.SongIndex, url);
+                    }
+                    else
+                    {
+                        _logger.LogError("Requested song index is invalid: " + req.SongIndex);
+                        return null;
+                    }
+                }
+                else
+                {
+                    _logger.LogError("Requested song index is too far in the future: " + req.SongIndex);
+                    return null;
+                }
+            }
+            else
+            {
+                _logger.LogError("Room does not have a quiz initialized: " + req.RoomId);
+                return null;
+            }
+        }
+        else
+        {
+            _logger.LogError("Room not found: " + req.RoomId);
+            return null;
+        }
     }
 
     [HttpPost]
     [Route("CreateRoom")]
-    public async Task<int> CreateRoom([FromBody] ReqCreateRoom request)
+    public async Task<int> CreateRoom([FromBody] ReqCreateRoom req)
     {
         // todo
-        var room = new Room
+        var room = new Room { Id = new Random().Next(), Name = req.Name, Password = req.Password, };
+
+        var quiz = new Quiz(_hubContext, req.QuizSettings, room)
         {
-            Id = new Random().Next(),
-            Name = request.Name,
-            Password = request.Password,
-            Quiz = new Quiz(_hubContext, request.QuizSettings)
+            Songs = new List<Song>
             {
-                Songs = new List<Song>()
-                {
-                    new() { Name = "burst", Url = "https://files.catbox.moe/b4b5wl.mp3", Data = "" },
-                    new() { Name = "shuffle", Url = "https://files.catbox.moe/8sxb1b.webm", Data = "" },
-                    new() { Name = "inukami", Url = "https://files.catbox.moe/kk3ndn.mp3", Data = "" },
-                    new() { Name = "gintama", Url = "https://files.catbox.moe/ftvkr9.mp3", Data = "" },
-                    new() { Name = "lovehina", Url = "https://files.catbox.moe/pwuc9j.mp3", Data = "" },
-                    new() { Name = "akunohana", Url = "https://files.catbox.moe/dupkk6.webm", Data = "" },
-                    new() { Name = "fsn", Url = "https://files.catbox.moe/d1boaz.webm", Data = "" },
-                    new() { Name = "h2o", Url = "https://files.catbox.moe/tf82bf.webm", Data = "" },
-                    new() { Name = "chihayafuru", Url = " https://files.catbox.moe/y3ps2h.mp3", Data = "" },
-                }
+                new() { Name = "burst", Url = "https://files.catbox.moe/b4b5wl.mp3", Data = "" },
+                new() { Name = "shuffle", Url = "https://files.catbox.moe/8sxb1b.webm", Data = "" },
+                new() { Name = "inukami", Url = "https://files.catbox.moe/kk3ndn.mp3", Data = "" },
+                new() { Name = "gintama", Url = "https://files.catbox.moe/ftvkr9.mp3", Data = "" },
+                new() { Name = "lovehina", Url = "https://files.catbox.moe/pwuc9j.mp3", Data = "" },
+                new() { Name = "akunohana", Url = "https://files.catbox.moe/dupkk6.webm", Data = "" },
+                new() { Name = "fsn", Url = "https://files.catbox.moe/d1boaz.webm", Data = "" },
+                new() { Name = "h2o", Url = "https://files.catbox.moe/tf82bf.webm", Data = "" },
+                new() { Name = "chihayafuru", Url = " https://files.catbox.moe/y3ps2h.mp3", Data = "" },
             }
         };
 
+        room.Quiz = quiz;
+
         // todo
-        room.Quiz.Songs = room.Quiz.Songs.OrderBy(a => new Random().Next()).ToList();
+        quiz.Songs = room.Quiz.Songs.OrderBy(a => new Random().Next()).ToList();
         Rooms.Add(room);
 
         return room.Id;
@@ -103,15 +128,37 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("JoinRoom")]
-    public async Task JoinRoom([FromBody] ReqJoinRoom request)
+    public async Task JoinRoom([FromBody] ReqJoinRoom req)
     {
-        var room = Rooms.Find(x => x.Id == request.RoomId);
-        if (room.Password == request.Password)
+        var room = Rooms.Find(x => x.Id == req.RoomId);
+        if (room != null)
         {
-            if (!room.Quiz.Players.Any(x => x.Id == request.PlayerId))
+            if (room.Password == req.Password)
             {
-                room.Quiz.Players.Add(new Player() { Username = "TestPlayer", Id = request.PlayerId }); // todo
+                if (!room.Players.Any(x => x.Id == req.PlayerId))
+                {
+                    var oldRoom = Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
+                    if (oldRoom is not null)
+                    {
+                        var player = oldRoom.Players.Single(x => x.Id == req.PlayerId);
+                        oldRoom.Players.Remove(player);
+                    }
+
+                    room.Players.Add(new Player(req.PlayerId, "TestPlayer")); // todo
+                }
+                else
+                {
+                    // todo warn error
+                }
             }
+            else
+            {
+                // todo warn wrong password
+            }
+        }
+        else
+        {
+            // todo warn error
         }
     }
 }
