@@ -1,6 +1,6 @@
-﻿namespace BlazorApp1.Shared;
+﻿namespace BlazorApp1.Shared.Core;
 
-public static class Utils
+public static class ExtensionMethods
 {
     public static string Base64Encode(this string plainText)
     {

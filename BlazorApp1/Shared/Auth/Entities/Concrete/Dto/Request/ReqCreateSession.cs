@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.Auth.Dto.Request;
+﻿namespace BlazorApp1.Shared.Auth.Entities.Concrete.Dto.Request;
 
 public class ReqCreateSession
 {

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.SignalR.Client;
 
-namespace BlazorApp1.Shared.Auth;
+namespace BlazorApp1.Shared.Auth.Entities.Concrete;
 
 // todo: should be split into two: Persist and Session
 public class Session

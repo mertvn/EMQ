@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.Quiz.Dto.Request;
+﻿namespace BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request;
 
 public class ReqCreateRoom
 {

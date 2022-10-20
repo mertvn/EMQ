@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using BlazorApp1.Server.Model;
 using BlazorApp1.Shared.Auth;
-using BlazorApp1.Shared.Auth.Dto.Request;
-using BlazorApp1.Shared.Quiz.Dto.Response;
+using BlazorApp1.Shared.Auth.Entities.Concrete;
+using BlazorApp1.Shared.Auth.Entities.Concrete.Dto.Request;
+using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 

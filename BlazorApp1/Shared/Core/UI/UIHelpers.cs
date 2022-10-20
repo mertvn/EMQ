@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.UI;
+﻿namespace BlazorApp1.Shared.Core.UI;
 
 public static class UiHelpers
 {

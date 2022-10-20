@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.Quiz;
+﻿namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class QuizSettings
 {

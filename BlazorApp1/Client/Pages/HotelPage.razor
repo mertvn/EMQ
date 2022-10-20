@@ -1,7 +1,8 @@
 ﻿@page "/HotelPage"
 @using Microsoft.Extensions.Logging
-@using BlazorApp1.Shared.Quiz.Dto.Request
 @using BlazorApp1.Shared.Quiz
+@using BlazorApp1.Shared.Quiz.Entities.Concrete
+@using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -19,11 +20,11 @@
 
 <button class="btn btn-primary" @onclick="CreateRoom">Reserve Room</button>
 
-<div style="float:right;">
-    @foreach (var roomId in roomIds)
-    {
-        <p style="padding: 0; margin:0;">@roomId</p>
-    }
+<div style="">
+    @* @foreach (var room in Rooms) *@
+    @* { *@
+    @*     <p style="">@room</p> *@
+    @* } *@
 </div>
 
 @code {
@@ -38,14 +39,13 @@
         ResultsTime = 8
     };
 
-    private List<int> roomIds = new();
+   // private List<Room> Rooms = new();
 
     private async Task CreateRoom()
     {
         ReqCreateRoom req = new(Name, Password, QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
-        roomIds.Add(roomId);
 
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.PlayerId));
         if (res1.IsSuccessStatusCode)

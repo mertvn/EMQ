@@ -2,6 +2,7 @@
 using BlazorApp1.Client;
 using BlazorApp1.Client.Pages;
 using BlazorApp1.Shared.Auth;
+using BlazorApp1.Shared.Auth.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 

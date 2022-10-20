@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.Quiz.Dto.Response;
+﻿namespace BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response;
 
 public class ResNextSong
 {

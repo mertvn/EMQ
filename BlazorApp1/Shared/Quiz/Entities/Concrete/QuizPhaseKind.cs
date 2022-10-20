@@ -1,4 +1,4 @@
-﻿namespace BlazorApp1.Shared.Quiz.Concrete;
+﻿namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public enum QuizPhaseKind
 {

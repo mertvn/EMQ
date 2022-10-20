@@ -2,6 +2,7 @@
 using System.Linq;
 using BlazorApp1.Server.Controllers;
 using BlazorApp1.Shared.Quiz;
+using BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 namespace BlazorApp1.Server.Model;
 

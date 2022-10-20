@@ -1,8 +1,7 @@
 ﻿using System.Text.Json.Serialization;
-using BlazorApp1.Shared.Quiz.Abstract;
-using BlazorApp1.Shared.Quiz.Concrete;
+using BlazorApp1.Shared.Quiz.Entities.Abstract;
 
-namespace BlazorApp1.Shared.Quiz;
+namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class QuizState
 {

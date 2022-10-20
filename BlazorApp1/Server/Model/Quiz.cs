@@ -6,7 +6,7 @@ using System.Timers;
 using BlazorApp1.Server.Controllers;
 using BlazorApp1.Server.Hubs;
 using BlazorApp1.Shared.Quiz;
-using BlazorApp1.Shared.Quiz.Concrete;
+using BlazorApp1.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BlazorApp1.Server.Model;
