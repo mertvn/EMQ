@@ -14,7 +14,7 @@ namespace BlazorApp1.Server.Hubs
         public override Task OnConnectedAsync()
         {
             var session =
-                AuthController.Sessions.Find(x => Context.GetHttpContext()!.Request.Query["access_token"] == x.Token);
+                ServerState.Sessions.Find(x => Context.GetHttpContext()!.Request.Query["access_token"] == x.Token);
             if (session != null)
             {
                 session.ConnectionId = Context.ConnectionId;
@@ -28,15 +28,23 @@ namespace BlazorApp1.Server.Hubs
         }
 
         // [Authorize]
-        public async Task SendPlayerIsReady(int playerId)
+        public async Task SendPlayerJoinedQuiz(int playerId)
         {
-            var session = AuthController.Sessions.Find(x => x.ConnectionId == Context.ConnectionId);
+            var session = ServerState.Sessions.Find(x => x.ConnectionId == Context.ConnectionId);
             if (session != null)
             {
-                var room = QuizController.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.PlayerId));
+                var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.PlayerId));
                 if (room?.Quiz != null)
                 {
-                    await room.Quiz.OnSendPlayerIsReady(session.PlayerId);
+                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Guid == room.Quiz.Guid);
+                    if (quizManager != null)
+                    {
+                        await quizManager.OnSendPlayerJoinedQuiz(Context.ConnectionId);
+                    }
+                    else
+                    {
+                        // todo
+                    }
                 }
                 else
                 {

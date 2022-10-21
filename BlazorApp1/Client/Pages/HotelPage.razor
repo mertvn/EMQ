@@ -3,6 +3,7 @@
 @using BlazorApp1.Shared.Quiz
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request
+@using System.Text.Json
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -21,10 +22,11 @@
 <button class="btn btn-primary" @onclick="CreateRoom">Reserve Room</button>
 
 <div style="">
-    @* @foreach (var room in Rooms) *@
-    @* { *@
-    @*     <p style="">@room</p> *@
-    @* } *@
+    @foreach (var room in Rooms)
+    {
+        <p style="">@JsonSerializer.Serialize(room)</p>
+        <button @onclick="@(() => JoinRoom(room.Id))">Join</button>
+    }
 </div>
 
 @code {
@@ -39,7 +41,16 @@
         ResultsTime = 8
     };
 
-   // private List<Room> Rooms = new();
+    private List<Room> Rooms { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+        if (res is not null)
+        {
+            Rooms = res.ToList();
+        }
+    }
 
     private async Task CreateRoom()
     {
@@ -47,6 +58,11 @@
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
+        await JoinRoom(roomId);
+    }
+
+    private async Task JoinRoom(int roomId)
+    {
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.PlayerId));
         if (res1.IsSuccessStatusCode)
         {

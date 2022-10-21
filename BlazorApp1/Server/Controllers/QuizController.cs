@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BlazorApp1.Server.Business;
 using BlazorApp1.Server.Hubs;
-using BlazorApp1.Server.Model;
 using BlazorApp1.Shared;
 using BlazorApp1.Shared.Auth;
 using BlazorApp1.Shared.Quiz;
@@ -29,13 +29,11 @@ public class QuizController : ControllerBase
         _hubContext = hubContext;
     }
 
-    public static readonly List<Room> Rooms = new() { };
-
     [HttpPost]
     [Route("SyncQuizState")]
     public QuizState? SyncQuizState([FromBody] int roomId)
     {
-        var room = Rooms.SingleOrDefault(x => x.Id == roomId);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
         if (room is null)
         {
             _logger.LogError("Room not found: " + roomId);
@@ -57,7 +55,7 @@ public class QuizController : ControllerBase
     public ResNextSong? NextSong([FromBody] ReqNextSong req)
     {
         // todo? verify user belongs in room
-        var room = Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
         if (room is not null)
         {
@@ -95,6 +93,13 @@ public class QuizController : ControllerBase
         }
     }
 
+    [HttpGet]
+    [Route("GetRooms")]
+    public async Task<IEnumerable<Room>> GetRooms()
+    {
+        return ServerState.Rooms; // todo: only return "active" rooms?
+    }
+
     [HttpPost]
     [Route("CreateRoom")]
     public async Task<int> CreateRoom([FromBody] ReqCreateRoom req)
@@ -102,7 +107,7 @@ public class QuizController : ControllerBase
         // todo
         var room = new Room { Id = new Random().Next(), Name = req.Name, Password = req.Password, };
 
-        var quiz = new Quiz(_hubContext, req.QuizSettings, room)
+        var quiz = new Quiz(req.QuizSettings, room)
         {
             Songs = new List<Song>
             {
@@ -122,7 +127,8 @@ public class QuizController : ControllerBase
 
         // todo
         quiz.Songs = room.Quiz.Songs.OrderBy(a => new Random().Next()).ToList();
-        Rooms.Add(room);
+        ServerState.Rooms.Add(room);
+        ServerState.QuizManagers.Add(new QuizManager(quiz, _hubContext));
 
         return room.Id;
     }
@@ -131,14 +137,14 @@ public class QuizController : ControllerBase
     [Route("JoinRoom")]
     public async Task JoinRoom([FromBody] ReqJoinRoom req)
     {
-        var room = Rooms.Find(x => x.Id == req.RoomId);
+        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
         if (room != null)
         {
             if (room.Password == req.Password)
             {
                 if (!room.Players.Any(x => x.Id == req.PlayerId))
                 {
-                    var oldRoom = Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
+                    var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
                     if (oldRoom is not null)
                     {
                         var player = oldRoom.Players.Single(x => x.Id == req.PlayerId);

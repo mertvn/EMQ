@@ -86,7 +86,7 @@
         _clientState._debug.Add("init");
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
-        await Globals.Session.hubConnection!.SendAsync("SendPlayerIsReady", Globals.Session.PlayerId);
+        await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.PlayerId);
     }
 
     public async ValueTask DisposeAsync()
@@ -235,12 +235,15 @@
         if (index < _clientSongs.Count)
         {
             _clientState._debug.Add("index: " + index);
-    // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_currentSong));
-            _currentSong = _clientSongs[index];
+    // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_clientSongs));
 
-            if (string.IsNullOrEmpty(_currentSong!.Data))
+            if (string.IsNullOrEmpty(_currentSong?.Data))
             {
                 await LoadMissingSong(index);
+            }
+            else
+            {
+                _currentSong = _clientSongs[index];
             }
         }
         else
@@ -252,7 +255,7 @@
     private async Task LoadMissingSong(int index)
     {
     // todo prevent double downloads
-        _clientState._debug.Add("Missing song: " + _clientSongs[index]!.Name);
+        _clientState._debug.Add("Loading missing song");
         var nextSong = await NextSong(index);
         _currentSong = nextSong;
         StateHasChanged();
