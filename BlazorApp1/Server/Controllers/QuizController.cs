@@ -30,8 +30,8 @@ public class QuizController : ControllerBase
     }
 
     [HttpPost]
-    [Route("SyncQuizState")]
-    public QuizState? SyncQuizState([FromBody] int roomId)
+    [Route("SyncRoom")]
+    public Room? SyncRoom([FromBody] int roomId)
     {
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
         if (room is null)
@@ -40,14 +40,7 @@ public class QuizController : ControllerBase
             return null;
         }
 
-        var quiz = room.Quiz;
-        if (quiz is null)
-        {
-            _logger.LogError("Room does not have a quiz initialized: " + roomId);
-            return null;
-        }
-
-        return quiz.QuizState;
+        return room;
     }
 
     [HttpPost]

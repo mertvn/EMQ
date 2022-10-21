@@ -19,17 +19,17 @@
 <p>Connected: @IsConnected</p>
 
 <div>
-    <p>Game is active: @_quizState.IsActive</p>
+    <p>Game is active: @Room?.Quiz?.QuizState.IsActive</p>
     @* <p>Phase: @_quizState.Phase</p> *@
-    <p>RemainingSeconds: @_quizState.RemainingSeconds</p>
-    <p>sp: @_quizState.sp</p>
+    <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
+    <p>sp: @Room?.Quiz?.QuizState.sp</p>
 </div>
 
 <input/>
 
-<div id="quizGrid">
+<div id="quizGrid" style="display:flex;">
     <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
-        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(_clientState.VideoPlayerVisibility)">
+        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
             <video src="@_currentSong?.Data" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
             </video>
             @* TODO: Make this work *@
@@ -39,20 +39,35 @@
             @* } *@
         </div>
 
-        @if (!_clientState.VideoPlayerVisibility)
+        @if (!PageState.VideoPlayerVisibility)
         {
 @* TODO: properly center this *@
             <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                @_clientState.Countdown
+                @PageState.Countdown
             </div>
         }
     </div>
+
     <div style="float:right;">
-        @foreach (var debug in _clientState._debug)
+        @foreach (var debug in PageState.Debug)
         {
             <p style="padding: 0; margin:0;">@debug</p>
         }
     </div>
+</div>
+
+<div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+    @if (Room?.Players.Any() ?? false)
+    {
+        @foreach (var player in Room.Players)
+        {
+            <div class="playerDiv">
+                <p> @player.Id</p>
+                <p> @player.Username</p>
+            </div>
+        }
+    }
+
 </div>
 
 @code {
@@ -83,7 +98,7 @@
             await Globals.Session.hubConnection.StartAsync();
         }
 
-        _clientState._debug.Add("init");
+        PageState.Debug.Add("init");
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
         await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.PlayerId);
@@ -97,27 +112,20 @@
         }
     }
 
-    public class ClientState
+    private class QuizPageState
     {
-        public readonly List<string> _debug = new() { "" };
+        public readonly List<string> Debug = new() { "" };
 
         public bool VideoPlayerVisibility { get; set; }
         public int Countdown { get; set; }
         public Timer Timer { get; } = new();
     }
 
-    // Todo: need to receive this from server at quiz start
-    private static QuizSettings _quizSettings { get; set; } = new()
-    {
-        GuessTime = 7,
-        ResultsTime = 3,
-    };
+    private static Room? Room { get; set; }
 
-    private static QuizState _quizState { get; set; } = new() { };
+    private static QuizPageState PageState { get; set; } = new() { };
 
-    private static ClientState _clientState { get; set; } = new() { };
-
-    private readonly List<Song?> _clientSongs = new(new Song[_quizState.NumSongs]) { };
+    private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 100]) { };
 
     private Song? _currentSong;
 
@@ -142,24 +150,24 @@
 
     private void SetTimer()
     {
-        _clientState.Timer.Stop();
-        _clientState.Timer.Elapsed -= OnTimedEvent;
+        PageState.Timer.Stop();
+        PageState.Timer.Elapsed -= OnTimedEvent;
 
-        _clientState.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
-        _clientState.Timer.Elapsed += OnTimedEvent;
-        _clientState.Timer.AutoReset = true;
-        _clientState.Timer.Start();
+        PageState.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        PageState.Timer.Elapsed += OnTimedEvent;
+        PageState.Timer.AutoReset = true;
+        PageState.Timer.Start();
     }
 
     private async Task SyncWithServer()
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncQuizState", Globals.Session!.RoomId);
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncRoom", Globals.Session!.RoomId);
         if (res.IsSuccessStatusCode)
         {
-            QuizState? sync = await res.Content.ReadFromJsonAsync<QuizState>().ConfigureAwait(false);
+            Room? sync = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
             if (sync is not null)
             {
-                _quizState = sync;
+                Room = sync;
             }
             else
             {
@@ -177,7 +185,7 @@
     private async Task OnReceiveQuizStarted()
     {
         await SyncWithServer();
-        _clientState.Countdown = _quizState.RemainingSeconds;
+        PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
         StateHasChanged();
         SetTimer();
     }
@@ -197,22 +205,22 @@
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
-                _clientState.VideoPlayerVisibility = false;
-                _clientState.Countdown = _quizState.RemainingSeconds;
+                PageState.VideoPlayerVisibility = false;
+                PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
                 StateHasChanged();
 
-                await SwapSongs(_quizState.sp);
+                await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
-                await Preload(_quizState.sp, _quizSettings.PreloadAmount);
+                await Preload(Room.Quiz.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
                 break;
             case QuizPhaseKind.Judgement:
     // todo show players' guesses
-                _clientState.Countdown = 0;
+                PageState.Countdown = 0;
                 StateHasChanged();
                 break;
             case QuizPhaseKind.Results:
     // TODO: restart song (option?)
-                _clientState.VideoPlayerVisibility = true;
+                PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
                 break;
             default:
@@ -222,9 +230,9 @@
 
     private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        if (_clientState.Countdown > 0)
+        if (PageState.Countdown > 0)
         {
-            _clientState.Countdown -= 1;
+            PageState.Countdown -= 1;
         }
 
         StateHasChanged();
@@ -234,7 +242,7 @@
     {
         if (index < _clientSongs.Count)
         {
-            _clientState._debug.Add("index: " + index);
+            PageState.Debug.Add("index: " + index);
     // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_clientSongs));
 
             if (string.IsNullOrEmpty(_currentSong?.Data))
@@ -255,7 +263,7 @@
     private async Task LoadMissingSong(int index)
     {
     // todo prevent double downloads
-        _clientState._debug.Add("Loading missing song");
+        PageState.Debug.Add("Loading missing song");
         var nextSong = await NextSong(index);
         _currentSong = nextSong;
         StateHasChanged();
@@ -271,7 +279,7 @@
                 if (song is not null)
                 {
                     _clientSongs[index + i] = song;
-                    _clientState._debug.Add($"preloaded: {song.Url}");
+                    PageState.Debug.Add($"preloaded: {song.Url}");
                 }
                 else
                 {
@@ -287,7 +295,7 @@
 
     private async Task<Song> DlSong(Song song)
     {
-        _clientState._debug.Add($"downloading {song.Url}");
+        PageState.Debug.Add($"downloading {song.Url}");
         string data = await _jsRuntime.InvokeAsync<string>("fetchObjectUrl", song.Url);
 
         var ret = new Song
@@ -299,6 +307,5 @@
 
         return ret;
     }
-
 
 }
