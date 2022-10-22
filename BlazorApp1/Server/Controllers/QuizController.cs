@@ -123,6 +123,8 @@ public class QuizController : ControllerBase
         ServerState.Rooms.Add(room);
         ServerState.QuizManagers.Add(new QuizManager(quiz, _hubContext));
 
+        _logger.LogInformation("Created room " + room.Id);
+        _logger.LogInformation("Created quiz " + quiz.Guid);
         return room.Id;
     }
 
@@ -141,9 +143,11 @@ public class QuizController : ControllerBase
                     if (oldRoom is not null)
                     {
                         var player = oldRoom.Players.Single(x => x.Id == req.PlayerId);
+                        _logger.LogInformation($"Removed player {req.PlayerId} from room " + room.Id);
                         oldRoom.Players.Remove(player);
                     }
 
+                    _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
                     room.Players.Add(new Player(req.PlayerId, "TestPlayer")); // todo
                 }
                 else

@@ -56,5 +56,35 @@ namespace BlazorApp1.Server.Hubs
                 // todo
             }
         }
+
+        // [Authorize]
+        public async Task SendGuessChanged(string guess)
+        {
+            var session = ServerState.Sessions.Find(x => x.ConnectionId == Context.ConnectionId);
+            if (session != null)
+            {
+                var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.PlayerId));
+                if (room?.Quiz != null)
+                {
+                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Guid == room.Quiz.Guid);
+                    if (quizManager != null)
+                    {
+                        await quizManager.OnSendGuessChanged(session.PlayerId, guess);
+                    }
+                    else
+                    {
+                        // todo
+                    }
+                }
+                else
+                {
+                    // todo
+                }
+            }
+            else
+            {
+                // todo
+            }
+        }
     }
 }

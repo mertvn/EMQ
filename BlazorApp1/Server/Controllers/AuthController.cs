@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
             playerId = 1001;
         }
 
-        _logger.LogInformation("Created new session for playerId " + playerId);
+        _logger.LogInformation("Created new session for player " + playerId);
         string token = Guid.NewGuid().ToString();
         ServerState.Sessions.Add(new Session(playerId, token));
 

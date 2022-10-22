@@ -14,4 +14,5 @@ public class Player
 
     // public string DisplayName { get; }
 
+    public string? Guess { get; set; }
 }

@@ -20,11 +20,11 @@ public class QuizManager
 
     private IHubContext<QuizHub> HubContext { get; }
 
-    public string[] AllPlayerConnectionIds =>
+    private string[] AllPlayerConnectionIds =>
         ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.PlayerId))
             .Select(x => x.ConnectionId!).ToArray();
 
-    public void SetTimer()
+    private void SetTimer()
     {
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
@@ -139,6 +139,19 @@ public class QuizManager
         else
         {
             // todo warn quiz is already over
+        }
+    }
+
+    public async Task OnSendGuessChanged(int playerId, string guess)
+    {
+        var player = Quiz.Room.Players.Find(x => x.Id == playerId);
+        if (player != null)
+        {
+            player.Guess = guess;
+        }
+        else
+        {
+            // todo log invalid guess submitted
         }
     }
 }

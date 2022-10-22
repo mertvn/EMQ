@@ -27,7 +27,8 @@
     <p>sp: @Room?.Quiz?.QuizState.sp</p>
 </div>
 
-<input/>
+@* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
+<input disabled="@(PageState.GuessesVisibility)" @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown" type="text" name="GuessInput"/>
 
 <div id="quizGrid" style="display:flex;">
     <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
@@ -50,27 +51,31 @@
         }
     </div>
 
-    <div style="float:right;">
-        @foreach (var debug in PageState.Debug)
+    @* <div style="float:right;"> *@
+    @*     @foreach (var debug in PageState.Debug) *@
+    @*     { *@
+    @*         <p style="padding: 0; margin:0;">@debug</p> *@
+    @*     } *@
+    @* </div> *@
+
+    <div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+        @if (Room?.Players.Any() ?? false)
         {
-            <p style="padding: 0; margin:0;">@debug</p>
+            @foreach (var player in Room.Players)
+            {
+                <div class="playerDiv">
+                    <p> @player.Id</p>
+                    <p> @player.Username</p>
+                    <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
+                        <p> @player.Guess</p>
+                    </div>
+                </div>
+            }
         }
+
     </div>
 </div>
 
-<div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
-    @if (Room?.Players.Any() ?? false)
-    {
-        @foreach (var player in Room.Players)
-        {
-            <div class="playerDiv">
-                <p> @player.Id</p>
-                <p> @player.Username</p>
-            </div>
-        }
-    }
-
-</div>
 
 @code {
     // private HubConnection? hubConnection;
@@ -120,6 +125,11 @@
         public readonly List<string> Debug = new() { "" };
 
         public bool VideoPlayerVisibility { get; set; }
+        public bool GuessesVisibility { get; set; } = true;
+    // public bool GuessInputDisabled { get; set; } = true;
+
+        public string? Guess { get; set; }
+
         public int Countdown { get; set; }
         public Timer Timer { get; } = new();
     }
@@ -236,6 +246,7 @@
                 PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
 
                 PageState.VideoPlayerVisibility = false;
+                PageState.GuessesVisibility = false;
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
                 StateHasChanged();
 
@@ -243,7 +254,9 @@
                 StateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
-    // todo show players' guesses
+                await Globals.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                await SyncWithServer();
+                PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
                 StateHasChanged();
                 break;
@@ -254,8 +267,8 @@
 
                 if (Room!.Quiz!.QuizState.sp + Room.Quiz.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room!.Quiz!.QuizSettings.ResultsTime));
-                    await Preload(Room!.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room.Quiz.QuizSettings.ResultsTime));
+                    await Preload(Room.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
                 }
                 break;
             default:
@@ -298,7 +311,6 @@
 
     private async Task LoadMissingSong(int index)
     {
-    // todo prevent double downloads
         PageState.Debug.Add("Loading missing song");
         string? nextSongUrl = await NextSongUrl(index);
         if (nextSongUrl is not null)
@@ -324,7 +336,7 @@
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        PageState.Debug.Add($"preload canceled: {song.Url}");
+                        PageState.Debug.Add($"preload cancelled: {song.Url}");
                     }
                     else
                     {
@@ -368,6 +380,14 @@
         }
 
         return ret;
+    }
+
+    private async Task GuessInput_OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Code is "Enter" or "NumpadEnter")
+        {
+            await Globals.Session.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+        }
     }
 
 }
