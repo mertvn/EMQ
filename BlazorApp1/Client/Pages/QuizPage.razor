@@ -277,13 +277,14 @@
             PageState.Debug.Add("index: " + index);
     // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_clientSongs));
 
+            if (_clientSongs.ElementAtOrDefault(index) is not null)
+            {
+                _currentSong = _clientSongs[index];
+            }
+
             if (string.IsNullOrEmpty(_currentSong?.Data))
             {
                 await LoadMissingSong(index);
-            }
-            else
-            {
-                _currentSong = _clientSongs[index];
             }
         }
         else
