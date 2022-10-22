@@ -9,8 +9,6 @@
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet"/>
     <link href="css/app.css" rel="stylesheet"/>
     <link href="BlazorApp1.Client.styles.css" rel="stylesheet"/>
-
-
 </head>
 
 <body>
@@ -32,13 +30,6 @@
     //     return URL.createObjectURL(param)
     // }
 
-    window.fetchObjectUrl = async (src) => {
-        const res = await fetch(src);
-        const blob = await res.blob();
-        console.log("dled");
-        return URL.createObjectURL(blob); // todo revoke
-    }
-
     //
     // window.reloadVideo = async () => {
     //     console.log("here")
@@ -50,9 +41,28 @@
     //         console.log(err)
     //     }
     // }
+
+    class Helpers {
+        static controller = new AbortController();
+
+        static async fetchObjectUrl(src) {
+            this.controller = new AbortController();
+            const signal = this.controller.signal;
+            const res = await fetch(src, {signal});
+            const blob = await res.blob();
+            console.log("dled");
+            return URL.createObjectURL(blob); // todo revoke
+        }
+
+        static abortFetch() {
+            this.controller.abort();
+            console.log('fetchObjectUrl aborted!');
+        }
+    }
+
+    window.Helpers = Helpers;
 </script>
 
 </body>
-
 
 </html>

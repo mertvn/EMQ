@@ -4,15 +4,17 @@
 @using BlazorApp1.Shared.Quiz
 @using System.Text.Json
 @using System.Text
+@using System.Threading
 @using BlazorApp1.Shared.Core.UI
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response
 @using Microsoft.AspNetCore.SignalR.Client
+@using Timer = System.Timers.Timer
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
-@inject HttpClient Client
-@inject NavigationManager Navigation
+@inject HttpClient _client
+@inject NavigationManager _navigation
 @implements IAsyncDisposable
 
 <h3>Quiz</h3>
@@ -30,7 +32,7 @@
 <div id="quizGrid" style="display:flex;">
     <div class="videoWrapper" style="position: relative; float: left; background: dimgrey;">
         <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
-            <video src="@_currentSong?.Data" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Url : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
             </video>
             @* TODO: Make this work *@
             @* @if (videoPlayerVisibility) *@
@@ -82,7 +84,7 @@
         if (Globals.Session!.hubConnection is null)
         {
             Globals.Session.hubConnection = new HubConnectionBuilder()
-                .WithUrl(Navigation.ToAbsoluteUri("/QuizHub"),
+                .WithUrl(_navigation.ToAbsoluteUri("/QuizHub"),
                     options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
                 .ConfigureLogging(logging =>
                 {
@@ -101,6 +103,7 @@
         PageState.Debug.Add("init");
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
+        _currentSong = _clientSongs[0];
         await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.PlayerId);
     }
 
@@ -129,9 +132,13 @@
 
     private Song? _currentSong;
 
+    private CancellationTokenSource PreloadCancellationSource { get; set; } = new();
+
+    private CancellationTokenRegistration PreloadCancellationRegistration { get; set; } = new();
+
     public async Task<Song?> NextSong(int index)
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -139,6 +146,24 @@
             {
                 Song song = await DlSong(new Song { Url = nextSong.Url });
                 return song;
+            }
+        }
+        else
+        {
+    // todo
+        }
+        return null;
+    }
+
+    public async Task<string?> NextSongUrl(int index)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
+        if (res.IsSuccessStatusCode)
+        {
+            ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
+            if (nextSong is not null)
+            {
+                return nextSong.Url;
             }
         }
         else
@@ -161,7 +186,7 @@
 
     private async Task SyncWithServer()
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncRoom", Globals.Session!.RoomId);
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SyncRoom", Globals.Session!.RoomId);
         if (res.IsSuccessStatusCode)
         {
             Room? sync = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
@@ -205,13 +230,17 @@
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
+                PreloadCancellationRegistration.Unregister();
+                PreloadCancellationSource.Dispose();
+                PreloadCancellationSource = new CancellationTokenSource();
+                PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
+
                 PageState.VideoPlayerVisibility = false;
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
                 StateHasChanged();
 
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
-                await Preload(Room.Quiz.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
                 break;
             case QuizPhaseKind.Judgement:
     // todo show players' guesses
@@ -222,6 +251,9 @@
     // TODO: restart song (option?)
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
+
+                PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room!.Quiz!.QuizSettings.ResultsTime));
+                await Preload(Room!.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -264,9 +296,16 @@
     {
     // todo prevent double downloads
         PageState.Debug.Add("Loading missing song");
-        var nextSong = await NextSong(index);
-        _currentSong = nextSong;
-        StateHasChanged();
+        string? nextSongUrl = await NextSongUrl(index);
+        if (nextSongUrl is not null)
+        {
+            _currentSong = new Song() { Url = nextSongUrl };
+            StateHasChanged();
+        }
+        else
+        {
+            PageState.Debug.Add("Failed loading missing song");
+        }
     }
 
     private async Task Preload(int index, int amount = 1)
@@ -295,15 +334,27 @@
 
     private async Task<Song> DlSong(Song song)
     {
-        PageState.Debug.Add($"downloading {song.Url}");
-        string data = await _jsRuntime.InvokeAsync<string>("fetchObjectUrl", song.Url);
-
         var ret = new Song
         {
             Name = song.Name,
             Url = song.Url,
-            Data = data
         };
+
+        try
+        {
+            PageState.Debug.Add($"downloading {song.Url}");
+            _logger.LogInformation("Startjs");
+            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Url);
+            _logger.LogInformation("Endjs");
+            PreloadCancellationRegistration.Unregister();
+            PreloadCancellationSource.Dispose();
+
+            ret.Data = data;
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning($"download cancelled {e}");
+        }
 
         return ret;
     }
