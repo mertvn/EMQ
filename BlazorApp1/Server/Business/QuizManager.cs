@@ -46,7 +46,7 @@ public class QuizManager
                 Quiz.QuizState.RemainingSeconds -= 1;
             }
 
-            if (Quiz.QuizState.RemainingSeconds < 0)
+            if (Quiz.QuizState.RemainingSeconds <= 0)
             {
                 Quiz.Timer.Stop();
 
