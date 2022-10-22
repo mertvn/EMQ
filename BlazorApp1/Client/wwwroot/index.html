@@ -22,6 +22,20 @@
 <script src="_framework/blazor.webassembly.js"></script>
 
 <script>
+    function disableBackspaceNavigation() {
+        window.onkeydown = function (e) {
+            if (e.keyCode == 8 && !isTextBox(e.target)) e.preventDefault();
+        }
+    }
+
+    function isTextBox(element) {
+        const tagName = element.tagName.toLowerCase();
+        if (tagName !== "input") return false;
+
+        const typeAttr = element.getAttribute('type').toLowerCase();
+        return typeAttr === 'text';
+    }
+
     window.log = async (param) => {
         console.log(param)
     }
@@ -46,6 +60,8 @@
         static controller = new AbortController();
 
         static async fetchObjectUrl(src) {
+            disableBackspaceNavigation() // todo move to init method
+
             this.controller = new AbortController(); // not sure if we need this line
             const signal = this.controller.signal;
             const res = await fetch(src, {signal});

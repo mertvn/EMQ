@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
@@ -73,6 +74,11 @@ public class QuizManager
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingSeconds = Quiz.QuizSettings.GuessTime;
         Quiz.QuizState.sp += 1;
+        foreach (var player in Quiz.Room.Players)
+        {
+            player.IsCorrect = null;
+        }
+
         await HubContext.Clients.Clients(AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
     }
@@ -100,7 +106,26 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
-        await Task.Delay(3000);
+        await Task.Delay(TimeSpan.FromSeconds(1)); // wait for late guesses & add suspense...
+
+        IEnumerable<string> correctAnswers = new[] { Quiz.Songs[Quiz.QuizState.sp].Name }; // todo aliases/translations
+        // todo make sure players leaving in the middle of judgement does not cause issues
+        foreach (var player in Quiz.Room.Players)
+        {
+            Console.WriteLine("-------");
+            Console.WriteLine("pG: " + player.Guess);
+            Console.WriteLine("cA: " + correctAnswers);
+            if (correctAnswers.Contains(player.Guess?.ToLowerInvariant() ?? string.Empty))
+            {
+                player.IsCorrect = true;
+                player.Score += 1;
+            }
+            else
+            {
+                player.IsCorrect = false;
+                // player.Lives -= 1; // todo
+            }
+        }
     }
 
     public async Task EndQuiz()
@@ -144,10 +169,17 @@ public class QuizManager
 
     public async Task OnSendGuessChanged(int playerId, string guess)
     {
-        var player = Quiz.Room.Players.Find(x => x.Id == playerId);
-        if (player != null)
+        if (Quiz.QuizState.Phase.Kind != QuizPhaseKind.Results)
         {
-            player.Guess = guess;
+            var player = Quiz.Room.Players.Find(x => x.Id == playerId);
+            if (player != null)
+            {
+                player.Guess = guess;
+            }
+            else
+            {
+                // todo log invalid guess submitted
+            }
         }
         else
         {

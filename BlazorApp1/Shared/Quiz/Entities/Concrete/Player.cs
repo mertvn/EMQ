@@ -15,4 +15,9 @@ public class Player
     // public string DisplayName { get; }
 
     public string? Guess { get; set; }
+
+    // todo: might want to keep this within Songs instead
+    public bool? IsCorrect { get; set; }
+
+    public int Score { get; set; }
 }

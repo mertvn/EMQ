@@ -120,6 +120,7 @@ public class QuizController : ControllerBase
 
         // todo
         quiz.Songs = room.Quiz.Songs.OrderBy(a => new Random().Next()).ToList();
+        quiz.QuizState.NumSongs = quiz.Songs.Count;
         ServerState.Rooms.Add(room);
         ServerState.QuizManagers.Add(new QuizManager(quiz, _hubContext));
 

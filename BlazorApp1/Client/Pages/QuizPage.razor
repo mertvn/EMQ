@@ -51,12 +51,12 @@
         }
     </div>
 
-    @* <div style="float:right;"> *@
-    @*     @foreach (var debug in PageState.Debug) *@
-    @*     { *@
-    @*         <p style="padding: 0; margin:0;">@debug</p> *@
-    @*     } *@
-    @* </div> *@
+    <div style="float:right;">
+        @foreach (var debug in PageState.Debug)
+        {
+            <p style="padding: 0; margin:0;">@debug</p>
+        }
+    </div>
 
     <div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
         @if (Room?.Players.Any() ?? false)
@@ -66,8 +66,12 @@
                 <div class="playerDiv">
                     <p> @player.Id</p>
                     <p> @player.Username</p>
+                    <p> Score: @player.Score</p>
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
-                        <p> @player.Guess</p>
+                        <div class="playerIsCorrectDiv" style="background-color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")">
+                            <p> @player.Guess</p>
+                        </div>
+
                     </div>
                 </div>
             }

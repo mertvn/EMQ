@@ -21,5 +21,5 @@ public class QuizState
     /// </summary>
     public int sp { get; set; } = -1;
 
-    public int NumSongs { get; set; } = 9; // todo hook this up
+    public int NumSongs { get; set; }
 }

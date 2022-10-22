@@ -25,7 +25,7 @@
     @foreach (var room in Rooms)
     {
         <p style="">@JsonSerializer.Serialize(room)</p>
-        <button @onclick="@(() => JoinRoom(room.Id))">Join</button>
+        <button class="btn btn-primary" @onclick="@(() => JoinRoom(room.Id))">Join</button>
     }
 </div>
 
