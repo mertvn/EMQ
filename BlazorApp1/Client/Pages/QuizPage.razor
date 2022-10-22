@@ -252,8 +252,11 @@
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
-                PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room!.Quiz!.QuizSettings.ResultsTime));
-                await Preload(Room!.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
+                if (Room!.Quiz!.QuizState.sp + Room.Quiz.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
+                {
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room!.Quiz!.QuizSettings.ResultsTime));
+                    await Preload(Room!.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
+                }
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -319,7 +322,14 @@
                 if (song is not null)
                 {
                     _clientSongs[index + i] = song;
-                    PageState.Debug.Add($"preloaded: {song.Url}");
+                    if (string.IsNullOrEmpty(song.Data))
+                    {
+                        PageState.Debug.Add($"preload canceled: {song.Url}");
+                    }
+                    else
+                    {
+                        PageState.Debug.Add($"preloaded: {song.Url}");
+                    }
                 }
                 else
                 {
