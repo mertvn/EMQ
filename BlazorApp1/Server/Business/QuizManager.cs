@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
 using BlazorApp1.Server.Hubs;
@@ -114,7 +115,7 @@ public class QuizManager
         {
             Console.WriteLine("-------");
             Console.WriteLine("pG: " + player.Guess);
-            Console.WriteLine("cA: " + correctAnswers);
+            Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers));
             if (correctAnswers.Contains(player.Guess?.ToLowerInvariant() ?? string.Empty))
             {
                 player.IsCorrect = true;

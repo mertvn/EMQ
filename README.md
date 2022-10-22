@@ -11,4 +11,5 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * Co-op mode
 * Proper authentication/authorization
 * CSS...
-*
+* Auto-complete
+* Eroge songs
