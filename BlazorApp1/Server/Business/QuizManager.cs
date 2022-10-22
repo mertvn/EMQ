@@ -23,7 +23,7 @@ public class QuizManager
     private IHubContext<QuizHub> HubContext { get; }
 
     private string[] AllPlayerConnectionIds =>
-        ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.PlayerId))
+        ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.Player.Id))
             .Select(x => x.ConnectionId!).ToArray();
 
     private void SetTimer()
@@ -107,15 +107,18 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
-        await Task.Delay(TimeSpan.FromSeconds(1)); // wait for late guesses & add suspense...
+        await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
 
         IEnumerable<string> correctAnswers = new[] { Quiz.Songs[Quiz.QuizState.sp].Name }; // todo aliases/translations
+
+        Console.WriteLine("-------");
+        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers));
+
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
-            Console.WriteLine("-------");
             Console.WriteLine("pG: " + player.Guess);
-            Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers));
+
             if (correctAnswers.Contains(player.Guess?.ToLowerInvariant() ?? string.Empty))
             {
                 player.IsCorrect = true;
@@ -135,6 +138,7 @@ public class QuizManager
         Quiz.QuizState.IsActive = false;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
+        Quiz.Timer.Dispose();
 
         await HubContext.Clients.Clients(AllPlayerConnectionIds)
             .SendAsync("ReceiveQuizEnded", Quiz.QuizState.IsActive);

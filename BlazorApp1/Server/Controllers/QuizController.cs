@@ -97,8 +97,15 @@ public class QuizController : ControllerBase
     [Route("CreateRoom")]
     public async Task<int> CreateRoom([FromBody] ReqCreateRoom req)
     {
-        // todo
-        var room = new Room { Id = new Random().Next(), Name = req.Name, Password = req.Password, };
+        var session = ServerState.Sessions.Find(x => x.Player.Id == req.PlayerId);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var owner = session.Player;
+        var room = new Room(new Random().Next(), req.Name, owner) { Password = req.Password, };
 
         var quiz = new Quiz(req.QuizSettings, room)
         {
@@ -134,36 +141,37 @@ public class QuizController : ControllerBase
     public async Task JoinRoom([FromBody] ReqJoinRoom req)
     {
         var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
-        if (room != null)
-        {
-            if (room.Password == req.Password)
-            {
-                if (!room.Players.Any(x => x.Id == req.PlayerId))
-                {
-                    var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
-                    if (oldRoom is not null)
-                    {
-                        var player = oldRoom.Players.Single(x => x.Id == req.PlayerId);
-                        _logger.LogInformation($"Removed player {req.PlayerId} from room " + room.Id);
-                        oldRoom.Players.Remove(player);
-                    }
+        var session = ServerState.Sessions.Find(x => x.Player.Id == req.PlayerId);
 
-                    _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
-                    room.Players.Add(new Player(req.PlayerId, "TestPlayer")); // todo
-                }
-                else
+        if (room is null || session is null)
+        {
+            // todo warn error
+            throw new Exception();
+        }
+
+        var player = session.Player;
+        if (room.Password == req.Password)
+        {
+            if (!room.Players.Any(x => x.Id == req.PlayerId))
+            {
+                var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
+                if (oldRoom is not null)
                 {
-                    // todo warn error
+                    _logger.LogInformation($"Removed player {req.PlayerId} from room " + room.Id);
+                    oldRoom.Players.RemoveAll(x => x.Id == player.Id);
                 }
+
+                _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
+                room.Players.Add(player);
             }
             else
             {
-                // todo warn wrong password
+                // todo warn error
             }
         }
         else
         {
-            // todo warn error
+            // todo warn wrong password
         }
     }
 }

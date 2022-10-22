@@ -6,15 +6,24 @@ namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class Room
 {
-    public int Id { get; set; } = -1;
+    public Room(int id, string name, Player owner)
+    {
+        Id = id;
+        Name = name;
+        Owner = owner;
+    }
+
+    public int Id { get; }
 
     [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
 
-    public string Name { get; set; } = "";
+    public string Name { get; set; }
 
     [JsonIgnore] public string Password { get; set; } = "";
 
     public Quiz? Quiz { get; set; }
 
     public List<Player> Players { get; set; } = new();
+
+    public Player Owner { get; set; }
 }

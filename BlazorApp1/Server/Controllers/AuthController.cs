@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BlazorApp1.Shared.Auth;
 using BlazorApp1.Shared.Auth.Entities.Concrete;
 using BlazorApp1.Shared.Auth.Entities.Concrete.Dto.Request;
+using BlazorApp1.Shared.Quiz.Entities.Concrete;
 using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,7 @@ public class AuthController : ControllerBase
     [Route("CreateSession")]
     public ResCreateSession CreateSession([FromBody] ReqCreateSession req)
     {
-        // todo: authenticate with db and get playerId
+        // todo: authenticate with db and get player
         int playerId = -1;
 
         if (req.Username == "" && req.Password == "")
@@ -37,9 +38,11 @@ public class AuthController : ControllerBase
             playerId = 1001;
         }
 
-        _logger.LogInformation("Created new session for player " + playerId);
+        var player = new Player(playerId, req.Username);
+
+        _logger.LogInformation("Created new session for player " + player.Id);
         string token = Guid.NewGuid().ToString();
-        ServerState.Sessions.Add(new Session(playerId, token));
+        ServerState.Sessions.Add(new Session(player, token));
 
         return new ResCreateSession(playerId, token);
     }

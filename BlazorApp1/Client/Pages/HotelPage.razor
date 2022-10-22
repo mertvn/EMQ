@@ -3,7 +3,6 @@
 @using BlazorApp1.Shared.Quiz
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request
-@using System.Text.Json
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -54,7 +53,7 @@
 
     private async Task CreateRoom()
     {
-        ReqCreateRoom req = new(Name, Password, QuizSettings);
+        ReqCreateRoom req = new(Globals.Session!.Player.Id, Name, Password, QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
@@ -63,7 +62,7 @@
 
     private async Task JoinRoom(int roomId)
     {
-        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.PlayerId));
+        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
             Globals.Session.RoomId = roomId;

@@ -2,6 +2,7 @@
 @using BlazorApp1.Shared.Auth
 @using BlazorApp1.Shared.Auth.Entities.Concrete
 @using BlazorApp1.Shared.Auth.Entities.Concrete.Dto.Request
+@using BlazorApp1.Shared.Quiz.Entities.Concrete
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response
 @using Microsoft.Extensions.Logging
 @inject NavigationManager Navigation
@@ -44,7 +45,8 @@
                 {
                     _logger.LogInformation("token: " + resCreateSession.Token);
 
-                    Globals.Session = new Session(resCreateSession.PlayerId, resCreateSession.Token);
+                    var player = new Player(resCreateSession.PlayerId, Username);
+                    Globals.Session = new Session(player, resCreateSession.Token);
                     Navigation.NavigateTo("/HotelPage");
                 }
             }

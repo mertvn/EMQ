@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using BlazorApp1.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace BlazorApp1.Shared.Auth.Entities.Concrete;
@@ -6,13 +7,13 @@ namespace BlazorApp1.Shared.Auth.Entities.Concrete;
 // todo: should be split into two: Persist and Session
 public class Session
 {
-    public Session(int playerId, string token)
+    public Session(Player player, string token)
     {
-        PlayerId = playerId;
+        Player = player;
         Token = token;
     }
 
-    public int PlayerId { get; }
+    public Player Player { get; }
 
     public string Token { get; }
 

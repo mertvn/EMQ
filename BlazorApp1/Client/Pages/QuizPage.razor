@@ -2,8 +2,6 @@
 @using Microsoft.Extensions.Logging
 @using System.Timers
 @using BlazorApp1.Shared.Quiz
-@using System.Text.Json
-@using System.Text
 @using System.Threading
 @using BlazorApp1.Shared.Core.UI
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
@@ -60,7 +58,9 @@
     </div>
 
     @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
-    <input disabled="@(PageState.GuessesVisibility)" @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown" type="text" name="GuessInput"/>
+    <input name="GuessInput" type="text" placeholder="Enter your answer here" disabled="@(PageState.GuessesVisibility)"
+           @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown"
+           style="padding-left: 10px; padding-right: 10px; margin-top: 10px"/>
 
     <div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
         @if (Room?.Players.Any() ?? false)
@@ -73,8 +73,8 @@
                             <p> @player.Guess</p>
                         </div>
                     </div>
-                    <p> @player.Id</p>
-                    <p> @player.Username</p>
+                    <p> Id: @player.Id</p>
+                    <p> Name: @player.Username</p>
                     <p> Score: @player.Score</p>
                 </div>
             }
@@ -116,7 +116,7 @@
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
         _currentSong = _clientSongs[0];
-        await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.PlayerId);
+        await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.Player.Id);
     }
 
     public async ValueTask DisposeAsync()
