@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
@@ -112,14 +113,18 @@ public class QuizManager
         IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Source.Aliases; // todo translations
 
         Console.WriteLine("-------");
-        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers));
+        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
             Console.WriteLine("pG: " + player.Guess);
 
-            if (correctAnswers.Contains(player.Guess?.ToLowerInvariant() ?? string.Empty))
+            bool correct = correctAnswers.Any(correctAnswer =>
+                player.Guess?.ToLowerInvariant() == correctAnswer.ToLowerInvariant());
+
+            if (correct)
             {
                 player.IsCorrect = true;
                 player.Score += 1;
