@@ -15,7 +15,7 @@ public class Room
 
     public int Id { get; }
 
-    [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
+    // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
 
     public string Name { get; set; }
 

@@ -13,7 +13,9 @@ public class Quiz
         Room = room;
     }
 
-    [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
+    public int Id { get; }
+
+    // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
 
     [JsonIgnore] public Room Room { get; }
 

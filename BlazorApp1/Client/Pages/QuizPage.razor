@@ -13,7 +13,7 @@
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
 @inject NavigationManager _navigation
-@inject idk _idk
+@inject ClientUtils _clientUtils
 @implements IAsyncDisposable
 
 <h3>Quiz</h3>
@@ -74,7 +74,7 @@
                             <p> @player.Guess</p>
                         </div>
                     </div>
-                    @* <p> Id: @player.Id</p> *@
+                    <p> Id: @player.Id</p>
                     <p> Name: @player.Username</p>
                     <p> Score: @player.Score</p>
                     <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
@@ -199,7 +199,7 @@
 
     private async Task SyncWithServer()
     {
-        Room = await _idk.SyncRoom();
+        Room = await _clientUtils.SyncRoom();
     }
 
     private async Task OnReceiveQuizStarted()

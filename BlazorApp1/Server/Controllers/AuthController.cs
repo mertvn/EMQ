@@ -26,17 +26,17 @@ public class AuthController : ControllerBase
     public ResCreateSession CreateSession([FromBody] ReqCreateSession req)
     {
         // todo: authenticate with db and get player
-        int playerId = -1;
+        int playerId = new Random().Next();
 
-        if (req.Username == "" && req.Password == "")
-        {
-            playerId = 69;
-        }
-
-        if (req.Username == "test" && req.Password == "")
-        {
-            playerId = 1001;
-        }
+        // if (req.Username == "" && req.Password == "")
+        // {
+        //     playerId = 69;
+        // }
+        //
+        // if (req.Username == "test" && req.Password == "")
+        // {
+        //     playerId = 1001;
+        // }
 
         var player = new Player(playerId, req.Username) { Avatar = new Avatar("Assets/Au.png") }; // todo
 

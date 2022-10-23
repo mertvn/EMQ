@@ -36,7 +36,7 @@ namespace BlazorApp1.Server.Hubs
                 var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
                 if (room?.Quiz != null)
                 {
-                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Guid == room.Quiz.Guid);
+                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == room.Quiz.Id);
                     if (quizManager != null)
                     {
                         await quizManager.OnSendPlayerJoinedQuiz(Context.ConnectionId);
@@ -66,7 +66,7 @@ namespace BlazorApp1.Server.Hubs
                 var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
                 if (room?.Quiz != null)
                 {
-                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Guid == room.Quiz.Guid);
+                    var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == room.Quiz.Id);
                     if (quizManager != null)
                     {
                         await quizManager.OnSendGuessChanged(session.Player.Id, guess);

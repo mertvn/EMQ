@@ -6,7 +6,7 @@
 @inject HttpClient Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
-@inject idk _idk
+@inject ClientUtils _clientUtils
 
 <h3>Room</h3>
 
@@ -44,7 +44,7 @@
         ClientState.Session!.hubConnection!.On("ReceivePlayerJoinedRoom", async () => { await OnReceivePlayerJoinedRoom(); });
         ClientState.Session!.hubConnection!.On<bool>("ReceiveQuizEntered", async _ => { await OnReceiveQuizEntered(); });
 
-        Room = await _idk.SyncRoom();
+        Room = await _clientUtils.SyncRoom();
         StateHasChanged();
     }
 
@@ -68,7 +68,7 @@
     private async Task OnReceivePlayerJoinedRoom()
     {
         _logger.LogInformation("Syncing room because ReceivePlayerJoinedRoom");
-        Room = await _idk.SyncRoom();
+        Room = await _clientUtils.SyncRoom();
         StateHasChanged();
         _logger.LogInformation(JsonSerializer.Serialize(Room));
     }

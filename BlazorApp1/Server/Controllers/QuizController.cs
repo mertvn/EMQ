@@ -116,7 +116,7 @@ public class QuizController : ControllerBase
         ServerState.QuizManagers.Add(new QuizManager(quiz, _hubContext));
 
         _logger.LogInformation("Created room " + room.Id);
-        _logger.LogInformation("Created quiz " + quiz.Guid);
+        _logger.LogInformation("Created quiz " + quiz.Id);
         return room.Id;
     }
 
@@ -187,7 +187,7 @@ public class QuizController : ControllerBase
             {
                 var quiz = room.Quiz!;
 
-                var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Guid == quiz.Guid);
+                var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == quiz.Id);
                 if (quizManager is not null)
                 {
                     // todo
@@ -209,7 +209,7 @@ public class QuizController : ControllerBase
 
 
                     await quizManager.StartQuiz();
-                    _logger.LogInformation("Started quiz " + quiz.Guid);
+                    _logger.LogInformation("Started quiz " + quiz.Id);
                 }
                 else
                 {

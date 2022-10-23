@@ -7,21 +7,21 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorApp1.Client;
 
-public class idk // todo: find better name
+public class ClientUtils // todo: find better name
 {
-    public idk(ILogger<idk> logger, HttpClient client)
+    public ClientUtils(ILogger<ClientUtils> logger, HttpClient client)
     {
-        _logger = logger;
-        _client = client;
+        Logger = logger;
+        Client = client;
     }
 
-    [Inject] private ILogger<idk> _logger { get; }
+    [Inject] private ILogger<ClientUtils> Logger { get; }
 
-    [Inject] private HttpClient _client { get; }
+    [Inject] private HttpClient Client { get; }
 
     public async Task<Room?> SyncRoom()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SyncRoom", ClientState.Session!.RoomId);
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncRoom", ClientState.Session!.RoomId);
         if (res.IsSuccessStatusCode)
         {
             Room? room = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
@@ -32,13 +32,13 @@ public class idk // todo: find better name
             else
             {
                 // todo warn user and require reload
-                _logger.LogError("Desynchronized");
+                Logger.LogError("Desynchronized");
             }
         }
         else
         {
             // todo warn user and require reload
-            _logger.LogError("Desynchronized");
+            Logger.LogError("Desynchronized");
         }
 
         return null;
