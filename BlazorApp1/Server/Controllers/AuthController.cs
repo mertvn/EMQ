@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
             playerId = 1001;
         }
 
-        var player = new Player(playerId, req.Username);
+        var player = new Player(playerId, req.Username) { Avatar = new Avatar("Assets/Au.png") }; // todo
 
         _logger.LogInformation("Created new session for player " + player.Id);
         string token = Guid.NewGuid().ToString();

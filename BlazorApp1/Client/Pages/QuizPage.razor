@@ -74,9 +74,10 @@
                             <p> @player.Guess</p>
                         </div>
                     </div>
-                    <p> Id: @player.Id</p>
+                    @* <p> Id: @player.Id</p> *@
                     <p> Name: @player.Username</p>
                     <p> Score: @player.Score</p>
+                    <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
                 </div>
             }
         }

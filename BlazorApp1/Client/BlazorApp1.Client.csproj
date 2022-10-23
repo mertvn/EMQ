@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Shared\BlazorApp1.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\Assets\Au.png" />
+  </ItemGroup>
+
 </Project>

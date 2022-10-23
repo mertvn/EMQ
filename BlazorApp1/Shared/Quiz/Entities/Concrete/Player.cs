@@ -20,4 +20,6 @@ public class Player
     public bool? IsCorrect { get; set; }
 
     public int Score { get; set; }
+
+    public Avatar? Avatar { get; set; }
 }
