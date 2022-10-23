@@ -53,7 +53,7 @@
 
     private async Task CreateRoom()
     {
-        ReqCreateRoom req = new(Globals.Session!.Player.Id, Name, Password, QuizSettings);
+        ReqCreateRoom req = new(ClientState.Session!.Player.Id, Name, Password, QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
@@ -62,10 +62,10 @@
 
     private async Task JoinRoom(int roomId)
     {
-        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.Player.Id));
+        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
-            Globals.Session.RoomId = roomId;
+            ClientState.Session.RoomId = roomId;
             Navigation.NavigateTo("/RoomPage");
         }
     }

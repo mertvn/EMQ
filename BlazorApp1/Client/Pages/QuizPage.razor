@@ -88,17 +88,17 @@
     // private HubConnection? hubConnection;
 
     public bool IsConnected =>
-        Globals.Session!.hubConnection?.State == HubConnectionState.Connected;
+        ClientState.Session!.hubConnection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
         PageState.DebugOut.Add("init QuizPage");
     // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
-        if (Globals.Session!.hubConnection is not null)
+        if (ClientState.Session!.hubConnection is not null)
         {
-            Globals.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-            Globals.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
-            Globals.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
+            ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
+            ClientState.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
+            ClientState.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }
         else
@@ -109,14 +109,14 @@
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
         _currentSong = _clientSongs[0];
-        await Globals.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", Globals.Session.Player.Id);
+        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (Globals.Session!.hubConnection is not null)
+        if (ClientState.Session!.hubConnection is not null)
         {
-            await Globals.Session.hubConnection.DisposeAsync();
+            await ClientState.Session.hubConnection.DisposeAsync();
         }
     }
 
@@ -149,7 +149,7 @@
 
     public async Task<Song?> NextSong(int index)
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -168,7 +168,7 @@
 
     public async Task<string?> NextSongUrl(int index)
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(Globals.Session!.RoomId!.Value, index));
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -197,7 +197,7 @@
 
     private async Task SyncWithServer()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SyncRoom", Globals.Session!.RoomId);
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SyncRoom", ClientState.Session!.RoomId);
         if (res.IsSuccessStatusCode)
         {
             Room? sync = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
@@ -255,7 +255,7 @@
                 StateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
-                await Globals.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
                 await SyncWithServer();
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
@@ -387,7 +387,7 @@
     {
         if (e.Code is "Enter" or "NumpadEnter")
         {
-            await Globals.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
         }
     }
 

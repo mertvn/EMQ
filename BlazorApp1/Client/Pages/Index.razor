@@ -37,7 +37,7 @@
 
     private async Task Login()
     {
-        if (Globals.Session is null)
+        if (ClientState.Session is null)
         {
     // todo proper auth
             HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession", new ReqCreateSession(Username, Password));
@@ -49,7 +49,7 @@
                     _logger.LogInformation("token: " + resCreateSession.Token);
 
                     var player = new Player(resCreateSession.PlayerId, Username);
-                    Globals.Session = new Session(player, resCreateSession.Token);
+                    ClientState.Session = new Session(player, resCreateSession.Token);
                     await InitHubConnection();
 
                     Navigation.NavigateTo("/HotelPage");
@@ -64,9 +64,9 @@
 
     private async Task InitHubConnection()
     {
-        Globals.Session!.hubConnection = new HubConnectionBuilder()
+        ClientState.Session!.hubConnection = new HubConnectionBuilder()
             .WithUrl(new Nav().ToAbsoluteUri("/QuizHub"),
-                options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
+                options => { options.AccessTokenProvider = () => Task.FromResult(ClientState.Session.Token)!; })
             .ConfigureLogging(logging =>
             {
                 logging.AddProvider(_logger.AsLoggerProvider());
@@ -76,7 +76,7 @@
 
        // Globals.Session.hubConnection.On<int>("DummyHandler",  _ => { OnDummyHandler(); });
 
-        await Globals.Session.hubConnection.StartAsync();
+        await ClientState.Session.hubConnection.StartAsync();
     }
 
     // doesn't seem to apply to the .NET version of SignalR?
