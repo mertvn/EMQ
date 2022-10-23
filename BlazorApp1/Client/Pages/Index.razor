@@ -65,7 +65,7 @@
     private async Task InitHubConnection()
     {
         ClientState.Session!.hubConnection = new HubConnectionBuilder()
-            .WithUrl(new Nav().ToAbsoluteUri("/QuizHub"),
+            .WithUrl(new Nav(Client.BaseAddress!.ToString()).ToAbsoluteUri("/QuizHub"),
                 options => { options.AccessTokenProvider = () => Task.FromResult(ClientState.Session.Token)!; })
             .ConfigureLogging(logging =>
             {

@@ -4,10 +4,13 @@ namespace BlazorApp1.Client;
 
 public class Nav : NavigationManager
 {
-    public Nav()
+    public Nav(string baseUri)
     {
-        Initialize("https://localhost:7021/", "https://localhost:7021/");
+        _baseUri = baseUri;
+        Initialize(_baseUri, _baseUri);
     }
+
+    private string _baseUri { get; }
 
     protected override void NavigateToCore(string uri, bool forceLoad)
     {
