@@ -100,6 +100,9 @@ public class QuizManager
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+            .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
+
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
         {
             await EndQuiz();

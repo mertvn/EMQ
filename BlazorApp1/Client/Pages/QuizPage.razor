@@ -37,7 +37,17 @@
     </div>
 }
 
+<div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); float:right;">
+    <p>Title: @_correctAnswer?.Name</p>
+    <p>Artist: @_correctAnswer?.Artist</p>
+</div>
+
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
+
+    <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+        @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases))
+    </div>
+
     <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
         <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
             <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First() : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
@@ -74,7 +84,7 @@
                             <p> @player.Guess</p>
                         </div>
                     </div>
-                    <p> Id: @player.Id</p>
+                    @* <p> Id: @player.Id</p> *@
                     <p> Name: @player.Username</p>
                     <p> Score: @player.Score</p>
                     <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
@@ -101,6 +111,7 @@
             ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
             ClientState.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
             ClientState.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
+            ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }
         else
@@ -112,6 +123,11 @@
         _clientSongs[0] = nextSong;
         _currentSong = _clientSongs[0];
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
+    }
+
+    private async Task OnReceiveCorrectAnswer(Song correctAnswer)
+    {
+        _correctAnswer = correctAnswer;
     }
 
     public async ValueTask DisposeAsync()
@@ -145,9 +161,30 @@
 
     private Song? _currentSong;
 
+    private Song? _correctAnswer;
+
     private CancellationTokenSource PreloadCancellationSource { get; set; } = new();
 
     private CancellationTokenRegistration PreloadCancellationRegistration { get; set; } = new();
+
+    // public async Task<Song?> CorrectAnswer(int index)
+    // {
+    //     HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/CorrectAnswer",
+    //         new ReqCorrectAnswer(ClientState.Session!.RoomId!.Value, index));
+    //     if (res.IsSuccessStatusCode)
+    //     {
+    //         var correctAnswer = await res.Content.ReadFromJsonAsync<Song>().ConfigureAwait(false);
+    //         if (correctAnswer is not null)
+    //         {
+    //             _correctAnswer = correctAnswer;
+    //         }
+    //     }
+    //     else
+    //     {
+    // // todo
+    //     }
+    //     return null;
+    // }
 
     public async Task<Song?> NextSong(int index)
     {
@@ -232,6 +269,7 @@
 
                 PageState.VideoPlayerVisibility = false;
                 PageState.GuessesVisibility = false;
+                _correctAnswer = null;
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
                 StateHasChanged();
 
