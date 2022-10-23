@@ -98,10 +98,10 @@ public class QuizManager
         Quiz.QuizState.Phase = new ResultsPhase();
         Quiz.QuizState.RemainingSeconds = Quiz.QuizSettings.ResultsTime;
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
+            .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
+            .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
         {
