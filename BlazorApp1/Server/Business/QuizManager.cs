@@ -138,7 +138,6 @@ public class QuizManager
         Quiz.QuizState.IsActive = false;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
-        Quiz.Timer.Dispose();
 
         await HubContext.Clients.Clients(AllPlayerConnectionIds)
             .SendAsync("ReceiveQuizEnded", Quiz.QuizState.IsActive);

@@ -4,6 +4,7 @@
 @using BlazorApp1.Shared.Auth.Entities.Concrete.Dto.Request
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @inject NavigationManager Navigation
 @inject HttpClient Client
@@ -29,7 +30,9 @@
 
     // protected override async Task OnInitializedAsync()
     // {
+    // // _logger.LogError("init globals");
     // // await Globals.InitGlobals();
+    // // _logger.LogError(JsonSerializer.Serialize(Globals.IsConnected));
     // }
 
     private async Task Login()
@@ -47,6 +50,8 @@
 
                     var player = new Player(resCreateSession.PlayerId, Username);
                     Globals.Session = new Session(player, resCreateSession.Token);
+                    await InitHubConnection();
+
                     Navigation.NavigateTo("/HotelPage");
                 }
             }
@@ -56,4 +61,29 @@
             }
         }
     }
+
+    private async Task InitHubConnection()
+    {
+        Globals.Session!.hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Nav().ToAbsoluteUri("/QuizHub"),
+                options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
+            .ConfigureLogging(logging =>
+            {
+                logging.AddProvider(_logger.AsLoggerProvider());
+                logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
+            })
+            .Build();
+
+       // Globals.Session.hubConnection.On<int>("DummyHandler",  _ => { OnDummyHandler(); });
+
+        await Globals.Session.hubConnection.StartAsync();
+    }
+
+    // doesn't seem to apply to the .NET version of SignalR?
+    // Normally you register event handlers before calling the start method to establish the connection.
+    // If you want to register some event handlers after establishing the connection, you can do that,
+    // but you must register at least one of your event handler(s) before calling the start method.
+    // private void OnDummyHandler()
+    // {
+    // }
 }

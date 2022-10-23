@@ -10,12 +10,14 @@ namespace BlazorApp1.Client;
 
 public static class Globals
 {
+    // public static NavigationManager? Navigation { get; set; }
+
     public static Session? Session { get; set; }
 
     // [Inject] public static NavigationManager Navigation { get; set; } = default!;
     //
     // public static readonly HubConnection hubConnection = new HubConnectionBuilder()
-    //     .WithUrl(Navigation.ToAbsoluteUri("/GeneralHub"))
+    //     .WithUrl(new TestNav().ToAbsoluteUri("/GeneralHub"))
     //     .Build();
     //
     // public static bool IsConnected =>
@@ -23,10 +25,9 @@ public static class Globals
     //
     // public static async Task InitGlobals()
     // {
-    //
+    //     // Navigation = new TestNav();
     //     await Globals.hubConnection.StartAsync();
     // }
-    //
     //
     // public static async ValueTask DisposeAsync()
     // {

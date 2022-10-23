@@ -92,27 +92,20 @@
 
     protected override async Task OnInitializedAsync()
     {
+        PageState.DebugOut.Add("init QuizPage");
     // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
-        if (Globals.Session!.hubConnection is null)
+        if (Globals.Session!.hubConnection is not null)
         {
-            Globals.Session.hubConnection = new HubConnectionBuilder()
-                .WithUrl(_navigation.ToAbsoluteUri("/QuizHub"),
-                    options => { options.AccessTokenProvider = () => Task.FromResult(Globals.Session.Token)!; })
-                .ConfigureLogging(logging =>
-                {
-                    logging.AddProvider(_logger.AsLoggerProvider());
-                    logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
-                })
-                .Build();
-
             Globals.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
             Globals.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
             Globals.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
-
-            await Globals.Session.hubConnection.StartAsync();
+            PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
+        }
+        else
+        {
+    // todo warn error, reload
         }
 
-        PageState.DebugOut.Add("init");
         var nextSong = await NextSong(0);
         _clientSongs[0] = nextSong;
         _currentSong = _clientSongs[0];
@@ -394,7 +387,7 @@
     {
         if (e.Code is "Enter" or "NumpadEnter")
         {
-            await Globals.Session.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+            await Globals.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
         }
     }
 
