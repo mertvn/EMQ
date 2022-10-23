@@ -1,9 +1,12 @@
 ﻿@page "/RoomPage"
 @using Microsoft.Extensions.Logging
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
+@using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Request
+@using Microsoft.AspNetCore.SignalR.Client
 @inject HttpClient Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
+@inject idk _idk
 
 <h3>Room</h3>
 
@@ -16,32 +19,57 @@
     <p>@JsonSerializer.Serialize(Room?.Quiz?.QuizSettings)</p>
 </div>
 
-<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="EnterQuiz">Start Quiz</button>
+<div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
+    @if (Room?.Players.Any() ?? false)
+    {
+        @foreach (var player in Room.Players)
+        {
+            <div class="playerDiv" style="margin: 40px">
+                <p> Id: @player.Id</p>
+                <p> Name: @player.Username</p>
+            </div>
+        }
+    }
+
+</div>
+
+<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
 
 @code {
     private Room? Room { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
-        if (res is not null)
+        ClientState.Session!.hubConnection!.On("ReceivePlayerJoinedRoom", async () => { await OnReceivePlayerJoinedRoom(); });
+        ClientState.Session!.hubConnection!.On<bool>("ReceiveQuizEntered", async _ => { await OnReceiveQuizEntered(); });
+
+        Room = await _idk.SyncRoom();
+        StateHasChanged();
+    }
+
+    private async Task StartQuiz()
+    {
+        if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            Room = res.Single(x => x.Id == ClientState.Session!.RoomId); // TODO
+            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz", new ReqStartQuiz(ClientState.Session.Player.Id, Room.Id));
+            if (res1.IsSuccessStatusCode)
+            {
+            }
         }
     }
 
-    private async Task EnterQuiz()
+    private async Task OnReceiveQuizEntered()
     {
-    // HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, Globals.Session!.Player.Id));
-    // if (res1.IsSuccessStatusCode)
-    // {
-        if (Room!.Owner.Id == ClientState.Session!.Player.Id)
-        {
-            Navigation.NavigateTo("/QuizPage");
-    // todo send message to other players in room that room is entering quiz
-        }
+        _logger.LogInformation("Navigating from Room to Quiz");
+        Navigation.NavigateTo("/QuizPage");
+    }
 
-    // }
+    private async Task OnReceivePlayerJoinedRoom()
+    {
+        _logger.LogInformation("Syncing room because ReceivePlayerJoinedRoom");
+        Room = await _idk.SyncRoom();
+        StateHasChanged();
+        _logger.LogInformation(JsonSerializer.Serialize(Room));
     }
 
 }

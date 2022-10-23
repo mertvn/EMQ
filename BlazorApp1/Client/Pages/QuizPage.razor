@@ -13,6 +13,7 @@
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
 @inject NavigationManager _navigation
+@inject idk _idk
 @implements IAsyncDisposable
 
 <h3>Quiz</h3>
@@ -62,7 +63,7 @@
            @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown"
            style="padding-left: 10px; padding-right: 10px; margin-top: 10px"/>
 
-    <div class="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+    <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
         @if (Room?.Players.Any() ?? false)
         {
             @foreach (var player in Room.Players)
@@ -197,25 +198,7 @@
 
     private async Task SyncWithServer()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SyncRoom", ClientState.Session!.RoomId);
-        if (res.IsSuccessStatusCode)
-        {
-            Room? sync = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
-            if (sync is not null)
-            {
-                Room = sync;
-            }
-            else
-            {
-    // todo warn user and require reload
-                _logger.LogError("Desynchronized");
-            }
-        }
-        else
-        {
-    // todo warn user and require reload
-            _logger.LogError("Desynchronized");
-        }
+        Room = await _idk.SyncRoom();
     }
 
     private async Task OnReceiveQuizStarted()
@@ -371,7 +354,6 @@
             string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Url);
             _logger.LogInformation("Endjs");
             PreloadCancellationRegistration.Unregister();
-            PreloadCancellationSource.Dispose();
 
             ret.Data = data;
         }

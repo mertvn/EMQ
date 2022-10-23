@@ -26,4 +26,6 @@ public class Room
     public List<Player> Players { get; set; } = new();
 
     public Player Owner { get; set; }
+
+    [JsonIgnore] public List<string> AllPlayerConnectionIds { get; set; } = new();
 }

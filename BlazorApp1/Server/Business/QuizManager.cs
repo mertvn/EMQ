@@ -22,9 +22,9 @@ public class QuizManager
 
     private IHubContext<QuizHub> HubContext { get; }
 
-    private string[] AllPlayerConnectionIds =>
-        ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.Player.Id))
-            .Select(x => x.ConnectionId!).ToArray();
+    // private string[] AllPlayerConnectionIds =>
+    //     ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.Player.Id))
+    //         .Select(x => x.ConnectionId!).ToArray();
 
     private void SetTimer()
     {
@@ -80,14 +80,14 @@ public class QuizManager
             player.IsCorrect = null;
         }
 
-        await HubContext.Clients.Clients(AllPlayerConnectionIds)
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
     }
 
     private async Task EnterJudgementPhase()
     {
         Quiz.QuizState.Phase = new JudgementPhase();
-        await HubContext.Clients.Clients(AllPlayerConnectionIds)
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
         await JudgeGuesses();
     }
@@ -96,7 +96,7 @@ public class QuizManager
     {
         Quiz.QuizState.Phase = new ResultsPhase();
         Quiz.QuizState.RemainingSeconds = Quiz.QuizSettings.ResultsTime;
-        await HubContext.Clients.Clients(AllPlayerConnectionIds)
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
@@ -139,15 +139,23 @@ public class QuizManager
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
-        await HubContext.Clients.Clients(AllPlayerConnectionIds)
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveQuizEnded", Quiz.QuizState.IsActive);
+    }
+
+    private async Task EnterQuiz()
+    {
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+            .SendAsync("ReceiveQuizEntered", Quiz.QuizState.IsActive);
+        await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
     public async Task StartQuiz()
     {
         Quiz.QuizState.IsActive = true;
 
-        await HubContext.Clients.Clients(AllPlayerConnectionIds)
+        await EnterQuiz();
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveQuizStarted", Quiz.QuizState.IsActive);
         await EnterGuessingPhase();
         SetTimer();
