@@ -13,3 +13,7 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * CSS...
 * Auto-complete
 * Eroge songs
+*
+* input stretching with 4+ players
+* player left room event
+* reconnect when disconnected
