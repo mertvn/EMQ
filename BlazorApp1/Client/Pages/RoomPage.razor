@@ -35,6 +35,7 @@
 </div>
 
 <button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
+@* <button class="btn btn-primary" disabled="@(!Room?.Quiz?.QuizState!.IsActive)" @onclick="Hotjoin">Hotjoin Quiz</button> *@
 
 @code {
     private Room? Room { get; set; }
@@ -46,6 +47,11 @@
 
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
+
+        if (Room!.Quiz?.QuizState.IsActive ?? false)
+        {
+            Hotjoin();
+        }
     }
 
     private async Task StartQuiz()
@@ -71,6 +77,12 @@
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
         _logger.LogInformation(JsonSerializer.Serialize(Room));
+    }
+
+    private void Hotjoin()
+    {
+        _logger.LogInformation("Hotjoining Quiz");
+        Navigation.NavigateTo("/QuizPage");
     }
 
 }

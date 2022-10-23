@@ -62,6 +62,9 @@
 
     private async Task JoinRoom(int roomId)
     {
+        // _logger.LogError(roomId.ToString());
+        // _logger.LogError(Password);
+        // _logger.LogError(JsonSerializer.Serialize(ClientState.Session));
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {

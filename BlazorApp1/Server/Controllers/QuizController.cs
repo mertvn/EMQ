@@ -120,6 +120,7 @@ public class QuizController : ControllerBase
         return room.Id;
     }
 
+    // todo decouple joining room from joining quiz maybe?
     [HttpPost]
     [Route("JoinRoom")]
     public async Task JoinRoom([FromBody] ReqJoinRoom req)
