@@ -7,10 +7,11 @@ namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class Quiz
 {
-    public Quiz(QuizSettings quizSettings, Room room)
+    public Quiz(QuizSettings quizSettings, Room room, int id)
     {
         QuizSettings = quizSettings;
         Room = room;
+        Id = id;
     }
 
     public int Id { get; }

@@ -109,7 +109,7 @@ public class QuizManager
     {
         await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
 
-        IEnumerable<string> correctAnswers = new[] { Quiz.Songs[Quiz.QuizState.sp].Name }; // todo aliases/translations
+        IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Source.Aliases; // todo translations
 
         Console.WriteLine("-------");
         Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers));

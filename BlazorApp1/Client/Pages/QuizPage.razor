@@ -40,7 +40,7 @@
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
     <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
         <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
-            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Url : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First() : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
             </video>
             @* TODO: Make this work *@
             @* @if (videoPlayerVisibility) *@
@@ -157,7 +157,7 @@
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
             if (nextSong is not null)
             {
-                Song song = await DlSong(new Song { Url = nextSong.Url });
+                Song song = await DlSong(new Song { Links = new[] { nextSong.Url } });
                 return song;
             }
         }
@@ -300,7 +300,7 @@
         string? nextSongUrl = await NextSongUrl(index);
         if (nextSongUrl is not null)
         {
-            _currentSong = new Song() { Url = nextSongUrl };
+            _currentSong = new Song() { Links = new[] { nextSongUrl } };
             StateHasChanged();
         }
         else
@@ -321,11 +321,11 @@
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Url}");
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First()}");
                     }
                     else
                     {
-                        PageState.DebugOut.Add($"preloaded: {song.Url}");
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First()}");
                     }
                 }
                 else
@@ -344,15 +344,14 @@
     {
         var ret = new Song
         {
-            Name = song.Name,
-            Url = song.Url,
+            Links = song.Links,
         };
 
         try
         {
-            PageState.DebugOut.Add($"downloading {song.Url}");
+            PageState.DebugOut.Add($"downloading {song.Links.First()}");
             _logger.LogInformation("Startjs");
-            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Url);
+            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First());
             _logger.LogInformation("Endjs");
             PreloadCancellationRegistration.Unregister();
 

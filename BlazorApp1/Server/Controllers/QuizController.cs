@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using BlazorApp1.Server.Business;
 using BlazorApp1.Server.Hubs;
@@ -58,7 +61,7 @@ public class QuizController : ControllerBase
                 {
                     if (req.SongIndex < room.Quiz.Songs.Count)
                     {
-                        string url = room.Quiz.Songs[req.SongIndex].Url;
+                        string url = room.Quiz.Songs[req.SongIndex].Links.First();
                         return new ResNextSong(req.SongIndex, url);
                     }
                     else
@@ -107,7 +110,7 @@ public class QuizController : ControllerBase
         var owner = session.Player;
         var room = new Room(new Random().Next(), req.Name, owner) { Password = req.Password, };
 
-        var quiz = new Quiz(req.QuizSettings, room);
+        var quiz = new Quiz(req.QuizSettings, room, new Random().Next());
 
         room.Quiz = quiz;
 
@@ -191,19 +194,34 @@ public class QuizController : ControllerBase
                 var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == quiz.Id);
                 if (quizManager is not null)
                 {
-                    // todo
-                    quiz.Songs = new List<Song>
-                    {
-                        new() { Name = "burst", Url = "https://files.catbox.moe/b4b5wl.mp3", Data = "" },
-                        new() { Name = "shuffle", Url = "https://files.catbox.moe/8sxb1b.webm", Data = "" },
-                        new() { Name = "inukami", Url = "https://files.catbox.moe/kk3ndn.mp3", Data = "" },
-                        new() { Name = "gintama", Url = "https://files.catbox.moe/ftvkr9.mp3", Data = "" },
-                        new() { Name = "lovehina", Url = "https://files.catbox.moe/pwuc9j.mp3", Data = "" },
-                        new() { Name = "akunohana", Url = "https://files.catbox.moe/dupkk6.webm", Data = "" },
-                        new() { Name = "fsn", Url = "https://files.catbox.moe/d1boaz.webm", Data = "" },
-                        new() { Name = "h2o", Url = "https://files.catbox.moe/tf82bf.webm", Data = "" },
-                        new() { Name = "chihayafuru", Url = " https://files.catbox.moe/y3ps2h.mp3", Data = "" },
-                    };
+                    // todo randomly get songs matching the current filters from db
+                    quiz.Songs = JsonSerializer.Deserialize<List<Song>>(
+                        await System.IO.File.ReadAllTextAsync("Data/songs.json"))!;
+                    // quiz.Songs = new List<Song>
+                    // {
+                    //     new()
+                    //     {
+                    //         Name = "burst",
+                    //         Links = new[] { "https://files.catbox.moe/b4b5wl.mp3" },
+                    //         Data = "",
+                    //         Source = new SongSource(new[] { "burst" })
+                    //     },
+                    //     new() { Name = "shuffle", Links = new[] { "https://files.catbox.moe/8sxb1b.webm" }, Data = "" },
+                    //     new() { Name = "inukami", Links = new[] { "https://files.catbox.moe/kk3ndn.mp3" }, Data = "" },
+                    //     new() { Name = "gintama", Links = new[] { "https://files.catbox.moe/ftvkr9.mp3" }, Data = "" },
+                    //     new() { Name = "lovehina", Links = new[] { "https://files.catbox.moe/pwuc9j.mp3" }, Data = "" },
+                    //     new() { Name = "akunohana", Links = new[] { "https://files.catbox.moe/dupkk6.webm" }, Data = "" },
+                    //     new() { Name = "fsn", Links = new[] { "https://files.catbox.moe/d1boaz.webm" }, Data = "" },
+                    //     new() { Name = "h2o", Links = new[] { "https://files.catbox.moe/tf82bf.webm" }, Data = "" },
+                    //     new() { Name = "chihayafuru", Links = new[] { " https://files.catbox.moe/y3ps2h.mp3" }, Data = "" },
+                    // };
+
+                    // await System.IO.File.WriteAllTextAsync("songs.json",
+                    //     JsonSerializer.Serialize(quiz.Songs,
+                    //         new JsonSerializerOptions()
+                    //         {
+                    //             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true
+                    //         }), Encoding.UTF8);
 
                     quiz.Songs = quiz.Songs.OrderBy(a => new Random().Next()).ToList(); // todo
                     quiz.QuizState.NumSongs = quiz.Songs.Count;
