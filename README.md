@@ -12,8 +12,7 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * Proper authentication/authorization
 * CSS...
 * Auto-complete
-* Eroge songs
-*
-* input stretching with 4+ players
+* More songs
 * player left room event
 * reconnect when disconnected
+* results phase time left display (progress bar)

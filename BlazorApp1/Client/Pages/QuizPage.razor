@@ -9,6 +9,7 @@
 @using BlazorApp1.Shared.Quiz.Entities.Concrete.Dto.Response
 @using Microsoft.AspNetCore.SignalR.Client
 @using Timer = System.Timers.Timer
+@using System.Text.Encodings.Web
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
@@ -45,7 +46,7 @@
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
     <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-        @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases))
+        @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
     </div>
 
     <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
@@ -71,7 +72,7 @@
     @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
     <input name="GuessInput" type="text" placeholder="Enter your answer here" disabled="@(PageState.GuessesVisibility)"
            @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown"
-           style="padding-left: 10px; padding-right: 10px; margin-top: 10px"/>
+           style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px"/>
 
     <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
         @if (Room?.Players.Any() ?? false)
@@ -157,7 +158,7 @@
 
     private static QuizPageState PageState { get; set; } = new() { };
 
-    private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 100]) { };
+    private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
 
     private Song? _currentSong;
 
