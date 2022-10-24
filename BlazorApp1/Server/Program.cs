@@ -4,6 +4,7 @@ using BlazorApp1.Server.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
@@ -28,8 +29,12 @@ builder.Services.AddRazorPages();
 //         options.AccessDeniedPath = "/Forbidden/";
 //     });
 
+void SetConfig(HubOptions<QuizHub> options)
+{
+    options.EnableDetailedErrors = true;
+}
 
-builder.Services.AddSignalR()
+builder.Services.AddSignalR().AddHubOptions<QuizHub>(SetConfig)
 //     .AddJsonProtocol(options =>
 // {
 //     // Configure the serializer to not change the casing of property names, instead of the default "camelCase" names.
