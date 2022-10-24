@@ -25,7 +25,7 @@
         @foreach (var player in Room.Players)
         {
             <div class="playerDiv" style="margin: 40px">
-                <p> Id: @player.Id</p>
+                @* <p> Id: @player.Id</p> *@
                 <p> Name: @player.Username</p>
                 <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
             </div>
@@ -76,7 +76,7 @@
         _logger.LogInformation("Syncing room because ReceivePlayerJoinedRoom");
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
-        _logger.LogInformation(JsonSerializer.Serialize(Room));
+        // _logger.LogInformation(JsonSerializer.Serialize(Room));
     }
 
     private void Hotjoin()

@@ -1,12 +1,24 @@
 ﻿@using BlazorApp1.Shared.Core.UI
+@using System.IO
+@inject HttpClient _client
 
 @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
 @* todo oninput event *@
 @* todo clear guess on click? *@
-<BlazoredTypeahead SearchMethod="SearchAutocomplete" @bind-Value="QuizPage.PageState.Guess"
-                   AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
-                   MinimumLength="1" MaximumSuggestions="5" Debounce="17"
-                   placeholder="Enter your answer here">
+<BlazoredTypeahead
+    SearchMethod="SearchAutocomplete"
+    TValue="string"
+    TItem="string"
+    Value="QuizPage.PageState.Guess"
+    ValueChanged="SelectedResultChanged"
+    ValueExpression="@(() => QuizPage.PageState.Guess)"
+    AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
+    MinimumLength="1"
+    MaximumSuggestions="5"
+    Debounce="1"
+    PreventDefault="true"
+    StopPropagation="true"
+    placeholder="Enter your answer here">
     <SelectedTemplate>
         @context
     </SelectedTemplate>
@@ -20,21 +32,22 @@
     [CascadingParameter]
     private QuizPage QuizPage { get; set; } = null!;
 
+    private string[] Data { get; set; }
+
     // if we don't do this, the autocomplete dropdown closes after every timer tick
     protected override bool ShouldRender()
     {
         return false;
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        Data = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+    }
+
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        var data = new List<string>
-        {
-            "oretsuba",
-            "sonoyoko",
-        };
-
-        var result = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).ToList();
+        var result = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
     // _logger.LogInformation(JsonSerializer.Serialize(result));
         return await Task.FromResult(result);
     }
@@ -43,5 +56,11 @@
     {
         return arg;
     }
+
+    private async Task SelectedResultChanged(string arg)
+    {
+        QuizPage.PageState.Guess = arg;
+    }
+
 
 }

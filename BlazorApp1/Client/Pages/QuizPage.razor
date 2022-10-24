@@ -272,7 +272,7 @@
                 PreloadCancellationSource = new CancellationTokenSource();
                 PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
 
-                PageState.Guess = null;
+    // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
                 PageState.VideoPlayerVisibility = false;
                 PageState.GuessesVisibility = false;
                 _correctAnswer = null;
