@@ -1,0 +1,47 @@
+﻿@using BlazorApp1.Shared.Core.UI
+
+@* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
+@* todo oninput event *@
+@* todo clear guess on click? *@
+<BlazoredTypeahead SearchMethod="SearchAutocomplete" @bind-Value="QuizPage.PageState.Guess"
+                   AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
+                   MinimumLength="1" MaximumSuggestions="5" Debounce="17"
+                   placeholder="Enter your answer here">
+    <SelectedTemplate>
+        @context
+    </SelectedTemplate>
+    <ResultTemplate >
+        @context
+    </ResultTemplate>
+</BlazoredTypeahead>
+
+@code {
+
+    [CascadingParameter]
+    private QuizPage QuizPage { get; set; } = null!;
+
+    // if we don't do this, the autocomplete dropdown closes after every timer tick
+    protected override bool ShouldRender()
+    {
+        return false;
+    }
+
+    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
+    {
+        var data = new List<string>
+        {
+            "oretsuba",
+            "sonoyoko",
+        };
+
+        var result = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).ToList();
+    // _logger.LogInformation(JsonSerializer.Serialize(result));
+        return await Task.FromResult(result);
+    }
+
+    private async Task<string> AddItemOnEmptyResultMethod(string arg)
+    {
+        return arg;
+    }
+
+}

@@ -15,4 +15,6 @@ public static class UiHelpers
             return (bool)b ? trueColor : falseColor;
         }
     }
+
+    public static string Bool2PointerEvents(bool b) => b ? "auto" : "none";
 }

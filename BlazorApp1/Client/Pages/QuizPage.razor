@@ -17,85 +17,89 @@
 @inject ClientUtils _clientUtils
 @implements IAsyncDisposable
 
-<h3>Quiz</h3>
-<p>Connected: @IsConnected</p>
+<CascadingValue Value="@this" IsFixed="true">
+    <h3>Quiz</h3>
+    <p>Connected: @IsConnected</p>
 
 
-@if (PageState.IsDebug)
-{
-    <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
-        <p>Game is active: @Room?.Quiz?.QuizState.IsActive</p>
-        @* <p>Phase: @_quizState.Phase</p> *@
-        <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
-        <p>sp: @Room?.Quiz?.QuizState.sp</p>
-    </div>
-
-    <div style="float:right;">
-        @foreach (var debug in PageState.DebugOut)
-        {
-            <p style="padding: 0; margin:0;">@debug</p>
-        }
-    </div>
-}
-
-<div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); float:right;">
-    <p>Title: @_correctAnswer?.Name</p>
-    <p>Artist: @_correctAnswer?.Artist</p>
-</div>
-
-<div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
-
-    <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-        @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
-    </div>
-
-    <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
-        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
-            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First() : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
-            </video>
-            @* TODO: Make this work *@
-            @* @if (videoPlayerVisibility) *@
-            @* { *@
-            @*     <p style="position: absolute; top: 40%; right: 40%; font-size: xx-large; color: white; z-index: -1">Sound only</p>  *@
-            @* } *@
+    @if (PageState.IsDebug)
+    {
+        <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
+            <p>Game is active: @Room?.Quiz?.QuizState.IsActive</p>
+            @* <p>Phase: @_quizState.Phase</p> *@
+            <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
+            <p>sp: @Room?.Quiz?.QuizState.sp</p>
         </div>
 
-        @if (!PageState.VideoPlayerVisibility)
-        {
-@* TODO: properly center this *@
-            <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                @PageState.Countdown
-            </div>
-        }
+        <div style="float:right;">
+            @foreach (var debug in PageState.DebugOut)
+            {
+                <p style="padding: 0; margin:0;">@debug</p>
+            }
+        </div>
+    }
+
+    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); float:right;">
+        <p>Title: @_correctAnswer?.Name</p>
+        <p>Artist: @_correctAnswer?.Artist</p>
     </div>
 
-    @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
-    <input name="GuessInput" type="text" placeholder="Enter your answer here" disabled="@(PageState.GuessesVisibility)"
-           @bind="PageState.Guess" @bind:event="oninput" @onkeydown="@GuessInput_OnKeyDown"
-           style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px"/>
+    <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
-    <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
-        @if (Room?.Players.Any() ?? false)
-        {
-            @foreach (var player in Room.Players)
+        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+            @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        </div>
+
+        <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
+            <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
+                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First() : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+                </video>
+                @* TODO: Make this work *@
+                @* @if (videoPlayerVisibility) *@
+                @* { *@
+                @*     <p style="position: absolute; top: 40%; right: 40%; font-size: xx-large; color: white; z-index: -1">Sound only</p>  *@
+                @* } *@
+            </div>
+
+            @if (!PageState.VideoPlayerVisibility)
             {
-                <div class="playerDiv" style="margin: 40px">
-                    <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
-                        <div class="playerIsCorrectDiv" style="background-color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")">
-                            <p> @player.Guess</p>
-                        </div>
-                    </div>
-                    @* <p> Id: @player.Id</p> *@
-                    <p> Name: @player.Username</p>
-                    <p> Score: @player.Score</p>
-                    <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
+@* TODO: properly center this *@
+                <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                    @PageState.Countdown
                 </div>
             }
-        }
+        </div>
 
+        @* we have to use pointer-events css property instead of
+         the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
+        <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+             pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.GuessesVisibility);">
+            <GuessInputComponent></GuessInputComponent>
+        </div>
+
+        <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+            @if (Room?.Players.Any() ?? false)
+            {
+                @foreach (var player in Room.Players)
+                {
+                    <div class="playerDiv" style="margin: 40px">
+                        <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
+                            <div class="playerIsCorrectDiv" style="background-color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")">
+                                <p> @player.Guess</p>
+                            </div>
+                        </div>
+                        @* <p> Id: @player.Id</p> *@
+                        <p> Name: @player.Username</p>
+                        <p> Score: @player.Score</p>
+                        <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
+                    </div>
+                }
+            }
+
+        </div>
     </div>
-</div>
 
+</CascadingValue>
 
 @code {
     // private HubConnection? hubConnection;
@@ -139,7 +143,7 @@
         }
     }
 
-    private class QuizPageState
+    public class QuizPageState
     {
         public bool IsDebug { get; } = false;
         public readonly List<string> DebugOut = new() { "" };
@@ -156,7 +160,7 @@
 
     private static Room? Room { get; set; }
 
-    private static QuizPageState PageState { get; set; } = new() { };
+    public static QuizPageState PageState { get; set; } = new() { };
 
     private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
 
@@ -268,6 +272,7 @@
                 PreloadCancellationSource = new CancellationTokenSource();
                 PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
 
+                PageState.Guess = null;
                 PageState.VideoPlayerVisibility = false;
                 PageState.GuessesVisibility = false;
                 _correctAnswer = null;
@@ -410,6 +415,24 @@
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
         }
+    }
+
+    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
+    {
+        var data = new List<string>
+        {
+            "oretsuba",
+            "sonoyoko",
+        };
+
+        var result = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).ToList();
+    // _logger.LogInformation(JsonSerializer.Serialize(result));
+        return await Task.FromResult(result);
+    }
+
+    private async Task<string> AddItemOnEmptyResultMethod(string arg)
+    {
+        return arg;
     }
 
 }
