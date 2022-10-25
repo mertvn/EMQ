@@ -19,7 +19,7 @@
 
 <CascadingValue Value="@this" IsFixed="true">
     @* <h3>Quiz</h3> *@
-    <p>Connected: @IsConnected</p>
+    <p style="color: @UiHelpers.Bool2Color(IsConnected, "green", "red")">@UiHelpers.Bool2Text(IsConnected, "Connected", "Disconnected")</p>
     <div style="display:flex; justify-content:center; align-items:center;">
         <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
     </div>
@@ -41,7 +41,7 @@
         </div>
     }
 
-    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); float:right;">
+    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
         <p>Title: @_correctAnswer?.Name</p>
         <p>Artist: @_correctAnswer?.Artist</p>
     </div>
@@ -126,9 +126,9 @@
     // todo warn error, reload
         }
 
-        var nextSong = await NextSong(0);
-        _clientSongs[0] = nextSong;
-        _currentSong = _clientSongs[0];
+    // var nextSong = await NextSong(0);
+    // _clientSongs[0] = nextSong;
+    // _currentSong = _clientSongs[0];
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
     }
 
