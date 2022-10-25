@@ -18,7 +18,7 @@
     <input @bind="Password" type="password" name="Password"/><br/>
 </div>
 
-<button class="btn btn-primary" @onclick="CreateRoom">Reserve Room</button>
+<button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
 
 <div style="">
     @foreach (var room in Rooms)
@@ -53,7 +53,13 @@
 
     private async Task CreateRoom()
     {
-        ReqCreateRoom req = new(ClientState.Session!.Player.Id, Name, Password, QuizSettings);
+        if (ClientState.Session is null)
+        {
+    // todo warn not logged in
+            return;
+        }
+
+        ReqCreateRoom req = new(ClientState.Session.Player.Id, Name, Password, QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
@@ -62,9 +68,16 @@
 
     private async Task JoinRoom(int roomId)
     {
-        // _logger.LogError(roomId.ToString());
-        // _logger.LogError(Password);
-        // _logger.LogError(JsonSerializer.Serialize(ClientState.Session));
+    // _logger.LogError(roomId.ToString());
+    // _logger.LogError(Password);
+    // _logger.LogError(JsonSerializer.Serialize(ClientState.Session));
+
+        if (ClientState.Session is null)
+        {
+    // todo warn not logged in
+            return;
+        }
+
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
