@@ -18,7 +18,7 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="@this" IsFixed="true">
-    <h3>Quiz</h3>
+    @* <h3>Quiz</h3> *@
     <p>Connected: @IsConnected</p>
     <div style="display:flex; justify-content:center; align-items:center;">
         <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
@@ -84,7 +84,7 @@
             {
                 @foreach (var player in Room.Players)
                 {
-                    <div class="playerDiv" style="margin: 40px">
+                    <div class="playerDiv" style="margin: 20px">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv" style="background-color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")">
                                 <p> @player.Guess</p>
