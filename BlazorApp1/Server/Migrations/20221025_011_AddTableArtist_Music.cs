@@ -10,7 +10,7 @@ public class AddTableArtist_Music : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("artist_id").AsInt32().PrimaryKey().ForeignKey("artist", "id")
+            .WithColumn("artist_alias_id").AsInt32().PrimaryKey().ForeignKey("artist_alias", "id")
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
             .WithColumn("role").AsInt32().Nullable()
             ;

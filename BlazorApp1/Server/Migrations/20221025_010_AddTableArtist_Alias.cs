@@ -10,9 +10,14 @@ public class AddTableMusic_Artist_Alias : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("artist", "id")
-            .WithColumn("alias").AsString().PrimaryKey()
-            ;
+            .WithColumn("id").AsInt32().PrimaryKey().Identity()
+            .WithColumn("music_id").AsInt32().ForeignKey("artist", "id")
+            .WithColumn("latin_alias").AsString()
+            .WithColumn("non_latin_alias").AsString();
+
+        Create.UniqueConstraint()
+            .OnTable(tableName)
+            .Columns("music_id", "latin_alias");
     }
 
     public override void Down()

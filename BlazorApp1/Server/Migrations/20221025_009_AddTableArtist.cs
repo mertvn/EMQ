@@ -11,7 +11,8 @@ public class AddTableArtist : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("name").AsString().NotNullable()
+            .WithColumn("latin_name").AsString().NotNullable()
+            .WithColumn("non_latin_name").AsString()
             .WithColumn("sex").AsInt32().Nullable()
             ;
     }

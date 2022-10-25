@@ -11,7 +11,8 @@ public class AddTableMusic_Source_Title : Migration
     {
         Create.Table(tableName)
             .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
-            .WithColumn("title").AsString().PrimaryKey()
+            .WithColumn("latin_title").AsString().PrimaryKey()
+            .WithColumn("non_latin_title").AsString()
             .WithColumn("language").AsInt32().PrimaryKey()
             .WithColumn("is_main_title").AsBoolean().NotNullable()
             ;
