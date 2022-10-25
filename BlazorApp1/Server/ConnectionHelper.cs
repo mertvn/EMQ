@@ -17,7 +17,6 @@ public static class ConnectionHelper
 
     private static string BuildConnectionString(string databaseUrl)
     {
-        Console.WriteLine(databaseUrl);
         var databaseUri = new Uri(databaseUrl);
         string[] userInfo = databaseUri.UserInfo.Split(':');
         var builder = new NpgsqlConnectionStringBuilder
@@ -27,7 +26,7 @@ public static class ConnectionHelper
             Username = userInfo[0],
             Password = userInfo[1],
             Database = databaseUri.LocalPath.TrimStart('/'),
-            SslMode = SslMode.Require,
+            SslMode = SslMode.Prefer,
             TrustServerCertificate = true
         };
         return builder.ToString();
