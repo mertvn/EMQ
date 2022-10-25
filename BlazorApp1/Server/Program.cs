@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
+const bool hasDb = true;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -90,13 +92,16 @@ static void UpdateDatabase(IServiceProvider serviceProvider)
     runner.MigrateUp();
 }
 
-var serviceProvider = CreateServices();
+if (hasDb)
+{
+    var serviceProvider = CreateServices();
 
 // Put the database update into a scope to ensure
 // that all resources will be disposed.
-using (var scope = serviceProvider.CreateScope())
-{
-    UpdateDatabase(scope.ServiceProvider);
+    using (var scope = serviceProvider.CreateScope())
+    {
+        UpdateDatabase(scope.ServiceProvider);
+    }
 }
 
 var app = builder.Build();
