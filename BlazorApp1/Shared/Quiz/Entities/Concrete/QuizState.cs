@@ -5,7 +5,7 @@ namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class QuizState
 {
-    public bool IsActive { get; set; }
+    public QuizStatus? QuizStatus { get; set; } // todo should this be here or on Quiz?
 
     [JsonIgnore] public IQuizPhase Phase { get; set; } = new GuessPhase();
 

@@ -7,4 +7,6 @@ public class QuizSettings
     public int ResultsTime { get; set; } = 20;
 
     public int PreloadAmount { get; set; } = 1;
+
+    public bool IsHotjoinEnabled { get; set; } = true;
 }

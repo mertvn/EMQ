@@ -20,12 +20,12 @@
 <CascadingValue Value="@this" IsFixed="true">
     <h3>Quiz</h3>
     <p>Connected: @IsConnected</p>
-
+    <p>@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
 
     @if (PageState.IsDebug)
     {
         <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
-            <p>Game is active: @Room?.Quiz?.QuizState.IsActive</p>
+            <p>Quiz status: @Room?.Quiz?.QuizState.QuizStatus</p>
             @* <p>Phase: @_quizState.Phase</p> *@
             <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
             <p>sp: @Room?.Quiz?.QuizState.sp</p>
@@ -114,8 +114,8 @@
         if (ClientState.Session!.hubConnection is not null)
         {
             ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-            ClientState.Session.hubConnection.On<bool>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
-            ClientState.Session.hubConnection.On<bool>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
+            ClientState.Session.hubConnection.On<QuizStatus>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
+            ClientState.Session.hubConnection.On<QuizStatus>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
             ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }

@@ -40,7 +40,7 @@ public class QuizManager
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        if (Quiz.QuizState.IsActive)
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             if (Quiz.QuizState.RemainingSeconds >= 0)
             {
@@ -143,28 +143,28 @@ public class QuizManager
     public async Task EndQuiz()
     {
         // todo other cleanup
-        Quiz.QuizState.IsActive = false;
+        Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizEnded", Quiz.QuizState.IsActive);
+            .SendAsync("ReceiveQuizEnded", Quiz.QuizState.QuizStatus);
     }
 
     private async Task EnterQuiz()
     {
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizEntered", Quiz.QuizState.IsActive);
+            .SendAsync("ReceiveQuizEntered", Quiz.QuizState.QuizStatus);
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
     public async Task StartQuiz()
     {
-        Quiz.QuizState.IsActive = true;
+        Quiz.QuizState.QuizStatus = QuizStatus.Playing;
 
         await EnterQuiz();
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizStarted", Quiz.QuizState.IsActive);
+            .SendAsync("ReceiveQuizStarted", Quiz.QuizState.QuizStatus);
         await EnterGuessingPhase();
         SetTimer();
     }
@@ -172,14 +172,14 @@ public class QuizManager
     public async Task OnSendPlayerJoinedQuiz(string connectionId)
     {
         // TODO: only start quiz if all? players ready
-        if (!Quiz.QuizState.IsActive) // todo: && !quizEnded
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Starting)
         {
             await StartQuiz();
         }
-        else if (true) // todo: && !quizEnded
+        else if (Quiz.QuizState.QuizStatus != QuizStatus.Ended)
         {
             await HubContext.Clients.Clients(connectionId)
-                .SendAsync("ReceiveQuizStarted", Quiz.QuizState.IsActive);
+                .SendAsync("ReceiveQuizStarted", Quiz.QuizState.QuizStatus);
         }
         else
         {
