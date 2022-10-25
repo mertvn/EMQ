@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using BlazorApp1.Server;
 using BlazorApp1.Server.Hubs;
 using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -71,7 +72,7 @@ static IServiceProvider CreateServices()
             // Add Postgres support to FluentMigrator
             .AddPostgres()
             // Set the connection string
-            .WithGlobalConnectionString(Environment.GetEnvironmentVariable("DATABASE_URL"))
+            .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
         // Enable logging to console in the FluentMigrator way
