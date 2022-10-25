@@ -1,7 +1,6 @@
 ﻿@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using System.Timers
-@using BlazorApp1.Shared.Quiz
 @using System.Threading
 @using BlazorApp1.Shared.Core.UI
 @using BlazorApp1.Shared.Quiz.Entities.Concrete
@@ -173,25 +172,6 @@
     private CancellationTokenSource PreloadCancellationSource { get; set; } = new();
 
     private CancellationTokenRegistration PreloadCancellationRegistration { get; set; } = new();
-
-    // public async Task<Song?> CorrectAnswer(int index)
-    // {
-    //     HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/CorrectAnswer",
-    //         new ReqCorrectAnswer(ClientState.Session!.RoomId!.Value, index));
-    //     if (res.IsSuccessStatusCode)
-    //     {
-    //         var correctAnswer = await res.Content.ReadFromJsonAsync<Song>().ConfigureAwait(false);
-    //         if (correctAnswer is not null)
-    //         {
-    //             _correctAnswer = correctAnswer;
-    //         }
-    //     }
-    //     else
-    //     {
-    // // todo
-    //     }
-    //     return null;
-    // }
 
     public async Task<Song?> NextSong(int index)
     {
@@ -410,31 +390,4 @@
 
         return ret;
     }
-
-    private async Task GuessInput_OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Code is "Enter" or "NumpadEnter")
-        {
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
-        }
-    }
-
-    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
-    {
-        var data = new List<string>
-        {
-            "oretsuba",
-            "sonoyoko",
-        };
-
-        var result = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).ToList();
-    // _logger.LogInformation(JsonSerializer.Serialize(result));
-        return await Task.FromResult(result);
-    }
-
-    private async Task<string> AddItemOnEmptyResultMethod(string arg)
-    {
-        return arg;
-    }
-
 }
