@@ -116,8 +116,8 @@
         if (ClientState.Session!.hubConnection is not null)
         {
             ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-            ClientState.Session.hubConnection.On<QuizStatus>("ReceiveQuizStarted", async _ => { await OnReceiveQuizStarted(); });
-            ClientState.Session.hubConnection.On<QuizStatus>("ReceiveQuizEnded", async _ => { await OnReceiveQuizEnded(); });
+            ClientState.Session.hubConnection.On("ReceiveQuizStarted", async () => { await OnReceiveQuizStarted(); });
+            ClientState.Session.hubConnection.On("ReceiveQuizEnded", async () => { await OnReceiveQuizEnded(); });
             ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }

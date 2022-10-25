@@ -147,14 +147,12 @@ public class QuizManager
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
-        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizEnded", Quiz.QuizState.QuizStatus);
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEnded");
     }
 
     private async Task EnterQuiz()
     {
-        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizEntered", Quiz.QuizState.QuizStatus);
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEntered");
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
@@ -163,8 +161,7 @@ public class QuizManager
         Quiz.QuizState.QuizStatus = QuizStatus.Playing;
 
         await EnterQuiz();
-        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceiveQuizStarted", Quiz.QuizState.QuizStatus);
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizStarted");
         await EnterGuessingPhase();
         SetTimer();
     }
@@ -178,8 +175,7 @@ public class QuizManager
         }
         else if (Quiz.QuizState.QuizStatus != QuizStatus.Ended)
         {
-            await HubContext.Clients.Clients(connectionId)
-                .SendAsync("ReceiveQuizStarted", Quiz.QuizState.QuizStatus);
+            await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
         }
         else
         {

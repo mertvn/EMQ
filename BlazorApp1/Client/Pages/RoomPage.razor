@@ -43,7 +43,7 @@
     protected override async Task OnInitializedAsync()
     {
         ClientState.Session!.hubConnection!.On("ReceivePlayerJoinedRoom", async () => { await OnReceivePlayerJoinedRoom(); });
-        ClientState.Session!.hubConnection!.On<QuizStatus>("ReceiveQuizEntered", async _ => { await OnReceiveQuizEntered(); });
+        ClientState.Session!.hubConnection!.On("ReceiveQuizEntered", async () => { await OnReceiveQuizEntered(); });
 
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
