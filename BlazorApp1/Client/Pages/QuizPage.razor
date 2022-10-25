@@ -20,7 +20,9 @@
 <CascadingValue Value="@this" IsFixed="true">
     <h3>Quiz</h3>
     <p>Connected: @IsConnected</p>
-    <p>@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
+    <div style="display:flex; justify-content:center; align-items:center;">
+        <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
+    </div>
 
     @if (PageState.IsDebug)
     {
