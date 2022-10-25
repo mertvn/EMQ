@@ -71,7 +71,7 @@ static IServiceProvider CreateServices()
             // Add Postgres support to FluentMigrator
             .AddPostgres()
             // Set the connection string
-            .WithGlobalConnectionString("User ID=postgres;Password=postgres;Database=EMQ;Host=localhost;Port=5432;")
+            .WithGlobalConnectionString(Environment.GetEnvironmentVariable("DATABASE_URL"))
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
         // Enable logging to console in the FluentMigrator way
