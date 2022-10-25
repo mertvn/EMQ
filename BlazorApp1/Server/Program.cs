@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using BlazorApp1.Server.Hubs;
+using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -59,6 +61,42 @@ builder.Services.AddResponseCompression(opts =>
 //             .AllowAnyHeader()
 //             .AllowCredentials());
 // });
+
+static IServiceProvider CreateServices()
+{
+    return new ServiceCollection()
+        // Add common FluentMigrator services
+        .AddFluentMigratorCore()
+        .ConfigureRunner(rb => rb
+            // Add Postgres support to FluentMigrator
+            .AddPostgres()
+            // Set the connection string
+            .WithGlobalConnectionString("User ID=postgres;Password=postgres;Database=EMQ;Host=localhost;Port=5432;")
+            // Define the assembly containing the migrations
+            .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
+        // Enable logging to console in the FluentMigrator way
+        .AddLogging(lb => lb.AddFluentMigratorConsole())
+        // Build the service provider
+        .BuildServiceProvider(false);
+}
+
+static void UpdateDatabase(IServiceProvider serviceProvider)
+{
+    // Instantiate the runner
+    var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
+
+    // Execute the migrations
+    runner.MigrateUp();
+}
+
+var serviceProvider = CreateServices();
+
+// Put the database update into a scope to ensure
+// that all resources will be disposed.
+using (var scope = serviceProvider.CreateScope())
+{
+    UpdateDatabase(scope.ServiceProvider);
+}
 
 var app = builder.Build();
 
