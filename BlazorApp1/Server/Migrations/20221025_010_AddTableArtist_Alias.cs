@@ -12,8 +12,9 @@ public class AddTableArtist_Alias : Migration
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("artist_id").AsInt32().ForeignKey("artist", "id")
-            .WithColumn("latin_alias").AsString()
-            .WithColumn("non_latin_alias").AsString();
+            .WithColumn("latin_alias").AsString().NotNullable()
+            .WithColumn("non_latin_alias").AsString().Nullable()
+            .WithColumn("is_main_name").AsBoolean().NotNullable();
 
         Create.UniqueConstraint()
             .OnTable(tableName)
