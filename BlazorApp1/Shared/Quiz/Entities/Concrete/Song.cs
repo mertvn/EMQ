@@ -6,15 +6,18 @@ namespace BlazorApp1.Shared.Quiz.Entities.Concrete;
 
 public class Song
 {
-    public string Title { get; set; }
+    public int Id { get; set; }
 
-    public string Artist { get; set; }
+    public string LatinTitle { get; set; } = "";
 
-    public string[] Links { get; set; } // todo multiple links
+    public List<SongArtist> Artists { get; set; } = new();
 
-    [JsonIgnore] public string Data { get; set; }
+    public List<SongLink> Links { get; set; } = new();
+
+    [JsonIgnore]
+    public string Data { get; set; } = "";
 
     // todo type
 
-    public SongSource Source { get; set; }
+    public List<SongSource> Sources { get; set; } = new();
 }

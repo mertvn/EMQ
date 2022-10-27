@@ -36,8 +36,9 @@
     // TODO allow user to change settings
     private QuizSettings QuizSettings { get; set; } = new()
     {
+        NumSongs = 3,
         GuessTime = 25,
-        ResultsTime = 20
+        ResultsTime = 20,
     };
 
     private List<Room> Rooms { get; set; } = new();

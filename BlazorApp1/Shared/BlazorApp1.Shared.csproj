@@ -15,10 +15,8 @@
 
   <ItemGroup>
     <Folder Include="Auth\Business" />
-    <Folder Include="Auth\DataAccess" />
     <Folder Include="Auth\Entities\Abstract" />
     <Folder Include="Quiz\Business" />
-    <Folder Include="Quiz\DataAccess" />
     <Folder Include="Quiz\Entities" />
   </ItemGroup>
 </Project>

@@ -41,19 +41,21 @@
     }
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
-        <p>Title: @_correctAnswer?.Title</p>
-        <p>Artist: @_correctAnswer?.Artist</p>
+        <p>Title: @_correctAnswer?.LatinTitle</p>
+        @* todo display multiple artists *@
+        <p>Artist: @_correctAnswer?.Artists.First().Aliases.First()</p>
     </div>
 
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
         <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-            @(JsonSerializer.Serialize(_correctAnswer?.Source.Aliases, new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+            @(JsonSerializer.Serialize(_correctAnswer?.Sources.SelectMany(x => x.Aliases), new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
         </div>
 
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
             <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
-                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First() : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+                @* TODO: How to select The One Link? *@
+                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
                 </video>
                 @* TODO: Make this work *@
                 @* @if (videoPlayerVisibility) *@
@@ -181,7 +183,16 @@
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
             if (nextSong is not null)
             {
-                Song song = await DlSong(new Song { Links = new[] { nextSong.Url } });
+                Song song = await DlSong(new Song
+                {
+                    Links = new List<SongLink>
+                    {
+                        new()
+                        {
+                            Url = nextSong.Url
+                        }
+                    }
+                });
                 return song;
             }
         }
@@ -326,7 +337,16 @@
         string? nextSongUrl = await NextSongUrl(index);
         if (nextSongUrl is not null)
         {
-            _currentSong = new Song() { Links = new[] { nextSongUrl } };
+            _currentSong = new Song()
+            {
+                Links = new List<SongLink>
+                {
+                    new()
+                    {
+                        Url = nextSongUrl
+                    }
+                }
+            };
             StateHasChanged();
         }
         else
@@ -347,11 +367,11 @@
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First()}");
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
                     }
                     else
                     {
-                        PageState.DebugOut.Add($"preloaded: {song.Links.First()}");
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
                     }
                 }
                 else
@@ -375,9 +395,10 @@
 
         try
         {
-            PageState.DebugOut.Add($"downloading {song.Links.First()}");
+            PageState.DebugOut.Add($"downloading {song.Links.First().Url}");
             _logger.LogInformation("Startjs");
-            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First());
+    // TODO: How to select The One Link?
+            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First().Url);
             _logger.LogInformation("Endjs");
             PreloadCancellationRegistration.Unregister();
 
@@ -390,4 +411,5 @@
 
         return ret;
     }
+
 }
