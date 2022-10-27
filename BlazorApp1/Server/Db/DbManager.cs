@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BlazorApp1.Server.db.Entities;
+using BlazorApp1.Server.Db.Entities;
 using BlazorApp1.Shared.Quiz.Entities.Concrete;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using Npgsql;
 
-namespace BlazorApp1.Server.db;
+namespace BlazorApp1.Server.Db;
 
 public static class DbManager
 {
