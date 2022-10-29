@@ -67,6 +67,7 @@
         ClientState.Session!.hubConnection = new HubConnectionBuilder()
             .WithUrl(new Nav(Client.BaseAddress!.ToString()).ToAbsoluteUri("/QuizHub"),
                 options => { options.AccessTokenProvider = () => Task.FromResult(ClientState.Session.Token)!; })
+            .WithAutomaticReconnect()
             .ConfigureLogging(logging =>
             {
                 logging.AddProvider(_logger.AsLoggerProvider());
