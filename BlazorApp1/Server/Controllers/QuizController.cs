@@ -147,7 +147,7 @@ public class QuizController : ControllerBase
                 var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
                 if (oldRoom is not null)
                 {
-                    _logger.LogInformation($"Removed player {req.PlayerId} from room " + room.Id);
+                    _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
                     oldRoom.Players.RemoveAll(x => x.Id == player.Id);
                 }
 
