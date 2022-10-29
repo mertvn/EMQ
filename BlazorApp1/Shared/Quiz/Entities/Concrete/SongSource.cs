@@ -7,5 +7,7 @@ public class SongSource
 {
     public List<string> Aliases { get; set; } = new();
 
-    // public string Medium { get; set; }
+    public List<SongSourceCategory> Categories { get; set; } = new();
+
+    // public string Medium { get; set; } // todo
 }

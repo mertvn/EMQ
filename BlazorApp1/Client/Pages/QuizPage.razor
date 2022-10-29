@@ -41,9 +41,24 @@
     }
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
-        <p>Title: @_correctAnswer?.LatinTitle</p>
-        @* todo display multiple artists *@
-        <p>Artist: @_correctAnswer?.Artists.First().Aliases.First()</p>
+        @* todo Latin vs NonLatin title option *@
+        Titles:
+        @if (_correctAnswer?.Titles != null)
+        {
+            foreach (var title in _correctAnswer?.Titles!)
+            {
+                <p>@title.LatinTitle)</p>
+            }
+        }
+
+        Artists:
+        @if (_correctAnswer?.Artists != null)
+        {
+            foreach (var artist in _correctAnswer?.Artists!)
+            {
+                <p>@artist.Aliases.First()</p>
+            }
+        }
     </div>
 
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">

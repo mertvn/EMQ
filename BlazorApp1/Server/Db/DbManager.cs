@@ -13,14 +13,14 @@ namespace BlazorApp1.Server.Db;
 
 public static class DbManager
 {
-    public static async Task<Song> SelectSong(int id)
+    public static async Task<Song> SelectSong(int mId)
     {
         const string sqlMusic =
             @"SELECT *
             FROM music m
             LEFT JOIN music_title mt ON mt.music_id = m.id
             LEFT JOIN music_external_link mel ON mel.music_id = m.id
-            where m.id = @id
+            where m.id = @mId
             ";
 
         const string sqlMusicSource =
@@ -29,7 +29,9 @@ public static class DbManager
             LEFT JOIN music_source ms ON ms.id = msm.music_source_id
             LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
             LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
-            where msm.music_id = @id
+            LEFT JOIN music_source_category msc ON msc.music_source_id = ms.id
+            LEFT JOIN category c ON c.id = msc.category_id
+            where msm.music_id = @mId
             ";
 
         const string sqlArtist =
@@ -37,7 +39,7 @@ public static class DbManager
             FROM artist_music am
             LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
             LEFT JOIN artist a ON a.id = aa.artist_id
-            where am.music_id = @id
+            where am.music_id = @mId
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -49,33 +51,44 @@ public static class DbManager
                     var song = new Song() // todo
                     {
                         Id = ((Music)objects[0]).id,
-                        LatinTitle = ((MusicTitle)objects[1]).latin_title,
+                        Titles = new List<SongTitle>()
+                        {
+                            new SongTitle() { LatinTitle = ((MusicTitle)objects[1]).latin_title, }
+                        },
                         Links = new List<SongLink> { new() { Url = ((MusicExternalLink)objects[2]).url } },
                     };
 
                     return song;
                 },
                 splitOn:
-                "id,music_id,music_id", param: new { id });
+                "music_id,music_id", param: new { mId });
             var song = songs.ToList().Single();
 
             var songSources = await connection.QueryAsync(sqlMusicSource,
                 new[]
                 {
                     typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
-                    typeof(MusicSourceExternalLink),
+                    typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
                 }, (objects) =>
                 {
-                    // Console.WriteLine(JsonSerializer.Serialize(objects));
+                    Console.WriteLine(JsonSerializer.Serialize(objects) + Environment.NewLine);
                     var songSource = new SongSource() // todo
                     {
                         Aliases = new List<string> { ((MusicSourceTitle)objects[2]).latin_title },
+                        Categories = new List<SongSourceCategory>()
+                        {
+                            new SongSourceCategory()
+                            {
+                                Name = ((Category)objects[5]).name, Type = ((Category)objects[5]).type
+                            }
+                        }
                     };
 
                     return songSource;
                 },
                 splitOn:
-                "music_source_id,music_id,id,music_source_id,music_source_id", param: new { id });
+                "id,music_source_id,music_source_id,music_source_id,id",
+                param: new { mId });
             song.Sources = songSources.ToList();
 
             var songArtists = await connection.QueryAsync(sqlArtist,
@@ -90,7 +103,7 @@ public static class DbManager
                     return songSource;
                 },
                 splitOn:
-                "artist_alias_id,music_id,id,artist_id,id", param: new { id });
+                "id,id", param: new { mId });
             song.Artists = songArtists.ToList();
 
             Console.WriteLine("song: " + JsonSerializer.Serialize(song));
@@ -106,10 +119,17 @@ public static class DbManager
         {
             int mId = await connection.InsertAsync(new Music() { type = 0 }); // todo
 
-            int mtId = await connection.InsertAsync(new MusicTitle()
+            foreach (SongTitle songTitle in song.Titles)
             {
-                music_id = mId, latin_title = song.LatinTitle, language = 0, is_main_title = true
-            }); // todo
+                int mtId = await connection.InsertAsync(new MusicTitle()
+                {
+                    music_id = mId,
+                    latin_title = songTitle.LatinTitle,
+                    non_latin_title = songTitle.NonLatinTitle,
+                    language = songTitle.Language,
+                    is_main_title = true
+                });
+            }
 
             foreach (SongLink songLink in song.Links)
             {
@@ -145,6 +165,18 @@ public static class DbManager
                 {
                     music_id = mId, music_source_id = msId, type = 0
                 }); // todo
+
+                foreach (SongSourceCategory songSourceCategory in songSource.Categories)
+                {
+                    // todo uniq check
+                    int cId = await connection.InsertAsync(new Category()
+                    {
+                        name = songSourceCategory.Name, type = songSourceCategory.Type
+                    });
+
+                    int mscId = await connection.InsertAsync(
+                        new MusicSourceCategory() { category_id = cId, music_source_id = msId });
+                }
             }
 
 
@@ -177,7 +209,7 @@ public static class DbManager
 
         while (ids.Count < numSongs)
         {
-            ids.Add(rand.Next(7, numSongsInDb));
+            ids.Add(rand.Next(4, numSongsInDb));
         }
 
         Console.WriteLine(JsonSerializer.Serialize(ids));

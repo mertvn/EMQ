@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using BlazorApp1.Server.Db;
 using BlazorApp1.Shared.Quiz.Entities.Concrete;
@@ -19,10 +21,11 @@ public class DbTests
     {
         var song = await DbManager.SelectSong(1);
         Assert.That(song.Id > 0);
-        Assert.That(song.LatinTitle.Any());
+        Assert.That(song.Titles.First().LatinTitle.Any());
         Assert.That(song.Links.First().Url.Any());
-        Assert.That(song.Sources.First().Aliases.Any());
-        Assert.That(song.Artists.First().Aliases.Any());
+        Assert.That(song.Sources.First().Aliases.First().Any);
+        Assert.That(song.Sources.First().Categories.First().Name.Any());
+        Assert.That(song.Artists.First().Aliases.First().Any());
     }
 
     [Test]
@@ -30,10 +33,11 @@ public class DbTests
     {
         var song = await DbManager.SelectSong(7);
         Assert.That(song.Id > 0);
-        Assert.That(song.LatinTitle.Any());
+        Assert.That(song.Titles.First().LatinTitle.Any());
         Assert.That(song.Links.First().Url.Any());
-        Assert.That(song.Sources.First().Aliases.Any());
-        Assert.That(song.Artists.First().Aliases.Any());
+        Assert.That(song.Sources.First().Aliases.First().Any);
+        Assert.That(song.Sources.First().Categories.First().Name.Any());
+        Assert.That(song.Artists.First().Aliases.First().Any());
     }
 
     [Test]
@@ -44,10 +48,11 @@ public class DbTests
         foreach (Song song in songs)
         {
             Assert.That(song.Id > 0);
-            Assert.That(song.LatinTitle.Any());
+            Assert.That(song.Titles.First().LatinTitle.Any());
             Assert.That(song.Links.First().Url.Any());
             Assert.That(song.Sources.First().Aliases.Any());
-            Assert.That(song.Artists.First().Aliases.Any());
+            Assert.That(song.Sources.First().Categories.First().Name.Any());
+            Assert.That(song.Artists.First().Aliases.First().Any());
         }
     }
 
@@ -56,7 +61,7 @@ public class DbTests
     {
         var song = new Song()
         {
-            LatinTitle = "Desire",
+            Titles = new List<SongTitle>() { new SongTitle() { LatinTitle = "Desire" } },
             Artists = new List<SongArtist>() { new SongArtist() { Aliases = new List<string>() { "Misato Aki" } } },
             Links =
                 new List<SongLink>()
@@ -67,10 +72,21 @@ public class DbTests
             {
                 new SongSource()
                 {
-                    Aliases = new List<string>() { "Tsuki ni Yorisou Otome no Sahou", "Tsuriotsu" }
-                }
+                    Aliases = new List<string>() { "Tsuki ni Yorisou Otome no Sahou", "Tsuriotsu" },
+                    Categories = new List<SongSourceCategory>()
+                    {
+                        new SongSourceCategory() { Name = "cat1", Type = 7 },
+                        new SongSourceCategory() { Name = "cat2", Type = 8 }
+                    }
+                },
             }
         };
         await DbManager.InsertSong(song);
+    }
+
+    [Test, Explicit]
+    public async Task GenerateAutocompleteJson()
+    {
+        // todo
     }
 }
