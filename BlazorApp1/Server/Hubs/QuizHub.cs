@@ -17,6 +17,12 @@ namespace BlazorApp1.Server.Hubs
                 ServerState.Sessions.Find(x => Context.GetHttpContext()!.Request.Query["access_token"] == x.Token);
             if (session != null)
             {
+                if (session.ConnectionId != null)
+                {
+                    Console.WriteLine(
+                        $"Player ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
+                }
+
                 session.ConnectionId = Context.ConnectionId;
             }
             else
