@@ -11,6 +11,7 @@ public class AddTableMusic : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
+            .WithColumn("length").AsInt32().Nullable()
             .WithColumn("type").AsInt32().NotNullable();
     }
 

@@ -69,6 +69,11 @@ public static class DbManager
                     song.Id = music.id;
                     song.Type = (SongType)music.type;
 
+                    if (music.length.HasValue)
+                    {
+                        song.Length = music.length.Value;
+                    }
+
                     songTitles.Add(new Title()
                     {
                         LatinTitle = musicTitle.latin_title,
@@ -241,7 +246,7 @@ public static class DbManager
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
-            int mId = await connection.InsertAsync(new Music() { type = (int)song.Type });
+            int mId = await connection.InsertAsync(new Music() { length = song.Length, type = (int)song.Type });
 
             foreach (Title songTitle in song.Titles)
             {

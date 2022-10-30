@@ -59,6 +59,7 @@ public class DbTests
     {
         var song = new Song()
         {
+            Length = 266,
             Titles =
                 new List<Title>()
                 {
