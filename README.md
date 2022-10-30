@@ -11,8 +11,9 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * Co-op mode
 * Proper authentication/authorization
 * CSS...
-* Auto-complete
+* less clunkier Auto-complete (might need to use JS libraries or write something custom)
 * More songs
 * player left room event
-* reconnect when disconnected
+* restore state on page refresh
 * results phase time left display (progress bar)
+* auto-generate autocomplete list

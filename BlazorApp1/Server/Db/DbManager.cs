@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using BlazorApp1.Server.Db.Entities;
@@ -44,63 +46,117 @@ public static class DbManager
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songs = await connection.QueryAsync(sqlMusic,
+            var song = new Song();
+            var songTitles = new List<SongTitle>();
+            var songLinks = new List<SongLink>();
+            var songSources = new List<SongSource>();
+            // var songSourceTitles = new List<SongSourceTitle>();
+            // var songSourceLinks = new List<SongSourceLink>();
+            // var songSourceCategories = new List<SongSourceCategory>();
+            var songArtists = new List<SongArtist>();
+            // var songArtistAliases = new List<SongArtistAlias>();
+
+            await connection.QueryAsync(sqlMusic,
                 new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), }, (objects) =>
                 {
                     // Console.WriteLine(JsonSerializer.Serialize(objects));
-                    var song = new Song() // todo
-                    {
-                        Id = ((Music)objects[0]).id,
-                        Titles = new List<SongTitle>()
-                        {
-                            new SongTitle() { LatinTitle = ((MusicTitle)objects[1]).latin_title, }
-                        },
-                        Links = new List<SongLink> { new() { Url = ((MusicExternalLink)objects[2]).url } },
-                    };
+                    var music = (Music)objects[0];
+                    var musicTitle = (MusicTitle)objects[1];
+                    var musicExternalLink = (MusicExternalLink)objects[2];
 
-                    return song;
+                    song.Id = music.id;
+                    song.Type = music.type;
+
+                    songTitles.Add(new SongTitle()
+                    {
+                        LatinTitle = musicTitle.latin_title,
+                        NonLatinTitle = musicTitle.non_latin_title,
+                        Language = musicTitle.language
+                    });
+
+                    songLinks.Add(new SongLink() { Url = musicExternalLink.url, IsVideo = musicExternalLink.is_video });
+
+                    return 0;
                 },
                 splitOn:
                 "music_id,music_id", param: new { mId });
-            var song = songs.ToList().Single();
+            song.Titles = songTitles.DistinctBy(x => x.LatinTitle).ToList();
+            song.Links = songLinks.DistinctBy(x => x.Url).ToList();
 
-            var songSources = await connection.QueryAsync(sqlMusicSource,
+            await connection.QueryAsync(sqlMusicSource,
                 new[]
                 {
                     typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
                     typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
                 }, (objects) =>
                 {
-                    Console.WriteLine(JsonSerializer.Serialize(objects) + Environment.NewLine);
-                    var songSource = new SongSource() // todo
-                    {
-                        Aliases = new List<string> { ((MusicSourceTitle)objects[2]).latin_title },
-                        Categories = new List<SongSourceCategory>()
-                        {
-                            new SongSourceCategory()
-                            {
-                                Name = ((Category)objects[5]).name, Type = ((Category)objects[5]).type
-                            }
-                        }
-                    };
+                    // Console.WriteLine(JsonSerializer.Serialize(objects) + Environment.NewLine);
+                    var musicSource = (MusicSource)objects[1];
+                    var musicSourceTitle = (MusicSourceTitle)objects[2];
+                    var musicExternalLink = (MusicSourceExternalLink)objects[3]; // todo
+                    var category = (Category)objects[5];
 
-                    return songSource;
+                    var existingSongSource = songSources.Where(x => x.Id == musicSource.id).ToList().SingleOrDefault();
+                    if (existingSongSource is null)
+                    {
+                        songSources.Add(new SongSource() // todo
+                        {
+                            Id = musicSource.id,
+                            Aliases = new List<string> { musicSourceTitle.latin_title },
+                            Categories = new List<SongSourceCategory>()
+                            {
+                                new SongSourceCategory() { Name = category.name, Type = category.type }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        if (!existingSongSource.Aliases.Any(x => x == musicSourceTitle.latin_title)) // todo
+                        {
+                            existingSongSource.Aliases.Add(musicSourceTitle.latin_title);
+                        }
+
+                        if (!existingSongSource.Categories.Any(x => x.Name == category.name))
+                        {
+                            existingSongSource.Categories.Add(new SongSourceCategory()
+                            {
+                                Name = category.name, Type = category.type
+                            });
+                        }
+                    }
+
+                    return 0;
                 },
                 splitOn:
                 "id,music_source_id,music_source_id,music_source_id,id",
                 param: new { mId });
-            song.Sources = songSources.ToList();
+            song.Sources = songSources;
 
-            var songArtists = await connection.QueryAsync(sqlArtist,
+            await connection.QueryAsync(sqlArtist,
                 new[] { typeof(ArtistMusic), typeof(ArtistAlias), typeof(Artist), }, (objects) =>
                 {
                     // Console.WriteLine(JsonSerializer.Serialize(objects));
-                    var songSource = new SongArtist() // todo
-                    {
-                        Aliases = new List<string>() { ((ArtistAlias)objects[1]).latin_alias }
-                    };
+                    var artistMusic = (ArtistMusic)objects[0]; // todo
+                    var artistAlias = (ArtistAlias)objects[1];
+                    var artist = (Artist)objects[2];
 
-                    return songSource;
+                    var existingArtist = songArtists.Where(x => x.Id == artist.id).ToList().SingleOrDefault();
+                    if (existingArtist is null)
+                    {
+                        songArtists.Add(new SongArtist() // todo
+                        {
+                            Id = artist.id, Aliases = new List<string>() { ((ArtistAlias)objects[1]).latin_alias }
+                        });
+                    }
+                    else
+                    {
+                        if (!existingArtist.Aliases.Any(x => x == artistAlias.latin_alias)) // todo
+                        {
+                            existingArtist.Aliases.Add(artistAlias.latin_alias);
+                        }
+                    }
+
+                    return 0;
                 },
                 splitOn:
                 "id,id", param: new { mId });
@@ -219,5 +275,22 @@ public static class DbManager
         }
 
         return songs;
+    }
+
+    public static async Task<string> SelectAutocomplete()
+    {
+        const string sqlAutocomplete =
+            @"SELECT json_agg(mst.latin_title)
+            FROM music_source_title mst
+            ";
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            IEnumerable<string>? res = await connection.QueryAsync<string>(sqlAutocomplete);
+            string autocomplete = JsonSerializer.Serialize(
+                JsonSerializer.Deserialize<List<string>>(res.Single())!.Distinct(),
+                new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            return autocomplete;
+        }
     }
 }

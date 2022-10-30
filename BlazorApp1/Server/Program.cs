@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
-const bool hasDb = true;
+const bool shouldMigrate = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +92,7 @@ static void UpdateDatabase(IServiceProvider serviceProvider)
     runner.MigrateUp();
 }
 
-if (hasDb)
+if (shouldMigrate)
 {
     var serviceProvider = CreateServices();
 

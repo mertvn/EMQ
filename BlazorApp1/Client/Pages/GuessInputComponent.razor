@@ -30,7 +30,7 @@
     [CascadingParameter]
     private QuizPage QuizPage { get; set; } = null!;
 
-    private string[] Data { get; set; }
+    private string[] Data { get; set; } = Array.Empty<string>();
 
     // if we don't do this, the autocomplete dropdown closes after every timer tick
     protected override bool ShouldRender()
@@ -50,12 +50,12 @@
         return await Task.FromResult(result);
     }
 
-    private async Task<string> AddItemOnEmptyResultMethod(string arg)
+    private Task<string> AddItemOnEmptyResultMethod(string arg)
     {
-        return arg;
+        return Task.FromResult(arg);
     }
 
-    private async Task SelectedResultChanged(string arg)
+    private void SelectedResultChanged(string arg)
     {
         QuizPage.PageState.Guess = arg;
     }

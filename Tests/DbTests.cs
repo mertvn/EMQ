@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -87,6 +88,6 @@ public class DbTests
     [Test, Explicit]
     public async Task GenerateAutocompleteJson()
     {
-        // todo
+        await File.WriteAllTextAsync("autocomplete.json", await DbManager.SelectAutocomplete());
     }
 }
