@@ -7,9 +7,26 @@ public class SongSource
 {
     public int Id { get; set; }
 
-    public List<string> Aliases { get; set; } = new();
+    public DateTime AirDateStart { get; set; }
+
+    public DateTime? AirDateEnd { get; set; }
+
+    public string LanguageOriginal { get; set; } = "";
+
+    public int? RatingAverage { get; set; }
+
+    public SongSourceType Type { get; set; } = SongSourceType.Unknown;
+
+    public List<Title> Titles { get; set; } = new();
+
+    public List<SongSourceLink> Links { get; set; } = new();
 
     public List<SongSourceCategory> Categories { get; set; } = new();
+}
 
-    // public string Medium { get; set; } // todo
+public enum SongSourceType
+{
+    Unknown,
+    VN,
+    Other
 }

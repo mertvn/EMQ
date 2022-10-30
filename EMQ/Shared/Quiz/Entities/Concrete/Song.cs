@@ -11,17 +11,26 @@ public class Song
     [JsonIgnore]
     public string Data { get; set; } = "";
 
-    public int Duration { get; set; } = 60; // todo
+    public int Length { get; set; } = 60; // todo
 
     public int StartTime { get; set; }
 
-    public List<SongTitle> Titles { get; set; } = new();
+    public List<Title> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();
 
     public List<SongLink> Links { get; set; } = new();
 
-    public int Type { get; set; } // todo
+    public SongType Type { get; set; } = SongType.Unknown;
 
     public List<SongSource> Sources { get; set; } = new();
+}
+
+public enum SongType
+{
+    Unknown,
+    Standard,
+    Instrumental,
+    Chanting,
+    Character
 }

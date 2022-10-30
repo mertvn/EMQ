@@ -18,7 +18,7 @@ public class MusicSourceTitle
 
     [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
-    public int language { get; set; }
+    public string language { get; set; } = "";
 
     [Required]
     public bool is_main_title { get; set; }

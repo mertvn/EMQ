@@ -12,5 +12,5 @@ public class Artist
 
     public int? sex { get; set; }
 
-    public int? primary_language { get; set; }
+    public string? primary_language { get; set; }
 }

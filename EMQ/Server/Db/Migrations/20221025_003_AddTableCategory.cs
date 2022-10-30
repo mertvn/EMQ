@@ -12,8 +12,7 @@ public class AddTableCategory : Migration
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("name").AsString().NotNullable()
-            .WithColumn("type").AsInt32().NotNullable()
-            ;
+            .WithColumn("type").AsInt32().NotNullable();
     }
 
     public override void Down()

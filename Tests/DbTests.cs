@@ -22,23 +22,21 @@ public class DbTests
     {
         var song = await DbManager.SelectSong(1);
         Assert.That(song.Id > 0);
-        Assert.That(song.Titles.First().LatinTitle.Any());
-        Assert.That(song.Links.First().Url.Any());
-        Assert.That(song.Sources.First().Aliases.First().Any);
-        Assert.That(song.Sources.First().Categories.First().Name.Any());
-        Assert.That(song.Artists.First().Aliases.First().Any());
-    }
 
-    [Test]
-    public async Task Test_SelectSong_7()
-    {
-        var song = await DbManager.SelectSong(7);
-        Assert.That(song.Id > 0);
         Assert.That(song.Titles.First().LatinTitle.Any());
+        Assert.That(song.Titles.First().Language.Any());
+
         Assert.That(song.Links.First().Url.Any());
-        Assert.That(song.Sources.First().Aliases.First().Any);
+
+        Assert.That(song.Sources.First().Id > 0);
+        Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
+        Assert.That(song.Sources.First().Titles.First().Language.Any());
+        Assert.That(song.Sources.First().Links.First().Url.Any());
         Assert.That(song.Sources.First().Categories.First().Name.Any());
-        Assert.That(song.Artists.First().Aliases.First().Any());
+
+        Assert.That(song.Artists.First().Id > 0);
+        Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+        Assert.That(song.Artists.First().Titles.First().Language.Any());
     }
 
     [Test]
@@ -51,9 +49,9 @@ public class DbTests
             Assert.That(song.Id > 0);
             Assert.That(song.Titles.First().LatinTitle.Any());
             Assert.That(song.Links.First().Url.Any());
-            Assert.That(song.Sources.First().Aliases.Any());
+            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
             Assert.That(song.Sources.First().Categories.First().Name.Any());
-            Assert.That(song.Artists.First().Aliases.First().Any());
+            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
         }
     }
 
@@ -62,22 +60,60 @@ public class DbTests
     {
         var song = new Song()
         {
-            Titles = new List<SongTitle>() { new SongTitle() { LatinTitle = "Desire" } },
-            Artists = new List<SongArtist>() { new SongArtist() { Aliases = new List<string>() { "Misato Aki" } } },
+            Titles =
+                new List<Title>()
+                {
+                    new Title() { LatinTitle = "Desire", Language = "en", IsMainTitle = true },
+                    new Title() { LatinTitle = "Desire2", Language = "ja" }
+                },
+            Artists = new List<SongArtist>()
+            {
+                new SongArtist()
+                {
+                    PrimaryLanguage = "ja",
+                    Titles =
+                        new List<Title>()
+                        {
+                            new Title()
+                            {
+                                LatinTitle = "Misato Aki",
+                                Language = "ja",
+                                NonLatinTitle = "美郷あき",
+                                IsMainTitle = true
+                            },
+                            new Title() { LatinTitle = "Misato Aki2", Language = "en" }
+                        },
+                    Sex = Sex.Female
+                }
+            },
             Links =
                 new List<SongLink>()
                 {
-                    new SongLink() { Url = "https://files.catbox.moe/3dep3s.mp3", IsVideo = false }
+                    new SongLink()
+                    {
+                        Url = "https://files.catbox.moe/3dep3s.mp3", IsVideo = false, Type = SongLinkType.Catbox
+                    }
                 },
             Sources = new List<SongSource>()
             {
                 new SongSource()
                 {
-                    Aliases = new List<string>() { "Tsuki ni Yorisou Otome no Sahou", "Tsuriotsu" },
+                    Titles =
+                        new List<Title>()
+                        {
+                            new Title()
+                            {
+                                LatinTitle = "Tsuki ni Yorisou Otome no Sahou",
+                                Language = "ja",
+                                NonLatinTitle = "月に寄りそう乙女の作法",
+                                IsMainTitle = true
+                            },
+                            new Title() { LatinTitle = "Tsuriotsu", Language = "en" }
+                        },
                     Categories = new List<SongSourceCategory>()
                     {
-                        new SongSourceCategory() { Name = "cat1", Type = 7 },
-                        new SongSourceCategory() { Name = "cat2", Type = 8 }
+                        new SongSourceCategory() { Name = "cat1", Type = SongSourceCategoryType.Tag },
+                        new SongSourceCategory() { Name = "cat2", Type = SongSourceCategoryType.Genre }
                     }
                 },
             }

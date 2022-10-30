@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
 @using Microsoft.AspNetCore.SignalR.Client
+@using EMQ.Shared.Core
 @inject HttpClient Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
@@ -16,7 +17,7 @@
     Owner:<br/>
     <p>@Room?.Owner.Username</p>
     Settings:<br/>
-    <p>@JsonSerializer.Serialize(Room?.Quiz?.QuizSettings)</p>
+    <p>@JsonSerializer.Serialize(Room?.Quiz?.QuizSettings, Utils.Jso)</p>
 </div>
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">

@@ -12,8 +12,7 @@ public class AddTableArtist : Migration
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("sex").AsInt32().Nullable()
-            .WithColumn("primary_language").AsInt32().Nullable()
-            ;
+            .WithColumn("primary_language").AsString().Nullable();
     }
 
     public override void Down()

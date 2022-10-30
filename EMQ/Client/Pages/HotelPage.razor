@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -23,7 +24,7 @@
 <div style="">
     @foreach (var room in Rooms)
     {
-        <p style="">@JsonSerializer.Serialize(room)</p>
+        <p style="">@JsonSerializer.Serialize(room, Utils.Jso)</p>
         <button class="btn btn-primary" @onclick="@(() => JoinRoom(room.Id))">Join</button>
     }
 </div>

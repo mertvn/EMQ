@@ -11,8 +11,7 @@ public class AddTableMusic : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("type").AsInt32().NotNullable()
-            ;
+            .WithColumn("type").AsInt32().NotNullable();
     }
 
     public override void Down()

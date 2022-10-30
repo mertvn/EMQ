@@ -13,10 +13,9 @@ public class AddTableMusic_Source : Migration
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("air_date_start").AsDateTime().NotNullable()
             .WithColumn("air_date_end").AsDateTime().Nullable()
-            .WithColumn("language_original").AsInt32().NotNullable()
+            .WithColumn("language_original").AsString().NotNullable()
             .WithColumn("rating_average").AsInt32().Nullable()
-            .WithColumn("type").AsInt32().NotNullable()
-            ;
+            .WithColumn("type").AsInt32().NotNullable();
     }
 
     public override void Down()

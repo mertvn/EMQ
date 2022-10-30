@@ -18,5 +18,5 @@ public class ArtistAlias
 
     public string? non_latin_alias { get; set; }
 
-    public bool? is_main_name { get; set; }
+    public bool is_main_name { get; set; }
 }

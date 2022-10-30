@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
+using EMQ.Shared.Core;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Business;
@@ -113,11 +114,11 @@ public class QuizManager
     {
         await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
 
-        IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Aliases).ToList();
+        IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+           .Select(x => x.LatinTitle).ToList();
 
         Console.WriteLine("-------");
-        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers,
-            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
 
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)

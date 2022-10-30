@@ -7,5 +7,12 @@ public class SongSourceCategory
 {
     public string Name { get; set; } = "";
 
-    public int Type { get; set; } // todo
+    public SongSourceCategoryType Type { get; set; } = SongSourceCategoryType.Unknown;
+}
+
+public enum SongSourceCategoryType
+{
+    Unknown,
+    Tag,
+    Genre
 }

@@ -16,7 +16,7 @@ public class MusicSource
     public DateTime? air_date_end { get; set; }
 
     [Required]
-    public int language_original { get; set; }
+    public string language_original { get; set; } = "";
 
     public int? rating_average { get; set; }
 

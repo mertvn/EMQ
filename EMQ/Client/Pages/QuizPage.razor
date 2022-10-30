@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using Timer = System.Timers.Timer
 @using System.Text.Encodings.Web
+@using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
@@ -56,7 +57,7 @@
         {
             foreach (var artist in _correctAnswer?.Artists!)
             {
-                <p>@artist.Aliases.First()</p>
+                <p>@artist.Titles.Single(x => x.IsMainTitle).LatinTitle</p>
             }
         }
     </div>
@@ -64,7 +65,7 @@
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
         <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-            @(JsonSerializer.Serialize(_correctAnswer?.Sources.SelectMany(x => x.Aliases), new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+            @(JsonSerializer.Serialize(_correctAnswer?.Sources.SelectMany(x => x.Titles).Select(x => x.LatinTitle), Utils.Jso))
         </div>
 
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">

@@ -13,9 +13,8 @@ public class AddTableMusic_Title : Migration
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
             .WithColumn("latin_title").AsString().PrimaryKey()
             .WithColumn("non_latin_title").AsString().Nullable()
-            .WithColumn("language").AsInt32().PrimaryKey()
-            .WithColumn("is_main_title").AsBoolean().NotNullable()
-            ;
+            .WithColumn("language").AsString().PrimaryKey()
+            .WithColumn("is_main_title").AsBoolean().NotNullable();
     }
 
     public override void Down()

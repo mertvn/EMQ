@@ -12,8 +12,7 @@ public class AddTableMusic_Source_Music : Migration
         Create.Table(tableName)
             .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
-            .WithColumn("type").AsInt32().NotNullable()
-            ;
+            .WithColumn("type").AsInt32().NotNullable();
     }
 
     public override void Down()
