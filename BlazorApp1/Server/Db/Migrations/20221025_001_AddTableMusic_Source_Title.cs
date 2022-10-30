@@ -1,6 +1,6 @@
 ﻿using FluentMigrator;
 
-namespace BlazorApp1.Server.Migrations;
+namespace BlazorApp1.Server.Db.Migrations;
 
 [Migration(20221025_001)]
 public class AddTableMusic_Source_Title : Migration

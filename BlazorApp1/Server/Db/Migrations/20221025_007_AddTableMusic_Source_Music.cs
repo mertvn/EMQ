@@ -1,19 +1,18 @@
 ﻿using FluentMigrator;
 
-namespace BlazorApp1.Server.Migrations;
+namespace BlazorApp1.Server.Db.Migrations;
 
-[Migration(20221025_008)]
-public class AddTableMusic_External_Link : Migration
+[Migration(20221025_007)]
+public class AddTableMusic_Source_Music : Migration
 {
-    private string tableName = "music_external_link";
+    private string tableName = "music_source_music";
 
     public override void Up()
     {
         Create.Table(tableName)
+            .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
-            .WithColumn("url").AsString().PrimaryKey()
             .WithColumn("type").AsInt32().NotNullable()
-            .WithColumn("is_video").AsBoolean().NotNullable()
             ;
     }
 

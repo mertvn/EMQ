@@ -1,6 +1,6 @@
 ﻿using FluentMigrator;
 
-namespace BlazorApp1.Server.Migrations;
+namespace BlazorApp1.Server.Db.Migrations;
 
 [Migration(20221025_010)]
 public class AddTableArtist_Alias : Migration

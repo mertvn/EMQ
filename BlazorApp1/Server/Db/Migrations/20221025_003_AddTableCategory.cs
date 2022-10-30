@@ -1,16 +1,17 @@
 ﻿using FluentMigrator;
 
-namespace BlazorApp1.Server.Migrations;
+namespace BlazorApp1.Server.Db.Migrations;
 
-[Migration(20221025_005)]
-public class AddTableMusic : Migration
+[Migration(20221025_003)]
+public class AddTableCategory : Migration
 {
-    private string tableName = "music";
+    private string tableName = "category";
 
     public override void Up()
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
+            .WithColumn("name").AsString().NotNullable()
             .WithColumn("type").AsInt32().NotNullable()
             ;
     }
