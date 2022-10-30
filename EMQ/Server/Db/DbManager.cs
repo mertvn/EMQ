@@ -271,7 +271,9 @@ public static class DbManager
         Console.WriteLine(JsonSerializer.Serialize(ids));
         foreach (int id in ids)
         {
-            songs.Add(await SelectSong(id));
+            var song = await SelectSong(id);
+            song.StartTime = rand.Next(0, song.Duration);
+            songs.Add(song);
         }
 
         return songs;

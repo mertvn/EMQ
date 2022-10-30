@@ -70,7 +70,8 @@
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
             <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
                 @* TODO: How to select The One Link? *@
-                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)#t=@(_currentSong?.StartTime)"
+                       id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
                 </video>
                 @* TODO: Make this work *@
                 @* @if (videoPlayerVisibility) *@
@@ -198,8 +199,9 @@
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
             if (nextSong is not null)
             {
-                Song song = await DlSong(new Song
+                Song song = new Song
                 {
+                    StartTime = nextSong.StartTime,
                     Links = new List<SongLink>
                     {
                         new()
@@ -207,26 +209,8 @@
                             Url = nextSong.Url
                         }
                     }
-                });
+                };
                 return song;
-            }
-        }
-        else
-        {
-    // todo
-        }
-        return null;
-    }
-
-    public async Task<string?> NextSongUrl(int index)
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
-        if (res.IsSuccessStatusCode)
-        {
-            ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
-            if (nextSong is not null)
-            {
-                return nextSong.Url;
             }
         }
         else
@@ -349,16 +333,17 @@
     private async Task LoadMissingSong(int index)
     {
         PageState.DebugOut.Add("Loading missing song");
-        string? nextSongUrl = await NextSongUrl(index);
-        if (nextSongUrl is not null)
+        var nextSong = await NextSong(index);
+        if (nextSong is not null)
         {
             _currentSong = new Song()
             {
+                StartTime = nextSong.StartTime,
                 Links = new List<SongLink>
                 {
                     new()
                     {
-                        Url = nextSongUrl
+                        Url = nextSong.Links.First().Url // todo
                     }
                 }
             };
@@ -379,6 +364,11 @@
                 var song = await NextSong(index + i);
                 if (song is not null)
                 {
+                    if (string.IsNullOrEmpty(song.Data))
+                    {
+                        song = await DlSong(song);
+                    }
+
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {

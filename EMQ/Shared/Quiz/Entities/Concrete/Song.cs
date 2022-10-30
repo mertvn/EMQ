@@ -11,6 +11,10 @@ public class Song
     [JsonIgnore]
     public string Data { get; set; } = "";
 
+    public int Duration { get; set; } = 60; // todo
+
+    public int StartTime { get; set; }
+
     public List<SongTitle> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();

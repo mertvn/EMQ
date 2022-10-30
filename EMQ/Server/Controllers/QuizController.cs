@@ -62,8 +62,9 @@ public class QuizController : ControllerBase
                 {
                     if (req.SongIndex < room.Quiz.Songs.Count)
                     {
-                        string url = room.Quiz.Songs[req.SongIndex].Links.First().Url;
-                        return new ResNextSong(req.SongIndex, url);
+                        var song = room.Quiz.Songs[req.SongIndex];
+                        string url = song.Links.First().Url; // todo link selection
+                        return new ResNextSong(req.SongIndex, url, song.StartTime);
                     }
                     else
                     {
@@ -196,7 +197,7 @@ public class QuizController : ControllerBase
                 if (quizManager is not null)
                 {
                     // todo randomly get songs matching the current filters from db
-                    var dbSongs =  await DbManager.GetRandomSongs(quiz.QuizSettings.NumSongs);
+                    var dbSongs = await DbManager.GetRandomSongs(quiz.QuizSettings.NumSongs);
                     quiz.Songs = dbSongs;
                     // Console.WriteLine(JsonSerializer.Serialize(quiz.Songs));
 
