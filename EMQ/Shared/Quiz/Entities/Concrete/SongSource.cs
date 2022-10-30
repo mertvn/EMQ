@@ -22,6 +22,17 @@ public class SongSource
     public List<SongSourceLink> Links { get; set; } = new();
 
     public List<SongSourceCategory> Categories { get; set; } = new();
+
+    public SongSourceSongType SongType { get; set; } = SongSourceSongType.Unknown;
+}
+
+public enum SongSourceSongType
+{
+    Unknown,
+    OP,
+    ED,
+    Insert,
+    BGM,
 }
 
 public enum SongSourceType

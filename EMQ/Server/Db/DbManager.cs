@@ -99,9 +99,10 @@ public static class DbManager
                 }, (objects) =>
                 {
                     // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
+                    var musicSourceMusic = (MusicSourceMusic)objects[0];
                     var musicSource = (MusicSource)objects[1];
                     var musicSourceTitle = (MusicSourceTitle)objects[2];
-                    var musicSourceExternalLink = (MusicSourceExternalLink)objects[3];
+                    var musicSourceExternalLink = (MusicSourceExternalLink?)objects[3];
                     var category = (Category)objects[5];
 
                     var existingSongSource = songSources.Where(x => x.Id == musicSource.id).ToList().SingleOrDefault();
@@ -115,6 +116,7 @@ public static class DbManager
                             AirDateEnd = musicSource.air_date_end,
                             LanguageOriginal = musicSource.language_original,
                             RatingAverage = musicSource.rating_average,
+                            SongType = (SongSourceSongType)musicSourceMusic.type,
                             Titles = new List<Title>
                             {
                                 new Title()
@@ -125,14 +127,7 @@ public static class DbManager
                                     IsMainTitle = musicSourceTitle.is_main_title
                                 }
                             },
-                            Links = new List<SongSourceLink>()
-                            {
-                                new SongSourceLink()
-                                {
-                                    Url = musicSourceExternalLink.url,
-                                    Type = (SongSourceLinkType)musicSourceExternalLink.type
-                                }
-                            },
+                            Links = new List<SongSourceLink>() { },
                             Categories = new List<SongSourceCategory>()
                             {
                                 new SongSourceCategory()
@@ -141,6 +136,15 @@ public static class DbManager
                                 }
                             }
                         });
+
+                        if (musicSourceExternalLink is not null)
+                        {
+                            songSources.Last().Links.Add(new SongSourceLink()
+                            {
+                                Url = musicSourceExternalLink.url,
+                                Type = (SongSourceLinkType)musicSourceExternalLink.type
+                            });
+                        }
                     }
                     else
                     {
@@ -231,7 +235,7 @@ public static class DbManager
         }
     }
 
-    public static async Task InsertSong(Song song)
+    public static async Task<int> InsertSong(Song song)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
@@ -293,8 +297,8 @@ public static class DbManager
 
                 int msmId = await connection.InsertAsync(new MusicSourceMusic()
                 {
-                    music_id = mId, music_source_id = msId, type = 0
-                }); // todo
+                    music_id = mId, music_source_id = msId, type = (int)songSource.SongType
+                });
 
                 foreach (SongSourceCategory songSourceCategory in songSource.Categories)
                 {
@@ -333,6 +337,7 @@ public static class DbManager
             }
 
             await transaction.CommitAsync();
+            return mId;
         }
     }
 

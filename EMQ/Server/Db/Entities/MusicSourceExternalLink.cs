@@ -12,7 +12,7 @@ public class MusicSourceExternalLink
 
     [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
-    public string url { get; set; }
+    public string url { get; set; } = "";
 
     [Required]
     public int type { get; set; }

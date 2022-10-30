@@ -36,7 +36,6 @@ public class DbTests
 
         Assert.That(song.Artists.First().Id > 0);
         Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
-        Assert.That(song.Artists.First().Titles.First().Language.Any());
     }
 
     [Test]
@@ -98,6 +97,14 @@ public class DbTests
             {
                 new SongSource()
                 {
+                    AirDateStart = DateTime.Now,
+                    SongType = SongSourceSongType.OP,
+                    LanguageOriginal = "ja",
+                    Type = SongSourceType.VN,
+                    Links = new List<SongSourceLink>()
+                    {
+                        new SongSourceLink() { Type = SongSourceLinkType.VNDB, Url = "https://vndb.org/v10680" }
+                    },
                     Titles =
                         new List<Title>()
                         {
@@ -118,7 +125,9 @@ public class DbTests
                 },
             }
         };
-        await DbManager.InsertSong(song);
+
+        int mId = await DbManager.InsertSong(song);
+        Console.WriteLine($"Inserted mId {mId}");
     }
 
     [Test, Explicit]
