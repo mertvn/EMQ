@@ -1,0 +1,90 @@
+﻿@page "/"
+@using EMQ.Shared.Auth
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Logging
+@inject NavigationManager Navigation
+@inject HttpClient Client
+@inject ILogger<Index> _logger
+
+<h1>Hello, EMQ!</h1>
+
+<p>Welcome to EMQ, please login.</p>
+
+<div>
+    Username:<br/>
+    <input @bind="Username" type="text" name="Username"/><br/>
+    @* Password:<br/> *@
+    @* <input @bind="Password" type="password" name="Password"/><br/> *@
+    <button class="btn btn-primary" @onclick="Login">Login</button>
+</div>
+
+@code
+{
+    private string Username { get; set; } = "";
+
+    private string Password { get; set; } = "";
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    // // _logger.LogError("init globals");
+    // // await Globals.InitGlobals();
+    // // _logger.LogError(JsonSerializer.Serialize(Globals.IsConnected));
+    // }
+
+    private async Task Login()
+    {
+        if (ClientState.Session is null)
+        {
+    // todo proper auth
+            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession", new ReqCreateSession(Username, Password));
+            if (res.IsSuccessStatusCode)
+            {
+                ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
+                if (resCreateSession != null)
+                {
+                    _logger.LogInformation("token: " + resCreateSession.Token);
+
+                    var player = new Player(resCreateSession.PlayerId, Username);
+                    ClientState.Session = new Session(player, resCreateSession.Token);
+                    await InitHubConnection();
+
+                    Navigation.NavigateTo("/HotelPage");
+                }
+            }
+            else
+            {
+    // todo
+            }
+        }
+    }
+
+    private async Task InitHubConnection()
+    {
+        ClientState.Session!.hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Nav(Client.BaseAddress!.ToString()).ToAbsoluteUri("/QuizHub"),
+                options => { options.AccessTokenProvider = () => Task.FromResult(ClientState.Session.Token)!; })
+            .WithAutomaticReconnect()
+            .ConfigureLogging(logging =>
+            {
+                logging.AddProvider(_logger.AsLoggerProvider());
+                logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug);
+            })
+            .Build();
+
+    // Globals.Session.hubConnection.On<int>("DummyHandler",  _ => { OnDummyHandler(); });
+
+        await ClientState.Session.hubConnection.StartAsync();
+    }
+
+    // doesn't seem to apply to the .NET version of SignalR?
+    // Normally you register event handlers before calling the start method to establish the connection.
+    // If you want to register some event handlers after establishing the connection, you can do that,
+    // but you must register at least one of your event handler(s) before calling the start method.
+    // private void OnDummyHandler()
+    // {
+    // }
+}

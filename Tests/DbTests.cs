@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BlazorApp1.Server.Db;
-using BlazorApp1.Shared.Quiz.Entities.Concrete;
+using EMQ.Server.Db;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using NUnit.Framework;
 
 namespace Tests;

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>EMQ</title>
+    <base href="/"/>
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet"/>
+    <link href="css/app.css" rel="stylesheet"/>
+    <link href="EMQ.Client.styles.css" rel="stylesheet"/>
+    <link href="_content/Blazored.Typeahead/blazored-typeahead.css" rel="stylesheet" />
+</head>
+
+<body>
+<div id="app">Loading...</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<script src="_content/Blazored.Typeahead/blazored-typeahead.js"></script>
+<script src="_framework/blazor.webassembly.js"></script>
+
+<script>
+    function disableBackspaceNavigation() {
+        window.onkeydown = function (e) {
+            if (e.keyCode == 8 && !isTextBox(e.target)) e.preventDefault();
+        }
+    }
+
+    function isTextBox(element) {
+        const tagName = element.tagName.toLowerCase();
+        if (tagName !== "input") return false;
+
+        const typeAttr = element.getAttribute('type').toLowerCase();
+        return typeAttr === 'text';
+    }
+
+    window.log = async (param) => {
+        console.log(param)
+    }
+
+    // window.createObjectURL = async (param) => {
+    //     return URL.createObjectURL(param)
+    // }
+
+    //
+    // window.reloadVideo = async () => {
+    //     console.log("here")
+    //     try {
+    //         const video = document.getElementById('video');
+    //         console.log(video)
+    //         await video.play();
+    //     } catch (err) {
+    //         console.log(err)
+    //     }
+    // }
+
+    class Helpers {
+        static controller = new AbortController();
+
+        static async fetchObjectUrl(src) {
+            disableBackspaceNavigation() // todo move to init method
+
+            this.controller = new AbortController(); // not sure if we need this line
+            const signal = this.controller.signal;
+            const res = await fetch(src, {signal});
+            const blob = await res.blob();
+            console.log("dled");
+            return URL.createObjectURL(blob); // todo revoke
+        }
+
+        static abortFetch() {
+            this.controller.abort();
+            console.log('fetchObjectUrl aborted!');
+        }
+    }
+
+    window.Helpers = Helpers;
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,70 @@
+﻿@using EMQ.Shared.Core.UI
+@using System.IO
+@inject HttpClient _client
+
+@* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
+@* todo oninput event *@
+@* todo clear guess on click? *@
+<BlazoredTypeahead
+    SearchMethod="SearchAutocomplete"
+    TValue="string"
+    TItem="string"
+    Value="QuizPage.PageState.Guess"
+    ValueChanged="SelectedResultChanged"
+    ValueExpression="@(() => QuizPage.PageState.Guess)"
+    AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
+    MinimumLength="1"
+    MaximumSuggestions="5"
+    Debounce="1"
+    placeholder="Enter your answer here">
+    <SelectedTemplate>
+        @context
+    </SelectedTemplate>
+    <ResultTemplate >
+        @context
+    </ResultTemplate>
+</BlazoredTypeahead>
+
+@code {
+
+    [CascadingParameter]
+    private QuizPage QuizPage { get; set; } = null!;
+
+    private string[] Data { get; set; } = Array.Empty<string>();
+
+    // if we don't do this, the autocomplete dropdown closes after every timer tick
+    protected override bool ShouldRender()
+    {
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Data = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+    }
+
+    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
+    {
+        var result = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
+    // _logger.LogInformation(JsonSerializer.Serialize(result));
+        return await Task.FromResult(result);
+    }
+
+    private Task<string> AddItemOnEmptyResultMethod(string arg)
+    {
+        return Task.FromResult(arg);
+    }
+
+    private void SelectedResultChanged(string arg)
+    {
+        QuizPage.PageState.Guess = arg;
+    }
+
+    // private async Task GuessInput_OnKeyDown(KeyboardEventArgs e)
+    // {
+    //     if (e.Code is "Enter" or "NumpadEnter")
+    //     {
+    //         await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+    //     }
+    // }
+}

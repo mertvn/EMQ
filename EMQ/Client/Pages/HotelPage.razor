@@ -1,0 +1,90 @@
+﻿@page "/HotelPage"
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Quiz
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@inject HttpClient Client
+@inject ILogger<HotelPage> _logger
+@inject NavigationManager Navigation
+
+<h3>Hotel</h3>
+
+<p>Welcome to EMQ Hotel, please reserve a room in order to start a quiz.</p>
+
+<div>
+    Name:<br/>
+    <input @bind="Name" type="text" name="Name"/><br/>
+    Password:<br/>
+    <input @bind="Password" type="password" name="Password"/><br/>
+</div>
+
+<button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
+
+<div style="">
+    @foreach (var room in Rooms)
+    {
+        <p style="">@JsonSerializer.Serialize(room)</p>
+        <button class="btn btn-primary" @onclick="@(() => JoinRoom(room.Id))">Join</button>
+    }
+</div>
+
+@code {
+    private string Name { get; set; } = "";
+
+    private string Password { get; set; } = "";
+
+    // TODO allow user to change settings
+    private QuizSettings QuizSettings { get; set; } = new()
+    {
+        NumSongs = 3,
+        GuessTime = 25,
+        ResultsTime = 20,
+    };
+
+    private List<Room> Rooms { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+        if (res is not null)
+        {
+            Rooms = res.ToList();
+        }
+    }
+
+    private async Task CreateRoom()
+    {
+        if (ClientState.Session is null)
+        {
+    // todo warn not logged in
+            return;
+        }
+
+        ReqCreateRoom req = new(ClientState.Session.Player.Id, Name, Password, QuizSettings);
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
+        int roomId = await res.Content.ReadFromJsonAsync<int>();
+
+        await JoinRoom(roomId);
+    }
+
+    private async Task JoinRoom(int roomId)
+    {
+    // _logger.LogError(roomId.ToString());
+    // _logger.LogError(Password);
+    // _logger.LogError(JsonSerializer.Serialize(ClientState.Session));
+
+        if (ClientState.Session is null)
+        {
+    // todo warn not logged in
+            return;
+        }
+
+        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
+        if (res1.IsSuccessStatusCode)
+        {
+            ClientState.Session.RoomId = roomId;
+            Navigation.NavigateTo("/RoomPage");
+        }
+    }
+
+}

@@ -1,0 +1,430 @@
+﻿@page "/QuizPage"
+@using Microsoft.Extensions.Logging
+@using System.Timers
+@using System.Threading
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.SignalR.Client
+@using Timer = System.Timers.Timer
+@using System.Text.Encodings.Web
+@inject IJSRuntime _jsRuntime
+@inject ILogger<QuizPage> _logger
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+@implements IAsyncDisposable
+
+<CascadingValue Value="@this" IsFixed="true">
+    @* <h3>Quiz</h3> *@
+    <p style="color: @UiHelpers.Bool2Color(IsConnected, "green", "red")">@UiHelpers.Bool2Text(IsConnected, "Connected", "Disconnected")</p>
+    <div style="display:flex; justify-content:center; align-items:center;">
+        <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
+    </div>
+
+    @if (PageState.IsDebug)
+    {
+        <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
+            <p>Quiz status: @Room?.Quiz?.QuizState.QuizStatus</p>
+            @* <p>Phase: @_quizState.Phase</p> *@
+            <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
+            <p>sp: @Room?.Quiz?.QuizState.sp</p>
+        </div>
+
+        <div style="float:right;">
+            @foreach (var debug in PageState.DebugOut)
+            {
+                <p style="padding: 0; margin:0;">@debug</p>
+            }
+        </div>
+    }
+
+    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
+        @* todo Latin vs NonLatin title option *@
+        Titles:
+        @if (_correctAnswer?.Titles != null)
+        {
+            foreach (var title in _correctAnswer?.Titles!)
+            {
+                <p>@title.LatinTitle</p>
+            }
+        }
+
+        Artists:
+        @if (_correctAnswer?.Artists != null)
+        {
+            foreach (var artist in _correctAnswer?.Artists!)
+            {
+                <p>@artist.Aliases.First()</p>
+            }
+        }
+    </div>
+
+    <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
+
+        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+            @(JsonSerializer.Serialize(_correctAnswer?.Sources.SelectMany(x => x.Aliases), new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
+        </div>
+
+        <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
+            <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
+                @* TODO: How to select The One Link? *@
+                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)" id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+                </video>
+                @* TODO: Make this work *@
+                @* @if (videoPlayerVisibility) *@
+                @* { *@
+                @*     <p style="position: absolute; top: 40%; right: 40%; font-size: xx-large; color: white; z-index: -1">Sound only</p>  *@
+                @* } *@
+            </div>
+
+            @if (!PageState.VideoPlayerVisibility)
+            {
+@* TODO: properly center this *@
+                <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                    @PageState.Countdown
+                </div>
+            }
+        </div>
+
+        @* we have to use pointer-events css property instead of
+         the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
+        <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+             pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.GuessesVisibility);">
+            <GuessInputComponent></GuessInputComponent>
+        </div>
+
+        <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+            @if (Room?.Players.Any() ?? false)
+            {
+                @foreach (var player in Room.Players)
+                {
+                    <div class="playerDiv" style="margin: 20px">
+                        <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
+                            <div class="playerIsCorrectDiv">
+                                <p style="color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")"> @player.Guess</p>
+                            </div>
+                        </div>
+                        @* <p> Id: @player.Id</p> *@
+                        <p> Name: @player.Username</p>
+                        <p> Score: @player.Score</p>
+                        <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+
+</CascadingValue>
+
+@code {
+    // private HubConnection? hubConnection;
+
+    public bool IsConnected =>
+        ClientState.Session!.hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageState.DebugOut.Add("init QuizPage");
+    // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
+        if (ClientState.Session!.hubConnection is not null)
+        {
+            ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
+            ClientState.Session.hubConnection.On("ReceiveQuizStarted", async () => { await OnReceiveQuizStarted(); });
+            ClientState.Session.hubConnection.On("ReceiveQuizEnded", async () => { await OnReceiveQuizEnded(); });
+            ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
+            PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
+        }
+        else
+        {
+    // todo warn error, reload
+        }
+
+    // var nextSong = await NextSong(0);
+    // _clientSongs[0] = nextSong;
+    // _currentSong = _clientSongs[0];
+        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
+    }
+
+    private async Task OnReceiveCorrectAnswer(Song correctAnswer)
+    {
+        _correctAnswer = correctAnswer;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (ClientState.Session!.hubConnection is not null)
+        {
+            await ClientState.Session.hubConnection.DisposeAsync();
+        }
+    }
+
+    public class QuizPageState
+    {
+        public bool IsDebug { get; } = false;
+        public readonly List<string> DebugOut = new() { "" };
+
+        public bool VideoPlayerVisibility { get; set; }
+        public bool GuessesVisibility { get; set; } = true;
+    // public bool GuessInputDisabled { get; set; } = true;
+
+        public string? Guess { get; set; }
+
+        public int Countdown { get; set; }
+        public Timer Timer { get; } = new();
+    }
+
+    private static Room? Room { get; set; }
+
+    public static QuizPageState PageState { get; set; } = new() { };
+
+    private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
+
+    private Song? _currentSong;
+
+    private Song? _correctAnswer;
+
+    private CancellationTokenSource PreloadCancellationSource { get; set; } = new();
+
+    private CancellationTokenRegistration PreloadCancellationRegistration { get; set; } = new();
+
+    public async Task<Song?> NextSong(int index)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
+        if (res.IsSuccessStatusCode)
+        {
+            ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
+            if (nextSong is not null)
+            {
+                Song song = await DlSong(new Song
+                {
+                    Links = new List<SongLink>
+                    {
+                        new()
+                        {
+                            Url = nextSong.Url
+                        }
+                    }
+                });
+                return song;
+            }
+        }
+        else
+        {
+    // todo
+        }
+        return null;
+    }
+
+    public async Task<string?> NextSongUrl(int index)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
+        if (res.IsSuccessStatusCode)
+        {
+            ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
+            if (nextSong is not null)
+            {
+                return nextSong.Url;
+            }
+        }
+        else
+        {
+    // todo
+        }
+        return null;
+    }
+
+    private void SetTimer()
+    {
+        PageState.Timer.Stop();
+        PageState.Timer.Elapsed -= OnTimedEvent;
+
+        PageState.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        PageState.Timer.Elapsed += OnTimedEvent;
+        PageState.Timer.AutoReset = true;
+        PageState.Timer.Start();
+    }
+
+    private async Task SyncWithServer()
+    {
+        Room = await _clientUtils.SyncRoom();
+    }
+
+    private async Task OnReceiveQuizStarted()
+    {
+        await SyncWithServer();
+        PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
+        StateHasChanged();
+        SetTimer();
+    }
+
+    private async Task OnReceiveQuizEnded()
+    {
+        await SyncWithServer();
+    // TODO: do endgame stuff
+    // _navigation.NavigateTo("/RoomPage");
+    }
+
+    public async Task OnReceivePhaseChanged(int phase)
+    {
+        await SyncWithServer();
+
+        QuizPhaseKind phaseKind = (QuizPhaseKind) phase;
+        switch (phaseKind)
+        {
+            case QuizPhaseKind.Guess:
+                PreloadCancellationRegistration.Unregister();
+                PreloadCancellationSource.Dispose();
+                PreloadCancellationSource = new CancellationTokenSource();
+                PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
+
+    // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
+                PageState.VideoPlayerVisibility = false;
+                PageState.GuessesVisibility = false;
+                _correctAnswer = null;
+                PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
+                StateHasChanged();
+
+                await SwapSongs(Room.Quiz.QuizState.sp);
+                StateHasChanged();
+                break;
+            case QuizPhaseKind.Judgement:
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                await SyncWithServer();
+                PageState.GuessesVisibility = true;
+                PageState.Countdown = 0;
+                StateHasChanged();
+                break;
+            case QuizPhaseKind.Results:
+    // TODO: restart song (option?)
+                PageState.VideoPlayerVisibility = true;
+                StateHasChanged();
+
+                if (Room!.Quiz!.QuizState.sp + Room.Quiz.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
+                {
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room.Quiz.QuizSettings.ResultsTime));
+                    await Preload(Room.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        if (PageState.Countdown > 0)
+        {
+            PageState.Countdown -= 1;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SwapSongs(int index)
+    {
+        if (index < _clientSongs.Count)
+        {
+            PageState.DebugOut.Add("index: " + index);
+    // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_clientSongs));
+
+            if (_clientSongs.ElementAtOrDefault(index) is not null)
+            {
+                _currentSong = _clientSongs[index];
+            }
+
+            if (string.IsNullOrEmpty(_currentSong?.Data))
+            {
+                await LoadMissingSong(index);
+            }
+        }
+        else
+        {
+            _logger.LogError("Attempted to swap to a song that does not exist -- probably desynchronized");
+        }
+    }
+
+    private async Task LoadMissingSong(int index)
+    {
+        PageState.DebugOut.Add("Loading missing song");
+        string? nextSongUrl = await NextSongUrl(index);
+        if (nextSongUrl is not null)
+        {
+            _currentSong = new Song()
+            {
+                Links = new List<SongLink>
+                {
+                    new()
+                    {
+                        Url = nextSongUrl
+                    }
+                }
+            };
+            StateHasChanged();
+        }
+        else
+        {
+            PageState.DebugOut.Add("Failed loading missing song");
+        }
+    }
+
+    private async Task Preload(int index, int amount = 1)
+    {
+        for (int i = 1; i <= amount; i++)
+        {
+            if (index + i < _clientSongs.Count)
+            {
+                var song = await NextSong(index + i);
+                if (song is not null)
+                {
+                    _clientSongs[index + i] = song;
+                    if (string.IsNullOrEmpty(song.Data))
+                    {
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
+                    }
+                    else
+                    {
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("preload failed");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("no song to preload");
+            }
+        }
+    }
+
+    private async Task<Song> DlSong(Song song)
+    {
+        var ret = new Song
+        {
+            Links = song.Links,
+        };
+
+        try
+        {
+            PageState.DebugOut.Add($"downloading {song.Links.First().Url}");
+            _logger.LogInformation("Startjs");
+    // TODO: How to select The One Link?
+            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First().Url);
+            _logger.LogInformation("Endjs");
+            PreloadCancellationRegistration.Unregister();
+
+            ret.Data = data;
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning($"download cancelled {e}");
+        }
+
+        return ret;
+    }
+
+}
