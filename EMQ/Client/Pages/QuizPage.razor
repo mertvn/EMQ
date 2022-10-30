@@ -323,6 +323,8 @@
             {
                 await LoadMissingSong(index);
             }
+
+            await _jsRuntime.InvokeAsync<string>("reloadVideo", _currentSong!.StartTime);
         }
         else
         {
@@ -366,7 +368,7 @@
                 {
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        song = await DlSong(song);
+                        song.Data = (await DlSong(song)).Data;
                     }
 
                     _clientSongs[index + i] = song;

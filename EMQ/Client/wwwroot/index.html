@@ -9,7 +9,7 @@
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet"/>
     <link href="css/app.css" rel="stylesheet"/>
     <link href="EMQ.Client.styles.css" rel="stylesheet"/>
-    <link href="_content/Blazored.Typeahead/blazored-typeahead.css" rel="stylesheet" />
+    <link href="_content/Blazored.Typeahead/blazored-typeahead.css" rel="stylesheet"/>
 </head>
 
 <body>
@@ -27,7 +27,7 @@
 <script>
     function disableBackspaceNavigation() {
         window.onkeydown = function (e) {
-            if (e.keyCode == 8 && !isTextBox(e.target)) e.preventDefault();
+            if (e.keyCode === 8 && !isTextBox(e.target)) e.preventDefault();
         }
     }
 
@@ -39,25 +39,17 @@
         return typeAttr === 'text';
     }
 
-    window.log = async (param) => {
-        console.log(param)
+    async function reloadVideo(startTime) {
+        // console.log("here")
+        try {
+            const video = document.getElementById('video');
+            // console.log(video)
+            console.log("seeking to startTime " + startTime)
+            video.currentTime = startTime;
+        } catch (err) {
+            console.log(err)
+        }
     }
-
-    // window.createObjectURL = async (param) => {
-    //     return URL.createObjectURL(param)
-    // }
-
-    //
-    // window.reloadVideo = async () => {
-    //     console.log("here")
-    //     try {
-    //         const video = document.getElementById('video');
-    //         console.log(video)
-    //         await video.play();
-    //     } catch (err) {
-    //         console.log(err)
-    //     }
-    // }
 
     class Helpers {
         static controller = new AbortController();
