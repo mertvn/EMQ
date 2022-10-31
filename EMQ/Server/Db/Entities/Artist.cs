@@ -13,4 +13,6 @@ public class Artist
     public int? sex { get; set; }
 
     public string? primary_language { get; set; }
+
+    public string? vndb_id { get; set; }
 }

@@ -11,7 +11,9 @@ public class SongArtist
 
     public Sex Sex { get; set; } = Sex.Unknown;
 
-    public List<Title> Titles { get; set; } = new();
+    public string? VndbId { get; set; }
+
+    public List<Title> Titles { get; set; } = new(); // todo should be singular
 
     public SongArtistRole Role { get; set; } = SongArtistRole.Unknown;
 }
