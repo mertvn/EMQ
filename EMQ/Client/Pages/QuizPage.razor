@@ -90,6 +90,10 @@
             }
         </div>
 
+        <div class="progress" style="height: 5px;">
+            <div class="progress-bar" role="progressbar" style="width:@(PageState.ProgressValue)%"></div>
+        </div>
+
         @* we have to use pointer-events css property instead of
          the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
@@ -167,6 +171,9 @@
     {
         public bool IsDebug { get; } = false;
         public readonly List<string> DebugOut = new() { "" };
+
+        public float ProgressValue { get; set; } = 0;
+        public float ProgressDivider { get; set; } = 1;
 
         public bool VideoPlayerVisibility { get; set; }
         public bool GuessesVisibility { get; set; } = true;
@@ -266,6 +273,8 @@
                 PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
 
     // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
+                PageState.ProgressValue = 0;
+                PageState.ProgressDivider = Room!.Quiz!.QuizSettings.GuessTime;
                 PageState.VideoPlayerVisibility = false;
                 PageState.GuessesVisibility = false;
                 _correctAnswer = null;
@@ -284,6 +293,8 @@
                 break;
             case QuizPhaseKind.Results:
     // TODO: restart song (option?)
+                PageState.ProgressValue = 0;
+                PageState.ProgressDivider = Room!.Quiz!.QuizSettings.ResultsTime;
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
@@ -300,6 +311,8 @@
 
     private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
+        PageState.ProgressValue += 100 / PageState.ProgressDivider;
+
         if (PageState.Countdown > 0)
         {
             PageState.Countdown -= 1;
