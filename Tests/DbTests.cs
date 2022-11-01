@@ -145,33 +145,6 @@ public class DbTests
         await File.WriteAllTextAsync("autocomplete.json", await DbManager.SelectAutocomplete());
     }
 
-    // [Test, Explicit]
-    // public async Task ImportVndbData()
-    // {
-    //     var musicSources =
-    //         JsonConvert.DeserializeObject<List<dynamic>>(
-    //             await File.ReadAllTextAsync("C:\\emq\\vndb\\music_source.json"))!;
-    //     foreach (dynamic dyn in musicSources)
-    //     {
-    //         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-    //         await connection.OpenAsync();
-    //         await using (var transaction = await connection.BeginTransactionAsync())
-    //         {
-    //             var musicSource = new MusicSource()
-    //             {
-    //                 language_original = dyn.olang, rating_average = dyn.c_average, type = (int)SongSourceType.VN,
-    //                 // air_date_start = dyn.; // todo
-    //             };
-    //
-    //             var msId = connection.InsertAsync(musicSource);
-    //
-    //             // await transaction.CommitAsync();
-    //         }
-    //     }
-    //
-    //     Console.WriteLine(musicSources);
-    // }
-
     [Test, Explicit]
     public async Task ImportVndbData()
     {

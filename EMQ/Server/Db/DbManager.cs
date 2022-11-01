@@ -248,6 +248,7 @@ public static class DbManager
 
     public static async Task<int> InsertSong(Song song)
     {
+        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
@@ -398,6 +399,16 @@ public static class DbManager
                             is_main_name = songArtistAlias.IsMainTitle
                         });
                     }
+                }
+
+                if (mId < 1)
+                {
+                    throw new Exception("mId is invalid");
+                }
+
+                if (aaId < 1)
+                {
+                    throw new Exception("aaId is invalid");
                 }
 
                 int amId = await connection.InsertAsync(

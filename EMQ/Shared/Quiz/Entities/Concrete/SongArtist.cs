@@ -30,4 +30,6 @@ public enum SongArtistRole
     Unknown,
     Vocals,
     Composer,
+    Staff, // not sure what this role actually entails
+    Translator,
 }

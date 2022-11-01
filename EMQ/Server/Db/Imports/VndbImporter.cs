@@ -43,9 +43,9 @@ public static class VndbImporter
         insertsJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ Insert 2022-10-31.json"))!;
 
-        await VndbImporter.ImportVndbDataInner(opsJson, SongSourceSongType.OP);
-        await VndbImporter.ImportVndbDataInner(edsJson, SongSourceSongType.ED);
-        await VndbImporter.ImportVndbDataInner(insertsJson, SongSourceSongType.Insert);
+        await ImportVndbDataInner(opsJson, SongSourceSongType.OP);
+        await ImportVndbDataInner(edsJson, SongSourceSongType.ED);
+        await ImportVndbDataInner(insertsJson, SongSourceSongType.Insert);
     }
 
     private static async Task ImportVndbDataInner(List<dynamic> dataJson, SongSourceSongType songSourceSongType)
@@ -54,84 +54,99 @@ public static class VndbImporter
 
         foreach (dynamic dynData in dataJson)
         {
-            bool processed = false;
             var dynMusicSource = musicSourcesJson.Find(x => x.id == dynData.VNID)!;
-            if (dynMusicSource.id is null)
+            try
             {
-                Console.WriteLine($"No matching music source found for {dynData.VNID}; skipping");
-                return;
+                dynamic? _ = dynMusicSource.id;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"No matching music source found for {dynData.VNID}");
+                throw;
             }
 
-            var songArtists = new List<SongArtist>();
-            var dynArtists = artistsJson.FindAll(x => x.aid == dynData.ArtistAliasID)!;
-            foreach (dynamic dynArtist in dynArtists)
+            var dynArtistAlias = artists_aliasesJson.Single(x => (int)x.aid == (int)dynData.ArtistAliasID);
+            try
             {
-                if (dynArtist.id is null)
-                {
-                    Console.WriteLine($"No matching artist found for {dynData.VNID}; skipping");
-                    return;
-                }
+                dynamic? _ = dynArtistAlias.aid;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"No matching artist alias found for {dynData.VNID}");
+                throw;
+            }
 
-                var dynArtistAlias = artists_aliasesJson.Find(x => x.aid == dynArtist.aid)!;
-                if (dynArtistAlias.aid is null)
-                {
-                    Console.WriteLine($"No matching alias found for {dynArtist.id}; skipping");
-                    return;
-                }
+            var dynArtist = artistsJson.Find(x => x.id == dynArtistAlias.id)!;
+            try
+            {
+                dynamic? _ = dynArtist.aid;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"No matching alias found for {dynArtist.id}");
+                throw;
+            }
 
-                bool artistAliasIsMain = (int)dynArtist.aid == (int)dynArtistAlias.aid; // todo doesn't work
+            bool artistAliasIsMain = (int)dynArtist.aid == (int)dynArtistAlias.aid;
 
-                // Console.WriteLine((string)dynOp.role);
-                SongArtistRole role = (string)dynData.role switch
-                {
-                    "songs" => SongArtistRole.Vocals,
-                    "music" => SongArtistRole.Composer,
-                    _ => throw new Exception("Invalid artist role")
-                };
+            // Console.WriteLine((string)dynData.role);
+            SongArtistRole role = (string)dynData.role switch
+            {
+                "songs" => SongArtistRole.Vocals,
+                "music" => SongArtistRole.Composer,
+                "staff" => SongArtistRole.Staff,
+                "translator" => SongArtistRole.Translator,
+                _ => throw new Exception("Invalid artist role")
+            };
 
-                // Console.WriteLine((string)dynArtist.gender);
-                Sex sex = (string)dynArtist.gender switch
-                {
-                    "f" => Sex.Female,
-                    "m" => Sex.Male,
-                    "unknown" => Sex.Unknown,
-                    _ => throw new Exception("Invalid artist sex")
-                };
+            // Console.WriteLine((string)dynArtist.gender);
+            Sex sex = (string)dynArtist.gender switch
+            {
+                "f" => Sex.Female,
+                "m" => Sex.Male,
+                "unknown" => Sex.Unknown,
+                _ => throw new Exception("Invalid artist sex")
+            };
 
-                var songArtist = new SongArtist()
-                {
-                    Role = role,
-                    PrimaryLanguage = dynArtist.lang,
-                    Titles =
-                        new List<Title>()
+            SongArtist songArtist = new SongArtist()
+            {
+                VndbId = dynArtist.id,
+                Role = role,
+                PrimaryLanguage = dynArtist.lang,
+                Titles =
+                    new List<Title>()
+                    {
+                        new Title()
                         {
-                            new Title()
-                            {
-                                LatinTitle = dynArtistAlias.name,
-                                NonLatinTitle = dynArtistAlias.original,
-                                Language = dynArtist.lang, // todo
-                                IsMainTitle = artistAliasIsMain
-                            },
+                            LatinTitle = dynArtistAlias.name,
+                            NonLatinTitle = dynArtistAlias.original,
+                            Language = dynArtist.lang, // todo
+                            IsMainTitle = artistAliasIsMain
                         },
-                    Sex = sex
-                };
+                    },
+                Sex = sex
+            };
 
-                var existingSong = songs.Find(x => x.Sources.First().Links.First().Url.Contains((string)dynData.VNID));
-                if (existingSong is not null)
-                {
-                    Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing song source ({dynData.VNID})");
-                    existingSong.Artists.Add(songArtist);
-                    processed = true;
-                    break;
-                }
-                else
-                {
-                    songArtists.Add(songArtist);
-                }
-            }
+            var existingSong = songs.LastOrDefault(x =>
+                x.Sources.First().Links.First().Url.Contains((string)dynData.VNID) &&
+                x.Titles.Any(y => y.LatinTitle == (string)dynData.MusicName));
 
-            if (processed)
+            if (existingSong is not null)
             {
+                var existingSongExistingArtist =
+                    existingSong.Artists.SingleOrDefault(z => z.VndbId == (string)dynArtist.id);
+                if (existingSongExistingArtist is not null)
+                {
+                    // todo
+                    continue;
+
+                    // Console.WriteLine(
+                    //     $"Adding new role ({dynData.role}) to existing artist ({(string)dynArtist.id}) for source ({dynData.VNID})");
+                    // existingSongExistingArtist.Roles.Add(songArtist);
+                }
+
+                Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing source ({dynData.VNID})");
+                existingSong.Artists.Add(songArtist);
                 continue;
             }
 
@@ -161,7 +176,7 @@ public static class VndbImporter
                         },
                         // todo multiple song titles?
                     },
-                Artists = songArtists,
+                Artists = new List<SongArtist> { songArtist },
                 // todo song links
                 Sources = new List<SongSource>()
                 {
