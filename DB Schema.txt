@@ -103,6 +103,8 @@ Table artist_music {
   artist_alias_id int [ref: <> artist_alias.id] 
   role enum // Singer, Composer etc.
     Indexes {
-    (artist_id, music_id) [pk]
+    (artist_id, music_id, role) [pk]
   }
 }
+
+Ref: artist_music.(artist_id, artist_alias_id) > artist_alias.(artist_id, id)
