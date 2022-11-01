@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -459,8 +459,9 @@ public static class DbManager
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             IEnumerable<string>? res = await connection.QueryAsync<string>(sqlAutocomplete);
-            string autocomplete = JsonSerializer.Serialize(
-                JsonSerializer.Deserialize<List<string>>(res.Single())!.Distinct(),
+            var deserialized = JsonSerializer.Deserialize<List<string>>(res.Single())!.Distinct().OrderBy(x => x);
+
+            string autocomplete = JsonSerializer.Serialize(deserialized,
                 new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             return autocomplete;
         }

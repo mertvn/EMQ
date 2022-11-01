@@ -45,7 +45,7 @@
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        var result = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
+        var result = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x.StartsWith(arg.ToLowerInvariant()));
     // _logger.LogInformation(JsonSerializer.Serialize(result));
         return await Task.FromResult(result);
     }

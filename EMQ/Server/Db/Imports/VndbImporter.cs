@@ -83,7 +83,7 @@ public static class VndbImporter
             }
             catch (Exception)
             {
-                Console.WriteLine($"No matching alias found for {dynArtist.id}");
+                Console.WriteLine($"No matching artist found for aid {dynArtistAlias.aid}");
                 throw;
             }
 

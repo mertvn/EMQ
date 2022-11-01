@@ -15,3 +15,5 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * player left room event
 * restore state on page refresh
 * auto-generate autocomplete list
+* don't start songs too close to the finish
+* convert timer to float (tick @ 240 hz?)
