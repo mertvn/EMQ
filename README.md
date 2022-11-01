@@ -5,7 +5,6 @@ Eroge = Visual Novel.
 Name was chosen as such for different reasons (mainly browser autocomplete).
 
 ## TODO
-* Start songs from a random point
 * Restart songs on results phase
 * User-changeable room settings
 * Co-op mode
@@ -15,5 +14,4 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * More songs
 * player left room event
 * restore state on page refresh
-* results phase time left display (progress bar)
 * auto-generate autocomplete list
