@@ -1,6 +1,8 @@
 ﻿@using EMQ.Shared.Core.UI
 @using System.IO
+@using Microsoft.Extensions.Logging
 @inject HttpClient _client
+@inject ILogger<GuessInputComponent> _logger
 
 @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
 @* todo oninput event *@
@@ -45,9 +47,10 @@
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        var result = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x.StartsWith(arg.ToLowerInvariant()));
+        var startsWith = Data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
+        var contains = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
     // _logger.LogInformation(JsonSerializer.Serialize(result));
-        return await Task.FromResult(result);
+        return await Task.FromResult(startsWith.Concat(contains).Distinct());
     }
 
     private Task<string> AddItemOnEmptyResultMethod(string arg)

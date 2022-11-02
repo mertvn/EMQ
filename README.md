@@ -16,3 +16,4 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * restore state on page refresh
 * auto-generate autocomplete list
 * don't start songs too close to the finish
+* wrap long guesses
