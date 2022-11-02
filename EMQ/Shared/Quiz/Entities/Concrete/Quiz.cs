@@ -24,8 +24,7 @@ public class Quiz
     [JsonIgnore]
     public Timer Timer { get; set; } = new();
 
-    [JsonIgnore]
-    public float TickRate { get; set; } = 17;
+    public const float TickRate = 17;
 
     public QuizSettings QuizSettings { get; set; }
 

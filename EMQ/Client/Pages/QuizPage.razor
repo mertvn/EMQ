@@ -233,7 +233,7 @@
         PageState.Timer.Stop();
         PageState.Timer.Elapsed -= OnTimedEvent;
 
-        PageState.Timer.Interval = TimeSpan.FromMilliseconds(Room!.Quiz!.TickRate).TotalMilliseconds;
+        PageState.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
         PageState.Timer.Elapsed += OnTimedEvent;
         PageState.Timer.AutoReset = true;
         PageState.Timer.Start();
@@ -311,11 +311,11 @@
 
     private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        PageState.ProgressValue += 100 / PageState.ProgressDivisor * Room!.Quiz!.TickRate;
+        PageState.ProgressValue += 100 / PageState.ProgressDivisor * Quiz.TickRate;
 
         if (PageState.Countdown > 0)
         {
-            PageState.Countdown -= Room!.Quiz!.TickRate;
+            PageState.Countdown -= Quiz.TickRate;
         }
 
         StateHasChanged();
