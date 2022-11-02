@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -211,10 +211,12 @@ public static class DbManager
                             }
                         };
 
-                        if (artistMusic.role.HasValue)
+                        if (artist.sex.HasValue)
                         {
-                            songArtist.Role = (SongArtistRole)artistMusic.role.Value;
+                            songArtist.Sex = (Sex)artist.sex;
                         }
+
+                        songArtist.Role = (SongArtistRole)artistMusic.role;
 
                         songArtists.Add(songArtist);
                     }
@@ -359,6 +361,11 @@ public static class DbManager
 
             foreach (SongArtist songArtist in song.Artists)
             {
+                if (songArtist.Titles.Count > 1)
+                {
+                    throw new Exception("Artists can only have one artist_alias per song");
+                }
+
                 int aId = 0;
                 int aaId = 0;
 
@@ -372,8 +379,9 @@ public static class DbManager
                 if (aId > 0)
                 {
                     aaId = (await connection.QueryAsync<int>(
-                        "select aa.id from artist_alias aa join artist a on a.id = aa.artist_id where a.vndb_id=@aVndbId",
-                        new { aVndbId = songArtist.VndbId })).ToList().SingleOrDefault();
+                            "select aa.id,aa.latin_alias from artist_alias aa join artist a on a.id = aa.artist_id where a.vndb_id=@aVndbId AND aa.latin_alias=@latinAlias",
+                            new { aVndbId = songArtist.VndbId, latinAlias = songArtist.Titles.First().LatinTitle }))
+                        .ToList().SingleOrDefault();
                 }
                 else
                 {
@@ -383,12 +391,10 @@ public static class DbManager
                         sex = (int)songArtist.Sex,
                         vndb_id = songArtist.VndbId
                     });
+                }
 
-                    if (songArtist.Titles.Count > 1)
-                    {
-                        throw new Exception("Artists can only have one artist_alias per song");
-                    }
-
+                if (aaId < 1)
+                {
                     foreach (Title songArtistAlias in songArtist.Titles)
                     {
                         aaId = await connection.InsertAsync(new ArtistAlias()
@@ -412,7 +418,10 @@ public static class DbManager
                 }
 
                 int amId = await connection.InsertAsync(
-                    new ArtistMusic() { music_id = mId, artist_alias_id = aaId, role = (int)songArtist.Role });
+                    new ArtistMusic()
+                    {
+                        music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
+                    });
             }
 
             await transaction.CommitAsync();

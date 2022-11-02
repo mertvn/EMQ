@@ -13,6 +13,8 @@ public static class VndbImporter
 {
     public static List<dynamic> musicSourcesJson { get; set; }
 
+    public static List<dynamic> musicSourcesTitlesJson { get; set; } // todo
+
     public static List<dynamic> artistsJson { get; set; }
 
     public static List<dynamic> artists_aliasesJson { get; set; }
@@ -25,23 +27,28 @@ public static class VndbImporter
 
     public static async Task ImportVndbData()
     {
+        string date = "2022-10-31";
+
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ music_source 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source {date}.json"))!;
+
+        musicSourcesTitlesJson = JsonConvert.DeserializeObject<List<dynamic>>(
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source_title {date}.json"))!;
 
         artistsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ artist 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ artist {date}.json"))!;
 
         artists_aliasesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ artist_alias 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ artist_alias {date}.json"))!;
 
         opsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ OP 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ OP {date}.json"))!;
 
         edsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ ED 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ ED {date}.json"))!;
 
         insertsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync("C:\\emq\\vndb\\EMQ Insert 2022-10-31.json"))!;
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ Insert {date}.json"))!;
 
         await ImportVndbDataInner(opsJson, SongSourceSongType.OP);
         await ImportVndbDataInner(edsJson, SongSourceSongType.ED);
