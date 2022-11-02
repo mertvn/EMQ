@@ -12,9 +12,9 @@ public class QuizState
     // public int ElapsedSeconds { get; set; }
 
     /// <summary>
-    ///  The remaining time for current phase in seconds
+    ///  The remaining time for current phase in milliseconds
     /// </summary>
-    public int RemainingSeconds { get; set; }
+    public float RemainingMs { get; set; }
 
     /// <summary>
     ///  "Song Pointer" (a.k.a. Current Song Index)

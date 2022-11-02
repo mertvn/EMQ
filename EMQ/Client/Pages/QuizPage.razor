@@ -29,7 +29,7 @@
         <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
             <p>Quiz status: @Room?.Quiz?.QuizState.QuizStatus</p>
             @* <p>Phase: @_quizState.Phase</p> *@
-            <p>RemainingSeconds: @Room?.Quiz?.QuizState.RemainingSeconds</p>
+            <p>RemainingMs: @Room?.Quiz?.QuizState.RemainingMs</p>
             <p>sp: @Room?.Quiz?.QuizState.sp</p>
         </div>
 
@@ -85,13 +85,13 @@
             {
 @* TODO: properly center this *@
                 <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                    @PageState.Countdown
+                    @((int) Math.Round(PageState.Countdown / 1000))
                 </div>
             }
         </div>
 
         <div class="progress" style="height: 5px;">
-            <div class="progress-bar" role="progressbar" style="width:@(PageState.ProgressValue)%"></div>
+            <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
         </div>
 
         @* we have to use pointer-events css property instead of
@@ -173,7 +173,7 @@
         public readonly List<string> DebugOut = new() { "" };
 
         public float ProgressValue { get; set; } = 0;
-        public float ProgressDivider { get; set; } = 1;
+        public float ProgressDivisor { get; set; } = 1;
 
         public bool VideoPlayerVisibility { get; set; }
         public bool GuessesVisibility { get; set; } = true;
@@ -181,7 +181,7 @@
 
         public string? Guess { get; set; }
 
-        public int Countdown { get; set; }
+        public float Countdown { get; set; }
         public Timer Timer { get; } = new();
     }
 
@@ -233,7 +233,7 @@
         PageState.Timer.Stop();
         PageState.Timer.Elapsed -= OnTimedEvent;
 
-        PageState.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        PageState.Timer.Interval = TimeSpan.FromMilliseconds(Room!.Quiz!.TickRate).TotalMilliseconds;
         PageState.Timer.Elapsed += OnTimedEvent;
         PageState.Timer.AutoReset = true;
         PageState.Timer.Start();
@@ -247,7 +247,7 @@
     private async Task OnReceiveQuizStarted()
     {
         await SyncWithServer();
-        PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
+        PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
         StateHasChanged();
         SetTimer();
     }
@@ -274,11 +274,11 @@
 
     // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivider = Room!.Quiz!.QuizSettings.GuessTime;
+                PageState.ProgressDivisor = Room!.Quiz!.QuizSettings.GuessMs;
                 PageState.VideoPlayerVisibility = false;
                 PageState.GuessesVisibility = false;
                 _correctAnswer = null;
-                PageState.Countdown = Room!.Quiz!.QuizState.RemainingSeconds;
+                PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
                 StateHasChanged();
 
                 await SwapSongs(Room.Quiz.QuizState.sp);
@@ -294,13 +294,13 @@
             case QuizPhaseKind.Results:
     // TODO: restart song (option?)
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivider = Room!.Quiz!.QuizSettings.ResultsTime;
+                PageState.ProgressDivisor = Room!.Quiz!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
                 if (Room!.Quiz!.QuizState.sp + Room.Quiz.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(TimeSpan.FromSeconds(Room.Quiz.QuizSettings.ResultsTime));
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds(Room.Quiz.QuizSettings.ResultsMs));
                     await Preload(Room.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
                 }
                 break;
@@ -311,11 +311,11 @@
 
     private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        PageState.ProgressValue += 100 / PageState.ProgressDivider;
+        PageState.ProgressValue += 100 / PageState.ProgressDivisor * Room!.Quiz!.TickRate;
 
         if (PageState.Countdown > 0)
         {
-            PageState.Countdown -= 1;
+            PageState.Countdown -= Room!.Quiz!.TickRate;
         }
 
         StateHasChanged();

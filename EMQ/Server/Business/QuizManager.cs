@@ -33,7 +33,7 @@ public class QuizManager
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
-        Quiz.Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        Quiz.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
         Quiz.Timer.Elapsed += OnTimedEvent;
         Quiz.Timer.AutoReset = true;
         Quiz.Timer.Start();
@@ -43,12 +43,12 @@ public class QuizManager
     {
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
-            if (Quiz.QuizState.RemainingSeconds >= 0)
+            if (Quiz.QuizState.RemainingMs >= 0)
             {
-                Quiz.QuizState.RemainingSeconds -= 1;
+                Quiz.QuizState.RemainingMs -= Quiz.TickRate;
             }
 
-            if (Quiz.QuizState.RemainingSeconds <= 0)
+            if (Quiz.QuizState.RemainingMs <= 0)
             {
                 Quiz.Timer.Stop();
 
@@ -75,7 +75,7 @@ public class QuizManager
     private async Task EnterGuessingPhase()
     {
         Quiz.QuizState.Phase = new GuessPhase();
-        Quiz.QuizState.RemainingSeconds = Quiz.QuizSettings.GuessTime;
+        Quiz.QuizState.RemainingMs = Quiz.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
         foreach (var player in Quiz.Room.Players)
         {
@@ -97,7 +97,7 @@ public class QuizManager
     private async Task EnterResultsPhase()
     {
         Quiz.QuizState.Phase = new ResultsPhase();
-        Quiz.QuizState.RemainingSeconds = Quiz.QuizSettings.ResultsTime;
+        Quiz.QuizState.RemainingMs = Quiz.QuizSettings.ResultsMs;
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
 
@@ -115,7 +115,7 @@ public class QuizManager
         await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
 
         IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-           .Select(x => x.LatinTitle).ToList();
+            .Select(x => x.LatinTitle).ToList();
 
         Console.WriteLine("-------");
         Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));

@@ -18,14 +18,19 @@ public class Quiz
 
     // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
 
-    [JsonIgnore] public Room Room { get; }
+    [JsonIgnore]
+    public Room Room { get; }
 
-    [JsonIgnore] public Timer Timer { get; set; } = new();
+    [JsonIgnore]
+    public Timer Timer { get; set; } = new();
+
+    [JsonIgnore]
+    public float TickRate { get; set; } = 17;
 
     public QuizSettings QuizSettings { get; set; }
 
     public QuizState QuizState { get; set; } = new();
 
     [JsonIgnore]
-    public List<Song> Songs { get; set; } = new(); // TODO: Make sure we're not leaking this to the client (memory)
+    public List<Song> Songs { get; set; } = new();
 }

@@ -4,9 +4,9 @@ public class QuizSettings
 {
     public int NumSongs { get; set; } = 100;
 
-    public int GuessTime { get; set; } = 20;
+    public int GuessMs { get; set; } = 20000;
 
-    public int ResultsTime { get; set; } = 20;
+    public int ResultsMs { get; set; } = 20000;
 
     public int PreloadAmount { get; set; } = 1;
 
