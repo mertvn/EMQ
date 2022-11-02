@@ -168,12 +168,15 @@ public static class DbManager
                             });
                         }
 
-                        if (!existingSongSource.Categories.Any(x => x.Name == category.name))
+                        if (category is not null)
                         {
-                            existingSongSource.Categories.Add(new SongSourceCategory()
+                            if (!existingSongSource.Categories.Any(x => x.Name == category.name))
                             {
-                                Name = category.name, Type = (SongSourceCategoryType)category.type
-                            });
+                                existingSongSource.Categories.Add(new SongSourceCategory()
+                                {
+                                    Name = category.name, Type = (SongSourceCategoryType)category.type
+                                });
+                            }
                         }
                     }
 
@@ -213,7 +216,7 @@ public static class DbManager
 
                         if (artist.sex.HasValue)
                         {
-                            songArtist.Sex = (Sex)artist.sex;
+                            songArtist.Sex = (Sex)artist.sex.Value;
                         }
 
                         songArtist.Role = (SongArtistRole)artistMusic.role;

@@ -11,19 +11,19 @@ namespace EMQ.Server.Db.Imports;
 
 public static class VndbImporter
 {
-    public static List<dynamic> musicSourcesJson { get; set; }
+    public static List<dynamic> musicSourcesJson { get; set; } = null!;
 
-    public static List<dynamic> musicSourcesTitlesJson { get; set; } // todo
+    public static List<dynamic> musicSourcesTitlesJson { get; set; } = null!; // todo
 
-    public static List<dynamic> artistsJson { get; set; }
+    public static List<dynamic> artistsJson { get; set; } = null!;
 
-    public static List<dynamic> artists_aliasesJson { get; set; }
+    public static List<dynamic> artists_aliasesJson { get; set; } = null!;
 
-    public static List<dynamic> opsJson { get; set; }
+    public static List<dynamic> opsJson { get; set; } = null!;
 
-    public static List<dynamic> edsJson { get; set; }
+    public static List<dynamic> edsJson { get; set; } = null!;
 
-    public static List<dynamic> insertsJson { get; set; }
+    public static List<dynamic> insertsJson { get; set; } = null!;
 
     public static async Task ImportVndbData()
     {
