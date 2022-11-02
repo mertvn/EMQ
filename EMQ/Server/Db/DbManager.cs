@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -454,7 +454,7 @@ public static class DbManager
             //     continue;
             // }
 
-            song.StartTime = rand.Next(0, song.Length - 20);
+            song.StartTime = rand.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
             songs.Add(song);
         }
 
@@ -464,16 +464,14 @@ public static class DbManager
     public static async Task<string> SelectAutocomplete()
     {
         const string sqlAutocomplete =
-            @"SELECT json_agg(mst.latin_title)
-            FROM music_source_title mst
+            @"SELECT mst.latin_title
+            FROM music_source_title mst where language IN ('ja','en','tr')
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            IEnumerable<string>? res = await connection.QueryAsync<string>(sqlAutocomplete);
-            var deserialized = JsonSerializer.Deserialize<List<string>>(res.Single())!.Distinct().OrderBy(x => x);
-
-            string autocomplete = JsonSerializer.Serialize(deserialized,
+            var res = (await connection.QueryAsync<string>(sqlAutocomplete)).ToList();
+            string autocomplete = JsonSerializer.Serialize(res.Distinct().OrderBy(x => x),
                 new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             return autocomplete;
         }

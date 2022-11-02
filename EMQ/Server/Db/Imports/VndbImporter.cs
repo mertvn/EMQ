@@ -11,6 +11,8 @@ namespace EMQ.Server.Db.Imports;
 
 public static class VndbImporter
 {
+    public static List<Song> Songs { get; } = new();
+
     public static List<dynamic> musicSourcesJson { get; set; } = null!;
 
     public static List<dynamic> musicSourcesTitlesJson { get; set; } = null!; // todo
@@ -27,6 +29,7 @@ public static class VndbImporter
 
     public static async Task ImportVndbData()
     {
+        Songs.Clear();
         string date = "2022-10-31";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
@@ -50,12 +53,18 @@ public static class VndbImporter
         insertsJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ Insert {date}.json"))!;
 
-        await ImportVndbDataInner(opsJson, SongSourceSongType.OP);
-        await ImportVndbDataInner(edsJson, SongSourceSongType.ED);
-        await ImportVndbDataInner(insertsJson, SongSourceSongType.Insert);
+        Songs.AddRange(ImportVndbDataInner(opsJson, SongSourceSongType.OP));
+        Songs.AddRange(ImportVndbDataInner(edsJson, SongSourceSongType.ED));
+        Songs.AddRange(ImportVndbDataInner(insertsJson, SongSourceSongType.Insert));
+
+        foreach (Song song in Songs)
+        {
+            int mId = await DbManager.InsertSong(song);
+            Console.WriteLine($"Inserted mId {mId}");
+        }
     }
 
-    private static async Task ImportVndbDataInner(List<dynamic> dataJson, SongSourceSongType songSourceSongType)
+    private static List<Song> ImportVndbDataInner(List<dynamic> dataJson, SongSourceSongType songSourceSongType)
     {
         var songs = new List<Song>();
 
@@ -69,6 +78,18 @@ public static class VndbImporter
             catch (Exception)
             {
                 Console.WriteLine($"No matching music source found for {dynData.VNID}");
+                throw;
+            }
+
+            List<dynamic> dynMusicSourceTitles =
+                musicSourcesTitlesJson.FindAll(x => (x.id == dynData.VNID) && (bool)x.official);
+            try
+            {
+                dynamic? _ = dynMusicSourceTitles.First().id;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"No matching music source title found for {dynData.VNID}");
                 throw;
             }
 
@@ -170,6 +191,39 @@ public static class VndbImporter
 
             var airDateStart = DateTime.ParseExact(date.ToString(), "yyyyMMdd", CultureInfo.InvariantCulture);
 
+            var musicSourceTitles = new List<Title>();
+
+            foreach (dynamic dynMusicSourceTitle in dynMusicSourceTitles)
+            {
+                string latinTitle;
+                string? nonLatinTitle;
+                if (string.IsNullOrEmpty((string)dynMusicSourceTitle.latin))
+                {
+                    latinTitle = dynMusicSourceTitle.title;
+                    nonLatinTitle = null;
+                }
+                else
+                {
+                    latinTitle = dynMusicSourceTitle.latin;
+                    nonLatinTitle = dynMusicSourceTitle.title;
+                }
+
+                // we don't want titles that are exactly same
+                if (musicSourceTitles.Any(x => x.LatinTitle == latinTitle))
+                {
+                    continue;
+                }
+
+                var musicSourceTitle = new Title()
+                {
+                    LatinTitle = latinTitle,
+                    NonLatinTitle = nonLatinTitle,
+                    Language = dynMusicSourceTitle.lang,
+                    IsMainTitle = latinTitle == (string)dynMusicSource.title
+                };
+                musicSourceTitles.Add(musicSourceTitle);
+            }
+
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
@@ -201,18 +255,7 @@ public static class VndbImporter
                                 Type = SongSourceLinkType.VNDB, Url = "https://vndb.org/" + dynMusicSource.id
                             }
                         },
-                        Titles =
-                            new List<Title>()
-                            {
-                                new Title()
-                                {
-                                    LatinTitle = dynMusicSource.title,
-                                    NonLatinTitle = dynMusicSource.original,
-                                    Language = dynMusicSource.olang, // todo
-                                    IsMainTitle = true
-                                },
-                                // todo multiple source titles
-                            },
+                        Titles = musicSourceTitles,
                         // todo categories
                     },
                 }
@@ -220,10 +263,6 @@ public static class VndbImporter
             songs.Add(song);
         }
 
-        foreach (Song song in songs)
-        {
-            int mId = await DbManager.InsertSong(song);
-            Console.WriteLine($"Inserted mId {mId}");
-        }
+        return songs;
     }
 }

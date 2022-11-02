@@ -15,7 +15,7 @@ public class SongArtist
 
     public List<Title> Titles { get; set; } = new(); // todo should be singular
 
-    public SongArtistRole Role { get; set; } = SongArtistRole.Unknown;
+    public SongArtistRole Role { get; set; } = SongArtistRole.Unknown; // todo needs to be list
 }
 
 public enum Sex
