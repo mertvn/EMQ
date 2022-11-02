@@ -159,6 +159,7 @@ public class QuizManager
 
     public async Task StartQuiz()
     {
+        // todo check if songs.count == 0 somewhere and if it is return to room
         Quiz.QuizState.QuizStatus = QuizStatus.Playing;
 
         await EnterQuiz();

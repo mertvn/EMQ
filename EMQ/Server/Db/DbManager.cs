@@ -434,15 +434,15 @@ public static class DbManager
 
     public static async Task<List<Song>> GetRandomSongs(int numSongs)
     {
-        // todo get ids from db & only get songs that have external links
+        const string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
         var songs = new List<Song>();
-        var ids = new HashSet<int>();
         var rand = new Random();
-        int numSongsInDb = 561; // todo
 
-        while (ids.Count < numSongs)
+        List<int> ids;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            ids.Add(rand.Next(1, numSongsInDb));
+            // todo make this faster if possible
+            ids = (await connection.QueryAsync<int>(sqlMusicIds)).OrderBy(_ => rand.Next()).Take(numSongs).ToList();
         }
 
         Console.WriteLine(JsonSerializer.Serialize(ids));

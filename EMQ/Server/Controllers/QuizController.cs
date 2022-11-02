@@ -196,7 +196,6 @@ public class QuizController : ControllerBase
                 var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == quiz.Id);
                 if (quizManager is not null)
                 {
-                    // todo randomly get songs matching the current filters from db
                     var dbSongs = await DbManager.GetRandomSongs(quiz.QuizSettings.NumSongs);
                     quiz.Songs = dbSongs;
                     // Console.WriteLine(JsonSerializer.Serialize(quiz.Songs));
