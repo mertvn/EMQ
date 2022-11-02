@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -454,7 +454,7 @@ public static class DbManager
             //     continue;
             // }
 
-            song.StartTime = rand.Next(0, song.Length);
+            song.StartTime = rand.Next(0, song.Length - 20);
             songs.Add(song);
         }
 
