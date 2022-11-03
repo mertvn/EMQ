@@ -240,13 +240,7 @@ public static class DbManager
                 "id,id", param: new { mId });
             song.Artists = songArtists.ToList();
 
-            Console.WriteLine("song: " + JsonSerializer.Serialize(song,
-                new JsonSerializerOptions()
-                {
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    WriteIndented = true,
-                    Converters = { new JsonStringEnumConverter() }
-                }));
+            Console.WriteLine("song: " + JsonSerializer.Serialize(song, Utils.JsoIndented));
             return song;
         }
     }
@@ -471,9 +465,126 @@ public static class DbManager
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var res = (await connection.QueryAsync<string>(sqlAutocomplete)).ToList();
-            string autocomplete = JsonSerializer.Serialize(res.Distinct().OrderBy(x => x),
-                new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            string autocomplete = JsonSerializer.Serialize(res.Distinct().OrderBy(x => x), Utils.Jso);
             return autocomplete;
+        }
+    }
+
+    public static async Task<IEnumerable<Song>> FindSongsBySongSourceLatinTitle(string songSourceLatinTitle)
+    {
+        const string sqlMIdFromMstLatinTitle = @"
+            SELECT msm.music_id
+            FROM music_source_music msm
+            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
+            WHERE mst.latin_title=@mstLatinTitle";
+
+        List<Song> songs = new();
+        List<int> mIds;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            mIds = (await connection.QueryAsync<int>(sqlMIdFromMstLatinTitle,
+                new { mstLatinTitle = songSourceLatinTitle })).ToList();
+        }
+
+        foreach (int mId in mIds)
+        {
+            songs.Add(await SelectSong(mId));
+        }
+
+        return songs;
+    }
+
+    public static async Task<int> InsertSongLink(int mId, SongLink songLink)
+    {
+        int melId;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            melId = await connection.InsertAsync(new MusicExternalLink
+            {
+                music_id = mId, url = songLink.Url, type = (int)songLink.Type, is_video = songLink.IsVideo,
+            });
+        }
+
+        return melId;
+    }
+
+    public static async Task<string> ExportSongLite()
+    {
+        var songs = await GetRandomSongs(int.MaxValue);
+
+        var songLite = songs.Select(song => new SongLite
+        {
+            Titles = song.Titles,
+            Links = song.Links,
+            SourceVndbIds = song.Sources.SelectMany(songSource =>
+                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
+                    .Select(songSourceLink => songSourceLink.Url.Replace("https://vndb.org/", ""))).ToList(),
+            ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
+        });
+
+        return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
+    }
+
+    public static async Task ImportSongLite(List<SongLite> songLites)
+    {
+        const string sqlMIdFromSongLite = @"
+            SELECT DISTINCT m.id
+            FROM music m
+            LEFT JOIN music_title mt ON mt.music_id = m.id
+            LEFT JOIN music_external_link mel ON mel.music_id = m.id
+            LEFT JOIN music_source_music msm ON msm.music_id = m.id
+            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+            LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
+            LEFT JOIN artist_music am ON am.music_id = m.id
+            LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+            LEFT JOIN artist a ON a.id = aa.artist_id
+            WHERE mt.latin_title = ANY(@mtLatinTitle)
+              AND msel.url = ANY(@mselUrl)
+              AND a.vndb_id = ANY(@aVndbId)";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
+        {
+            foreach (SongLite songLite in songLites)
+            {
+                // Console.WriteLine(JsonSerializer.Serialize(songLite, Utils.JsoIndented));
+                // Console.WriteLine(JsonSerializer.Serialize(songLite.Titles.Select(x => x.LatinTitle).ToList(),
+                //     Utils.JsoIndented));
+                // Console.WriteLine(JsonSerializer.Serialize(
+                //     songLite.SourceVndbIds.Select(x => "https://vndb.org/" + x).ToList(), Utils.JsoIndented));
+                // Console.WriteLine(JsonSerializer.Serialize(songLite.ArtistVndbIds, Utils.JsoIndented));
+                List<int> mIds = (await connection.QueryAsync<int>(sqlMIdFromSongLite,
+                        new
+                        {
+                            mtLatinTitle = songLite.Titles.Select(x => x.LatinTitle).ToList(),
+                            mselUrl = songLite.SourceVndbIds.Select(x => "https://vndb.org/" + x).ToList(),
+                            aVndbId = songLite.ArtistVndbIds
+                        }))
+                    .ToList();
+
+                if (mIds.Count > 1)
+                {
+                    throw new Exception(
+                        $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                }
+                else if (!mIds.Any())
+                {
+                    throw new Exception(
+                        $"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                }
+                else
+                {
+                    // todo check if there is already a link
+                    foreach (SongLink link in songLite.Links)
+                    {
+                        await InsertSongLink(mIds.First(), link);
+                    }
+                }
+            }
+
+            await transaction.CommitAsync();
         }
     }
 }

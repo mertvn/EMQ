@@ -10,4 +10,11 @@ public static class Utils
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, Converters = { new JsonStringEnumConverter() }
     };
+
+    public static JsonSerializerOptions JsoIndented => new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() },
+        WriteIndented = true
+    };
 }

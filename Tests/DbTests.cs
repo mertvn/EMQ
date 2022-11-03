@@ -14,6 +14,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using Newtonsoft.Json;
 using Npgsql;
 using NUnit.Framework;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Tests;
 
@@ -149,5 +150,20 @@ public class DbTests
     public async Task ImportVndbData()
     {
         await VndbImporter.ImportVndbData();
+    }
+
+    [Test, Explicit]
+    public async Task GenerateSongLite()
+    {
+        await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
+    }
+
+    [Test, Explicit]
+    public async Task ImportSongLite()
+    {
+        var deserialized =
+            JsonConvert.DeserializeObject<List<SongLite>>(
+                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
+        await DbManager.ImportSongLite(deserialized!);
     }
 }

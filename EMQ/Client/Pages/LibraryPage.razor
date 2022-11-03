@@ -1,0 +1,155 @@
+﻿@page "/LibraryPage"
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core
+@using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+@inject ILogger<GuessInputComponent> _logger
+
+<h3>Library</h3>
+
+<BlazoredTypeahead
+    SearchMethod="SearchAutocomplete"
+    TValue="string"
+    TItem="string"
+    Value="selectedMusicSourceLatinName"
+    ValueChanged="SelectedResultChanged"
+    ValueExpression="@(() => selectedMusicSourceLatinName)"
+    MinimumLength="1"
+    MaximumSuggestions="7"
+    Debounce="1"
+    placeholder="Enter VN name here">
+    <SelectedTemplate>
+        @context
+    </SelectedTemplate>
+    <ResultTemplate >
+        @context
+    </ResultTemplate>
+</BlazoredTypeahead>
+
+@foreach (var song in CurrentSongs)
+{
+    <div>------------------------------------------------------------------------------------------------------</div>
+
+    // <pre class="song">
+    //      @JsonSerializer.Serialize(song, Utils.JsoIndented)
+    //  </pre>
+
+    <div class="song">
+        <div class="songLatinTitle">@JsonSerializer.Serialize(@song.Titles, Utils.Jso)</div>
+        <div class="songArtistsLatinTitle">@JsonSerializer.Serialize(@song.Artists.Select(x => x.Titles.Single()), Utils.Jso) </div>
+        <div class="songSourceSongType">@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceLatinName))?.SongType</div>
+
+        <div>
+            Video link:
+            @if (song.Links.Any(x => x.IsVideo))
+            {
+                <p>✓</p>
+            }
+            else
+            {
+                <p>✘</p>
+
+                <label for="songUrl">Add video link:</label>
+                <input type="text" id="songUrl" @bind="songUrl">
+                <button @onclick="@(() => SubmitSongUrl(song.Id, songUrl))">Submit</button>
+            }
+        </div>
+        <div>
+            Sound-only link:
+            @if (song.Links.Any(x=> !x.IsVideo))
+            {
+                <p>✓</p>
+            }
+            else
+            {
+                <p>✘</p>
+
+                <label for="songUrl">Add sound-only link:</label>
+                <input type="text" id="songUrl" @bind="songUrl">
+                <button @onclick="@(() => SubmitSongUrl(song.Id, songUrl))">Submit</button>
+            }
+        </div>
+
+        @* @if (song.Links.Any() && !song.Links.Any(x => x.IsVideo)) *@
+        @* { *@
+        @*     <div>Missing video link</div> *@
+        @* } *@
+        @* else if (!song.Links.Any()) *@
+        @* { *@
+        @*     <div>Missing completely</div> *@
+        @* } *@
+        @* else *@
+        @* { *@
+        @*     <div>✓</div> *@
+        @* } *@
+
+    </div>
+}
+
+@code {
+    private string[] AutocompleteData { get; set; } = Array.Empty<string>();
+
+    public string selectedMusicSourceLatinName { get; set; } = "";
+
+    public List<Song> CurrentSongs { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+    }
+
+    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
+    {
+        var startsWith = AutocompleteData.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
+        var contains = AutocompleteData.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
+    // _logger.LogInformation(JsonSerializer.Serialize(result));
+        return await Task.FromResult(startsWith.Concat(contains).Distinct());
+    }
+
+    private async void SelectedResultChanged(string arg)
+    {
+        selectedMusicSourceLatinName = arg;
+
+        if (!string.IsNullOrWhiteSpace(selectedMusicSourceLatinName))
+        {
+            var req = new ReqFindSongsBySongSourceLatinTitle(selectedMusicSourceLatinName);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsBySongSourceLatinTitle", req);
+            if (res.IsSuccessStatusCode)
+            {
+                List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                if (songs != null && songs.Any())
+                {
+                    CurrentSongs = songs;
+                }
+                else
+                {
+                    CurrentSongs = new List<Song>();
+                }
+
+                StateHasChanged();
+            }
+        }
+    }
+
+    public string? songUrl { get; set; }
+
+    private async Task SubmitSongUrl(int mId, string url)
+    {
+        return;
+        songUrl = "";
+        StateHasChanged();
+
+        url = url.Trim();
+        bool isVideo = url.EndsWith(".mp4") || url.EndsWith(".webm");
+        SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
+
+        var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType }); // todo
+        var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
+        if (res.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Imported song link!");
+        }
+    }
+
+}

@@ -16,6 +16,7 @@
   <ItemGroup>
     <Folder Include="Auth\Business" />
     <Folder Include="Auth\Entities\Abstract" />
+    <Folder Include="Library\Entities\Abstract" />
     <Folder Include="Quiz\Business" />
     <Folder Include="Quiz\Entities" />
   </ItemGroup>

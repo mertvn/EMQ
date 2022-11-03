@@ -32,7 +32,7 @@
     [CascadingParameter]
     private QuizPage QuizPage { get; set; } = null!;
 
-    private string[] Data { get; set; } = Array.Empty<string>();
+    private string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
     // if we don't do this, the autocomplete dropdown closes after every timer tick
     protected override bool ShouldRender()
@@ -42,13 +42,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Data = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
     }
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        var startsWith = Data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
-        var contains = Data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
+        var startsWith = AutocompleteData.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
+        var contains = AutocompleteData.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
     // _logger.LogInformation(JsonSerializer.Serialize(result));
         return await Task.FromResult(startsWith.Concat(contains).Distinct());
     }

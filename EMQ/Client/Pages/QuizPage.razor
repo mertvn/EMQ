@@ -43,6 +43,14 @@
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
         @* todo Latin vs NonLatin title option *@
+        Song Type:
+        @if (_correctAnswer?.Sources != null)
+        {
+            foreach (var source in _correctAnswer?.Sources!)
+            {
+                <p>@source.SongType</p>
+            }
+        }
         Titles:
         @if (_correctAnswer?.Titles != null)
         {
@@ -57,7 +65,7 @@
         {
             foreach (var artist in _correctAnswer?.Artists!)
             {
-                <p>@artist.Titles.Single(x => x.IsMainTitle).LatinTitle</p>
+                <p>@artist.Titles.Single().LatinTitle</p>
             }
         }
     </div>
