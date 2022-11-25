@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -458,14 +458,16 @@ public static class DbManager
     public static async Task<string> SelectAutocomplete()
     {
         const string sqlAutocomplete =
-            @"SELECT mst.latin_title
+            @"SELECT mst.latin_title, mst.non_latin_title
             FROM music_source_title mst where language IN ('ja','en','tr')
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<string>(sqlAutocomplete)).ToList();
-            string autocomplete = JsonSerializer.Serialize(res.Distinct().OrderBy(x => x), Utils.Jso);
+            var res = (await connection.QueryAsync<(string, string?)>(sqlAutocomplete))
+                .Select(x => new[] { x.Item1, x.Item2 }).SelectMany(x => x);
+            string autocomplete =
+                JsonSerializer.Serialize(res.Distinct().Where(x => x != null).OrderBy(x => x), Utils.Jso);
             return autocomplete;
         }
     }
