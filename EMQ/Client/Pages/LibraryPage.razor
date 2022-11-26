@@ -59,7 +59,7 @@
 
                 @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
                 {
-                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url!))">
+                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
                         <DataAnnotationsValidator/>
                         @* <ValidationSummary/> *@
 
@@ -68,7 +68,7 @@
                             <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
                             <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
                         </div>
-                        <input type="submit" class="btn btn-primary" value="Submit"/>
+                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit"/>
                     </EditForm>
                 }
             </div>
@@ -107,7 +107,7 @@
         return await Task.FromResult(startsWith.Concat(contains).Distinct());
     }
 
-    private async void SelectedResultChanged(string arg)
+    private async Task SelectedResultChanged(string arg)
     {
         selectedMusicSourceTitle = arg;
 
@@ -131,8 +131,6 @@
             }
         }
     }
-
-    // public string? songUrl { get; set; }
 
     private async Task SubmitSongUrl(int mId, string url)
     {
