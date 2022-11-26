@@ -80,6 +80,7 @@ public class QuizManager
         foreach (var player in Quiz.Room.Players)
         {
             player.IsCorrect = null;
+            player.PlayerState = PlayerState.Thinking;
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
@@ -134,11 +135,13 @@ public class QuizManager
             {
                 player.IsCorrect = true;
                 player.Score += 1;
+                player.PlayerState = PlayerState.Correct;
             }
             else
             {
                 player.IsCorrect = false;
                 // player.Lives -= 1; // todo
+                player.PlayerState = PlayerState.Wrong;
             }
         }
     }
@@ -195,6 +198,8 @@ public class QuizManager
             if (player != null)
             {
                 player.Guess = guess;
+                player.PlayerState = PlayerState.Guessed;
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
             }
             else
             {

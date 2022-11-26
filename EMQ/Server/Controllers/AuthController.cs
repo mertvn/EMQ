@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
         //     playerId = 1001;
         // }
 
-        var player = new Player(playerId, req.Username) { Avatar = new Avatar("Assets/Au.png") }; // todo
+        var player = new Player(playerId, req.Username) { Avatar = new Avatar(AvatarCharacter.Auu, "default") };
         // todo: invalidate previous session with the same playerId if it exists
 
         _logger.LogInformation("Created new session for player " + player.Id);

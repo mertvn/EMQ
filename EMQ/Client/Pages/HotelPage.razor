@@ -36,7 +36,7 @@
                     </div>
                 </div>
             </div>
-            <button style="margin: 16px" class="btn btn-primary" @onclick="@(() => JoinRoom(room.Id))">Join</button>
+            <button style="margin: 16px" class="btn btn-primary" disabled="@(ClientState.Session == null)" @onclick="@(() => JoinRoom(room.Id))">Join</button>
         </div>
     }
 </div>

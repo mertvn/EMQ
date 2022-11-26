@@ -105,7 +105,7 @@
                         @* <p> Id: @player.Id</p> *@
                         <p> Name: @player.Username</p>
                         <p> Score: @player.Score</p>
-                        <img width="200px" height="200px" src="@player.Avatar?.Url" alt="Avatar">
+                        <img width="200px" height="200px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerState)" alt="Avatar">
                     </div>
                 }
             }
@@ -131,6 +131,7 @@
             ClientState.Session.hubConnection.On("ReceiveQuizStarted", async () => { await OnReceiveQuizStarted(); });
             ClientState.Session.hubConnection.On("ReceiveQuizEnded", async () => { await OnReceiveQuizEnded(); });
             ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
+            ClientState.Session.hubConnection.On("ReceiveResyncRequired", async () => { await OnReceiveResyncRequired(); });
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }
         else
@@ -142,6 +143,11 @@
     // _clientSongs[0] = nextSong;
     // _currentSong = _clientSongs[0];
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
+    }
+
+    private async Task OnReceiveResyncRequired()
+    {
+        await SyncWithServer();
     }
 
     private async Task OnReceiveCorrectAnswer(Song correctAnswer)

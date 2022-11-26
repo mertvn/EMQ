@@ -1,5 +1,6 @@
 ﻿@using EMQ.Shared.Core.UI
 @using System.IO
+@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
@@ -58,9 +59,13 @@
         return Task.FromResult(arg);
     }
 
-    private void SelectedResultChanged(string arg)
+    private async Task SelectedResultChanged(string arg)
     {
         QuizPage.PageState.Guess = arg;
+        if (!string.IsNullOrWhiteSpace(arg))
+        {
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", arg);
+        }
     }
 
     // private async Task GuessInput_OnKeyDown(KeyboardEventArgs e)
