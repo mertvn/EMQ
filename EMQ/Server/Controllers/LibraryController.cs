@@ -24,11 +24,11 @@ public class LibraryController : ControllerBase
     private readonly ILogger<LibraryController> _logger;
 
     [HttpPost]
-    [Route("FindSongsBySongSourceLatinTitle")]
-    public async Task<IEnumerable<Song>> FindSongsBySongSourceLatinTitle(
-        [FromBody] ReqFindSongsBySongSourceLatinTitle req)
+    [Route("FindSongsBySongSourceTitle")]
+    public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(
+        [FromBody] ReqFindSongsBySongSourceTitle req)
     {
-        var songs = await DbManager.FindSongsBySongSourceLatinTitle(req.SongSourceLatinTitle);
+        var songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
         return songs;
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -245,6 +245,7 @@ public static class DbManager
         }
     }
 
+    // todo InsertSongs
     public static async Task<int> InsertSong(Song song)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
@@ -472,21 +473,21 @@ public static class DbManager
         }
     }
 
-    public static async Task<IEnumerable<Song>> FindSongsBySongSourceLatinTitle(string songSourceLatinTitle)
+    public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)
     {
-        const string sqlMIdFromMstLatinTitle = @"
+        const string sqlMIdFromMstTitle = @"
             SELECT msm.music_id
             FROM music_source_music msm
             LEFT JOIN music_source ms ON ms.id = msm.music_source_id
             LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
-            WHERE mst.latin_title=@mstLatinTitle";
+            WHERE mst.latin_title=@mstTitle or mst.non_latin_title=@mstTitle";
 
         List<Song> songs = new();
         List<int> mIds;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            mIds = (await connection.QueryAsync<int>(sqlMIdFromMstLatinTitle,
-                new { mstLatinTitle = songSourceLatinTitle })).ToList();
+            mIds = (await connection.QueryAsync<int>(sqlMIdFromMstTitle,
+                new { mstTitle = songSourceTitle })).ToList();
         }
 
         foreach (int mId in mIds)

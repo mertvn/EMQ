@@ -3,6 +3,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using System.ComponentModel.DataAnnotations
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
@@ -12,13 +13,13 @@
     SearchMethod="SearchAutocomplete"
     TValue="string"
     TItem="string"
-    Value="selectedMusicSourceLatinName"
+    Value="selectedMusicSourceTitle"
     ValueChanged="SelectedResultChanged"
-    ValueExpression="@(() => selectedMusicSourceLatinName)"
+    ValueExpression="@(() => selectedMusicSourceTitle)"
     MinimumLength="1"
     MaximumSuggestions="7"
     Debounce="1"
-    placeholder="Enter VN name here">
+    placeholder="Enter VN title here">
     <SelectedTemplate>
         @context
     </SelectedTemplate>
@@ -27,70 +28,95 @@
     </ResultTemplate>
 </BlazoredTypeahead>
 
-@foreach (var song in CurrentSongs)
-{
-    <div>------------------------------------------------------------------------------------------------------</div>
+<div class="songs d-flex flex-row">
+    @foreach (var song in CurrentSongs)
+    {
+        <div class="song" style="margin: 16px">
+            <div class="songInfoCard card">
+                <div class="songInfoCardBody card-body">
+                    <div>
+                        <div>
+                            <h5 class="songSourceSongType">
+                                (@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)
+                            </h5>
+                            <h5 class="songLatinTitle card-title">@song.Titles.First(x => x.IsMainTitle).LatinTitle</h5>
+                        </div>
+                        <div>
+                            by
+                            @foreach (var songArtist in song.Artists)
+                            {
+                                <div>
+                                    <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">
+                                        <span>@songArtist.Titles.Single().LatinTitle</span>
+                                        @if (!string.IsNullOrEmpty(songArtist.Titles.Single().NonLatinTitle))
+                                        {
+                                            <span> (@songArtist.Titles.Single().NonLatinTitle)</span>
+                                        }
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
 
-    // <pre class="song">
-    //      @JsonSerializer.Serialize(song, Utils.JsoIndented)
-    //  </pre>
+                <div style="padding: 16px">
+                    <div>
+                        Video link:
+                        @if (song.Links.Any(x => x.IsVideo))
+                        {
+                            <span>✓</span>
+                        }
+                        else
+                        {
+                            <span>✘</span>
+                        }
+                    </div>
+                    <div>
+                        Sound link:
+                        @if (song.Links.Any(x => !x.IsVideo))
+                        {
+                            <span>✓</span>
+                        }
+                        else
+                        {
+                            <span>✘</span>
+                        }
+                    </div>
 
-    <div class="song">
-        <div class="songLatinTitle">@JsonSerializer.Serialize(@song.Titles, Utils.Jso)</div>
-        <div class="songArtistsLatinTitle">@JsonSerializer.Serialize(@song.Artists.Select(x => x.Titles.Single()), Utils.Jso) </div>
-        <div class="songSourceSongType">@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceLatinName))?.SongType</div>
+                    @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
+                    {
+                        <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url!))">
+                            <DataAnnotationsValidator/>
+                            @* <ValidationSummary/> *@
 
-        <div>
-            Video link:
-            @if (song.Links.Any(x => x.IsVideo))
-            {
-                <p>✓</p>
-            }
-            else
-            {
-                <p>✘</p>
-
-                <label for="songUrl">Add video link:</label>
-                <input type="text" id="songUrl" @bind="songUrl">
-                <button @onclick="@(() => SubmitSongUrl(song.Id, songUrl))">Submit</button>
-            }
+                            <div>
+                                <label for="songUrl">Add link: </label>
+                                <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
+                                <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
+                            </div>
+                            <input type="submit" class="btn btn-primary" value="Submit"/>
+                        </EditForm>
+                    }
+                </div>
+            </div>
         </div>
-        <div>
-            Sound-only link:
-            @if (song.Links.Any(x=> !x.IsVideo))
-            {
-                <p>✓</p>
-            }
-            else
-            {
-                <p>✘</p>
-
-                <label for="songUrl">Add sound-only link:</label>
-                <input type="text" id="songUrl" @bind="songUrl">
-                <button @onclick="@(() => SubmitSongUrl(song.Id, songUrl))">Submit</button>
-            }
-        </div>
-
-        @* @if (song.Links.Any() && !song.Links.Any(x => x.IsVideo)) *@
-        @* { *@
-        @*     <div>Missing video link</div> *@
-        @* } *@
-        @* else if (!song.Links.Any()) *@
-        @* { *@
-        @*     <div>Missing completely</div> *@
-        @* } *@
-        @* else *@
-        @* { *@
-        @*     <div>✓</div> *@
-        @* } *@
-
-    </div>
-}
+    }
+</div>
 
 @code {
+
+    public class AddSongLinkModel
+    {
+        [Required]
+        [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
+        public string Url { get; set; } = "";
+    }
+
+    private AddSongLinkModel _addSongLinkModel = new();
+
     private string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
-    public string selectedMusicSourceLatinName { get; set; } = "";
+    public string selectedMusicSourceTitle { get; set; } = "";
 
     public List<Song> CurrentSongs { get; set; } = new();
 
@@ -109,12 +135,12 @@
 
     private async void SelectedResultChanged(string arg)
     {
-        selectedMusicSourceLatinName = arg;
+        selectedMusicSourceTitle = arg;
 
-        if (!string.IsNullOrWhiteSpace(selectedMusicSourceLatinName))
+        if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
-            var req = new ReqFindSongsBySongSourceLatinTitle(selectedMusicSourceLatinName);
-            var res = await _client.PostAsJsonAsync("Library/FindSongsBySongSourceLatinTitle", req);
+            var req = new ReqFindSongsBySongSourceTitle(selectedMusicSourceTitle);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsBySongSourceTitle", req);
             if (res.IsSuccessStatusCode)
             {
                 List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
@@ -132,15 +158,15 @@
         }
     }
 
-    public string? songUrl { get; set; }
+    // public string? songUrl { get; set; }
 
     private async Task SubmitSongUrl(int mId, string url)
     {
-        return;
-        songUrl = "";
+    // return;
+        _addSongLinkModel.Url = "";
         StateHasChanged();
 
-        url = url.Trim();
+        url = url.Trim().ToLowerInvariant();
         bool isVideo = url.EndsWith(".mp4") || url.EndsWith(".webm");
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 

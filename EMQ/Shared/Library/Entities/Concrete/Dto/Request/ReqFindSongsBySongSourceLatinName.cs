@@ -1,11 +1,11 @@
 ﻿namespace EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 
-public class ReqFindSongsBySongSourceLatinTitle
+public class ReqFindSongsBySongSourceTitle
 {
-    public ReqFindSongsBySongSourceLatinTitle(string songSourceLatinTitle)
+    public ReqFindSongsBySongSourceTitle(string songSourceTitle)
     {
-        SongSourceLatinTitle = songSourceLatinTitle;
+        SongSourceTitle = songSourceTitle;
     }
 
-    public string SongSourceLatinTitle { get; }
+    public string SongSourceTitle { get; }
 }

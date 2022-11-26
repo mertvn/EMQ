@@ -73,7 +73,10 @@
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
         <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-            @(JsonSerializer.Serialize(_correctAnswer?.Sources.SelectMany(x => x.Titles).Select(x => x.LatinTitle), Utils.Jso))
+            @JsonSerializer.Serialize(_correctAnswer?
+                .Sources.SelectMany(x => x.Titles)
+                .Where(x => x.Language is "ja" or "en" or "tr") // todo
+                .Select(x => x.LatinTitle), Utils.Jso)
         </div>
 
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
