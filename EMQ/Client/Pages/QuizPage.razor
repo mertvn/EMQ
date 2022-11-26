@@ -43,31 +43,7 @@
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
         @* todo Latin vs NonLatin title option *@
-        Song Type:
-        @if (_correctAnswer?.Sources != null)
-        {
-            foreach (var source in _correctAnswer?.Sources!)
-            {
-                <p>@source.SongType</p>
-            }
-        }
-        Titles:
-        @if (_correctAnswer?.Titles != null)
-        {
-            foreach (var title in _correctAnswer?.Titles!)
-            {
-                <p>@title.LatinTitle</p>
-            }
-        }
-
-        Artists:
-        @if (_correctAnswer?.Artists != null)
-        {
-            foreach (var artist in _correctAnswer?.Artists!)
-            {
-                <p>@artist.Titles.Single().LatinTitle</p>
-            }
-        }
+        <SongInfoCardComponent song="@_correctAnswer" selectedMusicSourceTitle="@null"/>
     </div>
 
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
@@ -76,7 +52,10 @@
             @JsonSerializer.Serialize(_correctAnswer?
                 .Sources.SelectMany(x => x.Titles)
                 .Where(x => x.Language is "ja" or "en" or "tr") // todo
-                .Select(x => x.LatinTitle), Utils.Jso)
+                .Select(x => x.LatinTitle).Concat(_correctAnswer?
+                    .Sources.SelectMany(x => x.Titles)
+                    .Where(x => x.Language is "ja" or "en" or "tr") // todo
+                    .Select(x => x.NonLatinTitle).Where(x => x != null)!), Utils.Jso)
         </div>
 
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">

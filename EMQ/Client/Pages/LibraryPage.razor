@@ -31,74 +31,48 @@
 <div class="songs d-flex flex-row">
     @foreach (var song in CurrentSongs)
     {
-        <div class="song" style="margin: 16px">
-            <div class="songInfoCard card">
-                <div class="songInfoCardBody card-body">
-                    <div>
-                        <div>
-                            <h5 class="songSourceSongType">
-                                (@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)
-                            </h5>
-                            <h5 class="songLatinTitle card-title">@song.Titles.First(x => x.IsMainTitle).LatinTitle</h5>
-                        </div>
-                        <div>
-                            by
-                            @foreach (var songArtist in song.Artists)
-                            {
-                                <div>
-                                    <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">
-                                        <span>@songArtist.Titles.Single().LatinTitle</span>
-                                        @if (!string.IsNullOrEmpty(songArtist.Titles.Single().NonLatinTitle))
-                                        {
-                                            <span> (@songArtist.Titles.Single().NonLatinTitle)</span>
-                                        }
-                                    </a>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <div style="padding: 16px">
-                    <div>
-                        Video link:
-                        @if (song.Links.Any(x => x.IsVideo))
-                        {
-                            <span>✓</span>
-                        }
-                        else
-                        {
-                            <span>✘</span>
-                        }
-                    </div>
-                    <div>
-                        Sound link:
-                        @if (song.Links.Any(x => !x.IsVideo))
-                        {
-                            <span>✓</span>
-                        }
-                        else
-                        {
-                            <span>✘</span>
-                        }
-                    </div>
-
-                    @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
+        <div class="song card" style="margin: 16px">
+            <SongInfoCardComponent song="@song" selectedMusicSourceTitle="@selectedMusicSourceTitle"/>
+            <div style="padding: 16px">
+                <div>
+                    Video link:
+                    @if (song.Links.Any(x => x.IsVideo))
                     {
-                        <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url!))">
-                            <DataAnnotationsValidator/>
-                            @* <ValidationSummary/> *@
-
-                            <div>
-                                <label for="songUrl">Add link: </label>
-                                <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
-                                <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
-                            </div>
-                            <input type="submit" class="btn btn-primary" value="Submit"/>
-                        </EditForm>
+                        <span>✓</span>
+                    }
+                    else
+                    {
+                        <span>✘</span>
                     }
                 </div>
+                <div>
+                    Sound link:
+                    @if (song.Links.Any(x => !x.IsVideo))
+                    {
+                        <span>✓</span>
+                    }
+                    else
+                    {
+                        <span>✘</span>
+                    }
+                </div>
+
+                @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
+                {
+                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url!))">
+                        <DataAnnotationsValidator/>
+                        @* <ValidationSummary/> *@
+
+                        <div>
+                            <label for="songUrl">Add link: </label>
+                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
+                            <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
+                        </div>
+                        <input type="submit" class="btn btn-primary" value="Submit"/>
+                    </EditForm>
+                }
             </div>
+
         </div>
     }
 </div>

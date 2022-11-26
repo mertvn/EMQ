@@ -114,8 +114,10 @@ public class QuizManager
     {
         await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
 
-        IEnumerable<string> correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+        var correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
             .Select(x => x.LatinTitle).ToList();
+        correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+            .Select(x => x.NonLatinTitle).Where(x => x != null)!);
 
         Console.WriteLine("-------");
         Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));

@@ -20,6 +20,9 @@
     <p>@JsonSerializer.Serialize(Room?.Quiz?.QuizSettings, Utils.Jso)</p>
 </div>
 
+<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
+@* <button class="btn btn-primary" disabled="@(!Room?.Quiz?.QuizState!.IsActive)" @onclick="Hotjoin">Hotjoin Quiz</button> *@
+
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
     @if (Room?.Players.Any() ?? false)
     {
@@ -34,9 +37,6 @@
     }
 
 </div>
-
-<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
-@* <button class="btn btn-primary" disabled="@(!Room?.Quiz?.QuizState!.IsActive)" @onclick="Hotjoin">Hotjoin Quiz</button> *@
 
 @code {
     private Room? Room { get; set; }

@@ -1,0 +1,54 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+
+@if (song != null)
+{
+    <div class="songInfoCard card">
+        <div class="songInfoCardBody card-body">
+            <div>
+                <div>
+                    <h5 class="songSourceSongType">
+                        @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
+                        {
+                            <span>(@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)</span>
+                        }
+                        else
+                        {
+                            IEnumerable<SongSourceSongType> songTypes = song.Sources.Select(x => x.SongType);
+                            @foreach (var songType in songTypes)
+                            {
+                                <span>(@songType)</span>
+                            }
+                        }
+                    </h5>
+                    <h5 class="songLatinTitle card-title">@song.Titles.First(x => x.IsMainTitle).LatinTitle</h5>
+                </div>
+                <div>
+                    by
+                    @foreach (var songArtist in song.Artists)
+                    {
+                        <div>
+                            <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">
+                                <span>@songArtist.Titles.Single().LatinTitle</span>
+                                @if (!string.IsNullOrEmpty(songArtist.Titles.Single().NonLatinTitle))
+                                {
+                                    <span> (@songArtist.Titles.Single().NonLatinTitle)</span>
+                                }
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public Song? song { get; set; }
+
+    [Parameter]
+    public string? selectedMusicSourceTitle { get; set; }
+
+}
