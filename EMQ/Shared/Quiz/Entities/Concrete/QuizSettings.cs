@@ -11,4 +11,8 @@ public class QuizSettings
     public int PreloadAmount { get; set; } = 1;
 
     public bool IsHotjoinEnabled { get; set; } = true;
+
+    public int TeamSize { get; set; } = 2; // todo: default 1
+
+    public bool Duplicates { get; set; } = true; // TODO
 }

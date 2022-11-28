@@ -92,7 +92,53 @@ public class QuizManager
         Quiz.QuizState.Phase = new JudgementPhase();
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
+
+        if (Quiz.QuizSettings.TeamSize > 1)
+        {
+            await DetermineTeamGuesses();
+        }
+
         await JudgeGuesses();
+    }
+
+    private async Task DetermineTeamGuesses()
+    {
+        List<int> processedTeamIds = new();
+        foreach (Player player in Quiz.Room.Players)
+        {
+            if (processedTeamIds.Contains(player.TeamId))
+            {
+                continue;
+            }
+
+            if (IsGuessCorrect(player.Guess))
+            {
+                processedTeamIds.Add(player.TeamId);
+                foreach (Player teammate in Quiz.Room.Players.Where(teammate => teammate.TeamId == player.TeamId))
+                {
+                    teammate.Guess = player.Guess;
+                }
+            }
+        }
+
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+    }
+
+    private bool IsGuessCorrect(string guess)
+    {
+        // todo cache correctAnswers per song
+        var correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+            .Select(x => x.LatinTitle).ToList();
+        correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+            .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+
+        Console.WriteLine("-------");
+        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+
+        bool correct = correctAnswers.Any(correctAnswer =>
+            string.Equals(guess, correctAnswer, StringComparison.InvariantCultureIgnoreCase));
+
+        return correct;
     }
 
     private async Task EnterResultsPhase()
@@ -113,24 +159,14 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
-        await Task.Delay(TimeSpan.FromSeconds(2)); // wait for late guesses & add suspense...
-
-        var correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-            .Select(x => x.LatinTitle).ToList();
-        correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-            .Select(x => x.NonLatinTitle).Where(x => x != null)!);
-
-        Console.WriteLine("-------");
-        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+        await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense...
 
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
             Console.WriteLine("pG: " + player.Guess);
 
-            bool correct = correctAnswers.Any(correctAnswer =>
-                player.Guess?.ToLowerInvariant() == correctAnswer.ToLowerInvariant());
-
+            bool correct = IsGuessCorrect(player.Guess);
             if (correct)
             {
                 player.IsCorrect = true;
@@ -192,7 +228,7 @@ public class QuizManager
 
     public async Task OnSendGuessChanged(int playerId, string guess)
     {
-        if (Quiz.QuizState.Phase.Kind != QuizPhaseKind.Results)
+        if (Quiz.QuizState.Phase.Kind == QuizPhaseKind.Guess)
         {
             var player = Quiz.Room.Players.Find(x => x.Id == playerId);
             if (player != null)
@@ -205,10 +241,6 @@ public class QuizManager
             {
                 // todo log invalid guess submitted
             }
-        }
-        else
-        {
-            // todo log invalid guess submitted
         }
     }
 }

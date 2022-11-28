@@ -14,7 +14,7 @@ public class Player
 
     // public string DisplayName { get; }
 
-    public string? Guess { get; set; }
+    public string Guess { get; set; } = "";
 
     // todo: might want to keep this within Songs instead
     public bool? IsCorrect { get; set; } // todo maybe get rid of this and use PlayerState instead
@@ -24,4 +24,6 @@ public class Player
     public Avatar? Avatar { get; set; }
 
     public PlayerState PlayerState { get; set; }
+
+    public int TeamId { get; set; }
 }

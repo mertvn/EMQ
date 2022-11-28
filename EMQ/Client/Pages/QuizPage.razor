@@ -87,7 +87,7 @@
         @* we have to use pointer-events css property instead of
          the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
-             pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.GuessesVisibility);">
+             pointer-events:@UiHelpers.Bool2PointerEvents(Room?.Quiz?.QuizState.Phase.Kind != QuizPhaseKind.Results);">
             <GuessInputComponent></GuessInputComponent>
         </div>
 
@@ -272,7 +272,12 @@
                 PageState.ProgressValue = 0;
                 PageState.ProgressDivisor = Room!.Quiz!.QuizSettings.GuessMs;
                 PageState.VideoPlayerVisibility = false;
-                PageState.GuessesVisibility = false;
+
+                if (!(Room.Quiz.QuizSettings.TeamSize > 1))
+                {
+                    PageState.GuessesVisibility = false; // todo: should be able to toggle players' guesses separately (for multi-team games)
+                }
+
                 _correctAnswer = null;
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
                 StateHasChanged();
