@@ -26,4 +26,8 @@ public class Player
     public PlayerState PlayerState { get; set; }
 
     public int TeamId { get; set; }
+
+    public int Lives { get; set; }
+
+    public bool IsBuffered { get; set; }
 }

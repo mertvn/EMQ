@@ -49,8 +49,7 @@
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
 
-        if (Room!.Quiz?.QuizState.QuizStatus != null && Room!.Quiz?.QuizState.QuizStatus != QuizStatus.Ended
-            && (Room!.Quiz?.QuizSettings.IsHotjoinEnabled ?? false))
+        if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && (Room!.Quiz?.QuizSettings.IsHotjoinEnabled ?? false))
         {
             Hotjoin();
         }
@@ -85,6 +84,11 @@
     {
         _logger.LogInformation("Hotjoining Quiz");
         Navigation.NavigateTo("/QuizPage");
+    }
+
+    private async Task ChangeTeam(int teamId)
+    {
+    // todo
     }
 
 }

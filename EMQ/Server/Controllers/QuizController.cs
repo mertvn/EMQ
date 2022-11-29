@@ -95,7 +95,8 @@ public class QuizController : ControllerBase
     [Route("GetRooms")]
     public async Task<IEnumerable<Room>> GetRooms()
     {
-        return ServerState.Rooms; // todo: only return "active" rooms?
+        return ServerState.Rooms.Where(x =>
+            x.Quiz?.QuizState.QuizStatus is QuizStatus.Starting or QuizStatus.Playing);
     }
 
     [HttpPost]
@@ -196,14 +197,14 @@ public class QuizController : ControllerBase
                 var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == quiz.Id);
                 if (quizManager is not null)
                 {
-                    var dbSongs = await DbManager.GetRandomSongs(quiz.QuizSettings.NumSongs);
-                    quiz.Songs = dbSongs;
-                    // Console.WriteLine(JsonSerializer.Serialize(quiz.Songs));
-
-                    quiz.QuizState.NumSongs = quiz.Songs.Count;
-
-                    await quizManager.StartQuiz();
-                    _logger.LogInformation("Started quiz " + quiz.Id);
+                    if (await quizManager.PrimeQuiz())
+                    {
+                        _logger.LogInformation("Primed quiz {quiz.Id}", quiz.Id);
+                    }
+                    else
+                    {
+                        // todo cancel quiz and return to room
+                    }
                 }
                 else
                 {

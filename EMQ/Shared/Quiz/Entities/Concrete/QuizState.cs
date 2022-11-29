@@ -5,7 +5,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class QuizState
 {
-    public QuizStatus? QuizStatus { get; set; } // todo should this be here or on Quiz?
+    public QuizStatus QuizStatus { get; set; } = QuizStatus.Starting; // todo should this be here or on Quiz?
 
     [JsonIgnore] public IQuizPhase Phase { get; set; } = new GuessPhase();
 

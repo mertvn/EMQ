@@ -48,7 +48,7 @@
 
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
-        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); max-width: 720px;">
             @JsonSerializer.Serialize(_correctAnswer?
                 .Sources.SelectMany(x => x.Titles)
                 .Where(x => x.Language is "ja" or "en" or "tr") // todo
@@ -87,7 +87,7 @@
         @* we have to use pointer-events css property instead of
          the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
-             pointer-events:@UiHelpers.Bool2PointerEvents(Room?.Quiz?.QuizState.Phase.Kind != QuizPhaseKind.Results);">
+             pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
             <GuessInputComponent></GuessInputComponent>
         </div>
 
@@ -96,7 +96,7 @@
             {
                 @foreach (var player in Room.Players)
                 {
-                    <div class="playerDiv" style="margin: 20px">
+                    <div class="playerDiv" style="margin: 20px; max-width: 200px; max-height: 320px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv">
                                 <p style="color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")"> @player.Guess</p>
@@ -105,6 +105,12 @@
                         @* <p> Id: @player.Id</p> *@
                         <p> Name: @player.Username</p>
                         <p> Score: @player.Score</p>
+
+                        @if (Room?.Quiz?.QuizSettings.MaxLives > 0)
+                        {
+                            <p> Lives: @player.Lives</p>
+                        }
+
                         <img width="200px" height="200px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerState)" alt="Avatar">
                     </div>
                 }
@@ -139,9 +145,18 @@
     // todo warn error, reload
         }
 
-    // var nextSong = await NextSong(0);
-    // _clientSongs[0] = nextSong;
-    // _currentSong = _clientSongs[0];
+        await SyncWithServer();
+        if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting)
+        {
+            Song? nextSong = await NextSong(0);
+            if (nextSong is not null)
+            {
+                nextSong!.Data = (await DlSong(nextSong)).Data;
+                _clientSongs[0] = nextSong;
+                await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
+            }
+        }
+
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
     }
 
@@ -165,7 +180,7 @@
 
     public class QuizPageState
     {
-        public bool IsDebug { get; } = false;
+        public bool IsDebug { get; } = true;
         public readonly List<string> DebugOut = new() { "" };
 
         public float ProgressValue { get; set; } = 0;
@@ -394,6 +409,7 @@
                     else
                     {
                         PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
+                        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
                     }
                 }
                 else

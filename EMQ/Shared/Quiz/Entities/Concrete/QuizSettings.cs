@@ -12,7 +12,9 @@ public class QuizSettings
 
     public bool IsHotjoinEnabled { get; set; } = true;
 
-    public int TeamSize { get; set; } = 2; // todo: default 1
+    public int TeamSize { get; set; } = 1;
 
-    public bool Duplicates { get; set; } = true; // TODO
+    // public bool Duplicates { get; set; } = true; // TODO
+
+    public int MaxLives { get; set; }  // TODO
 }

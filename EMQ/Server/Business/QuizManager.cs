@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
+using EMQ.Server.Db;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
@@ -81,6 +82,7 @@ public class QuizManager
         {
             player.IsCorrect = null;
             player.PlayerState = PlayerState.Thinking;
+            player.IsBuffered = false;
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
@@ -176,8 +178,16 @@ public class QuizManager
             else
             {
                 player.IsCorrect = false;
-                // player.Lives -= 1; // todo
                 player.PlayerState = PlayerState.Wrong;
+
+                if (player.Lives > 0)
+                {
+                    player.Lives -= 1;
+                    if (player.Lives == 0)
+                    {
+                        // todo gameover for player
+                    }
+                }
             }
         }
     }
@@ -198,31 +208,67 @@ public class QuizManager
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
-    public async Task StartQuiz()
+    public async Task<bool> PrimeQuiz()
     {
-        // todo check if songs.count == 0 somewhere and if it is return to room
-        Quiz.QuizState.QuizStatus = QuizStatus.Playing;
+        var dbSongs = await DbManager.GetRandomSongs(Quiz.QuizSettings.NumSongs);
+        Quiz.Songs = dbSongs;
+        // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
+        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+
+        if (Quiz.QuizState.NumSongs == 0)
+        {
+            return false;
+        }
+
+        foreach (Player player in Quiz.Room.Players)
+        {
+            player.Lives = Quiz.QuizSettings.MaxLives;
+        }
 
         await EnterQuiz();
+        return true;
+    }
+
+    private async Task StartQuiz()
+    {
+        Quiz.QuizState.QuizStatus = QuizStatus.Playing;
+
+        // await EnterQuiz();
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizStarted");
         await EnterGuessingPhase();
         SetTimer();
     }
 
-    public async Task OnSendPlayerJoinedQuiz(string connectionId)
+    public async Task OnSendPlayerIsBuffered(int playerId)
     {
-        // TODO: only start quiz if all? players ready
+        // todo timeout
+        var player = Quiz.Room.Players.Find(player => player.Id == playerId)!;
+        player.IsBuffered = true;
+
+        int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+        Console.WriteLine($"isBufferedCount {isBufferedCount}");
         if (Quiz.QuizState.QuizStatus == QuizStatus.Starting)
         {
-            await StartQuiz();
+            if (isBufferedCount > Quiz.Room.Players.Count / 2)
+            {
+                await StartQuiz();
+            }
         }
-        else if (Quiz.QuizState.QuizStatus != QuizStatus.Ended)
+        else if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            if (isBufferedCount > Quiz.Room.Players.Count / 2)
+            {
+                // todo
+                // await StartNextSong();
+            }
+        }
+    }
+
+    public async Task OnSendPlayerJoinedQuiz(string connectionId)
+    {
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
-        }
-        else
-        {
-            // todo warn quiz is already over
         }
     }
 
