@@ -17,3 +17,4 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * auto-generate autocomplete list
 * coop: ability to click teammate's answer to switch to it
 * coop: should team answers be determined by count?
+* QuizLog

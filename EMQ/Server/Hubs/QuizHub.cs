@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Controllers;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -21,6 +22,17 @@ namespace EMQ.Server.Hubs
                 {
                     Console.WriteLine(
                         $"Player ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
+
+                    var playerRooms =
+                        ServerState.Rooms.FindAll(x => x.Players.Any(player => player.Id == session.Player.Id));
+
+                    foreach (Room playerRoom in playerRooms)
+                    {
+                        playerRoom.AllPlayerConnectionIds.Remove(session.ConnectionId);
+                        playerRoom.AllPlayerConnectionIds.Add(Context.ConnectionId);
+                        Console.WriteLine(
+                            $"Notified room {playerRoom.Id} of Player ConnectionId change");
+                    }
                 }
 
                 session.ConnectionId = Context.ConnectionId;

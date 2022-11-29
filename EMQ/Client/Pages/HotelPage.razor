@@ -33,6 +33,7 @@
                     <div>
                         <p> Owner: @room.Owner.Username</p>
                         <p> Players: @room.Players.Count</p>
+                        <p> QuizStatus: @room.Quiz?.QuizState.QuizStatus</p>
                     </div>
                 </div>
             </div>
@@ -50,10 +51,10 @@
     private QuizSettings QuizSettings { get; set; } = new()
     {
         NumSongs = 100,
-        GuessMs = 25000,
-        ResultsMs = 20000,
+        GuessMs = 2500,
+        ResultsMs = 2000,
         TeamSize = 8,
-        MaxLives = 5,
+        MaxLives = 2,
     };
 
     private List<Room> Rooms { get; set; } = new();

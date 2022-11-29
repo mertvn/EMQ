@@ -16,9 +16,6 @@ public class Player
 
     public string Guess { get; set; } = "";
 
-    // todo: might want to keep this within Songs instead
-    public bool? IsCorrect { get; set; } // todo maybe get rid of this and use PlayerState instead
-
     public int Score { get; set; }
 
     public Avatar? Avatar { get; set; }

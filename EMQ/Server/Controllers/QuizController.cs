@@ -58,7 +58,7 @@ public class QuizController : ControllerBase
         {
             if (room.Quiz != null)
             {
-                if (req.SongIndex <= room.Quiz.QuizState.sp + room.Quiz.QuizSettings.PreloadAmount)
+                if (req.SongIndex <= room.Quiz.QuizState.sp + room.Quiz.Room.QuizSettings.PreloadAmount)
                 {
                     if (req.SongIndex < room.Quiz.Songs.Count)
                     {
@@ -95,8 +95,11 @@ public class QuizController : ControllerBase
     [Route("GetRooms")]
     public async Task<IEnumerable<Room>> GetRooms()
     {
-        return ServerState.Rooms.Where(x =>
-            x.Quiz?.QuizState.QuizStatus is QuizStatus.Starting or QuizStatus.Playing);
+        // todo
+        // return ServerState.Rooms.Where(x => x.Quiz is null ||
+        //                                     x.Quiz?.QuizState.QuizStatus is QuizStatus.Starting or QuizStatus.Playing);
+
+        return ServerState.Rooms;
     }
 
     [HttpPost]
@@ -111,18 +114,13 @@ public class QuizController : ControllerBase
         }
 
         var owner = session.Player;
-        var room = new Room(new Random().Next(), req.Name, owner) { Password = req.Password, };
-
-        var quiz = new Quiz(req.QuizSettings, room, new Random().Next());
-
-        room.Quiz = quiz;
-
-        // todo
+        var room = new Room(new Random().Next(), req.Name, owner)
+        {
+            Password = req.Password, QuizSettings = req.QuizSettings
+        };
         ServerState.Rooms.Add(room);
-        ServerState.QuizManagers.Add(new QuizManager(quiz, _hubContext));
-
         _logger.LogInformation("Created room " + room.Id);
-        _logger.LogInformation("Created quiz " + quiz.Id);
+
         return room.Id;
     }
 
@@ -192,32 +190,32 @@ public class QuizController : ControllerBase
         {
             if (room.Owner.Id == player.Id)
             {
-                var quiz = room.Quiz!;
+                var quiz = new Quiz(room, new Random().Next());
+                room.Quiz = quiz;
+                var quizManager = new QuizManager(quiz, _hubContext);
+                ServerState.QuizManagers.Add(quizManager);
+                _logger.LogInformation("Created quiz " + quiz.Id);
 
-                var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == quiz.Id);
-                if (quizManager is not null)
+                if (await quizManager.PrimeQuiz())
                 {
-                    if (await quizManager.PrimeQuiz())
-                    {
-                        _logger.LogInformation("Primed quiz {quiz.Id}", quiz.Id);
-                    }
-                    else
-                    {
-                        // todo cancel quiz and return to room
-                    }
+                    _logger.LogInformation("Primed quiz {quiz.Id}", quiz.Id);
                 }
                 else
                 {
-                    // todo
+                    _logger.LogInformation("Failed to prime quiz {quiz.Id} - canceling", quiz.Id);
+                    // todo cancel quiz and return to room
                 }
             }
             else
             {
+                _logger.LogInformation("Attempt to start quiz in room {room.Id} by non-owner player {req.playerId}",
+                    room.Id, req.PlayerId);
                 // todo warn not owner
             }
         }
         else
         {
+            _logger.LogInformation("Attempt to start quiz in room {req.RoomId} that is null", req.RoomId);
             // todo
         }
     }

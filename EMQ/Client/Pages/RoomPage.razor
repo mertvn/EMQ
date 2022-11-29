@@ -8,6 +8,7 @@
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
 @inject ClientUtils _clientUtils
+@inject ClientConnectionManager _clientConnectionManager
 
 <h3>Room</h3>
 
@@ -17,7 +18,7 @@
     Owner:<br/>
     <p>@Room?.Owner.Username</p>
     Settings:<br/>
-    <p>@JsonSerializer.Serialize(Room?.Quiz?.QuizSettings, Utils.Jso)</p>
+    <p>@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
 </div>
 
 <button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
@@ -41,15 +42,25 @@
 @code {
     private Room? Room { get; set; }
 
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+
+    public RoomPage()
+    {
+        _handlers = new Dictionary<string, (Type[] types, Func<object?[], Task> value)>
+        {
+            { "ReceivePlayerJoinedRoom", (new Type[] { }, async _ => { await OnReceivePlayerJoinedRoom(); }) },
+            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) }
+        };
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        ClientState.Session!.hubConnection!.On("ReceivePlayerJoinedRoom", async () => { await OnReceivePlayerJoinedRoom(); });
-        ClientState.Session!.hubConnection!.On("ReceiveQuizEntered", async () => { await OnReceiveQuizEntered(); });
+        await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
 
-        if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && (Room!.Quiz?.QuizSettings.IsHotjoinEnabled ?? false))
+        if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
         {
             Hotjoin();
         }

@@ -15,9 +15,11 @@ public class ClientUtils // todo: find better name
         Client = client;
     }
 
-    [Inject] private ILogger<ClientUtils> Logger { get; }
+    [Inject]
+    private ILogger<ClientUtils> Logger { get; }
 
-    [Inject] private HttpClient Client { get; }
+    [Inject]
+    private HttpClient Client { get; }
 
     public async Task<Room?> SyncRoom()
     {

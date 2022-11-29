@@ -15,11 +15,14 @@
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
+@inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
 
 <CascadingValue Value="@this" IsFixed="true">
     @* <h3>Quiz</h3> *@
-    <p style="color: @UiHelpers.Bool2Color(IsConnected, "green", "red")">@UiHelpers.Bool2Text(IsConnected, "Connected", "Disconnected")</p>
+    <p style="color: @UiHelpers.Bool2Color(_clientConnectionManager.IsConnected, "green", "red")">
+        @UiHelpers.Bool2Text(_clientConnectionManager.IsConnected, "Connected", "Disconnected")
+    </p>
     <div style="display:flex; justify-content:center; align-items:center;">
         <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
     </div>
@@ -88,6 +91,7 @@
          the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
              pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
+            @* todo should be false on judgement phase as well *@
             <GuessInputComponent></GuessInputComponent>
         </div>
 
@@ -99,14 +103,14 @@
                     <div class="playerDiv" style="margin: 20px; max-width: 200px; max-height: 320px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv">
-                                <p style="color: @UiHelpers.Bool2Color(player.IsCorrect, "green", "red")"> @player.Guess</p>
+                                <p style="color: @UiHelpers.Bools2Color(player.PlayerState == PlayerState.Correct, player.PlayerState == PlayerState.Wrong, "green", "red")"> @player.Guess</p>
                             </div>
                         </div>
                         @* <p> Id: @player.Id</p> *@
                         <p> Name: @player.Username</p>
                         <p> Score: @player.Score</p>
 
-                        @if (Room?.Quiz?.QuizSettings.MaxLives > 0)
+                        @if (Room?.QuizSettings.MaxLives > 0)
                         {
                             <p> Lives: @player.Lives</p>
                         }
@@ -122,27 +126,35 @@
 </CascadingValue>
 
 @code {
-    // private HubConnection? hubConnection;
 
-    public bool IsConnected =>
-        ClientState.Session!.hubConnection?.State == HubConnectionState.Connected;
+    public QuizPage()
+    {
+        _handlers = new()
+        {
+            { "ReceiveQuizStarted", (new Type[] { }, async _ => { await OnReceiveQuizStarted(); }) },
+            { "ReceiveQuizEnded", (new Type[] { }, async _ => { await OnReceiveQuizEnded(); }) },
+            { "ReceiveResyncRequired", (new Type[] { }, async _ => { await OnReceiveResyncRequired(); }) },
+            { "ReceivePhaseChanged", (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int) phase[0]); }) },
+            { "ReceiveCorrectAnswer", (new Type[] { typeof(Song) }, async correctAnswer => { await OnReceiveCorrectAnswer((Song) correctAnswer[0]); }) },
+        };
+    }
+
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
     protected override async Task OnInitializedAsync()
     {
         PageState.DebugOut.Add("init QuizPage");
-    // _logger.LogError(JsonSerializer.Serialize(Globals.Session));
+
         if (ClientState.Session!.hubConnection is not null)
         {
-            ClientState.Session.hubConnection.On<int>("ReceivePhaseChanged", async phase => { await OnReceivePhaseChanged(phase); });
-            ClientState.Session.hubConnection.On("ReceiveQuizStarted", async () => { await OnReceiveQuizStarted(); });
-            ClientState.Session.hubConnection.On("ReceiveQuizEnded", async () => { await OnReceiveQuizEnded(); });
-            ClientState.Session.hubConnection.On<Song>("ReceiveCorrectAnswer", async correctAnswer => { await OnReceiveCorrectAnswer(correctAnswer); });
-            ClientState.Session.hubConnection.On("ReceiveResyncRequired", async () => { await OnReceiveResyncRequired(); });
+            await _clientConnectionManager.SetHandlers(_handlers);
             PageState.DebugOut.Add("initialized QuizPage hubConnection handlers");
         }
         else
         {
+    // await _clientConnectionManager.StartManagingConnection();
     // todo warn error, reload
+    // todo restore session from cookie or smth
         }
 
         await SyncWithServer();
@@ -151,7 +163,7 @@
             Song? nextSong = await NextSong(0);
             if (nextSong is not null)
             {
-                nextSong!.Data = (await DlSong(nextSong)).Data;
+                nextSong.Data = (await DlSong(nextSong)).Data;
                 _clientSongs[0] = nextSong;
                 await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
             }
@@ -267,7 +279,8 @@
     {
         await SyncWithServer();
     // TODO: do endgame stuff
-    // _navigation.NavigateTo("/RoomPage");
+        await Task.Delay(TimeSpan.FromSeconds(10));
+        _navigation.NavigateTo("/RoomPage");
     }
 
     public async Task OnReceivePhaseChanged(int phase)
@@ -285,10 +298,10 @@
 
     // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivisor = Room!.Quiz!.QuizSettings.GuessMs;
+                PageState.ProgressDivisor = Room!.QuizSettings.GuessMs;
                 PageState.VideoPlayerVisibility = false;
 
-                if (!(Room.Quiz.QuizSettings.TeamSize > 1))
+                if (!(Room.QuizSettings.TeamSize > 1))
                 {
                     PageState.GuessesVisibility = false; // todo: should be able to toggle players' guesses separately (for multi-team games)
                 }
@@ -310,14 +323,14 @@
             case QuizPhaseKind.Results:
     // TODO: restart song (option?)
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivisor = Room!.Quiz!.QuizSettings.ResultsMs;
+                PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
-                if (Room!.Quiz!.QuizState.sp + Room.Quiz.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
+                if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds(Room.Quiz.QuizSettings.ResultsMs));
-                    await Preload(Room.Quiz!.QuizState.sp, Room.Quiz.QuizSettings.PreloadAmount);
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds(Room.QuizSettings.ResultsMs));
+                    await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
                 }
                 break;
             default:

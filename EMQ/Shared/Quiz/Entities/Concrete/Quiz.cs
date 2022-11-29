@@ -7,9 +7,8 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class Quiz
 {
-    public Quiz(QuizSettings quizSettings, Room room, int id)
+    public Quiz(Room room, int id)
     {
-        QuizSettings = quizSettings;
         Room = room;
         Id = id;
     }
@@ -25,8 +24,6 @@ public class Quiz
     public Timer Timer { get; set; } = new();
 
     public const float TickRate = 17;
-
-    public QuizSettings QuizSettings { get; set; }
 
     public QuizState QuizState { get; set; } = new();
 

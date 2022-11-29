@@ -240,7 +240,7 @@ public static class DbManager
                 "id,id", param: new { mId });
             song.Artists = songArtists.ToList();
 
-            Console.WriteLine("song: " + JsonSerializer.Serialize(song, Utils.JsoIndented));
+            // Console.WriteLine("song: " + JsonSerializer.Serialize(song, Utils.JsoIndented));
             return song;
         }
     }

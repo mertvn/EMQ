@@ -76,11 +76,10 @@ public class QuizManager
     private async Task EnterGuessingPhase()
     {
         Quiz.QuizState.Phase = new GuessPhase();
-        Quiz.QuizState.RemainingMs = Quiz.QuizSettings.GuessMs;
+        Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
         foreach (var player in Quiz.Room.Players)
         {
-            player.IsCorrect = null;
             player.PlayerState = PlayerState.Thinking;
             player.IsBuffered = false;
         }
@@ -95,7 +94,7 @@ public class QuizManager
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
-        if (Quiz.QuizSettings.TeamSize > 1)
+        if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
             await DetermineTeamGuesses();
         }
@@ -146,14 +145,15 @@ public class QuizManager
     private async Task EnterResultsPhase()
     {
         Quiz.QuizState.Phase = new ResultsPhase();
-        Quiz.QuizState.RemainingMs = Quiz.QuizSettings.ResultsMs;
+        Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
-        if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
+        if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
+            Quiz.Room.Players.All(player => player.PlayerState == PlayerState.Dead))
         {
             await EndQuiz();
         }
@@ -166,18 +166,21 @@ public class QuizManager
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
+            if (player.PlayerState == PlayerState.Dead)
+            {
+                continue;
+            }
+
             Console.WriteLine("pG: " + player.Guess);
 
             bool correct = IsGuessCorrect(player.Guess);
             if (correct)
             {
-                player.IsCorrect = true;
                 player.Score += 1;
                 player.PlayerState = PlayerState.Correct;
             }
             else
             {
-                player.IsCorrect = false;
                 player.PlayerState = PlayerState.Wrong;
 
                 if (player.Lives > 0)
@@ -185,7 +188,7 @@ public class QuizManager
                     player.Lives -= 1;
                     if (player.Lives == 0)
                     {
-                        // todo gameover for player
+                        player.PlayerState = PlayerState.Dead;
                     }
                 }
             }
@@ -200,6 +203,7 @@ public class QuizManager
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEnded");
+        // Quiz.Room.Quiz = null; // todo
     }
 
     private async Task EnterQuiz()
@@ -210,7 +214,7 @@ public class QuizManager
 
     public async Task<bool> PrimeQuiz()
     {
-        var dbSongs = await DbManager.GetRandomSongs(Quiz.QuizSettings.NumSongs);
+        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs);
         Quiz.Songs = dbSongs;
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;
@@ -222,7 +226,7 @@ public class QuizManager
 
         foreach (Player player in Quiz.Room.Players)
         {
-            player.Lives = Quiz.QuizSettings.MaxLives;
+            player.Lives = Quiz.Room.QuizSettings.MaxLives;
         }
 
         await EnterQuiz();
@@ -281,7 +285,12 @@ public class QuizManager
             {
                 player.Guess = guess;
                 player.PlayerState = PlayerState.Guessed;
-                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+
+                if (Quiz.Room.QuizSettings.TeamSize > 1)
+                {
+                    await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                        .SendAsync("ReceiveResyncRequired");
+                }
             }
             else
             {

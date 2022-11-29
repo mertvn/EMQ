@@ -19,7 +19,10 @@ public class Room
 
     public string Name { get; set; }
 
-    [JsonIgnore] public string Password { get; set; } = "";
+    [JsonIgnore]
+    public string Password { get; set; } = "";
+
+    public QuizSettings QuizSettings { get; set; } = new();
 
     public Quiz? Quiz { get; set; }
 
@@ -27,5 +30,6 @@ public class Room
 
     public Player Owner { get; set; }
 
-    [JsonIgnore] public List<string> AllPlayerConnectionIds { get; set; } = new();
+    [JsonIgnore]
+    public List<string> AllPlayerConnectionIds { get; set; } = new();
 }

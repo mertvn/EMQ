@@ -7,4 +7,5 @@ public enum PlayerState
     Guessed,
     Correct,
     Wrong,
+    Dead
 }

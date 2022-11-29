@@ -16,6 +16,22 @@ public static class UiHelpers
         }
     }
 
+    public static string Bools2Color(bool b1, bool b2, string b1TrueValue, string b2TrueValue, string neitherValue = "")
+    {
+        if (b1)
+        {
+            return b1TrueValue;
+        }
+        else if (b2)
+        {
+            return b2TrueValue;
+        }
+        else
+        {
+            return neitherValue;
+        }
+    }
+
     public static string Bool2PointerEvents(bool b) => b ? "auto" : "none";
 
     public static string Bool2Text(bool? b, string trueValue, string falseValue, string nullValue = "")

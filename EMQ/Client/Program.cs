@@ -11,5 +11,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddSingleton(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddSingleton<ClientUtils>();
+builder.Services.AddSingleton<ClientConnectionManager>();
 
 await builder.Build().RunAsync();
