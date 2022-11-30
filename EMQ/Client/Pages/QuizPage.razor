@@ -134,15 +134,58 @@
             { "ReceiveQuizStarted", (new Type[] { }, async _ => { await OnReceiveQuizStarted(); }) },
             { "ReceiveQuizEnded", (new Type[] { }, async _ => { await OnReceiveQuizEnded(); }) },
             { "ReceiveResyncRequired", (new Type[] { }, async _ => { await OnReceiveResyncRequired(); }) },
-            { "ReceivePhaseChanged", (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int) phase[0]); }) },
-            { "ReceiveCorrectAnswer", (new Type[] { typeof(Song) }, async correctAnswer => { await OnReceiveCorrectAnswer((Song) correctAnswer[0]); }) },
+            { "ReceivePhaseChanged", (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int) phase[0]!); }) },
+            { "ReceiveCorrectAnswer", (new Type[] { typeof(Song) }, async correctAnswer => { await OnReceiveCorrectAnswer((Song) correctAnswer[0]!); }) },
         };
+
+        PageState.Timer.Stop();
+        PageState.Timer.Elapsed -= OnTimedEvent;
+        PageState = new QuizPageState();
+        Room = null;
+        _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
+        _currentSong = null;
+        _correctAnswer = null;
+        PreloadCancellationSource = new CancellationTokenSource();
+        PreloadCancellationRegistration = new CancellationTokenRegistration();
     }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
+    public class QuizPageState
+    {
+        public bool IsDebug { get; } = true;
+        public readonly List<string> DebugOut = new() { "" };
+
+        public float ProgressValue { get; set; } = 0;
+        public float ProgressDivisor { get; set; } = 1;
+
+        public bool VideoPlayerVisibility { get; set; }
+        public bool GuessesVisibility { get; set; } = true;
+    // public bool GuessInputDisabled { get; set; } = true;
+
+        public string? Guess { get; set; }
+
+        public float Countdown { get; set; }
+        public Timer Timer { get; } = new();
+    }
+
+    public static QuizPageState PageState { get; set; } = new() { };
+
+    private static Room? Room { get; set; }
+
+    private readonly List<Song?> _clientSongs;
+
+    private Song? _currentSong;
+
+    private Song? _correctAnswer;
+
+    private CancellationTokenSource PreloadCancellationSource { get; set; }
+
+    private CancellationTokenRegistration PreloadCancellationRegistration { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+    // todo reset page state between quizzes
         PageState.DebugOut.Add("init QuizPage");
 
         if (ClientState.Session!.hubConnection is not null)
@@ -190,38 +233,6 @@
         }
     }
 
-    public class QuizPageState
-    {
-        public bool IsDebug { get; } = true;
-        public readonly List<string> DebugOut = new() { "" };
-
-        public float ProgressValue { get; set; } = 0;
-        public float ProgressDivisor { get; set; } = 1;
-
-        public bool VideoPlayerVisibility { get; set; }
-        public bool GuessesVisibility { get; set; } = true;
-    // public bool GuessInputDisabled { get; set; } = true;
-
-        public string? Guess { get; set; }
-
-        public float Countdown { get; set; }
-        public Timer Timer { get; } = new();
-    }
-
-    private static Room? Room { get; set; }
-
-    public static QuizPageState PageState { get; set; } = new() { };
-
-    private readonly List<Song?> _clientSongs = new(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
-
-    private Song? _currentSong;
-
-    private Song? _correctAnswer;
-
-    private CancellationTokenSource PreloadCancellationSource { get; set; } = new();
-
-    private CancellationTokenRegistration PreloadCancellationRegistration { get; set; } = new();
-
     public async Task<Song?> NextSong(int index)
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong", new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
@@ -265,6 +276,7 @@
     private async Task SyncWithServer()
     {
         Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
     }
 
     private async Task OnReceiveQuizStarted()

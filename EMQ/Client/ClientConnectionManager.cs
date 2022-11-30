@@ -71,13 +71,13 @@ public class ClientConnectionManager
             await Task.Delay(500);
         }
 
-        await RegisterMethods(handlers);
+        RegisterMethods(handlers);
 
         var del = async delegate(Exception? exception)
         {
             if (exception != null)
             {
-                Logger.LogInformation(exception.ToString());
+                Logger.LogError(exception.ToString());
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(500));
@@ -96,7 +96,7 @@ public class ClientConnectionManager
         CurrentHandlers = handlers;
     }
 
-    public async Task RegisterMethod(string key, Type[] types, Func<object?[], Task> value)
+    public void RegisterMethod(string key, Type[] types, Func<object?[], Task> value)
     {
         for (int i = 0; i < types.Length; i++)
         {
@@ -113,7 +113,7 @@ public class ClientConnectionManager
         Logger.LogInformation("Registered method {Key}", key);
     }
 
-    private async Task RegisterMethods(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
+    private void RegisterMethods(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
     {
         Logger.LogInformation($"Registering {handlers.Count} methods");
         foreach ((string key, (Type[] types, Func<object?[], Task> value)) in handlers)
@@ -122,7 +122,7 @@ public class ClientConnectionManager
             // if (!CurrentHandlers.ContainsKey(key))
             // {
             // Logger.LogInformation($"here2");
-            await RegisterMethod(key, types, value);
+            RegisterMethod(key, types, value);
             // }
             // else
             // {

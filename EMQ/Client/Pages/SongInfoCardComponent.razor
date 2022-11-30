@@ -9,7 +9,10 @@
                     <h5 class="songSourceSongType">
                         @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
                         {
-                            <span>(@song.Sources.SingleOrDefault(x => x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)</span>
+                            <span>
+                                (@song.Sources.SingleOrDefault(x =>
+                                     x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)
+                            </span>
                         }
                         else
                         {

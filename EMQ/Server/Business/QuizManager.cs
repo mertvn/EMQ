@@ -227,6 +227,10 @@ public class QuizManager
         foreach (Player player in Quiz.Room.Players)
         {
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
+            player.Score = 0;
+            player.Guess = "";
+            player.IsBuffered = false;
+            player.PlayerState = PlayerState.Thinking;
         }
 
         await EnterQuiz();

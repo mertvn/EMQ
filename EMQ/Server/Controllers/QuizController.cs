@@ -202,20 +202,20 @@ public class QuizController : ControllerBase
                 }
                 else
                 {
-                    _logger.LogInformation("Failed to prime quiz {quiz.Id} - canceling", quiz.Id);
+                    _logger.LogWarning("Failed to prime quiz {quiz.Id} - canceling", quiz.Id);
                     // todo cancel quiz and return to room
                 }
             }
             else
             {
-                _logger.LogInformation("Attempt to start quiz in room {room.Id} by non-owner player {req.playerId}",
+                _logger.LogWarning("Attempt to start quiz in room {room.Id} by non-owner player {req.playerId}",
                     room.Id, req.PlayerId);
                 // todo warn not owner
             }
         }
         else
         {
-            _logger.LogInformation("Attempt to start quiz in room {req.RoomId} that is null", req.RoomId);
+            _logger.LogWarning("Attempt to start quiz in room {req.RoomId} that is null", req.RoomId);
             // todo
         }
     }
