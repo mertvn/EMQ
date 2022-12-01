@@ -508,10 +508,11 @@ public static class DbManager
                 music_id = mId, url = songLink.Url, type = (int)songLink.Type, is_video = songLink.IsVideo,
             };
 
+            Console.WriteLine($"Attempting to insert MusicExternalLink: " + JsonSerializer.Serialize(mel, Utils.Jso));
             melId = await connection.InsertAsync(mel);
             if (melId > 0)
             {
-                Console.WriteLine($"Inserted MusicExternalLink {melId}: " + JsonSerializer.Serialize(mel, Utils.Jso));
+             // todo
             }
         }
 
