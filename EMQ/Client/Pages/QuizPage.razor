@@ -103,7 +103,7 @@
                     <div class="playerDiv" style="margin: 20px; max-width: 200px; max-height: 320px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv">
-                                <p style="color: @UiHelpers.Bools2Color(player.PlayerState == PlayerState.Correct, player.PlayerState == PlayerState.Wrong, "green", "red")"> @player.Guess</p>
+                                <p style="color: @UiHelpers.Bools2Color(player.PlayerState == PlayerState.Correct, player.PlayerState is PlayerState.Wrong or PlayerState.Dead, "green", "red")"> @player.Guess</p>
                             </div>
                         </div>
                         @* <p> Id: @player.Id</p> *@
@@ -429,11 +429,11 @@
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}"); // todo link selection
                     }
                     else
                     {
-                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}"); // todo link selection
                         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
                     }
                 }

@@ -29,9 +29,9 @@ public class Avatar
 
         if (avatar is null)
         {
-            return $"assets/avatars/auu/default/{pose}.jpg";
+            return $"assets/avatars/auu/default/{pose}.jpg".ToLowerInvariant();
         }
 
-        return $"assets/avatars/{avatar.Character.ToString()}/{avatar.Skin}/{pose}.jpg";
+        return $"assets/avatars/{avatar.Character.ToString()}/{avatar.Skin}/{pose}.jpg".ToLowerInvariant();
     }
 }
