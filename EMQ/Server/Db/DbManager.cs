@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -503,10 +503,16 @@ public static class DbManager
         int melId;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            melId = await connection.InsertAsync(new MusicExternalLink
+            var mel = new MusicExternalLink
             {
                 music_id = mId, url = songLink.Url, type = (int)songLink.Type, is_video = songLink.IsVideo,
-            });
+            };
+
+            melId = await connection.InsertAsync(mel);
+            if (melId > 0)
+            {
+                Console.WriteLine($"Inserted MusicExternalLink {melId}: " + JsonSerializer.Serialize(mel, Utils.Jso));
+            }
         }
 
         return melId;
