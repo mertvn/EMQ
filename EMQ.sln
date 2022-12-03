@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMQ.Shared", "EMQ\Shared\EM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{9C73DEF6-1346-44DE-B4EC-D5E28835B942}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VNDBStaffNotesParser", "VNDBStaffNotesParser\VNDBStaffNotesParser.csproj", "{6FB25BFC-39C3-4AB8-9248-4022E2BDE8C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{9C73DEF6-1346-44DE-B4EC-D5E28835B942}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C73DEF6-1346-44DE-B4EC-D5E28835B942}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C73DEF6-1346-44DE-B4EC-D5E28835B942}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FB25BFC-39C3-4AB8-9248-4022E2BDE8C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FB25BFC-39C3-4AB8-9248-4022E2BDE8C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FB25BFC-39C3-4AB8-9248-4022E2BDE8C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FB25BFC-39C3-4AB8-9248-4022E2BDE8C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
