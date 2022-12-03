@@ -198,6 +198,7 @@ public class QuizManager
     public async Task EndQuiz()
     {
         // todo other cleanup
+        Console.WriteLine($"Ending quiz {Quiz.Id}");
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;

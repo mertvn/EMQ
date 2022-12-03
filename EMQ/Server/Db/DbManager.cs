@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -517,6 +517,12 @@ public static class DbManager
         }
 
         return melId;
+    }
+
+    public static async Task<string> ExportSong()
+    {
+        var songs = await GetRandomSongs(int.MaxValue);
+        return JsonSerializer.Serialize(songs, Utils.JsoIndented);
     }
 
     public static async Task<string> ExportSongLite()

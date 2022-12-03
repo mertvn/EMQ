@@ -62,7 +62,7 @@ public class DbTests
         }
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_InsertSong()
     {
         var song = new Song()
@@ -150,6 +150,12 @@ public class DbTests
     public async Task ImportVndbData()
     {
         await VndbImporter.ImportVndbData();
+    }
+
+    [Test, Explicit]
+    public async Task GenerateSong()
+    {
+        await File.WriteAllTextAsync("Song.json", await DbManager.ExportSong());
     }
 
     [Test, Explicit]
