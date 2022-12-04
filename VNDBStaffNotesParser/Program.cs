@@ -154,6 +154,7 @@ namespace VNDBStaffNotesParser
                 {
                     case Mode.BeforeSongType:
                         // TODO: Rewrite this to scan char by char searching for songTypeNames instead of enumerating the dicts
+                        // or use IsNextTokenASongType here
                         var possibleIndexOf = new List<int>();
                         foreach (Dictionary<SongType, List<string>> songTypeDict in SongTypeDicts)
                         {
@@ -237,7 +238,7 @@ namespace VNDBStaffNotesParser
                             case '"':
                             case ' ':
                                 break;
-                            // parantheses before song title
+                            // parentheses before song title
                             case '(':
                                 cursor += 1;
                                 mode = Mode.SongTitle;
@@ -332,36 +333,40 @@ namespace VNDBStaffNotesParser
                                                 goto nextMode;
                                         }
                                     }
-                                // todo: breaks other stuff
-                                // case ' ':
-                                //     {
-                                //         // if (IsNextTokenASongType(input, cursor))
-                                //         // {
-                                //         //
-                                //         // }
-                                //
-                                //         switch (input[boundsCheck + 1])
-                                //         {
-                                //             // new song with same song type
-                                //             case '"':
-                                //                 cursor = boundsCheck + 1;
-                                //                 mode = Mode.SongTitle;
-                                //
-                                //                 song = new Song { Type = song.Type };
-                                //
-                                //                 goto nextMode;
-                                //             // new song with different song type
-                                //             default:
-                                //                 cursor = boundsCheck + 1;
-                                //                 mode = Mode.SongType;
-                                //
-                                //                 song = new Song();
-                                //
-                                //                 goto nextMode;
-                                //         }
-                                //
-                                //         break;
-                                //     }
+                                case ' ':
+                                    {
+                                        if (IsNextTokenASongType(input, cursor + 1, out int distance,
+                                                out SongType songType))
+                                        {
+                                            // new song starting with SongType
+                                            cursor = boundsCheck + 1;
+                                            mode = Mode.SongType;
+
+                                            song = new Song();
+
+                                            goto nextMode;
+                                        }
+                                        else
+                                        {
+                                            // super dumb shit to handle MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType that may be breaking other stuff
+                                            string inp = input[cursor..^1].ToLowerInvariant();
+                                            if ((inp.Contains("op") || inp.Contains("ed") || inp.Contains("insert")) &&
+                                                !inp.Contains("and") && !inp.Contains('&'))
+                                            {
+                                                // new song starting with BeforeSongType
+                                                cursor = boundsCheck + 1;
+                                                mode = Mode.BeforeSongType;
+
+                                                song = new Song();
+
+                                                goto nextMode;
+                                            }
+                                            else
+                                            {
+                                                goto default; // AfterTitle
+                                            }
+                                        }
+                                    }
 
                                 // AfterTitle
                                 default:
@@ -504,9 +509,36 @@ namespace VNDBStaffNotesParser
             return songs;
         }
 
-        private static bool IsNextTokenASongType(string input, int cursor)
+        private static bool IsNextTokenASongType(string input, int cursor, out int distance, out SongType songType)
         {
-            throw new NotImplementedException();
+            distance = -1;
+            songType = SongType.Unknown;
+            foreach (Dictionary<SongType, List<string>> songTypeDict in SongTypeDicts)
+            {
+                foreach ((SongType key, List<string>? value) in songTypeDict)
+                {
+                    foreach (string songTypeName in value)
+                    {
+                        if (cursor + songTypeName.Length > input.Length)
+                        {
+                            continue;
+                        }
+
+                        string substr = input.Substring(cursor, songTypeName.Length);
+                        // Console.WriteLine(substr + "==" + songTypeName);
+                        bool foundSongTypeName = string.Equals(substr, songTypeName,
+                            StringComparison.OrdinalIgnoreCase);
+                        if (foundSongTypeName)
+                        {
+                            distance = songTypeName.Length;
+                            songType = key;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static string Preprocess(string input)
@@ -514,6 +546,7 @@ namespace VNDBStaffNotesParser
             string ret = input;
             ret = ret.Replace("''", "\"");
             ret = ret.Replace("“", "\"");
+            ret = ret.Replace("”", "\"");
 
             if (ret.EndsWith(','))
             {
@@ -572,9 +605,12 @@ namespace VNDBStaffNotesParser
                     throw new Exception($"AfterTitle is too long: {song.AfterTitle}");
                 }
 
-                if (song.AfterTitle.Contains("OP") || song.AfterTitle.Contains("ED")) // todo
+                if (song.AfterTitle.ToLowerInvariant().Contains(" op") ||
+                    song.AfterTitle.ToLowerInvariant().Contains(" ed") ||
+                    song.AfterTitle.ToLowerInvariant().Contains(" insert")) // todo
                 {
                     // todo very important
+                    Console.WriteLine($"AfterTitle contains new songs: {song.AfterTitle}");
                     // throw new Exception($"AfterTitle contains new songs: {song.AfterTitle}");
                 }
             }

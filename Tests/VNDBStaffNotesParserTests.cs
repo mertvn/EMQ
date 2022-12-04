@@ -36,6 +36,8 @@ public class VNDBStaffNotesParserTests
             "v24803",
             "v33175",
             "v33291",
+
+            "v8664",
         };
 
         var date = "2022-12-03";
@@ -194,6 +196,70 @@ public class VNDBStaffNotesParserTests
                 Type = new List<SongType> { SongType.ED },
                 Title = "Garasu no Kutsu",
                 AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_MultipleWithDifferentSongTypesSpaceDelimiter2()
+    {
+        string input = "OP \"Hyouketsu no Yoru\" Insert song “Komori Uta”";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Hyouketsu no Yoru",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Komori Uta",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType()
+    {
+        string input =
+            "OP \"Mirage Lullaby\", ED \"SCRAMBLE!\", PS2 OP \"ORIGINAL!\" Essence OP \"Link-age\", ED \"Summer Again\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Mirage Lullaby",
+                AfterTitle = ""
+            },
+            new() { BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "SCRAMBLE!", AfterTitle = "" },
+            new()
+            {
+                BeforeType = "PS2 ", Type = new List<SongType> { SongType.OP }, Title = "ORIGINAL!", AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Essence ",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Link-age",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "Summer Again", AfterTitle = ""
             },
         };
 
