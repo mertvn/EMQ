@@ -126,27 +126,27 @@ namespace VNDBStaffNotesParser
                 },
             };
 
-        public static List<Song> Parse(string input)
+        public static List<ParsedSong> Parse(string input)
         {
             if (string.IsNullOrEmpty(input))
             {
                 Console.WriteLine("input is null or empty");
-                return new List<Song>();
+                return new List<ParsedSong>();
             }
 
             if (!IsProcessable(input))
             {
                 Console.WriteLine($"Unprocessable input: {input}");
-                return new List<Song>();
+                return new List<ParsedSong>();
             }
 
             input = Preprocess(input);
 
-            var songs = new List<Song>();
+            var songs = new List<ParsedSong>();
 
             Mode mode = Mode.SongType;
             int cursor = 0;
-            var song = new Song();
+            var song = new ParsedSong();
             bool foundSongTypeAtStart = false;
             while (cursor < input.Length)
             {
@@ -295,7 +295,7 @@ namespace VNDBStaffNotesParser
 
                         string serialized = JsonSerializer.Serialize(song);
                         Console.WriteLine("add " + serialized);
-                        songs.Add(JsonSerializer.Deserialize<Song>(serialized)!);
+                        songs.Add(JsonSerializer.Deserialize<ParsedSong>(serialized)!);
 
                         int boundsCheck = ++cursor;
                         if (boundsCheck >= 0 && input.Length > boundsCheck)
@@ -313,14 +313,14 @@ namespace VNDBStaffNotesParser
                                                 cursor = boundsCheck + 2;
                                                 mode = Mode.SongTitle;
 
-                                                song = new Song { Type = song.Type };
+                                                song = new ParsedSong { Type = song.Type };
 
                                                 goto nextMode;
                                             case ("\"", _): // no space after comma
                                                 cursor = boundsCheck + 1;
                                                 mode = Mode.SongTitle;
 
-                                                song = new Song { Type = song.Type };
+                                                song = new ParsedSong { Type = song.Type };
 
                                                 goto nextMode;
                                             // new song with different song type
@@ -328,7 +328,7 @@ namespace VNDBStaffNotesParser
                                                 cursor = boundsCheck + 2;
                                                 mode = Mode.SongType;
 
-                                                song = new Song();
+                                                song = new ParsedSong();
 
                                                 goto nextMode;
                                         }
@@ -342,7 +342,7 @@ namespace VNDBStaffNotesParser
                                             cursor = boundsCheck + 1;
                                             mode = Mode.SongType;
 
-                                            song = new Song();
+                                            song = new ParsedSong();
 
                                             goto nextMode;
                                         }
@@ -351,13 +351,14 @@ namespace VNDBStaffNotesParser
                                             // super dumb shit to handle MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType that may be breaking other stuff
                                             string inp = input[cursor..^1].ToLowerInvariant();
                                             if ((inp.Contains("op") || inp.Contains("ed") || inp.Contains("insert")) &&
-                                                !inp.Contains("and") && !inp.Contains('&'))
+                                                !inp.Contains("and") && !inp.Contains('&')
+                                                && !inp.Contains('(') && !inp.Contains('/'))
                                             {
                                                 // new song starting with BeforeSongType
                                                 cursor = boundsCheck + 1;
                                                 mode = Mode.BeforeSongType;
 
-                                                song = new Song();
+                                                song = new ParsedSong();
 
                                                 goto nextMode;
                                             }
@@ -387,7 +388,7 @@ namespace VNDBStaffNotesParser
                                                         cursor = boundsCheck3 + 1 + "and".Length;
                                                         mode = Mode.SongTitle;
 
-                                                        song = new Song { Type = song.Type };
+                                                        song = new ParsedSong { Type = song.Type };
 
                                                         goto nextMode;
                                                     // new song with different song type
@@ -395,7 +396,7 @@ namespace VNDBStaffNotesParser
                                                         cursor = boundsCheck3 + 1 + "and".Length;
                                                         mode = Mode.SongType;
 
-                                                        song = new Song();
+                                                        song = new ParsedSong();
 
                                                         goto nextMode;
                                                 }
@@ -411,7 +412,7 @@ namespace VNDBStaffNotesParser
                                                         cursor = boundsCheck3 + 1 + "&".Length;
                                                         mode = Mode.SongTitle;
 
-                                                        song = new Song { Type = song.Type };
+                                                        song = new ParsedSong { Type = song.Type };
 
                                                         goto nextMode;
                                                     // new song with different song type
@@ -419,7 +420,7 @@ namespace VNDBStaffNotesParser
                                                         cursor = boundsCheck3 + 1 + "&".Length;
                                                         mode = Mode.SongType;
 
-                                                        song = new Song();
+                                                        song = new ParsedSong();
 
                                                         goto nextMode;
                                                 }
@@ -476,7 +477,7 @@ namespace VNDBStaffNotesParser
                                     cursor = nextIndex + 1;
                                     mode = Mode.SongType;
 
-                                    song = new Song();
+                                    song = new ParsedSong();
 
                                     goto nextMode;
                                 }
@@ -581,9 +582,9 @@ namespace VNDBStaffNotesParser
             return true;
         }
 
-        private static void CheckIntegrity(List<Song> songs)
+        private static void CheckIntegrity(List<ParsedSong> songs)
         {
-            foreach (Song song in songs)
+            foreach (ParsedSong song in songs)
             {
                 if (song.BeforeType.Length > 73)
                 {
@@ -628,7 +629,7 @@ namespace VNDBStaffNotesParser
         }
     }
 
-    public class Song
+    public class ParsedSong
     {
         public string BeforeType { get; set; } = "";
 

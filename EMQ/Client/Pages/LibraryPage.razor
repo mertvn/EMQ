@@ -146,7 +146,15 @@
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
         if (res.IsSuccessStatusCode)
         {
-            Console.WriteLine("Imported song link!");
+            var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
+            if (isSuccess)
+            {
+                Console.WriteLine("Imported song link!");
+            }
+            else
+            {
+                Console.WriteLine("Error importing song link");
+            }
         }
     }
 

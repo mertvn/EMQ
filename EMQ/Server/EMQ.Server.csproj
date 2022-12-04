@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\VNDBStaffNotesParser\VNDBStaffNotesParser.csproj" />
     <ProjectReference Include="..\Client\EMQ.Client.csproj" />
     <ProjectReference Include="..\Shared\EMQ.Shared.csproj" />
   </ItemGroup>

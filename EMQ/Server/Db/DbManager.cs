@@ -501,6 +501,7 @@ public static class DbManager
 
     public static async Task<int> InsertSongLink(int mId, SongLink songLink)
     {
+        // todo find and update other mIds that have exactly the same song
         int melId;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -513,7 +514,7 @@ public static class DbManager
             melId = await connection.InsertAsync(mel);
             if (melId > 0)
             {
-             // todo
+                // todo
             }
         }
 
@@ -581,22 +582,17 @@ public static class DbManager
                         }))
                     .ToList();
 
-                if (mIds.Count > 1)
-                {
-                    throw new Exception(
-                        $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
-                }
-                else if (!mIds.Any())
+                if (!mIds.Any())
                 {
                     throw new Exception(
                         $"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
                 }
-                else
+
+                foreach (int mId in mIds)
                 {
-                    // todo check if there is already a link
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mIds.First(), link);
+                        await InsertSongLink(mId, link);
                     }
                 }
             }

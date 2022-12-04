@@ -21,16 +21,12 @@ public static class VndbImporter
 
     public static List<dynamic> artists_aliasesJson { get; set; } = null!;
 
-    public static List<dynamic> opsJson { get; set; } = null!;
-
-    public static List<dynamic> edsJson { get; set; } = null!;
-
-    public static List<dynamic> insertsJson { get; set; } = null!;
+    public static List<ProcessedMusic> processedMusicsJson { get; set; } = null!;
 
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2022-10-31";
+        string date = "2022-12-04";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source {date}.json"))!;
@@ -44,18 +40,10 @@ public static class VndbImporter
         artists_aliasesJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ artist_alias {date}.json"))!;
 
-        opsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ OP {date}.json"))!;
+        processedMusicsJson = JsonConvert.DeserializeObject<List<ProcessedMusic>>(
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\processedMusics {date}.json"))!;
 
-        edsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ ED {date}.json"))!;
-
-        insertsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ Insert {date}.json"))!;
-
-        Songs.AddRange(ImportVndbDataInner(opsJson, SongSourceSongType.OP));
-        Songs.AddRange(ImportVndbDataInner(edsJson, SongSourceSongType.ED));
-        Songs.AddRange(ImportVndbDataInner(insertsJson, SongSourceSongType.Insert));
+        Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
 
         foreach (Song song in Songs)
         {
@@ -64,12 +52,13 @@ public static class VndbImporter
         }
     }
 
-    private static List<Song> ImportVndbDataInner(List<dynamic> dataJson, SongSourceSongType songSourceSongType)
+    private static List<Song> ImportVndbDataInner(List<ProcessedMusic> dataJson)
     {
         var songs = new List<Song>();
 
-        foreach (dynamic dynData in dataJson)
+        foreach (ProcessedMusic dynData in dataJson)
         {
+            // Console.WriteLine($"Processing {JsonConvert.SerializeObject(dynData)}");
             var dynMusicSource = musicSourcesJson.Find(x => x.id == dynData.VNID)!;
             try
             {
@@ -157,7 +146,7 @@ public static class VndbImporter
 
             var existingSong = songs.LastOrDefault(x =>
                 x.Sources.First().Links.First().Url.Contains((string)dynData.VNID) &&
-                x.Titles.Any(y => y.LatinTitle == (string)dynData.MusicName));
+                x.Titles.Any(y => y.LatinTitle == (string)dynData.ParsedSong.Title));
 
             if (existingSong is not null)
             {
@@ -233,7 +222,7 @@ public static class VndbImporter
                     {
                         new Title()
                         {
-                            LatinTitle = dynData.MusicName, Language = "ja", IsMainTitle = true // todo language
+                            LatinTitle = dynData.ParsedSong.Title, Language = "ja", IsMainTitle = true // todo language
                         },
                         // todo multiple song titles?
                     },
@@ -244,7 +233,7 @@ public static class VndbImporter
                     new SongSource()
                     {
                         AirDateStart = airDateStart,
-                        SongType = songSourceSongType,
+                        SongType = (SongSourceSongType)(int)dynData.ParsedSong.Type.First(), // todo combine these types, and handle list somehow
                         LanguageOriginal = dynMusicSource.olang,
                         RatingAverage = dynMusicSource.c_average,
                         Type = SongSourceType.VN,

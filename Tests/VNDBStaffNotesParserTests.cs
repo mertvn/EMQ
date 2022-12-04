@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using EMQ.Server.Db.Imports;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using VNDBStaffNotesParser;
@@ -36,18 +37,18 @@ public class VNDBStaffNotesParserTests
             "v24803",
             "v33175",
             "v33291",
-
             "v8664",
         };
 
-        var date = "2022-12-03";
+        string date = "2022-12-04";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music {date}.json"))!;
 
-        var songs = new List<Song>();
+        var parsedSongs = new List<ParsedSong>();
+        var processedMusics = new List<ProcessedMusic>();
         foreach (dynamic dynData in musicJson)
         {
-            var vnid = (string)dynData.VNID;
+            string vnid = (string)dynData.VNID;
             Console.WriteLine($"VNID: {dynData.VNID}");
 
             if (blacklist.Contains(vnid))
@@ -56,13 +57,29 @@ public class VNDBStaffNotesParserTests
                 continue;
             }
 
-            var staffNotes = (string)dynData.MusicName;
+            string staffNotes = (string)dynData.MusicName;
             Console.WriteLine($"staffNotes: {staffNotes}");
             var actual = VNDBStaffNotesParser.Program.Parse(staffNotes);
-            songs.AddRange(actual);
+            parsedSongs.AddRange(actual);
+
+            foreach (ParsedSong parsedSong in actual)
+            {
+                var processedMusic = new ProcessedMusic
+                {
+                    VNID = dynData.VNID,
+                    title = dynData.title,
+                    StaffID = dynData.StaffID,
+                    ArtistAliasID = dynData.ArtistAliasID,
+                    name = dynData.name,
+                    role = dynData.role,
+                    ParsedSong = parsedSong,
+                };
+                processedMusics.Add(processedMusic);
+            }
         }
 
-        Console.WriteLine("finished processing - count: " + songs.Count);
+        await File.WriteAllTextAsync($"processedMusics {date}.json", JsonConvert.SerializeObject(processedMusics));
+        Console.WriteLine("finished processing - count: " + parsedSongs.Count);
     }
 
     [Test]
@@ -70,7 +87,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "ED \"Twinkle Snow\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -90,7 +107,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "\"Kuroi Hitomi no Aria\", \"Sie Null\", ED \"DON'T LET GO\" [Remake]";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -110,7 +127,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Nene ED \"Re:Start ~Kimi to Mata Deaete~\",Band performance \"Without You\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -130,7 +147,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Grand Ending ED \"Kokuin ~Tattoo~\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -150,7 +167,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "\"Passion\"";
 
-        var expected = new List<Song> { };
+        var expected = new List<ParsedSong> { };
 
         var actual = VNDBStaffNotesParser.Program.Parse(input);
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
@@ -161,7 +178,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Shuusuke ED \"Hohoemi Genocide\" (credited as Alex3)";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -181,7 +198,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "ED1 \"Saya no Uta\" ED2 \"Garasu no Kutsu\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -208,7 +225,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "OP \"Hyouketsu no Yoru\" Insert song “Komori Uta”";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -236,7 +253,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "OP \"Mirage Lullaby\", ED \"SCRAMBLE!\", PS2 OP \"ORIGINAL!\" Essence OP \"Link-age\", ED \"Summer Again\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -272,7 +289,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "OP \"Todokanai Koi\", Insert Song \"After All ~Tsuzuru Omoi~\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -300,7 +317,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "OP \"Momiji\", Insert song \"Fuji no Tobari to Yoru no Uta\" and ED \"Ashita wo Egaku Omoi no Iro\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new() { BeforeType = "", Type = new List<SongType> { SongType.OP }, Title = "Momiji", AfterTitle = "" },
             new()
@@ -329,7 +346,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "PC OP \"HOLY WORLD\" and PS2 insert songs \"Kishin Houkou! Demonbane!\" and \"Evil Shine\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -364,7 +381,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "Insert Songs \"Shin'ai\", \"WHITE ALBUM\", \"SOUND OF DESTINY\", \"Todokanai Koi -live at campus Fes-\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -402,7 +419,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "OP & ED \"Present\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -422,7 +439,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Insert song / ED \"eternal twinkle\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -443,7 +460,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "OP/ED \"Suna no Shiro\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -464,7 +481,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "DC/PS2 OP/Kasumi ED \"Flow\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -484,7 +501,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Shizuru route ED \"Koibumi\", Akane route ED & Lucia route Insert song \"Itsuwaranai Kimi e\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -512,7 +529,7 @@ public class VNDBStaffNotesParserTests
     {
         string input = "Grand OP and True End ED \"Eigou Shinri no Fermata\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -534,7 +551,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "PC OP \"Muv-Luv\", Extra ED \"I will.\", Unlimited ED \"Harukanaru Chikyuu (Furusato) no Uta\", All-Ages ver. OP \"divergence\", Xbox 360 OP \"first pain\", PS3 OP \"LOVE STEP\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new() { BeforeType = "PC ", Type = new List<SongType> { SongType.OP }, Title = "Muv-Luv", AfterTitle = "" },
             new()
@@ -578,7 +595,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "ED \"To aru Ryuu no Koi no Uta\", Insert songs \"No Answer\",\"Are You Happy?\",\"To Aru Ryuu no Kami no Shi\" (Chorus)";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
@@ -617,7 +634,7 @@ public class VNDBStaffNotesParserTests
         string input =
             "Acta est Fabula OP \"Gregorio\" & ED \"Über den Himmel\", Amantes amentes OP \"Jubilus\" & ED \"Sanctus\", Switch version OP \"Einsatz -zugabe-\"";
 
-        var expected = new List<Song>
+        var expected = new List<ParsedSong>
         {
             new()
             {
