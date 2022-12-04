@@ -20,3 +20,9 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * QuizLog
 * trim before autocomplete
 * 4+ players progress bar stretching
+* 6+ players everything stretching
+* rejoining player double losing lives
+* quiz continuing after lives = 0 (ghost player with >0 lives?)
+* coop: hotjoining player should inherit their team's score and lives
+* https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
+*

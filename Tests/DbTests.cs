@@ -51,6 +51,7 @@ public class DbTests
     {
         var songs = await DbManager.GetRandomSongs(100);
 
+        // Assert.That(songs.Count > 0);
         foreach (Song song in songs)
         {
             Assert.That(song.Id > 0);
