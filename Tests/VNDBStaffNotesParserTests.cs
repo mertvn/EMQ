@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using VNDBStaffNotesParser;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Tests;
 
@@ -12,6 +15,52 @@ public class VNDBStaffNotesParserTests
     [SetUp]
     public void Setup()
     {
+    }
+
+    [Test]
+    public async Task Test_Batch()
+    {
+        List<string> blacklist = new()
+        {
+            "v863",
+            "v864",
+            "v865",
+            "v10935",
+            "v12377",
+            "v12775",
+            "v14700",
+            "v21212",
+            "v21261",
+            "v22727",
+            "v24208",
+            "v24803",
+            "v33175",
+            "v33291",
+        };
+
+        var date = "2022-12-03";
+        var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
+            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music {date}.json"))!;
+
+        var songs = new List<Song>();
+        foreach (dynamic dynData in musicJson)
+        {
+            var vnid = (string)dynData.VNID;
+            Console.WriteLine($"VNID: {dynData.VNID}");
+
+            if (blacklist.Contains(vnid))
+            {
+                Console.WriteLine($"Skipping blacklisted vnid {vnid}");
+                continue;
+            }
+
+            var staffNotes = (string)dynData.MusicName;
+            Console.WriteLine($"staffNotes: {staffNotes}");
+            var actual = VNDBStaffNotesParser.Program.Parse(staffNotes);
+            songs.AddRange(actual);
+        }
+
+        Console.WriteLine("finished processing - count: " + songs.Count);
     }
 
     [Test]
@@ -69,6 +118,37 @@ public class VNDBStaffNotesParserTests
                 AfterTitle = ""
             }
         };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_EndingED()
+    {
+        string input = "Grand Ending ED \"Kokuin ~Tattoo~\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "Grand ", // whatever
+                Type = new List<SongType> { SongType.ED },
+                Title = "Kokuin ~Tattoo~",
+                AfterTitle = ""
+            }
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_NoSongType()
+    {
+        string input = "\"Passion\"";
+
+        var expected = new List<Song> { };
 
         var actual = VNDBStaffNotesParser.Program.Parse(input);
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
@@ -272,6 +352,68 @@ public class VNDBStaffNotesParserTests
     }
 
     [Test]
+    public void Test_SingleWithMultipleSongTypesForwardSlashDelimiter()
+    {
+        string input = "Insert song / ED \"eternal twinkle\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type =
+                    new List<SongType> { SongType.Insert, SongType.ED },
+                Title = "eternal twinkle",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_SingleWithMultipleSongTypesForwardSlashDelimiterNoSpace()
+    {
+        string input = "OP/ED \"Suna no Shiro\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type =
+                    new List<SongType> { SongType.OP, SongType.ED },
+                Title = "Suna no Shiro",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_SingleWithMultipleSongTypesForwardSlashDelimiterIntoBeforeType()
+    {
+        string input = "DC/PS2 OP/Kasumi ED \"Flow\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "DC/PS2 ",
+                Type = new List<SongType> { SongType.OP, SongType.ED }, // idk if we should even bother with this one
+                Title = "Flow",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
     public void Test_MultipleWithMultipleSongTypesAmpersandDelimiter()
     {
         string input = "Shizuru route ED \"Koibumi\", Akane route ED & Lucia route Insert song \"Itsuwaranai Kimi e\"";
@@ -298,6 +440,27 @@ public class VNDBStaffNotesParserTests
         var actual = VNDBStaffNotesParser.Program.Parse(input);
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
     }
+
+    [Test]
+    public void Test_SingleWithMultipleSongTypesAndDelimiter()
+    {
+        string input = "Grand OP and True End ED \"Eigou Shinri no Fermata\"";
+
+        var expected = new List<Song>
+        {
+            new()
+            {
+                BeforeType = "True ",
+                Type = new List<SongType> { SongType.OP, SongType.ED },
+                Title = "Eigou Shinri no Fermata",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
 
     [Test]
     public void Test_ComplexShit1()

@@ -32,7 +32,11 @@ namespace VNDBStaffNotesParser
                             "OP",
                             "OPs",
                             "Opening",
+                            "Opening Song",
                             "Openings",
+                            "OP Theme",
+                            "OP song",
+                            "Main themes",
                             "OP1",
                             "OP2",
                             "OP3",
@@ -41,7 +45,9 @@ namespace VNDBStaffNotesParser
                             "OP6",
                             "OP7",
                             "OP8",
-                            "OP9"
+                            "OP9",
+                            "OP 1",
+                            "OP 2",
                         }.OrderByDescending(x => x).ToList()
                     }
                 },
@@ -53,7 +59,15 @@ namespace VNDBStaffNotesParser
                             "ED",
                             "EDs",
                             "Ending",
+                            "Ending Song",
+                            "ED song",
                             "Endings",
+                            "ED Theme",
+                            "ED (Chorus)",
+                            "ED chorus",
+                            "Ending ED",
+                            "End ED",
+                            "Ending theme",
                             "ED1",
                             "ED2",
                             "ED3",
@@ -62,11 +76,16 @@ namespace VNDBStaffNotesParser
                             "ED6",
                             "ED7",
                             "ED8",
-                            "ED9"
+                            "ED9",
+                            "ED 1",
+                            "ED 2",
+                            "ED 3",
+                            "ED A",
+                            "ED B",
+                            "EDs 1",
                         }.OrderByDescending(x => x).ToList()
                     }
                 },
-                // TODO: check if there are any Insert1 etc.
                 new Dictionary<SongType, List<string>>
                 {
                     {
@@ -76,15 +95,34 @@ namespace VNDBStaffNotesParser
                             "Inserts",
                             "Insert Song",
                             "Insert Songs",
+                            "Insert Song-",
+                            "Insert Song -",
+                            "Insert Song's",
                             "Image song",
                             "Image songs",
                             "Interlude",
+                            "hymn",
+                            "hymns",
+                            "cieln", // idonteven
+                            "cielns", // idonteven
+                            "Insert Music", // should be BGM maybe idk
+                            "Insert song 1",
+                            "Insert song 2",
+                            "Insert song 3",
+                            "insert song #1",
+                            "insert song #2",
+                            "insert song #3",
                         }.OrderByDescending(x => x).ToList()
                     }
                 },
                 new Dictionary<SongType, List<string>>
                 {
-                    { SongType.BGM, new List<string> { "BGM", }.OrderByDescending(x => x).ToList() }
+                    {
+                        SongType.BGM, new List<string>
+                        {
+                            "BGM", "BGMs", "Theme Song", "Theme song -" // idk
+                        }.OrderByDescending(x => x).ToList()
+                    }
                 },
             };
 
@@ -101,6 +139,8 @@ namespace VNDBStaffNotesParser
                 Console.WriteLine($"Unprocessable input: {input}");
                 return new List<Song>();
             }
+
+            input = Preprocess(input);
 
             var songs = new List<Song>();
 
@@ -121,8 +161,8 @@ namespace VNDBStaffNotesParser
                             {
                                 foreach (string songTypeName in value)
                                 {
-                                    // require a space before because we don't want to match inside words
-                                    var indexesOf = input.AllIndexesOf(" " + songTypeName).ToList();
+                                    // require a space before and after because we don't want to match inside words
+                                    var indexesOf = input.AllIndexesOf(" " + songTypeName + " ").ToList();
                                     if (indexesOf.Any())
                                     {
                                         // +1 because we required there to be a space before the song type
@@ -145,7 +185,7 @@ namespace VNDBStaffNotesParser
                         }
                         else
                         {
-                            Console.WriteLine("Skipping shit");
+                            Console.WriteLine($"Skipping shit - input: {input}");
                             break;
                             // throw new Exception();
                         }
@@ -157,8 +197,13 @@ namespace VNDBStaffNotesParser
                             {
                                 foreach (string songTypeName in value)
                                 {
+                                    if (cursor + songTypeName.Length > input.Length)
+                                    {
+                                        continue;
+                                    }
+
                                     string substr = input.Substring(cursor, songTypeName.Length);
-                                    Console.WriteLine(substr + "==" + songTypeName);
+                                    // Console.WriteLine(substr + "==" + songTypeName);
                                     bool foundSongTypeName = string.Equals(substr, songTypeName,
                                         StringComparison.OrdinalIgnoreCase);
 
@@ -186,22 +231,57 @@ namespace VNDBStaffNotesParser
                         break;
                     case Mode.SongTitle:
                         Console.WriteLine(input[cursor]);
-                        if (input[cursor] != '"')
+                        switch (input[cursor])
                         {
-                            if (input[cursor] == '&') // multiple types for the same song
-                            {
-                                if (input[++cursor] == ' ')
+                            // normal
+                            case '"':
+                            case ' ':
+                                break;
+                            // parantheses before song title
+                            case '(':
+                                cursor += 1;
+                                mode = Mode.SongTitle;
+                                goto nextMode;
+                            // multiple types for the same song
+                            case '&':
+                            case '/':
+                                cursor += 1;
+                                if (input[cursor] == ' ')
                                 {
-                                    cursor += 1; // skip the space after '&' if there is one
+                                    cursor += 1; // skip the space after if there is one
                                 }
 
                                 mode = Mode.SongType;
                                 goto nextMode;
-                            }
-                            else
-                            {
-                                throw new Exception("Invalid first char for SongTitle");
-                            }
+                            default:
+                                if (input[cursor - 1] == '/')
+                                {
+                                    mode = Mode.SongType;
+                                    goto nextMode;
+                                }
+
+                                if (input[cursor - 1] == '"')
+                                {
+                                    Console.WriteLine(
+                                        $"Skipping thing with no space between song type and quote - input: {input}");
+                                    cursor = input.Length;
+                                    goto nextMode;
+                                }
+
+                                // multiple types for the same song
+                                if (input[cursor..(cursor + "and".Length)] == "and")
+                                {
+                                    cursor += "and".Length;
+                                    if (input[cursor] == ' ')
+                                    {
+                                        cursor += 1; // skip the space after if there is one
+                                    }
+
+                                    mode = Mode.SongType;
+                                    goto nextMode;
+                                }
+
+                                throw new Exception($"Invalid start for SongTitle: {input[cursor]}");
                         }
 
                         string songTitle = "";
@@ -225,11 +305,18 @@ namespace VNDBStaffNotesParser
                                 // new song delimited by ','
                                 case ',':
                                     {
-                                        switch (input[boundsCheck + 2])
+                                        switch (input[boundsCheck + 1].ToString(), input[boundsCheck + 2].ToString())
                                         {
                                             // new song with same song type
-                                            case '"':
+                                            case (" ", "\""): // space after comma
                                                 cursor = boundsCheck + 2;
+                                                mode = Mode.SongTitle;
+
+                                                song = new Song { Type = song.Type };
+
+                                                goto nextMode;
+                                            case ("\"", _): // no space after comma
+                                                cursor = boundsCheck + 1;
                                                 mode = Mode.SongTitle;
 
                                                 song = new Song { Type = song.Type };
@@ -237,7 +324,7 @@ namespace VNDBStaffNotesParser
                                                 goto nextMode;
                                             // new song with different song type
                                             default:
-                                                cursor = boundsCheck + 2; // todo titles with no space after comma?
+                                                cursor = boundsCheck + 2;
                                                 mode = Mode.SongType;
 
                                                 song = new Song();
@@ -248,6 +335,11 @@ namespace VNDBStaffNotesParser
                                 // todo: breaks other stuff
                                 // case ' ':
                                 //     {
+                                //         // if (IsNextTokenASongType(input, cursor))
+                                //         // {
+                                //         //
+                                //         // }
+                                //
                                 //         switch (input[boundsCheck + 1])
                                 //         {
                                 //             // new song with same song type
@@ -260,7 +352,7 @@ namespace VNDBStaffNotesParser
                                 //                 goto nextMode;
                                 //             // new song with different song type
                                 //             default:
-                                //                 cursor = boundsCheck + 1; // todo titles with no space after comma?
+                                //                 cursor = boundsCheck + 1;
                                 //                 mode = Mode.SongType;
                                 //
                                 //                 song = new Song();
@@ -282,7 +374,7 @@ namespace VNDBStaffNotesParser
                                             if (string.Equals(input.Substring(boundsCheck3, "and".Length), "and",
                                                     StringComparison.OrdinalIgnoreCase))
                                             {
-                                                // new song delimited by 'and'
+                                                // new song delimited by "and"
                                                 switch (input[boundsCheck3 + 1 + "and".Length])
                                                 {
                                                     // new song with same song type
@@ -295,8 +387,7 @@ namespace VNDBStaffNotesParser
                                                         goto nextMode;
                                                     // new song with different song type
                                                     default:
-                                                        cursor = boundsCheck3 + 1 +
-                                                                 "and".Length; // todo titles with no space after comma
+                                                        cursor = boundsCheck3 + 1 + "and".Length;
                                                         mode = Mode.SongType;
 
                                                         song = new Song();
@@ -307,7 +398,7 @@ namespace VNDBStaffNotesParser
                                             else if (string.Equals(input.Substring(boundsCheck3, "&".Length), "&",
                                                          StringComparison.OrdinalIgnoreCase))
                                             {
-                                                // new song delimited by 'and'
+                                                // new song delimited by '&'
                                                 switch (input[boundsCheck3 + 1 + "&".Length])
                                                 {
                                                     // new song with same song type
@@ -320,8 +411,7 @@ namespace VNDBStaffNotesParser
                                                         goto nextMode;
                                                     // new song with different song type
                                                     default:
-                                                        cursor = boundsCheck3 + 1 +
-                                                                 "&".Length; // todo titles with no space after comma
+                                                        cursor = boundsCheck3 + 1 + "&".Length;
                                                         mode = Mode.SongType;
 
                                                         song = new Song();
@@ -329,6 +419,31 @@ namespace VNDBStaffNotesParser
                                                         goto nextMode;
                                                 }
                                             }
+                                            // else if (string.Equals(input.Substring(boundsCheck3, "/".Length), "/",
+                                            //              StringComparison.OrdinalIgnoreCase))
+                                            // {
+                                            //     // new song delimited by '/'
+                                            //     switch (input[boundsCheck3 + 1 + "/".Length])
+                                            //     {
+                                            //         // new song with same song type
+                                            //         case '"':
+                                            //             cursor = boundsCheck3 + 1 + "/".Length;
+                                            //             mode = Mode.SongTitle;
+                                            //
+                                            //             song = new Song { Type = song.Type };
+                                            //
+                                            //             goto nextMode;
+                                            //         // new song with different song type
+                                            //         default:
+                                            //             cursor = boundsCheck3 + 1 +
+                                            //                      "/".Length;
+                                            //             mode = Mode.SongType;
+                                            //
+                                            //             song = new Song();
+                                            //
+                                            //             goto nextMode;
+                                            //     }
+                                            // }
                                             else
                                             {
                                                 cursor -= 2; // todo
@@ -353,7 +468,12 @@ namespace VNDBStaffNotesParser
                                 char c = input[nextIndex];
                                 if (c == ',')
                                 {
-                                    // todo?
+                                    cursor = nextIndex + 1;
+                                    mode = Mode.SongType;
+
+                                    song = new Song();
+
+                                    goto nextMode;
                                 }
 
                                 songs.Last().AfterTitle += c;
@@ -372,7 +492,7 @@ namespace VNDBStaffNotesParser
                 break;
             }
 
-            Console.WriteLine(JsonSerializer.Serialize(songs,
+            Console.WriteLine("final output: " + JsonSerializer.Serialize(songs,
                 new JsonSerializerOptions
                 {
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -382,6 +502,25 @@ namespace VNDBStaffNotesParser
             CheckIntegrity(songs);
 
             return songs;
+        }
+
+        private static bool IsNextTokenASongType(string input, int cursor)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static string Preprocess(string input)
+        {
+            string ret = input;
+            ret = ret.Replace("''", "\"");
+            ret = ret.Replace("“", "\"");
+
+            if (ret.EndsWith(','))
+            {
+                ret = ret.Remove(ret.Length - 1, 1);
+            }
+
+            return ret;
         }
 
         private static bool IsProcessable(string input)
@@ -400,6 +539,12 @@ namespace VNDBStaffNotesParser
                 return false;
             }
 
+            // check if we start with a quote and there are less than 4 quotes
+            if (input.StartsWith('"') && input.Count(c => c == '"') < 4)
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -407,7 +552,7 @@ namespace VNDBStaffNotesParser
         {
             foreach (Song song in songs)
             {
-                if (song.BeforeType.Length > 50)
+                if (song.BeforeType.Length > 73)
                 {
                     throw new Exception($"BeforeType is too long: {song.BeforeType}");
                 }
@@ -417,14 +562,20 @@ namespace VNDBStaffNotesParser
                     throw new Exception("SongType is unknown");
                 }
 
-                if (song.Title.Length > 50)
+                if (song.Title.Length > 86)
                 {
                     throw new Exception($"Title is too long: {song.Title}");
                 }
 
-                if (song.AfterTitle.Length > 50)
+                if (song.AfterTitle.Length > 178) // should be like 20-30
                 {
                     throw new Exception($"AfterTitle is too long: {song.AfterTitle}");
+                }
+
+                if (song.AfterTitle.Contains("OP") || song.AfterTitle.Contains("ED")) // todo
+                {
+                    // todo very important
+                    // throw new Exception($"AfterTitle contains new songs: {song.AfterTitle}");
                 }
             }
         }
