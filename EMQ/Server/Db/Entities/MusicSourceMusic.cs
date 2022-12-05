@@ -14,6 +14,7 @@ public class MusicSourceMusic
     [Required]
     public int music_id { get; set; }
 
+    [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
     public int type { get; set; }
 }

@@ -124,7 +124,7 @@ public static class DbManager
                             AirDateEnd = musicSource.air_date_end,
                             LanguageOriginal = musicSource.language_original,
                             RatingAverage = musicSource.rating_average,
-                            SongType = (SongSourceSongType)musicSourceMusic.type,
+                            SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                             Titles = new List<Title>
                             {
                                 new Title()
@@ -177,6 +177,12 @@ public static class DbManager
                                     Name = category.name, Type = (SongSourceCategoryType)category.type
                                 });
                             }
+                        }
+
+                        var songSourceSongType = (SongSourceSongType)musicSourceMusic.type;
+                        if (!existingSongSource.SongTypes.Contains(songSourceSongType))
+                        {
+                            existingSongSource.SongTypes.Add(songSourceSongType);
                         }
                     }
 
@@ -350,10 +356,24 @@ public static class DbManager
                     }
                 }
 
-                int msmId = await connection.InsertAsync(new MusicSourceMusic()
+                foreach (var songSourceSongType in songSource.SongTypes)
                 {
-                    music_id = mId, music_source_id = msId, type = (int)songSource.SongType
-                });
+                    int msmId = 0;
+                    msmId = (await connection.QueryAsync<int>(
+                        "select music_id from music_source_music msm where msm.music_id=@mId AND msm.music_source_id =@msId AND msm.type=@songSourceSongType",
+                        new { mId, msId, songSourceSongType })).ToList().SingleOrDefault();
+
+                    if (msmId > 0)
+                    {
+                    }
+                    else
+                    {
+                        msmId = await connection.InsertAsync(new MusicSourceMusic()
+                        {
+                            music_id = mId, music_source_id = msId, type = (int)songSourceSongType
+                        });
+                    }
+                }
             }
 
 
@@ -430,6 +450,7 @@ public static class DbManager
     public static async Task<List<Song>> GetRandomSongs(int numSongs)
     {
         // todo: do this only once on server start and store the results in memory to use later
+        // todo no duplicates option
         const string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
         var songs = new List<Song>();
         var rand = new Random();
@@ -477,7 +498,7 @@ public static class DbManager
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)
     {
         const string sqlMIdFromMstTitle = @"
-            SELECT msm.music_id
+            SELECT DISTINCT msm.music_id
             FROM music_source_music msm
             LEFT JOIN music_source ms ON ms.id = msm.music_source_id
             LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
@@ -501,7 +522,6 @@ public static class DbManager
 
     public static async Task<int> InsertSongLink(int mId, SongLink songLink)
     {
-        // todo find and update other mIds that have exactly the same song
         int melId;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -586,6 +606,13 @@ public static class DbManager
                 {
                     throw new Exception(
                         $"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                }
+
+                if (mIds.Count > 1)
+                {
+                    // todo uncomment after making the required changes for song linking
+                    // throw new Exception(
+                    //     $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
                 }
 
                 foreach (int mId in mIds)

@@ -7,19 +7,47 @@
             <div>
                 <div>
                     <h5 class="songSourceSongType">
-                        @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
+                        @if (true)
                         {
-                            <span>
-                                (@song.Sources.SingleOrDefault(x =>
-                                     x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle))?.SongType)
-                            </span>
-                        }
-                        else
-                        {
-                            IEnumerable<SongSourceSongType> songTypes = song.Sources.Select(x => x.SongType);
-                            @foreach (var songType in songTypes)
+                            Dictionary<string, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
+
+                            @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
                             {
-                                <span>(@songType)</span>
+                                SongSource? songSource = song.Sources.SingleOrDefault(x =>
+                                    x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle));
+
+                                if (songSource != null)
+                                {
+                                    songSourceVNIDSongTypes.Add(songSource.Links.First().Url, songSource.SongTypes);
+                                }
+                            }
+                            else
+                            {
+                                foreach (SongSource songSource in song.Sources)
+                                {
+                                    songSourceVNIDSongTypes.Add(songSource.Links.First().Url, songSource.SongTypes);
+                                }
+                            }
+
+                            @foreach ((string? songSourceVNID, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            {
+                                for (int index = 0; index < songTypes.Count; index++)
+                                {
+                                    SongSourceSongType songType = songTypes[index];
+                                    <span>@songType</span>
+
+                                    if (index + 1 != songTypes.Count)
+                                    {
+                                        <span>, </span>
+                                    }
+                                }
+
+                                // todo fix underline being too long
+                                <span></span>
+                                <a class="songSourceVNID link-primary" href="@(songSourceVNID)">
+                                    <span>(VN)</span>
+                                </a>
+                                <br/>
                             }
                         }
                     </h5>
@@ -27,7 +55,7 @@
                 </div>
                 <div>
                     by
-                    @foreach (var songArtist in song.Artists)
+                    @foreach (SongArtist songArtist in song.Artists)
                     {
                         <div>
                             <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">

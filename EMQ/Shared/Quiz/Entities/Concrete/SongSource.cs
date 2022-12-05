@@ -23,7 +23,7 @@ public class SongSource
 
     public List<SongSourceCategory> Categories { get; set; } = new();
 
-    public SongSourceSongType SongType { get; set; } = SongSourceSongType.Unknown;
+    public List<SongSourceSongType> SongTypes { get; set; } = new();
 }
 
 public enum SongSourceSongType

@@ -46,6 +46,31 @@ public class DbTests
         Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
     }
 
+
+    [Test]
+    public async Task Test_SelectSong_MultipleSongSourceTypes()
+    {
+        var songs = await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na");
+        var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
+        Assert.That(song.Id > 0);
+
+        Assert.That(song.Titles.First().LatinTitle.Any());
+        Assert.That(song.Titles.First().Language.Any());
+
+        // Assert.That(song.Links.First().Url.Any());
+
+        Assert.That(song.Sources.First().Id > 0);
+        Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
+        Assert.That(song.Sources.First().Titles.First().Language.Any());
+        Assert.That(song.Sources.First().Links.First().Url.Any());
+        Assert.That(song.Sources.First().SongTypes.Count > 1);
+        // Assert.That(song.Sources.First().Categories.First().Name.Any());
+
+        Assert.That(song.Artists.First().Id > 0);
+        Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+
+    }
+
     [Test]
     public async Task Test_GetRandomSongs_100()
     {
@@ -109,7 +134,7 @@ public class DbTests
                 new SongSource()
                 {
                     AirDateStart = DateTime.Now,
-                    SongType = SongSourceSongType.OP,
+                    SongTypes = new List<SongSourceSongType> { SongSourceSongType.OP },
                     LanguageOriginal = "ja",
                     Type = SongSourceType.VN,
                     Links = new List<SongSourceLink>()

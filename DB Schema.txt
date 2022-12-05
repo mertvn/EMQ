@@ -65,7 +65,7 @@ Table music_source_music {
   music_id int [ref: <> music.id]
   type enum // ED, OP, Insert etc.
     Indexes {
-    (music_source_id, music_id) [pk]
+    (music_source_id, music_id, type) [pk]
   }
 }
 
@@ -83,7 +83,7 @@ Table artist {
   id int [pk]
   primary_language enum
   sex enum //Female, Male, Unknown // might be unnecessary
-  vndb_staff_id int 
+  vndb_staff_id int
 }
 
 Table artist_alias {
@@ -100,7 +100,7 @@ Table artist_alias {
 Table artist_music {
   artist_id int [ref: <> artist.id]
   music_id int [ref: <> music.id]
-  artist_alias_id int [ref: <> artist_alias.id] 
+  artist_alias_id int [ref: <> artist_alias.id]
   role enum // Singer, Composer etc.
     Indexes {
     (artist_id, music_id, role) [pk]

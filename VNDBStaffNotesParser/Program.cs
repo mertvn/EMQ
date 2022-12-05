@@ -36,7 +36,10 @@ namespace VNDBStaffNotesParser
                             "Openings",
                             "OP Theme",
                             "OP song",
+                            "Main theme",
                             "Main themes",
+                            "Theme Song", // idk
+                            "Theme song -", // idk
                             "OP1",
                             "OP2",
                             "OP3",
@@ -117,12 +120,7 @@ namespace VNDBStaffNotesParser
                 },
                 new Dictionary<SongType, List<string>>
                 {
-                    {
-                        SongType.BGM, new List<string>
-                        {
-                            "BGM", "BGMs", "Theme Song", "Theme song -" // idk
-                        }.OrderByDescending(x => x).ToList()
-                    }
+                    { SongType.BGM, new List<string> { "BGM", "BGMs", }.OrderByDescending(x => x).ToList() }
                 },
             };
 

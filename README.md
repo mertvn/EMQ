@@ -25,4 +25,4 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * quiz continuing after lives = 0 (ghost player with >0 lives?)
 * coop: hotjoining player should inherit their team's score and lives
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
-*
+* previous song playing instead of the new song rarely

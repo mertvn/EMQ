@@ -31,6 +31,7 @@
 <div class="songs d-flex flex-row">
     @foreach (var song in CurrentSongs)
     {
+        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
         <div class="song card" style="margin: 16px">
             <SongInfoCardComponent song="@song" selectedMusicSourceTitle="@selectedMusicSourceTitle"/>
             <div style="padding: 16px">
@@ -146,6 +147,7 @@
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
         if (res.IsSuccessStatusCode)
         {
+    // todo doesnt work
             var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
             if (isSuccess)
             {

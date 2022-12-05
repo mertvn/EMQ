@@ -213,6 +213,7 @@ public static class VndbImporter
                 musicSourceTitles.Add(musicSourceTitle);
             }
 
+            // todo check if song (same artist && same title && same company) already exists, and if it does merge songs
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
@@ -233,7 +234,7 @@ public static class VndbImporter
                     new SongSource()
                     {
                         AirDateStart = airDateStart,
-                        SongType = (SongSourceSongType)(int)dynData.ParsedSong.Type.First(), // todo combine these types, and handle list somehow
+                        SongTypes = dynData.ParsedSong.Type.Select(x => (int)x).Cast<SongSourceSongType>().ToList(),
                         LanguageOriginal = dynMusicSource.olang,
                         RatingAverage = dynMusicSource.c_average,
                         Type = SongSourceType.VN,
