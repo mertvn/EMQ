@@ -9,6 +9,8 @@ using NUnit.Framework;
 using VNDBStaffNotesParser;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
+// ReSharper disable StringLiteralTypo
+
 namespace Tests;
 
 public class VNDBStaffNotesParserTests
@@ -38,6 +40,15 @@ public class VNDBStaffNotesParserTests
             "v33175",
             "v33291",
             "v8664",
+            "v1531",
+            "v5916",
+            "v7183",
+            "v9734",
+            "v13882",
+            "v14000",
+            "v19843",
+            "v24351",
+            "v29232",
         };
 
         string date = "2022-12-04";
@@ -414,6 +425,27 @@ public class VNDBStaffNotesParserTests
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
     }
 
+    // doesn't seem like there are any 'OP, ED "SongTitle"' inputs so we should be fine with having 'OP,' and 'ED,' as song type identifiers
+    [Test, Explicit]
+    public void Test_SingleWithMultipleSongTypesCommaDelimiter()
+    {
+        string input = "OP, ED \"TestTitle\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.OP, SongType.ED },
+                Title = "TestTitle",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
     [Test]
     public void Test_SingleWithMultipleSongTypesAmpersandDelimiter()
     {
@@ -476,7 +508,7 @@ public class VNDBStaffNotesParserTests
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
     }
 
-    [Test]
+    [Test, Explicit]
     public void Test_SingleWithMultipleSongTypesForwardSlashDelimiterIntoBeforeType()
     {
         string input = "DC/PS2 OP/Kasumi ED \"Flow\"";

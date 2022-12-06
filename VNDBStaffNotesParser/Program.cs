@@ -35,11 +35,15 @@ namespace VNDBStaffNotesParser
                             "Opening Song",
                             "Openings",
                             "OP Theme",
+                            "OP Themes",
                             "OP song",
                             "Main theme",
                             "Main themes",
                             "Theme Song", // idk
+                            "Theme songs", // idk
                             "Theme song -", // idk
+                            "Theme Song:", // idk
+                            "OP,",
                             "OP1",
                             "OP2",
                             "OP3",
@@ -71,6 +75,9 @@ namespace VNDBStaffNotesParser
                             "Ending ED",
                             "End ED",
                             "Ending theme",
+                            "ED Theme",
+                            "ED Themes",
+                            "ED,",
                             "ED1",
                             "ED2",
                             "ED3",
@@ -597,6 +604,12 @@ namespace VNDBStaffNotesParser
                 if (song.Title.Length > 86)
                 {
                     throw new Exception($"Title is too long: {song.Title}");
+                }
+
+                if (!song.Title.Any())
+                {
+                    // Console.WriteLine($"Title is empty: {song.Title}");
+                    throw new Exception($"Title is empty: {song.Title}");
                 }
 
                 if (song.AfterTitle.Length > 178) // should be like 20-30

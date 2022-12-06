@@ -146,7 +146,8 @@ public static class VndbImporter
 
             var existingSong = songs.LastOrDefault(x =>
                 x.Sources.First().Links.First().Url.Contains((string)dynData.VNID) &&
-                x.Titles.Any(y => y.LatinTitle == (string)dynData.ParsedSong.Title));
+                x.Titles.Any(y => string.Equals(y.LatinTitle.ToLowerInvariant(),
+                    (string)dynData.ParsedSong.Title.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)));
 
             if (existingSong is not null)
             {
@@ -198,7 +199,8 @@ public static class VndbImporter
                 }
 
                 // we don't want titles that are exactly same
-                if (musicSourceTitles.Any(x => x.LatinTitle == latinTitle))
+                if (musicSourceTitles.Any(x =>
+                        string.Equals(x.LatinTitle, latinTitle, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -208,7 +210,8 @@ public static class VndbImporter
                     LatinTitle = latinTitle,
                     NonLatinTitle = nonLatinTitle,
                     Language = dynMusicSourceTitle.lang,
-                    IsMainTitle = latinTitle == (string)dynMusicSource.title
+                    IsMainTitle = string.Equals(latinTitle, (string)dynMusicSource.title,
+                        StringComparison.InvariantCultureIgnoreCase)
                 };
                 musicSourceTitles.Add(musicSourceTitle);
             }

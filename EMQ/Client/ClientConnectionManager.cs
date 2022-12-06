@@ -98,11 +98,11 @@ public class ClientConnectionManager
 
     public void RegisterMethod(string key, Type[] types, Func<object?[], Task> value)
     {
-        for (int i = 0; i < types.Length; i++)
-        {
-            Type type = types[i];
-            Logger.LogWarning($"parameter {i} is {type}");
-        }
+        // for (int i = 0; i < types.Length; i++)
+        // {
+        //     Type type = types[i];
+        //     Logger.LogWarning($"parameter {i} is {type}");
+        // }
 
         if (!CurrentHandlers.ContainsKey(key))
         {
