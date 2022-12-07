@@ -25,9 +25,7 @@ public class QuizManager
 
     private IHubContext<QuizHub> HubContext { get; }
 
-    // private string[] AllPlayerConnectionIds =>
-    //     ServerState.Sessions.Where(x => Quiz.Room.Players.Select(y => y.Id).Contains(x.Player.Id))
-    //         .Select(x => x.ConnectionId!).ToArray();
+    private Dictionary<int, List<string>> CorrectAnswersDict { get; set; } = new();
 
     private void SetTimer()
     {
@@ -127,14 +125,18 @@ public class QuizManager
 
     private bool IsGuessCorrect(string guess)
     {
-        // todo cache correctAnswers per song
-        var correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-            .Select(x => x.LatinTitle).ToList();
-        correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-            .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+        if (!CorrectAnswersDict.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+        {
+            correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+                .Select(x => x.LatinTitle).ToList();
+            correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+                .Select(x => x.NonLatinTitle).Where(x => x != null)!);
 
-        Console.WriteLine("-------");
-        Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
+
+            Console.WriteLine("-------");
+            Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+        }
 
         bool correct = correctAnswers.Any(correctAnswer =>
             string.Equals(guess, correctAnswer, StringComparison.InvariantCultureIgnoreCase));
@@ -215,6 +217,7 @@ public class QuizManager
 
     public async Task<bool> PrimeQuiz()
     {
+        CorrectAnswersDict = new Dictionary<int, List<string>>();
         var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs);
         Quiz.Songs = dbSongs;
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
@@ -273,11 +276,25 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendPlayerJoinedQuiz(string connectionId)
+    public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
     {
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
+
+            var player = Quiz.Room.Players.Single(x => x.Id == playerId);
+            player.Lives = Quiz.Room.QuizSettings.MaxLives;
+            player.Score = 0;
+            player.Guess = "";
+            player.IsBuffered = false;
+            player.PlayerState = PlayerState.Thinking;
+
+            if (Quiz.Room.QuizSettings.TeamSize > 1)
+            {
+                var teammate = Quiz.Room.Players.First(x => x.TeamId == player.TeamId);
+                player.Lives = teammate.Lives;
+                player.Score = teammate.Score;
+            }
         }
     }
 

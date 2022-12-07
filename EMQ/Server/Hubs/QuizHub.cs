@@ -57,7 +57,7 @@ namespace EMQ.Server.Hubs
                     var quizManager = ServerState.QuizManagers.Find(x => x.Quiz.Id == room.Quiz.Id);
                     if (quizManager != null)
                     {
-                        await quizManager.OnSendPlayerJoinedQuiz(Context.ConnectionId);
+                        await quizManager.OnSendPlayerJoinedQuiz(Context.ConnectionId, session.Player.Id);
                     }
                     else
                     {

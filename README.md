@@ -7,11 +7,9 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 ## TODO
 * Restart songs on results phase
 * User-changeable room settings
-* Co-op mode
 * Proper authentication/authorization
-* CSS...
+* CSS... (help!)
 * less clunkier Auto-complete (might need to use JS libraries or write something custom)
-* More songs
 * player left room event
 * restore state on page refresh
 * auto-generate autocomplete list
@@ -23,6 +21,5 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * 6+ players everything stretching
 * rejoining player double losing lives
 * quiz continuing after lives = 0 (ghost player with >0 lives?)
-* coop: hotjoining player should inherit their team's score and lives
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 * previous song playing instead of the new song rarely
