@@ -17,7 +17,6 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * coop: team answers should be determined by count
 * QuizLog
 * trim before autocomplete
-* 4+ players progress bar stretching
 * 6+ players everything stretching
 * rejoining player double losing lives
 * quiz continuing after lives = 0 (ghost player with >0 lives?)
