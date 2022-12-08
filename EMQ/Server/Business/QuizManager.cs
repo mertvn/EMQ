@@ -139,7 +139,7 @@ public class QuizManager
         }
 
         bool correct = correctAnswers.Any(correctAnswer =>
-            string.Equals(guess, correctAnswer, StringComparison.InvariantCultureIgnoreCase));
+            string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase));
 
         return correct;
     }

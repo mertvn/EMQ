@@ -13,7 +13,7 @@
 
                             @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
                             {
-                                SongSource? songSource = song.Sources.SingleOrDefault(x =>
+                                SongSource? songSource = song.Sources.FirstOrDefault(x =>
                                     x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle));
 
                                 if (songSource != null)
