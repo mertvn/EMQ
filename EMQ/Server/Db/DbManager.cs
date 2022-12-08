@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -306,7 +306,7 @@ public static class DbManager
                 {
                     msId = (await connection.QueryAsync<int>(
                         "select ms.id from music_source_external_link msel join music_source ms on ms.id = msel.music_source_id where msel.url=@mselUrl",
-                        new { mselUrl = msVndbUrl })).ToList().SingleOrDefault();
+                        new { mselUrl = msVndbUrl })).ToList().FirstOrDefault();
                 }
 
                 if (msId > 0)

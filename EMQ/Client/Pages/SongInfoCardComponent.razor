@@ -9,7 +9,7 @@
                     <h5 class="songSourceSongType">
                         @if (true)
                         {
-                            Dictionary<string, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
+                            Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
 
                             @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
                             {
@@ -18,36 +18,47 @@
 
                                 if (songSource != null)
                                 {
-                                    songSourceVNIDSongTypes.Add(songSource.Links.First().Url, songSource.SongTypes);
+                                    songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
                                 }
                             }
                             else
                             {
                                 foreach (SongSource songSource in song.Sources)
                                 {
-                                    songSourceVNIDSongTypes.Add(songSource.Links.First().Url, songSource.SongTypes);
+                                    songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
                                 }
                             }
 
-                            @foreach ((string? songSourceVNID, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
-                            {
-                                for (int index = 0; index < songTypes.Count; index++)
-                                {
-                                    SongSourceSongType songType = songTypes[index];
-                                    <span>@songType</span>
+                            // couldn't get distinct to work
+                            List<string> displayedIds = new();
 
-                                    if (index + 1 != songTypes.Count)
+                            @foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            {
+                                @foreach (string songSourceVNID in songSourceVNIDs)
+                                {
+                                    if (!displayedIds.Contains(songSourceVNID))
                                     {
-                                        <span>, </span>
+                                        displayedIds.Add(songSourceVNID);
+
+                                        for (int index = 0; index < songTypes.Count; index++)
+                                        {
+                                            SongSourceSongType songType = songTypes[index];
+                                            <span>@songType</span>
+
+                                            if (index + 1 != songTypes.Count)
+                                            {
+                                                <span>, </span>
+                                            }
+                                        }
+
+                                        // todo fix underline being too long
+                                        <span></span>
+                                        <a class="songSourceVNID link-primary" href="@(songSourceVNID)">
+                                            <span>(VN)</span>
+                                        </a>
+                                        <br/>
                                     }
                                 }
-
-                                // todo fix underline being too long
-                                <span></span>
-                                <a class="songSourceVNID link-primary" href="@(songSourceVNID)">
-                                    <span>(VN)</span>
-                                </a>
-                                <br/>
                             }
                         }
                     </h5>

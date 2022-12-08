@@ -26,7 +26,7 @@ public static class VndbImporter
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2022-12-04";
+        string date = "2022-12-08";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source {date}.json"))!;
@@ -163,7 +163,7 @@ public static class VndbImporter
                     // existingSongExistingArtist.Roles.Add(songArtist);
                 }
 
-                Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing source ({dynData.VNID})");
+                // Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing source ({dynData.VNID})");
                 existingSong.Artists.Add(songArtist);
                 continue;
             }
@@ -211,12 +211,11 @@ public static class VndbImporter
                     NonLatinTitle = nonLatinTitle,
                     Language = dynMusicSourceTitle.lang,
                     IsMainTitle = string.Equals(latinTitle, (string)dynMusicSource.title,
-                        StringComparison.InvariantCultureIgnoreCase)
+                        StringComparison.OrdinalIgnoreCase)
                 };
                 musicSourceTitles.Add(musicSourceTitle);
             }
 
-            // todo check if song (same artist && same title && same company) already exists, and if it does merge songs
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
@@ -229,8 +228,8 @@ public static class VndbImporter
                             LatinTitle = dynData.ParsedSong.Title, Language = "ja", IsMainTitle = true // todo language
                         },
                         // todo multiple song titles?
-                    },
-                Artists = new List<SongArtist> { songArtist },
+                    }.OrderBy(y => y).ToList(),
+                Artists = new List<SongArtist> { songArtist }.OrderBy(y => y).ToList(),
                 // todo song links
                 Sources = new List<SongSource>()
                 {
@@ -251,9 +250,25 @@ public static class VndbImporter
                         Titles = musicSourceTitles,
                         // todo categories
                     },
-                }
+                },
+                ProducerIds = dynData.ProducerIds.OrderBy(y => y).ToList()
             };
-            songs.Add(song);
+
+            var sameSong = songs.SingleOrDefault(x =>
+                x.Artists.Any(y => song.Artists.Select(z => z.VndbId).Contains(y.VndbId)) &&
+                x.Titles.Any(y => song.Titles.Select(z => z.LatinTitle).Contains(y.LatinTitle)) &&
+                x.ProducerIds.Any(y => song.ProducerIds.Contains(y)));
+
+            if (sameSong is not null)
+            {
+                Console.WriteLine(
+                    $"Same song! {dynData.title} == {sameSong.Sources.First().Titles.First().LatinTitle}");
+                sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
+            }
+            else
+            {
+                songs.Add(song);
+            }
         }
 
         return songs;

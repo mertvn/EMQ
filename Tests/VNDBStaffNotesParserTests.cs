@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Server.Db.Imports;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using VNDBStaffNotesParser;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -23,35 +24,17 @@ public class VNDBStaffNotesParserTests
     [Test]
     public async Task Test_Batch()
     {
+        // @formatter:off
         List<string> blacklist = new()
         {
-            "v863",
-            "v864",
-            "v865",
-            "v10935",
-            "v12377",
-            "v12775",
-            "v14700",
-            "v21212",
-            "v21261",
-            "v22727",
-            "v24208",
-            "v24803",
-            "v33175",
-            "v33291",
-            "v8664",
-            "v1531",
-            "v5916",
-            "v7183",
-            "v9734",
-            "v13882",
-            "v14000",
-            "v19843",
-            "v24351",
-            "v29232",
+            "v863", "v864", "v865", "v10935", "v12377", "v12775", "v14700",
+            "v21212", "v21261", "v22727", "v24208", "v24803", "v33175", "v33291",
+            "v8664", "v1531", "v5916", "v7183", "v9734", "v13882", "v14000",
+            "v19843", "v24351", "v29232",
         };
+        // @formatter:on
 
-        string date = "2022-12-04";
+        string date = "2022-12-08";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music {date}.json"))!;
 
@@ -84,6 +67,7 @@ public class VNDBStaffNotesParserTests
                     name = dynData.name,
                     role = dynData.role,
                     ParsedSong = parsedSong,
+                    ProducerIds = ((JArray)dynData.ProducerIds).ToObject<List<string>>().Distinct().ToList()
                 };
                 processedMusics.Add(processedMusic);
             }

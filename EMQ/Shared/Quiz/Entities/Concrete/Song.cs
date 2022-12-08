@@ -24,6 +24,9 @@ public class Song
     public SongType Type { get; set; } = SongType.Unknown;
 
     public List<SongSource> Sources { get; set; } = new();
+
+    [JsonIgnore]
+    public List<string> ProducerIds { get; set; } = new();
 }
 
 public enum SongType

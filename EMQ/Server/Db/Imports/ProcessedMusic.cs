@@ -1,4 +1,5 @@
-﻿using VNDBStaffNotesParser;
+﻿using System.Collections.Generic;
+using VNDBStaffNotesParser;
 
 namespace EMQ.Server.Db.Imports;
 
@@ -17,4 +18,6 @@ public class ProcessedMusic
     public string role { get; set; }
 
     public ParsedSong ParsedSong { get; set; }
+
+    public List<string> ProducerIds { get; set; }
 }
