@@ -14,8 +14,9 @@ namespace EMQ.Server.Hubs
     {
         public override Task OnConnectedAsync()
         {
-            var session =
-                ServerState.Sessions.Find(x => Context.GetHttpContext()!.Request.Query["access_token"] == x.Token);
+            var accessToken = Context.GetHttpContext()!.Request.Query["access_token"];
+
+            var session = ServerState.Sessions.Find(x => accessToken == x.Token);
             if (session != null)
             {
                 if (session.ConnectionId != null)
@@ -39,7 +40,7 @@ namespace EMQ.Server.Hubs
             }
             else
             {
-                throw new Exception();
+                Console.WriteLine($"Player session wasn't found for token {accessToken}");
             }
 
             return base.OnConnectedAsync();
