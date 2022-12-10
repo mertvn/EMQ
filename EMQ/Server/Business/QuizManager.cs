@@ -73,6 +73,11 @@ public class QuizManager
 
     private async Task EnterGuessingPhase()
     {
+        while (Quiz.QuizState.IsPaused)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
@@ -319,5 +324,11 @@ public class QuizManager
                 // todo log invalid guess submitted
             }
         }
+    }
+
+    public async Task OnSendPauseQuiz()
+    {
+        Console.WriteLine($"Paused Quiz {Quiz.Id}");
+        Quiz.QuizState.IsPaused = !Quiz.QuizState.IsPaused;
     }
 }
