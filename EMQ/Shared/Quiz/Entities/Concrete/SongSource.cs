@@ -24,6 +24,8 @@ public class SongSource
     public List<SongSourceCategory> Categories { get; set; } = new();
 
     public List<SongSourceSongType> SongTypes { get; set; } = new();
+
+    public HashSet<int> MusicIds { get; set; } = new();
 }
 
 public enum SongSourceSongType

@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Dapper;
 using Dapper.Contrib.Extensions;
+using DapperQueryBuilder;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
 using Npgsql;
@@ -17,48 +19,51 @@ namespace EMQ.Server.Db;
 
 public static class DbManager
 {
-    public static async Task<Song> SelectSong(int mId)
+    /// <summary>
+    /// Available filters: <br/>
+    /// Song.Id <br/>
+    /// Song.Titles.LatinTitle <br/>
+    /// Song.Links.Url <br/>
+    /// </summary>
+    public static async Task<List<Song>> SelectSongs(Song input)
     {
-        const string sqlMusic =
-            @"SELECT *
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var queryMusic = connection
+                .QueryBuilder($@"SELECT *
             FROM music m
             LEFT JOIN music_title mt ON mt.music_id = m.id
             LEFT JOIN music_external_link mel ON mel.music_id = m.id
-            where m.id = @mId
-            ";
+            /**where**/
+    ");
 
-        const string sqlMusicSource =
-            @"SELECT *
-            FROM music_source_music msm
-            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
-            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
-            LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
-            LEFT JOIN music_source_category msc ON msc.music_source_id = ms.id
-            LEFT JOIN category c ON c.id = msc.category_id
-            where msm.music_id = @mId
-            ";
+            if (input.Id > 0)
+            {
+                queryMusic.Where($"m.id = {input.Id}");
+            }
 
-        const string sqlArtist =
-            @"SELECT *
-            FROM artist_music am
-            LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
-            LEFT JOIN artist a ON a.id = aa.artist_id
-            where am.music_id = @mId
-            ";
+            var latinTitles = input.Titles.Select(x => x.LatinTitle).ToList();
+            if (latinTitles.Any())
+            {
+                queryMusic.Where($"mt.latin_title = ANY({latinTitles})");
+            }
 
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var song = new Song();
-            var songTitles = new List<Title>();
-            var songLinks = new List<SongLink>();
-            var songSources = new List<SongSource>();
-            // var songSourceTitles = new List<SongSourceTitle>();
-            // var songSourceLinks = new List<SongSourceLink>();
-            // var songSourceCategories = new List<SongSourceCategory>();
-            var songArtists = new List<SongArtist>();
-            // var songArtistAliases = new List<SongArtistAlias>();
+            var links = input.Links.Select(x => x.Url).ToList();
+            if (links.Any())
+            {
+                queryMusic.Where($"mel.url = ANY({links})");
+            }
 
-            await connection.QueryAsync(sqlMusic,
+            if (queryMusic.GetFilters() is null)
+            {
+                throw new Exception("At least one filter must be applied");
+            }
+
+            // Console.WriteLine(queryMusic.Sql);
+
+            var songs = new List<Song>();
+
+            await connection.QueryAsync(queryMusic.Sql,
                 new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), }, (objects) =>
                 {
                     // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
@@ -66,192 +71,330 @@ public static class DbManager
                     var musicTitle = (MusicTitle)objects[1];
                     var musicExternalLink = (MusicExternalLink?)objects[2];
 
-                    song.Id = music.id;
-                    song.Type = (SongType)music.type;
-
-                    if (music.length.HasValue)
+                    var existingSong = songs.Where(x => x.Id == music.id).ToList().SingleOrDefault();
+                    if (existingSong is null)
                     {
-                        song.Length = music.length.Value;
-                    }
+                        var song = new Song();
+                        var songTitles = new List<Title>();
+                        var songLinks = new List<SongLink>();
 
-                    songTitles.Add(new Title()
-                    {
-                        LatinTitle = musicTitle.latin_title,
-                        NonLatinTitle = musicTitle.non_latin_title,
-                        Language = musicTitle.language,
-                        IsMainTitle = musicTitle.is_main_title
-                    });
+                        song.Id = music.id;
+                        song.Type = (SongType)music.type;
 
-                    if (musicExternalLink is not null)
-                    {
-                        songLinks.Add(new SongLink()
+                        if (music.length.HasValue)
                         {
-                            Url = musicExternalLink.url,
-                            IsVideo = musicExternalLink.is_video,
-                            Type = (SongLinkType)musicExternalLink.type
+                            song.Length = music.length.Value;
+                        }
+
+                        songTitles.Add(new Title()
+                        {
+                            LatinTitle = musicTitle.latin_title,
+                            NonLatinTitle = musicTitle.non_latin_title,
+                            Language = musicTitle.language,
+                            IsMainTitle = musicTitle.is_main_title
                         });
+
+                        if (musicExternalLink is not null)
+                        {
+                            songLinks.Add(new SongLink()
+                            {
+                                Url = musicExternalLink.url,
+                                IsVideo = musicExternalLink.is_video,
+                                Type = (SongLinkType)musicExternalLink.type
+                            });
+                        }
+
+                        song.Titles = songTitles.DistinctBy(x => x.LatinTitle).ToList();
+                        song.Links = songLinks.DistinctBy(x => x.Url).ToList();
+
+                        songs.Add(song);
+                    }
+                    else
+                    {
+                        if (!existingSong.Titles.Any(x => x.LatinTitle == musicTitle.latin_title))
+                        {
+                            existingSong.Titles.Add(new Title()
+                            {
+                                LatinTitle = musicTitle.latin_title,
+                                NonLatinTitle = musicTitle.non_latin_title,
+                                Language = musicTitle.language
+                            });
+                        }
+
+                        if (musicExternalLink != null)
+                        {
+                            if (!existingSong.Links.Any(x => x.Url == musicExternalLink.url))
+                            {
+                                existingSong.Links.Add(new SongLink()
+                                {
+                                    Url = musicExternalLink.url,
+                                    Type = (SongLinkType)musicExternalLink.type,
+                                    IsVideo = musicExternalLink.is_video,
+                                });
+                            }
+                        }
                     }
 
                     return 0;
                 },
                 splitOn:
-                "music_id,music_id", param: new { mId });
-            song.Titles = songTitles.DistinctBy(x => x.LatinTitle).ToList();
-            song.Links = songLinks.DistinctBy(x => x.Url).ToList();
+                "music_id,music_id", param: queryMusic.Parameters);
 
-            await connection.QueryAsync(sqlMusicSource,
-                new[]
-                {
-                    typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
-                    typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
-                }, (objects) =>
-                {
-                    // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
-                    var musicSourceMusic = (MusicSourceMusic)objects[0];
-                    var musicSource = (MusicSource)objects[1];
-                    var musicSourceTitle = (MusicSourceTitle)objects[2];
-                    var musicSourceExternalLink = (MusicSourceExternalLink?)objects[3];
-                    var category = (Category?)objects[5];
 
-                    var existingSongSource = songSources.Where(x => x.Id == musicSource.id).ToList().SingleOrDefault();
-                    if (existingSongSource is null)
+            foreach (Song song in songs)
+            {
+                song.Sources = await SelectSongSource(connection, song);
+                song.Artists = await SelectArtist(connection, song);
+            }
+
+            Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
+
+            return songs;
+        }
+    }
+
+    /// <summary>
+    /// Available filters: <br/>
+    /// Song.Id <br/>
+    /// Song.Sources.Links <br/>
+    /// Song.Sources.Titles.LatinTitle <br/>
+    /// </summary>
+    public static async Task<List<SongSource>> SelectSongSource(IDbConnection connection, Song input)
+    {
+        var songSources = new List<SongSource>();
+        // var songSourceTitles = new List<SongSourceTitle>();
+        // var songSourceLinks = new List<SongSourceLink>();
+        // var songSourceCategories = new List<SongSourceCategory>();
+
+        var queryMusicSource = connection
+            .QueryBuilder($@"SELECT *
+            FROM music_source_music msm
+            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
+            LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
+            LEFT JOIN music_source_category msc ON msc.music_source_id = ms.id
+            LEFT JOIN category c ON c.id = msc.category_id
+            /**where**/
+    ");
+
+        if (input.Id > 0)
+        {
+            queryMusicSource.Where($"msm.music_id = {input.Id}");
+        }
+
+        var latinTitles = input.Sources.SelectMany(x => x.Titles.Select(y => y.LatinTitle)).ToList();
+        if (latinTitles.Any())
+        {
+            queryMusicSource.Where($"mst.latin_title = ANY({latinTitles})");
+        }
+
+        var links = input.Sources.SelectMany(x => x.Links.Select(y => y.Url)).ToList();
+        if (links.Any())
+        {
+            queryMusicSource.Where($"msel.url = ANY({links})");
+        }
+
+        if (queryMusicSource.GetFilters() is null)
+        {
+            throw new Exception("At least one filter must be applied");
+        }
+
+        // Console.WriteLine(queryMusicSource.Sql);
+
+        await connection.QueryAsync(queryMusicSource.Sql,
+            new[]
+            {
+                typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
+                typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
+            }, (objects) =>
+            {
+                // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
+                var musicSourceMusic = (MusicSourceMusic)objects[0];
+                var musicSource = (MusicSource)objects[1];
+                var musicSourceTitle = (MusicSourceTitle)objects[2];
+                var musicSourceExternalLink = (MusicSourceExternalLink?)objects[3];
+                var category = (Category?)objects[5];
+
+                var existingSongSource = songSources.Where(x => x.Id == musicSource.id).ToList().SingleOrDefault();
+                if (existingSongSource is null)
+                {
+                    songSources.Add(new SongSource()
                     {
-                        songSources.Add(new SongSource()
+                        Id = musicSource.id,
+                        Type = (SongSourceType)musicSource.type,
+                        AirDateStart = musicSource.air_date_start,
+                        AirDateEnd = musicSource.air_date_end,
+                        LanguageOriginal = musicSource.language_original,
+                        RatingAverage = musicSource.rating_average,
+                        SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
+                        Titles = new List<Title>
                         {
-                            Id = musicSource.id,
-                            Type = (SongSourceType)musicSource.type,
-                            AirDateStart = musicSource.air_date_start,
-                            AirDateEnd = musicSource.air_date_end,
-                            LanguageOriginal = musicSource.language_original,
-                            RatingAverage = musicSource.rating_average,
-                            SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
-                            Titles = new List<Title>
+                            new Title()
                             {
-                                new Title()
-                                {
-                                    LatinTitle = musicSourceTitle.latin_title,
-                                    NonLatinTitle = musicSourceTitle.non_latin_title,
-                                    Language = musicSourceTitle.language,
-                                    IsMainTitle = musicSourceTitle.is_main_title
-                                }
-                            },
-                            Links = new List<SongSourceLink>() { },
-                            Categories = new List<SongSourceCategory>() { }
+                                LatinTitle = musicSourceTitle.latin_title,
+                                NonLatinTitle = musicSourceTitle.non_latin_title,
+                                Language = musicSourceTitle.language,
+                                IsMainTitle = musicSourceTitle.is_main_title
+                            }
+                        },
+                        Links = new List<SongSourceLink>() { },
+                        Categories = new List<SongSourceCategory>() { },
+                        MusicIds = new HashSet<int>() { musicSourceMusic.music_id }
+                    });
+
+                    if (musicSourceExternalLink is not null)
+                    {
+                        songSources.Last().Links.Add(new SongSourceLink()
+                        {
+                            Url = musicSourceExternalLink.url,
+                            Type = (SongSourceLinkType)musicSourceExternalLink.type
                         });
+                    }
 
-                        if (musicSourceExternalLink is not null)
+                    if (category is not null)
+                    {
+                        songSources.Last().Categories.Add(new SongSourceCategory()
                         {
-                            songSources.Last().Links.Add(new SongSourceLink()
-                            {
-                                Url = musicSourceExternalLink.url,
-                                Type = (SongSourceLinkType)musicSourceExternalLink.type
-                            });
-                        }
+                            Name = category.name, Type = (SongSourceCategoryType)category.type
+                        });
+                    }
+                }
+                else
+                {
+                    if (!existingSongSource.Titles.Any(x => x.LatinTitle == musicSourceTitle.latin_title))
+                    {
+                        existingSongSource.Titles.Add(new Title()
+                        {
+                            LatinTitle = musicSourceTitle.latin_title,
+                            NonLatinTitle = musicSourceTitle.non_latin_title,
+                            Language = musicSourceTitle.language
+                        });
+                    }
 
-                        if (category is not null)
+                    if (category is not null)
+                    {
+                        if (!existingSongSource.Categories.Any(x => x.Name == category.name))
                         {
-                            songSources.Last().Categories.Add(new SongSourceCategory()
+                            existingSongSource.Categories.Add(new SongSourceCategory()
                             {
                                 Name = category.name, Type = (SongSourceCategoryType)category.type
                             });
                         }
                     }
-                    else
+
+                    var songSourceSongType = (SongSourceSongType)musicSourceMusic.type;
+                    if (!existingSongSource.SongTypes.Contains(songSourceSongType))
                     {
-                        if (!existingSongSource.Titles.Any(x => x.LatinTitle == musicSourceTitle.latin_title))
-                        {
-                            existingSongSource.Titles.Add(new Title()
-                            {
-                                LatinTitle = musicSourceTitle.latin_title,
-                                NonLatinTitle = musicSourceTitle.non_latin_title,
-                                Language = musicSourceTitle.language
-                            });
-                        }
-
-                        if (category is not null)
-                        {
-                            if (!existingSongSource.Categories.Any(x => x.Name == category.name))
-                            {
-                                existingSongSource.Categories.Add(new SongSourceCategory()
-                                {
-                                    Name = category.name, Type = (SongSourceCategoryType)category.type
-                                });
-                            }
-                        }
-
-                        var songSourceSongType = (SongSourceSongType)musicSourceMusic.type;
-                        if (!existingSongSource.SongTypes.Contains(songSourceSongType))
-                        {
-                            existingSongSource.SongTypes.Add(songSourceSongType);
-                        }
+                        existingSongSource.SongTypes.Add(songSourceSongType);
                     }
 
-                    return 0;
-                },
-                splitOn:
-                "id,music_source_id,music_source_id,music_source_id,id",
-                param: new { mId });
-            song.Sources = songSources;
+                    existingSongSource.MusicIds.Add(musicSourceMusic.music_id);
+                }
 
-            await connection.QueryAsync(sqlArtist,
-                new[] { typeof(ArtistMusic), typeof(ArtistAlias), typeof(Artist), }, (objects) =>
-                {
-                    // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
-                    var artistMusic = (ArtistMusic)objects[0];
-                    var artistAlias = (ArtistAlias)objects[1];
-                    var artist = (Artist)objects[2];
+                return 0;
+            },
+            splitOn:
+            "id,music_source_id,music_source_id,music_source_id,id",
+            param: queryMusicSource.Parameters);
 
-                    var existingArtist = songArtists.Where(x => x.Id == artist.id).ToList().SingleOrDefault();
-                    if (existingArtist is null)
-                    {
-                        var songArtist = new SongArtist()
-                        {
-                            Id = artist.id,
-                            PrimaryLanguage = artist.primary_language,
-                            VndbId = artist.vndb_id,
-                            Titles = new List<Title>()
-                            {
-                                new Title()
-                                {
-                                    LatinTitle = artistAlias.latin_alias,
-                                    NonLatinTitle = artistAlias.non_latin_alias,
-                                    IsMainTitle = artistAlias.is_main_name
-                                },
-                            }
-                        };
-
-                        if (artist.sex.HasValue)
-                        {
-                            songArtist.Sex = (Sex)artist.sex.Value;
-                        }
-
-                        songArtist.Role = (SongArtistRole)artistMusic.role;
-
-                        songArtists.Add(songArtist);
-                    }
-                    else
-                    {
-                        if (!existingArtist.Titles.Any(x => x.LatinTitle == artistAlias.latin_alias))
-                        {
-                            existingArtist.Titles.Add(new Title()
-                            {
-                                LatinTitle = artistAlias.latin_alias, NonLatinTitle = artistAlias.non_latin_alias,
-                            });
-                        }
-                    }
-
-                    return 0;
-                },
-                splitOn:
-                "id,id", param: new { mId });
-            song.Artists = songArtists.ToList();
-
-            // Console.WriteLine("song: " + JsonSerializer.Serialize(song, Utils.JsoIndented));
-            return song;
-        }
+        return songSources;
     }
 
-    // todo InsertSongs
+    /// <summary>
+    /// Available filters: <br/>
+    /// Song.Id <br/>
+    /// Song.Artists.Titles.LatinTitle <br/>
+    /// </summary>
+    public static async Task<List<SongArtist>> SelectArtist(IDbConnection connection, Song input)
+    {
+        var songArtists = new List<SongArtist>();
+        // var songArtistAliases = new List<SongArtistAlias>();
+
+        var queryArtist = connection
+            .QueryBuilder($@"SELECT *
+            FROM artist_music am
+            LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+            LEFT JOIN artist a ON a.id = aa.artist_id
+            /**where**/
+    ");
+
+        if (input.Id > 0)
+        {
+            queryArtist.Where($"am.music_id = {input.Id}");
+        }
+
+        var latinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)).ToList();
+        if (latinTitles.Any())
+        {
+            queryArtist.Where($"aa.latin_alias = ANY({latinTitles})");
+        }
+
+        if (queryArtist.GetFilters() is null)
+        {
+            throw new Exception("At least one filter must be applied");
+        }
+
+
+        // Console.WriteLine(queryArtist.Sql);
+
+        await connection.QueryAsync(queryArtist.Sql,
+            new[] { typeof(ArtistMusic), typeof(ArtistAlias), typeof(Artist), }, (objects) =>
+            {
+                // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
+                var artistMusic = (ArtistMusic)objects[0];
+                var artistAlias = (ArtistAlias)objects[1];
+                var artist = (Artist)objects[2];
+
+                var existingArtist = songArtists.Where(x => x.Id == artist.id).ToList().SingleOrDefault();
+                if (existingArtist is null)
+                {
+                    var songArtist = new SongArtist()
+                    {
+                        Id = artist.id,
+                        PrimaryLanguage = artist.primary_language,
+                        VndbId = artist.vndb_id,
+                        Titles = new List<Title>()
+                        {
+                            new Title()
+                            {
+                                LatinTitle = artistAlias.latin_alias,
+                                NonLatinTitle = artistAlias.non_latin_alias,
+                                IsMainTitle = artistAlias.is_main_name
+                            },
+                        },
+                        MusicIds = new HashSet<int> { artistMusic.music_id }
+                    };
+
+                    if (artist.sex.HasValue)
+                    {
+                        songArtist.Sex = (Sex)artist.sex.Value;
+                    }
+
+                    songArtist.Role = (SongArtistRole)artistMusic.role;
+
+                    songArtists.Add(songArtist);
+                }
+                else
+                {
+                    if (!existingArtist.Titles.Any(x => x.LatinTitle == artistAlias.latin_alias))
+                    {
+                        existingArtist.Titles.Add(new Title()
+                        {
+                            LatinTitle = artistAlias.latin_alias, NonLatinTitle = artistAlias.non_latin_alias,
+                        });
+                    }
+
+                    existingArtist.MusicIds.Add(artistMusic.music_id);
+                }
+
+                return 0;
+            },
+            splitOn:
+            "id,id", param: queryArtist.Parameters);
+
+        return songArtists;
+    }
+
     public static async Task<int> InsertSong(Song song)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
@@ -452,7 +595,7 @@ public static class DbManager
         // todo: do this only once on server start and store the results in memory to use later
         // todo no duplicates option
         const string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
-        var songs = new List<Song>();
+        var ret = new List<Song>();
         var rand = new Random();
 
         List<int> ids;
@@ -465,17 +608,18 @@ public static class DbManager
         Console.WriteLine(JsonSerializer.Serialize(ids));
         foreach (int id in ids)
         {
-            var song = await SelectSong(id);
-            // if (!song.Links.Any())
-            // {
-            //     continue;
-            // }
-
-            song.StartTime = rand.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
-            songs.Add(song);
+            var songs = await SelectSongs(new Song { Id = id });
+            if (songs.Any())
+            {
+                foreach (Song song in songs)
+                {
+                    song.StartTime = rand.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    ret.Add(song);
+                }
+            }
         }
 
-        return songs;
+        return ret;
     }
 
     public static async Task<string> SelectAutocomplete()
@@ -497,24 +641,55 @@ public static class DbManager
 
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)
     {
-        const string sqlMIdFromMstTitle = @"
-            SELECT DISTINCT msm.music_id
-            FROM music_source_music msm
-            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
-            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
-            WHERE mst.latin_title=@mstTitle or mst.non_latin_title=@mstTitle";
-
         List<Song> songs = new();
-        List<int> mIds;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            mIds = (await connection.QueryAsync<int>(sqlMIdFromMstTitle,
-                new { mstTitle = songSourceTitle })).ToList();
+            var songSources = await SelectSongSource(connection,
+                new Song
+                {
+                    Sources = new List<SongSource>
+                    {
+                        new() { Titles = new List<Title> { new() { LatinTitle = songSourceTitle } } }
+                    }
+                });
+
+            // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
+
+            foreach (SongSource songSource in songSources)
+            {
+                foreach (int songSourceMusicId in songSource.MusicIds)
+                {
+                    songs.AddRange(await SelectSongs(new Song { Id = songSourceMusicId }));
+                }
+            }
         }
 
-        foreach (int mId in mIds)
+        return songs;
+    }
+
+    public static async Task<IEnumerable<Song>> FindSongsByArtistTitle(string artistTitle)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            songs.Add(await SelectSong(mId));
+            var songArtists = await SelectArtist(connection,
+                new Song
+                {
+                    Artists = new List<SongArtist>
+                    {
+                        new() { Titles = new List<Title> { new() { LatinTitle = artistTitle } } }
+                    }
+                });
+
+            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+
+            foreach (var songArtist in songArtists)
+            {
+                foreach (int songArtistMusicId in songArtist.MusicIds)
+                {
+                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }));
+                }
+            }
         }
 
         return songs;
@@ -610,9 +785,8 @@ public static class DbManager
 
                 if (mIds.Count > 1)
                 {
-                    // todo uncomment after making the required changes for song linking
-                    // throw new Exception(
-                    //     $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    throw new Exception(
+                        $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
                 }
 
                 foreach (int mId in mIds)

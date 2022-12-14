@@ -26,29 +26,37 @@ public class DbTests
     }
 
     [Test]
-    public async Task Test_SelectSong_1()
+    public async Task Test_SelectSongs_ByTitles()
     {
-        var song = await DbManager.SelectSong(1);
-        Assert.That(song.Id > 0);
+        var songs = await DbManager.SelectSongs(new Song()
+        {
+            // Id = 210,
+            Titles =new List<Title>(){new Title(){LatinTitle = "Restoration ~Chinmoku no Sora~"}, new Title(){LatinTitle = "SHOOTING STAR"}}
+        });
+        Assert.That(songs.Count == 3);
+        foreach (var song in songs)
+        {
+            Assert.That(song.Id > 0);
 
-        Assert.That(song.Titles.First().LatinTitle.Any());
-        Assert.That(song.Titles.First().Language.Any());
+            Assert.That(song.Titles.First().LatinTitle.Any());
+            Assert.That(song.Titles.First().Language.Any());
 
-        // Assert.That(song.Links.First().Url.Any());
+            // Assert.That(song.Links.First().Url.Any());
 
-        Assert.That(song.Sources.First().Id > 0);
-        Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
-        Assert.That(song.Sources.First().Titles.First().Language.Any());
-        Assert.That(song.Sources.First().Links.First().Url.Any());
-        // Assert.That(song.Sources.First().Categories.First().Name.Any());
+            Assert.That(song.Sources.First().Id > 0);
+            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
+            Assert.That(song.Sources.First().Titles.First().Language.Any());
+            Assert.That(song.Sources.First().Links.First().Url.Any());
+            // Assert.That(song.Sources.First().Categories.First().Name.Any());
 
-        Assert.That(song.Artists.First().Id > 0);
-        Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+            Assert.That(song.Artists.First().Id > 0);
+            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+        }
     }
 
 
     [Test]
-    public async Task Test_SelectSong_MultipleSongSourceTypes()
+    public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
     {
         var songs = await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na");
         var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
@@ -68,7 +76,32 @@ public class DbTests
 
         Assert.That(song.Artists.First().Id > 0);
         Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+    }
 
+    [Test]
+    public async Task Test_FindSongsByArtistTitle_KOTOKO()
+    {
+        var songs = await DbManager.FindSongsByArtistTitle("KOTOKO");
+
+        foreach (Song song in songs)
+        {
+            Assert.That(song.Id > 0);
+
+            Assert.That(song.Titles.First().LatinTitle.Any());
+            Assert.That(song.Titles.First().Language.Any());
+
+            // Assert.That(song.Links.First().Url.Any());
+
+            Assert.That(song.Sources.First().Id > 0);
+            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
+            Assert.That(song.Sources.First().Titles.First().Language.Any());
+            Assert.That(song.Sources.First().Links.First().Url.Any());
+            Assert.That(song.Sources.First().SongTypes.Any());
+            // Assert.That(song.Sources.First().Categories.First().Name.Any());
+
+            Assert.That(song.Artists.First().Id > 0);
+            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+        }
     }
 
     [Test]
