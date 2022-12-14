@@ -303,7 +303,7 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendGuessChanged(int playerId, string guess)
+    public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
     {
         if (Quiz.QuizState.Phase.Kind == QuizPhaseKind.Guess)
         {
@@ -317,6 +317,10 @@ public class QuizManager
                 {
                     await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
                         .SendAsync("ReceiveResyncRequired");
+                }
+                else
+                {
+                    await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveResyncRequired");
                 }
             }
             else
