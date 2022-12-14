@@ -109,7 +109,7 @@ public class ClientConnectionManager
             CurrentHandlers.Add(key, (types, value));
         }
 
-        ClientState.Session!.hubConnection!.On(key, types, value);
+        ClientState.Session!.hubConnection!.On(key, types, value); // TODO: Use the return value
         Logger.LogInformation("Registered method {Key}", key);
     }
 

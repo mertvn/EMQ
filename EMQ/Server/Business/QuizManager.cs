@@ -303,6 +303,7 @@ public class QuizManager
         }
     }
 
+    // todo: avoid sending other players' guesses in non-team games
     public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
     {
         if (Quiz.QuizState.Phase.Kind == QuizPhaseKind.Guess)

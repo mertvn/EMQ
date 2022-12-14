@@ -61,6 +61,7 @@
         await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();
+        ClientQuizSettings = Room!.QuizSettings;
         StateHasChanged();
 
         if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
