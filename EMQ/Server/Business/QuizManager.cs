@@ -328,7 +328,15 @@ public class QuizManager
 
     public async Task OnSendPauseQuiz()
     {
-        Console.WriteLine($"Paused Quiz {Quiz.Id}");
-        Quiz.QuizState.IsPaused = !Quiz.QuizState.IsPaused;
+        if (Quiz.QuizState.IsPaused)
+        {
+            Quiz.QuizState.IsPaused = false;
+            Console.WriteLine($"Unpaused Quiz {Quiz.Id}");
+        }
+        else
+        {
+            Quiz.QuizState.IsPaused = true;
+            Console.WriteLine($"Paused Quiz {Quiz.Id}");
+        }
     }
 }

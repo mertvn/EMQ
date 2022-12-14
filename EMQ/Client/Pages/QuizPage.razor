@@ -29,8 +29,8 @@
     @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
         <button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="SendPauseQuiz"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
-            Pause
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
+           @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
         </button>
     }
 
@@ -491,6 +491,7 @@
         if (Room is {Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPauseQuiz");
+            await SyncWithServer();
         }
     }
 
