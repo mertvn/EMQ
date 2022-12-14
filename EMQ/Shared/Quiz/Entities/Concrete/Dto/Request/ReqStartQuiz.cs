@@ -2,13 +2,13 @@
 
 public class ReqStartQuiz
 {
-    public ReqStartQuiz(int playerId, int roomId)
+    public ReqStartQuiz(string playerToken, int roomId)
     {
-        PlayerId = playerId;
+        PlayerToken = playerToken;
         RoomId = roomId;
     }
 
-    public int PlayerId { get; }
+    public string PlayerToken { get; }
 
     public int RoomId { get; }
 }

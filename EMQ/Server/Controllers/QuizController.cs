@@ -106,7 +106,7 @@ public class QuizController : ControllerBase
     [Route("CreateRoom")]
     public async Task<int> CreateRoom([FromBody] ReqCreateRoom req)
     {
-        var session = ServerState.Sessions.Find(x => x.Player.Id == req.PlayerId);
+        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -176,7 +176,7 @@ public class QuizController : ControllerBase
     [Route("StartQuiz")]
     public async Task StartQuiz([FromBody] ReqStartQuiz req)
     {
-        var session = ServerState.Sessions.Find(x => x.Player.Id == req.PlayerId);
+        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -209,13 +209,57 @@ public class QuizController : ControllerBase
             else
             {
                 _logger.LogWarning("Attempt to start quiz in room {room.Id} by non-owner player {req.playerId}",
-                    room.Id, req.PlayerId);
+                    room.Id, req.PlayerToken);
                 // todo warn not owner
             }
         }
         else
         {
             _logger.LogWarning("Attempt to start quiz in room {req.RoomId} that is null", req.RoomId);
+            // todo
+        }
+    }
+
+    [HttpPost]
+    [Route("ChangeRoomSettings")]
+    public async Task ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
+    {
+        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
+
+        if (room is not null)
+        {
+            if (room.Owner.Id == player.Id)
+            {
+                if (room.Quiz is null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing)
+                {
+                    room.Password = req.RoomPassword;
+                    room.QuizSettings = req.QuizSettings;
+
+                    _logger.LogInformation("Changed room settings in room {room.Id}", room.Id);
+                }
+                else
+                {
+                    _logger.LogInformation("Cannot change room settings while quiz is active in room {room.Id}",
+                        room.Id);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Attempt to change room settings in room {room.Id} by non-owner player", room.Id);
+                // todo warn not owner
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to change room settings in room {req.RoomId} that is null", req.RoomId);
             // todo
         }
     }

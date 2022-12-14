@@ -22,6 +22,7 @@
 </div>
 
 <button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
+<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="ResetQuizSettings">Reset to default</button>
 @* <button class="btn btn-primary" disabled="@(!Room?.Quiz?.QuizState!.IsActive)" @onclick="Hotjoin">Hotjoin Quiz</button> *@
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
@@ -40,6 +41,8 @@
 </div>
 
 @code {
+    private QuizSettings ClientQuizSettings { get; set; } = new();
+
     private Room? Room { get; set; }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
@@ -70,7 +73,7 @@
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz", new ReqStartQuiz(ClientState.Session.Player.Id, Room.Id));
+            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz", new ReqStartQuiz(ClientState.Session.Token, Room.Id));
             if (res1.IsSuccessStatusCode)
             {
             }
@@ -100,6 +103,28 @@
     private async Task ChangeTeam(int teamId)
     {
     // todo
+    }
+
+    private async Task ResetQuizSettings()
+    {
+        ClientQuizSettings = new QuizSettings();
+        await SendChangeRoomSettingsReq(); // todo remove
+    }
+
+    private async Task SendChangeRoomSettingsReq()
+    {
+        if (Room!.Owner.Id == ClientState.Session!.Player.Id)
+        {
+            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/ChangeRoomSettings", new ReqChangeRoomSettings(
+                ClientState.Session.Token, Room.Id, "TODO", ClientQuizSettings));
+
+            if (res1.IsSuccessStatusCode)
+            {
+    // todo close modal
+                Room = await _clientUtils.SyncRoom();
+                StateHasChanged();
+            }
+        }
     }
 
 }

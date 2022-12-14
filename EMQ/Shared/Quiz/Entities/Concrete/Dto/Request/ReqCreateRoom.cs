@@ -2,15 +2,15 @@
 
 public class ReqCreateRoom
 {
-    public ReqCreateRoom(int playerId, string name, string password, QuizSettings quizSettings)
+    public ReqCreateRoom(string playerToken, string name, string password, QuizSettings quizSettings)
     {
-        PlayerId = playerId;
+        PlayerToken = playerToken;
         Name = name;
         Password = password;
         QuizSettings = quizSettings;
     }
 
-    public int PlayerId { get; }
+    public string PlayerToken { get; }
 
     public string Name { get; }
 

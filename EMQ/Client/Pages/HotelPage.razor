@@ -76,7 +76,7 @@
             return;
         }
 
-        ReqCreateRoom req = new(ClientState.Session.Player.Id, Name, Password, QuizSettings);
+        ReqCreateRoom req = new(ClientState.Session.Token, Name, Password, QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
