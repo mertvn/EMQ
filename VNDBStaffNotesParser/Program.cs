@@ -55,6 +55,7 @@ namespace VNDBStaffNotesParser
                             "OP9",
                             "OP 1",
                             "OP 2",
+                            "ED chorus, PSV OP", // YOLO
                         }.OrderByDescending(x => x).ToList()
                     }
                 },
@@ -93,6 +94,7 @@ namespace VNDBStaffNotesParser
                             "ED A",
                             "ED B",
                             "EDs 1",
+                            "BGM, ED" // YOLO
                         }.OrderByDescending(x => x).ToList()
                     }
                 },
@@ -131,7 +133,7 @@ namespace VNDBStaffNotesParser
                 },
             };
 
-        public static List<ParsedSong> Parse(string input)
+        public static List<ParsedSong> Parse(string input, bool doIntegrityCheck = true)
         {
             if (string.IsNullOrEmpty(input))
             {
@@ -139,13 +141,13 @@ namespace VNDBStaffNotesParser
                 return new List<ParsedSong>();
             }
 
+            input = Preprocess(input);
+
             if (!IsProcessable(input))
             {
                 Console.WriteLine($"Unprocessable input: {input}");
                 return new List<ParsedSong>();
             }
-
-            input = Preprocess(input);
 
             var songs = new List<ParsedSong>();
 
@@ -308,8 +310,9 @@ namespace VNDBStaffNotesParser
                             // todo: abstractize this to reduce duplication
                             switch (input[boundsCheck])
                             {
-                                // new song delimited by ','
+                                // new song delimited by ',' or ';'
                                 case ',':
+                                case ';':
                                     {
                                         switch (input[boundsCheck + 1].ToString(), input[boundsCheck + 2].ToString())
                                         {
@@ -343,11 +346,21 @@ namespace VNDBStaffNotesParser
                                         if (IsNextTokenASongType(input, cursor + 1, out int distance,
                                                 out SongType songType))
                                         {
-                                            // new song starting with SongType
+                                            // new song with different song type
                                             cursor = boundsCheck + 1;
                                             mode = Mode.SongType;
 
                                             song = new ParsedSong();
+
+                                            goto nextMode;
+                                        }
+                                        else if (input[boundsCheck + 1] == '"')
+                                        {
+                                            // new song with same song type
+                                            cursor = boundsCheck + 1;
+                                            mode = Mode.SongTitle;
+
+                                            song = new ParsedSong { Type = song.Type };
 
                                             goto nextMode;
                                         }
@@ -510,7 +523,10 @@ namespace VNDBStaffNotesParser
                     Converters = { new JsonStringEnumConverter() }
                 }));
 
-            CheckIntegrity(songs);
+            if (doIntegrityCheck)
+            {
+                CheckIntegrity(songs);
+            }
 
             return songs;
         }
@@ -617,13 +633,18 @@ namespace VNDBStaffNotesParser
                     throw new Exception($"AfterTitle is too long: {song.AfterTitle}");
                 }
 
+                if (song.AfterTitle.Contains('"'))
+                {
+                    Console.WriteLine($"AfterTitle contains a quote: {song.AfterTitle}");
+                    throw new Exception($"AfterTitle contains a quote: {song.AfterTitle}");
+                }
+
                 if (song.AfterTitle.ToLowerInvariant().Contains(" op") ||
                     song.AfterTitle.ToLowerInvariant().Contains(" ed") ||
                     song.AfterTitle.ToLowerInvariant().Contains(" insert")) // todo
                 {
-                    // todo very important
                     Console.WriteLine($"AfterTitle contains new songs: {song.AfterTitle}");
-                    // throw new Exception($"AfterTitle contains new songs: {song.AfterTitle}");
+                    throw new Exception($"AfterTitle contains new songs: {song.AfterTitle}");
                 }
             }
         }

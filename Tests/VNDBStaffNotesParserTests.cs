@@ -27,10 +27,13 @@ public class VNDBStaffNotesParserTests
         // @formatter:off
         List<string> blacklist = new()
         {
-            "v863", "v864", "v865", "v10935", "v12377", "v12775", "v14700",
-            "v21212", "v21261", "v22727", "v24208", "v24803", "v33175", "v33291",
-            "v8664", "v1531", "v5916", "v7183", "v9734", "v13882", "v14000",
-            "v19843", "v24351", "v29232",
+            "v863", "v864", "v865", "v10935", "v12377", "v12775", "v14700", "v21212", "v21261", "v22727", "v24208", "v24803", "v33175", "v33291", "v8664", "v1531", "v5916", "v7183", "v9734", "v13882", "v14000", "v19843", "v24351", "v29232", // TBD
+            "v15495", "v20070", "v20071", // too irregular
+        };
+
+        List<string> graylist = new()
+        {
+            "v1515", "v2368", "v2527", "v3144", "v3238", "v4054", "v6426", "v11749", "v13765", "v13892", "v16460", "v17376", "v19592", "v24302", "v25915", "v26987" // AfterTitle contains quote
         };
         // @formatter:on
 
@@ -53,7 +56,7 @@ public class VNDBStaffNotesParserTests
 
             string staffNotes = (string)dynData.MusicName;
             Console.WriteLine($"staffNotes: {staffNotes}");
-            var actual = VNDBStaffNotesParser.Program.Parse(staffNotes);
+            var actual = VNDBStaffNotesParser.Program.Parse(staffNotes, !graylist.Contains(vnid));
             parsedSongs.AddRange(actual);
 
             foreach (ParsedSong parsedSong in actual)
@@ -409,19 +412,53 @@ public class VNDBStaffNotesParserTests
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
     }
 
-    // doesn't seem like there are any 'OP, ED "SongTitle"' inputs so we should be fine with having 'OP,' and 'ED,' as song type identifiers
-    [Test, Explicit]
-    public void Test_SingleWithMultipleSongTypesCommaDelimiter()
+    [Test]
+    public void Test_MultipleWithSameSongTypesSpaceDelimiter()
     {
-        string input = "OP, ED \"TestTitle\"";
+        string input =
+            "Insert songs \"Amazing Grace\" \"Ave Maria\" \"Joy to the World\"";
 
         var expected = new List<ParsedSong>
         {
             new()
             {
                 BeforeType = "",
-                Type = new List<SongType> { SongType.OP, SongType.ED },
-                Title = "TestTitle",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Amazing Grace",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Ave Maria",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Joy to the World",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_SingleWithMultipleSongTypesCommaDelimiter()
+    {
+        string input = "BGM, ED \"Kono Michi de...\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.ED }, // YOLO
+                Title = "Kono Michi de...",
                 AfterTitle = ""
             },
         };
