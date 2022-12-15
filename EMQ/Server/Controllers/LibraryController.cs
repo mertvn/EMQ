@@ -25,10 +25,17 @@ public class LibraryController : ControllerBase
 
     [HttpPost]
     [Route("FindSongsBySongSourceTitle")]
-    public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(
-        [FromBody] ReqFindSongsBySongSourceTitle req)
+    public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
     {
         var songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
+        return songs;
+    }
+
+    [HttpPost]
+    [Route("FindSongsByArtistTitle")]
+    public async Task<IEnumerable<Song>> FindSongsByArtistTitle([FromBody] ReqFindSongsByArtistTitle req)
+    {
+        var songs = await DbManager.FindSongsByArtistTitle(req.ArtistTitle);
         return songs;
     }
 

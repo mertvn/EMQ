@@ -25,64 +25,8 @@ public class DbTests
     {
     }
 
-    [Test]
-    public async Task Test_SelectSongs_ByTitles()
+    private void GenericSongsAssert(IEnumerable<Song> songs)
     {
-        var songs = await DbManager.SelectSongs(new Song()
-        {
-            // Id = 210,
-            Titles =new List<Title>(){new Title(){LatinTitle = "Restoration ~Chinmoku no Sora~"}, new Title(){LatinTitle = "SHOOTING STAR"}}
-        });
-        Assert.That(songs.Count == 3);
-        foreach (var song in songs)
-        {
-            Assert.That(song.Id > 0);
-
-            Assert.That(song.Titles.First().LatinTitle.Any());
-            Assert.That(song.Titles.First().Language.Any());
-
-            // Assert.That(song.Links.First().Url.Any());
-
-            Assert.That(song.Sources.First().Id > 0);
-            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
-            Assert.That(song.Sources.First().Titles.First().Language.Any());
-            Assert.That(song.Sources.First().Links.First().Url.Any());
-            // Assert.That(song.Sources.First().Categories.First().Name.Any());
-
-            Assert.That(song.Artists.First().Id > 0);
-            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
-        }
-    }
-
-
-    [Test]
-    public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
-    {
-        var songs = await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na");
-        var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
-        Assert.That(song.Id > 0);
-
-        Assert.That(song.Titles.First().LatinTitle.Any());
-        Assert.That(song.Titles.First().Language.Any());
-
-        // Assert.That(song.Links.First().Url.Any());
-
-        Assert.That(song.Sources.First().Id > 0);
-        Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
-        Assert.That(song.Sources.First().Titles.First().Language.Any());
-        Assert.That(song.Sources.First().Links.First().Url.Any());
-        Assert.That(song.Sources.First().SongTypes.Count > 1);
-        // Assert.That(song.Sources.First().Categories.First().Name.Any());
-
-        Assert.That(song.Artists.First().Id > 0);
-        Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
-    }
-
-    [Test]
-    public async Task Test_FindSongsByArtistTitle_KOTOKO()
-    {
-        var songs = await DbManager.FindSongsByArtistTitle("KOTOKO");
-
         foreach (Song song in songs)
         {
             Assert.That(song.Id > 0);
@@ -97,6 +41,7 @@ public class DbTests
             Assert.That(song.Sources.First().Titles.First().Language.Any());
             Assert.That(song.Sources.First().Links.First().Url.Any());
             Assert.That(song.Sources.First().SongTypes.Any());
+
             // Assert.That(song.Sources.First().Categories.First().Name.Any());
 
             Assert.That(song.Artists.First().Id > 0);
@@ -105,20 +50,56 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_SelectSongs_ByTitles()
+    {
+        var songs = await DbManager.SelectSongs(new Song()
+        {
+            // Id = 210,
+            Titles = new List<Title>
+            {
+                new() { LatinTitle = "Restoration ~Chinmoku no Sora~" }, new() { LatinTitle = "SHOOTING STAR" }
+            }
+        });
+
+        Assert.That(songs.Count == 3);
+        GenericSongsAssert(songs);
+    }
+
+
+    [Test]
+    public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
+    {
+        var songs = await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na");
+        var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
+
+        GenericSongsAssert(new List<Song> { song });
+    }
+
+    [Test]
+    public async Task Test_FindSongsByArtistTitle_KOTOKO()
+    {
+        var songs = await DbManager.FindSongsByArtistTitle("KOTOKO");
+
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_FindSongsByArtistTitle_ByNonMainAlias()
+    {
+        var songs = (await DbManager.FindSongsByArtistTitle("Mishiro Mako")).ToList();
+
+        Assert.That(songs.Count > 10);
+        Assert.That(songs.Count < 30);
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_100()
     {
         var songs = await DbManager.GetRandomSongs(100);
 
-        // Assert.That(songs.Count > 0);
-        foreach (Song song in songs)
-        {
-            Assert.That(song.Id > 0);
-            Assert.That(song.Titles.First().LatinTitle.Any());
-            // Assert.That(song.Links.First().Url.Any());
-            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
-            // Assert.That(song.Sources.First().Categories.First().Name.Any());
-            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
-        }
+        Assert.That(songs.Count > 99);
+        GenericSongsAssert(songs);
     }
 
     [Test, Explicit]

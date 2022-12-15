@@ -144,10 +144,10 @@ public static class DbManager
             foreach (Song song in songs)
             {
                 song.Sources = await SelectSongSource(connection, song);
-                song.Artists = await SelectArtist(connection, song);
+                song.Artists = await SelectArtist(connection, song, false);
             }
 
-            Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
+            // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
 
             return songs;
         }
@@ -303,9 +303,10 @@ public static class DbManager
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
+    /// Song.Artists.Id <br/>
     /// Song.Artists.Titles.LatinTitle <br/>
     /// </summary>
-    public static async Task<List<SongArtist>> SelectArtist(IDbConnection connection, Song input)
+    public static async Task<List<SongArtist>> SelectArtist(IDbConnection connection, Song input, bool needsRequery)
     {
         var songArtists = new List<SongArtist>();
         // var songArtistAliases = new List<SongArtistAlias>();
@@ -321,6 +322,12 @@ public static class DbManager
         if (input.Id > 0)
         {
             queryArtist.Where($"am.music_id = {input.Id}");
+        }
+
+        int? artistId = input.Artists.FirstOrDefault()?.Id;
+        if (artistId is > 0)
+        {
+            queryArtist.Where($"a.id = {artistId}");
         }
 
         var latinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)).ToList();
@@ -391,6 +398,13 @@ public static class DbManager
             },
             splitOn:
             "id,id", param: queryArtist.Parameters);
+
+        if (needsRequery && songArtists.Any())
+        {
+            var inputWithArtistId =
+                new Song { Artists = new List<SongArtist> { new() { Id = songArtists.First().Id } } };
+            input.Artists = songArtists = await SelectArtist(connection, inputWithArtistId, false);
+        }
 
         return songArtists;
     }
@@ -679,7 +693,7 @@ public static class DbManager
                     {
                         new() { Titles = new List<Title> { new() { LatinTitle = artistTitle } } }
                     }
-                });
+                }, true);
 
             // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
 

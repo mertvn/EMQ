@@ -16,6 +16,7 @@
     Value="selectedMusicSourceTitle"
     ValueChanged="SelectedResultChanged"
     ValueExpression="@(() => selectedMusicSourceTitle)"
+    AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
     MinimumLength="1"
     MaximumSuggestions="10"
     Debounce="1"
@@ -76,6 +77,11 @@
 
         </div>
     }
+
+    @if (!CurrentSongs.Any())
+    {
+        @NoSongsText
+    }
 </div>
 
 @code {
@@ -94,6 +100,8 @@
     public string selectedMusicSourceTitle { get; set; } = "";
 
     public List<Song> CurrentSongs { get; set; } = new();
+
+    public string NoSongsText { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,6 +122,10 @@
 
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
             var req = new ReqFindSongsBySongSourceTitle(selectedMusicSourceTitle);
             var res = await _client.PostAsJsonAsync("Library/FindSongsBySongSourceTitle", req);
             if (res.IsSuccessStatusCode)
@@ -125,7 +137,21 @@
                 }
                 else
                 {
-                    CurrentSongs = new List<Song>();
+                    var req2 = new ReqFindSongsByArtistTitle(selectedMusicSourceTitle);
+                    var res2 = await _client.PostAsJsonAsync("Library/FindSongsByArtistTitle", req2);
+                    if (res.IsSuccessStatusCode)
+                    {
+                        List<Song>? songs2 = await res2.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                        if (songs2 != null && songs2.Any())
+                        {
+                            CurrentSongs = songs2;
+                        }
+                    }
+                }
+
+                if (!CurrentSongs.Any())
+                {
+                    NoSongsText = "No results.";
                 }
 
                 StateHasChanged();
@@ -158,6 +184,11 @@
                 Console.WriteLine("Error importing song link");
             }
         }
+    }
+
+    private Task<string> AddItemOnEmptyResultMethod(string arg)
+    {
+        return Task.FromResult(arg);
     }
 
 }

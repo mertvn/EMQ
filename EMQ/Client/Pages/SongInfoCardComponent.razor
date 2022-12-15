@@ -68,12 +68,14 @@
                     by
                     @foreach (SongArtist songArtist in song.Artists)
                     {
+                        var songArtistTitle = songArtist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First();
+
                         <div>
                             <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">
-                                <span>@songArtist.Titles.Single().LatinTitle</span>
-                                @if (!string.IsNullOrEmpty(songArtist.Titles.Single().NonLatinTitle))
+                                <span>@songArtistTitle.LatinTitle</span>
+                                @if (!string.IsNullOrEmpty(songArtistTitle.NonLatinTitle))
                                 {
-                                    <span> (@songArtist.Titles.Single().NonLatinTitle)</span>
+                                    <span> (@songArtistTitle.NonLatinTitle)</span>
                                 }
                             </a>
                         </div>

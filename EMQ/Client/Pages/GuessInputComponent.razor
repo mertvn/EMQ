@@ -48,6 +48,7 @@
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
+        // todo startsWith should be for every word rather than just the first word
         var startsWith = AutocompleteData.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
         var contains = AutocompleteData.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
     // _logger.LogInformation(JsonSerializer.Serialize(result));
