@@ -212,4 +212,26 @@ public class DbTests
                 await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
         await DbManager.ImportSongLite(deserialized!);
     }
+
+    [Test, Explicit]
+    public async Task ApproveReviewQueueItem()
+    {
+        var rqIds = Enumerable.Range(1, 25).ToArray();
+
+        foreach (int rqId in rqIds)
+        {
+            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Approved);
+        }
+    }
+
+    [Test, Explicit]
+    public async Task RejectReviewQueueItem()
+    {
+        var rqIds = Enumerable.Range(1, 25).ToArray();
+
+        foreach (int rqId in rqIds)
+        {
+            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected);
+        }
+    }
 }

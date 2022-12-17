@@ -871,4 +871,49 @@ public static class DbManager
 
         return rqs;
     }
+
+    public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus)
+    {
+        int melId = -1;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            ReviewQueue? rq = await connection.GetAsync<ReviewQueue>(rqId);
+
+            if (rq is null)
+            {
+                throw new InvalidOperationException($"Could not find rqId {rqId}");
+            }
+
+            var currentStatus = (ReviewQueueStatus)rq.status;
+            switch (currentStatus)
+            {
+                case ReviewQueueStatus.Pending:
+                case ReviewQueueStatus.Rejected:
+                    break;
+                case ReviewQueueStatus.Approved:
+                    throw new NotImplementedException("Cannot update approved items.");
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            switch (requestedStatus)
+            {
+                case ReviewQueueStatus.Pending:
+                case ReviewQueueStatus.Rejected:
+                    break;
+                case ReviewQueueStatus.Approved:
+                    var songLink = new SongLink() { Url = rq.url, Type = (SongLinkType)rq.type, IsVideo = rq.is_video };
+                    melId = await InsertSongLink(rq.music_id, songLink);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
+            }
+
+            rq.status = (int)requestedStatus;
+            await connection.UpdateAsync(rq);
+            Console.WriteLine($"Updated ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
+        }
+
+        return melId;
+    }
 }

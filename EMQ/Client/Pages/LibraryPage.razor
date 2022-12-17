@@ -103,7 +103,7 @@
 
     private string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
-    private ReviewQueueComponent _reviewQueueComponent { get; set; }
+    private ReviewQueueComponent? _reviewQueueComponent { get; set; }
 
     public string selectedMusicSourceTitle { get; set; } = "";
 
@@ -191,7 +191,7 @@
             {
     // todo display successfully added message
                 Console.WriteLine("Imported song link!");
-                await _reviewQueueComponent.RefreshRQs();
+                await _reviewQueueComponent!.RefreshRQs();
             }
             else
             {
