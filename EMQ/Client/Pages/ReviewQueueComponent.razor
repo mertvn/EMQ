@@ -40,6 +40,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await RefreshRQs();
+    }
+
+    public async Task RefreshRQs()
+    {
         var req = new ReqFindRQs(DateTime.Now.AddDays(-30), DateTime.Now);
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
@@ -54,6 +59,7 @@
                 _logger.LogError("Failed to find RQs");
             }
         }
+        StateHasChanged();
     }
 
 }

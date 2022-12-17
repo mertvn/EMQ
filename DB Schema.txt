@@ -108,3 +108,15 @@ Table artist_music {
 }
 
 Ref: artist_music.(artist_id, artist_alias_id) > artist_alias.(artist_id, id)
+
+Table review_queue {
+  id int [pk]
+  music_id int [ref: > music.id]
+  url varchar
+  type enum // catbox, openingsmoe etc. // might be unnecessary
+  is_video boolean
+  submitted_by varchar
+  submitted_on datetime
+  status enum
+  reason varchar
+}
