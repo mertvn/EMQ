@@ -22,3 +22,4 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * quiz continuing after lives = 0 rarely (ghost player with >0 lives?)
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 * previous song playing instead of the new song when the phase change message to the results phase is not received due to a disconnect
+* player -> (site)user + (quiz)player

@@ -14,14 +14,25 @@
 
 <h1>Hello, EMQ!</h1>
 
-<p>Welcome to EMQ, please login.</p>
-
 <div>
-    Username:<br/>
-    <input @bind="Username" type="text" name="Username"/><br/>
-    @* Password:<br/> *@
-    @* <input @bind="Password" type="password" name="Password"/><br/> *@
-    <button class="btn btn-primary" @onclick="Login">Login</button>
+    @if (ClientState.Session != null)
+    {
+        <div>
+            Currently Logged in as @ClientState.Session.Player.Username<br/>
+            <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
+        </div>
+    }
+    else
+    {
+        <p>Welcome to EMQ, please login.</p>
+        <div>
+            Username:<br/>
+            <input @bind="Username" type="text" name="Username"/><br/>
+            @* Password:<br/> *@
+            @* <input @bind="Password" type="password" name="Password"/><br/> *@
+            <button class="btn btn-primary" @onclick="Login" disabled="@(ClientState.Session != null)">Login</button>
+        </div>
+    }
 </div>
 
 @code
@@ -50,6 +61,24 @@
 
                     Navigation.NavigateTo("/HotelPage");
                 }
+            }
+            else
+            {
+    // todo
+            }
+        }
+    }
+
+    private async Task Logout()
+    {
+        if (ClientState.Session is not null)
+        {
+    // todo proper auth
+            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/RemoveSession", new ReqRemoveSession(ClientState.Session.Token));
+            if (res.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Logged out");
+                Navigation.NavigateTo("/", forceLoad: true);
             }
             else
             {

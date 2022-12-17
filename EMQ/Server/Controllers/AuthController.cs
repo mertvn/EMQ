@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using EMQ.Shared.Auth;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
@@ -46,5 +48,15 @@ public class AuthController : ControllerBase
         ServerState.Sessions.Add(new Session(player, token));
 
         return new ResCreateSession(playerId, token);
+    }
+
+    [HttpPost]
+    [Route("RemoveSession")]
+    public async Task RemoveSession([FromBody] ReqRemoveSession req)
+    {
+        var session = ServerState.Sessions.Single(x => x.Token == req.Token);
+        _logger.LogInformation("Removing session " + session.Token);
+        ServerState.Sessions.Remove(session);
+        // todo notify room?
     }
 }
