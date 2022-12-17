@@ -5,7 +5,7 @@ Eroge = Visual Novel.
 Name was chosen as such for different reasons (mainly browser autocomplete).
 
 ## TODO
-* Restart songs on results phase
+* Restart songs on results phase option
 * User-changeable room settings
 * Proper authentication/authorization
 * CSS... (help!)
@@ -19,6 +19,6 @@ Name was chosen as such for different reasons (mainly browser autocomplete).
 * trim before autocomplete
 * 6+ players everything stretching
 * rejoining player double losing lives
-* quiz continuing after lives = 0 (ghost player with >0 lives?)
+* quiz continuing after lives = 0 rarely (ghost player with >0 lives?)
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
-* previous song playing instead of the new song rarely
+* previous song playing instead of the new song when the phase change message to the results phase is not received due to a disconnect
