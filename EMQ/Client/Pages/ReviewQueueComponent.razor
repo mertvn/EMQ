@@ -59,6 +59,7 @@
             var content = await res.Content.ReadFromJsonAsync<List<RQ>>();
             if (content is not null)
             {
+                content.Reverse();
                 CurrentRQs = content;
             }
             else
