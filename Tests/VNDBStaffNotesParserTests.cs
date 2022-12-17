@@ -33,7 +33,7 @@ public class VNDBStaffNotesParserTests
 
         List<string> graylist = new()
         {
-            "v1515", "v2368", "v2527", "v3144", "v3238", "v4054", "v6426", "v11749", "v13765", "v13892", "v16460", "v17376", "v19592", "v24302", "v25915", "v26987" // AfterTitle contains quote
+            "v1515", "v2368", "v2527", "v3238", "v4054", "v6426", "v11749", "v13765", "v13892", "v16460", "v17376", "v19592", "v24302", "v25915", "v26987" // AfterTitle contains quote
         };
         // @formatter:on
 
@@ -275,6 +275,39 @@ public class VNDBStaffNotesParserTests
             new()
             {
                 BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "Summer Again", AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType2()
+    {
+        string input =
+            "OP \"Kuuki Rikigaku Shoujo to Shounen no Uta\" Looking-glass Insects ED \"Shuumatsu no Bishou\" Tsui no Sora II ED \"Norowareta Sei / Shukufukusareta Sei\", Knockin' on heaven's door ED \"Kuuki Rikigaku Shoujo to Shounen no Uta -PianoVocalVer-\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Kuuki Rikigaku Shoujo to Shounen no Uta",
+                AfterTitle = ""
+            },
+            new() { BeforeType = "Looking-glass Insects ", Type = new List<SongType> { SongType.ED }, Title = "Shuumatsu no Bishou", AfterTitle = "" },
+            new()
+            {
+                BeforeType = "Tsui no Sora II ", Type = new List<SongType> { SongType.ED }, Title = "Norowareta Sei / Shukufukusareta Sei", AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Knockin' on heaven's door ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Kuuki Rikigaku Shoujo to Shounen no Uta -PianoVocalVer-",
+                AfterTitle = ""
             },
         };
 

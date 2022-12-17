@@ -369,8 +369,7 @@ namespace VNDBStaffNotesParser
                                             // super dumb shit to handle MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType that may be breaking other stuff
                                             string inp = input[cursor..^1].ToLowerInvariant();
                                             if ((inp.Contains("op") || inp.Contains("ed") || inp.Contains("insert")) &&
-                                                !inp.Contains("and") && !inp.Contains('&')
-                                                && !inp.Contains('(') && !inp.Contains('/'))
+                                                !inp.Contains("and") && !inp.Contains('&') && !inp.Contains('('))
                                             {
                                                 // new song starting with BeforeSongType
                                                 cursor = boundsCheck + 1;
