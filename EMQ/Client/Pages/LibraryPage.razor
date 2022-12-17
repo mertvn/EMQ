@@ -70,7 +70,7 @@
                             <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
                             <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
                         </div>
-                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit"/>
+                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
                     </EditForm>
                 }
             </div>
@@ -162,7 +162,11 @@
 
     private async Task SubmitSongUrl(int mId, string url)
     {
-    // return;
+        if (ClientState.Session?.Player.Username is null)
+        {
+            return;
+        }
+
         _addSongLinkModel.Url = "";
         StateHasChanged();
 
@@ -170,14 +174,14 @@
         bool isVideo = url.EndsWith(".mp4") || url.EndsWith(".webm");
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 
-        var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType }); // todo
+        var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType }, ClientState.Session!.Player.Username);
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
         if (res.IsSuccessStatusCode)
         {
-    // todo doesnt work
             var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
             if (isSuccess)
             {
+    // todo display successfully added message
                 Console.WriteLine("Imported song link!");
             }
             else

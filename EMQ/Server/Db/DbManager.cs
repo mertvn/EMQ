@@ -730,6 +730,33 @@ public static class DbManager
         return melId;
     }
 
+    public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy)
+    {
+        int rqId;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var rq = new ReviewQueue()
+            {
+                music_id = mId,
+                url = songLink.Url,
+                type = (int)songLink.Type,
+                is_video = songLink.IsVideo,
+                submitted_by = submittedBy,
+                submitted_on = DateTime.Now,
+                status = (int)ReviewQueueStatus.Pending,
+                reason = null
+            };
+
+            rqId = await connection.InsertAsync(rq);
+            if (rqId > 0)
+            {
+                Console.WriteLine($"Inserted ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
+            }
+        }
+
+        return rqId;
+    }
+
     public static async Task<string> ExportSong()
     {
         var songs = await GetRandomSongs(int.MaxValue);

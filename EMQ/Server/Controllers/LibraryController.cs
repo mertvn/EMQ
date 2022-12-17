@@ -43,7 +43,7 @@ public class LibraryController : ControllerBase
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     {
-        int melId = await DbManager.InsertSongLink(req.MId, req.SongLink);
-        return melId > 0;
+        int id = await DbManager.InsertReviewQueue(req.MId, req.SongLink, req.SubmittedBy);
+        return id > 0;
     }
 }

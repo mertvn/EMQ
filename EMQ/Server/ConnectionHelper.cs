@@ -26,7 +26,7 @@ public static class ConnectionHelper
             Username = userInfo[0],
             Password = userInfo[1],
             Database = databaseUri.LocalPath.TrimStart('/'),
-            SslMode = SslMode.Prefer,
+            SslMode = SslMode.Disable,
             TrustServerCertificate = true,
             IncludeErrorDetail = true
         };
