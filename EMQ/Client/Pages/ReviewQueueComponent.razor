@@ -21,8 +21,15 @@
     {
         <tr>
             <td>@rq.id</td>
-            <td>@((rq.Song.Titles.FirstOrDefault(x => x.IsMainTitle) ?? rq.Song.Titles.First()).LatinTitle)</td>
-            <td>@((rq.Song.Sources.First().Titles.FirstOrDefault(x => x.IsMainTitle) ?? rq.Song.Sources.First().Titles.First()).LatinTitle)</td>
+            <td>
+                @* todo... *@
+                @((rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
+                   ?? rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+            </td>
+            <td>
+                @((rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
+                   ?? rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+            </td>
             <td>@rq.url</td>
             <td>@rq.type</td>
             <td>@rq.is_video</td>
