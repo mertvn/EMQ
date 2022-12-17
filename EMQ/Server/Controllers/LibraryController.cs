@@ -46,4 +46,12 @@ public class LibraryController : ControllerBase
         int id = await DbManager.InsertReviewQueue(req.MId, req.SongLink, req.SubmittedBy);
         return id > 0;
     }
+
+    [HttpPost]
+    [Route("FindRQs")]
+    public async Task<IEnumerable<RQ>> FindRQs([FromBody] ReqFindRQs req)
+    {
+        var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate);
+        return rqs;
+    }
 }

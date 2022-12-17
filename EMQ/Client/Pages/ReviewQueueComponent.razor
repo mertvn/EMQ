@@ -1,0 +1,59 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@inject HttpClient _client
+@inject ILogger<GuessInputComponent> _logger
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <th>SongTitle</th>
+        <th>SourceTitle</th>
+        <th>Url</th>
+        <th>Type</th>
+        <th>IsVideo</th>
+        <th>SubmittedBy</th>
+        <th>SubmittedOn</th>
+        <th>Status</th>
+        <th>Reason</th>
+    </tr>
+    @foreach (var rq in CurrentRQs)
+    {
+        <tr>
+            <td>@rq.id</td>
+            <td>@((rq.Song.Titles.FirstOrDefault(x => x.IsMainTitle) ?? rq.Song.Titles.First()).LatinTitle)</td>
+            <td>@((rq.Song.Sources.First().Titles.FirstOrDefault(x => x.IsMainTitle) ?? rq.Song.Sources.First().Titles.First()).LatinTitle)</td>
+            <td>@rq.url</td>
+            <td>@rq.type</td>
+            <td>@rq.is_video</td>
+            <td>@rq.submitted_by</td>
+            <td>@rq.submitted_on</td>
+            <td>@rq.status</td>
+            <td>@rq.reason</td>
+        </tr>
+    }
+</table>
+
+@code {
+
+    public List<RQ> CurrentRQs { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var req = new ReqFindRQs(DateTime.Now.AddDays(-30), DateTime.Now);
+        var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
+        if (res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadFromJsonAsync<List<RQ>>();
+            if (content is not null)
+            {
+                CurrentRQs = content;
+            }
+            else
+            {
+                _logger.LogError("Failed to find RQs");
+            }
+        }
+    }
+
+}

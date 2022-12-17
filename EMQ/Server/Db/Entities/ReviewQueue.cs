@@ -11,7 +11,6 @@ public class ReviewQueue
     [Required]
     public int id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
     public int music_id { get; set; }
 

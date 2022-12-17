@@ -742,7 +742,7 @@ public static class DbManager
                 type = (int)songLink.Type,
                 is_video = songLink.IsVideo,
                 submitted_by = submittedBy,
-                submitted_on = DateTime.Now,
+                submitted_on = DateTime.UtcNow,
                 status = (int)ReviewQueueStatus.Pending,
                 reason = null
             };
@@ -841,5 +841,34 @@ public static class DbManager
 
             await transaction.CommitAsync();
         }
+    }
+
+    public static async Task<IEnumerable<RQ>> FindRQs(DateTime startDate, DateTime endDate)
+    {
+        var rqs = new List<RQ>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            // todo date filter
+            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList();
+            foreach (ReviewQueue reviewQueue in reviewQueues)
+            {
+                var rq = new RQ
+                {
+                    id = reviewQueue.id,
+                    music_id = reviewQueue.music_id,
+                    url = reviewQueue.url,
+                    type = (SongLinkType)reviewQueue.type,
+                    is_video = reviewQueue.is_video,
+                    submitted_by = reviewQueue.submitted_by,
+                    submitted_on = reviewQueue.submitted_on,
+                    status = (ReviewQueueStatus)reviewQueue.status,
+                    reason = reviewQueue.reason,
+                    Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single()
+                };
+                rqs.Add(rq);
+            }
+        }
+
+        return rqs;
     }
 }
