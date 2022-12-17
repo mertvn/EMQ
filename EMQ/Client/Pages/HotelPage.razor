@@ -15,8 +15,8 @@
 <div>
     Name:<br/>
     <input @bind="Name" type="text" name="Name"/><br/>
-    Password:<br/>
-    <input @bind="Password" type="password" name="Password"/><br/>
+    @* Password:<br/> *@
+    @* <input @bind="Password" type="password" name="Password"/><br/> *@
 </div>
 
 <button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
@@ -50,7 +50,7 @@
     // TODO allow user to change settings
     private QuizSettings QuizSettings { get; set; } = new()
     {
-        NumSongs = 50,
+        NumSongs = 25,
         GuessMs = 25000,
         ResultsMs = 25000,
         TeamSize = 8,
