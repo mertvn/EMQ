@@ -189,12 +189,12 @@
             var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
             if (isSuccess)
             {
-    // todo display successfully added message
                 Console.WriteLine("Imported song link!");
                 await _reviewQueueComponent!.RefreshRQs();
             }
             else
             {
+                // todo show error
                 Console.WriteLine("Error importing song link");
             }
         }

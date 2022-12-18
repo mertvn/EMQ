@@ -18,7 +18,7 @@
     @if (ClientState.Session != null)
     {
         <div>
-            Currently Logged in as @ClientState.Session.Player.Username<br/>
+            Currently logged in as @ClientState.Session.Player.Username<br/>
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
         </div>
     }
@@ -73,7 +73,6 @@
     {
         if (ClientState.Session is not null)
         {
-    // todo proper auth
             HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/RemoveSession", new ReqRemoveSession(ClientState.Session.Token));
             if (res.IsSuccessStatusCode)
             {

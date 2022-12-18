@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Client;
 
-public class ClientUtils // todo: find better name
+public class ClientUtils
 {
     public ClientUtils(ILogger<ClientUtils> logger, HttpClient client)
     {
