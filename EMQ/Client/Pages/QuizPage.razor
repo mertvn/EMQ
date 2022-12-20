@@ -153,7 +153,7 @@
         PageState.Timer.Elapsed -= OnTimedEvent;
         PageState = new QuizPageState();
         Room = null;
-        _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 101]) { };
+        _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 1000]) { };
         _currentSong = null;
         _correctAnswer = null;
         PreloadCancellationSource = new CancellationTokenSource();
@@ -394,7 +394,8 @@
         }
         else
         {
-            _logger.LogError("Attempted to swap to a song that does not exist -- probably desynchronized");
+            _logger.LogError($"Attempted to swap to a song that does not exist -- probably desynchronized;" +
+                             $" index: {index}, clientSongs.Count: {_clientSongs.Count}");
         }
     }
 
