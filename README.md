@@ -63,4 +63,6 @@ rampaa: Help with the database schema
 
 hslead: Avatar "Auu"
 
+Burnal: Motivational support
 
+Ryuu: Added a lot of song links
