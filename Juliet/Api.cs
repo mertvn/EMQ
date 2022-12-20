@@ -17,7 +17,7 @@ public static class Api
         DefaultRequestHeaders = { { "User-Agent", Constants.UserAgent }, },
     };
 
-    public static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
+    private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
     {
         try
         {
@@ -120,8 +120,12 @@ public static class Api
                     // todo
                     {
                         "filters",
-                        new dynamic[] { "or", new dynamic[] { "label", "=", 2 }, new dynamic[] { "label", "=", 7 } }
-                    } // finished, voted
+                        new dynamic[]
+                        {
+                            "or", new dynamic[] { "label", "=", 1 }, new dynamic[] { "label", "=", 2 },
+                            new dynamic[] { "label", "=", 7 }
+                        } // playing, finished, voted
+                    }
                 });
             Console.WriteLine("json:" + json);
 
@@ -137,7 +141,7 @@ public static class Api
                 req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
             }
 
-            var res = await Send<ResPOST<ResPOST_ulist>>(req);
+            var res = await Send<ResPOST_ulist>(req);
             if (res != null)
             {
                 Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters));
@@ -154,4 +158,6 @@ public static class Api
 
         return final;
     }
+
+    // TODO GET_ulist_labels
 }

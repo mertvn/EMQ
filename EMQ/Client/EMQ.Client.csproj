@@ -16,8 +16,4 @@
     <ProjectReference Include="..\Shared\EMQ.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="wwwroot\Assets\Au.png" />
-  </ItemGroup>
-
 </Project>

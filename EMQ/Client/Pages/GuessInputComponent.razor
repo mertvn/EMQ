@@ -8,6 +8,7 @@
 @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
 @* todo oninput event *@
 @* todo clear guess on click? *@
+@* todo fix steins;gate not showing up in the first 7 lol *@
 <BlazoredTypeahead
     SearchMethod="SearchAutocomplete"
     TValue="string"
@@ -17,7 +18,7 @@
     ValueExpression="@(() => QuizPage.PageState.Guess)"
     AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
     MinimumLength="1"
-    MaximumSuggestions="7"
+    MaximumSuggestions="8"
     Debounce="1"
     placeholder="Enter your answer here">
     <SelectedTemplate>
