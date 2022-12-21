@@ -33,7 +33,7 @@
     @foreach (var song in CurrentSongs)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-        <div class="song card" style="margin: 16px">
+        <div class="song card" style="margin: 16px; min-width:200px; max-width: 222px; min-height:200px;">
             <SongInfoCardComponent song="@song" selectedMusicSourceTitle="@selectedMusicSourceTitle"/>
             <div style="padding: 16px">
                 <div>
@@ -118,10 +118,7 @@
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        var startsWith = AutocompleteData.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
-        var contains = AutocompleteData.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
-    // _logger.LogInformation(JsonSerializer.Serialize(result));
-        return await Task.FromResult(startsWith.Concat(contains).Distinct());
+        return Autocomplete.SearchAutocomplete(arg, AutocompleteData);
     }
 
     private async Task SelectedResultChanged(string arg)

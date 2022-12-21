@@ -8,7 +8,6 @@
 @* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
 @* todo oninput event *@
 @* todo clear guess on click? *@
-@* todo fix steins;gate not showing up in the first 7 lol *@
 <BlazoredTypeahead
     SearchMethod="SearchAutocomplete"
     TValue="string"
@@ -18,7 +17,7 @@
     ValueExpression="@(() => QuizPage.PageState.Guess)"
     AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
     MinimumLength="1"
-    MaximumSuggestions="8"
+    MaximumSuggestions="7"
     Debounce="1"
     placeholder="Enter your answer here">
     <SelectedTemplate>
@@ -49,11 +48,7 @@
 
     private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
     {
-        // todo startsWith should be for every word rather than just the first word
-        var startsWith = AutocompleteData.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()));
-        var contains = AutocompleteData.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant()));
-    // _logger.LogInformation(JsonSerializer.Serialize(result));
-        return await Task.FromResult(startsWith.Concat(contains).Distinct());
+        return Autocomplete.SearchAutocomplete(arg, AutocompleteData);
     }
 
     private Task<string> AddItemOnEmptyResultMethod(string arg)
