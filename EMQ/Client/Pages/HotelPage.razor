@@ -10,7 +10,7 @@
 
 <h3>Hotel</h3>
 
-<p>Welcome to EMQ Hotel, please reserve a room in order to start a quiz.</p>
+<p>Welcome to EMQ Hotel. Here you can join an existing room or reserve a new room in order to play.</p>
 
 <div>
     Name:<br/>
@@ -55,6 +55,7 @@
         ResultsMs = 25000,
         TeamSize = 8,
         MaxLives = 78,
+        OnlyFromLists = true,
     };
 
     private List<Room> Rooms { get; set; } = new();

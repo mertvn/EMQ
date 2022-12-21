@@ -604,11 +604,22 @@ public static class DbManager
         }
     }
 
-    public static async Task<List<Song>> GetRandomSongs(int numSongs)
+    public static async Task<List<Song>> GetRandomSongs(int numSongs, List<string>? validSources = null)
     {
         // todo: do this only once on server start and store the results in memory to use later
         // todo no duplicates option
-        const string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
+        string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
+
+        if (validSources != null && validSources.Any())
+        {
+            sqlMusicIds = $@"SELECT DISTINCT mel.music_id FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     WHERE msel.url = ANY(@validSources)";
+        }
+
         var ret = new List<Song>();
         var rand = new Random();
 
@@ -616,7 +627,8 @@ public static class DbManager
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             // todo make this faster if possible
-            ids = (await connection.QueryAsync<int>(sqlMusicIds)).OrderBy(_ => rand.Next()).Take(numSongs).ToList();
+            ids = (await connection.QueryAsync<int>(sqlMusicIds, new { validSources }))
+                .OrderBy(_ => rand.Next()).Take(numSongs).ToList();
         }
 
         Console.WriteLine(JsonSerializer.Serialize(ids));
@@ -891,7 +903,7 @@ public static class DbManager
                 case ReviewQueueStatus.Rejected:
                     break;
                 case ReviewQueueStatus.Approved:
-                    throw new NotImplementedException("Cannot update approved items.");
+                    throw new NotImplementedException($"Cannot update approved item {rqId}.");
                 default:
                     throw new ArgumentOutOfRangeException();
             }

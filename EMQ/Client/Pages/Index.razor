@@ -2,23 +2,27 @@
 @using EMQ.Shared.Auth
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
+@using System.ComponentModel.DataAnnotations
+@using Juliet.Model.Param
 @inject NavigationManager Navigation
 @inject HttpClient Client
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 
-<h1>Hello, EMQ!</h1>
+<h1>Eroge Music Quiz</h1>
 
 <div>
     @if (ClientState.Session != null)
     {
         <div>
-            Currently logged in as @ClientState.Session.Player.Username<br/>
+            Currently logged in as @ClientState.Session.Player.Username (@ClientState.Session.Player.VndbInfo.VndbId)<br/>
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
         </div>
     }
@@ -26,48 +30,62 @@
     {
         <p>Welcome to EMQ, please login.</p>
         <div>
-            Username:<br/>
-            <input @bind="Username" type="text" name="Username"/><br/>
-            @* Password:<br/> *@
-            @* <input @bind="Password" type="password" name="Password"/><br/> *@
-            <button class="btn btn-primary" @onclick="Login" disabled="@(ClientState.Session != null)">Login</button>
+
+            <EditForm Model="@_loginModel" OnValidSubmit="@(() => OnValidSubmit(_loginModel))">
+                <DataAnnotationsValidator/>
+                <ValidationSummary/>
+
+                <label for="Username">Username: </label>
+                <br/>
+                <InputText id="Username" type="text" @bind-Value="_loginModel.Username"/>
+                <br/>
+
+                @* Password:<br/> *@
+                @* <input @bind="Password" type="password" name="Password"/><br/> *@
+
+                <label for="VndbId">VNDB Id (Optional): </label>
+                <br/>
+                <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId"/>
+                <br/>
+
+                <label for="VndbApiToken">VNDB API Token (Optional, only required if your list is private): </label>
+                <br/>
+                <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken"/>
+                <br/>
+
+                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session != null)"/>
+            </EditForm>
+
+        </div>
+
+        <div>
+            @foreach (var item in LoginProgressDisplay)
+            {
+                <p>@item</p>
+            }
         </div>
     }
 </div>
 
 @code
 {
-    private string Username { get; set; } = "";
-
-    private string Password { get; set; } = "";
-
-    private async Task Login()
+    public class LoginModel
     {
-        if (ClientState.Session is null)
-        {
-    // todo proper auth
-            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession", new ReqCreateSession(Username, Password));
-            if (res.IsSuccessStatusCode)
-            {
-                ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
-                if (resCreateSession != null)
-                {
-                    _logger.LogInformation("token: " + resCreateSession.Token);
+        [Required]
+        public string Username { get; set; } = "";
 
-                    var player = new Player(resCreateSession.PlayerId, Username);
-                    ClientState.Session = new Session(player, resCreateSession.Token);
+        public string Password { get; set; } = "";
 
-                    await _clientConnectionManager.StartManagingConnection();
+        [RegularExpression(RegexPatterns.VndbIdRegex, ErrorMessage = "Invalid VNDB Id: make sure it looks like 'u1234567'")]
+        public string? VndbId { get; set; }
 
-                    Navigation.NavigateTo("/HotelPage");
-                }
-            }
-            else
-            {
-    // todo
-            }
-        }
+        [MinLength(32, ErrorMessage = "Invalid VNDB API Token")]
+        public string? VndbApiToken { get; set; }
     }
+
+    private LoginModel _loginModel = new();
+
+    public List<string> LoginProgressDisplay { get; set; } = new();
 
     private async Task Logout()
     {
@@ -78,6 +96,82 @@
             {
                 _logger.LogInformation("Logged out");
                 Navigation.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+    // todo
+            }
+        }
+    }
+
+    private async Task OnValidSubmit(LoginModel loginModel)
+    {
+        if (ClientState.Session is null)
+        {
+            LoginProgressDisplay = new List<string>();
+            StateHasChanged();
+
+            if (!string.IsNullOrWhiteSpace(loginModel.VndbApiToken))
+            {
+                LoginProgressDisplay.Add("Validating VNDB API Token...");
+                var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = loginModel.VndbApiToken });
+                if (resAuth != null)
+                {
+                    if (!resAuth.Permissions.Contains("listread")) // todo
+                    {
+                        LoginProgressDisplay.Add("Error: VNDB API Token does not have the necessary permissions: listread");
+                        LoginProgressDisplay.Add("Login cancelled.");
+                        StateHasChanged();
+                        return;
+                    }
+                    else
+                    {
+                        LoginProgressDisplay.Add("Successfully validated VNDB API Token.");
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
+                    LoginProgressDisplay.Add("Login cancelled.");
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            LoginProgressDisplay.Add($"Creating session...");
+            StateHasChanged();
+            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession",
+                new ReqCreateSession(
+                    loginModel.Username,
+                    loginModel.Password,
+                    new PlayerVndbInfo() { VndbId = loginModel.VndbId },
+                    loginModel.VndbApiToken));
+
+            if (res.IsSuccessStatusCode)
+            {
+                ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
+                if (resCreateSession != null)
+                {
+                    LoginProgressDisplay.Add($"Created session.");
+                    StateHasChanged();
+                    _logger.LogInformation("token: " + resCreateSession.Session);
+
+                    ClientState.Session = resCreateSession.Session;
+                    Player player = resCreateSession.Session.Player;
+                    LoginProgressDisplay.Add($"Grabbed {player.VndbInfo.VNs?.Count} VNs from VNDB.");
+                    StateHasChanged();
+
+                    LoginProgressDisplay.Add($"Initializing websocket connection...");
+                    StateHasChanged();
+                    await _clientConnectionManager.StartManagingConnection();
+                    LoginProgressDisplay.Add($"Initialized websocket connection.");
+                    StateHasChanged();
+
+                    LoginProgressDisplay.Add($"Successfully logged in. Navigating to Hotel.");
+                    StateHasChanged();
+                    Navigation.NavigateTo("/HotelPage");
+                }
             }
             else
             {

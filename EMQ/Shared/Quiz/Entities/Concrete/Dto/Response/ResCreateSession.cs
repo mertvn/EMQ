@@ -1,14 +1,13 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
+﻿using EMQ.Shared.Auth.Entities.Concrete;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 
 public class ResCreateSession
 {
-    public ResCreateSession(int playerId, string token)
+    public ResCreateSession(Session session)
     {
-        PlayerId = playerId;
-        Token = token;
+        Session = session;
     }
 
-    public int PlayerId { get; }
-
-    public string Token { get; }
+    public Session Session { get; }
 }

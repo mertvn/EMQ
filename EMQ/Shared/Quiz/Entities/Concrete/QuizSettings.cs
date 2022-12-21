@@ -17,4 +17,6 @@ public class QuizSettings
     // public bool Duplicates { get; set; } = true; // TODO
 
     public int MaxLives { get; set; }  // TODO
+
+    public bool OnlyFromLists = true;
 }

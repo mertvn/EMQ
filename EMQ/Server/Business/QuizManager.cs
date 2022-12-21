@@ -9,6 +9,8 @@ using EMQ.Server.Db;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
+using EMQ.Shared.VNDB.Business;
+using Juliet.Model.Param;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Business;
@@ -223,7 +225,16 @@ public class QuizManager
     public async Task<bool> PrimeQuiz()
     {
         CorrectAnswersDict = new Dictionary<int, List<string>>();
-        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs);
+
+        List<string>? validSources = null;
+        if (Quiz.Room.QuizSettings.OnlyFromLists)
+        {
+            validSources = Quiz.Room.Players.SelectMany(x => x.VndbInfo.VNs).ToList();
+        }
+
+        Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+
+        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
         Quiz.Songs = dbSongs;
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;

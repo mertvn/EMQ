@@ -20,4 +20,8 @@
     <Folder Include="Quiz\Business" />
     <Folder Include="Quiz\Entities" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Juliet\Juliet.csproj" />
+  </ItemGroup>
 </Project>

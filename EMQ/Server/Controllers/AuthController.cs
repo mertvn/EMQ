@@ -7,6 +7,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
+using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -25,29 +26,36 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("CreateSession")]
-    public ResCreateSession CreateSession([FromBody] ReqCreateSession req)
+    public async Task<ResCreateSession> CreateSession([FromBody] ReqCreateSession req)
     {
         // todo: authenticate with db and get player
         int playerId = new Random().Next();
 
-        // if (req.Username == "" && req.Password == "")
-        // {
-        //     playerId = 69;
-        // }
-        //
-        // if (req.Username == "test" && req.Password == "")
-        // {
-        //     playerId = 1001;
-        // }
+        var vns = new List<string>();
+        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
+        {
+            vns = await VndbMethods.GrabPlayerVNsFromVNDB(new PlayerVndbInfo()
+            {
+                VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken
+            });
+        }
 
-        var player = new Player(playerId, req.Username) { Avatar = new Avatar(AvatarCharacter.Auu, "default") };
+        var player = new Player(playerId, req.Username)
+        {
+            Avatar = new Avatar(AvatarCharacter.Auu, "default"),
+            VndbInfo = new PlayerVndbInfo()
+            {
+                VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, VNs = vns
+            }
+        };
+
         // todo: invalidate previous session with the same playerId if it exists
-
-        _logger.LogInformation("Created new session for player " + player.Id);
         string token = Guid.NewGuid().ToString();
-        ServerState.Sessions.Add(new Session(player, token));
+        var session = new Session(player, token);
+        ServerState.Sessions.Add(session);
+        _logger.LogInformation("Created new session for player " + player.Id + $" ({player.VndbInfo.VndbId})");
 
-        return new ResCreateSession(playerId, token);
+        return new ResCreateSession(session);
     }
 
     [HttpPost]

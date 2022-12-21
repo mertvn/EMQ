@@ -1,4 +1,7 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class Player
 {
@@ -27,4 +30,18 @@ public class Player
     public int Lives { get; set; }
 
     public bool IsBuffered { get; set; }
+
+    public PlayerVndbInfo VndbInfo { get; set; } = new();
+}
+
+// todo
+public class PlayerVndbInfo
+{
+    public string? VndbId { get; set; }
+
+    [JsonIgnore]
+    public string? VndbApiToken { get; set; }
+
+    [JsonIgnore]
+    public List<string>? VNs { get; set; }
 }
