@@ -40,8 +40,7 @@ w
 2. Run the project (EMQ.Server) once in order for the database migrations to run. Terminate it after it's done.
 3. Go to https://query.vndb.org and run all of the queries located in Queries/VNDB, download the results as json and put
    them where they belong (check EMQ/Server/DB/Imports/VndbImporter.cs for the correct filenames and where to put them)
-4. Run test VNDBStaffNotesParserTests.Test_Batch() (~6 seconds), put the output file next to the other files from the
-   previous step
+4. Run test VNDBStaffNotesParserTests.Test_Batch() (~6 seconds)
 5. Run test DbTests.ImportVndbData() (~5 minutes) in order to import everything but the song links
 6. (Optional) Run test DbTests.ImportSongLite() (~4 seconds) in order to import the song links if you have a
    SongLite.json file from before. You may encounter exceptions on this step if VNDB data has been modified since you

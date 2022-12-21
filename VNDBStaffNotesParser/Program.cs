@@ -36,6 +36,7 @@ namespace VNDBStaffNotesParser
                             "Openings",
                             "OP Theme",
                             "OP Themes",
+                            "opening theme",
                             "OP song",
                             "Main theme",
                             "Main themes",
@@ -76,11 +77,13 @@ namespace VNDBStaffNotesParser
                             "Ending ED",
                             "End ED",
                             "Ending theme",
+                            "ending theme song",
                             "ED Theme",
                             "ED Themes",
                             "ED,",
                             "ED1",
                             "ED2",
+                            "ED 2",
                             "ED3",
                             "ED4",
                             "ED5",
@@ -103,6 +106,7 @@ namespace VNDBStaffNotesParser
                     {
                         SongType.Insert, new List<string>
                         {
+                            "INS",
                             "Insert",
                             "Inserts",
                             "Insert Song",
@@ -112,6 +116,8 @@ namespace VNDBStaffNotesParser
                             "Insert Song's",
                             "Image song",
                             "Image songs",
+                            "Character song",
+                            "Epilogue song",
                             "Interlude",
                             "hymn",
                             "hymns",
@@ -442,31 +448,6 @@ namespace VNDBStaffNotesParser
                                                         goto nextMode;
                                                 }
                                             }
-                                            // else if (string.Equals(input.Substring(boundsCheck3, "/".Length), "/",
-                                            //              StringComparison.OrdinalIgnoreCase))
-                                            // {
-                                            //     // new song delimited by '/'
-                                            //     switch (input[boundsCheck3 + 1 + "/".Length])
-                                            //     {
-                                            //         // new song with same song type
-                                            //         case '"':
-                                            //             cursor = boundsCheck3 + 1 + "/".Length;
-                                            //             mode = Mode.SongTitle;
-                                            //
-                                            //             song = new Song { Type = song.Type };
-                                            //
-                                            //             goto nextMode;
-                                            //         // new song with different song type
-                                            //         default:
-                                            //             cursor = boundsCheck3 + 1 +
-                                            //                      "/".Length;
-                                            //             mode = Mode.SongType;
-                                            //
-                                            //             song = new Song();
-                                            //
-                                            //             goto nextMode;
-                                            //     }
-                                            // }
                                             else
                                             {
                                                 cursor -= 2; // todo
@@ -616,7 +597,7 @@ namespace VNDBStaffNotesParser
                     throw new Exception("SongType is unknown");
                 }
 
-                if (song.Title.Length > 86)
+                if (song.Title.Length > 89)
                 {
                     throw new Exception($"Title is too long: {song.Title}");
                 }
@@ -648,7 +629,7 @@ namespace VNDBStaffNotesParser
             }
         }
 
-        public static IEnumerable<int> AllIndexesOf(this string str, string searchString)
+        private static IEnumerable<int> AllIndexesOf(this string str, string searchString)
         {
             int minIndex = str.IndexOf(searchString, StringComparison.OrdinalIgnoreCase);
             while (minIndex != -1)

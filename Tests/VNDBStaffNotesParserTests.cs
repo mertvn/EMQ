@@ -27,19 +27,20 @@ public class VNDBStaffNotesParserTests
         // @formatter:off
         List<string> blacklist = new()
         {
-            "v863", "v864", "v865", "v10935", "v12377", "v12775", "v14700", "v21212", "v21261", "v22727", "v24208", "v24803", "v33175", "v33291", "v8664", "v1531", "v5916", "v7183", "v9734", "v13882", "v14000", "v19843", "v24351", "v29232", // TBD
-            "v15495", "v20070", "v20071", // too irregular
+          "v24208", "v33175", "v19843", "v8664", // possible room for improvement
+          "v15495", "v20070", "v20071", // too irregular
         };
 
         List<string> graylist = new()
         {
-            "v1515", "v2368", "v2527", "v3238", "v4054", "v6426", "v11749", "v13765", "v13892", "v16460", "v17376", "v19592", "v24302", "v25915", "v26987" // AfterTitle contains quote
+          "v1515","v2368", "v2527", "v4054" // AfterTitle contains quote
         };
         // @formatter:on
 
-        string date = "2022-12-08";
+        string date = "2022-12-21";
+        string folder = $"C:\\emq\\vndb\\{date}";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\EMQ music.json"))!;
 
         var parsedSongs = new List<ParsedSong>();
         var processedMusics = new List<ProcessedMusic>();
@@ -76,7 +77,7 @@ public class VNDBStaffNotesParserTests
             }
         }
 
-        await File.WriteAllTextAsync($"processedMusics {date}.json", JsonConvert.SerializeObject(processedMusics));
+        await File.WriteAllTextAsync($"{folder}\\processedMusics.json", JsonConvert.SerializeObject(processedMusics));
         Console.WriteLine("finished processing - count: " + parsedSongs.Count);
     }
 
@@ -297,10 +298,19 @@ public class VNDBStaffNotesParserTests
                 Title = "Kuuki Rikigaku Shoujo to Shounen no Uta",
                 AfterTitle = ""
             },
-            new() { BeforeType = "Looking-glass Insects ", Type = new List<SongType> { SongType.ED }, Title = "Shuumatsu no Bishou", AfterTitle = "" },
             new()
             {
-                BeforeType = "Tsui no Sora II ", Type = new List<SongType> { SongType.ED }, Title = "Norowareta Sei / Shukufukusareta Sei", AfterTitle = ""
+                BeforeType = "Looking-glass Insects ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Shuumatsu no Bishou",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Tsui no Sora II ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Norowareta Sei / Shukufukusareta Sei",
+                AfterTitle = ""
             },
             new()
             {
@@ -334,6 +344,39 @@ public class VNDBStaffNotesParserTests
                 BeforeType = "",
                 Type = new List<SongType> { SongType.Insert },
                 Title = "After All ~Tsuzuru Omoi~",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test, Explicit]
+    public void Test_MultipleWithDifferentSongTypesOxfordCommaAmpersandDelimiter()
+    {
+        var _ =
+            "OP \"Aoiro Step\", insert songs \"Heroine Mode\", \"Sweet Mission\", & \"Seishun Meiro de Syalalala\""; // todo
+        string input =
+            "OP \"AI CATCH\", ED themes \"De SLASH\", \"Only finally there is the free end\", \"PARA MIDIA\", and \"Masculine Devil\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new() { BeforeType = "", Type = new List<SongType> { SongType.OP }, Title = "AI CATCH", AfterTitle = "" },
+            new() { BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "De SLASH", AfterTitle = "" },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Only finally there is the free end",
+                AfterTitle = ""
+            },
+            new() { BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "PARA MIDIA", AfterTitle = "" },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Masculine Devil",
                 AfterTitle = ""
             },
         };
