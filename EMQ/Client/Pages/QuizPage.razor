@@ -55,7 +55,7 @@
         </div>
     }
 
-    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:250px; min-height:500px; float:right; padding-right: 20px">
+    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:200px; max-width: 222px; min-height:200px; float:right; padding-right: 20px">
         @* todo Latin vs NonLatin title option *@
         <SongInfoCardComponent song="@_correctAnswer" selectedMusicSourceTitle="@null"/>
     </div>

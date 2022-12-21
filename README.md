@@ -59,7 +59,7 @@ VNDB: Data obtained under Open Data Commons Open Database License (ODbL) v1.0.
 
 ### People
 
-rampaa: Help with the database schema
+rampaa: Help with the database schema and VNDB queries
 
 hslead: Avatar "Auu"
 
