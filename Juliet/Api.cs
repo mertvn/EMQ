@@ -11,10 +11,10 @@ namespace Juliet;
 
 public static class Api
 {
-    private static HttpClient Client { get; } = new(new HttpClientHandler { UseProxy = false })
+    private static HttpClient Client { get; } = new()
     {
         BaseAddress = new Uri(Constants.VndbApiUrl),
-        DefaultRequestHeaders = { { "User-Agent", Constants.UserAgent }, },
+        // DefaultRequestHeaders = { { "User-Agent", Constants.UserAgent }, }, // getting a CORS error
     };
 
     private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
@@ -92,7 +92,7 @@ public static class Api
         return res;
     }
 
-    public static async Task<List<ResPOST_ulist>?> POST_ulist(ParamPOST_ulist param)
+    public static async Task<List<ResPOST<ResPOST_ulist>>?> POST_ulist(ParamPOST_ulist param)
     {
         // todo validate other params
         if (string.IsNullOrWhiteSpace(param.User))
@@ -100,7 +100,7 @@ public static class Api
             return null;
         }
 
-        var final = new List<ResPOST_ulist>();
+        var final = new List<ResPOST<ResPOST_ulist>>();
 
         int page = 0;
         bool more;
@@ -115,6 +115,7 @@ public static class Api
                     { "user", param.User },
                     { "fields", string.Join(", ", param.Fields.Select(x => x.ToString().ToLowerInvariant())) },
                     { "normalized_filters", param.NormalizedFilters },
+                    { "compact_filters", param.CompactFilters },
                     { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
                     { "page", page },
                     // todo
@@ -141,13 +142,13 @@ public static class Api
                 req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
             }
 
-            var res = await Send<ResPOST_ulist>(req);
+            var res = await Send<ResPOST<ResPOST_ulist>>(req);
             if (res != null)
             {
                 Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters));
                 // break;
 
-                final.AddRange(res.Results);
+                final.Add(res);
                 more = res.More;
             }
             else

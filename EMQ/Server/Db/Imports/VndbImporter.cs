@@ -26,22 +26,23 @@ public static class VndbImporter
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2022-12-08";
+        string date = "2022-12-21";
+        string folder = $"C:\\emq\\vndb\\{date}";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\EMQ music_source.json"))!;
 
         musicSourcesTitlesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ music_source_title {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\EMQ music_source_title.json"))!;
 
         artistsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ artist {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\EMQ artist.json"))!;
 
         artists_aliasesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\EMQ artist_alias {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\EMQ artist_alias.json"))!;
 
         processedMusicsJson = JsonConvert.DeserializeObject<List<ProcessedMusic>>(
-            await File.ReadAllTextAsync($"C:\\emq\\vndb\\processedMusics {date}.json"))!;
+            await File.ReadAllTextAsync($"{folder}\\processedMusics.json"))!;
 
         Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
 
@@ -262,7 +263,7 @@ public static class VndbImporter
             if (sameSong is not null)
             {
                 Console.WriteLine(
-                    $"Same song! {dynData.title} == {sameSong.Sources.First().Titles.First().LatinTitle}");
+                    $"Same song! {dynData.title} <> {sameSong.Sources.First().Titles.First().LatinTitle}");
                 sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
             }
             else
