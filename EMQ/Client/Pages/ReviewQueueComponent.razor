@@ -7,8 +7,8 @@
 <table class="table">
     <tr>
         <th>Id</th>
-        <th>Song Title</th>
         <th>Source Title</th>
+        <th>Song Title</th>
         <th>Url</th>
         <th>Type</th>
         <th>Is Video</th>
@@ -23,12 +23,12 @@
             <td>@rq.id</td>
             <td>
                 @* todo... *@
-                @((rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
-                   ?? rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
-            </td>
-            <td>
                 @((rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
                    ?? rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+            </td>
+            <td>
+                @((rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
+                   ?? rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
             </td>
             <td>@rq.url</td>
             <td>@rq.type</td>

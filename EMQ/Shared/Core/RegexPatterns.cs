@@ -1,8 +1,8 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace EMQ.Shared.Core;
 
 public static class RegexPatterns
 {
-    public const string SongLinkUrlRegex = @".+\..+\/.+\..+";
+    public const string SongLinkUrlRegex = @"^.+\..+\/.+\.(ogg|mp3|mp4|webm)$";
 }
