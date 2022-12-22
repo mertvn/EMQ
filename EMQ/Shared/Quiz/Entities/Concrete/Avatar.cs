@@ -14,16 +14,16 @@ public class Avatar
 
     public string Skin { get; }
 
-    public static string GetUrlByPlayerState(Avatar? avatar, PlayerState playerState)
+    public static string GetUrlByPlayerState(Avatar? avatar, PlayerStatus playerStatus)
     {
-        string pose = playerState switch
+        string pose = playerStatus switch
         {
-            PlayerState.Default => "default",
-            PlayerState.Thinking => "thinking",
-            PlayerState.Guessed => "guessed",
-            PlayerState.Correct => "correct",
-            PlayerState.Wrong => "wrong",
-            PlayerState.Dead => "wrong",
+            PlayerStatus.Default => "default",
+            PlayerStatus.Thinking => "thinking",
+            PlayerStatus.Guessed => "guessed",
+            PlayerStatus.Correct => "correct",
+            PlayerStatus.Wrong => "wrong",
+            PlayerStatus.Dead => "wrong",
             _ => "default"
         };
 

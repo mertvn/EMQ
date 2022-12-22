@@ -120,7 +120,7 @@
                     <div class="playerDiv" style="margin: 20px; max-width: 200px; max-height: 320px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv">
-                                <p style="color: @UiHelpers.Bools2Color(player.PlayerState == PlayerState.Correct, player.PlayerState is PlayerState.Wrong or PlayerState.Dead, "green", "red")"> @player.Guess</p>
+                                <p style="color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")"> @player.Guess</p>
                             </div>
                         </div>
                         @* <p> Id: @player.Id</p> *@
@@ -132,7 +132,7 @@
                             <p> Lives: @player.Lives</p>
                         }
 
-                        <img width="200px" height="200px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerState)" alt="Avatar">
+                        <img width="200px" height="200px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
                     </div>
                 }
             }

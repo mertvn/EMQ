@@ -14,7 +14,6 @@ public static class Api
     private static HttpClient Client { get; } = new()
     {
         BaseAddress = new Uri(Constants.VndbApiUrl),
-        // DefaultRequestHeaders = { { "User-Agent", Constants.UserAgent }, }, // getting a CORS error
     };
 
     private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class

@@ -86,7 +86,7 @@ public class QuizManager
         Quiz.QuizState.ExtraInfo = "";
         foreach (var player in Quiz.Room.Players)
         {
-            player.PlayerState = PlayerState.Thinking;
+            player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
         }
 
@@ -163,7 +163,7 @@ public class QuizManager
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
-            Quiz.Room.Players.All(player => player.PlayerState == PlayerState.Dead))
+            Quiz.Room.Players.All(player => player.PlayerStatus == PlayerStatus.Dead))
         {
             await EndQuiz();
         }
@@ -176,7 +176,7 @@ public class QuizManager
         // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
-            if (player.PlayerState == PlayerState.Dead)
+            if (player.PlayerStatus == PlayerStatus.Dead)
             {
                 continue;
             }
@@ -187,18 +187,18 @@ public class QuizManager
             if (correct)
             {
                 player.Score += 1;
-                player.PlayerState = PlayerState.Correct;
+                player.PlayerStatus = PlayerStatus.Correct;
             }
             else
             {
-                player.PlayerState = PlayerState.Wrong;
+                player.PlayerStatus = PlayerStatus.Wrong;
 
                 if (player.Lives > 0)
                 {
                     player.Lives -= 1;
                     if (player.Lives == 0)
                     {
-                        player.PlayerState = PlayerState.Dead;
+                        player.PlayerStatus = PlayerStatus.Dead;
                     }
                 }
             }
@@ -235,7 +235,7 @@ public class QuizManager
             player.Score = 0;
             player.Guess = "";
             player.IsBuffered = false;
-            player.PlayerState = PlayerState.Default;
+            player.PlayerStatus = PlayerStatus.Default;
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
@@ -310,7 +310,7 @@ public class QuizManager
             player.Score = 0;
             player.Guess = "";
             player.IsBuffered = false;
-            player.PlayerState = PlayerState.Thinking;
+            player.PlayerStatus = PlayerStatus.Thinking;
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
@@ -330,7 +330,7 @@ public class QuizManager
             if (player != null)
             {
                 player.Guess = guess;
-                player.PlayerState = PlayerState.Guessed;
+                player.PlayerStatus = PlayerStatus.Guessed;
 
                 if (Quiz.Room.QuizSettings.TeamSize > 1)
                 {

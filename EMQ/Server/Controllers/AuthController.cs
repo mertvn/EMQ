@@ -31,7 +31,7 @@ public class AuthController : ControllerBase
         // todo: authenticate with db and get player
         int playerId = new Random().Next();
 
-        var vns = new List<string>();
+        List<string>? vns = null;
         if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
         {
             vns = await VndbMethods.GrabPlayerVNsFromVNDB(new PlayerVndbInfo()

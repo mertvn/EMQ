@@ -22,11 +22,11 @@
     @if (ClientState.Session != null && !LoginInProgress)
     {
         <div>
-            Currently logged in as @ClientState.Session.Player.Username (@ClientState.Session.VndbInfo.VndbId)<br/>
+            Currently logged in as @ClientState.Session.Player.Username<br/>
 
             @if (ClientState.Session!.VndbInfo.VNs is not null)
             {
-                <p>Grabbed @ClientState.Session!.VndbInfo.VNs.Count VNs from VNDB.</p>
+                <p>Grabbed @ClientState.Session!.VndbInfo.VNs.Count VNs from VNDB. (@ClientState.Session.VndbInfo.VndbId)</p>
             }
 
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
@@ -169,8 +169,11 @@
                     _logger.LogInformation("token: " + resCreateSession.Session);
 
                     ClientState.Session = resCreateSession.Session;
-                    LoginProgressDisplay.Add($"Grabbed {ClientState.Session.VndbInfo.VNs?.Count} VNs from VNDB.");
-    // StateHasChanged();
+                    if (ClientState.Session.VndbInfo.VNs is not null)
+                    {
+                        LoginProgressDisplay.Add($"Grabbed {ClientState.Session.VndbInfo.VNs?.Count} VNs from VNDB.");
+                        StateHasChanged();
+                    }
 
                     LoginProgressDisplay.Add($"Initializing websocket connection...");
                     StateHasChanged();

@@ -1,6 +1,6 @@
 ﻿namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public enum PlayerState
+public enum PlayerStatus
 {
     Default,
     Thinking,

@@ -23,7 +23,7 @@ public class Player
 
     public Avatar? Avatar { get; set; }
 
-    public PlayerState PlayerState { get; set; }
+    public PlayerStatus PlayerStatus { get; set; }
 
     public int TeamId { get; set; }
 
