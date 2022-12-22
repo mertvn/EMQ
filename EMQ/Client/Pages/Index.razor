@@ -32,7 +32,7 @@
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
         </div>
     }
-    else if (ClientState.Session == null)
+    else if (LoginInProgress || ClientState.Session == null)
     {
         <p>Welcome to EMQ, please login.</p>
         <div>
