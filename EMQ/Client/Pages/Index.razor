@@ -32,7 +32,7 @@
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
         </div>
     }
-    else
+    else if (ClientState.Session == null)
     {
         <p>Welcome to EMQ, please login.</p>
         <div>
@@ -117,6 +117,7 @@
         if (ClientState.Session is null)
         {
             LoginProgressDisplay = new List<string>();
+            LoginInProgress = true;
             StateHasChanged();
 
             if (!string.IsNullOrWhiteSpace(loginModel.VndbApiToken))
