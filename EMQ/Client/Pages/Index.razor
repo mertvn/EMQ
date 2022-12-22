@@ -19,10 +19,16 @@
 <h1>Eroge Music Quiz</h1>
 
 <div>
-    @if (ClientState.Session != null)
+    @if (ClientState.Session != null && !LoginInProgress)
     {
         <div>
-            Currently logged in as @ClientState.Session.Player.Username (@ClientState.Session.Player.VndbInfo.VndbId)<br/>
+            Currently logged in as @ClientState.Session.Player.Username (@ClientState.Session.VndbInfo.VndbId)<br/>
+
+            @if (ClientState.Session!.VndbInfo.VNs is not null)
+            {
+                <p>Grabbed @ClientState.Session!.VndbInfo.VNs.Count VNs from VNDB.</p>
+            }
+
             <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
         </div>
     }
@@ -53,7 +59,7 @@
                 <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken"/>
                 <br/>
 
-                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session != null)"/>
+                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session != null || LoginInProgress)"/>
             </EditForm>
 
         </div>
@@ -86,6 +92,8 @@
     private LoginModel _loginModel = new();
 
     public List<string> LoginProgressDisplay { get; set; } = new();
+
+    public bool LoginInProgress { get; set; } = false;
 
     private async Task Logout()
     {
@@ -120,6 +128,7 @@
                     if (!resAuth.Permissions.Contains("listread")) // todo
                     {
                         LoginProgressDisplay.Add("Error: VNDB API Token does not have the necessary permissions: listread");
+                        LoginInProgress = false;
                         LoginProgressDisplay.Add("Login cancelled.");
                         StateHasChanged();
                         return;
@@ -133,6 +142,7 @@
                 else
                 {
                     LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
+                    LoginInProgress = false;
                     LoginProgressDisplay.Add("Login cancelled.");
                     StateHasChanged();
                     return;
@@ -158,9 +168,8 @@
                     _logger.LogInformation("token: " + resCreateSession.Session);
 
                     ClientState.Session = resCreateSession.Session;
-                    Player player = resCreateSession.Session.Player;
-                    LoginProgressDisplay.Add($"Grabbed {player.VndbInfo.VNs?.Count} VNs from VNDB.");
-                    StateHasChanged();
+                    LoginProgressDisplay.Add($"Grabbed {ClientState.Session.VndbInfo.VNs?.Count} VNs from VNDB.");
+    // StateHasChanged();
 
                     LoginProgressDisplay.Add($"Initializing websocket connection...");
                     StateHasChanged();
@@ -170,6 +179,7 @@
 
                     LoginProgressDisplay.Add($"Successfully logged in. Navigating to Hotel.");
                     StateHasChanged();
+                    LoginInProgress = false;
                     Navigation.NavigateTo("/HotelPage");
                 }
             }

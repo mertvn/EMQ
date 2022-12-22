@@ -225,24 +225,7 @@ public class QuizManager
     public async Task<bool> PrimeQuiz()
     {
         CorrectAnswersDict = new Dictionary<int, List<string>>();
-
-        List<string>? validSources = null;
-        if (Quiz.Room.QuizSettings.OnlyFromLists)
-        {
-            validSources = Quiz.Room.Players.SelectMany(x => x.VndbInfo.VNs).ToList();
-        }
-
-        Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
-
-        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
-        Quiz.Songs = dbSongs;
-        // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
-        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
-
-        if (Quiz.QuizState.NumSongs == 0)
-        {
-            return false;
-        }
+        List<string> validSources = new();
 
         foreach (Player player in Quiz.Room.Players)
         {
@@ -250,8 +233,29 @@ public class QuizManager
             player.Score = 0;
             player.Guess = "";
             player.IsBuffered = false;
-            player.PlayerState = PlayerState.Thinking;
+            player.PlayerState = PlayerState.Default;
+
+            if (Quiz.Room.QuizSettings.OnlyFromLists)
+            {
+                var session = ServerState.Sessions.Single(x => x.Player.Id == player.Id);
+                if (session.VndbInfo.VNs != null)
+                {
+                    validSources.AddRange(session.VndbInfo.VNs);
+                }
+            }
         }
+
+        Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+
+        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+        if (dbSongs.Count == 0)
+        {
+            return false;
+        }
+
+        Quiz.Songs = dbSongs;
+        // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
+        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
 
         await EnterQuiz();
         return true;

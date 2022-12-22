@@ -40,20 +40,18 @@ public class AuthController : ControllerBase
             });
         }
 
-        var player = new Player(playerId, req.Username)
-        {
-            Avatar = new Avatar(AvatarCharacter.Auu, "default"),
-            VndbInfo = new PlayerVndbInfo()
-            {
-                VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, VNs = vns
-            }
-        };
+        var player = new Player(playerId, req.Username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
 
         // todo: invalidate previous session with the same playerId if it exists
         string token = Guid.NewGuid().ToString();
+
         var session = new Session(player, token);
+        session.VndbInfo = new PlayerVndbInfo()
+        {
+            VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, VNs = vns
+        };
         ServerState.Sessions.Add(session);
-        _logger.LogInformation("Created new session for player " + player.Id + $" ({player.VndbInfo.VndbId})");
+        _logger.LogInformation("Created new session for player " + player.Id + $" ({session.VndbInfo.VndbId})");
 
         return new ResCreateSession(session);
     }

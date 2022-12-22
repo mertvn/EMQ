@@ -19,7 +19,10 @@ public class Session
 
     public string? ConnectionId { get; set; }
 
-    [JsonIgnore] public HubConnection? hubConnection { get; set; }
+    [JsonIgnore]
+    public HubConnection? hubConnection { get; set; }
 
     public int? RoomId { get; set; }
+
+    public PlayerVndbInfo VndbInfo { get; set; } = new();
 }

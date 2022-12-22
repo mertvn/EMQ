@@ -178,7 +178,7 @@
         bool isVideo = url.EndsWith(".mp4") || url.EndsWith(".webm");
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 
-        var submittedBy = !string.IsNullOrEmpty(ClientState.Session.Player.VndbInfo.VndbId) ? ClientState.Session.Player.VndbInfo.VndbId : ClientState.Session.Player.Username;
+        var submittedBy = !string.IsNullOrEmpty(ClientState.Session.VndbInfo.VndbId) ? ClientState.Session.VndbInfo.VndbId : ClientState.Session.Player.Username;
         var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType }, submittedBy);
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
         if (res.IsSuccessStatusCode)
