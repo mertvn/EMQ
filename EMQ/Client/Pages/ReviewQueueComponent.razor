@@ -1,6 +1,7 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core.UI
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
@@ -22,20 +23,27 @@
         <tr>
             <td>@rq.id</td>
             <td>
-                @* todo... *@
-                @((rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
-                   ?? rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+                @* todo title converter method *@
+                @* todo link might be different from what's displayed *@
+                <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url">
+                    @((rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
+                       ?? rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+                </a>
             </td>
             <td>
                 @((rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
                    ?? rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
             </td>
-            <td>@rq.url</td>
+            <td>
+                <a href="@rq.url">@rq.url</a>
+            </td>
             <td>@rq.type</td>
             <td>@rq.is_video</td>
             <td>@rq.submitted_by</td>
             <td>@rq.submitted_on</td>
-            <td>@rq.status</td>
+            <td style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
+                @rq.status
+            </td>
             <td>@rq.reason</td>
         </tr>
     }

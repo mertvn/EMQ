@@ -31,6 +31,7 @@ w
 * Japanese song titles (VGMdb, EGS)
 * song lengths (EGS, maybe link scanning?)
 * try automating some parts of Steps to import data
+* leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick etc.
 
 ## Steps to import data
 

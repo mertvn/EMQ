@@ -67,8 +67,8 @@ public class ClientConnectionManager
 
         while (ClientState.Session.hubConnection!.State != HubConnectionState.Connected)
         {
-            Logger.LogInformation("waiting 100ms for conn");
-            await Task.Delay(100);
+            Logger.LogInformation("waiting 50ms for conn");
+            await Task.Delay(50);
         }
 
         RegisterMethods(handlers);
@@ -80,7 +80,7 @@ public class ClientConnectionManager
                 Logger.LogError(exception.ToString());
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
             await EnsureHubConnection(CurrentHandlers);
         };
         ClientState.Session.hubConnection.Closed -= del;
