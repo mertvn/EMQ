@@ -25,4 +25,6 @@ public class QuizState
     public int NumSongs { get; set; }
 
     public bool IsPaused { get; set; }
+
+    public string ExtraInfo { get; set; } = "";
 }

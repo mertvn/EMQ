@@ -83,6 +83,7 @@ public class QuizManager
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
+        Quiz.QuizState.ExtraInfo = "";
         foreach (var player in Quiz.Room.Players)
         {
             player.PlayerState = PlayerState.Thinking;
@@ -211,6 +212,7 @@ public class QuizManager
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
+        Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEnded");
         // Quiz.Room.Quiz = null; // todo
@@ -256,6 +258,7 @@ public class QuizManager
         Quiz.Songs = dbSongs;
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+        Quiz.QuizState.ExtraInfo = "Waiting buffering...";
 
         await EnterQuiz();
         return true;
@@ -351,11 +354,13 @@ public class QuizManager
         if (Quiz.QuizState.IsPaused)
         {
             Quiz.QuizState.IsPaused = false;
+            Quiz.QuizState.ExtraInfo = "";
             Console.WriteLine($"Unpaused Quiz {Quiz.Id}");
         }
         else
         {
             Quiz.QuizState.IsPaused = true;
+            Quiz.QuizState.ExtraInfo = "Paused";
             Console.WriteLine($"Paused Quiz {Quiz.Id}");
         }
     }
