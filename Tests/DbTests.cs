@@ -205,6 +205,12 @@ public class DbTests
     }
 
     [Test, Explicit]
+    public async Task GenerateReviewQueue()
+    {
+        await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());
+    }
+
+    [Test, Explicit]
     public async Task ImportSongLite()
     {
         var deserialized =
@@ -234,4 +240,6 @@ public class DbTests
             await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected);
         }
     }
+
+    // todo pgrestore pgdump tests
 }

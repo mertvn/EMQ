@@ -1,4 +1,5 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
 
 @if (song != null)
 {
@@ -71,7 +72,7 @@
                         var songArtistTitle = songArtist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First();
 
                         <div>
-                            <a class="songArtistsLatinTitle link-primary" href="@("https://vndb.org/" + songArtist.VndbId)">
+                            <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())">
                                 <span>@songArtistTitle.LatinTitle</span>
                                 @if (!string.IsNullOrEmpty(songArtistTitle.NonLatinTitle))
                                 {

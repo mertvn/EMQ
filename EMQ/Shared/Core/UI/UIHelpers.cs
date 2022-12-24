@@ -4,6 +4,8 @@ public static class UiHelpers
 {
     public static string Bool2Vis(bool b) => b ? "visible" : "hidden";
 
+    public static string Bool2Display(bool b) => b ? "initial" : "none";
+
     public static string Bool2Color(bool? b, string trueValue, string falseValue, string nullValue = "")
     {
         if (b is null)

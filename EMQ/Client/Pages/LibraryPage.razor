@@ -4,10 +4,34 @@
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using System.ComponentModel.DataAnnotations
+@using EMQ.Shared.Core.UI
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
 <h3>Library</h3>
+
+<p>Welcome to EMQ Library. Here you can contribute new song links to the game. Please read the upload criteria first. You also need to be logged in.</p>
+
+<button class="btn btn-primary" type="button" @onclick="@(() => ShowUploadCriteria = !ShowUploadCriteria)" style="margin: 5px;">
+    Show upload criteria
+</button>
+<div style="display: @UiHelpers.Bool2Display(ShowUploadCriteria)" id="collapseUploadCriteria">
+    <p>Please only submit links matching the following criteria:</p>
+    <ul>
+        <li>Game size/short version if there is one.</li>
+        <li>.mp3 and .webm formats are preferred, however we also accept .ogg and .mp4 currently.</li>
+        <li>Uploaded to <a href="https://catbox.moe/">catbox.</a> </li>
+        <li>No excess silence or song-restarts at the beginnings or ends of songs</li>
+        <li>
+            Videos should be of reasonable size and quality:
+            <ul>
+                <li>Ideally 720p resolution or less.</li>
+                <li>Ideally between 1000-2000 kbps average bitrate.</li>
+                <li>No subtitles.</li>
+            </ul>
+        </li>
+    </ul>
+</div>
 
 <BlazoredTypeahead
     SearchMethod="SearchAutocomplete"
@@ -110,6 +134,8 @@
 
     public string NoSongsText { get; set; } = "";
 
+    public bool ShowUploadCriteria { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
@@ -175,7 +201,7 @@
         StateHasChanged();
 
         url = url.Trim().ToLowerInvariant();
-        bool isVideo = url.EndsWith(".mp4") || url.EndsWith(".webm");
+        bool isVideo = url.IsVideoLink();
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 
         var submittedBy = !string.IsNullOrEmpty(ClientState.Session.VndbInfo.VndbId) ? ClientState.Session.VndbInfo.VndbId : ClientState.Session.Player.Username;

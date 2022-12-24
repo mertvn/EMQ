@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Newtonsoft.Json;
 
@@ -245,7 +246,7 @@ public static class VndbImporter
                         {
                             new SongSourceLink()
                             {
-                                Type = SongSourceLinkType.VNDB, Url = "https://vndb.org/" + dynMusicSource.id
+                                Type = SongSourceLinkType.VNDB, Url = ((string)dynMusicSource.id).ToVndbUrl()
                             }
                         },
                         Titles = musicSourceTitles,

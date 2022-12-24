@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Juliet.Model.Param;
 
@@ -21,7 +22,7 @@ public static class VndbMethods
             });
             if (playerVns != null)
             {
-                ret.AddRange(playerVns.SelectMany(x => x.Results.Select(y => "https://vndb.org/" + y.Id))); // todo
+                ret.AddRange(playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())));
                 Console.WriteLine($"Grabbed {ret.Count} vns for {vndbInfo.VndbId}");
             }
             else

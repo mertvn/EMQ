@@ -785,11 +785,20 @@ public static class DbManager
             Links = song.Links,
             SourceVndbIds = song.Sources.SelectMany(songSource =>
                 songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
-                    .Select(songSourceLink => songSourceLink.Url.Replace("https://vndb.org/", ""))).ToList(),
+                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
             ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
         });
 
         return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
+    }
+
+    public static async Task<string> ExportReviewQueue()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var reviewQueue = (await connection.GetAllAsync<ReviewQueue>()).ToList();
+            return JsonSerializer.Serialize(reviewQueue, Utils.JsoIndented);
+        }
     }
 
     public static async Task ImportSongLite(List<SongLite> songLites)
@@ -825,7 +834,7 @@ public static class DbManager
                         new
                         {
                             mtLatinTitle = songLite.Titles.Select(x => x.LatinTitle).ToList(),
-                            mselUrl = songLite.SourceVndbIds.Select(x => "https://vndb.org/" + x).ToList(),
+                            mselUrl = songLite.SourceVndbIds.Select(x => x.ToVndbUrl()).ToList(),
                             aVndbId = songLite.ArtistVndbIds
                         }))
                     .ToList();
