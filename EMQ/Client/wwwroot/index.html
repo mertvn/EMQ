@@ -25,11 +25,12 @@
 <script src="_framework/blazor.webassembly.js"></script>
 
 <script>
-    function disableBackspaceNavigation() {
-        window.onkeydown = function (e) {
-            if (e.keyCode === 8 && !isTextBox(e.target)) e.preventDefault();
-        }
-    }
+    // todo: this only should be active on the quiz page
+    // function disableBackspaceNavigation() {
+    //     window.onkeydown = function (e) {
+    //         if (e.keyCode === 8 && !isTextBox(e.target)) e.preventDefault();
+    //     }
+    // }
 
     function isTextBox(element) {
         const tagName = element.tagName.toLowerCase();

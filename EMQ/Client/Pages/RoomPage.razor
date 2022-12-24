@@ -4,6 +4,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
 @using Microsoft.AspNetCore.SignalR.Client
 @using EMQ.Shared.Core
+@using EMQ.Shared.Core.UI
 @inject HttpClient Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
@@ -21,9 +22,57 @@
     <p>@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
 </div>
 
-<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="StartQuiz">Start Quiz</button>
-<button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="ResetQuizSettings">Reset to default</button>
-@* <button class="btn btn-primary" disabled="@(!Room?.Quiz?.QuizState!.IsActive)" @onclick="Hotjoin">Hotjoin Quiz</button> *@
+@if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && (Room?.QuizSettings.IsHotjoinEnabled ?? false))
+{
+    <button class="btn btn-primary" @onclick="Hotjoin">Hotjoin Quiz</button>
+}
+
+@if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+{
+    <button class="btn btn-primary" @onclick="StartQuiz">Start Quiz</button>
+
+    <button class="btn btn-primary" type="button" @onclick="OnclickShowQuizSettings" style="margin: 5px;">
+        @UiHelpers.Bool2Text(ShowQuizSettings, "Hide quiz settings", "Show quiz settings")
+    </button>
+    <div style="display: @UiHelpers.Bool2Display(ShowQuizSettings)" id="collapseQuizSettings">
+
+        <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+
+            <InputCheckbox id="OnlyFromLists" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
+            <label for="OnlyFromLists">Only from VNDB lists?</label>
+            <br/>
+
+            <InputCheckbox id="IsHotjoinEnabled" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
+            <label for="IsHotjoinEnabled">Enable hotjoin?</label>
+            <br/>
+
+            <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
+            <label for="NumSongs">Maximum number of songs</label>
+            <br/>
+
+            <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
+            <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
+            <br/>
+
+            <InputNumber id="MaxLives" @bind-Value="ClientQuizSettings.MaxLives" style="margin: 5px"></InputNumber>
+            <label for="MaxLives">Lives (0 for unlimited)</label>
+            <br/>
+
+            <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.GuessMs" style="margin: 5px"></InputNumber>
+            <label for="GuessMs">Guess time (ms)</label>
+            <br/>
+
+            <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.ResultsMs" style="margin: 5px"></InputNumber>
+            <label for="ResultsMs">Results time (ms)</label>
+            <br/>
+
+            <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/>
+            <button style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
+        </EditForm>
+    </div>
+}
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
     @if (Room?.Players.Any() ?? false)
@@ -41,11 +90,6 @@
 </div>
 
 @code {
-    private QuizSettings ClientQuizSettings { get; set; } = new();
-
-    private Room? Room { get; set; }
-
-    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
     public RoomPage()
     {
@@ -56,12 +100,20 @@
         };
     }
 
+    private QuizSettings ClientQuizSettings { get; set; } = new();
+
+    private Room? Room { get; set; }
+
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+
+    public bool ShowQuizSettings { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();
-        ClientQuizSettings = Room!.QuizSettings;
+        ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!;
         StateHasChanged();
 
         if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
@@ -109,23 +161,35 @@
     private async Task ResetQuizSettings()
     {
         ClientQuizSettings = new QuizSettings();
-        await SendChangeRoomSettingsReq(); // todo remove
+        await SendChangeRoomSettingsReq(ClientQuizSettings); // todo remove
     }
 
-    private async Task SendChangeRoomSettingsReq()
+    private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
             HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/ChangeRoomSettings", new ReqChangeRoomSettings(
-                ClientState.Session.Token, Room.Id, "TODO", ClientQuizSettings));
+                ClientState.Session.Token, Room.Id, "TODO", clientQuizSettings));
 
             if (res1.IsSuccessStatusCode)
             {
-    // todo close modal
+                ShowQuizSettings = false;
                 Room = await _clientUtils.SyncRoom();
                 StateHasChanged();
             }
         }
+    }
+
+    private async Task OnclickShowQuizSettings()
+    {
+        Room = await _clientUtils.SyncRoom();
+        if (Room?.QuizSettings != null)
+        {
+            ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!;
+        }
+
+        ShowQuizSettings = !ShowQuizSettings;
+        StateHasChanged();
     }
 
 }

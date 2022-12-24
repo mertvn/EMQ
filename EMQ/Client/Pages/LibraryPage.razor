@@ -13,7 +13,7 @@
 <p>Welcome to EMQ Library. Here you can contribute new song links to the game. Please read the upload criteria first. You also need to be logged in.</p>
 
 <button class="btn btn-primary" type="button" @onclick="@(() => ShowUploadCriteria = !ShowUploadCriteria)" style="margin: 5px;">
-    Show upload criteria
+    @UiHelpers.Bool2Text(ShowUploadCriteria, "Hide upload criteria", "Show upload criteria")
 </button>
 <div style="display: @UiHelpers.Bool2Display(ShowUploadCriteria)" id="collapseUploadCriteria">
     <p>Please only submit links matching the following criteria:</p>
@@ -26,6 +26,7 @@
             Videos should be of reasonable size and quality:
             <ul>
                 <li>Ideally 720p resolution or less.</li>
+                <li>Ideally between 24-30 FPS.</li>
                 <li>Ideally between 1000-2000 kbps average bitrate.</li>
                 <li>No subtitles.</li>
             </ul>

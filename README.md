@@ -10,7 +10,6 @@ w
 ## TODO
 
 * Restart songs on results phase option
-* User-changeable room settings
 * Proper authentication/authorization
 * CSS... (help!)
 * less clunkier Auto-complete (might need to use JS libraries or write something custom)
@@ -30,7 +29,6 @@ w
 * player -> (site)user + (quiz)player
 * Japanese song titles (VGMdb, EGS)
 * song lengths (EGS, maybe link scanning?)
-* try automating some parts of Steps to import data
 * leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick etc.
 
 ## Steps to import data
@@ -53,7 +51,7 @@ w
 
 Bootstrap: MIT License.
 
-Open-iconic: SIL OPEN FONT LICENSE Version 1.1 and MIT License.
+Open-iconic: MIT License and SIL OPEN FONT LICENSE Version 1.1.
 
 VNDB: Data obtained under Open Data Commons Open Database License (ODbL) v1.0.
 
