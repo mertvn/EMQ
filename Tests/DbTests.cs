@@ -25,7 +25,7 @@ public class DbTests
     {
     }
 
-    private void GenericSongsAssert(IEnumerable<Song> songs)
+    private static void GenericSongsAssert(IEnumerable<Song> songs)
     {
         foreach (Song song in songs)
         {

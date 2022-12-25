@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Juliet.Model.Filters;
+﻿namespace Juliet.Model.Filters;
 
 public class Predicate : Query
 {
