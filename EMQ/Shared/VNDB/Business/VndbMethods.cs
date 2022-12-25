@@ -21,12 +21,12 @@ public static class VndbMethods
             {
                 User = vndbInfo.VndbId,
                 APIToken = vndbInfo.VndbApiToken,
-                Filters = new Combinator("or",
+                Filters = new Combinator(CombinatorKind.Or,
                     new List<Query>
                     {
-                        new Predicate("label", FilterOperator.Equal, 1),
-                        new Predicate("label", FilterOperator.Equal, 2),
-                        new Predicate("label", FilterOperator.Equal, 7),
+                        new Predicate(FilterField.Label, FilterOperator.Equal, 1),
+                        new Predicate(FilterField.Label, FilterOperator.Equal, 2),
+                        new Predicate(FilterField.Label, FilterOperator.Equal, 7),
                     })
             });
             if (playerVns != null)

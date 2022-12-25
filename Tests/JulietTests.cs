@@ -43,12 +43,12 @@ public class JulietTests
             ResultsPerPage = 5,
             Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
             APIToken = "",
-            Filters = new Combinator("or",
+            Filters = new Combinator(CombinatorKind.Or,
                 new List<Query>
                 {
-                    new Predicate("label", FilterOperator.Equal, 1),
-                    new Predicate("label", FilterOperator.Equal, 2),
-                    new Predicate("label", FilterOperator.Equal, 7),
+                    new Predicate(FilterField.Label, FilterOperator.Equal, 1),
+                    new Predicate(FilterField.Label, FilterOperator.Equal, 2),
+                    new Predicate(FilterField.Label, FilterOperator.Equal, 7),
                 })
         });
         Console.WriteLine(JsonSerializer.Serialize(res));
@@ -66,35 +66,35 @@ public class JulietTests
             ResultsPerPage = 5,
             Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
             APIToken = "",
-            Filters = new Combinator("or",
+            Filters = new Combinator(CombinatorKind.Or,
                 new List<Query>
                 {
-                    new Combinator("and",
+                    new Combinator(CombinatorKind.Or,
                         new List<Query>
                         {
-                            new Predicate("label", FilterOperator.Equal, 2),
-                            new Predicate("label", FilterOperator.Equal, 6),
+                            new Predicate(FilterField.Label, FilterOperator.Equal, 2),
+                            new Predicate(FilterField.Label, FilterOperator.Equal, 6),
                         }),
-                    new Combinator("and",
+                    new Combinator(CombinatorKind.Or,
                         new List<Query>
                         {
-                            new Predicate("label", FilterOperator.Equal, 4),
-                            new Predicate("label", FilterOperator.Equal, 6),
+                            new Predicate(FilterField.Label, FilterOperator.Equal, 4),
+                            new Predicate(FilterField.Label, FilterOperator.Equal, 6),
                         }),
-                    new Combinator("and",
+                    new Combinator(CombinatorKind.Or,
                         new List<Query>
                         {
-                            new Combinator("or",
+                            new Combinator(CombinatorKind.Or,
                                 new List<Query>
                                 {
-                                    new Predicate("label", FilterOperator.Equal, 2),
-                                    new Predicate("label", FilterOperator.Equal, 6),
+                                    new Predicate(FilterField.Label, FilterOperator.Equal, 2),
+                                    new Predicate(FilterField.Label, FilterOperator.Equal, 6),
                                 }),
-                            new Combinator("or",
+                            new Combinator(CombinatorKind.Or,
                                 new List<Query>
                                 {
-                                    new Predicate("label", FilterOperator.Equal, 4),
-                                    new Predicate("label", FilterOperator.Equal, 6),
+                                    new Predicate(FilterField.Label, FilterOperator.Equal, 4),
+                                    new Predicate(FilterField.Label, FilterOperator.Equal, 6),
                                 })
                         })
                 })
