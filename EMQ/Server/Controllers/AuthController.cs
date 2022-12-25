@@ -137,7 +137,6 @@ public class AuthController : ControllerBase
         }
         else
         {
-            // todo
             throw new Exception("Could not find the label to update");
         }
     }

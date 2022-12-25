@@ -1,12 +1,9 @@
 ﻿@page "/"
-@using EMQ.Shared.Auth
-@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
 @using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @using System.ComponentModel.DataAnnotations
 @using EMQ.Shared.VNDB.Business
@@ -128,7 +125,7 @@
         [RegularExpression(RegexPatterns.VndbIdRegex, ErrorMessage = "Invalid VNDB Id: make sure it looks like 'u1234567'")]
         public string? VndbId { get; set; }
 
-    // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // todo prevents login if users enter something random, and then delete it
+    // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // todo prevents login if users enter something random, and then deletes it
         public string? VndbApiToken { get; set; }
     }
 

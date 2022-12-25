@@ -50,7 +50,7 @@ public static class Api
                     default:
                         Console.WriteLine("Error communicating with VNDB. res: " + JsonSerializer.Serialize(res));
                         throw new Exception(
-                            $"Error communicating with VNDB. Status code: {res.StatusCode} {res.Content.ReadAsStringAsync()}");
+                            $"Error communicating with VNDB. Status code: {res.StatusCode} {res.Content.ReadAsStringAsync()}"); // todo can't read the content
                 }
             }
         }
