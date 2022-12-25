@@ -2,19 +2,19 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.Response;
 using Juliet.Model.VNDBObject;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Juliet;
 
 public static class Api
 {
-    private static HttpClient Client { get; } = new()
-    {
-        BaseAddress = new Uri(Constants.VndbApiUrl),
-    };
+    private static HttpClient Client { get; } = new() { BaseAddress = new Uri(Constants.VndbApiUrl), };
 
     private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
     {
@@ -107,6 +107,56 @@ public static class Api
         {
             page += 1;
 
+            // var jArray = JArray.FromObject(param.Filters);
+            // foreach (JObject jObject in jArray.Children<JObject>())
+            // {
+            //     foreach (KeyValuePair<string, JToken> kvp in jObject)
+            //     {
+            //         Console.WriteLine(JsonConvert.SerializeObject(kvp));
+            //     }
+            //
+            //     Console.WriteLine(jObject);
+            // }
+
+            // var valuesList = jArray.SelectMany(x => x.Values().ToList()).ToList();
+
+            var wrong = "";
+            var right = "";
+
+            if (param.Filters is { } c1)
+            {
+                if (c1.Query.Any(x => x is Combinator))
+                {
+                    // foreach (CombinatorOrPredicate q in c1.Query)
+                    // {
+                    //
+                    // }
+
+                    // wrong = JsonConvert.SerializeObject(c1.Query);
+                    // var jArray1 = JArray.FromObject(JArray.FromObject((c1.Query)));
+                    // right = JsonConvert.SerializeObject(jArray1.SelectMany(x => x.Values().ToList()).ToList());
+
+                    //  throw new Exception("Nested filters are not supported at the moment");
+                }
+            }
+
+            //string finalRes = JsonConvert.SerializeObject(valuesList);
+
+            string finalRes = "";
+            if (param.Filters != null)
+            {
+                finalRes = param.Filters.ToJsonNormalized(param.Filters, ref finalRes, true);
+            }
+
+            // if (!string.IsNullOrWhiteSpace(wrong))
+            // {
+            //     finalRes = finalRes.Replace(wrong, right);
+            // }
+
+            // finalRes = finalRes.Remove(finalRes.Length - 1, 1).Remove(0, 1);
+
+            // return null;
+
             // TODO
             string json = JsonSerializer.Serialize(
                 new Dictionary<string, dynamic>()
@@ -117,16 +167,8 @@ public static class Api
                     { "compact_filters", param.CompactFilters },
                     { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
                     { "page", page },
-                    // todo
-                    {
-                        "filters",
-                        new dynamic[]
-                        {
-                            "or", new dynamic[] { "label", "=", 1 }, new dynamic[] { "label", "=", 2 },
-                            new dynamic[] { "label", "=", 7 }
-                        } // playing, finished, voted
-                    }
-                });
+                    { "filters", finalRes }
+                }, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             Console.WriteLine("json:" + json);
 
             var req = new HttpRequestMessage

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.VNDBObject.Fields;
 using NUnit.Framework;
@@ -42,9 +43,64 @@ public class JulietTests
             ResultsPerPage = 5,
             Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
             APIToken = "",
+            Filters = new Combinator("or",
+                new List<CombinatorOrPredicate>
+                {
+                    new Predicate("label", FilterOperator.Equal, 1),
+                    new Predicate("label", FilterOperator.Equal, 2),
+                    new Predicate("label", FilterOperator.Equal, 7),
+                }, true)
         });
         Console.WriteLine(JsonSerializer.Serialize(res));
 
-        Assert.That(res!.Count > 4);
+        Assert.That(res!.First().Results.Count > 4);
+    }
+
+    [Test]
+    public async Task Test_POST_ulist_Nested()
+    {
+        var res = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
+        {
+            User = "u101804",
+            Exhaust = false,
+            ResultsPerPage = 5,
+            Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
+            APIToken = "",
+            Filters = new Combinator("or",
+                new List<CombinatorOrPredicate>
+                {
+                    new Combinator("and",
+                        new List<CombinatorOrPredicate>
+                        {
+                            new Predicate("label", FilterOperator.Equal, 2),
+                            new Predicate("label", FilterOperator.Equal, 6),
+                        }, true),
+                    new Combinator("and",
+                        new List<CombinatorOrPredicate>
+                        {
+                            new Predicate("label", FilterOperator.Equal, 4),
+                            new Predicate("label", FilterOperator.Equal, 6),
+                        }, true),
+                    new Combinator("or",
+                        new List<CombinatorOrPredicate>
+                        {
+                            new Combinator("and",
+                                new List<CombinatorOrPredicate>
+                                {
+                                    new Predicate("label", FilterOperator.Equal, 2),
+                                    new Predicate("label", FilterOperator.Equal, 6),
+                                }, true),
+                            new Combinator("and",
+                                new List<CombinatorOrPredicate>
+                                {
+                                    new Predicate("label", FilterOperator.Equal, 4),
+                                    new Predicate("label", FilterOperator.Equal, 6),
+                                }, true)
+                        }, sameLevel: false)
+                }, sameLevel: false)
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res));
+
+        Assert.That(res!.First().Results.Count > 1);
     }
 }

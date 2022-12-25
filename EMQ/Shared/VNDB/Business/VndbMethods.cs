@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Juliet.Model.Filters;
 using Juliet.Model.Param;
 
 namespace EMQ.Shared.VNDB.Business;
@@ -18,7 +19,15 @@ public static class VndbMethods
         {
             var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
             {
-                User = vndbInfo.VndbId, APIToken = vndbInfo.VndbApiToken
+                User = vndbInfo.VndbId,
+                APIToken = vndbInfo.VndbApiToken,
+                Filters = new Combinator("or",
+                    new List<CombinatorOrPredicate>
+                    {
+                        new Predicate("label", FilterOperator.Equal, 1),
+                        new Predicate("label", FilterOperator.Equal, 2),
+                        new Predicate("label", FilterOperator.Equal, 7),
+                    }, true)
             });
             if (playerVns != null)
             {

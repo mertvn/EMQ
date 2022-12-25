@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using Juliet.Model.Filters;
 using Juliet.Model.VNDBObject.Fields;
 
 namespace Juliet.Model.Param;
@@ -26,4 +27,6 @@ public class ParamPOST_ulist : Param
     /// </summary>
     [DefaultValue(true)]
     public bool Exhaust { get; set; } = true;
+
+    public Combinator? Filters { get; set; }
 }
