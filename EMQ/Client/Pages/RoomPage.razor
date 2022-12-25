@@ -31,7 +31,7 @@
 {
     <button class="btn btn-primary" @onclick="StartQuiz">Start Quiz</button>
 
-    <button class="btn btn-primary" type="button" @onclick="OnclickShowQuizSettings" style="margin: 5px;">
+    <button class="btn btn-secondary" type="button" @onclick="OnclickShowQuizSettings" style="margin: 5px;">
         @UiHelpers.Bool2Text(ShowQuizSettings, "Hide quiz settings", "Show quiz settings")
     </button>
     <div style="display: @UiHelpers.Bool2Display(ShowQuizSettings)" id="collapseQuizSettings">

@@ -606,7 +606,6 @@ public static class DbManager
 
     public static async Task<List<Song>> GetRandomSongs(int numSongs, List<string>? validSources = null)
     {
-        // todo: do this only once on server start and store the results in memory to use later
         // todo no duplicates option
         string sqlMusicIds = @"SELECT DISTINCT mel.music_id FROM music_external_link mel";
 
