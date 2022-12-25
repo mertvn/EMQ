@@ -34,6 +34,15 @@ public class JulietTests
     }
 
     [Test]
+    public async Task Test_GET_ulist_labels()
+    {
+        var res = await Juliet.Api.GET_ulist_labels(new Param() { User = "u1" });
+        Console.WriteLine(JsonSerializer.Serialize(res));
+
+        Assert.That(res!.Labels.Length > 5);
+    }
+
+    [Test]
     public async Task Test_POST_ulist()
     {
         var res = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
@@ -41,15 +50,9 @@ public class JulietTests
             User = "u101804",
             Exhaust = false,
             ResultsPerPage = 5,
-            Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
+            Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.LabelsId, FieldPOST_ulist.LabelsLabel },
             APIToken = "",
-            Filters = new Combinator(CombinatorKind.Or,
-                new List<Query>
-                {
-                    new Predicate(FilterField.Label, FilterOperator.Equal, 1),
-                    new Predicate(FilterField.Label, FilterOperator.Equal, 2),
-                    new Predicate(FilterField.Label, FilterOperator.Equal, 7),
-                })
+            Filters = null
         });
         Console.WriteLine(JsonSerializer.Serialize(res));
 
@@ -84,13 +87,13 @@ public class JulietTests
                     new Combinator(CombinatorKind.Or,
                         new List<Query>
                         {
-                            new Combinator(CombinatorKind.Or,
+                            new Combinator(CombinatorKind.And,
                                 new List<Query>
                                 {
                                     new Predicate(FilterField.Label, FilterOperator.Equal, 2),
                                     new Predicate(FilterField.Label, FilterOperator.Equal, 6),
                                 }),
-                            new Combinator(CombinatorKind.Or,
+                            new Combinator(CombinatorKind.And,
                                 new List<Query>
                                 {
                                     new Predicate(FilterField.Label, FilterOperator.Equal, 4),

@@ -2,7 +2,6 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
-@using Microsoft.AspNetCore.SignalR.Client
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
 @inject HttpClient Client
@@ -113,7 +112,7 @@
         await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();
-        ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!;
+        ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
         StateHasChanged();
 
         if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)

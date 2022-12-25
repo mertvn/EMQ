@@ -71,7 +71,7 @@ public class VNDBStaffNotesParserTests
                     name = dynData.name,
                     role = dynData.role,
                     ParsedSong = parsedSong,
-                    ProducerIds = ((JArray)dynData.ProducerIds).ToObject<List<string>>().Distinct().ToList()
+                    ProducerIds = ((JArray)dynData.ProducerIds).ToObject<List<string>>()!.Distinct().ToList()
                 };
                 processedMusics.Add(processedMusic);
             }

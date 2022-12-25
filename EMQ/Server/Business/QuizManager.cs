@@ -11,6 +11,7 @@ using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
+using Juliet.Model.VNDBObject;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Business;
@@ -240,14 +241,25 @@ public class QuizManager
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
                 var session = ServerState.Sessions.Single(x => x.Player.Id == player.Id);
-                if (session.VndbInfo.VNs != null)
+                if (session.VndbInfo.Labels != null)
                 {
-                    validSources.AddRange(session.VndbInfo.VNs);
+                    var include = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Include).ToList();
+                    var exclude = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
+
+                    Console.WriteLine($"includeCount: {include.Count}");
+                    Console.WriteLine($"excludeCount: {exclude.Count}");
+
+                    foreach (Label excludedLabel in exclude)
+                    {
+                        var final = include.SelectMany(x => x.VnUrls.Except(excludedLabel.VnUrls));
+                        validSources.AddRange(final);
+                    }
                 }
             }
         }
 
         Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+        Console.WriteLine($"validSourcesCount: {validSources.Count}");
 
         var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
         if (dbSongs.Count == 0)

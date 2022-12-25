@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.Response;
 using Juliet.Model.VNDBObject;
@@ -16,13 +15,14 @@ public static class Api
 {
     private static HttpClient Client { get; } = new() { BaseAddress = new Uri(Constants.VndbApiUrl), };
 
+    // todo: return IResult<T> type with success, message, result properties
     private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
     {
         try
         {
-            Console.WriteLine($"Sending request {JsonSerializer.Serialize(req)}"); // TODO
+            // Console.WriteLine($"Sending request {JsonSerializer.Serialize(req)}"); // TODO
             var res = await Client.SendAsync(req);
-            Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
+            // Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
 
             if (res.IsSuccessStatusCode)
             {
@@ -49,7 +49,8 @@ public static class Api
                     //     break;
                     default:
                         Console.WriteLine("Error communicating with VNDB. res: " + JsonSerializer.Serialize(res));
-                        throw new Exception($"Error communicating with VNDB. Status code: {res.StatusCode}");
+                        throw new Exception(
+                            $"Error communicating with VNDB. Status code: {res.StatusCode} {res.Content.ReadAsStringAsync()}");
                 }
             }
         }
@@ -69,7 +70,7 @@ public static class Api
 
         var req = new HttpRequestMessage
         {
-            // &fields=lengthvotes,lengthvotes_sum
+            // todo &fields=lengthvotes,lengthvotes_sum
             RequestUri = new Uri($"user?q={param.User}", UriKind.Relative),
         };
 
@@ -91,6 +92,25 @@ public static class Api
         return res;
     }
 
+    public static async Task<ResGET_ulist_labels?> GET_ulist_labels(Param param)
+    {
+        if (string.IsNullOrWhiteSpace(param.User))
+        {
+            return null;
+        }
+
+        // todo &fields=count
+        var req = new HttpRequestMessage { RequestUri = new Uri($"ulist_labels?user={param.User}", UriKind.Relative), };
+
+        if (!string.IsNullOrWhiteSpace(param.APIToken))
+        {
+            req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
+        }
+
+        var res = await Send<ResGET_ulist_labels>(req);
+        return res;
+    }
+
     public static async Task<List<ResPOST<ResPOST_ulist>>?> POST_ulist(ParamPOST_ulist param)
     {
         // todo validate other params
@@ -101,30 +121,38 @@ public static class Api
 
         var final = new List<ResPOST<ResPOST_ulist>>();
 
-        int page = 0;
+        string vndbId = "v1"; // pagination by id should be faster for this type of request
+        // int page = 0;
         bool more;
         do
         {
-            page += 1;
+            //  page += 1;
+
+            string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid zzz
+            // TODO
+            var dict = new Dictionary<string, dynamic>()
+            {
+                { "user", param.User },
+                { "fields", string.Join(", ", param.Fields.Select(x => x.GetDescription())) },
+                { "normalized_filters", param.NormalizedFilters },
+                { "compact_filters", param.CompactFilters },
+                { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
+                //  { "page", page },
+            };
 
             string filters = "";
             if (param.Filters != null)
             {
                 filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
+                dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+            }
+            else
+            {
+                dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
             }
 
-            // TODO
-            string json = JsonSerializer.Serialize(
-                new Dictionary<string, dynamic>()
-                {
-                    { "user", param.User },
-                    { "fields", string.Join(", ", param.Fields.Select(x => x.ToString().ToLowerInvariant())) },
-                    { "normalized_filters", param.NormalizedFilters },
-                    { "compact_filters", param.CompactFilters },
-                    { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
-                    { "page", page },
-                    { "filters", filters }
-                }, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            string json = JsonSerializer.Serialize(dict,
+                new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             Console.WriteLine("json:" + json);
 
             var req = new HttpRequestMessage
@@ -146,6 +174,10 @@ public static class Api
 
                 final.Add(res);
                 more = res.More;
+                if (res.More)
+                {
+                    vndbId = res.Results.Last().Id;
+                }
             }
             else
             {
@@ -155,6 +187,4 @@ public static class Api
 
         return final;
     }
-
-    // TODO GET_ulist_labels
 }

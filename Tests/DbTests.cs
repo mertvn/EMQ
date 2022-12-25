@@ -10,7 +10,9 @@ using EMQ.Server;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using Newtonsoft.Json;
 using Npgsql;
 using NUnit.Framework;
@@ -239,6 +241,42 @@ public class DbTests
         {
             await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected);
         }
+    }
+
+    [Test, Explicit]
+    public async Task Test_GrabVnsFromVndb()
+    {
+        // todo move this to another class?
+        PlayerVndbInfo vndbInfo = new PlayerVndbInfo()
+        {
+            VndbId = "u101804",
+            VndbApiToken = "",
+            Labels = new List<Label>
+            {
+                new()
+                {
+                    Id = 1, // Playing
+                    Kind = LabelKind.Include
+                },
+                new()
+                {
+                    Id = 2, // Finished
+                    Kind = LabelKind.Include
+                },
+                new()
+                {
+                    Id = 7, // Voted
+                    Kind = LabelKind.Include
+                },
+                new()
+                {
+                    Id = 6, // Blacklist
+                    Kind = LabelKind.Exclude
+                },
+            }
+        };
+        var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+        Console.WriteLine(JsonSerializer.Serialize(labels, Utils.Jso));
     }
 
     // todo pgrestore pgdump tests

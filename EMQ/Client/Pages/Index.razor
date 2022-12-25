@@ -9,7 +9,9 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @using System.ComponentModel.DataAnnotations
+@using EMQ.Shared.VNDB.Business
 @using Juliet.Model.Param
+@using Juliet.Model.VNDBObject
 @inject NavigationManager Navigation
 @inject HttpClient Client
 @inject ILogger<Index> _logger
@@ -24,12 +26,53 @@
         <div>
             Currently logged in as @ClientState.Session.Player.Username<br/>
 
-            @if (ClientState.Session!.VndbInfo.VNs is not null)
-            {
-                <p>Grabbed @ClientState.Session!.VndbInfo.VNs.Count VNs from VNDB. (@ClientState.Session.VndbInfo.VndbId)</p>
-            }
+            <button class="btn btn-primary" @onclick="Logout">Logout</button>
+            <br/>
 
-            <button class="btn btn-primary" @onclick="Logout" disabled="@(ClientState.Session == null)">Logout</button>
+            @if (ClientState.Session!.VndbInfo.Labels is not null)
+            {
+                <br/>
+                <p> You can include or exclude VNDB labels here. Exclude takes priority over Include currently.</p>
+
+                <button class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">Fetch labels</button>
+                <br/>
+
+                <div class="labels d-flex flex-row">
+                    @foreach (var label in Labels)
+                    {
+                        <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
+                            <div class="labelCardBody card-body">
+                                <span>#@label.Id @label.Name (@label.VnUrls.Count)</span>
+                                @if (label.IsPrivate)
+                                {
+                                    <span> Private </span>
+                                }
+                                else
+                                {
+                                    <span> Public </span>
+                                }
+
+                                <br/>
+                                <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px">
+                                    <label class="btn btn-outline-primary">
+                                        <input type="radio" name="@("options" + label.Id)" id="option1" autocomplete="off" checked="@(label.Kind == LabelKind.Include)"
+                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
+                                    </label>
+                                    <label class="btn btn-outline-primary">
+                                        <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Ignore)"
+                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Ignore))"> Ignore
+                                    </label>
+                                    <label class="btn btn-outline-primary">
+                                        <input type="radio" name="@("options" + label.Id)" id="option3" autocomplete="off" checked="@(label.Kind == LabelKind.Exclude)"
+                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
+                                    </label>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     }
     else if (LoginInProgress || ClientState.Session == null)
@@ -85,7 +128,7 @@
         [RegularExpression(RegexPatterns.VndbIdRegex, ErrorMessage = "Invalid VNDB Id: make sure it looks like 'u1234567'")]
         public string? VndbId { get; set; }
 
-        [MinLength(32, ErrorMessage = "Invalid VNDB API Token")]
+    // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // todo prevents login if users enter something random, and then delete it
         public string? VndbApiToken { get; set; }
     }
 
@@ -94,6 +137,8 @@
     public List<string> LoginProgressDisplay { get; set; } = new();
 
     public bool LoginInProgress { get; set; } = false;
+
+    public List<Label> Labels { get; set; } = new();
 
     private async Task Logout()
     {
@@ -126,9 +171,10 @@
                 var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = loginModel.VndbApiToken });
                 if (resAuth != null)
                 {
-                    if (!resAuth.Permissions.Contains("listread")) // todo
+                    const string vndbPermName = "listread"; // todo
+                    if (!resAuth.Permissions.Contains(vndbPermName))
                     {
-                        LoginProgressDisplay.Add("Error: VNDB API Token does not have the necessary permissions: listread");
+                        LoginProgressDisplay.Add($"Error: VNDB API Token does not have the necessary permissions: {vndbPermName}");
                         LoginInProgress = false;
                         LoginProgressDisplay.Add("Login cancelled.");
                         StateHasChanged();
@@ -156,8 +202,7 @@
                 new ReqCreateSession(
                     loginModel.Username,
                     loginModel.Password,
-                    new PlayerVndbInfo() { VndbId = loginModel.VndbId },
-                    loginModel.VndbApiToken));
+                    new PlayerVndbInfo() { VndbId = loginModel.VndbId, VndbApiToken = loginModel.VndbApiToken }));
 
             if (res.IsSuccessStatusCode)
             {
@@ -169,9 +214,10 @@
                     _logger.LogInformation("token: " + resCreateSession.Session);
 
                     ClientState.Session = resCreateSession.Session;
-                    if (ClientState.Session.VndbInfo.VNs is not null)
+                    if (ClientState.Session.VndbInfo.Labels is not null)
                     {
-                        LoginProgressDisplay.Add($"Grabbed {ClientState.Session.VndbInfo.VNs?.Count} VNs from VNDB.");
+                        Labels = ClientState.Session.VndbInfo.Labels.ToList();
+                        LoginProgressDisplay.Add("Grabbed VNs from VNDB.");
                         StateHasChanged();
                     }
 
@@ -184,13 +230,63 @@
                     LoginProgressDisplay.Add($"Successfully logged in. Navigating to Hotel.");
                     StateHasChanged();
                     LoginInProgress = false;
-                    Navigation.NavigateTo("/HotelPage");
+
+                    if (ClientState.Session.VndbInfo.Labels is null)
+                    {
+                        Navigation.NavigateTo("/HotelPage");
+                    }
                 }
             }
             else
             {
-    // todo
+                LoginProgressDisplay.Add("Login failed.");
+                StateHasChanged();
+                LoginInProgress = false;
             }
+        }
+    }
+
+    private async Task FetchLabels(PlayerVndbInfo vndbInfo)
+    {
+        Labels.Clear();
+        List<Label> newLabels = new();
+
+        VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(vndbInfo);
+        foreach (VNDBLabel vndbLabel in vndbLabels)
+        {
+            newLabels.Add(Label.FromVndbLabel(vndbLabel));
+        }
+
+        Console.WriteLine(vndbInfo.Labels!.Count + "-" + newLabels.Count);
+        List<Label> final = Label.MergeLabels(vndbInfo.Labels!, newLabels);
+        Labels.AddRange(final);
+        StateHasChanged();
+    }
+
+    private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind)
+    {
+        if (label.Kind == newLabelKind)
+        {
+            return;
+        }
+
+        label.Kind = newLabelKind;
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/UpdateLabel",
+            new ReqUpdateLabel(ClientState.Session!.Token, label));
+
+        if (res.IsSuccessStatusCode)
+        {
+            var updatedLabel = await res.Content.ReadFromJsonAsync<Label>();
+            if (updatedLabel != null)
+            {
+                Label oldLabel = Labels.Single(x => x.Id == updatedLabel.Id);
+                oldLabel.Kind = updatedLabel.Kind;
+                oldLabel.VnUrls = updatedLabel.VnUrls;
+            }
+        }
+        else
+        {
+    // todo
         }
     }
 }

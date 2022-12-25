@@ -14,6 +14,9 @@ public class ResPOST_ulist
     [JsonPropertyName("vote")]
     public int? Vote { get; set; }
 
+    [JsonPropertyName("labels")]
+    public VNDBLabel[] Labels { get; set; }
+
     [JsonPropertyName("vn")]
     public VN VN { get; set; } = new();
 }

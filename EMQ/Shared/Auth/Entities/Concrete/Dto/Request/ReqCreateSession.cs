@@ -4,12 +4,11 @@ namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 
 public class ReqCreateSession
 {
-    public ReqCreateSession(string username, string password, PlayerVndbInfo vndbInfo, string? vndbApiToken)
+    public ReqCreateSession(string username, string password, PlayerVndbInfo vndbInfo)
     {
         Username = username;
         Password = password;
         VndbInfo = vndbInfo;
-        VndbApiToken = vndbApiToken;
     }
 
     public string Username { get; }
@@ -17,6 +16,4 @@ public class ReqCreateSession
     public string Password { get; }
 
     public PlayerVndbInfo VndbInfo { get; }
-
-    public string? VndbApiToken { get; set; }
 }

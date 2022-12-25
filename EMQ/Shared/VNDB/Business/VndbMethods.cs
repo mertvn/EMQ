@@ -1,42 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Juliet.Model.Filters;
 using Juliet.Model.Param;
+using Juliet.Model.VNDBObject;
 
 namespace EMQ.Shared.VNDB.Business;
 
 public static class VndbMethods
 {
-    public static async Task<List<string>> GrabPlayerVNsFromVNDB(PlayerVndbInfo vndbInfo)
+    // todo: consider rewriting this to grab all vns in a single Juliet.Api.POST_ulist call (~20% faster for my list)
+    // would need more post-processing to match returned vns to labels though, so it might not be a big improvement
+    public static async Task<List<Label>> GrabPlayerVNsFromVndb(PlayerVndbInfo vndbInfo)
     {
-        var ret = new List<string>();
+        var ret = new List<Label>();
 
         if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
-            var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
+            if (vndbInfo.Labels != null)
             {
-                User = vndbInfo.VndbId,
-                APIToken = vndbInfo.VndbApiToken,
-                Filters = new Combinator(CombinatorKind.Or,
-                    new List<Query>
+                if (vndbInfo.Labels.Any())
+                {
+                    // Console.WriteLine("GrabPlayerVNsFromVndb labels: " +
+                    //                   JsonSerializer.Serialize(vndbInfo.Labels, Utils.JsoIndented));
+
+                    foreach (var label in vndbInfo.Labels)
                     {
-                        new Predicate(FilterField.Label, FilterOperator.Equal, 1),
-                        new Predicate(FilterField.Label, FilterOperator.Equal, 2),
-                        new Predicate(FilterField.Label, FilterOperator.Equal, 7),
-                    })
-            });
-            if (playerVns != null)
-            {
-                ret.AddRange(playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())));
-                Console.WriteLine($"Grabbed {ret.Count} vns for {vndbInfo.VndbId}");
+                        if (label.Kind is LabelKind.Include or LabelKind.Exclude)
+                        {
+                            if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken))
+                            {
+                                var query = new List<Query>()
+                                {
+                                    new Predicate(FilterField.Label, FilterOperator.Equal, label.Id)
+                                };
+
+                                var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
+                                {
+                                    User = vndbInfo.VndbId,
+                                    APIToken = vndbInfo.VndbApiToken,
+                                    Exhaust = true,
+                                    Filters = new Combinator(CombinatorKind.Or, query),
+                                });
+                                if (playerVns != null)
+                                {
+                                    label.VnUrls = playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl()))
+                                        .ToList();
+                                    ret.Add(label);
+                                    Console.WriteLine(
+                                        $"Grabbed {label.VnUrls.Count} vns for label {label.Id} ({label.Name})");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Error grabbing {vndbInfo.VndbId}'s VNs");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Skipping private label {label.Id} ({label.Name})");
+                            }
+                        }
+                    }
+                }
             }
             else
             {
-                Console.WriteLine($"Error grabbing {vndbInfo.VndbId}'s VNs");
+                Console.WriteLine($"Encountered null vndbInfo.Labels when grabbing vns");
             }
         }
         else
@@ -45,5 +78,15 @@ public static class VndbMethods
         }
 
         return ret;
+    }
+
+    public static async Task<VNDBLabel[]> GetLabels(PlayerVndbInfo vndbInfo)
+    {
+        var res = await Juliet.Api.GET_ulist_labels(new Param()
+        {
+            User = vndbInfo.VndbId, APIToken = vndbInfo.VndbApiToken
+        });
+
+        return res != null ? res.Labels : Array.Empty<VNDBLabel>();
     }
 }
