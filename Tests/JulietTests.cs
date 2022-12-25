@@ -44,12 +44,12 @@ public class JulietTests
             Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
             APIToken = "",
             Filters = new Combinator("or",
-                new List<CombinatorOrPredicate>
+                new List<Query>
                 {
                     new Predicate("label", FilterOperator.Equal, 1),
                     new Predicate("label", FilterOperator.Equal, 2),
                     new Predicate("label", FilterOperator.Equal, 7),
-                }, true)
+                })
         });
         Console.WriteLine(JsonSerializer.Serialize(res));
 
@@ -67,37 +67,37 @@ public class JulietTests
             Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.Vote, FieldPOST_ulist.Added },
             APIToken = "",
             Filters = new Combinator("or",
-                new List<CombinatorOrPredicate>
+                new List<Query>
                 {
                     new Combinator("and",
-                        new List<CombinatorOrPredicate>
+                        new List<Query>
                         {
                             new Predicate("label", FilterOperator.Equal, 2),
                             new Predicate("label", FilterOperator.Equal, 6),
-                        }, true),
+                        }),
                     new Combinator("and",
-                        new List<CombinatorOrPredicate>
+                        new List<Query>
                         {
                             new Predicate("label", FilterOperator.Equal, 4),
                             new Predicate("label", FilterOperator.Equal, 6),
-                        }, true),
-                    new Combinator("or",
-                        new List<CombinatorOrPredicate>
+                        }),
+                    new Combinator("and",
+                        new List<Query>
                         {
-                            new Combinator("and",
-                                new List<CombinatorOrPredicate>
+                            new Combinator("or",
+                                new List<Query>
                                 {
                                     new Predicate("label", FilterOperator.Equal, 2),
                                     new Predicate("label", FilterOperator.Equal, 6),
-                                }, true),
-                            new Combinator("and",
-                                new List<CombinatorOrPredicate>
+                                }),
+                            new Combinator("or",
+                                new List<Query>
                                 {
                                     new Predicate("label", FilterOperator.Equal, 4),
                                     new Predicate("label", FilterOperator.Equal, 6),
-                                }, true)
-                        }, sameLevel: false)
-                }, sameLevel: false)
+                                })
+                        })
+                })
         });
         Console.WriteLine(JsonSerializer.Serialize(res));
 

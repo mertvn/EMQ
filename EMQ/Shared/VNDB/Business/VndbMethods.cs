@@ -22,12 +22,12 @@ public static class VndbMethods
                 User = vndbInfo.VndbId,
                 APIToken = vndbInfo.VndbApiToken,
                 Filters = new Combinator("or",
-                    new List<CombinatorOrPredicate>
+                    new List<Query>
                     {
                         new Predicate("label", FilterOperator.Equal, 1),
                         new Predicate("label", FilterOperator.Equal, 2),
                         new Predicate("label", FilterOperator.Equal, 7),
-                    }, true)
+                    })
             });
             if (playerVns != null)
             {

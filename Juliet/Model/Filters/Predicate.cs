@@ -5,13 +5,12 @@ namespace Juliet.Model.Filters;
 
 // https://code.blicky.net/yorhel/vndb/src/commit/29bccb3a5f661dc60eee1a8b3c24c776aa8c30c6/lib/VNWeb/AdvSearch.pm#L36
 // i hate everything about this
-// [JsonConverter(typeof(ObjectToArrayConverter<Predicate>))]
-public class Predicate : CombinatorOrPredicate
+public class Predicate : Query
 {
     public Predicate(string name, FilterOperator @operator, dynamic value)
     {
         Name = name;
-        Operator = @operator.GetDescription()!;
+        Operator = @operator;
         Value = value;
     }
 
@@ -19,67 +18,35 @@ public class Predicate : CombinatorOrPredicate
     public string Name { get; init; }
 
     [JsonProperty(Order = 2)]
-    public string Operator { get; init; }
+    public FilterOperator Operator { get; init; }
 
     [JsonProperty(Order = 3)]
     public dynamic Value { get; init; }
 }
 
-// [JsonConverter(typeof(myconv<Combinator>))]
-public class Combinator : CombinatorOrPredicate
+public class Combinator : Query
 {
-    public Combinator(string kind, IEnumerable<CombinatorOrPredicate> query, bool sameLevel)
+    public Combinator(string kind, IEnumerable<Query> query)
     {
         Kind = kind;
         Query = query;
-        SameLevel = sameLevel;
-
-        // if (sameLevel)
-        // {
-        //     v = JsonConvert.SerializeObject(new dynamic[] { Kind, Query });
-        // }
-        // else
-        // {
-        //     v = JsonConvert.SerializeObject(new dynamic[] { Kind, new dynamic[] { Query } });
-        // }
-
-        // v = v.Remove(v.Length - 1, 1).Remove(0, 1);
     }
 
-    [JsonIgnore]
-    // [JsonProperty(Order = 1)]
-    public bool SameLevel { get; init; }
-
-    [JsonIgnore]
-    [JsonProperty(Order = 2)]
     public string Kind { get; init; }
 
-    [JsonIgnore]
-    [JsonProperty(Order = 3)]
-    public IEnumerable<CombinatorOrPredicate> Query { get; init; }
+    public IEnumerable<Query> Query { get; init; }
 
-    // [JsonProperty(Order = 1)]
-    // public string v { get; set; }
-
-    // [JsonProperty(Order = 2)]
-    // public Predicate? Predicate1 { get; init; }
-    //
-    // [JsonProperty(Order = 3)]
-    // public Predicate? Predicate2 { get; init; }
-    //
-    // [JsonProperty(Order = 4)]
-    // public Predicate? Predicate3 { get; init; }
-
-    public string ToJsonNormalized(Combinator comb, ref string ret, bool outer)
+    // todo accept Query instead of Combinator?
+    public string ToJsonNormalized(Combinator comb, ref string ret, bool isRoot)
     {
-        if (outer)
+        if (isRoot)
         {
             ret += "[";
             ret += "\"" + Kind + "\"";
             ret += ",";
         }
 
-        foreach (CombinatorOrPredicate cQuery in comb.Query)
+        foreach (Query cQuery in comb.Query)
         {
             switch (cQuery)
             {
@@ -94,14 +61,14 @@ public class Combinator : CombinatorOrPredicate
                     // Console.WriteLine("proc p");
                     ret += "," +
                            "[" + "\"" + p.Name + "\"" + "," +
-                           "\"" + p.Operator + "\"" + "," +
+                           "\"" + p.Operator.GetDescription() + "\"" + "," +
                            "\"" + p.Value + "\"" + "]";
                     // Console.WriteLine($"ret: {ret}");
                     break;
             }
         }
 
-        if (outer)
+        if (isRoot)
         {
             ret += "]";
         }
@@ -112,30 +79,9 @@ public class Combinator : CombinatorOrPredicate
     }
 }
 
-public abstract class CombinatorOrPredicate
+public abstract class Query
 {
 }
-
-// [JsonConverter(typeof(ObjectToArrayConverter<Query>))]
-// public class Query // : IEnumerable
-// {
-//     [JsonProperty(Order = 1)]
-//     public Combinator? Combinator { get; init; }
-//
-//     [JsonProperty(Order = 2)]
-//     public Predicate? Predicate { get; init; }
-//
-//     // public IEnumerator GetEnumerator()
-//     // {
-//     //     return GetEnumerator1();
-//     //
-//     // }
-//     //
-//     // public IEnumerator GetEnumerator1()
-//     // {
-//     //     yield return Element;
-//     // }
-// }
 
 public enum FilterOperator
 {

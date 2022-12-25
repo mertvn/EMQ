@@ -107,55 +107,11 @@ public static class Api
         {
             page += 1;
 
-            // var jArray = JArray.FromObject(param.Filters);
-            // foreach (JObject jObject in jArray.Children<JObject>())
-            // {
-            //     foreach (KeyValuePair<string, JToken> kvp in jObject)
-            //     {
-            //         Console.WriteLine(JsonConvert.SerializeObject(kvp));
-            //     }
-            //
-            //     Console.WriteLine(jObject);
-            // }
-
-            // var valuesList = jArray.SelectMany(x => x.Values().ToList()).ToList();
-
-            var wrong = "";
-            var right = "";
-
-            if (param.Filters is { } c1)
-            {
-                if (c1.Query.Any(x => x is Combinator))
-                {
-                    // foreach (CombinatorOrPredicate q in c1.Query)
-                    // {
-                    //
-                    // }
-
-                    // wrong = JsonConvert.SerializeObject(c1.Query);
-                    // var jArray1 = JArray.FromObject(JArray.FromObject((c1.Query)));
-                    // right = JsonConvert.SerializeObject(jArray1.SelectMany(x => x.Values().ToList()).ToList());
-
-                    //  throw new Exception("Nested filters are not supported at the moment");
-                }
-            }
-
-            //string finalRes = JsonConvert.SerializeObject(valuesList);
-
-            string finalRes = "";
+            string filters = "";
             if (param.Filters != null)
             {
-                finalRes = param.Filters.ToJsonNormalized(param.Filters, ref finalRes, true);
+                filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
             }
-
-            // if (!string.IsNullOrWhiteSpace(wrong))
-            // {
-            //     finalRes = finalRes.Replace(wrong, right);
-            // }
-
-            // finalRes = finalRes.Remove(finalRes.Length - 1, 1).Remove(0, 1);
-
-            // return null;
 
             // TODO
             string json = JsonSerializer.Serialize(
@@ -167,7 +123,7 @@ public static class Api
                     { "compact_filters", param.CompactFilters },
                     { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
                     { "page", page },
-                    { "filters", finalRes }
+                    { "filters", filters }
                 }, new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             Console.WriteLine("json:" + json);
 
@@ -187,7 +143,6 @@ public static class Api
             if (res != null)
             {
                 Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters));
-                // break;
 
                 final.Add(res);
                 more = res.More;
