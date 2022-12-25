@@ -255,11 +255,6 @@ public class DbTests
             {
                 new()
                 {
-                    Id = 1, // Playing
-                    Kind = LabelKind.Include
-                },
-                new()
-                {
                     Id = 2, // Finished
                     Kind = LabelKind.Include
                 },
@@ -275,8 +270,11 @@ public class DbTests
                 },
             }
         };
+
         var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
         Console.WriteLine(JsonSerializer.Serialize(labels, Utils.Jso));
+        Assert.That(labels.Count > 1);
+        Assert.That(labels.First().VnUrls.Count > 1);
     }
 
     // todo pgrestore pgdump tests
