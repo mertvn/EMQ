@@ -43,22 +43,20 @@ public class AuthController : ControllerBase
                 labels.Add(Label.FromVndbLabel(vndbLabel));
             }
 
-            // we try including playing, finished, and voted labels by default
-            int found = 0;
+            // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
             foreach (Label label in labels)
             {
-                if (found >= 3) // minor optimization
+                switch (label.Name.ToLowerInvariant())
                 {
-                    break;
-                }
-
-                switch (label.Id)
-                {
-                    case 1:
-                    case 2:
-                    case 7:
+                    case "playing":
+                    case "finished":
+                    case "stalled":
+                    case "voted":
+                    case "emq-wl":
                         label.Kind = LabelKind.Include;
-                        found += 1;
+                        break;
+                    case "emq-bl":
+                        label.Kind = LabelKind.Exclude;
                         break;
                 }
             }
