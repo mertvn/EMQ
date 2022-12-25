@@ -34,7 +34,7 @@
                 <button class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">Fetch labels</button>
                 <br/>
 
-                <div class="labels d-flex flex-row">
+                <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
                     @foreach (var label in Labels)
                     {
                         <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">

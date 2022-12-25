@@ -21,7 +21,7 @@
 
 <button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
 
-<div class="rooms d-flex flex-row">
+<div class="rooms d-flex flex-row flex-wrap" style="max-width: 1600px">
     @foreach (var room in Rooms)
     {
         <div class="roomCard card" style="margin: 16px">

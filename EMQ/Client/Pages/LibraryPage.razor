@@ -54,7 +54,7 @@
     </ResultTemplate>
 </BlazoredTypeahead>
 
-<div class="songs d-flex flex-row">
+<div class="songs d-flex flex-row flex-wrap" style="max-width: 1600px">
     @foreach (var song in CurrentSongs)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
