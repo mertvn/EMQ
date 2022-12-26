@@ -56,7 +56,7 @@
         static controller = new AbortController();
 
         static async fetchObjectUrl(src) {
-            disableBackspaceNavigation() // todo move to init method
+            // disableBackspaceNavigation() // todo move to init method
 
             this.controller = new AbortController(); // not sure if we need this line
             const signal = this.controller.signal;

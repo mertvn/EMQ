@@ -27,7 +27,7 @@
             <button class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>
 
-            @if (ClientState.Session!.VndbInfo.Labels is not null)
+            @if (ClientState.Session.VndbInfo.Labels is not null)
             {
                 <br/>
                 <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>
