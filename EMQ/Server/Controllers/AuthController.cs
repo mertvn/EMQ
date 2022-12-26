@@ -112,6 +112,7 @@ public class AuthController : ControllerBase
             switch (req.Label.Kind)
             {
                 case LabelKind.Ignore:
+                    label.Kind = req.Label.Kind;
                     label.VnUrls = new List<string>();
                     break;
                 case LabelKind.Include:
@@ -125,7 +126,7 @@ public class AuthController : ControllerBase
                         VndbApiToken = session.VndbInfo.VndbApiToken,
                         Labels = new List<Label>() { label },
                     });
-                    label.VnUrls = grabbed.Single().VnUrls;
+                    label.VnUrls = grabbed.SingleOrDefault()?.VnUrls ?? new List<string>();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

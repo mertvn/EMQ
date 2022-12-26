@@ -32,7 +32,8 @@ public static class VndbMethods
                     {
                         if (label.Kind is LabelKind.Include or LabelKind.Exclude)
                         {
-                            if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken))
+                            // The ‘Voted’ label (id=7) is always included even when private.
+                            if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken) || label.Id == 7)
                             {
                                 var query = new List<Query>()
                                 {
