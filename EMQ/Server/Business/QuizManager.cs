@@ -141,7 +141,8 @@ public class QuizManager
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
             // Console.WriteLine("-------");
-            Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            Console.WriteLine($"{Quiz.Id}-{Quiz.QuizState.sp} cA: " +
+                              JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
         bool correct = correctAnswers.Any(correctAnswer =>
@@ -179,7 +180,7 @@ public class QuizManager
                 continue;
             }
 
-            Console.WriteLine("pG: " + player.Guess);
+            Console.WriteLine($"{Quiz.Id}-{Quiz.QuizState.sp} pG: " + player.Guess);
 
             bool correct = IsGuessCorrect(player.Guess);
             if (correct)
