@@ -140,7 +140,7 @@ public class QuizManager
 
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
-            Console.WriteLine("-------");
+            // Console.WriteLine("-------");
             Console.WriteLine("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
@@ -246,10 +246,17 @@ public class QuizManager
                     Console.WriteLine($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
                     Console.WriteLine($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
 
-                    foreach (Label excludedLabel in exclude)
+                    if (exclude.Any())
                     {
-                        var final = include.SelectMany(x => x.VnUrls.Except(excludedLabel.VnUrls));
-                        validSources.AddRange(final);
+                        foreach (Label excludedLabel in exclude)
+                        {
+                            var final = include.SelectMany(x => x.VnUrls.Except(excludedLabel.VnUrls));
+                            validSources.AddRange(final);
+                        }
+                    }
+                    else
+                    {
+                        validSources.AddRange(include.SelectMany(x => x.VnUrls));
                     }
                 }
             }
