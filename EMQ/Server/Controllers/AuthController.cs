@@ -109,29 +109,29 @@ public class AuthController : ControllerBase
                 session.VndbInfo.Labels.Add(label);
             }
 
+            Console.WriteLine($"{session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " + req.Label.Kind);
+            label.Kind = req.Label.Kind;
+
+            var newVnUrls = new List<string>();
             switch (req.Label.Kind)
             {
                 case LabelKind.Ignore:
-                    label.Kind = req.Label.Kind;
-                    label.VnUrls = new List<string>();
                     break;
                 case LabelKind.Include:
                 case LabelKind.Exclude:
-                    Console.WriteLine($"{session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " +
-                                      req.Label.Kind);
-                    label.Kind = req.Label.Kind;
                     var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
                     {
                         VndbId = session.VndbInfo.VndbId,
                         VndbApiToken = session.VndbInfo.VndbApiToken,
                         Labels = new List<Label>() { label },
                     });
-                    label.VnUrls = grabbed.SingleOrDefault()?.VnUrls ?? new List<string>();
+                    newVnUrls = grabbed.SingleOrDefault()?.VnUrls ?? new List<string>();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
+            label.VnUrls = newVnUrls;
             return label;
         }
         else

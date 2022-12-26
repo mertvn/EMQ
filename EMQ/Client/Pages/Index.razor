@@ -29,7 +29,7 @@
             @if (ClientState.Session!.VndbInfo.Labels is not null)
             {
                 <br/>
-                <p> You can include or exclude VNDB labels here. Exclude takes priority over Include currently.</p>
+                <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>
 
                 <button class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">Fetch labels</button>
                 <br/>
@@ -51,15 +51,15 @@
 
                                 <br/>
                                 <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px">
-                                    <label class="btn btn-outline-primary">
+                                    <label class="btn btn-outline-primary" style="background-color: green; color: white;">
                                         <input type="radio" name="@("options" + label.Id)" id="option1" autocomplete="off" checked="@(label.Kind == LabelKind.Include)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
                                     </label>
-                                    <label class="btn btn-outline-primary">
+                                    <label class="btn btn-outline-primary" style="background-color: white; color: black;">
                                         <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Ignore)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Ignore))"> Ignore
                                     </label>
-                                    <label class="btn btn-outline-primary">
+                                    <label class="btn btn-outline-primary" style="background-color: red; color: white;">
                                         <input type="radio" name="@("options" + label.Id)" id="option3" autocomplete="off" checked="@(label.Kind == LabelKind.Exclude)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
                                     </label>

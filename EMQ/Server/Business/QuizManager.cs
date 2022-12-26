@@ -9,9 +9,6 @@ using EMQ.Server.Db;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
-using EMQ.Shared.VNDB.Business;
-using Juliet.Model.Param;
-using Juliet.Model.VNDBObject;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Business;
@@ -246,8 +243,8 @@ public class QuizManager
                     var include = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Include).ToList();
                     var exclude = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
 
-                    Console.WriteLine($"includeCount: {include.Count}");
-                    Console.WriteLine($"excludeCount: {exclude.Count}");
+                    Console.WriteLine($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
+                    Console.WriteLine($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
 
                     foreach (Label excludedLabel in exclude)
                     {
