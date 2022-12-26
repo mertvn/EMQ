@@ -1,14 +1,17 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager _navigation
 
 <PageTitle>EMQ</PageTitle>
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    @if (!_navigation.Uri.EndsWith("QuizPage"))
+    {
+        <div class="sidebar">
+            <NavMenu/>
+        </div>
+    }
 
     <main>
-
         <article class="content px-4">
             @Body
         </article>
