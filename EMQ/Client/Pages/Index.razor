@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Logging
 @using System.ComponentModel.DataAnnotations
+@using EMQ.Shared.Core.UI
 @using EMQ.Shared.VNDB.Business
 @using Juliet.Model.Param
 @using Juliet.Model.VNDBObject
@@ -51,15 +52,21 @@
 
                                 <br/>
                                 <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px">
-                                    <label class="btn btn-outline-primary" style="background-color: green; color: white;">
+                                    <label class="btn btn-outline-primary"
+                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
+                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");">
                                         <input type="radio" name="@("options" + label.Id)" id="option1" autocomplete="off" checked="@(label.Kind == LabelKind.Include)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
                                     </label>
-                                    <label class="btn btn-outline-primary" style="background-color: white; color: black;">
+                                    <label class="btn btn-outline-primary"
+                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Ignore, "gray", "transparent");
+                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Ignore, "white", "black");">
                                         <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Ignore)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Ignore))"> Ignore
                                     </label>
-                                    <label class="btn btn-outline-primary" style="background-color: red; color: white;">
+                                    <label class="btn btn-outline-primary"
+                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
+                                           color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");">
                                         <input type="radio" name="@("options" + label.Id)" id="option3" autocomplete="off" checked="@(label.Kind == LabelKind.Exclude)"
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
                                     </label>
