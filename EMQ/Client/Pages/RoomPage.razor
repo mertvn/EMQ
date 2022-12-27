@@ -185,7 +185,7 @@
         Room = await _clientUtils.SyncRoom();
         if (Room?.QuizSettings != null)
         {
-            ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!;
+            ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
         }
 
         ShowQuizSettings = !ShowQuizSettings;
