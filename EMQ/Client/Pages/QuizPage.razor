@@ -34,7 +34,7 @@
         </button>
     }
 
-    <button class="btn btn-warning" @onclick="Onclick_Leave"
+    <button class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
         Leave
     </button>
@@ -319,12 +319,17 @@
     private async Task Onclick_Leave()
     {
         await SyncWithServer();
-        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
-        await SyncWithServer();
+
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", "Really leave? If you return your score will not be restored.");
+        if (confirmed)
+        {
+            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
+            await SyncWithServer();
 
     // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
-        _navigation.NavigateTo("/RoomPage");
-        _navigation.NavigateTo("/HotelPage");
+            _navigation.NavigateTo("/RoomPage");
+            _navigation.NavigateTo("/HotelPage");
+        }
     }
 
     public async Task OnReceivePhaseChanged(int phase)

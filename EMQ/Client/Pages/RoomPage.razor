@@ -28,7 +28,7 @@
 
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
-    <button class="btn btn-primary" @onclick="StartQuiz">Start Quiz</button>
+    <button class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)">Start Quiz</button>
 
     <button class="btn btn-secondary" type="button" @onclick="OnclickShowQuizSettings" style="margin: 5px;">
         @UiHelpers.Bool2Text(ShowQuizSettings, "Hide quiz settings", "Show quiz settings")
@@ -115,11 +115,11 @@
         ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
         StateHasChanged();
 
-        // breaks the leave button on QuizPage
-        // if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
-        // {
-        //     Hotjoin();
-        // }
+    // breaks the leave button on QuizPage
+    // if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
+    // {
+    //     Hotjoin();
+    // }
     }
 
     private async Task StartQuiz()
