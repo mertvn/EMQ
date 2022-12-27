@@ -29,7 +29,7 @@ w
 * player -> (site)user + (quiz)player
 * Japanese song titles (VGMdb, EGS)
 * song lengths (EGS, maybe link scanning?)
-* leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick etc.
+* ~~leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick etc.~~ applied bandaid
 
 ## Steps to import data
 

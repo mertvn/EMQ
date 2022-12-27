@@ -34,6 +34,11 @@
         </button>
     }
 
+    <button class="btn btn-warning" @onclick="Onclick_Leave"
+            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
+        Leave
+    </button>
+
     <div style="display:flex; justify-content:center; align-items:center;">
         <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
     </div>
@@ -309,6 +314,17 @@
     // TODO: do endgame stuff
         await Task.Delay(TimeSpan.FromSeconds(20));
         _navigation.NavigateTo("/RoomPage");
+    }
+
+    private async Task Onclick_Leave()
+    {
+        await SyncWithServer();
+        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
+        await SyncWithServer();
+
+    // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
+        _navigation.NavigateTo("/RoomPage");
+        _navigation.NavigateTo("/HotelPage");
     }
 
     public async Task OnReceivePhaseChanged(int phase)

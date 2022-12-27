@@ -115,10 +115,11 @@
         ClientQuizSettings = JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
         StateHasChanged();
 
-        if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
-        {
-            Hotjoin();
-        }
+        // breaks the leave button on QuizPage
+        // if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
+        // {
+        //     Hotjoin();
+        // }
     }
 
     private async Task StartQuiz()

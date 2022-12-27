@@ -381,4 +381,9 @@ public class QuizManager
             Console.WriteLine($"Paused Quiz {Quiz.Id}");
         }
     }
+
+    // public async Task OnSendPlayerLeaving(int playerId)
+    // {
+    //
+    // }
 }
