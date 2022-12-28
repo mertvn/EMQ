@@ -29,6 +29,7 @@ w
 * Japanese song titles (VGMdb, EGS)
 * song lengths (~~EGS~~ usually has the full-size lengths, maybe link scanning?)
 * ~~leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick etc.~~ applied band-aid
+* song link selection
 
 ## Steps to import data
 

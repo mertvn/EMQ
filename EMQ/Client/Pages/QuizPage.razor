@@ -363,6 +363,7 @@
 
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
+
                 _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
@@ -371,6 +372,8 @@
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
                 StateHasChanged();
+
+                _guessInputComponent.CallClose();
                 _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Results:
@@ -379,11 +382,13 @@
                 PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
+
+                _guessInputComponent.CallClose();
                 _guessInputComponent.CallStateHasChanged();
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds(Room.QuizSettings.ResultsMs));
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds(Room.QuizSettings.ResultsMs * 3));
                     await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
                 }
                 break;
@@ -504,7 +509,15 @@
             PageState.DebugOut.Add($"downloading {song.Links.First().Url}");
             _logger.LogInformation("Startjs");
     // TODO: How to select The One Link?
-            string data = await _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First().Url);
+
+            var task = _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token, song.Links.First().Url);
+            while (!task.IsCompleted && !task.IsCanceled)
+            {
+                await Task.Delay(1000);
+                await SyncWithServer();
+            }
+            var data = task.Result;
+
             _logger.LogInformation("Endjs");
             PreloadCancellationRegistration.Unregister();
 

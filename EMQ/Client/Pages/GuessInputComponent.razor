@@ -13,7 +13,7 @@
               ReadData="@OnHandleReadData"
               TextField="@((item) => item)"
               ValueField="@((item) => item)"
-              Placeholder="Enter your answer here"
+              Placeholder="Enter your guess here"
               FreeTyping="true"
               MinLength="1"
               Debounce="true"
@@ -87,6 +87,11 @@
     private async Task SelectedValueChanged(string arg)
     {
         currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
+    }
+
+    public void CallClose()
+    {
+        AutocompleteComponent.Close();
     }
 
 }

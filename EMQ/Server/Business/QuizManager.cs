@@ -78,6 +78,20 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
+        int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+        int waitingForMs = 0;
+        // Console.WriteLine("ibc " + isBufferedCount);
+        while (isBufferedCount < (float)Quiz.Room.Players.Count / 2 &&
+               waitingForMs < Quiz.Room.QuizSettings.ResultsMs * 3)
+        {
+            // Console.WriteLine("in while " + isBufferedCount);
+            await Task.Delay(500);
+            waitingForMs += 500;
+
+            isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+            Quiz.QuizState.ExtraInfo = $"Waiting buffering... {isBufferedCount}/{Quiz.Room.Players.Count}";
+        }
+
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
@@ -370,17 +384,20 @@ public class QuizManager
 
     public async Task OnSendPauseQuiz()
     {
-        if (Quiz.QuizState.IsPaused)
+        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering"))
         {
-            Quiz.QuizState.IsPaused = false;
-            Quiz.QuizState.ExtraInfo = "";
-            Console.WriteLine($"Unpaused Quiz {Quiz.Id}");
-        }
-        else
-        {
-            Quiz.QuizState.IsPaused = true;
-            Quiz.QuizState.ExtraInfo = "Paused";
-            Console.WriteLine($"Paused Quiz {Quiz.Id}");
+            if (Quiz.QuizState.IsPaused)
+            {
+                Quiz.QuizState.IsPaused = false;
+                Quiz.QuizState.ExtraInfo = "";
+                Console.WriteLine($"Unpaused Quiz {Quiz.Id}");
+            }
+            else
+            {
+                Quiz.QuizState.IsPaused = true;
+                Quiz.QuizState.ExtraInfo = "Paused";
+                Console.WriteLine($"Paused Quiz {Quiz.Id}");
+            }
         }
     }
 
