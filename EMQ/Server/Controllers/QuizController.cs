@@ -164,11 +164,13 @@ public class QuizController : ControllerBase
             else
             {
                 // todo warn error
+                throw new Exception();
             }
         }
         else
         {
             // todo warn wrong password
+            throw new Exception();
         }
     }
 
