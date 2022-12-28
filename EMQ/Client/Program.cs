@@ -1,5 +1,7 @@
 using System;
 using System.Net.Http;
+using Blazorise;
+using Blazorise.Bootstrap5;
 using EMQ.Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -12,5 +14,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddSingleton(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddSingleton<ClientUtils>();
 builder.Services.AddSingleton<ClientConnectionManager>();
+
+builder.Services.AddBlazorise(options => { options.Immediate = true; }).AddBootstrap5Providers();
 
 await builder.Build().RunAsync();

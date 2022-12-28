@@ -108,12 +108,10 @@
             <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
         </div>
 
-        @* we have to use pointer-events css property instead of
-         the Disabled property of BlazoredTypeahead because we're setting ShouldRender to false for GuessInputComponent *@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
              pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
             @* todo should be false on judgement phase as well *@
-            <GuessInputComponent></GuessInputComponent>
+            <GuessInputComponent @ref="_guessInputComponent"></GuessInputComponent>
         </div>
 
         <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
@@ -203,6 +201,8 @@
     private CancellationTokenSource PreloadCancellationSource { get; set; }
 
     private CancellationTokenRegistration PreloadCancellationRegistration { get; set; }
+
+    private GuessInputComponent _guessInputComponent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -345,7 +345,9 @@
                 PreloadCancellationSource = new CancellationTokenSource();
                 PreloadCancellationRegistration = PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
 
-    // PageState.Guess = null; // todo does not currently update what's displayed in the input box, so it's better if we don't do this
+                PageState.Guess = "";
+                await _guessInputComponent.ClearInputField();
+
                 PageState.ProgressValue = 0;
                 PageState.ProgressDivisor = Room!.QuizSettings.GuessMs;
                 PageState.VideoPlayerVisibility = false;
@@ -361,6 +363,7 @@
 
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
+                _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
                 await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
@@ -368,6 +371,7 @@
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
                 StateHasChanged();
+                _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Results:
     // TODO: restart song (option?)
@@ -375,6 +379,7 @@
                 PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
+                _guessInputComponent.CallStateHasChanged();
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {

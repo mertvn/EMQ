@@ -1,32 +1,32 @@
-﻿@using EMQ.Shared.Core.UI
-@using System.IO
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
-@* todo don't override guess on change if there is already a guess set, unless enter is pressed *@
-@* todo oninput event *@
-@* todo clear guess on click? *@
-<BlazoredTypeahead
-    SearchMethod="SearchAutocomplete"
-    TValue="string"
-    TItem="string"
-    Value="QuizPage.PageState.Guess"
-    ValueChanged="SelectedResultChanged"
-    ValueExpression="@(() => QuizPage.PageState.Guess)"
-    AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
-    MinimumLength="1"
-    MaximumSuggestions="8"
-    Debounce="1"
-    placeholder="Enter your answer here">
-    <SelectedTemplate>
-        @context
-    </SelectedTemplate>
-    <ResultTemplate >
-        @context
-    </ResultTemplate>
-</BlazoredTypeahead>
+@* todo send guess on guess phase end even if enter is not pressed *@
+
+<Autocomplete @ref="AutocompleteComponent"
+              @onkeypress="Onkeypress"
+              TItem="string"
+              TValue="string"
+              Data="@currentDataSource"
+              ReadData="@OnHandleReadData"
+              TextField="@((item) => item)"
+              ValueField="@((item) => item)"
+              Placeholder="Enter your answer here"
+              FreeTyping="true"
+              MinLength="1"
+              Debounce="true"
+              DebounceInterval="50"
+              MaxMenuHeight="340px"
+              AutoPreSelect="false"
+              AutoSelectFirstItem="false"
+              CustomFilter="CustomFilter"
+              SelectedValueChanged="SelectedValueChanged"
+              Disabled="QuizPage.PageState.VideoPlayerVisibility">
+</Autocomplete>
+
+<span>Guess: @QuizPage.PageState.Guess</span>
 
 @code {
 
@@ -35,11 +35,9 @@
 
     private string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
-    // if we don't do this, the autocomplete dropdown closes after every timer tick
-    protected override bool ShouldRender()
-    {
-        return false;
-    }
+    public IEnumerable<string> currentDataSource = Array.Empty<string>();
+
+    public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,25 +49,51 @@
         return Autocomplete.SearchAutocomplete(arg, AutocompleteData);
     }
 
-    private Task<string> AddItemOnEmptyResultMethod(string arg)
+    private async Task OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
     {
-        return Task.FromResult(arg);
-    }
-
-    private async Task SelectedResultChanged(string arg)
-    {
-        QuizPage.PageState.Guess = arg;
-        if (!string.IsNullOrWhiteSpace(arg))
+        if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", arg);
+            currentDataSource = Autocomplete.SearchAutocomplete(autocompleteReadDataEventArgs.SearchValue, AutocompleteData);
         }
     }
 
-    // private async Task GuessInput_OnKeyDown(KeyboardEventArgs e)
-    // {
-    //     if (e.Code is "Enter" or "NumpadEnter")
-    //     {
-    //         await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
-    //     }
-    // }
+    private bool CustomFilter(string item, string searchValue)
+    {
+        return true;
+    }
+
+    public void CallStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+    public async Task ClearInputField()
+    {
+        AutocompleteComponent.Clear(); // awaiting this causes signalr messages not to be processed in time (???)
+        await Task.Delay(100);
+        StateHasChanged();
+    }
+
+    private async Task Onkeypress(KeyboardEventArgs obj)
+    {
+        if (obj.Key is "Enter" or "NumpadEnter")
+        {
+            QuizPage.PageState.Guess = AutocompleteComponent.SelectedText;
+            await AutocompleteComponent.Close();
+            StateHasChanged();
+
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
+        }
+    }
+
+    private async Task SelectedValueChanged(string arg)
+    {
+        currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
+        if (string.IsNullOrWhiteSpace(QuizPage.PageState.Guess))
+        {
+            QuizPage.PageState.Guess = arg;
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
+        }
+    }
+
 }

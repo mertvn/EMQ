@@ -84,6 +84,7 @@ public class QuizManager
         Quiz.QuizState.ExtraInfo = "";
         foreach (var player in Quiz.Room.Players)
         {
+            player.Guess = "";
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
         }

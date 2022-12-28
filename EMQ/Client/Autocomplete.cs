@@ -15,7 +15,8 @@ public static class Autocomplete
         var startsWith = data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
         var contains = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
 
-        // _logger.LogInformation(JsonSerializer.Serialize(result));
-        return exactMatch.Concat(startsWith.Concat(contains)).Distinct();
+        string[] final = exactMatch.Concat(startsWith.Concat(contains)).Distinct().ToArray();
+        // _logger.LogInformation(JsonSerializer.Serialize(final));
+        return final.Any() ? final.Take(25) : Array.Empty<string>();
     }
 }
