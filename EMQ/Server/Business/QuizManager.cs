@@ -187,7 +187,6 @@ public class QuizManager
     {
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense...
 
-        // todo make sure players leaving in the middle of judgement does not cause issues
         foreach (var player in Quiz.Room.Players)
         {
             if (player.PlayerStatus == PlayerStatus.Dead)
