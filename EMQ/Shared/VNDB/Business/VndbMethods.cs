@@ -21,49 +21,46 @@ public static class VndbMethods
 
         if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
-            if (vndbInfo.Labels != null)
+            if (vndbInfo.Labels != null && vndbInfo.Labels.Any())
             {
-                if (vndbInfo.Labels.Any())
+                // Console.WriteLine("GrabPlayerVNsFromVndb labels: " +
+                //                   JsonSerializer.Serialize(vndbInfo.Labels, Utils.JsoIndented));
+
+                foreach (var label in vndbInfo.Labels)
                 {
-                    // Console.WriteLine("GrabPlayerVNsFromVndb labels: " +
-                    //                   JsonSerializer.Serialize(vndbInfo.Labels, Utils.JsoIndented));
-
-                    foreach (var label in vndbInfo.Labels)
+                    if (label.Kind is LabelKind.Include or LabelKind.Exclude)
                     {
-                        if (label.Kind is LabelKind.Include or LabelKind.Exclude)
+                        // The ‘Voted’ label (id=7) is always included even when private.
+                        if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken) || label.Id == 7)
                         {
-                            // The ‘Voted’ label (id=7) is always included even when private.
-                            if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken) || label.Id == 7)
+                            var query = new List<Query>()
                             {
-                                var query = new List<Query>()
-                                {
-                                    new Predicate(FilterField.Label, FilterOperator.Equal, label.Id)
-                                };
+                                new Predicate(FilterField.Label, FilterOperator.Equal, label.Id)
+                            };
 
-                                var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
-                                {
-                                    User = vndbInfo.VndbId,
-                                    APIToken = vndbInfo.VndbApiToken,
-                                    Exhaust = true,
-                                    Filters = new Combinator(CombinatorKind.Or, query),
-                                });
-                                if (playerVns != null)
-                                {
-                                    label.VnUrls = playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl()))
-                                        .ToList();
-                                    ret.Add(label);
-                                    Console.WriteLine(
-                                        $"Grabbed {label.VnUrls.Count} vns for label {label.Id} ({label.Name})");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Error grabbing {vndbInfo.VndbId}'s VNs");
-                                }
+                            var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
+                            {
+                                User = vndbInfo.VndbId,
+                                APIToken = vndbInfo.VndbApiToken,
+                                Exhaust = true,
+                                Filters = new Combinator(CombinatorKind.Or, query),
+                            });
+                            if (playerVns != null)
+                            {
+                                label.VnUrls = playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl()))
+                                    .ToList();
+                                ret.Add(label);
+                                Console.WriteLine(
+                                    $"Grabbed {label.VnUrls.Count} vns for label {label.Id} ({label.Name})");
                             }
                             else
                             {
-                                Console.WriteLine($"Skipping private label {label.Id} ({label.Name})");
+                                Console.WriteLine($"Error grabbing {vndbInfo.VndbId}'s VNs");
                             }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Skipping private label {label.Id} ({label.Name})");
                         }
                     }
                 }

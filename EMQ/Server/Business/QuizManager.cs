@@ -264,6 +264,7 @@ public class QuizManager
             }
         }
 
+        validSources = validSources.Distinct().ToList();
         Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
         Console.WriteLine($"validSourcesCount: {validSources.Count}");
 
