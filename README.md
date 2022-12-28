@@ -12,7 +12,6 @@ w
 * Restart songs on results phase option
 * Proper authentication/authorization
 * CSS... (help!)
-* less clunkier Auto-complete (might need to use JS libraries or write something custom)
 * player left room event
 * restore state on page refresh
 * auto-generate autocomplete list
@@ -52,6 +51,8 @@ w
 Bootstrap: MIT License.
 
 Open-iconic: MIT License and SIL OPEN FONT LICENSE Version 1.1.
+
+Blazorise: Apache License 2.0.
 
 VNDB: Data obtained under Open Data Commons Open Database License (ODbL) v1.0.
 

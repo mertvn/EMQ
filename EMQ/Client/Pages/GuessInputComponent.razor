@@ -44,11 +44,6 @@
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
     }
 
-    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
-    {
-        return Autocomplete.SearchAutocomplete(arg, AutocompleteData);
-    }
-
     private async Task OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
     {
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
@@ -78,22 +73,20 @@
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            QuizPage.PageState.Guess = AutocompleteComponent.SelectedText;
-            await AutocompleteComponent.Close();
-            StateHasChanged();
+            if (QuizPage.PageState.Guess != AutocompleteComponent.SelectedText)
+            {
+                QuizPage.PageState.Guess = AutocompleteComponent.SelectedText;
+                await AutocompleteComponent.Close();
+                StateHasChanged();
 
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
+            }
         }
     }
 
     private async Task SelectedValueChanged(string arg)
     {
         currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
-        if (string.IsNullOrWhiteSpace(QuizPage.PageState.Guess))
-        {
-            QuizPage.PageState.Guess = arg;
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
-        }
     }
 
 }

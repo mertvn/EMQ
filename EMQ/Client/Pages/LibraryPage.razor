@@ -34,25 +34,25 @@
     </ul>
 </div>
 
-<BlazoredTypeahead
-    SearchMethod="SearchAutocomplete"
-    TValue="string"
-    TItem="string"
-    Value="selectedMusicSourceTitle"
-    ValueChanged="SelectedResultChanged"
-    ValueExpression="@(() => selectedMusicSourceTitle)"
-    AddItemOnEmptyResultMethod="AddItemOnEmptyResultMethod"
-    MinimumLength="1"
-    MaximumSuggestions="10"
-    Debounce="1"
-    placeholder="Enter VN title here">
-    <SelectedTemplate>
-        @context
-    </SelectedTemplate>
-    <ResultTemplate >
-        @context
-    </ResultTemplate>
-</BlazoredTypeahead>
+<Autocomplete @ref="AutocompleteComponent"
+              @onkeypress="Onkeypress"
+              TItem="string"
+              TValue="string"
+              Data="@currentDataSource"
+              ReadData="@OnHandleReadData"
+              TextField="@((item) => item)"
+              ValueField="@((item) => item)"
+              Placeholder="Enter VN title here"
+              FreeTyping="true"
+              MinLength="1"
+              Debounce="true"
+              DebounceInterval="50"
+              MaxMenuHeight="340px"
+              AutoPreSelect="false"
+              AutoSelectFirstItem="false"
+              CustomFilter="CustomFilter"
+              SelectedValueChanged="SelectedValueChanged">
+</Autocomplete>
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1600px">
     @foreach (var song in CurrentSongs)
@@ -137,20 +137,17 @@
 
     public bool ShowUploadCriteria { get; set; }
 
+    public IEnumerable<string> currentDataSource = Array.Empty<string>();
+
+    public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
     }
 
-    private async Task<IEnumerable<string>> SearchAutocomplete(string arg)
+    private async Task SelectedResultChanged()
     {
-        return Autocomplete.SearchAutocomplete(arg, AutocompleteData);
-    }
-
-    private async Task SelectedResultChanged(string arg)
-    {
-        selectedMusicSourceTitle = arg;
-
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
             CurrentSongs = new List<Song>();
@@ -224,9 +221,36 @@
         }
     }
 
-    private Task<string> AddItemOnEmptyResultMethod(string arg)
+    private async Task OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
     {
-        return Task.FromResult(arg);
+        if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
+        {
+            currentDataSource = Autocomplete.SearchAutocomplete(autocompleteReadDataEventArgs.SearchValue, AutocompleteData);
+        }
+    }
+
+    private bool CustomFilter(string item, string searchValue)
+    {
+        return true;
+    }
+
+    private async Task Onkeypress(KeyboardEventArgs obj)
+    {
+        if (obj.Key is "Enter" or "NumpadEnter")
+        {
+            if (selectedMusicSourceTitle != AutocompleteComponent.SelectedText)
+            {
+                selectedMusicSourceTitle = AutocompleteComponent.SelectedText;
+                await AutocompleteComponent.Close();
+                StateHasChanged();
+                await SelectedResultChanged();
+            }
+        }
+    }
+
+    private async Task SelectedValueChanged(string arg)
+    {
+        currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
     }
 
 }
