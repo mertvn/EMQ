@@ -8,6 +8,7 @@ using System.Timers;
 using EMQ.Server.Db;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using Microsoft.AspNetCore.SignalR;
 
@@ -180,6 +181,13 @@ public class QuizManager
             Quiz.Room.Players.All(player => player.PlayerStatus == PlayerStatus.Dead))
         {
             await EndQuiz();
+        }
+
+        while (Quiz.JoinQueue.Any())
+        {
+            var session = Quiz.JoinQueue.Dequeue();
+            Quiz.Room.Players.Add(session.Player);
+            Quiz.Room.AllPlayerConnectionIds.Add(session.ConnectionId!);
         }
     }
 

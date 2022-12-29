@@ -168,7 +168,7 @@
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            // todo room password
+    // todo room password
             HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/ChangeRoomSettings", new ReqChangeRoomSettings(
                 ClientState.Session.Token, Room.Id, "", clientQuizSettings));
 

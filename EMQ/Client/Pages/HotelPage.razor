@@ -4,6 +4,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
@@ -20,6 +21,11 @@
 </div>
 
 <button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
+
+@if (IsJoiningRoom)
+{
+    <p>Joining room...</p>
+}
 
 <div class="rooms d-flex flex-row flex-wrap" style="max-width: 1600px">
     @foreach (var room in Rooms)
@@ -60,6 +66,8 @@
 
     private List<Room> Rooms { get; set; } = new();
 
+    public bool IsJoiningRoom = false;
+
     protected override async Task OnInitializedAsync()
     {
         IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
@@ -96,12 +104,25 @@
             return;
         }
 
+        IsJoiningRoom = true;
+        StateHasChanged();
+
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom", new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
+            int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;
+            if (waitTime > 0)
+            {
+                Console.WriteLine($"waiting for {waitTime} ms to join room");
+                await Task.Delay(waitTime);
+            }
+
             ClientState.Session.RoomId = roomId;
             Navigation.NavigateTo("/RoomPage");
         }
+
+        IsJoiningRoom = false;
+        StateHasChanged();
     }
 
 }

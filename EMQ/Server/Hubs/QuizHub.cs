@@ -29,6 +29,7 @@ namespace EMQ.Server.Hubs
 
                     foreach (Room playerRoom in playerRooms)
                     {
+                        // todo notify joinqueue?
                         playerRoom.AllPlayerConnectionIds.Remove(session.ConnectionId);
                         playerRoom.AllPlayerConnectionIds.Add(Context.ConnectionId);
                         Console.WriteLine(
