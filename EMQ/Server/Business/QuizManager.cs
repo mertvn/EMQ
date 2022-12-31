@@ -93,6 +93,11 @@ public class QuizManager
             Quiz.QuizState.ExtraInfo = $"Waiting buffering... {isBufferedCount}/{Quiz.Room.Players.Count}";
         }
 
+        if (waitingForMs > 0)
+        {
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+        }
+
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
