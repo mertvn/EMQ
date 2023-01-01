@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -153,10 +153,18 @@ public class QuizController : ControllerBase
                 // hotjoins have to be handled differently
                 if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
                 {
-                    _logger.LogInformation($"Added player {req.PlayerId} to JoinQueue in room " + room.Id);
-                    room.Quiz.JoinQueue.Enqueue(session);
+                    if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
+                    {
+                        _logger.LogInformation($"Added player {req.PlayerId} to JoinQueue in room " + room.Id);
+                        room.Quiz.JoinQueue.Enqueue(session);
 
-                    return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
+                        return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
+                    }
+                    else
+                    {
+                        // todo
+                        throw new Exception();
+                    }
                 }
                 else if (room.Quiz is null || room.Quiz.QuizState.Phase.Kind == QuizPhaseKind.Results)
                 {

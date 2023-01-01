@@ -21,7 +21,6 @@ w
 * trim before autocomplete
 * 6+ players everything stretching
 * rejoining player double losing lives?
-* quiz continuing after lives = 0 rarely (ghost player with >0 lives?)
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 * previous song playing instead of the new song when the phase change message to the results phase is not received due
   to a disconnect
