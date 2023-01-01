@@ -277,5 +277,44 @@ public class DbTests
         Assert.That(labels.First().VnUrls.Count > 1);
     }
 
+    [Test, Explicit]
+    public async Task BackupSongFilesUsingSongLite()
+    {
+        string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
+        var songLites =
+            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath), Utils.JsoIndented)!;
+
+        var client = new HttpClient();
+
+        int dlCount = 0;
+        const int waitMs = 5000;
+
+        foreach (var songLite in songLites)
+        {
+            foreach (var link in songLite.Links)
+            {
+                var directory = "C:\\emq\\emqsongsbackup";
+                var filePath = $"{directory}\\{new Uri(link.Url).Segments.Last()}";
+
+                if (!File.Exists(filePath))
+                {
+                    var stream = await client.GetStreamAsync(link.Url);
+
+                    await using (MemoryStream ms = new())
+                    {
+                        await stream.CopyToAsync(ms);
+                        Directory.CreateDirectory(directory);
+                        await File.WriteAllBytesAsync(filePath, ms.ToArray());
+                    }
+
+                    dlCount += 1;
+                    await Task.Delay(waitMs);
+                }
+            }
+        }
+
+        Console.WriteLine($"Downloaded {dlCount} files.");
+    }
+
     // todo pgrestore pgdump tests
 }
