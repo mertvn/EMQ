@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -214,10 +214,10 @@ public class QuizManager
             {
                 player.PlayerStatus = PlayerStatus.Wrong;
 
-                if (player.Lives > 0)
+                if (player.Lives >= 0)
                 {
                     player.Lives -= 1;
-                    if (player.Lives == 0)
+                    if (player.Lives <= 0)
                     {
                         player.PlayerStatus = PlayerStatus.Dead;
                     }
