@@ -2,7 +2,8 @@
 
 public enum QuizPhaseKind
 {
-    Guess,
-    Judgement,
-    Results
+    Guess = 0,
+    Judgement = 1,
+    Results = 2,
+    Looting = -1,
 }

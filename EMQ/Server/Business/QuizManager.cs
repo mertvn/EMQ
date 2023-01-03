@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -257,6 +258,7 @@ public class QuizManager
             player.Guess = "";
             player.IsBuffered = false;
             player.PlayerStatus = PlayerStatus.Default;
+            player.LootingStuff.TreasureRoomId = 0; // TODO
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
@@ -295,13 +297,63 @@ public class QuizManager
             return false;
         }
 
-        Quiz.Songs = dbSongs;
-        // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
-        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
-        Quiz.QuizState.ExtraInfo = "Waiting buffering...";
+        switch (Quiz.Room.QuizSettings.SongSelectionKind)
+        {
+            case SongSelectionKind.Random:
+                Quiz.Songs = dbSongs;
+                break;
+            case SongSelectionKind.Looting:
+                await DoLootingStuffKakkoKari(dbSongs);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
 
-        await EnterQuiz();
+        // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
+
+        // todo
+        // Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+        // Quiz.QuizState.ExtraInfo = "Waiting buffering...";
+        //
+        // await EnterQuiz();
         return true;
+    }
+
+    private async Task DoLootingStuffKakkoKari(List<Song> dbSongs)
+    {
+        int maxRooms = 9;
+        int maxX = 650;
+        int maxY = 650;
+        var rng = Random.Shared;
+
+        var treasureRooms = new List<TreasureRoom>();
+        for (int i = 0; i < maxRooms; i++)
+        {
+            var treasureRoom = new TreasureRoom() { Id = i, Treasures = new List<Treasure>() };
+            treasureRooms.Add(treasureRoom);
+        }
+
+        foreach (Song dbSong in dbSongs)
+        {
+            // todo max treasures in one room?
+            // todo better position randomization?
+            int treasureRoomId = rng.Next(0, maxRooms - 1);
+            var treasure = new Treasure()
+            {
+                Guid = Guid.NewGuid(),
+                TreasureRoomId = treasureRoomId,
+                Position = new Point(rng.Next(maxX), rng.Next(maxY)),
+                Song = dbSong,
+            };
+
+            treasureRooms[treasureRoomId].Treasures.Add(treasure);
+        }
+
+        // Console.WriteLine("treasureRooms: " + JsonSerializer.Serialize(treasureRooms), Utils.Jso);
+        Quiz.Room.TreasureRooms = treasureRooms;
+
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
+        // await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
     private async Task StartQuiz()
@@ -412,4 +464,11 @@ public class QuizManager
     // {
     //
     // }
+
+    public async Task OnSendPlayerMoved(int playerId, float newX, float newY, DateTime dateTime, string connectionId)
+    {
+        // todo anti-cheat
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Where(x => x != connectionId))
+            .SendAsync("ReceiveUpdatePlayerPosition", playerId, newX, newY, dateTime);
+    }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -288,6 +288,46 @@ public class QuizController : ControllerBase
         {
             _logger.LogWarning("Attempt to change room settings in room {req.RoomId} that is null", req.RoomId);
             // todo
+        }
+    }
+
+    [HttpGet]
+    [Route("GetTreasureRoom")]
+    public TreasureRoom? GetTreasureRoom([FromQuery] int treasureRoomId, [FromQuery] string playerToken)
+    {
+        var session = ServerState.Sessions.Find(x => x.Token == playerToken);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is not null)
+        {
+            if (room.Quiz != null)
+            {
+                // todo player is in treasureroom check
+                if (room.TreasureRooms.Count > treasureRoomId)
+                {
+                    return room.TreasureRooms[treasureRoomId];
+                }
+                else
+                {
+                    // todo
+                    return null;
+                }
+            }
+            else
+            {
+                // todo
+                return null;
+            }
+        }
+        else
+        {
+            // todo
+            return null;
         }
     }
 }

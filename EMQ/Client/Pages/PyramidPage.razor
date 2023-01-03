@@ -1,0 +1,84 @@
+﻿@page "/PyramidPage"
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core
+@inject IJSRuntime _jsRuntime
+@inject ILogger<QuizPage> _logger
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+@inject ClientConnectionManager _clientConnectionManager
+
+@* <h5>PyramidPage</h5> *@
+
+@if (TreasureRooms.Any())
+{
+    <TreasureRoomComponent Treasures="@TreasureRooms[CurrentRoomId]?.Treasures" Inventory="Inventory" Room="Room"></TreasureRoomComponent>
+}
+
+@code {
+
+    public PyramidPage()
+    {
+        _handlers = new()
+        {
+            {
+                "ReceiveUpdatePlayerPosition", (new Type[] { typeof(int), typeof(float), typeof(float), typeof(DateTime) },
+                    async param => { await OnReceiveUpdatePlayerPosition((int) param[0]!, (float) param[1]!, (float) param[2]!, (DateTime) param[3]!); })
+            },
+        };
+    }
+
+    private async Task OnReceiveUpdatePlayerPosition(int playerId, float newX, float newY, DateTime dateTime)
+    {
+        if (playerId != ClientState.Session!.Player.Id)
+        {
+            if (Room != null)
+            {
+                var player = Room.Players.Single(x => x.Id == playerId);
+                player.LootingStuff.X = newX;
+                player.LootingStuff.Y = newY;
+            }
+        }
+    }
+
+    public List<Treasure> Inventory { get; set; } = new();
+
+    public List<TreasureRoom> TreasureRooms { get; set; } = new(new TreasureRoom[100]);
+
+    private static Room? Room { get; set; }
+
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+
+    // TODO
+    public int CurrentRoomId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await _client.GetAsync($"Quiz/GetTreasureRoom?treasureRoomId={CurrentRoomId}&playerToken={ClientState.Session!.Token}");
+        if (res.IsSuccessStatusCode)
+        {
+            var treasureRoom = await res.Content.ReadFromJsonAsync<TreasureRoom>();
+            if (treasureRoom is not null)
+            {
+    // Console.WriteLine(JsonSerializer.Serialize(treasureRoom, Utils.JsoIndented));
+                TreasureRooms[CurrentRoomId] = treasureRoom;
+            }
+            else
+            {
+                throw new Exception("TreasureRoom was null");
+            }
+        }
+
+        await SyncWithServer();
+        await _clientConnectionManager.SetHandlers(_handlers);
+    }
+
+    private async Task SyncWithServer()
+    {
+        Room = await _clientUtils.SyncRoom();
+    // ClientState.Session!.Player = Room!.Players.Single(x => x.Id == ClientState.Session.Player.Id);
+        StateHasChanged();
+    }
+
+}
