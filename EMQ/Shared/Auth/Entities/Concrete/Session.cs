@@ -13,7 +13,7 @@ public class Session
         Token = token;
     }
 
-    public Player Player { get; set; }
+    public Player Player { get; }
 
     public string Token { get; }
 

@@ -30,15 +30,4 @@ public class Player
     public int Lives { get; set; }
 
     public bool IsBuffered { get; set; }
-
-    public LootingStuff LootingStuff { get; set; } = new();
-}
-
-public class LootingStuff // todo name
-{
-    public float X { get; set; }
-
-    public float Y { get; set; }
-
-    public int TreasureRoomId { get; set; }
 }

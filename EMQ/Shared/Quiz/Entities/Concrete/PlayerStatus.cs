@@ -7,6 +7,5 @@ public enum PlayerStatus
     Guessed,
     Correct,
     Wrong,
-    Dead,
-    Looting
+    Dead
 }

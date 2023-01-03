@@ -24,7 +24,6 @@ public class Avatar
             PlayerStatus.Correct => "correct",
             PlayerStatus.Wrong => "wrong",
             PlayerStatus.Dead => "wrong",
-            PlayerStatus.Looting => "looting",
             _ => "default"
         };
 
@@ -33,6 +32,6 @@ public class Avatar
             return $"assets/avatars/auu/default/{pose}.jpg".ToLowerInvariant();
         }
 
-        return $"assets/avatars/{avatar.Character.ToString()}/{avatar.Skin}/{pose}.webp".ToLowerInvariant();
+        return $"assets/avatars/{avatar.Character.ToString()}/{avatar.Skin}/{pose}.jpg".ToLowerInvariant();
     }
 }

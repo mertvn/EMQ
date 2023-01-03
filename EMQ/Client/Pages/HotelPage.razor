@@ -1,4 +1,4 @@
-﻿@page "/HotelPage"
+@page "/HotelPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Quiz
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -56,7 +56,12 @@
     // TODO allow user to change settings before creating room
     private QuizSettings QuizSettings { get; set; } = new()
     {
-        SongSelectionKind = SongSelectionKind.Looting,
+        NumSongs = 40,
+        GuessMs = 25000,
+        ResultsMs = 25000,
+        TeamSize = 1,
+        MaxLives = 0,
+        OnlyFromLists = true,
     };
 
     private List<Room> Rooms { get; set; } = new();

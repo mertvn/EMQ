@@ -95,8 +95,7 @@
         _handlers = new Dictionary<string, (Type[] types, Func<object?[], Task> value)>
         {
             { "ReceivePlayerJoinedRoom", (new Type[] { }, async _ => { await OnReceivePlayerJoinedRoom(); }) },
-            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
-            { "ReceivePyramidEntered", (new Type[] { }, async _ => { await OnReceivePyramidEntered(); }) },
+            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) }
         };
     }
 
@@ -138,12 +137,6 @@
     {
         _logger.LogInformation("Navigating from Room to Quiz");
         Navigation.NavigateTo("/QuizPage");
-    }
-
-    private async Task OnReceivePyramidEntered()
-    {
-        _logger.LogInformation("Navigating from Room to Pyramid");
-        Navigation.NavigateTo("/PyramidPage");
     }
 
     private async Task OnReceivePlayerJoinedRoom()

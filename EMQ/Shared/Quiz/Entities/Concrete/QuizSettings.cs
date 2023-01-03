@@ -44,18 +44,4 @@ public class QuizSettings
     [Required]
     [DefaultValue(true)]
     public bool OnlyFromLists { get; set; } = true;
-
-    [Required]
-    [DefaultValue(SongSelectionKind.Random)]
-    public SongSelectionKind SongSelectionKind { get; set; } = SongSelectionKind.Random;
-
-    [Required]
-    [Range(20000, 200000)]
-    [DefaultValue(120000)]
-    public int LootingMs { get; set; } = 120000;
-
-    [Required]
-    [Range(1, 10)]
-    [DefaultValue(5)]
-    public int InventorySize { get; set; } = 5;
 }

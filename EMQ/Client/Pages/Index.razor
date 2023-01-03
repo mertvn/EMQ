@@ -16,8 +16,6 @@
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 
-@* <TreasureRoomComponent></TreasureRoomComponent> *@
-
 <h1>Eroge Music Quiz</h1>
 
 <div>
@@ -127,11 +125,11 @@
     public class LoginModel
     {
         [Required]
-        public string Username { get; set; } = "Anonymous";
+        public string Username { get; set; } = "";
 
         public string Password { get; set; } = "";
 
-        [RegularExpression(RegexPatterns.VndbIdRegex, ErrorMessage = "Invalid VNDB Id: make sure it looks like u1234567")]
+        [RegularExpression(RegexPatterns.VndbIdRegex, ErrorMessage = "Invalid VNDB Id: make sure it looks like 'u1234567'")]
         public string? VndbId { get; set; }
 
     // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // todo prevents login if users enter something random, and then deletes it
