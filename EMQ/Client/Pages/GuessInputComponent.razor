@@ -16,6 +16,8 @@
               Placeholder="Enter your guess here"
               FreeTyping="true"
               MinLength="1"
+              Debounce="true"
+              DebounceInterval="20"
               MaxMenuHeight="340px"
               AutoPreSelect="false"
               AutoSelectFirstItem="false"
@@ -24,7 +26,7 @@
               Disabled="QuizPage.PageState.VideoPlayerVisibility">
 </Autocomplete>
 
-<span>Guess: @QuizPage.PageState.Guess</span>
+<span style="word-wrap: anywhere">Guess: @QuizPage.PageState.Guess</span>
 
 @code {
 

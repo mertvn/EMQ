@@ -214,7 +214,7 @@ public class QuizManager
             {
                 player.PlayerStatus = PlayerStatus.Wrong;
 
-                if (player.Lives >= 0)
+                if (Quiz.Room.QuizSettings.MaxLives > 0 && player.Lives >= 0)
                 {
                     player.Lives -= 1;
                     if (player.Lives <= 0)
