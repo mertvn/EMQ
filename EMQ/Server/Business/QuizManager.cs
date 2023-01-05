@@ -267,7 +267,7 @@ public class QuizManager
             player.Guess = "";
             player.IsBuffered = false;
             player.PlayerStatus = PlayerStatus.Default;
-            player.LootingInfo.TreasureRoomCoords = new Point(1); // TODO
+            player.LootingInfo = new PlayerLootingInfo();
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
@@ -366,6 +366,9 @@ public class QuizManager
             case SongSelectionKind.Looting:
                 await EnterLootingPhase();
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                    .SendAsync("ReceiveUpdateTreasureRoom", Quiz.Room.TreasureRooms[0][0]);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
