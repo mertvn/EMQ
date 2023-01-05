@@ -2,6 +2,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core
+@using System.Timers
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
@@ -15,7 +16,7 @@
      Room.TreasureRooms.Any(x => x.Any(y => y.Treasures.Any(z => z.ValidSource.Value.Any()))))
 {
     // todo countdown
-    <TreasureRoomComponent @ref="_treasureRoomComponentRef" Room="Room" Countdown="0"></TreasureRoomComponent>
+    <TreasureRoomComponent @ref="_treasureRoomComponentRef" Room="Room" Countdown="Countdown"></TreasureRoomComponent>
 }
 
 @code {
@@ -45,6 +46,10 @@
 
     private TreasureRoomComponent _treasureRoomComponentRef = null!;
 
+    public Timer Timer { get; } = new();
+
+    public float Countdown { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await SyncWithServer();
@@ -54,26 +59,11 @@
             await Task.Delay(TimeSpan.FromSeconds(3));
             await SyncWithServer();
         }
-    //
-    //     var currentTreasureRoomCoords = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id).LootingInfo.TreasureRoomCoords;
-    //     var res = await _client.GetAsync($"Quiz/GetTreasureRoom?treasureRoomId={currentTreasureRoomCoords}&playerToken={ClientState.Session!.Token}");
-    //     if (res.IsSuccessStatusCode)
-    //     {
-    //         var treasureRoom = await res.Content.ReadFromJsonAsync<TreasureRoom>();
-    //         if (treasureRoom is not null)
-    //         {
-    // // Console.WriteLine(JsonSerializer.Serialize(treasureRoom, Utils.JsoIndented));
-    //             Room!.TreasureRooms[currentTreasureRoomCoords.X, currentTreasureRoomCoords.Y] = treasureRoom;
-    //         }
-    //         else
-    //         {
-    //             throw new Exception("TreasureRoom was null");
-    //         }
-    //     }
 
         await _clientConnectionManager.SetHandlers(_handlers);
 
         await Task.Delay(TimeSpan.FromSeconds(1));
+        SetTimer();
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
@@ -82,6 +72,7 @@
     {
         Room = await _clientUtils.SyncRoom();
     // Console.WriteLine(JsonSerializer.Serialize(Room, Utils.JsoIndented));
+        Countdown = Room!.Quiz!.QuizState.RemainingMs;
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
@@ -113,6 +104,33 @@
     private async Task OnReceiveUpdateTreasureRoom(TreasureRoom treasureRoom)
     {
         Room!.TreasureRooms[treasureRoom.Coords.X][treasureRoom.Coords.Y] = treasureRoom;
+        StateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged(Room);
+    }
+
+    private void SetTimer()
+    {
+        Timer.Stop();
+        Timer.Elapsed -= OnTimedEvent;
+
+        Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
+        Timer.Elapsed += OnTimedEvent;
+        Timer.AutoReset = true;
+        Timer.Start();
+    }
+
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        if (Countdown > 0)
+        {
+            Countdown -= Quiz.TickRate;
+        }
+        else
+        {
+            Timer.Stop();
+            Timer.Elapsed -= OnTimedEvent;
+        }
+
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
