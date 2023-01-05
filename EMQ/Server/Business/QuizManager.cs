@@ -679,7 +679,9 @@ public class QuizManager
             }
             else
             {
-                Console.WriteLine($"Failed to use non-existing exit");
+                Console.WriteLine(
+                    $"Failed to use non-existing exit {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
+                    $"{treasureRoomCoords.X},{treasureRoomCoords.Y}");
             }
         }
         else

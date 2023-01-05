@@ -33,5 +33,6 @@ public class Quiz
 
     public Queue<Session> JoinQueue { get; set; } = new();
 
+    [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSources { get; set; }
 }

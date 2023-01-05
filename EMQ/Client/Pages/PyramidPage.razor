@@ -11,10 +11,11 @@
 
 @* <h5>PyramidPage</h5> *@
 
-@if (Room != null && Room.TreasureRooms.Any())
+@if (Room != null &&
+     Room.TreasureRooms.Any(x => x.Any(y => y.Treasures.Any(z => z.ValidSource.Value.Any()))))
 {
     // todo countdown
-    <TreasureRoomComponent Room="Room" Countdown="0"></TreasureRoomComponent>
+    <TreasureRoomComponent @ref="_treasureRoomComponentRef" Room="Room" Countdown="0"></TreasureRoomComponent>
 }
 
 @code {
@@ -42,10 +43,12 @@
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
+    private TreasureRoomComponent _treasureRoomComponentRef;
+
     protected override async Task OnInitializedAsync()
     {
         await SyncWithServer();
-        if (!Room!.TreasureRooms.Any(x=> x.Any(y=> y.Treasures.Any())))
+        if (!Room!.TreasureRooms.Any(x => x.Any(y => y.Treasures.Any(z => z.ValidSource.Value.Any()))))
         {
             Console.WriteLine("Resync Pyramid");
             await Task.Delay(TimeSpan.FromSeconds(3));
@@ -69,6 +72,10 @@
     //     }
 
         await _clientConnectionManager.SetHandlers(_handlers);
+
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        StateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged();
     }
 
     private async Task SyncWithServer()
