@@ -638,7 +638,7 @@ public class QuizManager
                 0, LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
 
             player.LootingInfo.Inventory.Remove(treasure);
-            treasureRoom.Treasures.Add(treasure with { Position = new Point(newX, newY) });
+            treasureRoom.Treasures.Add(treasure);
 
             await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
                 .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);

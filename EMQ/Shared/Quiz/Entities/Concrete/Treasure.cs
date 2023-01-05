@@ -4,7 +4,7 @@ using System.Drawing;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public record Treasure
+public class Treasure
 {
     public Treasure(Guid guid, KeyValuePair<string, List<Title>> validSource, Point position)
     {
