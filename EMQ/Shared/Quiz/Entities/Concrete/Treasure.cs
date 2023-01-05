@@ -6,16 +6,10 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class Treasure
 {
-    public Treasure(Guid guid, KeyValuePair<string, List<Title>> validSource, Point position)
-    {
-        Guid = guid;
-        ValidSource = validSource;
-        Position = position;
-    }
 
-    public Guid Guid { get; }
+    public Guid Guid { get; set; }
 
-    public KeyValuePair<string, List<Title>> ValidSource { get; }
+    public KeyValuePair<string, List<Title>> ValidSource { get; set; }
 
-    public Point Position { get; init; }
+    public Point Position { get; set; }
 }
