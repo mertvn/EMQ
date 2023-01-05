@@ -45,6 +45,12 @@
     protected override async Task OnInitializedAsync()
     {
         await SyncWithServer();
+        if (!Room!.TreasureRooms.Any(x=> x.Any(y=> y.Treasures.Any())))
+        {
+            Console.WriteLine("Resync Pyramid");
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            await SyncWithServer();
+        }
     //
     //     var currentTreasureRoomCoords = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id).LootingInfo.TreasureRoomCoords;
     //     var res = await _client.GetAsync($"Quiz/GetTreasureRoom?treasureRoomId={currentTreasureRoomCoords}&playerToken={ClientState.Session!.Token}");
