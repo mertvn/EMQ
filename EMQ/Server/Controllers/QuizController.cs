@@ -37,8 +37,6 @@ public class QuizController : ControllerBase
     [Route("SyncRoom")]
     public Room? SyncRoom([FromQuery] int roomId)
     {
-        // Assembly.Load("System.Drawing");
-
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
         if (room is null)
         {
@@ -47,15 +45,6 @@ public class QuizController : ControllerBase
         }
 
         // _logger.LogError(JsonSerializer.Serialize(room));
-
-        // return JsonConvert.SerializeObject(room,
-        //     new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-
-        // Point p1 = new Point(0);
-        // Point p2 = new Point(1);
-        // Console.WriteLine(JsonSerializer.Serialize(p1));
-        // Console.WriteLine(JsonSerializer.Serialize(p2));
-
         return room;
     }
 

@@ -25,26 +25,7 @@ public class ClientUtils
 
     public async Task<Room?> SyncRoom()
     {
-        // JsonTypeInfo<Room> typeInfo = SourceGenerationContext.Default.Room ?? throw new InvalidOperationException();
-
-        // Point p1 = new Point(0);
-        // Point p2 = new Point(1);
-        // Console.WriteLine(JsonSerializer.Serialize(p1));
-        // Console.WriteLine(JsonSerializer.Serialize(p2));
-
-        // Assembly.Load("System.Drawing");
-
-        var req = new HttpRequestMessage
-        {
-            RequestUri = new Uri($"Quiz/SyncRoom?roomId={ClientState.Session!.RoomId.ToString()}", UriKind.Relative)
-        };
-        HttpResponseMessage res = await Client.SendAsync(req);
-
-        // var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?roomId={ClientState.Session?.RoomId}", jsonTypeInfo:typeInfo);
         var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?roomId={ClientState.Session?.RoomId}");
-        // Room? room = JsonConvert.DeserializeObject<Room?>(await res.Content.ReadAsStringAsync(),
-        //     new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-
         // Console.WriteLine(JsonSerializer.Serialize(room));
 
         if (room is not null)
