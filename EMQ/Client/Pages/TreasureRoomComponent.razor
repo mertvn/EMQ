@@ -82,7 +82,7 @@
         @foreach ((Direction direction, Point treasureRoomCoords) in Room.TreasureRooms[currentTreasureRoomCoords.X][currentTreasureRoomCoords.Y].Exits)
         {
             Point arrowPosition;
-            string arrowText;
+            string arrowText; // todo needs to be bigger
             switch (direction)
             {
                 case Direction.North:
@@ -118,7 +118,7 @@
                           font-size: xx-large; cursor: pointer;
                           color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");
                           pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y));"
-                 @onclick="@(() => OnclickChangeTreasureRoomArrow(arrowPosition, treasureRoomCoords))">
+                 @onclick="@(() => OnclickChangeTreasureRoomArrow(arrowPosition, treasureRoomCoords, direction))">
                 @arrowText
             </div>
         }
@@ -259,12 +259,12 @@
         }
     }
 
-    private async Task OnclickChangeTreasureRoomArrow(Point arrowPosition, Point treasureRoomCoords)
+    private async Task OnclickChangeTreasureRoomArrow(Point arrowPosition, Point treasureRoomCoords, Direction direction)
     {
         var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
         if (arrowPosition.IsReachableFromCoords((int) player.LootingInfo.X, (int) player.LootingInfo.Y))
         {
-            await ClientState.Session!.hubConnection!.SendAsync("SendChangeTreasureRoom", treasureRoomCoords);
+            await ClientState.Session!.hubConnection!.SendAsync("SendChangeTreasureRoom", treasureRoomCoords, direction);
         }
     }
 

@@ -299,7 +299,7 @@ namespace EMQ.Server.Hubs
         }
 
         // [Authorize]
-        public async Task SendChangeTreasureRoom(Point treasureRoomId)
+        public async Task SendChangeTreasureRoom(Point treasureRoomId, Direction direction)
         {
             var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
             if (session != null)
@@ -310,7 +310,7 @@ namespace EMQ.Server.Hubs
                     var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (quizManager != null)
                     {
-                        await quizManager.OnSendChangeTreasureRoom(session, treasureRoomId);
+                        await quizManager.OnSendChangeTreasureRoom(session, treasureRoomId, direction);
                     }
                     else
                     {

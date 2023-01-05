@@ -314,7 +314,7 @@ public class QuizManager
                 break;
             case SongSelectionKind.Looting:
                 dbSongs = await DbManager.GetRandomSongs(
-                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 2) / 2), validSources);
+                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 4) / 2), validSources);
                 if (dbSongs.Count == 0)
                 {
                     return false;
@@ -652,7 +652,7 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendChangeTreasureRoom(Session session, Point treasureRoomCoords)
+    public async Task OnSendChangeTreasureRoom(Session session, Point treasureRoomCoords, Direction direction)
     {
         var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
 
@@ -667,8 +667,27 @@ public class QuizManager
             if (currentTreasureRoom.Exits.ContainsValue(treasureRoomCoords))
             {
                 player.LootingInfo.TreasureRoomCoords = treasureRoomCoords;
-                player.LootingInfo.X = (int)(LootingConstants.TreasureRoomWidth / 2); // TODO
-                player.LootingInfo.Y = (int)(LootingConstants.TreasureRoomHeight / 2); // TODO
+
+                int newX = (int)player.LootingInfo.X;
+                int newY = (int)player.LootingInfo.Y;
+                switch (direction)
+                {
+                    case Direction.North:
+                    case Direction.South:
+                        newY = Math.Clamp((int)(LootingConstants.TreasureRoomHeight - player.LootingInfo.Y), 0,
+                            LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
+                        break;
+                    case Direction.East:
+                    case Direction.West:
+                        newX = Math.Clamp((int)(LootingConstants.TreasureRoomWidth - player.LootingInfo.X), 0,
+                            LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+                }
+
+                player.LootingInfo.X = newX;
+                player.LootingInfo.Y = newY;
 
                 await HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdateTreasureRoom", newTreasureRoom);
