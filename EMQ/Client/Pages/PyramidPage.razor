@@ -43,7 +43,7 @@
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
-    private TreasureRoomComponent _treasureRoomComponentRef;
+    private TreasureRoomComponent _treasureRoomComponentRef = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,6 +83,7 @@
         Room = await _clientUtils.SyncRoom();
     // Console.WriteLine(JsonSerializer.Serialize(Room, Utils.JsoIndented));
         StateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged();
     }
 
     private async Task OnReceiveUpdatePlayerLootingInfo(int playerId, PlayerLootingInfo playerLootingInfo)
@@ -105,6 +106,7 @@
     // }
 
             StateHasChanged();
+            _treasureRoomComponentRef.CallStateHasChanged();
         }
     }
 
@@ -112,6 +114,7 @@
     {
         Room!.TreasureRooms[treasureRoom.Coords.X][treasureRoom.Coords.Y] = treasureRoom;
         StateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged();
     }
 
 }

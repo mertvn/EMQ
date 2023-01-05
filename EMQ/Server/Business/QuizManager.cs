@@ -602,7 +602,9 @@ public class QuizManager
                 }
                 else
                 {
-                    Console.WriteLine("Player is not close enough to the treasure to pickup");
+                    Console.WriteLine(
+                        $"Player is not close enough to the treasure to pickup: {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
+                        $"{treasure.Position.X},{treasure.Position.Y}");
                 }
             }
             else
