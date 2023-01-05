@@ -259,8 +259,9 @@
         }
     }
 
-    public void CallStateHasChanged()
+    public void CallStateHasChanged(Room room)
     {
+        Room = room;
         StateHasChanged();
     }
 

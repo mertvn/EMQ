@@ -75,7 +75,7 @@
 
         await Task.Delay(TimeSpan.FromSeconds(1));
         StateHasChanged();
-        _treasureRoomComponentRef.CallStateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
 
     private async Task SyncWithServer()
@@ -83,7 +83,7 @@
         Room = await _clientUtils.SyncRoom();
     // Console.WriteLine(JsonSerializer.Serialize(Room, Utils.JsoIndented));
         StateHasChanged();
-        _treasureRoomComponentRef.CallStateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
 
     private async Task OnReceiveUpdatePlayerLootingInfo(int playerId, PlayerLootingInfo playerLootingInfo)
@@ -106,7 +106,7 @@
     // }
 
             StateHasChanged();
-            _treasureRoomComponentRef.CallStateHasChanged();
+            _treasureRoomComponentRef.CallStateHasChanged(Room);
         }
     }
 
@@ -114,7 +114,7 @@
     {
         Room!.TreasureRooms[treasureRoom.Coords.X][treasureRoom.Coords.Y] = treasureRoom;
         StateHasChanged();
-        _treasureRoomComponentRef.CallStateHasChanged();
+        _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
 
 }
