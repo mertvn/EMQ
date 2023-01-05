@@ -547,6 +547,11 @@ public class QuizManager
             // player.LootingInfo = new PlayerLootingInfo();
         }
 
+        if (!validSources.Any())
+        {
+            // todo failed to prime etc.
+        }
+
         var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
         if (!dbSongs.Any())
         {

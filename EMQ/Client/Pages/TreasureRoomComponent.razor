@@ -61,12 +61,20 @@
         {
             @foreach (var treasure in Room.TreasureRooms[currentTreasureRoomCoords.X][currentTreasureRoomCoords.Y].Treasures)
             {
-                <div class="treasure"
+                <div class="treasure" @onmouseover="@(() => { })"
                      style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer;
-                  color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");"
+                     padding: 5px 5px 1px 5px; border-style: solid; border-radius: 50%;
+                     border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");"
                      @onclick="@(() => PickupTreasure(treasure))">
+
                     @* todo title selection *@
-                    @treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle
+                    @* todo invisible until picked up quiz setting *@
+                    <Blazorise.Tooltip Text="@treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle">
+                        <img width="@(LootingConstants.PlayerAvatarSize - 20)px" height="@(LootingConstants.PlayerAvatarSize - 20)px"
+                             src="assets/gem.svg" alt="Treasure"
+                             style="display: inline-block">
+                    </Blazorise.Tooltip>
+
                 </div>
             }
         }
