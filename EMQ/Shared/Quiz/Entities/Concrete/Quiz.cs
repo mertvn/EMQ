@@ -31,8 +31,9 @@ public class Quiz
     [JsonIgnore]
     public List<Song> Songs { get; set; } = new();
 
+    [JsonIgnore]
     public Queue<Session> JoinQueue { get; set; } = new();
 
     [JsonIgnore]
-    public Dictionary<string, List<Title>> ValidSources { get; set; }
+    public Dictionary<string, List<Title>> ValidSources { get; set; } = new();
 }

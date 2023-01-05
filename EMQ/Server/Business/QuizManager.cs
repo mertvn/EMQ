@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -513,12 +512,10 @@ public class QuizManager
             const int maxY = LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize;
             foreach (var dbSong in validSources)
             {
-                var treasure = new Treasure()
-                {
-                    Guid = Guid.NewGuid(),
-                    ValidSource = dbSong,
-                    Position = new Point(rng.Next(maxX), rng.Next(maxY))
-                };
+                var treasure = new Treasure(
+                    Guid.NewGuid(),
+                    dbSong,
+                    new Point(rng.Next(maxX), rng.Next(maxY)));
 
                 // todo max treasures in one room?
                 // todo better position randomization?
@@ -640,8 +637,7 @@ public class QuizManager
                 0, LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
 
             player.LootingInfo.Inventory.Remove(treasure);
-            // todo with inventory new
-            treasureRoom.Treasures.Add(treasure);
+            treasureRoom.Treasures.Add(treasure with { Position = new Point(newX, newY) });
 
             await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
                 .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
@@ -690,6 +686,7 @@ public class QuizManager
                 Console.WriteLine(
                     $"Failed to use non-existing exit {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
                     $"{treasureRoomCoords.X},{treasureRoomCoords.Y}");
+                // Console.WriteLine(JsonSerializer.Serialize(Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][player.LootingInfo.TreasureRoomCoords.Y].Exits));
             }
         }
         else

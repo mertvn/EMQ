@@ -1,9 +1,11 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace EMQ.Client;
 
@@ -23,19 +25,31 @@ public class ClientUtils
 
     public async Task<Room?> SyncRoom()
     {
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/SyncRoom", ClientState.Session!.RoomId);
-        if (res.IsSuccessStatusCode)
+        // JsonTypeInfo<Room> typeInfo = SourceGenerationContext.Default.Room ?? throw new InvalidOperationException();
+
+        // Point p1 = new Point(0);
+        // Point p2 = new Point(1);
+        // Console.WriteLine(JsonSerializer.Serialize(p1));
+        // Console.WriteLine(JsonSerializer.Serialize(p2));
+
+        // Assembly.Load("System.Drawing");
+
+        var req = new HttpRequestMessage
         {
-            Room? room = await res.Content.ReadFromJsonAsync<Room>().ConfigureAwait(false);
-            if (room is not null)
-            {
-                return room;
-            }
-            else
-            {
-                // todo warn user and require reload
-                Logger.LogError("Desynchronized");
-            }
+            RequestUri = new Uri($"Quiz/SyncRoom?roomId={ClientState.Session!.RoomId.ToString()}", UriKind.Relative)
+        };
+        HttpResponseMessage res = await Client.SendAsync(req);
+
+        // var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?roomId={ClientState.Session?.RoomId}", jsonTypeInfo:typeInfo);
+        var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?roomId={ClientState.Session?.RoomId}");
+        // Room? room = JsonConvert.DeserializeObject<Room?>(await res.Content.ReadAsStringAsync(),
+        //     new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+
+        // Console.WriteLine(JsonSerializer.Serialize(room));
+
+        if (room is not null)
+        {
+            return room;
         }
         else
         {

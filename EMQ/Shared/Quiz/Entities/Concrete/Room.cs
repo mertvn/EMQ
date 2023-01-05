@@ -38,3 +38,31 @@ public class Room
 
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 }
+
+// GREAT API DESIGN BTW! doesn't even work
+// [JsonSerializable(typeof(Room))]
+// [JsonSerializable(typeof(int))]
+// [JsonSerializable(typeof(string))]
+// [JsonSerializable(typeof(QuizSettings))]
+// [JsonSerializable(typeof(Quiz))]
+// [JsonSerializable(typeof(List<Player>))]
+// [JsonSerializable(typeof(Player))]
+// [JsonSerializable(typeof(List<string>))]
+// [JsonSerializable(typeof(TreasureRoom))]
+// [JsonSerializable(typeof(TreasureRoom[]))]
+// [JsonSerializable(typeof(TreasureRoom[][]))]
+// [JsonSerializable(typeof(Treasure))]
+// public partial class SourceGenerationContext : JsonSerializerContext
+// {
+//     // public static SourceGenerationContext Default { get; }
+//     //
+//     // public JsonTypeInfo<Room>? Room { get; }
+//     //
+//     // public SourceGenerationContext(JsonSerializerOptions? options) : base(options)
+//     // {
+//     // }
+//     //
+//     // public override JsonTypeInfo? GetTypeInfo(Type type) => throw new NotImplementedException();
+//     //
+//     // protected override JsonSerializerOptions? GeneratedSerializerOptions { get; }
+// }

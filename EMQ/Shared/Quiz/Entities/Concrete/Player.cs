@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -43,7 +42,7 @@ public record PlayerLootingInfo
 
     public float Y { get; set; }
 
-    public Point TreasureRoomCoords { get; set; }
+    public Point TreasureRoomCoords { get; set; } = new();
 
     public List<Treasure> Inventory { get; set; } = new();
 }

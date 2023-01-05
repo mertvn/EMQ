@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Drawing;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Core;
 

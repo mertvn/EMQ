@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
+
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class TreasureRoom
 {
-    public Point Coords { get; set; }
+    public Point Coords { get; set; } = new();
 
     public List<Treasure> Treasures { get; set; } = new();
 

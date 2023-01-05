@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared;
 using EMQ.Shared.Auth;
@@ -18,6 +16,7 @@ using EMQ.Server.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace EMQ.Server.Controllers;
 
@@ -34,16 +33,28 @@ public class QuizController : ControllerBase
         _hubContext = hubContext;
     }
 
-    [HttpPost]
+    [HttpGet]
     [Route("SyncRoom")]
-    public Room? SyncRoom([FromBody] int roomId)
+    public Room? SyncRoom([FromQuery] int roomId)
     {
+        // Assembly.Load("System.Drawing");
+
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
         if (room is null)
         {
             _logger.LogError("Room not found: " + roomId);
             return null;
         }
+
+        // _logger.LogError(JsonSerializer.Serialize(room));
+
+        // return JsonConvert.SerializeObject(room,
+        //     new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+
+        // Point p1 = new Point(0);
+        // Point p2 = new Point(1);
+        // Console.WriteLine(JsonSerializer.Serialize(p1));
+        // Console.WriteLine(JsonSerializer.Serialize(p2));
 
         return room;
     }

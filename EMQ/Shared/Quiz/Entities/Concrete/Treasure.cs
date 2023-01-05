@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class Treasure
+public record Treasure
 {
+    public Treasure(Guid guid, KeyValuePair<string, List<Title>> validSource, Point position)
+    {
+        Guid = guid;
+        ValidSource = validSource;
+        Position = position;
+    }
 
-    public Guid Guid { get; set; }
+    public Guid Guid { get; }
 
-    public KeyValuePair<string, List<Title>> ValidSource { get; set; }
+    public KeyValuePair<string, List<Title>> ValidSource { get; }
 
-    public Point Position { get; set; }
+    public Point Position { get; init; } = new();
 }
