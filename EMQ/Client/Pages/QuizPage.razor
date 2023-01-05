@@ -202,7 +202,11 @@
 
     private CancellationTokenRegistration PreloadCancellationRegistration { get; set; }
 
-    private GuessInputComponent _guessInputComponent;
+    private GuessInputComponent _guessInputComponent = null!;
+
+    private DateTime LastSync { get; set; }
+
+    private bool SyncInProgress { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -222,7 +226,10 @@
         }
 
         await SyncWithServer();
-        if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting)
+        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
+
+        if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
+            Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp == -1)
         {
             Song? nextSong = await NextSong(0);
             if (nextSong is not null)
@@ -232,8 +239,6 @@
                 await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
             }
         }
-
-        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
     }
 
     private async Task OnReceiveResyncRequired()
@@ -296,7 +301,11 @@
 
     private async Task SyncWithServer()
     {
+        SyncInProgress = true;
         Room = await _clientUtils.SyncRoom();
+        LastSync = DateTime.Now;
+        SyncInProgress = false;
+
         StateHasChanged();
     }
 
@@ -388,7 +397,7 @@
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds((float)Room.QuizSettings.ResultsMs * 2.5));
+                    PreloadCancellationSource.CancelAfter(TimeSpan.FromMilliseconds((float) Room.QuizSettings.ResultsMs * 2.5));
                     await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
                 }
                 break;
@@ -397,13 +406,17 @@
         }
     }
 
-    private void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
         PageState.ProgressValue += 100 / PageState.ProgressDivisor * Quiz.TickRate;
 
         if (PageState.Countdown > 0)
         {
             PageState.Countdown -= Quiz.TickRate;
+        }
+        else if (!SyncInProgress && DateTime.Now - LastSync > TimeSpan.FromSeconds(2))
+        {
+            await SyncWithServer();
         }
 
         StateHasChanged();
@@ -482,8 +495,10 @@
                     else
                     {
                         PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}"); // todo link selection
-                        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
                     }
+
+    // we want to send this message regardless of whether the preloading was successful or not
+                    await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
                 }
                 else
                 {
@@ -514,7 +529,9 @@
             while (!task.IsCompleted && !task.IsCanceled)
             {
                 await Task.Delay(1000);
-                await SyncWithServer();
+    // todo can just await the task if we're not going to do this
+    // await SyncWithServer();
+    // Console.WriteLine(Room!.Quiz!.QuizState.ExtraInfo);
             }
             var data = task.Result;
 

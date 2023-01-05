@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -63,6 +64,11 @@ public class QuizManager
                     case QuizPhaseKind.Results:
                         await EnterGuessingPhase();
                         break;
+                    case QuizPhaseKind.Looting:
+                        await SetLootedSongs();
+                        await EnterQuiz();
+                        await EnterGuessingPhase();
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -85,18 +91,20 @@ public class QuizManager
         while (isBufferedCount < (float)Quiz.Room.Players.Count / 2 &&
                waitingForMs < Quiz.Room.QuizSettings.ResultsMs * 3)
         {
-            // Console.WriteLine("in while " + isBufferedCount);
+            // Console.WriteLine("in while " + isBufferedCount + "/" + (float)Quiz.Room.Players.Count / 2);
             await Task.Delay(500);
             waitingForMs += 500;
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
             Quiz.QuizState.ExtraInfo = $"Waiting buffering... {isBufferedCount}/{Quiz.Room.Players.Count}";
+            // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
         }
 
         Quiz.QuizState.Phase = new GuessPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
         Quiz.QuizState.ExtraInfo = "";
+
         foreach (var player in Quiz.Room.Players)
         {
             player.Guess = "";
@@ -111,6 +119,7 @@ public class QuizManager
     private async Task EnterJudgementPhase()
     {
         Quiz.QuizState.Phase = new JudgementPhase();
+
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
@@ -157,7 +166,7 @@ public class QuizManager
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
             // Console.WriteLine("-------");
-            Console.WriteLine($"{Quiz.Id}-{Quiz.QuizState.sp} cA: " +
+            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} cA: " +
                               JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
@@ -171,6 +180,7 @@ public class QuizManager
     {
         Quiz.QuizState.Phase = new ResultsPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
+
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
 
@@ -178,7 +188,7 @@ public class QuizManager
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
-            Quiz.Room.Players.All(player => player.PlayerStatus == PlayerStatus.Dead))
+            (Quiz.Room.QuizSettings.MaxLives > 0 && Quiz.Room.Players.All(x => x.Lives <= 0)))
         {
             await EndQuiz();
         }
@@ -202,7 +212,7 @@ public class QuizManager
                 continue;
             }
 
-            Console.WriteLine($"{Quiz.Id}-{Quiz.QuizState.sp} pG: " + player.Guess);
+            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} pG: " + player.Guess);
 
             bool correct = IsGuessCorrect(player.Guess);
             if (correct)
@@ -242,7 +252,7 @@ public class QuizManager
     private async Task EnterQuiz()
     {
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEntered");
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(3));
     }
 
     public async Task<bool> PrimeQuiz()
@@ -257,6 +267,7 @@ public class QuizManager
             player.Guess = "";
             player.IsBuffered = false;
             player.PlayerStatus = PlayerStatus.Default;
+            player.LootingInfo.TreasureRoomCoords = new Point(1); // TODO
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
@@ -289,54 +300,87 @@ public class QuizManager
         Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
         Console.WriteLine($"validSourcesCount: {validSources.Count}");
 
-        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
-        if (dbSongs.Count == 0)
+        List<Song> dbSongs;
+        switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
-            return false;
+            case SongSelectionKind.Random:
+                dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+                if (dbSongs.Count == 0)
+                {
+                    return false;
+                }
+
+                Quiz.Songs = dbSongs;
+                Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+                break;
+            case SongSelectionKind.Looting:
+                dbSongs = await DbManager.GetRandomSongs(
+                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 2) / 2), validSources);
+                if (dbSongs.Count == 0)
+                {
+                    return false;
+                }
+
+                var asdf = new Dictionary<string, List<Title>>();
+                foreach (Song dbSong in dbSongs)
+                {
+                    foreach (var dbSongSource in dbSong.Sources)
+                    {
+                        // todo songs with multiple vns overriding each other
+                        asdf[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                            dbSongSource.Titles;
+
+                        if (!dbSongSource.Titles.Any(x => x.IsMainTitle))
+                        {
+                            throw new Exception(JsonSerializer.Serialize(dbSongSource, Utils.Jso));
+                        }
+                    }
+                }
+
+                Quiz.ValidSources = asdf;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
-        Quiz.Songs = dbSongs;
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
-        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
         Quiz.QuizState.ExtraInfo = "Waiting buffering...";
 
-        await EnterQuiz();
         return true;
     }
 
-    private async Task StartQuiz()
+    public async Task StartQuiz()
     {
         Quiz.QuizState.QuizStatus = QuizStatus.Playing;
 
         // await EnterQuiz();
-        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizStarted");
-        await EnterGuessingPhase();
+        // await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizStarted");
+
+        switch (Quiz.Room.QuizSettings.SongSelectionKind)
+        {
+            case SongSelectionKind.Random:
+                await EnterQuiz();
+                await EnterGuessingPhase();
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizStarted");
+                break;
+            case SongSelectionKind.Looting:
+                await EnterLootingPhase();
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
         SetTimer();
     }
 
     public async Task OnSendPlayerIsBuffered(int playerId)
     {
-        // todo timeout
-        var player = Quiz.Room.Players.Find(player => player.Id == playerId)!;
+        Player player = Quiz.Room.Players.Single(player => player.Id == playerId);
         player.IsBuffered = true;
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
         Console.WriteLine($"isBufferedCount {isBufferedCount}");
-        if (Quiz.QuizState.QuizStatus == QuizStatus.Starting)
-        {
-            if (isBufferedCount > Quiz.Room.Players.Count / 2)
-            {
-                await StartQuiz();
-            }
-        }
-        else if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
-        {
-            if (isBufferedCount > Quiz.Room.Players.Count / 2)
-            {
-                // todo
-                // await StartNextSong();
-            }
-        }
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
@@ -412,4 +456,235 @@ public class QuizManager
     // {
     //
     // }
+
+    private async Task EnterLootingPhase()
+    {
+        Quiz.QuizState.Phase = new LootingPhase();
+        Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.LootingMs;
+
+        foreach (var player in Quiz.Room.Players)
+        {
+            player.PlayerStatus = PlayerStatus.Looting;
+            player.LootingInfo = new PlayerLootingInfo();
+        }
+
+        TreasureRoom[][] GenerateTreasureRooms(Dictionary<string, List<Title>> validSources)
+        {
+            var rng = Random.Shared;
+            int gridSize = 3; // todo
+
+            TreasureRoom[][] treasureRooms =
+                new TreasureRoom[gridSize].Select(_ => new TreasureRoom[gridSize]).ToArray();
+            for (int i = 0; i < gridSize; i++)
+            {
+                for (int j = 0; j < gridSize; j++)
+                {
+                    treasureRooms[i][j] =
+                        new TreasureRoom() { Coords = new Point(i, j), Treasures = new List<Treasure>() };
+
+                    if (j - 1 >= 0 && j - 1 < gridSize)
+                    {
+                        treasureRooms[i][j].Exits.Add(Direction.North, new Point(i, j - 1));
+                    }
+
+                    if (i + 1 < gridSize)
+                    {
+                        treasureRooms[i][j].Exits.Add(Direction.East, new Point(i + 1, j));
+                    }
+
+                    if (j + 1 < gridSize)
+                    {
+                        treasureRooms[i][j].Exits.Add(Direction.South, new Point(i, j + 1));
+                    }
+
+                    if (i - 1 >= 0 && i - 1 < gridSize)
+                    {
+                        treasureRooms[i][j].Exits.Add(Direction.West, new Point(i - 1, j));
+                    }
+                }
+            }
+
+            Quiz.QuizState.LootingGridSize = gridSize;
+
+            const int maxX = LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize;
+            const int maxY = LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize;
+            foreach (var dbSong in validSources)
+            {
+                var treasure = new Treasure(
+                    Guid.NewGuid(),
+                    dbSong,
+                    new Point(rng.Next(maxX), rng.Next(maxY)));
+
+                // todo max treasures in one room?
+                // todo better position randomization?
+                var treasureRoomId = new Point(rng.Next(0, gridSize), rng.Next(0, gridSize));
+                treasureRooms[treasureRoomId.X][treasureRoomId.Y].Treasures.Add(treasure);
+            }
+
+            // Console.WriteLine("treasureRooms: " + JsonSerializer.Serialize(treasureRooms)][ Utils.Jso);
+            return treasureRooms;
+        }
+
+        Quiz.Room.TreasureRooms = GenerateTreasureRooms(Quiz.ValidSources);
+        // await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
+
+        // todo
+    }
+
+    private async Task SetLootedSongs()
+    {
+        var validSources = new List<string>();
+        foreach (var player in Quiz.Room.Players)
+        {
+            foreach (var treasure in player.LootingInfo.Inventory)
+            {
+                validSources.Add(treasure.ValidSource.Key);
+            }
+
+            // reduce serialized Room size
+            // player.LootingInfo = new PlayerLootingInfo();
+        }
+
+        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+        if (!dbSongs.Any())
+        {
+            // todo failed to prime etc.
+        }
+
+        // reduce serialized Room size
+        // Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
+
+        Quiz.Songs = dbSongs;
+        Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+    }
+
+    public async Task OnSendPlayerMoved(Player player, float newX, float newY, DateTime dateTime, string connectionId)
+    {
+        // todo anti-cheat
+        player.LootingInfo.X = newX;
+        player.LootingInfo.Y = newY;
+
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Where(x => x != connectionId))
+            .SendAsync("ReceiveUpdatePlayerLootingInfo",
+                player.Id,
+                player.LootingInfo with { Inventory = new List<Treasure>() }
+            );
+    }
+
+    public async Task OnSendPickupTreasure(Session session, Guid treasureGuid)
+    {
+        var player = session.Player;
+        if (player.LootingInfo.TreasureRoomCoords.X < Quiz.QuizState.LootingGridSize &&
+            player.LootingInfo.TreasureRoomCoords.Y < Quiz.QuizState.LootingGridSize)
+        {
+            var treasureRoom = Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][
+                player.LootingInfo.TreasureRoomCoords.Y];
+            var treasure = treasureRoom.Treasures.SingleOrDefault(x => x.Guid == treasureGuid);
+
+            if (treasure != null)
+            {
+                if (treasure.Position.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
+                {
+                    if (player.LootingInfo.Inventory.Count < Quiz.Room.QuizSettings.InventorySize)
+                    {
+                        player.LootingInfo.Inventory.Add(treasure);
+                        treasureRoom.Treasures.Remove(treasure);
+
+                        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                            .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
+
+                        await HubContext.Clients.Clients(session.ConnectionId!)
+                            .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Player is not close enough to the treasure to pickup");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Could not find the treasure to pickup");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Invalid player treasure room coords");
+        }
+    }
+
+    public async Task OnSendDropTreasure(Session session, Guid treasureGuid)
+    {
+        var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
+        var treasure = player.LootingInfo.Inventory.SingleOrDefault(x => x.Guid == treasureGuid);
+        if (treasure != null)
+        {
+            var treasureRoom = Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][
+                player.LootingInfo.TreasureRoomCoords.Y];
+
+            int newX = (int)Math.Clamp(
+                player.LootingInfo.X +
+                Random.Shared.Next(-LootingConstants.PlayerAvatarSize, LootingConstants.PlayerAvatarSize),
+                0, LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
+
+            int newY = (int)Math.Clamp(
+                player.LootingInfo.Y +
+                Random.Shared.Next(-LootingConstants.PlayerAvatarSize, LootingConstants.PlayerAvatarSize),
+                0, LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
+
+            player.LootingInfo.Inventory.Remove(treasure);
+            treasureRoom.Treasures.Add(treasure with { Position = new Point(newX, newY) });
+
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
+
+            await HubContext.Clients.Clients(session.ConnectionId!)
+                .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
+        }
+    }
+
+    public async Task OnSendChangeTreasureRoom(Session session, Point treasureRoomCoords)
+    {
+        var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
+
+        var currentTreasureRoom =
+            Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][player.LootingInfo.TreasureRoomCoords.Y];
+        var newTreasureRoom =
+            Quiz.Room.TreasureRooms[treasureRoomCoords.X][treasureRoomCoords.Y];
+
+        if (treasureRoomCoords.X < Quiz.QuizState.LootingGridSize &&
+            treasureRoomCoords.Y < Quiz.QuizState.LootingGridSize)
+        {
+            if (currentTreasureRoom.Exits.ContainsValue(treasureRoomCoords))
+            {
+                player.LootingInfo.TreasureRoomCoords = treasureRoomCoords;
+                player.LootingInfo.X = (int)(LootingConstants.TreasureRoomWidth / 2); // TODO
+                player.LootingInfo.Y = (int)(LootingConstants.TreasureRoomHeight / 2); // TODO
+
+                await HubContext.Clients.Clients(session.ConnectionId!)
+                    .SendAsync("ReceiveUpdateTreasureRoom", newTreasureRoom);
+
+                await HubContext.Clients.Clients(session.ConnectionId!)
+                    .SendAsync("ReceiveUpdatePlayerLootingInfo",
+                        player.Id,
+                        player.LootingInfo
+                    );
+
+                await HubContext.Clients
+                    .Clients(Quiz.Room.AllPlayerConnectionIds.Where(x => x != session.ConnectionId))
+                    .SendAsync("ReceiveUpdatePlayerLootingInfo",
+                        player.Id,
+                        player.LootingInfo with { Inventory = new List<Treasure>() }
+                    );
+            }
+            else
+            {
+                Console.WriteLine($"Failed to use non-existing exit");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Failed to move to non-existing treasure room {treasureRoomCoords}");
+        }
+    }
 }

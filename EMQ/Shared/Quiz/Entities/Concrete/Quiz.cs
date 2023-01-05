@@ -32,4 +32,6 @@ public class Quiz
     public List<Song> Songs { get; set; } = new();
 
     public Queue<Session> JoinQueue { get; set; } = new();
+
+    public Dictionary<string, List<Title>> ValidSources { get; set; }
 }

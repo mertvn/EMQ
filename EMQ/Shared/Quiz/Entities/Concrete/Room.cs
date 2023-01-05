@@ -4,8 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-// Anything that's in this class that's not JsonIgnore'd will be visible to ALL players in a room, so be careful not to leak player-specific information.
-// other players' guesses are leaked currently (but hidden with CSS)
+// Anything that's in this class that's not JsonIgnore'd will be visible to ALL players in a room,
+// so be careful not to leak player-specific information.
+// TODO: Other players' guesses are leaked currently (but hidden with CSS).
 public class Room
 {
     public Room(int id, string name, Player owner)
@@ -33,5 +34,7 @@ public class Room
     public Player Owner { get; set; }
 
     [JsonIgnore]
-    public List<string> AllPlayerConnectionIds { get; set; } = new();
+    public List<string> AllPlayerConnectionIds { get; set; } = new(); // todo needs to be dict
+
+    public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 }

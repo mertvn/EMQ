@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -151,7 +152,8 @@ public class QuizController : ControllerBase
                 }
 
                 // hotjoins have to be handled differently
-                if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
+                if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
+                    or QuizPhaseKind.Looting)
                 {
                     if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
                     {
@@ -226,6 +228,7 @@ public class QuizController : ControllerBase
                 if (await quizManager.PrimeQuiz())
                 {
                     _logger.LogInformation("Primed quiz {quiz.Id}", quiz.Id);
+                    await quizManager.StartQuiz();
                 }
                 else
                 {
@@ -290,4 +293,44 @@ public class QuizController : ControllerBase
             // todo
         }
     }
+
+    // [HttpGet]
+    // [Route("GetTreasureRoom")]
+    // public TreasureRoom? GetTreasureRoom([FromQuery] Point treasureRoomId, [FromQuery] string playerToken)
+    // {
+    //     var session = ServerState.Sessions.Find(x => x.Token == playerToken);
+    //     if (session is null)
+    //     {
+    //         // todo
+    //         throw new Exception();
+    //     }
+    //
+    //     var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+    //     if (room is not null)
+    //     {
+    //         if (room.Quiz != null)
+    //         {
+    //             // todo player is in treasureroom check
+    //             // if (room.TreasureRooms.Count > treasureRoomId)
+    //             // {
+    //                 return room.TreasureRooms[treasureRoomId.X, treasureRoomId.Y];
+    //             // }
+    //             // else
+    //             // {
+    //             //     // todo
+    //             //     return null;
+    //             // }
+    //         }
+    //         else
+    //         {
+    //             // todo
+    //             return null;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         // todo
+    //         return null;
+    //     }
+    // }
 }

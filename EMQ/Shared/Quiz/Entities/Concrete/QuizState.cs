@@ -27,4 +27,6 @@ public class QuizState
     public bool IsPaused { get; set; }
 
     public string ExtraInfo { get; set; } = "";
+
+    public int LootingGridSize { get; set; }
 }

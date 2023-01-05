@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -30,4 +32,18 @@ public class Player
     public int Lives { get; set; }
 
     public bool IsBuffered { get; set; }
+
+    public PlayerLootingInfo LootingInfo { get; set; } = new();
+}
+
+public record PlayerLootingInfo
+{
+    // todo convert to int
+    public float X { get; set; }
+
+    public float Y { get; set; }
+
+    public Point TreasureRoomCoords { get; set; }
+
+    public List<Treasure> Inventory { get; set; } = new();
 }

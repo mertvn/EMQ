@@ -47,6 +47,15 @@
             <label for="IsHotjoinEnabled">Enable hotjoin?</label>
             <br/>
 
+            <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
+                @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
+                {
+                    <option value="@songSelectionKind">@songSelectionKind</option>
+                }
+            </InputSelect>
+            <label for="SongSelectionKind">Song selection method</label>
+            <br/>
+
             <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
             <label for="NumSongs">Maximum number of songs</label>
             <br/>
@@ -65,6 +74,14 @@
 
             <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.ResultsMs" style="margin: 5px"></InputNumber>
             <label for="ResultsMs">Results time (ms)</label>
+            <br/>
+
+            <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.LootingMs" style="margin: 5px"></InputNumber>
+            <label for="LootingMs">Looting time (ms)</label>
+            <br/>
+
+            <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
+            <label for="InventorySize">Looting inventory size</label>
             <br/>
 
             <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/>
@@ -95,7 +112,8 @@
         _handlers = new Dictionary<string, (Type[] types, Func<object?[], Task> value)>
         {
             { "ReceivePlayerJoinedRoom", (new Type[] { }, async _ => { await OnReceivePlayerJoinedRoom(); }) },
-            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) }
+            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
+            { "ReceivePyramidEntered", (new Type[] { }, async _ => { await OnReceivePyramidEntered(); }) },
         };
     }
 
@@ -139,6 +157,12 @@
         Navigation.NavigateTo("/QuizPage");
     }
 
+    private async Task OnReceivePyramidEntered()
+    {
+        _logger.LogInformation("Navigating from Room to Pyramid");
+        Navigation.NavigateTo("/PyramidPage");
+    }
+
     private async Task OnReceivePlayerJoinedRoom()
     {
         _logger.LogInformation("Syncing room because ReceivePlayerJoinedRoom");
@@ -161,7 +185,6 @@
     private async Task ResetQuizSettings()
     {
         ClientQuizSettings = new QuizSettings();
-        await SendChangeRoomSettingsReq(ClientQuizSettings); // todo remove
     }
 
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)

@@ -1,0 +1,104 @@
+﻿@page "/PyramidPage"
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core
+@inject IJSRuntime _jsRuntime
+@inject ILogger<QuizPage> _logger
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+@inject ClientConnectionManager _clientConnectionManager
+
+@* <h5>PyramidPage</h5> *@
+
+@if (Room != null && Room.TreasureRooms.Any())
+{
+    // todo countdown
+    <TreasureRoomComponent Room="Room" Countdown="0"></TreasureRoomComponent>
+}
+
+@code {
+
+    public PyramidPage()
+    {
+        _handlers = new()
+        {
+            {
+                "ReceiveUpdatePlayerLootingInfo", (new Type[] { typeof(int), typeof(PlayerLootingInfo), },
+                    async param => { await OnReceiveUpdatePlayerLootingInfo((int) param[0]!, (PlayerLootingInfo) param[1]!); })
+            },
+            {
+                "ReceiveUpdateTreasureRoom", (new Type[] { typeof(TreasureRoom), },
+                    async param => { await OnReceiveUpdateTreasureRoom((TreasureRoom) param[0]!); })
+            },
+        };
+    }
+
+    // public List<Treasure> Inventory { get; set; } = new();
+
+    // public List<TreasureRoom> TreasureRooms { get; set; } = new(new TreasureRoom[100]);
+
+    private static Room? Room { get; set; }
+
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SyncWithServer();
+    //
+    //     var currentTreasureRoomCoords = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id).LootingInfo.TreasureRoomCoords;
+    //     var res = await _client.GetAsync($"Quiz/GetTreasureRoom?treasureRoomId={currentTreasureRoomCoords}&playerToken={ClientState.Session!.Token}");
+    //     if (res.IsSuccessStatusCode)
+    //     {
+    //         var treasureRoom = await res.Content.ReadFromJsonAsync<TreasureRoom>();
+    //         if (treasureRoom is not null)
+    //         {
+    // // Console.WriteLine(JsonSerializer.Serialize(treasureRoom, Utils.JsoIndented));
+    //             Room!.TreasureRooms[currentTreasureRoomCoords.X, currentTreasureRoomCoords.Y] = treasureRoom;
+    //         }
+    //         else
+    //         {
+    //             throw new Exception("TreasureRoom was null");
+    //         }
+    //     }
+
+        await _clientConnectionManager.SetHandlers(_handlers);
+    }
+
+    private async Task SyncWithServer()
+    {
+        Room = await _clientUtils.SyncRoom();
+    // Console.WriteLine(JsonSerializer.Serialize(Room, Utils.JsoIndented));
+        StateHasChanged();
+    }
+
+    private async Task OnReceiveUpdatePlayerLootingInfo(int playerId, PlayerLootingInfo playerLootingInfo)
+    {
+        if (Room != null)
+        {
+            Player player = Room.Players.Single(x => x.Id == playerId);
+            player.LootingInfo = playerLootingInfo;
+
+    // player.LootingInfo.TreasureRoomId = playerLootingInfo.TreasureRoomId;
+
+    // if (playerId == ClientState.Session!.Player.Id)
+    // {
+    //     player.LootingInfo.Inventory = playerLootingInfo.Inventory;
+    // }
+    // else
+    // {
+    //     player.LootingInfo.X = playerLootingInfo.X;
+    //     player.LootingInfo.Y = playerLootingInfo.Y;
+    // }
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnReceiveUpdateTreasureRoom(TreasureRoom treasureRoom)
+    {
+        Room!.TreasureRooms[treasureRoom.Coords.X][treasureRoom.Coords.Y] = treasureRoom;
+        StateHasChanged();
+    }
+
+}

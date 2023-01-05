@@ -267,7 +267,8 @@ public static class DbManager
                         {
                             LatinTitle = musicSourceTitle.latin_title,
                             NonLatinTitle = musicSourceTitle.non_latin_title,
-                            Language = musicSourceTitle.language
+                            Language = musicSourceTitle.language,
+                            IsMainTitle = musicSourceTitle.is_main_title,
                         });
                     }
 
@@ -620,14 +621,14 @@ public static class DbManager
         }
 
         var ret = new List<Song>();
-        var rand = new Random();
+        var rng = new Random();
 
         List<int> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             // todo make this faster if possible
             ids = (await connection.QueryAsync<int>(sqlMusicIds, new { validSources }))
-                .OrderBy(_ => rand.Next()).Take(numSongs).ToList();
+                .OrderBy(_ => rng.Next()).Take(numSongs).ToList();
         }
 
         Console.WriteLine(JsonSerializer.Serialize(ids));
@@ -638,7 +639,7 @@ public static class DbManager
             {
                 foreach (Song song in songs)
                 {
-                    song.StartTime = rand.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
                     ret.Add(song);
                 }
             }

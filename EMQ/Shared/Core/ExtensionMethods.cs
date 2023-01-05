@@ -1,4 +1,7 @@
-﻿namespace EMQ.Shared.Core;
+﻿using System;
+using System.Drawing;
+
+namespace EMQ.Shared.Core;
 
 public static class ExtensionMethods
 {
@@ -27,5 +30,17 @@ public static class ExtensionMethods
     public static string ToVndbId(this string vndbUrl)
     {
         return vndbUrl.Replace("https://vndb.org/", "");
+    }
+
+    public static bool IsReachableFromCoords(this Point point, int x, int y,
+        int maxDistance = LootingConstants.MaxDistance)
+    {
+        if (Math.Abs(point.X - x) < maxDistance &&
+            Math.Abs(point.Y - y) < maxDistance)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

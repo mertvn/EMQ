@@ -4,7 +4,7 @@
 <PageTitle>EMQ</PageTitle>
 
 <div class="page">
-    @if (!_navigation.Uri.EndsWith("QuizPage"))
+    @if (SidebarPages.Contains(new Uri(_navigation.Uri).Segments.Last()))
     {
         <div class="sidebar">
             <NavMenu/>
@@ -17,3 +17,11 @@
         </article>
     </main>
 </div>
+
+@code
+{
+    public List<string> SidebarPages { get; set; } = new()
+    {
+        { "/" }, { "HotelPage" }, { "RoomPage" }, { "LibraryPage" }
+    };
+}

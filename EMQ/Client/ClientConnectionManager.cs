@@ -109,7 +109,8 @@ public class ClientConnectionManager
             CurrentHandlers.Add(key, (types, value));
         }
 
-        ClientState.Session!.hubConnection!.On(key, types, value); // TODO: Use the return value
+        // TODO: Use the return value and dispose of old handlers, i think this might be what's causing the double timer tick bug
+        ClientState.Session!.hubConnection!.On(key, types, value);
         Logger.LogInformation("Registered method {Key}", key);
     }
 

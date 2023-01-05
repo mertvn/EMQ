@@ -36,12 +36,14 @@ public class DbTests
 
             Assert.That(song.Titles.First().LatinTitle.Any());
             Assert.That(song.Titles.First().Language.Any());
+            Assert.That(song.Titles.Any(x => x.IsMainTitle));
 
             // Assert.That(song.Links.First().Url.Any());
 
             Assert.That(song.Sources.First().Id > 0);
             Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
             Assert.That(song.Sources.First().Titles.First().Language.Any());
+            Assert.That(song.Sources.First().Titles.Any(x => x.IsMainTitle));
             Assert.That(song.Sources.First().Links.First().Url.Any());
             Assert.That(song.Sources.First().SongTypes.Any());
 
@@ -68,6 +70,12 @@ public class DbTests
         GenericSongsAssert(songs);
     }
 
+    [Test]
+    public async Task Test_SelectSongs_YuminaMainTitleThing()
+    {
+        var songs = await DbManager.SelectSongs(new Song() { Id = 821, });
+        GenericSongsAssert(songs);
+    }
 
     [Test]
     public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
@@ -225,7 +233,7 @@ public class DbTests
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(1, 25).ToArray();
+        var rqIds = Enumerable.Range(55, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -236,7 +244,7 @@ public class DbTests
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(1, 25).ToArray();
+        var rqIds = Enumerable.Range(24, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
