@@ -157,6 +157,11 @@ public class QuizManager
     {
         if (!CorrectAnswersDict.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
         {
+            if (Quiz.QuizState.sp > Quiz.Songs.Count)
+            {
+                throw new Exception($"Invalid quiz state sp: {Quiz.QuizState.sp} SongsCount: {Quiz.Songs.Count}");
+            }
+
             correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
                 .Select(x => x.LatinTitle).ToList();
             correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
