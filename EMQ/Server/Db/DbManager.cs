@@ -648,6 +648,57 @@ public static class DbManager
         return ret;
     }
 
+    public static async Task<List<Song>> GetLootedSongs(int numSongs, List<string> validSources)
+    {
+        if (!validSources.Any())
+        {
+            return new List<Song>();
+        }
+
+        // todo no duplicates option
+        string sqlMusicIds = $@"SELECT DISTINCT mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     WHERE msel.url = ANY(@validSources)";
+
+        var ret = new List<Song>();
+        var addedMselUrls = new List<string>();
+        var rng = new Random();
+
+        List<(int, string)> ids;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            ids = (await connection.QueryAsync<(int, string)>(sqlMusicIds, new { validSources }))
+                .OrderBy(_ => rng.Next()).ToList();
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
+
+        foreach ((int mId, string? mselUrl) in ids)
+        {
+            if (ret.Count >= numSongs)
+            {
+                break;
+            }
+
+            if (!addedMselUrls.Contains(mselUrl))
+            {
+                var songs = await SelectSongs(new Song { Id = mId });
+                if (songs.Any())
+                {
+                    var song = songs.First();
+                    song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    ret.Add(song);
+                    addedMselUrls.Add(mselUrl);
+                }
+            }
+        }
+
+        return ret;
+    }
+
     public static async Task<string> SelectAutocomplete()
     {
         const string sqlAutocomplete =

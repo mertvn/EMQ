@@ -543,8 +543,8 @@ public class QuizManager
                 validSources.Add(treasure.ValidSource.Key);
             }
 
-            // reduce serialized Room size
-            // player.LootingInfo = new PlayerLootingInfo();
+            // reduce serialized Room size & prevent Inventory leak
+            player.LootingInfo = new PlayerLootingInfo();
         }
 
         if (!validSources.Any())
@@ -552,14 +552,17 @@ public class QuizManager
             // todo failed to prime etc.
         }
 
-        var dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+        Console.WriteLine($"{Quiz.Id} Players looted {validSources.Distinct().Count()} distinct sources");
+        var dbSongs = await DbManager.GetLootedSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
         if (!dbSongs.Any())
         {
             // todo failed to prime etc.
         }
 
+        Console.WriteLine($"{Quiz.Id} Selected {dbSongs.Count} looted songs");
+
         // reduce serialized Room size
-        // Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
+        Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
 
         Quiz.Songs = dbSongs;
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;

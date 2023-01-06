@@ -49,10 +49,13 @@
                     </div>
                 }
 
-                <div class="treasureRoomPlayerDiv" style="z-index: 3000000; display: inline-block; position: absolute; left: @(player.LootingInfo.X)px; top: @(player.LootingInfo.Y)px;">
-                    <img width="@(LootingConstants.PlayerAvatarSize)px" height="@(LootingConstants.PlayerAvatarSize)px"
-                         src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Looting)" alt="Avatar"
-                         style="border-radius: 50%;">
+                <div class="treasureRoomPlayerDiv" style="z-index: 300000; display: inline-block; position: absolute; left: @(player.LootingInfo.X)px; top: @(player.LootingInfo.Y)px;">
+                    <Blazorise.Tooltip Text="@player.Username">
+                        <img width="@(LootingConstants.PlayerAvatarSize)px" height="@(LootingConstants.PlayerAvatarSize)px"
+                             src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Looting)" alt="Avatar"
+                             style="border-radius: 50%;">
+                        @* <p>@player.Username</p> *@
+                    </Blazorise.Tooltip>
                 </div>
             }
         }
@@ -62,7 +65,7 @@
             @foreach (var treasure in Room.TreasureRooms[currentTreasureRoomCoords.X][currentTreasureRoomCoords.Y].Treasures)
             {
                 <div class="treasure" @onmouseover="@(() => { })"
-                     style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer;
+                     style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer; z-index: 3000000;
                      padding: 5px 5px 1px 5px; border-style: solid; border-radius: 50%;
                      border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");"
                      @onclick="@(() => PickupTreasure(treasure))">
