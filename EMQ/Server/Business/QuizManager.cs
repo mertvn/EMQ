@@ -300,10 +300,14 @@ public class QuizManager
         Console.WriteLine($"validSourcesCount: {validSources.Count}");
 
         List<Song> dbSongs;
+
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
-                dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+                dbSongs = await DbManager.GetRandomSongs(
+                    Quiz.Room.QuizSettings.NumSongs,
+                    Quiz.Room.QuizSettings.Duplicates, validSources);
+
                 if (dbSongs.Count == 0)
                 {
                     return false;
@@ -314,7 +318,9 @@ public class QuizManager
                 break;
             case SongSelectionKind.Looting:
                 dbSongs = await DbManager.GetRandomSongs(
-                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 4) / 2), validSources);
+                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 4) / 2),
+                    Quiz.Room.QuizSettings.Duplicates, validSources);
+
                 if (dbSongs.Count == 0)
                 {
                     return false;
@@ -553,7 +559,11 @@ public class QuizManager
         }
 
         Console.WriteLine($"{Quiz.Id} Players looted {validSources.Distinct().Count()} distinct sources");
-        var dbSongs = await DbManager.GetLootedSongs(Quiz.Room.QuizSettings.NumSongs, validSources);
+        var dbSongs = await DbManager.GetLootedSongs(
+            Quiz.Room.QuizSettings.NumSongs,
+            Quiz.Room.QuizSettings.Duplicates,
+            validSources);
+
         if (!dbSongs.Any())
         {
             // todo failed to prime etc.

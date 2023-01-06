@@ -107,7 +107,7 @@ public class DbTests
     [Test]
     public async Task Test_GetRandomSongs_100()
     {
-        var songs = await DbManager.GetRandomSongs(100);
+        var songs = await DbManager.GetRandomSongs(100, true);
 
         Assert.That(songs.Count > 99);
         GenericSongsAssert(songs);

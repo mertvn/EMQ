@@ -34,7 +34,9 @@ public class QuizSettings
     [DefaultValue(1)]
     public int TeamSize { get; set; } = 1;
 
-    // public bool Duplicates { get; set; } = true; // TODO
+    [Required]
+    [DefaultValue(false)]
+    public bool Duplicates { get; set; } = false;
 
     [Required]
     [Range(0, 5)]
