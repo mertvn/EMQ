@@ -616,7 +616,7 @@ public static class DbManager
 
         if (validSources != null && validSources.Any())
         {
-            sqlMusicIds += $@"WHERE msel.url = ANY(@validSources)";
+            sqlMusicIds += $@" WHERE msel.url = ANY(@validSources)";
         }
 
         var ret = new List<Song>();
