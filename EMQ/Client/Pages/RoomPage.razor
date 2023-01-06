@@ -4,13 +4,18 @@
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
+@using Microsoft.AspNetCore.SignalR.Client
 @inject HttpClient Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager Navigation
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
+@inject IJSRuntime _jsRuntime
 
-<h3>Room</h3>
+<button class="btn btn-warning" @onclick="Onclick_Leave"
+        style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
+    Leave
+</button>
 
 <div id="roomInfo">
     Name:<br/>
@@ -214,6 +219,19 @@
 
         ShowQuizSettings = !ShowQuizSettings;
         StateHasChanged();
+    }
+
+    private async Task Onclick_Leave()
+    {
+        Room = await _clientUtils.SyncRoom();
+
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", "Really leave?");
+        if (confirmed)
+        {
+            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
+            Room = await _clientUtils.SyncRoom();
+            Navigation.NavigateTo("/HotelPage");
+        }
     }
 
 }

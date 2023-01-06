@@ -181,21 +181,13 @@ namespace EMQ.Server.Hubs
             if (session != null)
             {
                 var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-                if (room?.Quiz != null)
+                if (room != null)
                 {
-                    var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                    if (quizManager != null)
-                    {
-                        // await quizManager.OnSendPlayerLeaving(session.Player.Id);
-                        Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
-                        var player = room.Players.Single(player => player.Id == session.Player.Id)!;
-                        room.Players.Remove(player);
-                        room.AllPlayerConnectionIds.Remove(Context.ConnectionId);
-                    }
-                    else
-                    {
-                        // todo
-                    }
+                    // await quizManager.OnSendPlayerLeaving(session.Player.Id);
+                    Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
+                    var player = room.Players.Single(player => player.Id == session.Player.Id)!;
+                    room.Players.Remove(player);
+                    room.AllPlayerConnectionIds.Remove(Context.ConnectionId);
                 }
                 else
                 {
