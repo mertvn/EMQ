@@ -251,7 +251,7 @@ public class QuizManager
     private async Task EnterQuiz()
     {
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizEntered");
-        await Task.Delay(TimeSpan.FromSeconds(3));
+        await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
     public async Task<bool> PrimeQuiz()
@@ -371,7 +371,7 @@ public class QuizManager
             case SongSelectionKind.Looting:
                 await EnterLootingPhase();
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
-                await Task.Delay(TimeSpan.FromSeconds(3));
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
                     .SendAsync("ReceiveUpdateTreasureRoom", Quiz.Room.TreasureRooms[0][0]);
                 break;
