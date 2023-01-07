@@ -13,6 +13,7 @@
     @((int) Math.Round(Countdown / 1000))
 </div>
 
+@* z-indexes: arrow > treasure > player *@
 <div id="treasureRoomMainDiv" tabindex="0" @ref="_treasureRoomMainDivRef"
      style="width: @(LootingConstants.TreasureRoomWidth)px; height: @(LootingConstants.TreasureRoomHeight)px;
       background-color: gray; word-wrap: break-word; position: absolute; left: 50%; transform: translate(-50%, 0);"
@@ -48,6 +49,11 @@
                         }
                     </div>
                 }
+
+                <div id="treasureRoomCoordsDiv"
+                     style="position: absolute; right: 2px; top: 2px;">
+                    (@(player.LootingInfo.TreasureRoomCoords.X),@(player.LootingInfo.TreasureRoomCoords.Y))
+                </div>
 
                 <div class="treasureRoomPlayerDiv" style="z-index: 300000; display: inline-block; position: absolute; left: @(player.LootingInfo.X)px; top: @(player.LootingInfo.Y)px;">
                     <Blazorise.Tooltip Text="@player.Username">
@@ -117,7 +123,7 @@
             }
 
             <div class="changeTreasureRoomArrowDiv"
-                 style="position: absolute; left: @(arrowPosition.X)px; top:@(arrowPosition.Y)px;
+                 style="position: absolute; left: @(arrowPosition.X)px; top:@(arrowPosition.Y)px; z-index: 30000000;
                           font-size: xx-large; cursor: pointer;
                           color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");
                           pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y));"

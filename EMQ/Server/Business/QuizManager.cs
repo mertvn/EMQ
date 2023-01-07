@@ -489,18 +489,13 @@ public class QuizManager
 
     private async Task EnterLootingPhase()
     {
+        var rng = Random.Shared;
+
         Quiz.QuizState.Phase = new LootingPhase();
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.LootingMs;
 
-        foreach (var player in Quiz.Room.Players)
-        {
-            player.PlayerStatus = PlayerStatus.Looting;
-            player.LootingInfo = new PlayerLootingInfo();
-        }
-
         TreasureRoom[][] GenerateTreasureRooms(Dictionary<string, List<Title>> validSources)
         {
-            var rng = Random.Shared;
             int gridSize = 3; // todo
 
             TreasureRoom[][] treasureRooms =
@@ -536,14 +531,27 @@ public class QuizManager
 
             Quiz.QuizState.LootingGridSize = gridSize;
 
-            const int maxX = LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize;
-            const int maxY = LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize;
+            foreach (var player in Quiz.Room.Players)
+            {
+                player.PlayerStatus = PlayerStatus.Looting;
+                player.LootingInfo = new PlayerLootingInfo
+                {
+                    X = (int)(LootingConstants.TreasureRoomWidth / 2),
+                    Y = (int)(LootingConstants.TreasureRoomHeight / 2),
+                    Inventory = new List<Treasure>(),
+                    TreasureRoomCoords =
+                        new Point(rng.Next(Quiz.QuizState.LootingGridSize), rng.Next(Quiz.QuizState.LootingGridSize)),
+                };
+            }
+
+            const int treasureMaxX = LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize;
+            const int treasureMaxY = LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize;
             foreach (var dbSong in validSources)
             {
                 var treasure = new Treasure(
                     Guid.NewGuid(),
                     dbSong,
-                    new Point(rng.Next(maxX), rng.Next(maxY)));
+                    new Point(rng.Next(treasureMaxX), rng.Next(treasureMaxY)));
 
                 // todo max treasures in one room?
                 // todo better position randomization?
@@ -644,7 +652,7 @@ public class QuizManager
                 else
                 {
                     Console.WriteLine(
-                        $"Player is not close enough to the treasure to pickup: {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
+                        $"Player is not close enough to the treasure to pickup: {player.LootingInfo.X},{player.LootingInfo.Y} -> " +
                         $"{treasure.Position.X},{treasure.Position.Y}");
                 }
             }
