@@ -301,13 +301,10 @@ public class QuizManager
                     Console.WriteLine($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
                     Console.WriteLine($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
 
+                    validSources = include.SelectMany(x => x.VnUrls).ToList();
                     if (exclude.Any())
                     {
-                        foreach (Label excludedLabel in exclude)
-                        {
-                            var final = include.SelectMany(x => x.VnUrls.Except(excludedLabel.VnUrls));
-                            validSources.AddRange(final);
-                        }
+                        validSources = validSources.Except(exclude.SelectMany(x=> x.VnUrls)).ToList();
                     }
                     else
                     {
