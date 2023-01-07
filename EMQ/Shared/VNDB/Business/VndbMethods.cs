@@ -13,8 +13,6 @@ namespace EMQ.Shared.VNDB.Business;
 
 public static class VndbMethods
 {
-    // todo: consider rewriting this to grab all vns in a single Juliet.Api.POST_ulist call (~20% faster for my list)
-    // would need more post-processing to match returned vns to labels though, so it might not be a big improvement
     public static async Task<List<Label>> GrabPlayerVNsFromVndb(PlayerVndbInfo vndbInfo)
     {
         var ret = new List<Label>();
