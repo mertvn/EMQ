@@ -13,7 +13,6 @@ w
 * Proper authentication/authorization
 * CSS... (help!)
 * player left room event
-* restore state on page refresh
 * auto-generate autocomplete list
 * coop: ability to click teammate's answer to switch to it
 * coop: team answers should be determined by count
