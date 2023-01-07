@@ -33,6 +33,7 @@
                 "ReceiveUpdateTreasureRoom", (new Type[] { typeof(TreasureRoom), },
                     async param => { await OnReceiveUpdateTreasureRoom((TreasureRoom) param[0]!); })
             },
+            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
         };
     }
 
@@ -132,6 +133,12 @@
 
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);
+    }
+
+    private async Task OnReceiveQuizEntered()
+    {
+        _logger.LogInformation("Navigating from Pyramid to Quiz");
+        _navigation.NavigateTo("/QuizPage");
     }
 
 }
