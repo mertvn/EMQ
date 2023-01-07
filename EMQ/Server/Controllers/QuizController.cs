@@ -142,56 +142,54 @@ public class QuizController : ControllerBase
         var player = session.Player;
         if (room.Password == req.Password)
         {
-            if (!room.Players.Any(x => x.Id == req.PlayerId))
+            if (room.Players.Any(x => x.Id == req.PlayerId))
             {
-                var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
-                if (oldRoom is not null)
+                // TODO probably shouldn't allow this after the necessary changes for detecting players leaving rooms is completed
+                return new ResJoinRoom(0);
+            }
+
+            var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
+            if (oldRoom is not null)
+            {
+                _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
+                oldRoom.Players.RemoveAll(x => x.Id == player.Id);
+            }
+
+            // hotjoins have to be handled differently
+            if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
+                or QuizPhaseKind.Looting)
+            {
+                if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
                 {
-                    _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
-                    oldRoom.Players.RemoveAll(x => x.Id == player.Id);
-                }
+                    _logger.LogInformation($"Added player {req.PlayerId} to JoinQueue in room " + room.Id);
+                    room.Quiz.JoinQueue.Enqueue(session);
 
-                // hotjoins have to be handled differently
-                if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
-                    or QuizPhaseKind.Looting)
-                {
-                    if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
-                    {
-                        _logger.LogInformation($"Added player {req.PlayerId} to JoinQueue in room " + room.Id);
-                        room.Quiz.JoinQueue.Enqueue(session);
-
-                        return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
-                    }
-                    else
-                    {
-                        // todo
-                        throw new Exception();
-                    }
-                }
-                else if (room.Quiz is null || room.Quiz.QuizState.Phase.Kind == QuizPhaseKind.Results)
-                {
-                    _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
-                    room.Players.Add(player);
-                    // _logger.LogInformation("cnnid: " + session.ConnectionId!);
-                    room.AllPlayerConnectionIds.Add(session.ConnectionId!);
-
-                    // let every other player in the room know that a new player joined,
-                    // we can't send this message to the joining player because their room page hasn't initialized yet
-                    await _hubContext.Clients.Clients(room.AllPlayerConnectionIds.Where(x => x != session.ConnectionId))
-                        .SendAsync("ReceivePlayerJoinedRoom");
-
-                    return new ResJoinRoom(0);
+                    return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
                 }
                 else
                 {
-                    _logger.LogError("Invalid room/quiz state when attempting to add new player to room");
-                    throw new Exception("Invalid room/quiz state when attempting to add new player to room");
+                    // todo
+                    throw new Exception();
                 }
+            }
+            else if (room.Quiz is null || room.Quiz.QuizState.Phase.Kind == QuizPhaseKind.Results)
+            {
+                _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
+                room.Players.Add(player);
+                // _logger.LogInformation("cnnid: " + session.ConnectionId!);
+                room.AllPlayerConnectionIds.Add(session.ConnectionId!);
+
+                // let every other player in the room know that a new player joined,
+                // we can't send this message to the joining player because their room page hasn't initialized yet
+                await _hubContext.Clients.Clients(room.AllPlayerConnectionIds.Where(x => x != session.ConnectionId))
+                    .SendAsync("ReceivePlayerJoinedRoom");
+
+                return new ResJoinRoom(0);
             }
             else
             {
-                // todo warn error
-                throw new Exception();
+                _logger.LogError("Invalid room/quiz state when attempting to add new player to room");
+                throw new Exception("Invalid room/quiz state when attempting to add new player to room");
             }
         }
         else

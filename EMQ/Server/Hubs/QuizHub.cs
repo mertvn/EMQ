@@ -188,6 +188,8 @@ namespace EMQ.Server.Hubs
                     var player = room.Players.Single(player => player.Id == session.Player.Id)!;
                     room.Players.Remove(player);
                     room.AllPlayerConnectionIds.Remove(Context.ConnectionId);
+
+                    // todo check if there are any players left in the room
                 }
                 else
                 {

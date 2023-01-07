@@ -8,6 +8,7 @@
 @inject HttpClient Client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
+@inject ClientUtils _clientUtils
 
 <h3>Hotel</h3>
 
@@ -65,6 +66,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await _clientUtils.TryRestoreSession();
         IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
         if (res is not null)
         {
@@ -108,12 +110,14 @@
             int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;
             if (waitTime > 0)
             {
-                // todo display the wait time to the player
+    // todo display the wait time to the player
                 Console.WriteLine($"waiting for {waitTime} ms to join room");
                 await Task.Delay(waitTime);
             }
 
             ClientState.Session.RoomId = roomId;
+            await _clientUtils.SaveSessionToLocalStorage();
+
             Navigation.NavigateTo("/RoomPage");
         }
 

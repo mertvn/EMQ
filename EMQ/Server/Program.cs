@@ -6,6 +6,7 @@ using EMQ.Server.Hubs;
 using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +30,13 @@ builder.Services.AddRazorPages();
 // builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
 //     .AddCookie(options =>
 //     {
-//         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+//         options.Cookie = new CookieBuilder()
+//         {
+//             Name = "EMQSessionCookie",
+//             SameSite = SameSiteMode.Strict,
+//             HttpOnly = false,
+//         };
+//         options.ExpireTimeSpan = TimeSpan.FromHours(6);
 //         options.SlidingExpiration = true;
 //         options.AccessDeniedPath = "/Forbidden/";
 //     });

@@ -214,6 +214,7 @@
     // todo reset page state between quizzes
         PageState.DebugOut.Add("init QuizPage");
 
+        await _clientUtils.TryRestoreSession();
         if (ClientState.Session!.hubConnection is not null)
         {
             await _clientConnectionManager.SetHandlers(_handlers);
@@ -221,9 +222,7 @@
         }
         else
         {
-    // await _clientConnectionManager.StartManagingConnection();
-    // todo warn error, reload
-    // todo restore session from cookie or smth
+    // todo warn error, redirect to index page
         }
 
     // await Task.Delay(TimeSpan.FromSeconds(2));

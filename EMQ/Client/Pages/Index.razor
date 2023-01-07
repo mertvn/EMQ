@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Logging
 @using System.ComponentModel.DataAnnotations
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.VNDB.Business
 @using Juliet.Model.Param
@@ -15,6 +16,7 @@
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
+@inject Blazored.LocalStorage.ILocalStorageService _localStorage
 
 <h1>Eroge Music Quiz</h1>
 
@@ -144,6 +146,11 @@
 
     public List<Label> Labels { get; set; } = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        await _clientUtils.TryRestoreSession();
+    }
+
     private async Task Logout()
     {
         if (ClientState.Session is not null)
@@ -152,6 +159,11 @@
             if (res.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Logged out");
+
+    // todo disconnect hub connection
+                ClientState.Session = null;
+                await _clientUtils.SaveSessionToLocalStorage();
+
                 Navigation.NavigateTo("/", forceLoad: true);
             }
             else
@@ -215,9 +227,10 @@
                 {
                     LoginProgressDisplay.Add($"Created session.");
                     StateHasChanged();
-                    _logger.LogInformation("token: " + resCreateSession.Session);
 
                     ClientState.Session = resCreateSession.Session;
+                    await _clientUtils.SaveSessionToLocalStorage();
+
                     if (ClientState.Session.VndbInfo.Labels is not null)
                     {
                         Labels = ClientState.Session.VndbInfo.Labels.ToList();
@@ -231,9 +244,9 @@
                     LoginProgressDisplay.Add($"Initialized websocket connection.");
                     StateHasChanged();
 
-                    LoginProgressDisplay.Add($"Successfully logged in. Navigating to Hotel.");
-                    StateHasChanged();
+                    LoginProgressDisplay.Add($"Successfully logged in.");
                     LoginInProgress = false;
+                    StateHasChanged();
 
                     if (ClientState.Session.VndbInfo.Labels is null)
                     {
@@ -286,6 +299,8 @@
                 Label oldLabel = Labels.Single(x => x.Id == updatedLabel.Id);
                 oldLabel.Kind = updatedLabel.Kind;
                 oldLabel.VnUrls = updatedLabel.VnUrls;
+
+                await _clientUtils.SaveSessionToLocalStorage();
             }
         }
         else

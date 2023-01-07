@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using Blazored.LocalStorage;
 using Blazorise;
 using Blazorise.Bootstrap5;
 using EMQ.Client;
@@ -16,5 +17,7 @@ builder.Services.AddSingleton<ClientUtils>();
 builder.Services.AddSingleton<ClientConnectionManager>();
 
 builder.Services.AddBlazorise(options => { options.Immediate = true; }).AddBootstrap5Providers();
+
+builder.Services.AddBlazoredLocalStorageAsSingleton();
 
 await builder.Build().RunAsync();

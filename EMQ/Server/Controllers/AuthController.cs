@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
@@ -9,6 +10,8 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.VNDBObject;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -82,6 +85,29 @@ public class AuthController : ControllerBase
         ServerState.Sessions.Add(session);
         _logger.LogInformation("Created new session for player " + player.Id + $" ({session.VndbInfo.VndbId})");
 
+        // var claims = new List<Claim>
+        // {
+        //     new Claim(ClaimTypes.Sid, player.Id.ToString()),
+        //     new Claim(ClaimTypes.Name, player.Username),
+        //     new Claim(ClaimTypes.Role, "User"),
+        // };
+        //
+        // var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        // var authProperties = new AuthenticationProperties
+        // {
+        //     AllowRefresh = true,
+        //     IsPersistent = true,
+        //
+        //     //RedirectUri = <string>
+        //     // The full path or absolute URI to be used as an http
+        //     // redirect response value.
+        // };
+        //
+        // await HttpContext.SignInAsync(
+        //     CookieAuthenticationDefaults.AuthenticationScheme,
+        //     new ClaimsPrincipal(claimsIdentity),
+        //     authProperties);
+
         return new ResCreateSession(session);
     }
 
@@ -89,10 +115,21 @@ public class AuthController : ControllerBase
     [Route("RemoveSession")]
     public async Task RemoveSession([FromBody] ReqRemoveSession req)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == req.Token);
-        _logger.LogInformation("Removing session " + session.Token);
-        ServerState.Sessions.Remove(session);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
+        _logger.LogInformation("Removing session " + session?.Token);
+        if (session != null)
+        {
+            ServerState.Sessions.Remove(session);
+        }
         // todo notify room?
+    }
+
+    [HttpPost]
+    [Route("ValidateSession")]
+    public async Task<ActionResult> RemoveSession([FromBody] string token)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+        return session == null ? Unauthorized() : Ok();
     }
 
     [HttpPost]

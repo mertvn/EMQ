@@ -7,6 +7,7 @@
 @using EMQ.Shared.Core.UI
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
+@inject ClientUtils _clientUtils
 
 <h3>Library</h3>
 
@@ -143,6 +144,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await _clientUtils.TryRestoreSession();
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
     }
 
