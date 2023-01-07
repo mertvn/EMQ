@@ -247,7 +247,6 @@
                 {
                     nextSong.Data = dledSong.Data;
                     _clientSongs[0] = nextSong;
-                    await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
                 }
             }
             else
@@ -260,6 +259,9 @@
                     await OnReceiveQuizCanceled();
                 }
             }
+
+    // we want to send this message regardless of whether the preloading was successful or not
+            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
         }
     }
 
