@@ -211,10 +211,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await _clientUtils.TryRestoreSession();
+
     // todo reset page state between quizzes
         PageState.DebugOut.Add("init QuizPage");
-
-        await _clientUtils.TryRestoreSession();
         if (ClientState.Session!.hubConnection is not null)
         {
             await _clientConnectionManager.SetHandlers(_handlers);

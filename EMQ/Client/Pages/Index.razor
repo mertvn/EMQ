@@ -148,7 +148,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        LoginInProgress = true;
+        StateHasChanged();
         await _clientUtils.TryRestoreSession();
+        LoginInProgress = false;
+        StateHasChanged();
     }
 
     private async Task Logout()
