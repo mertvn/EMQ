@@ -32,14 +32,13 @@
     //         if (e.keyCode === 8 && !isTextBox(e.target)) e.preventDefault();
     //     }
     // }
-
-    function isTextBox(element) {
-        const tagName = element.tagName.toLowerCase();
-        if (tagName !== "input") return false;
-
-        const typeAttr = element.getAttribute('type').toLowerCase();
-        return typeAttr === 'text';
-    }
+    // function isTextBox(element) {
+    //     const tagName = element.tagName.toLowerCase();
+    //     if (tagName !== "input") return false;
+    //
+    //     const typeAttr = element.getAttribute('type').toLowerCase();
+    //     return typeAttr === 'text';
+    // }
 
     async function reloadVideo(startTime) {
         // console.log("here")

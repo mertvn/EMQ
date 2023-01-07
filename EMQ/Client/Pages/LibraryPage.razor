@@ -87,16 +87,22 @@
 
                 @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
                 {
-                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
-                        <DataAnnotationsValidator/>
+                    <button class="btn btn-primary" style="margin-top: 5px" @onclick="@(() => ChangeActiveSong(song.Id))" disabled="@(ClientState.Session == null)">
+                        @UiHelpers.Bool2Text(ActiveSongId == song.Id, "Hide form", "Show form")
+                    </button>
+                    if (song.Id == ActiveSongId)
+                    {
+                        <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
+                            <DataAnnotationsValidator/>
 
-                        <div>
-                            <label for="songUrl">Add link: </label>
-                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
-                            <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
-                        </div>
-                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                    </EditForm>
+                            <div>
+                                <label for="songUrl">Add link: </label>
+                                <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
+                                <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
+                            </div>
+                            <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                        </EditForm>
+                    }
                 }
             </div>
 
@@ -141,6 +147,8 @@
     public IEnumerable<string> currentDataSource = Array.Empty<string>();
 
     public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
+
+    public int ActiveSongId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -253,6 +261,20 @@
     private async Task SelectedValueChanged(string arg)
     {
         currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
+    }
+
+    private void ChangeActiveSong(int songId)
+    {
+        _addSongLinkModel.Url = "";
+        if (songId == ActiveSongId)
+        {
+            ActiveSongId = 0;
+        }
+        else
+        {
+            ActiveSongId = songId;
+        }
+        StateHasChanged();
     }
 
 }

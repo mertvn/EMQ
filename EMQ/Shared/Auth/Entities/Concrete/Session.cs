@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -11,6 +12,7 @@ public class Session
     {
         Player = player;
         Token = token;
+        CreatedAt = DateTime.Now;
     }
 
     public Player Player { get; }
@@ -25,4 +27,6 @@ public class Session
     public int? RoomId { get; set; }
 
     public PlayerVndbInfo VndbInfo { get; set; } = new();
+
+    public DateTime CreatedAt { get; set; }
 }
