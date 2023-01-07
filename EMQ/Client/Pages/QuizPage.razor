@@ -152,6 +152,7 @@
         {
             { "ReceiveQuizStarted", (new Type[] { }, async _ => { await OnReceiveQuizStarted(); }) },
             { "ReceiveQuizEnded", (new Type[] { }, async _ => { await OnReceiveQuizEnded(); }) },
+            { "ReceiveQuizCanceled", (new Type[] { }, async _ => { await OnReceiveQuizCanceled(); }) },
             { "ReceiveResyncRequired", (new Type[] { }, async _ => { await OnReceiveResyncRequired(); }) },
             { "ReceivePhaseChanged", (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int) phase[0]!); }) },
             { "ReceiveCorrectAnswer", (new Type[] { typeof(Song) }, async correctAnswer => { await OnReceiveCorrectAnswer((Song) correctAnswer[0]!); }) },
@@ -225,7 +226,14 @@
     // todo restore session from cookie or smth
         }
 
+    // await Task.Delay(TimeSpan.FromSeconds(2));
         await SyncWithServer();
+
+        if (Room!.Quiz!.QuizState.QuizStatus == QuizStatus.Canceled)
+        {
+            await OnReceiveQuizCanceled();
+        }
+
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
 
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
@@ -234,9 +242,23 @@
             Song? nextSong = await NextSong(0);
             if (nextSong is not null)
             {
-                nextSong.Data = (await DlSong(nextSong)).Data;
-                _clientSongs[0] = nextSong;
-                await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
+                var dledSong = await DlSong(nextSong);
+                if (!string.IsNullOrEmpty(dledSong.Data))
+                {
+                    nextSong.Data = dledSong.Data;
+                    _clientSongs[0] = nextSong;
+                    await ClientState.Session.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
+                }
+            }
+            else
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                await SyncWithServer();
+
+                if (Room!.Quiz!.QuizState.QuizStatus == QuizStatus.Canceled)
+                {
+                    await OnReceiveQuizCanceled();
+                }
             }
         }
     }
@@ -322,6 +344,13 @@
         await SyncWithServer();
     // TODO: do endgame stuff
         await Task.Delay(TimeSpan.FromSeconds(15));
+        _navigation.NavigateTo("/RoomPage");
+    }
+
+    private async Task OnReceiveQuizCanceled()
+    {
+        await SyncWithServer();
+        await Task.Delay(TimeSpan.FromSeconds(1));
         _navigation.NavigateTo("/RoomPage");
     }
 

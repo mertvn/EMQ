@@ -4,5 +4,6 @@ public enum QuizStatus
 {
     Starting,
     Playing,
-    Ended
+    Ended,
+    Canceled
 }

@@ -61,8 +61,6 @@
         }
 
         await _clientConnectionManager.SetHandlers(_handlers);
-
-        await Task.Delay(TimeSpan.FromSeconds(1));
         SetTimer();
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);

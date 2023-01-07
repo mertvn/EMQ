@@ -50,7 +50,7 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("NextSong")]
-    public ResNextSong? NextSong([FromBody] ReqNextSong req)
+    public ActionResult<ResNextSong> NextSong([FromBody] ReqNextSong req)
     {
         // todo? verify user belongs in room
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
@@ -70,25 +70,25 @@ public class QuizController : ControllerBase
                     else
                     {
                         _logger.LogError("Requested song index is invalid: " + req.SongIndex);
-                        return null;
+                        return BadRequest("Requested song index is invalid: " + req.SongIndex);
                     }
                 }
                 else
                 {
                     _logger.LogError("Requested song index is too far in the future: " + req.SongIndex);
-                    return null;
+                    return BadRequest("Requested song index is too far in the future: " + req.SongIndex);
                 }
             }
             else
             {
                 _logger.LogError("Room does not have a quiz initialized: " + req.RoomId);
-                return null;
+                return BadRequest("Room does not have a quiz initialized: " + req.RoomId);
             }
         }
         else
         {
             _logger.LogError("Room not found: " + req.RoomId);
-            return null;
+            return BadRequest("Room not found: " + req.RoomId);
         }
     }
 
@@ -233,7 +233,7 @@ public class QuizController : ControllerBase
                 else
                 {
                     _logger.LogWarning("Failed to prime quiz {quiz.Id} - canceling", quiz.Id);
-                    // todo cancel quiz and return to room
+                    await quizManager.CancelQuiz();
                 }
             }
             else

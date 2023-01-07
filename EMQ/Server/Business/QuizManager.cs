@@ -64,8 +64,15 @@ public class QuizManager
                         await EnterGuessingPhase();
                         break;
                     case QuizPhaseKind.Looting:
-                        await SetLootedSongs();
+                        bool lootingSuccess = await SetLootedSongs();
                         await EnterQuiz();
+
+                        if (!lootingSuccess)
+                        {
+                            Console.WriteLine($"{Quiz.Id} Canceling quiz due to looting failure");
+                            await CancelQuiz();
+                        }
+
                         await EnterGuessingPhase();
                         break;
                     default:
@@ -75,6 +82,16 @@ public class QuizManager
                 Quiz.Timer.Start();
             }
         }
+    }
+
+    public async Task CancelQuiz()
+    {
+        Quiz.QuizState.QuizStatus = QuizStatus.Canceled;
+        Quiz.Timer.Stop();
+        Quiz.Timer.Elapsed -= OnTimedEvent;
+
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveQuizCanceled");
+        // Quiz.Room.Quiz = null; // todo
     }
 
     private async Task EnterGuessingPhase()
@@ -157,7 +174,7 @@ public class QuizManager
     {
         if (!CorrectAnswersDict.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
         {
-            if (Quiz.QuizState.sp > Quiz.Songs.Count)
+            if (Quiz.QuizState.sp < 0 || Quiz.QuizState.sp > Quiz.Songs.Count)
             {
                 throw new Exception($"Invalid quiz state sp: {Quiz.QuizState.sp} SongsCount: {Quiz.Songs.Count}");
             }
@@ -544,7 +561,7 @@ public class QuizManager
         // todo
     }
 
-    private async Task SetLootedSongs()
+    private async Task<bool> SetLootedSongs()
     {
         var validSources = new List<string>();
         foreach (var player in Quiz.Room.Players)
@@ -560,7 +577,7 @@ public class QuizManager
 
         if (!validSources.Any())
         {
-            // todo failed to prime etc.
+            return false;
         }
 
         Console.WriteLine($"{Quiz.Id} Players looted {validSources.Distinct().Count()} distinct sources");
@@ -571,7 +588,7 @@ public class QuizManager
 
         if (!dbSongs.Any())
         {
-            // todo failed to prime etc.
+            return false;
         }
 
         Console.WriteLine($"{Quiz.Id} Selected {dbSongs.Count} looted songs");
@@ -581,6 +598,8 @@ public class QuizManager
 
         Quiz.Songs = dbSongs;
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+
+        return true;
     }
 
     public async Task OnSendPlayerMoved(Player player, float newX, float newY, DateTime dateTime, string connectionId)
