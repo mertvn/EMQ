@@ -413,7 +413,7 @@ public class QuizManager
         player.IsBuffered = true;
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        Console.WriteLine($"isBufferedCount {isBufferedCount}");
+        Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isBufferedCount: {isBufferedCount}");
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
@@ -798,6 +798,7 @@ public class QuizManager
             {
                 Quiz.QuizState.RemainingMs = 1000;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
+                Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} Skipping...");
 
                 foreach (Player p in Quiz.Room.Players)
                 {
