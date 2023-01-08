@@ -12,22 +12,21 @@ w
 * Restart songs on results phase option
 * Proper authentication/authorization
 * CSS... (help!)
-* player left room event
 * auto-generate autocomplete list
 * coop: ability to click teammate's answer to switch to it
 * coop: team answers should be determined by count
 * QuizLog
 * trim before autocomplete
 * 6+ players everything stretching
-* rejoining player double losing lives?
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 * previous song playing instead of the new song when the phase change message to the results phase is not received due
   to a disconnect
-* player -> (site)user + (quiz)player
 * Japanese song titles (VGMdb, EGS)
+* player -> (site)user + (quiz)player
+* check if players are still active ^prerequisite
 * song lengths (~~EGS~~ usually has the full-size lengths, maybe link scanning?)
+* song link selection ^prerequisite
 * ~~leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick~~ applied band-aid
-* song link selection
 
 ## Steps to import data
 
