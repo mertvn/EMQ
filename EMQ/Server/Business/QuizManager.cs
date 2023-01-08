@@ -304,7 +304,7 @@ public class QuizManager
                     validSources = include.SelectMany(x => x.VnUrls).ToList();
                     if (exclude.Any())
                     {
-                        validSources = validSources.Except(exclude.SelectMany(x=> x.VnUrls)).ToList();
+                        validSources = validSources.Except(exclude.SelectMany(x => x.VnUrls)).ToList();
                     }
                     else
                     {
@@ -416,7 +416,14 @@ public class QuizManager
         {
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
 
+            // todo player initialization logic shouldn't be here at all after the user + player separation
             var player = Quiz.Room.Players.Single(x => x.Id == playerId);
+            if (player.Score > 0 || player.Guess != "" || (Quiz.Room.QuizSettings.MaxLives > 0 &&
+                                                           player.Lives != Quiz.Room.QuizSettings.MaxLives))
+            {
+                return;
+            }
+
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
             player.Guess = "";

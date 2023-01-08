@@ -947,20 +947,20 @@ public static class DbManager
         }
     }
 
-    public static async Task ImportReviewQueue(List<ReviewQueue> reviewQueues)
-    {
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.OpenAsync();
-        await using (var transaction = await connection.BeginTransactionAsync())
-        {
-            foreach (ReviewQueue reviewQueue in reviewQueues)
-            {
-                await connection.InsertAsync(reviewQueue);
-            }
-
-            await transaction.CommitAsync();
-        }
-    }
+    // public static async Task ImportReviewQueue(List<ReviewQueue> reviewQueues)
+    // {
+    //     await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+    //     await connection.OpenAsync();
+    //     await using (var transaction = await connection.BeginTransactionAsync())
+    //     {
+    //         foreach (ReviewQueue reviewQueue in reviewQueues)
+    //         {
+    //             await connection.InsertAsync(reviewQueue);
+    //         }
+    //
+    //         await transaction.CommitAsync();
+    //     }
+    // }
 
     public static async Task<IEnumerable<RQ>> FindRQs(DateTime startDate, DateTime endDate)
     {

@@ -248,14 +248,15 @@ public class DbTests
         await DbManager.ImportSongLite(deserialized!);
     }
 
-    [Test, Explicit]
-    public async Task ImportReviewQueue()
-    {
-        var deserialized =
-            JsonConvert.DeserializeObject<List<ReviewQueue>>(
-                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\ReviewQueue.json"));
-        await DbManager.ImportReviewQueue(deserialized!);
-    }
+    // music ids can change between vndb imports, so this doesn't work correctly right now
+    // [Test, Explicit]
+    // public async Task ImportReviewQueue()
+    // {
+    //     var deserialized =
+    //         JsonConvert.DeserializeObject<List<ReviewQueue>>(
+    //             await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\ReviewQueue.json"));
+    //     await DbManager.ImportReviewQueue(deserialized!);
+    // }
 
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()

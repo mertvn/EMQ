@@ -77,7 +77,7 @@
                      @onclick="@(() => PickupTreasure(treasure))">
 
                     @* todo title selection *@
-                    @* todo invisible until picked up quiz setting *@
+                    @* todo invisible until picked up quiz setting or until in range *@
                     <Blazorise.Tooltip Text="@treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle">
                         <img width="@(LootingConstants.PlayerAvatarSize - 20)px" height="@(LootingConstants.PlayerAvatarSize - 20)px"
                              src="assets/gem.svg" alt="Treasure"
@@ -110,14 +110,6 @@
                     arrowPosition = new Point(5, LootingConstants.TreasureRoomHeight / 2);
                     arrowText = "←";
                     break;
-                // case Direction.Northeast:
-                //     break;
-                // case Direction.Northwest:
-                //     break;
-                // case Direction.Southeast:
-                //     break;
-                // case Direction.Southwest:
-                //     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -136,8 +128,6 @@
 </div>
 
 @code {
-
-    // apparently these properties are null on the first render, before they are initialized through the Parameter attribute (???)
 
     [Parameter]
     public Room? Room { get; set; }
@@ -281,6 +271,12 @@
     {
         Room = room;
         StateHasChanged();
+    }
+
+    public void StopTimers()
+    {
+        _movementTimer.Stop();
+        _movementTimer.Elapsed -= MovementTimerOnElapsed;
     }
 
 }

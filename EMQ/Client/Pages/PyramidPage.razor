@@ -37,10 +37,6 @@
         };
     }
 
-    // public List<Treasure> Inventory { get; set; } = new();
-
-    // public List<TreasureRoom> TreasureRooms { get; set; } = new(new TreasureRoom[100]);
-
     private static Room? Room { get; set; }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
@@ -137,6 +133,8 @@
 
     private async Task OnReceiveQuizEntered()
     {
+        _treasureRoomComponentRef.StopTimers();
+
         _logger.LogInformation("Navigating from Pyramid to Quiz");
         _navigation.NavigateTo("/QuizPage");
     }
