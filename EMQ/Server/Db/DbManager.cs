@@ -610,7 +610,7 @@ public static class DbManager
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null)
     {
-        string sqlMusicIds = $@"SELECT DISTINCT mel.music_id, msel.url FROM music_external_link mel
+        string sqlMusicIds = $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -664,7 +664,7 @@ public static class DbManager
             }
         }
 
-        return ret.DistinctBy(x => x.Id).ToList();
+        return ret;
     }
 
     public static async Task<List<Song>> GetLootedSongs(int numSongs, bool duplicates, List<string> validSources)
@@ -674,7 +674,7 @@ public static class DbManager
             return new List<Song>();
         }
 
-        string sqlMusicIds = $@"SELECT DISTINCT mel.music_id, msel.url FROM music_external_link mel
+        string sqlMusicIds = $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -714,7 +714,7 @@ public static class DbManager
             }
         }
 
-        return ret.DistinctBy(x => x.Id).ToList();
+        return ret;
     }
 
     public static async Task<string> SelectAutocomplete()
