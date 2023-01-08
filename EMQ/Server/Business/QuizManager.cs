@@ -794,7 +794,7 @@ public class QuizManager
 
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
             Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isSkippingCount: {isSkippingCount}");
-            if ((float)isSkippingCount >= (float)Quiz.Room.Players.Count * 0.6) // todo?
+            if ((float)isSkippingCount >= (float)Quiz.Room.Players.Count * 0.66) // todo?
             {
                 Quiz.QuizState.RemainingMs = 1000;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
