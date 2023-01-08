@@ -26,27 +26,32 @@
         </p>
     }
 
-    @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+    @if (Room?.Quiz != null)
     {
+        @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+        {
+            <button class="btn btn-primary"
+                    disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)"
+                    @onclick="SendPauseQuiz"
+                    style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
+                @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
+            </button>
+        }
+
+        int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
+        int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
         <button class="btn btn-primary"
-                disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)"
-                @onclick="SendPauseQuiz"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
-            @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
+                disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 3000 && Room?.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
+                @onclick="SendToggleSkip"
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
+            @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
+        </button>
+
+        <button class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
+            Leave
         </button>
     }
-
-    <button class="btn btn-primary"
-            disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 3000 && Room?.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
-            @onclick="SendToggleSkip"
-            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
-        @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, "Skipping", "Skip")
-    </button>
-
-    <button class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"
-            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
-        Leave
-    </button>
 
     <div style="display:flex; justify-content:center; align-items:center;">
         <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>

@@ -793,8 +793,10 @@ public class QuizManager
             // await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveResyncRequired");
 
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
-            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isSkippingCount: {isSkippingCount}");
-            if ((float)isSkippingCount >= (float)Quiz.Room.Players.Count * 0.66) // todo?
+            int skipNumber = (int)Math.Round((float)Quiz.Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
+
+            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isSkippingCount: {isSkippingCount}/{skipNumber}");
+            if (isSkippingCount >= skipNumber)
             {
                 Quiz.QuizState.RemainingMs = 1000;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
