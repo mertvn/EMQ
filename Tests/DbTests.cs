@@ -113,6 +113,24 @@ public class DbTests
         GenericSongsAssert(songs);
     }
 
+    [Test]
+    public async Task Test_GetRandomSongs_IsDistinct()
+    {
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
+
+        HashSet<int> seen = new();
+        foreach (Song song in songs)
+        {
+            bool added = seen.Add(song.Id);
+            if (!added)
+            {
+                throw new Exception();
+            }
+        }
+
+        GenericSongsAssert(songs);
+    }
+
     [Test, Explicit]
     public async Task Test_InsertSong()
     {
@@ -228,6 +246,15 @@ public class DbTests
             JsonConvert.DeserializeObject<List<SongLite>>(
                 await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
         await DbManager.ImportSongLite(deserialized!);
+    }
+
+    [Test, Explicit]
+    public async Task ImportReviewQueue()
+    {
+        var deserialized =
+            JsonConvert.DeserializeObject<List<ReviewQueue>>(
+                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\ReviewQueue.json"));
+        await DbManager.ImportReviewQueue(deserialized!);
     }
 
     [Test, Explicit]

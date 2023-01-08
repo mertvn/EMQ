@@ -12,4 +12,6 @@ public class SongLite
     public List<string> SourceVndbIds { get; set; }
 
     public List<string> ArtistVndbIds { get; set; }
+
+    public string Md5Hash { get; set; }
 }

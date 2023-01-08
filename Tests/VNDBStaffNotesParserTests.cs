@@ -37,7 +37,7 @@ public class VNDBStaffNotesParserTests
         };
         // @formatter:on
 
-        string date = "2022-12-24";
+        string date = "2023-01-07";
         string folder = $"C:\\emq\\vndb\\{date}";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music.json"))!;

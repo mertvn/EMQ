@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -662,7 +664,7 @@ public static class DbManager
             }
         }
 
-        return ret;
+        return ret.DistinctBy(x => x.Id).ToList();
     }
 
     public static async Task<List<Song>> GetLootedSongs(int numSongs, bool duplicates, List<string> validSources)
@@ -854,7 +856,21 @@ public static class DbManager
                 songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
                     .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
             ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
-        });
+        }).ToList();
+
+        foreach (SongLite sl in songLite)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sl));
+            byte[] hash = MD5.Create().ComputeHash(bytes);
+            string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
+
+            if (songLite.Any(x => x.Md5Hash == encoded))
+            {
+                throw new Exception("Duplicate SongLite detected");
+            }
+
+            sl.Md5Hash = encoded;
+        }
 
         return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
     }
@@ -925,6 +941,21 @@ public static class DbManager
                         await InsertSongLink(mId, link);
                     }
                 }
+            }
+
+            await transaction.CommitAsync();
+        }
+    }
+
+    public static async Task ImportReviewQueue(List<ReviewQueue> reviewQueues)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
+        {
+            foreach (ReviewQueue reviewQueue in reviewQueues)
+            {
+                await connection.InsertAsync(reviewQueue);
             }
 
             await transaction.CommitAsync();
