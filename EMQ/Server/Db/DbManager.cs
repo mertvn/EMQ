@@ -988,7 +988,7 @@ public static class DbManager
             }
         }
 
-        return rqs;
+        return rqs.OrderBy(x=> x.id);
     }
 
     public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus)

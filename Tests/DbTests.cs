@@ -117,6 +117,7 @@ public class DbTests
     public async Task Test_GetRandomSongs_IsDistinct()
     {
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
+        Console.WriteLine(songs.Count + " songs");
 
         HashSet<int> seen = new();
         foreach (Song song in songs)
@@ -261,7 +262,7 @@ public class DbTests
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(57, 11).ToArray();
+        var rqIds = Enumerable.Range(68, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
