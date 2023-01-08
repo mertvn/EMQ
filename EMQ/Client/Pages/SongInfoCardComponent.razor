@@ -12,22 +12,9 @@
                         {
                             Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
 
-                            @if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
+                            foreach (SongSource songSource in song.Sources)
                             {
-                                SongSource? songSource = song.Sources.FirstOrDefault(x =>
-                                    x.Titles.Any(y => y.LatinTitle == selectedMusicSourceTitle || y.NonLatinTitle == selectedMusicSourceTitle));
-
-                                if (songSource != null)
-                                {
-                                    songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
-                                }
-                            }
-                            else
-                            {
-                                foreach (SongSource songSource in song.Sources)
-                                {
-                                    songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
-                                }
+                                songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
                             }
 
                             // couldn't get distinct to work
@@ -92,8 +79,5 @@
 
     [Parameter]
     public Song? song { get; set; }
-
-    [Parameter]
-    public string? selectedMusicSourceTitle { get; set; }
 
 }

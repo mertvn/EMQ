@@ -714,7 +714,7 @@ public static class DbManager
             }
         }
 
-        return ret;
+        return ret.DistinctBy(x => x.Id).ToList();
     }
 
     public static async Task<string> SelectAutocomplete()

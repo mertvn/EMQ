@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -28,5 +28,6 @@ public class Session
 
     public PlayerVndbInfo VndbInfo { get; set; } = new();
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; }
+
 }

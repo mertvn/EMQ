@@ -55,7 +55,7 @@ public class ClientUtils
     public async Task SaveSessionToLocalStorage()
     {
         string json = JsonSerializer.Serialize(ClientState.Session);
-        Logger.LogInformation("saving session: " + json);
+        // Logger.LogInformation("saving session: " + json);
         await LocalStorage.SetItemAsync("session", json);
     }
 
