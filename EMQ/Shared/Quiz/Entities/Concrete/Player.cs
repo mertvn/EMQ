@@ -33,6 +33,8 @@ public class Player
     public bool IsBuffered { get; set; }
 
     public PlayerLootingInfo LootingInfo { get; set; } = new();
+
+    public bool IsSkipping { get; set; }
 }
 
 public record PlayerLootingInfo

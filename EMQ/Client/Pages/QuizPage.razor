@@ -28,11 +28,20 @@
 
     @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
-        <button class="btn btn-primary" disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)" @onclick="SendPauseQuiz"
+        <button class="btn btn-primary"
+                disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)"
+                @onclick="SendPauseQuiz"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
             @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
         </button>
     }
+
+    <button class="btn btn-primary"
+            disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 3000 && Room?.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
+            @onclick="SendToggleSkip"
+            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
+        @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, "Skipping", "Skip")
+    </button>
 
     <button class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
@@ -233,7 +242,7 @@
             await OnReceiveQuizCanceled();
         }
 
-        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz", ClientState.Session.Player.Id);
+        await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz");
 
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
             Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp == -1)
@@ -583,6 +592,15 @@
         if (Room is {Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPauseQuiz");
+            await SyncWithServer();
+        }
+    }
+
+    private async Task SendToggleSkip()
+    {
+        if (Room is {Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
             await SyncWithServer();
         }
     }

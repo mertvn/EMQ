@@ -126,6 +126,7 @@ public class QuizManager
             player.Guess = "";
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
+            player.IsSkipping = false;
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
@@ -135,6 +136,11 @@ public class QuizManager
     private async Task EnterJudgementPhase()
     {
         Quiz.QuizState.Phase = new JudgementPhase();
+
+        if (Quiz.QuizState.ExtraInfo.Contains("Skipping")) // todo
+        {
+            Quiz.QuizState.ExtraInfo = "";
+        }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
@@ -765,6 +771,41 @@ public class QuizManager
         else
         {
             Console.WriteLine($"Failed to move to non-existing treasure room {treasureRoomCoords}");
+        }
+    }
+
+    public async Task OnSendToggleSkip(string connectionId, int playerId)
+    {
+        if (Quiz.QuizState.RemainingMs > 3000 &&
+            Quiz.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
+            !Quiz.QuizState.IsPaused)
+        {
+            var player = Quiz.Room.Players.Single(x => x.Id == playerId);
+            if (player.IsSkipping)
+            {
+                player.IsSkipping = false;
+            }
+            else
+            {
+                player.IsSkipping = true;
+            }
+
+            // await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveResyncRequired");
+
+            int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
+            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isSkippingCount: {isSkippingCount}");
+            if ((float)isSkippingCount >= (float)Quiz.Room.Players.Count * 0.6) // todo?
+            {
+                Quiz.QuizState.RemainingMs = 1000;
+                Quiz.QuizState.ExtraInfo = "Skipping...";
+
+                foreach (Player p in Quiz.Room.Players)
+                {
+                    p.IsSkipping = false;
+                }
+
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+            }
         }
     }
 }
