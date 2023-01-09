@@ -473,9 +473,9 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendPauseQuiz()
+    public async Task OnSendTogglePause()
     {
-        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering"))
+        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering")) // todo
         {
             if (Quiz.QuizState.IsPaused)
             {

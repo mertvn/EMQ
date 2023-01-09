@@ -458,11 +458,11 @@ public partial class QuizPage
         return ret;
     }
 
-    private async Task SendPauseQuiz()
+    private async Task SendTogglePause()
     {
         if (Room is { Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
-            await ClientState.Session!.hubConnection!.SendAsync("SendPauseQuiz");
+            await ClientState.Session!.hubConnection!.SendAsync("SendTogglePause");
             await SyncWithServer();
         }
     }

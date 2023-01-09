@@ -134,7 +134,7 @@ public class QuizHub : Hub
     }
 
     // [Authorize]
-    public async Task SendPauseQuiz()
+    public async Task SendTogglePause()
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
         if (session != null)
@@ -147,7 +147,7 @@ public class QuizHub : Hub
                     var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (quizManager != null)
                     {
-                        await quizManager.OnSendPauseQuiz();
+                        await quizManager.OnSendTogglePause();
                     }
                     else
                     {
