@@ -31,8 +31,7 @@ public partial class QuizPage
                 (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int)phase[0]!); })
             },
             {
-                "ReceiveCorrectAnswer",
-                (new Type[] { typeof(Song) },
+                "ReceiveCorrectAnswer", (new Type[] { typeof(Song) },
                     async correctAnswer => { await OnReceiveCorrectAnswer((Song)correctAnswer[0]!); })
             },
         };
@@ -138,10 +137,10 @@ public partial class QuizPage
                     await OnReceiveQuizCanceled();
                 }
             }
-
-            // we want to send this message regardless of whether the preloading was successful or not
-            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
         }
+
+        // we want to send this message regardless of whether the preloading was successful or not
+        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
     }
 
     private async Task OnReceiveResyncRequired()
@@ -460,7 +459,7 @@ public partial class QuizPage
 
     private async Task SendTogglePause()
     {
-        if (Room is { Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendTogglePause");
             await SyncWithServer();
@@ -469,7 +468,7 @@ public partial class QuizPage
 
     private async Task SendToggleSkip()
     {
-        if (Room is { Quiz: { } } && Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
             await SyncWithServer();
