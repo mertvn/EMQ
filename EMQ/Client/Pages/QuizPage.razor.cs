@@ -109,7 +109,7 @@ public partial class QuizPage
         // await Task.Delay(TimeSpan.FromSeconds(2));
         await SyncWithServer();
 
-        if (Room!.Quiz!.QuizState.QuizStatus == QuizStatus.Canceled)
+        if (Room!.Quiz!.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
         {
             await OnReceiveQuizCanceled();
         }
@@ -257,7 +257,8 @@ public partial class QuizPage
                     if (phaseChanged || forcePhaseChange)
                     {
                         Console.WriteLine(
-                            $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
+                            $"{oldSp}{(QuizPhaseKind)oldPhase} -> " +
+                            $"{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
                         await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
                     }
                 }

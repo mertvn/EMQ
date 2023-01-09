@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace EMQ.Client;
+namespace EMQ.Shared.Core;
 
 public static class LoggerExtensions
 {

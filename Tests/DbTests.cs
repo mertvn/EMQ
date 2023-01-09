@@ -262,7 +262,7 @@ public class DbTests
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(69, 1).ToArray();
+        var rqIds = Enumerable.Range(75, 3).ToArray();
 
         foreach (int rqId in rqIds)
         {
