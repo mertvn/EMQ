@@ -19,8 +19,6 @@ w
 * trim before autocomplete
 * 6+ players everything stretching
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
-* previous song playing instead of the new song when the phase change message to the results phase is not received due
-  to a disconnect
 * Japanese song titles (VGMdb, EGS)
 * player -> (site)user + (quiz)player
 * check if players are still active ^prerequisite

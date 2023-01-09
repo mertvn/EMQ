@@ -88,6 +88,8 @@ public partial class QuizPage
 
     private bool SyncInProgress { get; set; }
 
+    private bool PhaseChangeInProgress { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -198,15 +200,6 @@ public partial class QuizPage
 
     private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
     {
-        if (SyncInProgress
-            // && room is null && !forcePhaseChange // doesn't look like we need these?
-           )
-        {
-            return;
-        }
-
-        SyncInProgress = true;
-
         int? oldPhase = null;
         int? oldSp = null;
         if (Room is { Quiz: { } })
@@ -215,38 +208,65 @@ public partial class QuizPage
             oldSp = Room.Quiz.QuizState.sp;
         }
 
-        Room = room ?? await _clientUtils.SyncRoom();
-        LastSync = DateTime.Now;
-
-        if (Room is { Quiz: { } } && oldPhase != null)
+        if (room != null)
         {
-            bool phaseChanged;
-            switch (Room.Quiz.QuizState.Phase)
-            {
-                case QuizPhaseKind.Guess:
-                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase && Room.Quiz.QuizState.sp > oldSp;
-                    break;
-                case QuizPhaseKind.Judgement:
-                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
-                    break;
-                case QuizPhaseKind.Results:
-                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
-                    break;
-                case QuizPhaseKind.Looting:
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            Room = room;
+            LastSync = DateTime.Now;
+        }
+        else if (!SyncInProgress)
+        {
+            // Console.WriteLine("slow sync");
+            // Console.WriteLine($"start slow sync {DateTime.Now:O}");
+            SyncInProgress = true;
+            Room = await _clientUtils.SyncRoom();
+            SyncInProgress = false;
+            LastSync = DateTime.Now;
+            // Console.WriteLine($"end slow sync {DateTime.Now:O}");
+        }
 
-            if (phaseChanged || forcePhaseChange)
+        if (Room is { Quiz: { } })
+        {
+            PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
+            // todo ProgressDivisor
+
+            if (!PhaseChangeInProgress || room is not null || forcePhaseChange)
             {
-                Console.WriteLine(
-                    $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
-                await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                // Console.WriteLine($"checking phase change");
+                PhaseChangeInProgress = true;
+                if (oldPhase != null)
+                {
+                    bool phaseChanged;
+                    switch (Room.Quiz.QuizState.Phase)
+                    {
+                        case QuizPhaseKind.Guess:
+                            phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase && Room.Quiz.QuizState.sp > oldSp;
+                            break;
+                        case QuizPhaseKind.Judgement:
+                            phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                            break;
+                        case QuizPhaseKind.Results:
+                            phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                            break;
+                        case QuizPhaseKind.Looting:
+                            phaseChanged = false;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                    if (phaseChanged || forcePhaseChange)
+                    {
+                        Console.WriteLine(
+                            $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
+                        await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                    }
+                }
+
+                PhaseChangeInProgress = false;
             }
         }
 
-        SyncInProgress = false;
-
+        // Console.WriteLine($"ei {Room?.Quiz?.QuizState.ExtraInfo}");
         StateHasChanged();
     }
 
@@ -485,6 +505,7 @@ public partial class QuizPage
                 await Task.Delay(1000);
 
                 await SyncWithServer();
+                // Console.WriteLine($"sps {Room!.Quiz!.QuizState.sp} {startSp}");
                 if (Room!.Quiz!.QuizState.sp > startSp)
                 {
                     Console.WriteLine("Canceling preload due to sp change");

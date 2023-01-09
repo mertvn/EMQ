@@ -108,12 +108,15 @@ public class QuizManager
                waitingForMs < Quiz.Room.QuizSettings.ResultsMs * 3)
         {
             // Console.WriteLine("in while " + isBufferedCount + "/" + (float)Quiz.Room.Players.Count / 2);
-            await Task.Delay(500);
-            waitingForMs += 500;
+            await Task.Delay(1000);
+            waitingForMs += 1000;
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
             Quiz.QuizState.ExtraInfo = $"Waiting buffering... {isBufferedCount}/{Quiz.Room.Players.Count}";
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
+
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
         }
 
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
@@ -467,7 +470,8 @@ public class QuizManager
 
     public async Task OnSendTogglePause()
     {
-        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering")) // todo
+        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering") &&
+            !Quiz.QuizState.ExtraInfo.Contains("Skipping")) // todo
         {
             if (Quiz.QuizState.IsPaused)
             {
