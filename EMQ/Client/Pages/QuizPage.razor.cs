@@ -198,25 +198,49 @@ public partial class QuizPage
 
     private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
     {
-        int? oldPhase = null;
-        if (Room is { Quiz: { } })
+        if (!SyncInProgress)
         {
-            oldPhase = (int)Room.Quiz.QuizState.Phase;
-        }
+            SyncInProgress = true;
 
-        SyncInProgress = true;
-        Room = room ?? await _clientUtils.SyncRoom();
-        LastSync = DateTime.Now;
-        SyncInProgress = false;
-
-        if (Room is { Quiz: { } } && oldPhase != null)
-        {
-            if ((int)Room.Quiz.QuizState.Phase != oldPhase || forcePhaseChange)
+            int? oldPhase = null;
+            int? oldSp = null;
+            if (Room is { Quiz: { } })
             {
-                Console.WriteLine(
-                    $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced:{forcePhaseChange}");
-                await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                oldPhase = (int)Room.Quiz.QuizState.Phase;
+                oldSp = Room.Quiz.QuizState.sp;
             }
+
+            Room = room ?? await _clientUtils.SyncRoom();
+            LastSync = DateTime.Now;
+
+            if (Room is { Quiz: { } } && oldPhase != null)
+            {
+                bool phaseChanged;
+                switch (Room.Quiz.QuizState.Phase)
+                {
+                    case QuizPhaseKind.Guess:
+                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase && Room.Quiz.QuizState.sp > oldSp;
+                        break;
+                    case QuizPhaseKind.Judgement:
+                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                        break;
+                    case QuizPhaseKind.Results:
+                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                        break;
+                    case QuizPhaseKind.Looting:
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (phaseChanged || forcePhaseChange)
+                {
+                    Console.WriteLine(
+                        $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
+                    await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                }
+            }
+
+            SyncInProgress = false;
         }
 
         StateHasChanged();
