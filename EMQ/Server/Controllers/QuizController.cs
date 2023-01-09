@@ -1,22 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using EMQ.Shared;
-using EMQ.Shared.Auth;
-using EMQ.Shared.Quiz;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Server.Business;
-using EMQ.Server.Db;
 using EMQ.Server.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace EMQ.Server.Controllers;
 
@@ -291,44 +284,4 @@ public class QuizController : ControllerBase
             // todo
         }
     }
-
-    // [HttpGet]
-    // [Route("GetTreasureRoom")]
-    // public TreasureRoom? GetTreasureRoom([FromQuery] Point treasureRoomId, [FromQuery] string playerToken)
-    // {
-    //     var session = ServerState.Sessions.Find(x => x.Token == playerToken);
-    //     if (session is null)
-    //     {
-    //         // todo
-    //         throw new Exception();
-    //     }
-    //
-    //     var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-    //     if (room is not null)
-    //     {
-    //         if (room.Quiz != null)
-    //         {
-    //             // todo player is in treasureroom check
-    //             // if (room.TreasureRooms.Count > treasureRoomId)
-    //             // {
-    //                 return room.TreasureRooms[treasureRoomId.X, treasureRoomId.Y];
-    //             // }
-    //             // else
-    //             // {
-    //             //     // todo
-    //             //     return null;
-    //             // }
-    //         }
-    //         else
-    //         {
-    //             // todo
-    //             return null;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         // todo
-    //         return null;
-    //     }
-    // }
 }

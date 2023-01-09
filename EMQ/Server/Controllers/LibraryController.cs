@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
-using EMQ.Shared.Library;
-using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
