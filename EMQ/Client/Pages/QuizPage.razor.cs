@@ -198,50 +198,54 @@ public partial class QuizPage
 
     private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
     {
-        if (!SyncInProgress)
+        if (SyncInProgress
+            // && room is null && !forcePhaseChange // doesn't look like we need these?
+           )
         {
-            SyncInProgress = true;
-
-            int? oldPhase = null;
-            int? oldSp = null;
-            if (Room is { Quiz: { } })
-            {
-                oldPhase = (int)Room.Quiz.QuizState.Phase;
-                oldSp = Room.Quiz.QuizState.sp;
-            }
-
-            Room = room ?? await _clientUtils.SyncRoom();
-            LastSync = DateTime.Now;
-
-            if (Room is { Quiz: { } } && oldPhase != null)
-            {
-                bool phaseChanged;
-                switch (Room.Quiz.QuizState.Phase)
-                {
-                    case QuizPhaseKind.Guess:
-                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase && Room.Quiz.QuizState.sp > oldSp;
-                        break;
-                    case QuizPhaseKind.Judgement:
-                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
-                        break;
-                    case QuizPhaseKind.Results:
-                        phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
-                        break;
-                    case QuizPhaseKind.Looting:
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-
-                if (phaseChanged || forcePhaseChange)
-                {
-                    Console.WriteLine(
-                        $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
-                    await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
-                }
-            }
-
-            SyncInProgress = false;
+            return;
         }
+
+        SyncInProgress = true;
+
+        int? oldPhase = null;
+        int? oldSp = null;
+        if (Room is { Quiz: { } })
+        {
+            oldPhase = (int)Room.Quiz.QuizState.Phase;
+            oldSp = Room.Quiz.QuizState.sp;
+        }
+
+        Room = room ?? await _clientUtils.SyncRoom();
+        LastSync = DateTime.Now;
+
+        if (Room is { Quiz: { } } && oldPhase != null)
+        {
+            bool phaseChanged;
+            switch (Room.Quiz.QuizState.Phase)
+            {
+                case QuizPhaseKind.Guess:
+                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase && Room.Quiz.QuizState.sp > oldSp;
+                    break;
+                case QuizPhaseKind.Judgement:
+                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                    break;
+                case QuizPhaseKind.Results:
+                    phaseChanged = (int)Room.Quiz.QuizState.Phase != oldPhase;
+                    break;
+                case QuizPhaseKind.Looting:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (phaseChanged || forcePhaseChange)
+            {
+                Console.WriteLine(
+                    $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
+                await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+            }
+        }
+
+        SyncInProgress = false;
 
         StateHasChanged();
     }
@@ -294,6 +298,7 @@ public partial class QuizPage
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
+                PreloadCancellationSource.Cancel();
                 PreloadCancellationRegistration.Unregister();
                 PreloadCancellationSource.Dispose();
                 PreloadCancellationSource = new CancellationTokenSource();
