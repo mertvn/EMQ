@@ -22,17 +22,17 @@ public partial class QuizPage
     {
         _handlers = new()
         {
-            { "ReceiveQuizStarted", (new Type[] { }, async _ => { await OnReceiveQuizStarted(); }) },
-            { "ReceiveQuizEnded", (new Type[] { }, async _ => { await OnReceiveQuizEnded(); }) },
-            { "ReceiveQuizCanceled", (new Type[] { }, async _ => { await OnReceiveQuizCanceled(); }) },
-            { "ReceiveResyncRequired", (new Type[] { }, async _ => { await OnReceiveResyncRequired(); }) },
-            {
-                "ReceivePhaseChanged",
-                (new Type[] { typeof(int) }, async phase => { await OnReceivePhaseChanged((int)phase[0]!); })
-            },
+            { "ReceiveQuizStarted", (Array.Empty<Type>(), async _ => { await OnReceiveQuizStarted(); }) },
+            { "ReceiveQuizEnded", (Array.Empty<Type>(), async _ => { await OnReceiveQuizEnded(); }) },
+            { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
+            { "ReceiveResyncRequired", (Array.Empty<Type>(), async _ => { await OnReceiveResyncRequired(); }) },
             {
                 "ReceiveCorrectAnswer", (new Type[] { typeof(Song) },
-                    async correctAnswer => { await OnReceiveCorrectAnswer((Song)correctAnswer[0]!); })
+                    async param => { await OnReceiveCorrectAnswer((Song)param[0]!); })
+            },
+            {
+                "ReceiveUpdateRoom", (new Type[] { typeof(Room), typeof(bool) },
+                    async param => { await OnReceiveUpdateRoom((Room)param[0]!, (bool)param[1]!); })
             },
         };
 
@@ -196,12 +196,28 @@ public partial class QuizPage
         PageState.Timer.Start();
     }
 
-    private async Task SyncWithServer()
+    private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
     {
+        int? oldPhase = null;
+        if (Room is { Quiz: { } })
+        {
+            oldPhase = (int)Room.Quiz.QuizState.Phase;
+        }
+
         SyncInProgress = true;
-        Room = await _clientUtils.SyncRoom();
+        Room = room ?? await _clientUtils.SyncRoom();
         LastSync = DateTime.Now;
         SyncInProgress = false;
+
+        if (Room is { Quiz: { } } && oldPhase != null)
+        {
+            if ((int)Room.Quiz.QuizState.Phase != oldPhase || forcePhaseChange)
+            {
+                Console.WriteLine(
+                    $"{(QuizPhaseKind)oldPhase} -> {Room.Quiz.QuizState.Phase} forced:{forcePhaseChange}");
+                await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+            }
+        }
 
         StateHasChanged();
     }
@@ -248,7 +264,7 @@ public partial class QuizPage
 
     public async Task OnReceivePhaseChanged(int phase)
     {
-        await SyncWithServer();
+        // await SyncWithServer();
 
         QuizPhaseKind phaseKind = (QuizPhaseKind)phase;
         switch (phaseKind)
@@ -284,7 +300,7 @@ public partial class QuizPage
                 break;
             case QuizPhaseKind.Judgement:
                 await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
-                await SyncWithServer();
+                // await SyncWithServer();
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
                 StateHasChanged();
@@ -310,6 +326,7 @@ public partial class QuizPage
                 }
 
                 break;
+            case QuizPhaseKind.Looting:
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -429,25 +446,33 @@ public partial class QuizPage
         try
         {
             PageState.DebugOut.Add($"downloading {song.Links.First().Url}");
-            _logger.LogInformation("Startjs");
-            // TODO: How to select The One Link?
+            _logger.LogInformation($"Startjs {song.Links.First().Url}");
 
+            int startSp = Room!.Quiz!.QuizState.sp;
             var task = _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token,
                 song.Links.First().Url);
             while (!task.IsCompleted && !task.IsCanceled)
             {
                 await Task.Delay(1000);
-                // todo can just await the task if we're not going to do this
-                // await SyncWithServer();
+
+                await SyncWithServer();
+                if (Room!.Quiz!.QuizState.sp > startSp)
+                {
+                    Console.WriteLine("Canceling preload due to sp change");
+                    PreloadCancellationSource.Cancel();
+                }
+
                 // Console.WriteLine(Room!.Quiz!.QuizState.ExtraInfo);
             }
 
-            var data = task.Result;
-
-            _logger.LogInformation("Endjs");
+            _logger.LogInformation($"Endjs success: {task.IsCompletedSuccessfully}");
             PreloadCancellationRegistration.Unregister();
 
-            ret.Data = data;
+            if (task.IsCompletedSuccessfully)
+            {
+                string data = task.Result;
+                ret.Data = data;
+            }
         }
         catch (Exception e)
         {
@@ -473,5 +498,10 @@ public partial class QuizPage
             await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
             await SyncWithServer();
         }
+    }
+
+    private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged)
+    {
+        await SyncWithServer(room, phaseChanged);
     }
 }

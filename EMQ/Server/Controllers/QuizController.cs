@@ -149,7 +149,7 @@ public class QuizController : ControllerBase
             }
 
             // hotjoins have to be handled differently
-            if (room.Quiz?.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
+            if (room.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
                 or QuizPhaseKind.Looting)
             {
                 if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
@@ -165,7 +165,7 @@ public class QuizController : ControllerBase
                     throw new Exception();
                 }
             }
-            else if (room.Quiz is null || room.Quiz.QuizState.Phase.Kind == QuizPhaseKind.Results)
+            else if (room.Quiz is null || room.Quiz.QuizState.Phase == QuizPhaseKind.Results)
             {
                 _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
                 room.Players.Add(player);

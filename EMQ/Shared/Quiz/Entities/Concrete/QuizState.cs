@@ -7,8 +7,7 @@ public class QuizState
 {
     public QuizStatus QuizStatus { get; set; } = QuizStatus.Starting; // todo should this be here or on Quiz?
 
-    [JsonIgnore]
-    public IQuizPhase Phase { get; set; } = new GuessPhase();
+    public QuizPhaseKind Phase { get; set; } = QuizPhaseKind.Guess;
 
     // public int ElapsedSeconds { get; set; }
 

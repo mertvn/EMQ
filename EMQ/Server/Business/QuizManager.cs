@@ -52,7 +52,7 @@ public class QuizManager
             {
                 Quiz.Timer.Stop();
 
-                switch (Quiz.QuizState.Phase.Kind)
+                switch (Quiz.QuizState.Phase)
                 {
                     case QuizPhaseKind.Guess:
                         await EnterJudgementPhase();
@@ -116,7 +116,7 @@ public class QuizManager
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
         }
 
-        Quiz.QuizState.Phase = new GuessPhase();
+        Quiz.QuizState.Phase = QuizPhaseKind.Guess;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
         Quiz.QuizState.ExtraInfo = "";
@@ -130,12 +130,12 @@ public class QuizManager
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
     }
 
     private async Task EnterJudgementPhase()
     {
-        Quiz.QuizState.Phase = new JudgementPhase();
+        Quiz.QuizState.Phase = QuizPhaseKind.Judgement;
 
         if (Quiz.QuizState.ExtraInfo.Contains("Skipping")) // todo
         {
@@ -143,7 +143,7 @@ public class QuizManager
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
 
         if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
@@ -173,7 +173,8 @@ public class QuizManager
             }
         }
 
-        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+        await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
     }
 
     private bool IsGuessCorrect(string guess)
@@ -205,14 +206,14 @@ public class QuizManager
 
     private async Task EnterResultsPhase()
     {
-        Quiz.QuizState.Phase = new ResultsPhase();
+        Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-            .SendAsync("ReceivePhaseChanged", Quiz.QuizState.Phase.Kind);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
             (Quiz.Room.QuizSettings.MaxLives > 0 && Quiz.Room.Players.All(x => x.Lives <= 0)))
@@ -230,7 +231,7 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
-        await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense...
+        await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -351,23 +352,18 @@ public class QuizManager
                     return false;
                 }
 
-                var asdf = new Dictionary<string, List<Title>>();
+                var validSourcesLooting = new Dictionary<string, List<Title>>();
                 foreach (Song dbSong in dbSongs)
                 {
                     foreach (var dbSongSource in dbSong.Sources)
                     {
                         // todo songs with multiple vns overriding each other
-                        asdf[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                        validSourcesLooting[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
                             dbSongSource.Titles;
-
-                        if (!dbSongSource.Titles.Any(x => x.IsMainTitle))
-                        {
-                            throw new Exception(JsonSerializer.Serialize(dbSongSource, Utils.Jso));
-                        }
                     }
                 }
 
-                Quiz.ValidSources = asdf;
+                Quiz.ValidSources = validSourcesLooting;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -442,13 +438,16 @@ public class QuizManager
                 player.Lives = teammate.Lives;
                 player.Score = teammate.Score;
             }
+
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
         }
     }
 
     // todo: avoid sending other players' guesses in non-team games
     public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
     {
-        if (Quiz.QuizState.Phase.Kind == QuizPhaseKind.Guess)
+        if (Quiz.QuizState.Phase == QuizPhaseKind.Guess)
         {
             var player = Quiz.Room.Players.Find(x => x.Id == playerId);
             if (player != null)
@@ -456,15 +455,8 @@ public class QuizManager
                 player.Guess = guess;
                 player.PlayerStatus = PlayerStatus.Guessed;
 
-                if (Quiz.Room.QuizSettings.TeamSize > 1)
-                {
-                    await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-                        .SendAsync("ReceiveResyncRequired");
-                }
-                else
-                {
-                    await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveResyncRequired");
-                }
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
             }
             else
             {
@@ -489,6 +481,9 @@ public class QuizManager
                 Quiz.QuizState.ExtraInfo = "Paused";
                 Console.WriteLine($"Paused Quiz {Quiz.Id}");
             }
+
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
         }
     }
 
@@ -501,7 +496,7 @@ public class QuizManager
     {
         var rng = Random.Shared;
 
-        Quiz.QuizState.Phase = new LootingPhase();
+        Quiz.QuizState.Phase = QuizPhaseKind.Looting;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.LootingMs;
 
         TreasureRoom[][] GenerateTreasureRooms(Dictionary<string, List<Title>> validSources)
@@ -777,7 +772,7 @@ public class QuizManager
     public async Task OnSendToggleSkip(string connectionId, int playerId)
     {
         if (Quiz.QuizState.RemainingMs > 3000 &&
-            Quiz.QuizState.Phase.Kind is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
+            Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
             !Quiz.QuizState.IsPaused)
         {
             var player = Quiz.Room.Players.Single(x => x.Id == playerId);
@@ -790,7 +785,7 @@ public class QuizManager
                 player.IsSkipping = true;
             }
 
-            // await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveResyncRequired");
+            await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
 
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
             int skipNumber = (int)Math.Round((float)Quiz.Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
@@ -807,7 +802,8 @@ public class QuizManager
                     p.IsSkipping = false;
                 }
 
-                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceiveResyncRequired");
+                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
             }
         }
     }
