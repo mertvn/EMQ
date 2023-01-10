@@ -96,7 +96,14 @@
                 }
             </div>
 
-            <div id="quizExtraInfoDiv" style="position: absolute; top: 3%; left: 3%; font-size: xx-large; color: white; z-index: 300000;">
+            <div id="quizInfoDiv" style="position: absolute; top: 3%; left: 3%; font-size: xx-large; color: white; z-index: 300000;">
+                @if (Room?.Quiz?.QuizState.IsPaused ?? false)
+                {
+                    <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
+                        Paused
+                    </p>
+                }
+
                 <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
                     @(Room?.Quiz?.QuizState.ExtraInfo)
                 </p>
