@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -69,7 +69,7 @@ public class QuizManager
 
                         if (!lootingSuccess)
                         {
-                            Console.WriteLine($"{Quiz.Id} Canceling quiz due to looting failure");
+                            Quiz.Log("Canceling due to looting failure");
                             await CancelQuiz();
                         }
 
@@ -197,8 +197,7 @@ public class QuizManager
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
             // Console.WriteLine("-------");
-            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} cA: " +
-                              JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            Quiz.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
         bool correct = correctAnswers.Any(correctAnswer =>
@@ -243,7 +242,7 @@ public class QuizManager
                 continue;
             }
 
-            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} pG: " + player.Guess);
+            Quiz.Log("pG: " + player.Guess, player.Id);
 
             bool correct = IsGuessCorrect(player.Guess);
             if (correct)
@@ -270,7 +269,7 @@ public class QuizManager
     public async Task EndQuiz()
     {
         // todo other cleanup
-        Console.WriteLine($"Ending quiz {Quiz.Id}");
+        Quiz.Log("Ended");
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Timer.Stop();
         Quiz.Timer.Elapsed -= OnTimedEvent;
@@ -308,8 +307,8 @@ public class QuizManager
                     var include = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Include).ToList();
                     var exclude = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
 
-                    Console.WriteLine($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
-                    Console.WriteLine($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
+                    Quiz.Log($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
+                    Quiz.Log($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
 
                     validSources = include.SelectMany(x => x.VnUrls).ToList();
                     if (exclude.Any())
@@ -325,8 +324,8 @@ public class QuizManager
         }
 
         validSources = validSources.Distinct().ToList();
-        Console.WriteLine("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
-        Console.WriteLine($"validSourcesCount: {validSources.Count}");
+        Quiz.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+        Quiz.Log($"validSourcesCount: {validSources.Count}");
 
         List<Song> dbSongs;
 
@@ -412,7 +411,7 @@ public class QuizManager
         player.IsBuffered = true;
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isBufferedCount: {isBufferedCount}");
+        Quiz.Log($"isBufferedCount: {isBufferedCount}");
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
@@ -476,14 +475,12 @@ public class QuizManager
             if (Quiz.QuizState.IsPaused)
             {
                 Quiz.QuizState.IsPaused = false;
-                Quiz.QuizState.ExtraInfo = "";
-                Console.WriteLine($"Unpaused Quiz {Quiz.Id}");
+                Quiz.Log("Unpaused");
             }
             else
             {
                 Quiz.QuizState.IsPaused = true;
-                Quiz.QuizState.ExtraInfo = "Paused";
-                Console.WriteLine($"Paused Quiz {Quiz.Id}");
+                Quiz.Log("Paused");
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
@@ -604,7 +601,7 @@ public class QuizManager
             return false;
         }
 
-        Console.WriteLine($"{Quiz.Id} Players looted {validSources.Distinct().Count()} distinct sources");
+        Quiz.Log($"Players looted {validSources.Distinct().Count()} distinct sources");
         var dbSongs = await DbManager.GetLootedSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
@@ -615,14 +612,13 @@ public class QuizManager
             return false;
         }
 
-        Console.WriteLine($"{Quiz.Id} Selected {dbSongs.Count} looted songs");
+        Quiz.Log($"Selected {dbSongs.Count} looted songs");
 
         // reduce serialized Room size
         Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
 
         Quiz.Songs = dbSongs;
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;
-
         return true;
     }
 
@@ -667,19 +663,19 @@ public class QuizManager
                 }
                 else
                 {
-                    Console.WriteLine(
+                    Quiz.Log(
                         $"Player is not close enough to the treasure to pickup: {player.LootingInfo.X},{player.LootingInfo.Y} -> " +
-                        $"{treasure.Position.X},{treasure.Position.Y}");
+                        $"{treasure.Position.X},{treasure.Position.Y}", player.Id);
                 }
             }
             else
             {
-                Console.WriteLine("Could not find the treasure to pickup");
+                Quiz.Log("Could not find the treasure to pickup");
             }
         }
         else
         {
-            Console.WriteLine("Invalid player treasure room coords");
+            Quiz.Log("Invalid player treasure room coords", player.Id);
         }
     }
 
@@ -768,15 +764,15 @@ public class QuizManager
             }
             else
             {
-                Console.WriteLine(
+                Quiz.Log(
                     $"Failed to use non-existing exit {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
-                    $"{treasureRoomCoords.X},{treasureRoomCoords.Y}");
+                    $"{treasureRoomCoords.X},{treasureRoomCoords.Y}", player.Id);
                 // Console.WriteLine(JsonSerializer.Serialize(Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][player.LootingInfo.TreasureRoomCoords.Y].Exits));
             }
         }
         else
         {
-            Console.WriteLine($"Failed to move to non-existing treasure room {treasureRoomCoords}");
+            Quiz.Log($"Failed to move to non-existing treasure room {treasureRoomCoords}", player.Id);
         }
     }
 
@@ -801,12 +797,12 @@ public class QuizManager
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
             int skipNumber = (int)Math.Round((float)Quiz.Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
 
-            Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} isSkippingCount: {isSkippingCount}/{skipNumber}");
+            Quiz.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
             if (isSkippingCount >= skipNumber)
             {
                 Quiz.QuizState.RemainingMs = 1000;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
-                Console.WriteLine($"{Quiz.Id}@{Quiz.QuizState.sp} Skipping...");
+                Quiz.Log($"Skipping...");
 
                 foreach (Player p in Quiz.Room.Players)
                 {

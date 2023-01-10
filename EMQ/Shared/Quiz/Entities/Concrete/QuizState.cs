@@ -1,15 +1,10 @@
-﻿using System.Text.Json.Serialization;
-using EMQ.Shared.Quiz.Entities.Abstract;
-
-namespace EMQ.Shared.Quiz.Entities.Concrete;
+﻿namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class QuizState
 {
-    public QuizStatus QuizStatus { get; set; } = QuizStatus.Starting; // todo should this be here or on Quiz?
+    public QuizStatus QuizStatus { get; set; } = QuizStatus.Starting;
 
     public QuizPhaseKind Phase { get; set; } = QuizPhaseKind.Guess;
-
-    // public int ElapsedSeconds { get; set; }
 
     /// <summary>
     ///  The remaining time for current phase in milliseconds
