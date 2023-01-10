@@ -139,11 +139,7 @@ public class QuizManager
     private async Task EnterJudgementPhase()
     {
         Quiz.QuizState.Phase = QuizPhaseKind.Judgement;
-
-        if (Quiz.QuizState.ExtraInfo.Contains("Skipping")) // todo
-        {
-            Quiz.QuizState.ExtraInfo = "";
-        }
+        Quiz.QuizState.ExtraInfo = "";
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
@@ -396,7 +392,8 @@ public class QuizManager
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-                    .SendAsync("ReceiveUpdateTreasureRoom", Quiz.Room.TreasureRooms[0][0]);
+                    .SendAsync("ReceiveUpdateTreasureRoom",
+                        Quiz.Room.TreasureRooms[0][0]); // uhh do we really need this?
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -778,7 +775,7 @@ public class QuizManager
 
     public async Task OnSendToggleSkip(string connectionId, int playerId)
     {
-        if (Quiz.QuizState.RemainingMs > 3000 &&
+        if (Quiz.QuizState.RemainingMs > 2000 &&
             Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
             !Quiz.QuizState.IsPaused)
         {
@@ -800,7 +797,7 @@ public class QuizManager
             Quiz.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
             if (isSkippingCount >= skipNumber)
             {
-                Quiz.QuizState.RemainingMs = 1000;
+                Quiz.QuizState.RemainingMs = 200;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
                 Quiz.Log($"Skipping...");
 
