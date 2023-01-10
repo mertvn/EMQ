@@ -53,11 +53,11 @@
               SelectedValueChanged="SelectedValueChanged">
 </Autocomplete>
 
-<div class="songs d-flex flex-row flex-wrap" style="max-width: 1600px">
+<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
     @foreach (var song in CurrentSongs)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-        <div class="song card" style="margin: 16px; min-width:200px; max-width: 222px; min-height:200px;">
+        <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
             <SongInfoCardComponent song="@song"/>
             <div style="padding: 16px">
                 <div>
