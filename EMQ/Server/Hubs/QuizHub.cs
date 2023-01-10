@@ -18,18 +18,18 @@ public class QuizHub : Hub
             if (session.ConnectionId != null)
             {
                 Console.WriteLine(
-                    $"Player ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
+                    $"Player {session.Player.Id} ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
 
-                var playerRooms =
-                    ServerState.Rooms.FindAll(x => x.Players.Any(player => player.Id == session.Player.Id));
+                var room = ServerState.Rooms.SingleOrDefault(x =>
+                    x.Players.Any(player => player.Id == session.Player.Id));
 
-                foreach (Room playerRoom in playerRooms)
+                if (room != null)
                 {
                     // todo notify joinqueue?
-                    playerRoom.AllPlayerConnectionIds.Remove(session.ConnectionId);
-                    playerRoom.AllPlayerConnectionIds.Add(Context.ConnectionId);
-                    Console.WriteLine(
-                        $"Notified room {playerRoom.Id} of Player ConnectionId change");
+                    room.Quiz?.Log($"ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}",
+                        session.Player.Id);
+                    room.AllPlayerConnectionIds.Remove(session.ConnectionId);
+                    room.AllPlayerConnectionIds.Add(Context.ConnectionId);
                 }
             }
 
@@ -133,6 +133,7 @@ public class QuizHub : Hub
         }
     }
 
+    // todo can't unpause after reconnecting? -- works after refreshing the page though
     // [Authorize]
     public async Task SendTogglePause()
     {

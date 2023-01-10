@@ -12,7 +12,7 @@ public class Session
     {
         Player = player;
         Token = token;
-        CreatedAt = DateTime.Now;
+        CreatedAt = DateTime.UtcNow;
     }
 
     public Player Player { get; }

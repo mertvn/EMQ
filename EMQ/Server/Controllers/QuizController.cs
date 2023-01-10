@@ -154,7 +154,8 @@ public class QuizController : ControllerBase
             {
                 if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
                 {
-                    _logger.LogInformation($"Added player {req.PlayerId} to JoinQueue in room " + room.Id);
+                    // todo quizlog
+                    room.Quiz.Log("Added player to JoinQueue", player.Id);
                     room.Quiz.JoinQueue.Enqueue(session);
 
                     return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
@@ -214,16 +215,16 @@ public class QuizController : ControllerBase
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);
                 ServerState.QuizManagers.Add(quizManager);
-                _logger.LogInformation("Created quiz " + quiz.Id);
+                quiz.Log("Created");
 
                 if (await quizManager.PrimeQuiz())
                 {
-                    _logger.LogInformation("Primed quiz {quiz.Id}", quiz.Id);
+                    quiz.Log("Primed");
                     await quizManager.StartQuiz();
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to prime quiz {quiz.Id} - canceling", quiz.Id);
+                    quiz.Log("Failed to prime - canceling");
                     await quizManager.CancelQuiz();
                 }
             }
@@ -265,6 +266,7 @@ public class QuizController : ControllerBase
                     room.QuizSettings = req.QuizSettings;
 
                     _logger.LogInformation("Changed room settings in room {room.Id}", room.Id);
+                    room.Quiz?.Log("Changed room settings");
                 }
                 else
                 {

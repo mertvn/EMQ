@@ -205,17 +205,17 @@ public partial class QuizPage
         if (room != null)
         {
             Room = room;
-            LastSync = DateTime.Now;
+            LastSync = DateTime.UtcNow;
         }
         else if (!SyncInProgress)
         {
             // Console.WriteLine("slow sync");
-            // Console.WriteLine($"start slow sync {DateTime.Now:O}");
+            // Console.WriteLine($"start slow sync {DateTime.UtcNow:O}");
             SyncInProgress = true;
             Room = await _clientUtils.SyncRoom();
             SyncInProgress = false;
-            LastSync = DateTime.Now;
-            // Console.WriteLine($"end slow sync {DateTime.Now:O}");
+            LastSync = DateTime.UtcNow;
+            // Console.WriteLine($"end slow sync {DateTime.UtcNow:O}");
         }
 
         if (Room is { Quiz: { } })
@@ -384,7 +384,7 @@ public partial class QuizPage
         {
             PageState.Countdown -= Quiz.TickRate;
         }
-        else if (!SyncInProgress && DateTime.Now - LastSync > TimeSpan.FromSeconds(2))
+        else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
         {
             await SyncWithServer();
         }

@@ -177,7 +177,7 @@ public class DbTests
             {
                 new SongSource()
                 {
-                    AirDateStart = DateTime.Now,
+                    AirDateStart = DateTime.UtcNow,
                     SongTypes = new List<SongSourceSongType> { SongSourceSongType.OP },
                     LanguageOriginal = "ja",
                     Type = SongSourceType.VN,

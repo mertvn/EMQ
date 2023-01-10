@@ -41,7 +41,7 @@ public class Quiz
 
     public void Log(string message, int playerId = -1)
     {
-        var quizLog = new QuizLog(Id, QuizState, playerId, message);
+        var quizLog = new QuizLog(Room.Id, Id, Room.QuizSettings, QuizState, playerId, message);
         QuizLog.Add(quizLog);
 
         Console.WriteLine(quizLog.ToString());
@@ -50,17 +50,25 @@ public class Quiz
 
 public class QuizLog
 {
-    public QuizLog(int quizId, QuizState quizState, int playerId, string message)
+    public QuizLog(int roomId, int quizId, QuizSettings quizSettings, QuizState quizState, int playerId, string message)
     {
+        DateTime = DateTime.UtcNow;
+
+        RoomId = roomId;
         QuizId = quizId;
+        QuizSettings = quizSettings;
         QuizState = quizState;
         PlayerId = playerId;
         Message = message;
-
-        DateTime = DateTime.Now;
     }
 
+    public DateTime DateTime { get; set; }
+
+    public int RoomId { get; set; }
+
     public int QuizId { get; set; }
+
+    public QuizSettings QuizSettings { get; set; }
 
     public QuizState QuizState { get; set; }
 
@@ -68,11 +76,9 @@ public class QuizLog
 
     public string Message { get; set; }
 
-    public DateTime DateTime { get; set; }
-
     public override string ToString()
     {
-        string final = $"q{QuizId}@{QuizState.sp} {PlayerId} {Message}";
+        string final = $"{DateTime:O} r{RoomId}-q{QuizId}@{QuizState.sp} {PlayerId} {Message}";
         return final;
     }
 }
