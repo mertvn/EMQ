@@ -25,7 +25,6 @@ public partial class QuizPage
             { "ReceiveQuizStarted", (Array.Empty<Type>(), async _ => { await OnReceiveQuizStarted(); }) },
             { "ReceiveQuizEnded", (Array.Empty<Type>(), async _ => { await OnReceiveQuizEnded(); }) },
             { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
-            { "ReceiveResyncRequired", (Array.Empty<Type>(), async _ => { await OnReceiveResyncRequired(); }) },
             {
                 "ReceiveCorrectAnswer", (new Type[] { typeof(Song) },
                     async param => { await OnReceiveCorrectAnswer((Song)param[0]!); })
@@ -143,11 +142,6 @@ public partial class QuizPage
 
         // we want to send this message regardless of whether the preloading was successful or not
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
-    }
-
-    private async Task OnReceiveResyncRequired()
-    {
-        await SyncWithServer();
     }
 
     private async Task OnReceiveCorrectAnswer(Song correctAnswer)
