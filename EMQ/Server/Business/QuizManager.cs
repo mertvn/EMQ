@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -505,7 +505,14 @@ public class QuizManager
 
         TreasureRoom[][] GenerateTreasureRooms(Dictionary<string, List<Title>> validSources)
         {
-            int gridSize = 3; // todo
+            int gridSize = Quiz.Room.Players.Count switch
+            {
+                <= 3 => 3,
+                4 or 5 => 4,
+                6 or 7 => 5,
+                8 or 9 => 6,
+                >= 10 => 7,
+            };
 
             TreasureRoom[][] treasureRooms =
                 new TreasureRoom[gridSize].Select(_ => new TreasureRoom[gridSize]).ToArray();
