@@ -797,7 +797,7 @@ public class QuizManager
             Quiz.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
             if (isSkippingCount >= skipNumber)
             {
-                Quiz.QuizState.RemainingMs = 200;
+                Quiz.QuizState.RemainingMs = 500;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
                 Quiz.Log($"Skipping...");
 

@@ -32,6 +32,8 @@ public partial class RoomPage
 
     public bool ShowQuizSettings { get; set; }
 
+    public bool IsStartingQuiz { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -53,10 +55,16 @@ public partial class RoomPage
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz",
-                new ReqStartQuiz(ClientState.Session.Token, Room.Id));
-            if (res1.IsSuccessStatusCode)
+            if (!IsStartingQuiz)
             {
+                IsStartingQuiz = true;
+                HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz",
+                    new ReqStartQuiz(ClientState.Session.Token, Room.Id));
+                if (res1.IsSuccessStatusCode)
+                {
+                }
+
+                IsStartingQuiz = false;
             }
         }
     }

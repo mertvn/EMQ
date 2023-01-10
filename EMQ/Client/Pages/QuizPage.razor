@@ -67,14 +67,14 @@
         </div>
     }
 
-    <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); min-width:200px; max-width: 300px; min-height:200px; float:right; padding-right: 20px">
+    <div id="correctAnswerInfoDiv" style="@UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 300px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">
         @* todo Latin vs NonLatin title option *@
         <SongInfoCardComponent song="@_correctAnswer"/>
     </div>
 
     <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
-        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); max-width: 720px;">
+        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 720px; min-height: 52px">
             @JsonSerializer.Serialize(_correctAnswer?
                 .Sources.SelectMany(x => x.Titles)
                 .Where(x => x.Language is "ja" or "en" or "tr") // todo
