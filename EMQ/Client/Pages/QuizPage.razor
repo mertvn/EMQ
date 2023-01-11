@@ -112,8 +112,9 @@
                 {
                     @if (Room.Quiz.QuizState.RemainingMs <= 0)
                     {
+                        List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
                         List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
-                        @if (notBuffered.Count < 5)
+                        @if (buffered.Count > 0 && notBuffered.Count < 5)
                         {
                             @foreach (Player player in notBuffered)
                             {
