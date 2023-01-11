@@ -78,7 +78,7 @@ public class QuizLog
 
     public override string ToString()
     {
-        string final = $"r{RoomId}-q{QuizId}@{QuizState.sp} {PlayerId} {Message}";
+        string final = $"r{RoomId}-q{QuizId}@{QuizState.sp} p{PlayerId} {Message}";
         return final;
     }
 }

@@ -57,7 +57,7 @@ public class QuizSettings
     public int LootingMs { get; set; } = 120000;
 
     [Required]
-    [Range(1, 50)]
+    [Range(1, 25)]
     [DefaultValue(7)]
     public int InventorySize { get; set; } = 7;
 }
