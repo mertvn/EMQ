@@ -25,7 +25,7 @@ public partial class GuessInputComponent
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
     }
 
-    private async Task OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
+    private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
     {
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
@@ -46,7 +46,9 @@ public partial class GuessInputComponent
 
     public async Task ClearInputField()
     {
+#pragma warning disable CS4014
         AutocompleteComponent.Clear(); // awaiting this causes signalr messages not to be processed in time (???)
+#pragma warning restore CS4014
         await Task.Delay(100);
         StateHasChanged();
     }
@@ -66,7 +68,7 @@ public partial class GuessInputComponent
         }
     }
 
-    private async Task SelectedValueChanged(string arg)
+    private void SelectedValueChanged(string arg)
     {
         currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
     }

@@ -103,8 +103,8 @@ if (shouldMigrate)
 {
     var serviceProvider = CreateServices();
 
-// Put the database update into a scope to ensure
-// that all resources will be disposed.
+    // Put the database update into a scope to ensure
+    // that all resources will be disposed.
     using (var scope = serviceProvider.CreateScope())
     {
         UpdateDatabase(scope.ServiceProvider);
@@ -127,8 +127,6 @@ else
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-    // TODO: Address security concerns (CRIME and BREACH) https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery?view=aspnetcore-6.0
-    // app.UseResponseCompression();
 }
 
 app.UseHttpsRedirection();

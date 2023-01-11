@@ -113,7 +113,7 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("RemoveSession")]
-    public async Task RemoveSession([FromBody] ReqRemoveSession req)
+    public void RemoveSession([FromBody] ReqRemoveSession req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
         _logger.LogInformation("Removing session " + session?.Token);
@@ -126,7 +126,7 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("ValidateSession")]
-    public async Task<ActionResult> RemoveSession([FromBody] string token)
+    public ActionResult RemoveSession([FromBody] string token)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         return session == null ? Unauthorized() : Ok();

@@ -15,7 +15,6 @@ w
 * auto-generate autocomplete list
 * coop: ability to click teammate's answer to switch to it
 * coop: team answers should be determined by count
-* QuizLog
 * trim before autocomplete
 * 6+ players everything stretching
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event

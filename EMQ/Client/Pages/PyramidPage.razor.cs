@@ -111,7 +111,7 @@ public partial class PyramidPage
         Timer.Start();
     }
 
-    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    private void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
         if (Countdown > 0)
         {
@@ -124,7 +124,10 @@ public partial class PyramidPage
         }
 
         StateHasChanged();
-        _treasureRoomComponentRef.CallStateHasChanged(Room);
+        if (Room != null)
+        {
+            _treasureRoomComponentRef.CallStateHasChanged(Room);
+        }
     }
 
     private async Task OnReceiveQuizEntered()

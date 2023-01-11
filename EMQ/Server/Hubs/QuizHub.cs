@@ -172,7 +172,7 @@ public class QuizHub : Hub
     }
 
     // [Authorize]
-    public async Task SendPlayerLeaving()
+    public void SendPlayerLeaving()
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
         if (session != null)

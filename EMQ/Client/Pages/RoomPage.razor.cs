@@ -100,7 +100,7 @@ public partial class RoomPage
         // todo
     }
 
-    private async Task ResetQuizSettings()
+    private void ResetQuizSettings()
     {
         ClientQuizSettings = new QuizSettings();
     }

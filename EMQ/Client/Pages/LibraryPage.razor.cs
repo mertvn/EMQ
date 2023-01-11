@@ -125,7 +125,7 @@ public partial class LibraryPage
         }
     }
 
-    private async Task OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
+    private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
     {
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
@@ -153,7 +153,7 @@ public partial class LibraryPage
         }
     }
 
-    private async Task SelectedValueChanged(string arg)
+    private void SelectedValueChanged(string arg)
     {
         currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
     }

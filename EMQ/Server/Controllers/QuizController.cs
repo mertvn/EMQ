@@ -87,7 +87,7 @@ public class QuizController : ControllerBase
 
     [HttpGet]
     [Route("GetRooms")]
-    public async Task<IEnumerable<Room>> GetRooms()
+    public IEnumerable<Room> GetRooms()
     {
         // todo
         // return ServerState.Rooms.Where(x => x.Quiz is null ||
@@ -98,9 +98,9 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("CreateRoom")]
-    public async Task<int> CreateRoom([FromBody] ReqCreateRoom req)
+    public int CreateRoom([FromBody] ReqCreateRoom req)
     {
-        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -244,7 +244,7 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("ChangeRoomSettings")]
-    public async Task ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
+    public void ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
     {
         var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
         if (session is null)
