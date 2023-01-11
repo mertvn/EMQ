@@ -365,7 +365,7 @@ public partial class QuizPage
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
                     PreloadCancellationSource.CancelAfter(
-                        TimeSpan.FromMilliseconds((float)Room.QuizSettings.ResultsMs * 2.5));
+                        TimeSpan.FromMilliseconds((float)Room.QuizSettings.ResultsMs * 5));
                     await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
                 }
 

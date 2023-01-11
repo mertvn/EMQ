@@ -60,4 +60,9 @@ public class QuizSettings
     [Range(1, 25)]
     [DefaultValue(7)]
     public int InventorySize { get; set; } = 7;
+
+    [Required]
+    [Range(50, 100)]
+    [DefaultValue(90)]
+    public int WaitPercentage { get; set; } = 90;
 }

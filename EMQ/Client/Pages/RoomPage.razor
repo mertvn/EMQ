@@ -91,6 +91,10 @@
             <label for="InventorySize">Looting inventory size</label>
             <br/>
 
+            <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
+            <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
+            <br/>
+
             <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/>
             <button style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
         </EditForm>

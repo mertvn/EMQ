@@ -102,20 +102,23 @@ public class QuizManager
         }
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        int waitingForMs = 0;
+        int timeoutMs = Quiz.Room.QuizSettings.ResultsMs * 6;
         // Console.WriteLine("ibc " + isBufferedCount);
 
-        // todo math.round etc and 100% and setting
+        float waitNumber = (float)Math.Round(
+            Quiz.Room.Players.Count * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
+            MidpointRounding.AwayFromZero);
 
-        while (isBufferedCount < (float)Quiz.Room.Players.Count / 2 &&
-               waitingForMs < Quiz.Room.QuizSettings.ResultsMs * 3)
+        while (isBufferedCount < waitNumber &&
+               timeoutMs > 0)
         {
-            // Console.WriteLine("in while " + isBufferedCount + "/" + (float)Quiz.Room.Players.Count / 2);
+            // Console.WriteLine("in while " + isBufferedCount + "/" + waitNumber);
             await Task.Delay(1000);
-            waitingForMs += 1000;
+            timeoutMs -= 1000;
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-            Quiz.QuizState.ExtraInfo = $"Waiting buffering... {isBufferedCount}/{Quiz.Room.Players.Count}";
+            Quiz.QuizState.ExtraInfo =
+                $"Waiting buffering... {isBufferedCount}/{waitNumber} timeout in {timeoutMs / 1000}s";
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
 
             await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)

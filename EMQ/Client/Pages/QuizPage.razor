@@ -107,6 +107,22 @@
                 <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
                     @(Room?.Quiz?.QuizState.ExtraInfo)
                 </p>
+
+                @if (Room != null)
+                {
+                    List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
+                    List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
+
+                    @if (buffered.Count > 0 && notBuffered.Count < 5)
+                    {
+                        @foreach (Player player in notBuffered)
+                        {
+                            <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; font-size: x-large;">
+                                Waiting for @player.Username
+                            </p>
+                        }
+                    }
+                }
             </div>
 
             @if (!PageState.VideoPlayerVisibility)
