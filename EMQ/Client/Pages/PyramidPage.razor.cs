@@ -25,6 +25,10 @@ public partial class PyramidPage
                 "ReceiveUpdateTreasureRoom", (new Type[] { typeof(TreasureRoom), },
                     async param => { await OnReceiveUpdateTreasureRoom((TreasureRoom)param[0]!); })
             },
+            {
+                "ReceiveUpdateRemainingMs",
+                (new Type[] { typeof(float) }, async param => { await OnReceiveUpdateRemainingMs((float)param[0]!); })
+            },
             { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
         };
     }
@@ -129,5 +133,10 @@ public partial class PyramidPage
 
         _logger.LogInformation("Navigating from Pyramid to Quiz");
         _navigation.NavigateTo("/QuizPage");
+    }
+
+    private async Task OnReceiveUpdateRemainingMs(float remainingMs)
+    {
+        Countdown = remainingMs;
     }
 }

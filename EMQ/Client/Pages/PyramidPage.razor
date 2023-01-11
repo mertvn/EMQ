@@ -12,6 +12,5 @@
 @if (Room != null &&
      Room.TreasureRooms.Any(x => x.Any(y => y.Treasures.Any(z => z.ValidSource.Value.Any()))))
 {
-    // todo countdown
     <TreasureRoomComponent @ref="_treasureRoomComponentRef" Room="Room" Countdown="Countdown"></TreasureRoomComponent>
 }

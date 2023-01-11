@@ -104,6 +104,9 @@ public class QuizManager
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
         int waitingForMs = 0;
         // Console.WriteLine("ibc " + isBufferedCount);
+
+        // todo math.round etc and 100% and setting
+
         while (isBufferedCount < (float)Quiz.Room.Players.Count / 2 &&
                waitingForMs < Quiz.Room.QuizSettings.ResultsMs * 3)
         {
@@ -391,9 +394,6 @@ public class QuizManager
                 await EnterLootingPhase();
                 await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds).SendAsync("ReceivePyramidEntered");
                 await Task.Delay(TimeSpan.FromSeconds(1));
-                await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds)
-                    .SendAsync("ReceiveUpdateTreasureRoom",
-                        Quiz.Room.TreasureRooms[0][0]); // uhh do we really need this?
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -655,6 +655,9 @@ public class QuizManager
                             .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
 
                         await HubContext.Clients.Clients(session.ConnectionId!)
+                            .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
+
+                        await HubContext.Clients.Clients(session.ConnectionId!)
                             .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
                     }
                 }
@@ -702,6 +705,9 @@ public class QuizManager
                 .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
 
             await HubContext.Clients.Clients(session.ConnectionId!)
+                .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
+
+            await HubContext.Clients.Clients(session.ConnectionId!)
                 .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
         }
     }
@@ -745,6 +751,9 @@ public class QuizManager
 
                 await HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdateTreasureRoom", newTreasureRoom);
+
+                await HubContext.Clients.Clients(session.ConnectionId!)
+                    .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
                 await HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdatePlayerLootingInfo",
