@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -158,6 +159,12 @@ public partial class RoomPage
 
     private async Task RandomizeTags()
     {
+        // todo
+        if (!AutocompleteCData.Any())
+        {
+            return;
+        }
+
         var rng = Random.Shared;
 
         var categoryFilters = new List<CategoryFilter>();
