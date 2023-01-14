@@ -54,6 +54,7 @@ public partial class RoomPage
         // }
 
         AutocompleteCData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete_c.json", Utils.Jso))!;
+        StateHasChanged();
     }
 
     private async Task StartQuiz()

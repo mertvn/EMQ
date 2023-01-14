@@ -107,7 +107,10 @@
         </EditForm>
     </div>
 
-    <button class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize Tags</button>
+    <button class="btn btn-primary" @onclick="RandomizeTags"
+            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing } || !AutocompleteCData.Any()) ">
+        Randomize Tags
+    </button>
 }
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
