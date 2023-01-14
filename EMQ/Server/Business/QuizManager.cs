@@ -329,14 +329,16 @@ public class QuizManager
         Quiz.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
         Quiz.Log($"validSourcesCount: {validSources.Count}");
 
-        List<Song> dbSongs;
+        var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;
+        Quiz.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
+        Quiz.Log($"validCategoriesCount: {validCategories.Count}");
 
+        List<Song> dbSongs;
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
-                dbSongs = await DbManager.GetRandomSongs(
-                    Quiz.Room.QuizSettings.NumSongs,
-                    Quiz.Room.QuizSettings.Duplicates, validSources);
+                dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
+                    Quiz.Room.QuizSettings.Duplicates, validSources, validCategories);
 
                 if (dbSongs.Count == 0)
                 {

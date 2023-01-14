@@ -52,10 +52,10 @@
                                                @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
                                     </label>
                                     <label class="btn btn-outline-primary"
-                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Ignore, "gray", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Ignore, "white", "black");">
-                                        <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Ignore)"
-                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Ignore))"> Ignore
+                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
+                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");">
+                                        <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Maybe)"
+                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Maybe
                                     </label>
                                     <label class="btn btn-outline-primary"
                                            style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");

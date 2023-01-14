@@ -152,7 +152,7 @@ public class AuthController : ControllerBase
             var newVnUrls = new List<string>();
             switch (req.Label.Kind)
             {
-                case LabelKind.Ignore:
+                case LabelKind.Maybe:
                     break;
                 case LabelKind.Include:
                 case LabelKind.Exclude:

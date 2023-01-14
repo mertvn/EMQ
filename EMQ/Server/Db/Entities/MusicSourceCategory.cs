@@ -13,4 +13,8 @@ public class MusicSourceCategory
     [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
     public int category_id { get; set; }
+
+    public float? rating { get; set; }
+
+    public int? spoiler_level { get; set; }
 }

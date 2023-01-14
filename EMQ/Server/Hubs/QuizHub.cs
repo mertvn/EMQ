@@ -18,7 +18,7 @@ public class QuizHub : Hub
             if (session.ConnectionId != null)
             {
                 Console.WriteLine(
-                    $"Player {session.Player.Id} ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
+                    $"p{session.Player.Id} ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
 
                 var room = ServerState.Rooms.SingleOrDefault(x =>
                     x.Players.Any(player => player.Id == session.Player.Id));

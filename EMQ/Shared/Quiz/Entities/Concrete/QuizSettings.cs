@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -65,4 +66,12 @@ public class QuizSettings
     [Range(50, 100)]
     [DefaultValue(90)]
     public int WaitPercentage { get; set; } = 90;
+
+    [Required]
+    public QuizFilters Filters { get; set; } = new();
+}
+
+public class QuizFilters
+{
+    public List<CategoryFilter> CategoryFilters { get; set; } = new();
 }

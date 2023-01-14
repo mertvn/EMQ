@@ -22,7 +22,7 @@ public partial class GuessInputComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete_mst.json"))!;
     }
 
     private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
@@ -30,7 +30,7 @@ public partial class GuessInputComponent
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
             currentDataSource =
-                Autocomplete.SearchAutocomplete(autocompleteReadDataEventArgs.SearchValue, AutocompleteData);
+                Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
         }
     }
 

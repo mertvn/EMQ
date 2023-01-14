@@ -19,5 +19,5 @@ public class ProcessedMusic
 
     public ParsedSong ParsedSong { get; set; }
 
-    public List<string> ProducerIds { get; set; }
+    public string[] ProducerIds { get; set; }
 }

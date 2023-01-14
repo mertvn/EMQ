@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -34,6 +35,8 @@ public partial class RoomPage
 
     public bool IsStartingQuiz { get; set; }
 
+    public SongSourceCategory[] AutocompleteCData { get; set; } = Array.Empty<SongSourceCategory>();
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -49,6 +52,8 @@ public partial class RoomPage
         // {
         //     Hotjoin();
         // }
+
+        AutocompleteCData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete_c.json", Utils.Jso))!;
     }
 
     private async Task StartQuiz()
@@ -150,5 +155,30 @@ public partial class RoomPage
         }
     }
 
-    // todo readying up
+    private async Task RandomizeTags()
+    {
+        var rng = Random.Shared;
+
+        var categoryFilters = new List<CategoryFilter>();
+        for (int i = 1; i <= rng.Next(1, 6); i++)
+        {
+            var songSourceCategory = AutocompleteCData[rng.Next(AutocompleteCData.Length)];
+
+            var trilean = (LabelKind)rng.Next(-1, 2);
+            if (trilean is LabelKind.Exclude)
+            {
+                songSourceCategory.SpoilerLevel = SpoilerLevel.Major;
+            }
+            else
+            {
+                songSourceCategory.SpoilerLevel = SpoilerLevel.None;
+            }
+
+            var categoryFilter = new CategoryFilter(songSourceCategory, trilean);
+            categoryFilters.Add(categoryFilter);
+        }
+
+        ClientQuizSettings.Filters.CategoryFilters = categoryFilters;
+        await SendChangeRoomSettingsReq(ClientQuizSettings);
+    }
 }

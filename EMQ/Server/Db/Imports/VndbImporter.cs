@@ -24,6 +24,10 @@ public static class VndbImporter
 
     public static List<ProcessedMusic> processedMusicsJson { get; set; } = null!;
 
+    public static List<VNTagInfo> vnTagInfoJson { get; set; } = null!;
+
+    public static List<Tag> tagsJson { get; set; } = null!;
+
     public static async Task ImportVndbData()
     {
         Songs.Clear();
@@ -44,6 +48,12 @@ public static class VndbImporter
 
         processedMusicsJson = JsonConvert.DeserializeObject<List<ProcessedMusic>>(
             await File.ReadAllTextAsync($"{folder}\\processedMusics.json"))!;
+
+        vnTagInfoJson = JsonConvert.DeserializeObject<List<VNTagInfo>>(
+            await File.ReadAllTextAsync($"{folder}\\EMQ vnTagInfo.json"))!;
+
+        tagsJson = JsonConvert.DeserializeObject<List<Tag>>(
+            await File.ReadAllTextAsync($"{folder}\\EMQ tags.json"))!;
 
         Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
 
@@ -105,6 +115,35 @@ public static class VndbImporter
                 Console.WriteLine($"No matching artist found for aid {dynArtistAlias.aid}");
                 throw;
             }
+
+            List<SongSourceCategory> categories = new();
+
+            VNTagInfo? vnTagInfo = vnTagInfoJson.SingleOrDefault(x => x.VNID == dynData.VNID)!;
+            if (vnTagInfo != null! && vnTagInfo.TVIs.Any())
+            {
+                foreach (var tvi in vnTagInfo.TVIs)
+                {
+                    var tag = tagsJson.Single(x => x.Id == tvi.t);
+                    // Console.WriteLine(JsonConvert.SerializeObject(tag));
+
+                    categories.Add(new SongSourceCategory
+                    {
+                        Name = tag.Name,
+                        VndbId = tag.Id,
+                        Type = SongSourceCategoryType.Tag,
+                        Rating = tvi.r,
+                        SpoilerLevel = (SpoilerLevel)tvi.s
+                    });
+                }
+            }
+            else
+            {
+                Console.WriteLine(
+                    JsonConvert.SerializeObject(dynData.VNID +
+                                                $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
+            }
+
+            // Console.WriteLine(JsonConvert.SerializeObject(tags, Formatting.Indented));
 
             bool artistAliasIsMain = (int)dynArtist.aid == (int)dynArtistAlias.aid;
 
@@ -250,7 +289,7 @@ public static class VndbImporter
                             }
                         },
                         Titles = musicSourceTitles,
-                        // todo categories
+                        Categories = categories,
                     },
                 },
                 ProducerIds = dynData.ProducerIds.OrderBy(y => y).ToList()

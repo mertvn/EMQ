@@ -44,7 +44,7 @@ public partial class LibraryPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete_mst.json"))!;
     }
 
     private async Task SelectedResultChanged()
@@ -130,7 +130,7 @@ public partial class LibraryPage
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
             currentDataSource =
-                Autocomplete.SearchAutocomplete(autocompleteReadDataEventArgs.SearchValue, AutocompleteData);
+                Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
         }
     }
 

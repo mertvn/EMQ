@@ -15,4 +15,6 @@ public class Category
 
     [Required]
     public int type { get; set; }
+
+    public string? vndb_id { get; set; }
 }

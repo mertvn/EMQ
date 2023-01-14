@@ -1,23 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Dapper.Contrib.Extensions;
-using EMQ.Server;
 using EMQ.Server.Db;
-using EMQ.Server.Db.Entities;
-using EMQ.Server.Db.Imports;
-using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using EMQ.Shared.VNDB.Business;
-using Newtonsoft.Json;
-using Npgsql;
 using NUnit.Framework;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Tests;
 
@@ -28,8 +15,11 @@ public class DbTests
     {
     }
 
-    private static void GenericSongsAssert(IEnumerable<Song> songs)
+    private static void GenericSongsAssert(List<Song> songs)
     {
+        Console.WriteLine($"{songs.Count} songs");
+
+        // Assert.That(songs.Any(x => x.Sources.Any(y => y.Categories.Any())));
         foreach (Song song in songs)
         {
             Assert.That(song.Id > 0);
@@ -38,19 +28,47 @@ public class DbTests
             Assert.That(song.Titles.First().Language.Any());
             Assert.That(song.Titles.Any(x => x.IsMainTitle));
 
-            // Assert.That(song.Links.First().Url.Any());
+            foreach (SongLink songLink in song.Links)
+            {
+                Assert.That(!string.IsNullOrWhiteSpace(songLink.Url));
+                Assert.That(songLink.Type != SongLinkType.Unknown);
+            }
 
-            Assert.That(song.Sources.First().Id > 0);
-            Assert.That(song.Sources.First().Titles.First().LatinTitle.Any());
-            Assert.That(song.Sources.First().Titles.First().Language.Any());
-            Assert.That(song.Sources.First().Titles.Any(x => x.IsMainTitle));
-            Assert.That(song.Sources.First().Links.First().Url.Any());
-            Assert.That(song.Sources.First().SongTypes.Any());
+            foreach (SongSource songSource in song.Sources)
+            {
+                Assert.That(songSource.Id > 0);
+                Assert.That(songSource.Titles.First().LatinTitle.Any());
+                Assert.That(songSource.Titles.First().Language.Any());
+                Assert.That(songSource.Titles.Any(x => x.IsMainTitle));
+                Assert.That(songSource.Links.First().Url.Any());
+                Assert.That(songSource.SongTypes.Any());
 
-            // Assert.That(song.Sources.First().Categories.First().Name.Any());
+                HashSet<int> seenTags = new();
+                foreach (SongSourceCategory songSourceCategory in songSource.Categories)
+                {
+                    Assert.That(songSourceCategory.Id > 0);
+                    Assert.That(songSourceCategory.Name.Any());
+                    Assert.That(songSourceCategory.Type != SongSourceCategoryType.Unknown);
 
-            Assert.That(song.Artists.First().Id > 0);
-            Assert.That(song.Artists.First().Titles.First().LatinTitle.Any());
+                    if (songSourceCategory.Type == SongSourceCategoryType.Tag)
+                    {
+                        Assert.That(songSourceCategory.Rating > 0);
+                        Assert.That(songSourceCategory.SpoilerLevel is not null);
+
+                        bool added = seenTags.Add(songSourceCategory.Id);
+                        if (!added)
+                        {
+                            throw new Exception();
+                        }
+                    }
+                }
+            }
+
+            foreach (SongArtist songArtist in song.Artists)
+            {
+                Assert.That(songArtist.Id > 0);
+                Assert.That(songArtist.Titles.First().LatinTitle.Any());
+            }
         }
     }
 
@@ -65,59 +83,180 @@ public class DbTests
                 new() { LatinTitle = "Restoration ~Chinmoku no Sora~" }, new() { LatinTitle = "SHOOTING STAR" }
             }
         });
+        GenericSongsAssert(songs);
 
         Assert.That(songs.Count == 3);
-        GenericSongsAssert(songs);
     }
 
     [Test]
     public async Task Test_SelectSongs_YuminaMainTitleThing()
     {
-        var songs = await DbManager.SelectSongs(new Song() { Id = 821, });
+        var songs = (await DbManager.SelectSongs(new Song() { Id = 821, })).ToList();
         GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 0);
     }
 
     [Test]
     public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
     {
-        var songs = await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na");
-        var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
+        var songs = (await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na")).ToList();
 
+        var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
         GenericSongsAssert(new List<Song> { song });
+    }
+
+    [Test]
+    public async Task Test_FindSongsBySongSourceCategories()
+    {
+        var categories = new List<SongSourceCategory>()
+        {
+            new() { VndbId = "g2405", Type = SongSourceCategoryType.Tag },
+            new() { VndbId = "g2689", Type = SongSourceCategoryType.Tag },
+        };
+        var songs = (await DbManager.FindSongsBySongSourceCategories(categories)).ToList();
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Any(x => x.Sources.Any(y => y.Categories.Any(z => z.Name == "Non Looping BGM"))));
+        Assert.That(songs.Any(x => x.Sources.Any(y => y.Categories.Any(z => z.Name == "Modifications"))));
     }
 
     [Test]
     public async Task Test_FindSongsByArtistTitle_KOTOKO()
     {
-        var songs = await DbManager.FindSongsByArtistTitle("KOTOKO");
-
+        var songs = (await DbManager.FindSongsByArtistTitle("KOTOKO")).ToList();
         GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 100);
     }
 
     [Test]
     public async Task Test_FindSongsByArtistTitle_ByNonMainAlias()
     {
         var songs = (await DbManager.FindSongsByArtistTitle("Mishiro Mako")).ToList();
+        GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 10);
         Assert.That(songs.Count < 30);
-        GenericSongsAssert(songs);
     }
 
     [Test]
     public async Task Test_GetRandomSongs_100()
     {
         var songs = await DbManager.GetRandomSongs(100, true);
+        GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 99);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_100000()
+    {
+        var songs = await DbManager.GetRandomSongs(100000, true);
         GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 400);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_100000_NoDuplicates()
+    {
+        var songs = await DbManager.GetRandomSongs(100000, false);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 280);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_CategoryFilter_1()
+    {
+        List<CategoryFilter> categories = new()
+        {
+            // (ignored) ~ da capo 3, duel savior, Justy×Nasty ~Maou Hajimemashita~, magical charming, sorcery jokers, edelweiss
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g685", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe) { },
+            // + a lot of shit
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g424", SpoilerLevel = SpoilerLevel.Minor },
+                LabelKind.Include) { },
+        };
+
+        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Ano Harewataru Sora yori Takaku")))));
+
+        Assert.That(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Ao no Kanata no Four Rhythm")))));
+
+        Assert.That(songs.Count > 10);
+        Assert.That(songs.Count < 400);
+    }
+
+
+    [Test]
+    public async Task Test_GetRandomSongs_CategoryFilter_1_NoAokana()
+    {
+        List<CategoryFilter> categories = new()
+        {
+            // (ignored) ~ da capo 3, duel savior, Justy×Nasty ~Maou Hajimemashita~, magical charming, sorcery jokers, edelweiss
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g685", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe) { },
+            // + a lot of shit
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g424", SpoilerLevel = SpoilerLevel.Minor },
+                LabelKind.Include) { },
+            // - aokana
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g2924", SpoilerLevel = SpoilerLevel.Major },
+                LabelKind.Exclude) { },
+        };
+
+        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Ano Harewataru Sora yori Takaku")))));
+
+        Assert.That(!(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Ao no Kanata no Four Rhythm"))))));
+
+        Assert.That(songs.Count > 10);
+        Assert.That(songs.Count < 400);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_CategoryFilter_2()
+    {
+        List<CategoryFilter> categories = new()
+        {
+            // - magical charming
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g187", SpoilerLevel = SpoilerLevel.Major },
+                LabelKind.Exclude) { },
+            // ~ da capo 3, duel savior, Justy×Nasty ~Maou Hajimemashita~, magical charming, sorcery jokers, edelweiss
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g685", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe),
+            // ~ aokana,
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g2924", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe),
+        };
+
+        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Sorcery Jokers")))));
+
+        Assert.That(!(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Magical Charming"))))));
+
+        Assert.That(songs.Count > 4);
+        Assert.That(songs.Count < 100);
     }
 
     [Test]
     public async Task Test_GetRandomSongs_IsDistinct()
     {
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
-        Console.WriteLine(songs.Count + " songs");
+        GenericSongsAssert(songs);
 
         HashSet<int> seen = new();
         foreach (Song song in songs)
@@ -128,8 +267,6 @@ public class DbTests
                 throw new Exception();
             }
         }
-
-        GenericSongsAssert(songs);
     }
 
     [Test, Explicit]
@@ -209,150 +346,4 @@ public class DbTests
         int mId = await DbManager.InsertSong(song);
         Console.WriteLine($"Inserted mId {mId}");
     }
-
-    [Test, Explicit]
-    public async Task GenerateAutocompleteJson()
-    {
-        await File.WriteAllTextAsync("autocomplete.json", await DbManager.SelectAutocomplete());
-    }
-
-    [Test, Explicit]
-    public async Task ImportVndbData()
-    {
-        await VndbImporter.ImportVndbData();
-    }
-
-    [Test, Explicit]
-    public async Task GenerateSong()
-    {
-        await File.WriteAllTextAsync("Song.json", await DbManager.ExportSong());
-    }
-
-    [Test, Explicit]
-    public async Task GenerateSongLite()
-    {
-        await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
-    }
-
-    [Test, Explicit]
-    public async Task GenerateReviewQueue()
-    {
-        await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());
-    }
-
-    [Test, Explicit]
-    public async Task ImportSongLite()
-    {
-        var deserialized =
-            JsonConvert.DeserializeObject<List<SongLite>>(
-                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
-        await DbManager.ImportSongLite(deserialized!);
-    }
-
-    // music ids can change between vndb imports, so this doesn't work correctly right now
-    // [Test, Explicit]
-    // public async Task ImportReviewQueue()
-    // {
-    //     var deserialized =
-    //         JsonConvert.DeserializeObject<List<ReviewQueue>>(
-    //             await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\ReviewQueue.json"));
-    //     await DbManager.ImportReviewQueue(deserialized!);
-    // }
-
-    [Test, Explicit]
-    public async Task ApproveReviewQueueItem()
-    {
-        var rqIds = Enumerable.Range(78, 1).ToArray();
-
-        foreach (int rqId in rqIds)
-        {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Approved);
-        }
-    }
-
-    [Test, Explicit]
-    public async Task RejectReviewQueueItem()
-    {
-        var rqIds = Enumerable.Range(24, 1).ToArray();
-
-        foreach (int rqId in rqIds)
-        {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected);
-        }
-    }
-
-    [Test, Explicit]
-    public async Task Test_GrabVnsFromVndb()
-    {
-        // todo move this to another class?
-        PlayerVndbInfo vndbInfo = new PlayerVndbInfo()
-        {
-            VndbId = "u101804",
-            VndbApiToken = "",
-            Labels = new List<Label>
-            {
-                new()
-                {
-                    Id = 2, // Finished
-                    Kind = LabelKind.Include
-                },
-                new()
-                {
-                    Id = 7, // Voted
-                    Kind = LabelKind.Include
-                },
-                new()
-                {
-                    Id = 6, // Blacklist
-                    Kind = LabelKind.Exclude
-                },
-            }
-        };
-
-        var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
-        Console.WriteLine(JsonSerializer.Serialize(labels, Utils.Jso));
-        Assert.That(labels.Count > 1);
-        Assert.That(labels.First().VnUrls.Count > 1);
-    }
-
-    [Test, Explicit]
-    public async Task BackupSongFilesUsingSongLite()
-    {
-        string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
-        var songLites =
-            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath), Utils.JsoIndented)!;
-
-        var client = new HttpClient();
-
-        int dlCount = 0;
-        const int waitMs = 5000;
-
-        foreach (var songLite in songLites)
-        {
-            foreach (var link in songLite.Links)
-            {
-                var directory = "C:\\emq\\emqsongsbackup";
-                var filePath = $"{directory}\\{new Uri(link.Url).Segments.Last()}";
-
-                if (!File.Exists(filePath))
-                {
-                    var stream = await client.GetStreamAsync(link.Url);
-
-                    await using (MemoryStream ms = new())
-                    {
-                        await stream.CopyToAsync(ms);
-                        Directory.CreateDirectory(directory);
-                        await File.WriteAllBytesAsync(filePath, ms.ToArray());
-                    }
-
-                    dlCount += 1;
-                    await Task.Delay(waitMs);
-                }
-            }
-        }
-
-        Console.WriteLine($"Downloaded {dlCount} files.");
-    }
-
-    // todo pgrestore pgdump tests
 }

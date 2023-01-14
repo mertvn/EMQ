@@ -9,6 +9,7 @@
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 @inject IJSRuntime _jsRuntime
+@inject HttpClient _client
 
 <button class="btn btn-warning" @onclick="Onclick_Leave"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
@@ -22,6 +23,12 @@
     <p>@Room?.Owner.Username</p>
     Settings:<br/>
     <p>@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
+    Tags:<br/>
+    <p>
+        @JsonSerializer.Serialize(
+            Room?.QuizSettings.Filters.CategoryFilters.Select(x => $"{x.SongSourceCategory.VndbId} {x.SongSourceCategory.Name} ({x.Trilean})"),
+            Utils.Jso)
+    </p>
 </div>
 
 @if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && (Room?.QuizSettings.IsHotjoinEnabled ?? false))
@@ -99,6 +106,8 @@
             <button style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
         </EditForm>
     </div>
+
+    <button class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize Tags</button>
 }
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
@@ -115,3 +124,5 @@
     }
 
 </div>
+
+@* todo readying up *@
