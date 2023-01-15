@@ -39,12 +39,14 @@
                         {
                             @foreach (var treasure in player.LootingInfo.Inventory)
                             {
+                                var sourceLatinTitle = @treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle;
                                 <span style="cursor: pointer"
                                       @onclick="@(() => DropTreasure(treasure))">
                                     @* todo title selection *@
-                                    @treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle
+                                    <Blazorise.Tooltip Text="@sourceLatinTitle">
+                                        @sourceLatinTitle
+                                    </Blazorise.Tooltip>
                                 </span>
-                                <br/>
                             }
                         }
                     </div>
