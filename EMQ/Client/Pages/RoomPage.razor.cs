@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -187,6 +187,12 @@ public partial class RoomPage
         }
 
         ClientQuizSettings.Filters.CategoryFilters = categoryFilters;
+        await SendChangeRoomSettingsReq(ClientQuizSettings);
+    }
+
+    private async Task ClearTags()
+    {
+        ClientQuizSettings.Filters.CategoryFilters = new List<CategoryFilter>();
         await SendChangeRoomSettingsReq(ClientQuizSettings);
     }
 }
