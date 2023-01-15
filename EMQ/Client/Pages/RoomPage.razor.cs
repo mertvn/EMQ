@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -172,7 +172,7 @@ public partial class RoomPage
         {
             var songSourceCategory = AutocompleteCData[rng.Next(AutocompleteCData.Length)];
 
-            var trilean = (LabelKind)rng.Next(-1, 2);
+            var trilean = (LabelKind)rng.Next(-1, 1); // we don't want Include here
             if (trilean is LabelKind.Exclude)
             {
                 songSourceCategory.SpoilerLevel = SpoilerLevel.Major;
