@@ -89,7 +89,7 @@ public partial class PyramidPage
             // }
 
             StateHasChanged();
-            _treasureRoomComponentRef.CallStateHasChanged(Room);
+            // _treasureRoomComponentRef.CallStateHasChanged(Room);
         }
     }
 
@@ -124,10 +124,10 @@ public partial class PyramidPage
         }
 
         StateHasChanged();
-        if (Room != null)
-        {
-            _treasureRoomComponentRef.CallStateHasChanged(Room);
-        }
+        // if (Room != null)
+        // {
+        //     _treasureRoomComponentRef.CallStateHasChanged(Room);
+        // }
     }
 
     private async Task OnReceiveQuizEntered()
