@@ -89,7 +89,7 @@ public partial class PyramidPage
             // }
 
             StateHasChanged();
-            // _treasureRoomComponentRef.CallStateHasChanged(Room);
+             // _treasureRoomComponentRef.CallStateHasChanged(Room);
         }
     }
 
