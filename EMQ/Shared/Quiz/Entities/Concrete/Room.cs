@@ -34,7 +34,7 @@ public class Room
     public Player Owner { get; set; }
 
     [JsonIgnore]
-    public List<string> AllPlayerConnectionIds { get; set; } = new(); // todo needs to be dict
+    public Dictionary<int, string> AllPlayerConnectionIds { get; set; } = new();
 
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 }

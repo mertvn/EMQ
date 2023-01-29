@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EMQ.Server.Business;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR;
 
@@ -8,17 +9,20 @@ namespace EMQ.Server.Hubs;
 
 public class QuizHub : Hub
 {
-    public override Task OnConnectedAsync()
+    public override async Task OnConnectedAsync()
     {
         var accessToken = Context.GetHttpContext()!.Request.Query["access_token"];
 
         var session = ServerState.Sessions.SingleOrDefault(x => accessToken == x.Token);
         if (session != null)
         {
-            if (session.ConnectionId != null)
+            string? oldConnectionId = session.ConnectionId;
+            string newConnectionId = Context.ConnectionId;
+
+            if (oldConnectionId != null)
             {
                 Console.WriteLine(
-                    $"p{session.Player.Id} ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}");
+                    $"p{session.Player.Id} ConnectionId changed from {oldConnectionId} to {newConnectionId}");
 
                 var room = ServerState.Rooms.SingleOrDefault(x =>
                     x.Players.Any(player => player.Id == session.Player.Id));
@@ -26,10 +30,26 @@ public class QuizHub : Hub
                 if (room != null)
                 {
                     // todo notify joinqueue?
-                    room.Quiz?.Log($"ConnectionId changed from {session.ConnectionId} to {Context.ConnectionId}",
+                    room.Quiz?.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
                         session.Player.Id);
-                    room.AllPlayerConnectionIds.Remove(session.ConnectionId);
-                    room.AllPlayerConnectionIds.Add(Context.ConnectionId);
+
+                    room.AllPlayerConnectionIds[session.Player.Id] = newConnectionId!;
+                    if (room.Quiz != null)
+                    {
+                        var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                        if (quizManager != null)
+                        {
+                            await quizManager.OnConnectedAsync(session.Player.Id, newConnectionId);
+                        }
+                        else
+                        {
+                            // todo
+                        }
+                    }
+                    else
+                    {
+                        // todo
+                    }
                 }
             }
 
@@ -39,8 +59,6 @@ public class QuizHub : Hub
         {
             Console.WriteLine($"Player session wasn't found for token {accessToken}");
         }
-
-        return base.OnConnectedAsync();
     }
 
     // [Authorize]
@@ -184,7 +202,7 @@ public class QuizHub : Hub
                 Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
                 var player = room.Players.Single(player => player.Id == session.Player.Id)!;
                 room.Players.Remove(player);
-                room.AllPlayerConnectionIds.Remove(Context.ConnectionId);
+                room.AllPlayerConnectionIds.Remove(player.Id);
 
                 // todo check if there are any players left in the room
             }

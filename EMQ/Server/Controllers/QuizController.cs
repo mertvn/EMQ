@@ -171,11 +171,12 @@ public class QuizController : ControllerBase
                 _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
                 room.Players.Add(player);
                 // _logger.LogInformation("cnnid: " + session.ConnectionId!);
-                room.AllPlayerConnectionIds.Add(session.ConnectionId!);
+                room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
 
                 // let every other player in the room know that a new player joined,
                 // we can't send this message to the joining player because their room page hasn't initialized yet
-                await _hubContext.Clients.Clients(room.AllPlayerConnectionIds.Where(x => x != session.ConnectionId))
+                await _hubContext.Clients.Clients(room.AllPlayerConnectionIds
+                        .Where(x => x.Value != session.ConnectionId).Select(x => x.Value))
                     .SendAsync("ReceivePlayerJoinedRoom");
 
                 return new ResJoinRoom(0);

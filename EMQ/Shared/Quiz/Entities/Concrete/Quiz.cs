@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Timers;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -14,7 +15,8 @@ public class Quiz
         Id = id;
     }
 
-    private List<QuizLog> QuizLog = new();
+    [JsonIgnore]
+    public List<QuizLog> QuizLog = new();
 
     public const float TickRate = 17;
 
@@ -56,8 +58,8 @@ public class QuizLog
 
         RoomId = roomId;
         QuizId = quizId;
-        QuizSettings = quizSettings;
-        QuizState = quizState;
+        // QuizSettings = quizSettings;
+        QuizState = JsonSerializer.Deserialize<QuizState>(JsonSerializer.Serialize(quizState))!;
         PlayerId = playerId;
         Message = message;
     }
@@ -68,7 +70,7 @@ public class QuizLog
 
     public int QuizId { get; set; }
 
-    public QuizSettings QuizSettings { get; set; }
+    // public QuizSettings QuizSettings { get; set; }
 
     public QuizState QuizState { get; set; }
 
@@ -78,7 +80,7 @@ public class QuizLog
 
     public override string ToString()
     {
-        string final = $"r{RoomId}-q{QuizId}@{QuizState.sp} p{PlayerId} {Message}";
+        string final = $"r{RoomId}q{QuizId}@{QuizState.sp} p{PlayerId} {Message}";
         return final;
     }
 }
