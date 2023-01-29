@@ -267,7 +267,7 @@ public static class DbManager
                             Name = category.name,
                             VndbId = category.vndb_id,
                             Type = (SongSourceCategoryType)category.type,
-                            Rating = musicSourceCategory.rating,
+                            Rating = musicSourceCategory!.rating,
                             SpoilerLevel = musicSourceCategory.spoiler_level as SpoilerLevel?
                         });
 
@@ -301,7 +301,7 @@ public static class DbManager
                                 Name = category.name,
                                 VndbId = category.vndb_id,
                                 Type = (SongSourceCategoryType)category.type,
-                                Rating = musicSourceCategory.rating,
+                                Rating = musicSourceCategory!.rating,
                             });
 
                             if (musicSourceCategory.spoiler_level.HasValue)
