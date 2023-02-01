@@ -151,22 +151,33 @@
             {
                 @foreach (var player in Room.Players)
                 {
-                    <div class="playerDiv" style="margin: 20px; max-width: 200px; max-height: 320px;">
-                        <div class="playerGuessDiv" style="display: @UiHelpers.Bool2Display(PageState.GuessesVisibility)">
+                    <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
+                        <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
                             <div class="playerIsCorrectDiv">
-                                <p style="word-wrap: anywhere; color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")"> @player.Guess</p>
+                                <span style="word-wrap: anywhere; height: 90px; display: block;
+                                 color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
+                                    @* todo make text smaller as it gets longer *@
+                                    @player.Guess
+                                </span>
                             </div>
                         </div>
-                        @* <p> Id: @player.Id</p> *@
-                        <p> Name: @player.Username</p>
-                        <p> Score: @player.Score</p>
 
                         @if (Room?.QuizSettings.MaxLives > 0)
                         {
                             <p> Lives: @player.Lives</p>
                         }
 
-                        <img width="200px" height="200px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
+                        <div style="position: relative">
+                            <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
+
+                            <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
+
+                                @* todo make text smaller as it gets longer *@
+                                <span style="color: white;">@player.Username</span>
+
+                                <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
+                            </div>
+                        </div>
                     </div>
                 }
             }
