@@ -909,6 +909,12 @@ public static class DbManager
             }
         }
 
+        // todo
+        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
         return songs;
     }
 
@@ -958,6 +964,12 @@ public static class DbManager
                     songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }));
                 }
             }
+        }
+
+        // todo
+        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return songs;
