@@ -11,14 +11,45 @@ namespace EMQ.Client.Pages;
 
 public partial class GuessInputComponent
 {
-    [CascadingParameter]
-    private QuizPage QuizPage { get; set; } = null!;
-
     private string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
-    public IEnumerable<string> currentDataSource = Array.Empty<string>();
+    private IEnumerable<string> CurrentDataSource { get; set; } = Array.Empty<string>();
 
     public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
+
+    [Parameter]
+    public string Placeholder { get; set; } = "";
+
+    [Parameter]
+    public bool FreeTyping { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public bool IsQuizPage { get; set; }
+
+    private string? _guess;
+
+    [Parameter]
+    public string? Guess
+    {
+        get => _guess;
+        set
+        {
+            if (_guess != value)
+            {
+                _guess = value;
+                GuessChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<string?> GuessChanged { get; set; }
+
+    [Parameter]
+    public Func<Task>? Callback { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -29,7 +60,7 @@ public partial class GuessInputComponent
     {
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
-            currentDataSource =
+            CurrentDataSource =
                 Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
         }
     }
@@ -57,20 +88,25 @@ public partial class GuessInputComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            if (QuizPage.PageState.Guess != AutocompleteComponent.SelectedText)
+            if (Guess != AutocompleteComponent.SelectedText)
             {
-                QuizPage.PageState.Guess = AutocompleteComponent.SelectedText;
+                Guess = AutocompleteComponent.SelectedText;
                 await AutocompleteComponent.Close();
                 StateHasChanged();
 
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", QuizPage.PageState.Guess);
+                if (IsQuizPage)
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                }
+
+                Callback?.Invoke();
             }
         }
     }
 
     private void SelectedValueChanged(string arg)
     {
-        currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
+        CurrentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
     }
 
     public void CallClose()

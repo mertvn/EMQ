@@ -23,8 +23,6 @@ public partial class LibraryPage
 
     private AddSongLinkModel _addSongLinkModel = new();
 
-    private string[] AutocompleteData { get; set; } = Array.Empty<string>();
-
     private ReviewQueueComponent? _reviewQueueComponent { get; set; }
 
     public string? selectedMusicSourceTitle { get; set; }
@@ -35,16 +33,11 @@ public partial class LibraryPage
 
     public bool ShowUploadCriteria { get; set; }
 
-    public IEnumerable<string> currentDataSource = Array.Empty<string>();
-
-    public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
-
     public int ActiveSongId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete_mst.json"))!;
     }
 
     private async Task SelectedResultChanged()
@@ -64,6 +57,7 @@ public partial class LibraryPage
                 {
                     CurrentSongs = songs;
                 }
+                // todo
                 else
                 {
                     var req2 = new ReqFindSongsByArtistTitle(selectedMusicSourceTitle);
@@ -123,39 +117,6 @@ public partial class LibraryPage
                 Console.WriteLine("Error importing song link");
             }
         }
-    }
-
-    private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
-    {
-        if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
-        {
-            currentDataSource =
-                Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
-        }
-    }
-
-    private bool CustomFilter(string item, string searchValue)
-    {
-        return true;
-    }
-
-    private async Task Onkeypress(KeyboardEventArgs obj)
-    {
-        if (obj.Key is "Enter" or "NumpadEnter")
-        {
-            if (selectedMusicSourceTitle != AutocompleteComponent.SelectedText)
-            {
-                selectedMusicSourceTitle = AutocompleteComponent.SelectedText;
-                await AutocompleteComponent.Close();
-                StateHasChanged();
-                await SelectedResultChanged();
-            }
-        }
-    }
-
-    private void SelectedValueChanged(string arg)
-    {
-        currentDataSource = new List<string> { arg }; // work-around for an issue I'm too lazy to submit a report for
     }
 
     private void ChangeActiveSong(int songId)

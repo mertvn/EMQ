@@ -143,7 +143,13 @@
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
              pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
             @* todo should be false on judgement phase as well *@
-            <GuessInputComponent @ref="_guessInputComponent"></GuessInputComponent>
+            <GuessInputComponent @ref="_guessInputComponent"
+                                 Placeholder="Enter your guess here"
+                                 FreeTyping="true"
+                                 IsDisabled="@PageState.VideoPlayerVisibility"
+                                 IsQuizPage="true"
+                                 @bind-Guess="@PageState.Guess">
+            </GuessInputComponent>
         </div>
 
         <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
@@ -153,7 +159,7 @@
                 {
                     <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility)">
-                            <div class="playerIsCorrectDiv">
+                            <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                                 <span style="word-wrap: anywhere; height: 90px; display: block;
                                  color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                     @* todo make text smaller as it gets longer *@

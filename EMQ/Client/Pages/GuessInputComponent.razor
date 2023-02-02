@@ -3,18 +3,18 @@
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
-@* todo send guess on guess phase end even if enter is not pressed *@
+@* todo update guess on guess phase end even if enter is not pressed *@
 
 <Autocomplete @ref="AutocompleteComponent"
               @onkeypress="Onkeypress"
               TItem="string"
               TValue="string"
-              Data="@currentDataSource"
+              Data="@CurrentDataSource"
               ReadData="@OnHandleReadData"
               TextField="@((item) => item)"
               ValueField="@((item) => item)"
-              Placeholder="Enter your guess here"
-              FreeTyping="true"
+              Placeholder="@Placeholder"
+              FreeTyping="@FreeTyping"
               MinLength="1"
               Debounce="true"
               DebounceInterval="20"
@@ -23,7 +23,10 @@
               AutoSelectFirstItem="false"
               CustomFilter="CustomFilter"
               SelectedValueChanged="SelectedValueChanged"
-              Disabled="QuizPage.PageState.VideoPlayerVisibility">
+              Disabled="@IsDisabled">
 </Autocomplete>
 
-<span style="word-wrap: anywhere">Guess: @QuizPage.PageState.Guess</span>
+@if (IsQuizPage)
+{
+    <span style="word-wrap: anywhere">Guess: @Guess</span>
+}

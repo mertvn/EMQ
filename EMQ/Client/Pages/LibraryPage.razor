@@ -33,25 +33,14 @@
     </ul>
 </div>
 
-<Autocomplete @ref="AutocompleteComponent"
-              @onkeypress="Onkeypress"
-              TItem="string"
-              TValue="string"
-              Data="@currentDataSource"
-              ReadData="@OnHandleReadData"
-              TextField="@((item) => item)"
-              ValueField="@((item) => item)"
-              Placeholder="Enter VN title here"
-              FreeTyping="true"
-              MinLength="1"
-              Debounce="true"
-              DebounceInterval="20"
-              MaxMenuHeight="340px"
-              AutoPreSelect="false"
-              AutoSelectFirstItem="false"
-              CustomFilter="CustomFilter"
-              SelectedValueChanged="SelectedValueChanged">
-</Autocomplete>
+@* todo FreeTyping should be false after the artist autocomplete changes *@
+<GuessInputComponent Placeholder="Enter VN title here"
+                     FreeTyping="true"
+                     IsDisabled="false"
+                     IsQuizPage="false"
+                     @bind-Guess="@selectedMusicSourceTitle"
+                     Callback="SelectedResultChanged">
+</GuessInputComponent>
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
     @foreach (var song in CurrentSongs)
