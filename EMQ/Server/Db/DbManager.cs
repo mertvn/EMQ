@@ -12,6 +12,8 @@ using Dapper.Contrib.Extensions;
 using DapperQueryBuilder;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
+using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz;
 using Npgsql;
 
 namespace EMQ.Server.Db;
@@ -884,6 +886,25 @@ public static class DbManager
         }
     }
 
+    public static async Task<string> SelectAutocompleteA()
+    {
+        const string sqlAutocompleteA =
+            @"SELECT a.id, aa.latin_alias
+            FROM artist_music am
+            LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+            LEFT JOIN artist a ON a.id = aa.artist_id
+            ";
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var res = (await connection.QueryAsync<(int, string)>(sqlAutocompleteA))
+                .Select(x => new AutocompleteA(x.Item1, x.Item2));
+            string autocomplete =
+                JsonSerializer.Serialize(res.DistinctBy(x => x), Utils.Jso);
+            return autocomplete;
+        }
+    }
+
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)
     {
         List<Song> songs = new();
@@ -954,6 +975,34 @@ public static class DbManager
                         new() { Titles = new List<Title> { new() { LatinTitle = artistTitle } } }
                     }
                 }, true);
+
+            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+
+            foreach (var songArtist in songArtists)
+            {
+                foreach (int songArtistMusicId in songArtist.MusicIds)
+                {
+                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }));
+                }
+            }
+        }
+
+        // todo
+        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
+        return songs;
+    }
+
+    public static async Task<IEnumerable<Song>> FindSongsByArtistId(int artistId)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var songArtists = await SelectArtist(connection,
+                new Song { Artists = new List<SongArtist> { new() { Id = artistId } } }, false);
 
             // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
 

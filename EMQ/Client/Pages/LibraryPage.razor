@@ -1,6 +1,7 @@
 ﻿@page "/LibraryPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
+@using EMQ.Client.Components
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 @inject ClientUtils _clientUtils
@@ -33,14 +34,33 @@
     </ul>
 </div>
 
-@* todo FreeTyping should be false after the artist autocomplete changes *@
-<GuessInputComponent Placeholder="Enter VN title here"
-                     FreeTyping="true"
-                     IsDisabled="false"
-                     IsQuizPage="false"
-                     @bind-Guess="@selectedMusicSourceTitle"
-                     Callback="SelectedResultChanged">
-</GuessInputComponent>
+<Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+    <Items>
+        <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
+        <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+    </Items>
+    <Content>
+        <Blazorise.TabPanel Name="TabAutocompleteMst">
+            @* todo FreeTyping should be false after the artist autocomplete changes *@
+            <GuessInputComponent Placeholder="Enter VN title here"
+                                 FreeTyping="true"
+                                 IsDisabled="false"
+                                 IsQuizPage="false"
+                                 @bind-Guess="@selectedMusicSourceTitle"
+                                 Callback="SelectedResultChangedMst">
+            </GuessInputComponent>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabAutocompleteA">
+            <AutocompleteAComponent Placeholder="Enter artist name here"
+                                    FreeTyping="true"
+                                    IsDisabled="false"
+                                    IsQuizPage="false"
+                                    @bind-Guess="@selectedArtistId"
+                                    Callback="SelectedResultChangedA">
+            </AutocompleteAComponent>
+        </Blazorise.TabPanel>
+    </Content>
+</Blazorise.Tabs>
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
     @foreach (var song in CurrentSongs)

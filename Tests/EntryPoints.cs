@@ -29,6 +29,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateAutocompleteAJson()
+    {
+        await File.WriteAllTextAsync("autocomplete_a.json", await DbManager.SelectAutocompleteA());
+    }
+
+    [Test, Explicit]
     public async Task ImportVndbData()
     {
         await VndbImporter.ImportVndbData();
@@ -74,7 +80,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(3, 2).ToArray();
+        var rqIds = Enumerable.Range(5, 20).ToArray();
 
         foreach (int rqId in rqIds)
         {

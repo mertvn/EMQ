@@ -27,6 +27,8 @@ public partial class LibraryPage
 
     public string? selectedMusicSourceTitle { get; set; }
 
+    public int? selectedArtistId { get; set; }
+
     public List<Song> CurrentSongs { get; set; } = new();
 
     public string NoSongsText { get; set; } = "";
@@ -35,12 +37,20 @@ public partial class LibraryPage
 
     public int ActiveSongId { get; set; }
 
+    private string _selectedTab = "TabAutocompleteMst";
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
     }
 
-    private async Task SelectedResultChanged()
+    private Task OnSelectedTabChanged(string name)
+    {
+        _selectedTab = name;
+        return Task.CompletedTask;
+    }
+
+    private async Task SelectedResultChangedMst()
     {
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
@@ -57,21 +67,6 @@ public partial class LibraryPage
                 {
                     CurrentSongs = songs;
                 }
-                // todo
-                else
-                {
-                    var req2 = new ReqFindSongsByArtistTitle(selectedMusicSourceTitle);
-                    var res2 = await _client.PostAsJsonAsync("Library/FindSongsByArtistTitle", req2);
-                    if (res.IsSuccessStatusCode)
-                    {
-                        List<Song>? songs2 = await res2.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
-                        if (songs2 != null && songs2.Any())
-                        {
-                            CurrentSongs = songs2;
-                            selectedMusicSourceTitle = null;
-                        }
-                    }
-                }
 
                 if (!CurrentSongs.Any())
                 {
@@ -80,6 +75,34 @@ public partial class LibraryPage
 
                 StateHasChanged();
             }
+        }
+    }
+
+    private async Task SelectedResultChangedA()
+    {
+        if (selectedArtistId is > 0)
+        {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
+            var res = await _client.PostAsJsonAsync("Library/FindSongsByArtistId", selectedArtistId);
+            if (res.IsSuccessStatusCode)
+            {
+                List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                if (songs != null && songs.Any())
+                {
+                    CurrentSongs = songs;
+                    selectedArtistId = null;
+                }
+            }
+
+            if (!CurrentSongs.Any())
+            {
+                NoSongsText = "No results.";
+            }
+
+            StateHasChanged();
         }
     }
 

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Client;
@@ -11,7 +13,6 @@ public static class Autocomplete
     public static IEnumerable<string> SearchAutocompleteMst(string[] data, string arg)
     {
         // todo prefer Japanese latin titles
-        //var exactMatch = data.Where(x => string.Equals(x, arg, StringComparison.OrdinalIgnoreCase)).OrderBy(x => x);
         var startsWith = data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
         var contains = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
 
@@ -33,5 +34,17 @@ public static class Autocomplete
         var final = startsWith.Concat(startsWith1).Concat(contains).Concat(contains1).Distinct().ToArray();
         // _logger.LogInformation(JsonSerializer.Serialize(final));
         return final.Any() ? final.Take(25) : Array.Empty<SongSourceCategory>();
+    }
+
+    public static IEnumerable<AutocompleteA> SearchAutocompleteA(AutocompleteA[] data, string arg)
+    {
+        var startsWith = data.Where(x => x.aaLatinAlias.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
+            .OrderBy(x => x.aaLatinAlias);
+        var contains = data.Where(x => x.aaLatinAlias.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
+            .OrderBy(x => x.aaLatinAlias);
+
+        var final = (startsWith.Concat(contains)).Distinct().ToArray();
+        Console.WriteLine(JsonSerializer.Serialize(final));
+        return final.Any() ? final.Take(25) : Array.Empty<AutocompleteA>();
     }
 }

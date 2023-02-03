@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
+using EMQ.Shared.Library.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 
-namespace EMQ.Client.Pages;
+namespace EMQ.Client.Components;
 
-public partial class GuessInputComponent
+public partial class AutocompleteAComponent
 {
-    private string[] AutocompleteData { get; set; } = Array.Empty<string>();
+    private AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
 
-    private IEnumerable<string> CurrentDataSource { get; set; } = Array.Empty<string>();
+    private IEnumerable<AutocompleteA> CurrentDataSource { get; set; } = Array.Empty<AutocompleteA>();
 
-    public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
+    public Autocomplete<AutocompleteA, AutocompleteA> AutocompleteComponent { get; set; } = null!;
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -29,10 +30,10 @@ public partial class GuessInputComponent
     [Parameter]
     public bool IsQuizPage { get; set; }
 
-    private string? _guess;
+    private int? _guess;
 
     [Parameter]
-    public string? Guess
+    public int? Guess
     {
         get => _guess;
         set
@@ -46,14 +47,14 @@ public partial class GuessInputComponent
     }
 
     [Parameter]
-    public EventCallback<string?> GuessChanged { get; set; }
+    public EventCallback<int?> GuessChanged { get; set; }
 
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete_mst.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete_a.json"))!;
     }
 
     private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
@@ -61,11 +62,11 @@ public partial class GuessInputComponent
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
             CurrentDataSource =
-                Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
+                Autocomplete.SearchAutocompleteA(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
         }
     }
 
-    private bool CustomFilter(string item, string searchValue)
+    private bool CustomFilter(AutocompleteA item, string searchValue)
     {
         return true;
     }
@@ -88,30 +89,27 @@ public partial class GuessInputComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            // todo find another way to prevent spam
-            // if (Guess != AutocompleteComponent.SelectedText)
-            // {
-            Guess = AutocompleteComponent.SelectedText;
-            await AutocompleteComponent.Close();
-            StateHasChanged();
-
-            if (IsQuizPage)
+            if (Guess != AutocompleteComponent.SelectedValue.aId)
             {
-                // todo do this with callback
+                Guess = AutocompleteComponent.SelectedValue.aId;
+                await AutocompleteComponent.Close();
+                StateHasChanged();
 
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                if (IsQuizPage)
+                {
+                    // todo do this with callback
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                }
+
+                Callback?.Invoke();
             }
-
-            Callback?.Invoke();
-            // }
         }
     }
 
-    private void SelectedValueChanged(string arg)
+    private void SelectedValueChanged(AutocompleteA arg)
     {
         CurrentDataSource =
-            Autocomplete.SearchAutocompleteMst(AutocompleteData,
-                arg); // work-around for an issue I'm too lazy to submit a report for
+            Autocomplete.SearchAutocompleteA(AutocompleteData, arg.aaLatinAlias); // work-around for an issue I'm too lazy to submit a report for
     }
 
     public void CallClose()
