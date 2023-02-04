@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
@@ -34,7 +35,7 @@ public partial class ChatComponent
             var session = ClientState.Session;
             if (session is { RoomId: { } } && !string.IsNullOrWhiteSpace(ChatInputText))
             {
-                if (ChatInputText.Length < 500)
+                if (ChatInputText.Length < Constants.MaxChatMessageLength)
                 {
                     var req = new ReqSendChatMessage(session.Token, session.RoomId.Value, ChatInputText);
                     var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);

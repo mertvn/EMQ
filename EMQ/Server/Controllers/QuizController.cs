@@ -8,6 +8,7 @@ using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Server.Business;
 using EMQ.Server.Hubs;
+using EMQ.Shared.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -308,10 +309,13 @@ public class QuizController : ControllerBase
         {
             if (room.Players.Any(x => x.Id == player.Id))
             {
-                var chatMessage = new ChatMessage(req.Contents, player);
-                room.Chat.Enqueue(chatMessage);
-                _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
-                // todo sync room for all players
+                if (req.Contents.Length < Constants.MaxChatMessageLength)
+                {
+                    var chatMessage = new ChatMessage(req.Contents, player);
+                    room.Chat.Enqueue(chatMessage);
+                    _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
+                    // todo sync room for all players
+                }
             }
             else
             {
