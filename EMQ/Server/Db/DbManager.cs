@@ -889,7 +889,7 @@ public static class DbManager
     public static async Task<string> SelectAutocompleteA()
     {
         const string sqlAutocompleteA =
-            @"SELECT a.id, aa.latin_alias
+            @"SELECT a.id, aa.latin_alias, aa.non_latin_alias
             FROM artist_music am
             LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
             LEFT JOIN artist a ON a.id = aa.artist_id
@@ -897,8 +897,8 @@ public static class DbManager
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<(int, string)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2));
+            var res = (await connection.QueryAsync<(int, string, string)>(sqlAutocompleteA))
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3));
             string autocomplete =
                 JsonSerializer.Serialize(res.DistinctBy(x => x), Utils.Jso);
             return autocomplete;
