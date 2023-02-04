@@ -308,8 +308,9 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
-                var session = ServerState.Sessions.Single(x => x.Player.Id == player.Id);
-                if (session.VndbInfo.Labels != null)
+                // todo session shouldn't be null here after implementing the removal of logged out players from rooms
+                var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
+                if (session?.VndbInfo.Labels != null)
                 {
                     var include = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Include).ToList();
                     var exclude = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
