@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -37,4 +38,6 @@ public class Room
     public Dictionary<int, string> AllPlayerConnectionIds { get; set; } = new();
 
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
+
+    public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
 }

@@ -26,6 +26,10 @@
 <script src="_framework/blazor.webassembly.js"></script>
 
 <script>
+    function scrollToEnd(element) {
+        element.scrollTop = element.scrollHeight;
+    }
+
     // todo: this only should be active on the quiz page
     // function disableBackspaceNavigation() {
     //     window.onkeydown = function (e) {

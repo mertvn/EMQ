@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using EMQ.Client.Components;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
@@ -61,6 +62,9 @@ public partial class QuizPage
         public bool GuessesVisibility { get; set; } = true;
         // public bool GuessInputDisabled { get; set; } = true;
 
+        // !!!
+        // IMPORTANT TODO: I BROKE GUESS RESETTING ON PHASE CHANGE SOMEHOW
+        // !!!
         public string? Guess { get; set; }
 
         public float Countdown { get; set; }
@@ -82,6 +86,8 @@ public partial class QuizPage
     private CancellationTokenRegistration PreloadCancellationRegistration { get; set; }
 
     private GuessInputComponent _guessInputComponent = null!;
+
+    private ChatComponent? _chatComponent;
 
     private DateTime LastSync { get; set; }
 
@@ -218,6 +224,14 @@ public partial class QuizPage
             // Console.WriteLine($"end slow sync {DateTime.UtcNow:O}");
         }
 
+        // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
+        if (_chatComponent != null)
+        {
+            // todo don't do this if there are no new messages
+            await _chatComponent.ScrollToEnd();
+            StateHasChanged();
+        }
+
         if (Room is { Quiz: { } })
         {
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
@@ -261,7 +275,13 @@ public partial class QuizPage
             }
         }
 
-        // Console.WriteLine($"ei {Room?.Quiz?.QuizState.ExtraInfo}");
+        // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
+        if (_chatComponent != null)
+        {
+            // todo don't do this if there are no new messages
+            await _chatComponent.ScrollToEnd();
+        }
+
         StateHasChanged();
     }
 
@@ -361,6 +381,11 @@ public partial class QuizPage
 
                 _guessInputComponent.CallClose();
                 _guessInputComponent.CallStateHasChanged();
+
+                if (_correctAnswer == null)
+                {
+                    // todo request
+                }
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
@@ -548,5 +573,10 @@ public partial class QuizPage
     private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged)
     {
         await SyncWithServer(room, phaseChanged);
+    }
+
+    private async Task OnChatMessage()
+    {
+        await SyncWithServer();
     }
 }

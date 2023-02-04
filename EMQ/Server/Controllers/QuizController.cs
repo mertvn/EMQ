@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
@@ -266,25 +267,62 @@ public class QuizController : ControllerBase
                     room.Password = req.RoomPassword;
                     room.QuizSettings = req.QuizSettings;
 
-                    _logger.LogInformation("Changed room settings in room {room.Id}", room.Id);
+                    _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
                     room.Quiz?.Log("Changed room settings");
+                    // todo write to chat
                 }
                 else
                 {
-                    _logger.LogInformation("Cannot change room settings while quiz is active in room {room.Id}",
+                    _logger.LogInformation("Cannot change room settings while quiz is active in r{room.Id}",
                         room.Id);
                 }
             }
             else
             {
-                _logger.LogWarning("Attempt to change room settings in room {room.Id} by non-owner player", room.Id);
+                _logger.LogWarning("Attempt to change room settings in r{room.Id} by non-owner player", room.Id);
                 // todo warn not owner
             }
         }
         else
         {
-            _logger.LogWarning("Attempt to change room settings in room {req.RoomId} that is null", req.RoomId);
+            _logger.LogWarning("Attempt to change room settings in r{req.RoomId} which is null", req.RoomId);
             // todo
+        }
+    }
+
+    [HttpPost]
+    [Route("SendChatMessage")]
+    public void SendChatMessage([FromBody] ReqSendChatMessage req)
+    {
+        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
+
+        if (room is not null)
+        {
+            if (room.Players.Any(x => x.Id == player.Id))
+            {
+                var chatMessage = new ChatMessage(req.Contents, player);
+                room.Chat.Enqueue(chatMessage);
+                _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
+                // todo sync room for all players
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to send chat message to r{req.RoomId} which p{player.Id} does not belong to",
+                    req.RoomId, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to send chat message to r{req.RoomId} which is null", req.RoomId);
         }
     }
 }

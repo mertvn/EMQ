@@ -3,6 +3,7 @@
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Client.Components
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
@@ -65,6 +66,11 @@
                 <p style="padding: 0; margin:0;">@debug</p>
             }
         </div>
+    }
+
+    @if (Room?.Chat != null)
+    {
+        <ChatComponent @ref="_chatComponent" Chat="@Room.Chat" Callback="OnChatMessage"></ChatComponent>
     }
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 300px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">

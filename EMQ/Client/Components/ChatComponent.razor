@@ -1,0 +1,30 @@
+﻿@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+@inject ILogger<ChatComponent> _logger
+@inject IJSRuntime _jsRuntime
+
+<div id="chat">
+    <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
+        @foreach (ChatMessage chatMessage in Chat)
+        {
+            <div class="chatMessage" style="background-color: black; padding: 5px; margin:5px;">
+                @if (chatMessage.Sender != null)
+                {
+                    <span class="chatMessageSenderName">
+                        <b>@(chatMessage.Sender.Username): </b>
+                    </span>
+                }
+                <span class="chatMessageContents">@(chatMessage.Contents)</span>
+            </div>
+        }
+    </div>
+
+    @* HACK: https://stackoverflow.com/a/72419307 *@
+    <textarea
+ id="chatInput"
+ rows="4" cols="50" placeholder="Chat"
+ @bind="ChatInputText" @bind:event="oninput"
+ @onkeydown="OnKeyDown" @onkeydown:preventDefault="_preventDefault"
+ style="resize: none; overflow: auto"></textarea>
+</div>

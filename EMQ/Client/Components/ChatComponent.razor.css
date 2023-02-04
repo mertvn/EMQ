@@ -1,0 +1,10 @@
+﻿#chat {
+    display: grid;
+    grid-template-columns: 30vh;
+    grid-template-rows: 50vh 100px;
+    background-color: dimgray;
+    color: white;
+    padding: 5px;
+    margin: 5px;
+    float: right;
+}
