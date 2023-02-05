@@ -1,7 +1,7 @@
 ﻿using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 
-namespace EMQ.Client.Pages;
+namespace EMQ.Client.Components;
 
 public partial class SongInfoCardComponent
 {

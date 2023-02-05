@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 
-namespace EMQ.Client.Pages;
+namespace EMQ.Client.Components;
 
 public partial class TreasureRoomComponent
 {

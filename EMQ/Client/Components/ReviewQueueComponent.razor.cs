@@ -6,7 +6,7 @@ using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Logging;
 
-namespace EMQ.Client.Pages;
+namespace EMQ.Client.Components;
 
 public partial class ReviewQueueComponent
 {
