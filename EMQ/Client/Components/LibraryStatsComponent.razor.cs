@@ -8,7 +8,7 @@ public partial class LibraryStatsComponent
 {
     public LibraryStats? LibraryStats { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
         await RefreshStats();
     }
