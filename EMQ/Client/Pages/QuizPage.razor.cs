@@ -224,16 +224,16 @@ public partial class QuizPage
             // Console.WriteLine($"end slow sync {DateTime.UtcNow:O}");
         }
 
-        // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
-        if (_chatComponent != null)
-        {
-            // todo don't do this if there are no new messages
-            await _chatComponent.ScrollToEnd();
-            StateHasChanged();
-        }
-
         if (Room is { Quiz: { } })
         {
+            // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
+            if (_chatComponent != null)
+            {
+                // todo don't do this if there are no new messages
+                await _chatComponent.ScrollToEnd();
+                StateHasChanged();
+            }
+
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
             // todo ProgressDivisor
 
@@ -275,11 +275,14 @@ public partial class QuizPage
             }
         }
 
-        // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
-        if (_chatComponent != null)
+        if (Room is { Quiz: { } })
         {
-            // todo don't do this if there are no new messages
-            await _chatComponent.ScrollToEnd();
+            // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
+            if (_chatComponent != null)
+            {
+                // todo don't do this if there are no new messages
+                await _chatComponent.ScrollToEnd();
+            }
         }
 
         StateHasChanged();

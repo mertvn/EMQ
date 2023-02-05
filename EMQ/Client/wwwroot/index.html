@@ -27,7 +27,9 @@
 
 <script>
     function scrollToEnd(element) {
-        element.scrollTop = element.scrollHeight;
+        if (element){
+            element.scrollTop = element.scrollHeight;
+        }
     }
 
     // todo: this only should be active on the quiz page
