@@ -38,6 +38,7 @@
     <Items>
         <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+        <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
     </Items>
     <Content>
         <Blazorise.TabPanel Name="TabAutocompleteMst">
@@ -58,6 +59,9 @@
                                     @bind-Guess="@selectedArtistId"
                                     Callback="SelectedResultChangedA">
             </AutocompleteAComponent>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabStats">
+            <LibraryStatsComponent></LibraryStatsComponent>
         </Blazorise.TabPanel>
     </Content>
 </Blazorise.Tabs>
@@ -125,5 +129,6 @@
 
 <br/>
 <div>
+    <h4 style="font-size: 1.2rem">Review Queue</h4>
     <ReviewQueueComponent @ref="_reviewQueueComponent"></ReviewQueueComponent>
 </div>

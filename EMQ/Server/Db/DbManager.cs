@@ -1270,4 +1270,42 @@ public static class DbManager
 
         return melId;
     }
+
+    public static async Task<LibraryStats> SelectLibraryStats()
+    {
+        const string sqlMusic =
+            "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
+
+        const string sqlMusicSource =
+            "SELECT COUNT(DISTINCT ms.id) FROM music_source_music msm LEFT JOIN music_source ms ON ms.id = msm.music_source_id LEFT JOIN music_external_link mel ON mel.music_id = msm.music_id";
+
+        const string sqlArtist =
+            "SELECT COUNT(DISTINCT a.id) FROM artist_music am LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id LEFT JOIN artist a ON a.id = aa.artist_id LEFT JOIN music_external_link mel ON mel.music_id = am.music_id";
+
+        const string sqlWhereClause = " WHERE mel.url is not null";
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            int totalMusicCount = await connection.QuerySingleAsync<int>(sqlMusic);
+            int availableMusicCount = await connection.QuerySingleAsync<int>(sqlMusic + sqlWhereClause);
+
+            int totalMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource);
+            int availableMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource + sqlWhereClause);
+
+            int totalArtistCount = await connection.QuerySingleAsync<int>(sqlArtist);
+            int availableArtistCount = await connection.QuerySingleAsync<int>(sqlArtist + sqlWhereClause);
+
+            var libraryStats = new LibraryStats
+            {
+                TotalMusicCount = totalMusicCount,
+                AvailableMusicCount = availableMusicCount,
+                TotalMusicSourceCount = totalMusicSourceCount,
+                AvailableMusicSourceCount = availableMusicSourceCount,
+                TotalArtistCount = totalArtistCount,
+                AvailableArtistCount = availableArtistCount
+            };
+
+            return libraryStats;
+        }
+    }
 }

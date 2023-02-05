@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
@@ -58,5 +59,13 @@ public class LibraryController : ControllerBase
     {
         var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate);
         return rqs;
+    }
+
+    [HttpGet]
+    [Route("GetLibraryStats")]
+    public async Task<LibraryStats> GetLibraryStats()
+    {
+        var libraryStats = await DbManager.SelectLibraryStats();
+        return libraryStats;
     }
 }

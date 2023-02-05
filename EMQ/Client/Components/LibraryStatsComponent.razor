@@ -1,0 +1,25 @@
+﻿@using EMQ.Shared.Library.Entities.Concrete
+@inject HttpClient _client
+
+@if (LibraryStats is { } libraryStats)
+{
+    <div id="libraryStats">
+        <div>
+            <p>Total:</p>
+            <ul>
+                <li>Songs: @libraryStats.TotalMusicCount</li>
+                <li>VNs: @libraryStats.TotalMusicSourceCount</li>
+                <li>Artists: @libraryStats.TotalArtistCount</li>
+            </ul>
+        </div>
+
+        <div>
+            <p>With at least one song link:</p>
+            <ul>
+                <li>Songs: @libraryStats.AvailableMusicCount (@((((double) libraryStats.AvailableMusicCount / libraryStats.TotalMusicCount) * 100).ToString("N2"))%)</li>
+                <li>VNs: @libraryStats.AvailableMusicSourceCount (@((((double) libraryStats.AvailableMusicSourceCount / libraryStats.TotalMusicSourceCount) * 100).ToString("N2"))%)</li>
+                <li>Artists: @libraryStats.AvailableArtistCount (@((((double) libraryStats.AvailableArtistCount / libraryStats.TotalArtistCount) * 100).ToString("N2"))%)</li>
+            </ul>
+        </div>
+    </div>
+}
