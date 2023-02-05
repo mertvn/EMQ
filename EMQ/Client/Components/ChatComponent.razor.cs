@@ -59,7 +59,14 @@ public partial class ChatComponent
 
     public async Task ScrollToEnd()
     {
-        await _jsRuntime.InvokeVoidAsync("scrollToEnd", _chatHistoryRef);
-        StateHasChanged();
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("scrollToEnd", _chatHistoryRef);
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.ToString());
+        }
     }
 }
