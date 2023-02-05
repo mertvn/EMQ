@@ -12,7 +12,7 @@
               TValue="AutocompleteA"
               Data="@CurrentDataSource"
               ReadData="@OnHandleReadData"
-              TextField="@((item) => $"{item.aaLatinAlias}" + (!string.IsNullOrWhiteSpace(item.aaNonLatinAlias) ? $" ({item.aaNonLatinAlias})" : ""))"
+              TextField="@((item) => $"{item.AALatinAlias}" + (!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : ""))"
               ValueField="@((item) => item)"
               Placeholder="@Placeholder"
               FreeTyping="@FreeTyping"

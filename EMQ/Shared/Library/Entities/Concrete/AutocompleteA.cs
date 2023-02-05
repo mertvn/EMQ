@@ -1,17 +1,22 @@
-﻿namespace EMQ.Shared.Library.Entities.Concrete;
+﻿using System.Text.Json.Serialization;
+
+namespace EMQ.Shared.Library.Entities.Concrete;
 
 public struct AutocompleteA
 {
     public AutocompleteA(int aId, string aaLatinAlias, string aaNonLatinAlias = "")
     {
-        this.aId = aId;
-        this.aaLatinAlias = aaLatinAlias;
-        this.aaNonLatinAlias = aaNonLatinAlias;
+        AId = aId;
+        AALatinAlias = aaLatinAlias;
+        AANonLatinAlias = aaNonLatinAlias;
     }
 
-    public int aId { get; set; }
+    [JsonPropertyName("aId")]
+    public int AId { get; set; }
 
-    public string aaLatinAlias { get; set; }
+    [JsonPropertyName("aaLA")]
+    public string AALatinAlias { get; set; }
 
-    public string aaNonLatinAlias { get; set; }
+    [JsonPropertyName("aaNLA")]
+    public string AANonLatinAlias { get; set; }
 }

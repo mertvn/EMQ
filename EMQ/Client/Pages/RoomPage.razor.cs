@@ -54,7 +54,7 @@ public partial class RoomPage
         //     Hotjoin();
         // }
 
-        AutocompleteCData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete_c.json", Utils.Jso))!;
+        AutocompleteCData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
         StateHasChanged();
     }
 

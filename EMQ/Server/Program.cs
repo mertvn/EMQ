@@ -1,7 +1,10 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using EMQ.Server;
+using EMQ.Server.Db;
 using EMQ.Server.Hubs;
 using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
-const bool shouldMigrate = true;
+const bool hasDb = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,12 +44,7 @@ builder.Services.AddRazorPages();
 //         options.AccessDeniedPath = "/Forbidden/";
 //     });
 
-void SetConfig(HubOptions<QuizHub> options)
-{
-    options.EnableDetailedErrors = true;
-}
-
-builder.Services.AddSignalR().AddHubOptions<QuizHub>(SetConfig)
+builder.Services.AddSignalR().AddHubOptions<QuizHub>(opt => { opt.EnableDetailedErrors = true; })
 //     .AddJsonProtocol(options =>
 // {
 //     // Configure the serializer to not change the casing of property names, instead of the default "camelCase" names.
@@ -71,45 +69,6 @@ builder.Services.AddResponseCompression(opts =>
 //             .AllowAnyHeader()
 //             .AllowCredentials());
 // });
-
-static IServiceProvider CreateServices()
-{
-    return new ServiceCollection()
-        // Add common FluentMigrator services
-        .AddFluentMigratorCore()
-        .ConfigureRunner(rb => rb
-            // Add Postgres support to FluentMigrator
-            .AddPostgres()
-            // Set the connection string
-            .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
-            // Define the assembly containing the migrations
-            .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
-        // Enable logging to console in the FluentMigrator way
-        .AddLogging(lb => lb.AddFluentMigratorConsole())
-        // Build the service provider
-        .BuildServiceProvider(false);
-}
-
-static void UpdateDatabase(IServiceProvider serviceProvider)
-{
-    // Instantiate the runner
-    var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
-
-    // Execute the migrations
-    runner.MigrateUp();
-}
-
-if (shouldMigrate)
-{
-    var serviceProvider = CreateServices();
-
-    // Put the database update into a scope to ensure
-    // that all resources will be disposed.
-    using (var scope = serviceProvider.CreateScope())
-    {
-        UpdateDatabase(scope.ServiceProvider);
-    }
-}
 
 var app = builder.Build();
 
@@ -144,5 +103,54 @@ app.MapControllers();
 app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
+
+static IServiceProvider CreateServices()
+{
+    return new ServiceCollection()
+        // Add common FluentMigrator services
+        .AddFluentMigratorCore()
+        .ConfigureRunner(rb => rb
+            // Add Postgres support to FluentMigrator
+            .AddPostgres()
+            // Set the connection string
+            .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
+            // Define the assembly containing the migrations
+            .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
+        // Enable logging to console in the FluentMigrator way
+        .AddLogging(lb => lb.AddFluentMigratorConsole())
+        // Build the service provider
+        .BuildServiceProvider(false);
+}
+
+async Task Init()
+{
+    if (hasDb)
+    {
+        var serviceProvider = CreateServices();
+
+        // Put the database update into a scope to ensure
+        // that all resources will be disposed.
+        using (var scope = serviceProvider.CreateScope())
+        {
+            // Instantiate the runner
+            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+            // Execute the migrations
+            runner.MigrateUp();
+        }
+
+        string autocompleteFolder =
+            app.Environment.IsDevelopment() ? "../Client/wwwroot/autocomplete" : "wwwroot/autocomplete";
+        Directory.CreateDirectory(autocompleteFolder);
+
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
+            await DbManager.SelectAutocompleteMst());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/c.json",
+            await DbManager.SelectAutocompleteC());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
+            await DbManager.SelectAutocompleteA());
+    }
+}
+
+await Init();
 
 app.Run();

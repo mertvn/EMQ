@@ -19,19 +19,19 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateAutocompleteMstJson()
     {
-        await File.WriteAllTextAsync("autocomplete_mst.json", await DbManager.SelectAutocompleteMst());
+        await File.WriteAllTextAsync("mst.json", await DbManager.SelectAutocompleteMst());
     }
 
     [Test, Explicit]
     public async Task GenerateAutocompleteCJson()
     {
-        await File.WriteAllTextAsync("autocomplete_c.json", await DbManager.SelectAutocompleteC());
+        await File.WriteAllTextAsync("c.json", await DbManager.SelectAutocompleteC());
     }
 
     [Test, Explicit]
     public async Task GenerateAutocompleteAJson()
     {
-        await File.WriteAllTextAsync("autocomplete_a.json", await DbManager.SelectAutocompleteA());
+        await File.WriteAllTextAsync("a.json", await DbManager.SelectAutocompleteA());
     }
 
     [Test, Explicit]

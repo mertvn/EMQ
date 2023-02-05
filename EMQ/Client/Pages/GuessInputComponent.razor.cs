@@ -53,7 +53,7 @@ public partial class GuessInputComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete_mst.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete/mst.json"))!;
     }
 
     private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)

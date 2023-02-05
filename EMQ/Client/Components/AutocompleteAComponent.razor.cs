@@ -54,7 +54,7 @@ public partial class AutocompleteAComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete_a.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/a.json"))!;
     }
 
     private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
@@ -89,9 +89,9 @@ public partial class AutocompleteAComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            if (Guess != AutocompleteComponent.SelectedValue.aId)
+            if (Guess != AutocompleteComponent.SelectedValue.AId)
             {
-                Guess = AutocompleteComponent.SelectedValue.aId;
+                Guess = AutocompleteComponent.SelectedValue.AId;
                 await AutocompleteComponent.Close();
                 StateHasChanged();
 
@@ -109,7 +109,7 @@ public partial class AutocompleteAComponent
     private void SelectedValueChanged(AutocompleteA arg)
     {
         CurrentDataSource =
-            Autocomplete.SearchAutocompleteA(AutocompleteData, arg.aaLatinAlias); // work-around for an issue I'm too lazy to submit a report for
+            Autocomplete.SearchAutocompleteA(AutocompleteData, arg.AALatinAlias); // work-around for an issue I'm too lazy to submit a report for
     }
 
     public void CallClose()
