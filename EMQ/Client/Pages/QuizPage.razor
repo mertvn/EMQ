@@ -48,7 +48,7 @@
     }
 
     <div style="display:flex; justify-content:center; align-items:center;">
-        <p style="">@(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs</p>
+        @(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs
     </div>
 
     @if (PageState.IsDebug)

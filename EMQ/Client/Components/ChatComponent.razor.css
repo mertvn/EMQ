@@ -1,7 +1,7 @@
 ﻿#chat {
     display: grid;
     grid-template-columns: 30vh;
-    grid-template-rows: 50vh 100px;
+    grid-template-rows: 66vh 100px;
     background-color: dimgray;
     color: white;
     padding: 5px;
