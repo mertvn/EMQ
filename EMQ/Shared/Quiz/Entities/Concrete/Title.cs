@@ -12,4 +12,8 @@ public class Title
     public string Language { get; set; } = "";
 
     public bool IsMainTitle { get; set; }
+
+    // todo: use this
+    public override string ToString() =>
+        $"{LatinTitle}" + (!string.IsNullOrWhiteSpace(NonLatinTitle) ? $" ({NonLatinTitle})" : "");
 }

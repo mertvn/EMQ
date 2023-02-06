@@ -17,4 +17,14 @@ public static class Utils
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true
     };
+
+    public static string PercentageStr(int dividend, int divisor)
+    {
+        return $"{(((double)dividend / divisor) * 100):N2}%";
+    }
+
+    public static string PercentageStr(double dividend, double divisor)
+    {
+        return $"{((dividend / divisor) * 100):N2}%";
+    }
 }
