@@ -5,23 +5,155 @@
 @if (LibraryStats is { } libraryStats)
 {
     <div id="libraryStats">
-        <div>
-            <p>Total:</p>
-            <ul>
-                <li>Songs: @libraryStats.TotalMusicCount</li>
-                <li>VNs: @libraryStats.TotalMusicSourceCount</li>
-                <li>Artists: @libraryStats.TotalArtistCount</li>
-            </ul>
-        </div>
+        <Blazorise.Tabs SelectedTab="@SelectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+            <Items>
+                <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
+                <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
+                <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
+                <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
+            </Items>
+            <Content>
+                <Blazorise.TabPanel Name="TabGeneral">
+                    <div>
+                        <p>Total:</p>
+                        <ul>
+                            <li>Songs: @libraryStats.TotalMusicCount</li>
+                            <li>VNs: @libraryStats.TotalMusicSourceCount</li>
+                            <li>Artists: @libraryStats.TotalArtistCount</li>
+                        </ul>
+                    </div>
 
-        <div>
-            <p>With at least one song link:</p>
-            <ul>
-                @* todo percentage method *@
-                <li>Songs: @libraryStats.AvailableMusicCount (@(Utils.PercentageStr(libraryStats.AvailableMusicCount, libraryStats.TotalMusicCount)))</li>
-                <li>VNs: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
-                <li>Artists: @libraryStats.AvailableArtistCount (@(Utils.PercentageStr(libraryStats.AvailableArtistCount, libraryStats.TotalArtistCount)))</li>
-            </ul>
-        </div>
+                    <div>
+                        <p>Available:</p>
+                        <ul>
+                            @* todo percentage method *@
+                            <li>Songs: @libraryStats.AvailableMusicCount (@(Utils.PercentageStr(libraryStats.AvailableMusicCount, libraryStats.TotalMusicCount)))</li>
+                            <li>VNs: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
+                            <li>Artists: @libraryStats.AvailableArtistCount (@(Utils.PercentageStr(libraryStats.AvailableArtistCount, libraryStats.TotalArtistCount)))</li>
+                        </ul>
+                    </div>
+                </Blazorise.TabPanel>
+
+
+                <Blazorise.TabPanel Name="TabSong">
+                    <div>
+                        <ul>
+                            <li>Songs with only video links: @libraryStats.VideoLinkCount</li>
+                            <li>Songs with only sound links: @libraryStats.SoundLinkCount</li>
+                            <li>Songs with both links: @libraryStats.BothLinkCount</li>
+                        </ul>
+                    </div>
+                </Blazorise.TabPanel>
+
+
+                <Blazorise.TabPanel Name="TabVN">
+                    <div class="libraryStatsRow">
+                        <div class="libraryStatsColumn">
+                            <p>Total:</p>
+                            <table>
+                                <tr>
+                                    <th>#</th>
+                                    <th>VN</th>
+                                    <th>Songs</th>
+                                </tr>
+                                @for (int i = 0; i < libraryStats.msm.Count; i++)
+                                {
+                                    var item = libraryStats.msm[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>
+                                            <a class="link-primary" href="@(item.MselUrl)">
+                                                <span>@item.MstLatinTitle</span>
+                                            </a>
+                                        </td>
+                                        <td>@item.MusicCount</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+
+                        <div class="libraryStatsColumn">
+                            <p>Available:</p>
+                            <table>
+                                <tr>
+                                    <th>#</th>
+                                    <th>VN</th>
+                                    <th>Songs</th>
+                                </tr>
+                                @for (int i = 0; i < libraryStats.msmAvailable.Count; i++)
+                                {
+                                    var item = libraryStats.msmAvailable[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>
+                                            <a class="link-primary" href="@(item.MselUrl)">
+                                                <span>@item.MstLatinTitle</span>
+                                            </a>
+                                        </td>
+
+                                        <td>@item.MusicCount</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+
+
+                <Blazorise.TabPanel Name="TabArtist">
+                    <div class="libraryStatsRow">
+                        <div class="libraryStatsColumn">
+                            <p>Total:</p>
+                            <table>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Artist</th>
+                                    <th>Songs</th>
+                                </tr>
+                                @for (int i = 0; i < libraryStats.am.Count; i++)
+                                {
+                                    var item = libraryStats.am[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>
+                                            @* todo nonlatinalias *@
+                                            <a class="link-primary" href="@(item.VndbId.ToVndbUrl())">
+                                                <span>@item.AALatinAlias</span>
+                                            </a>
+                                        </td>
+                                        <td>@item.MusicCount</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+
+                        <div class="libraryStatsColumn">
+                            <p>Available:</p>
+                            <table>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Artist</th>
+                                    <th>Songs</th>
+                                </tr>
+                                @for (int i = 0; i < libraryStats.amAvailable.Count; i++)
+                                {
+                                    var item = libraryStats.amAvailable[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>
+                                            @* todo nonlatinalias *@
+                                            <a class="link-primary" href="@(item.VndbId.ToVndbUrl())">
+                                                <span>@item.AALatinAlias</span>
+                                            </a>
+                                        </td>
+                                        <td>@item.MusicCount</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+            </Content>
+        </Blazorise.Tabs>
     </div>
 }

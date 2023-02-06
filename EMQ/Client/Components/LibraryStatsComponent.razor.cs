@@ -8,6 +8,8 @@ public partial class LibraryStatsComponent
 {
     public LibraryStats? LibraryStats { get; set; }
 
+    public string SelectedTab { get; set; } = "TabGeneral";
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshStats();
@@ -21,5 +23,10 @@ public partial class LibraryStatsComponent
             LibraryStats = res;
             StateHasChanged();
         }
+    }
+
+    private void OnSelectedTabChanged(string name)
+    {
+        SelectedTab = name;
     }
 }

@@ -1273,6 +1273,8 @@ public static class DbManager
 
     public static async Task<LibraryStats> SelectLibraryStats()
     {
+        // todo external_link vndb type check
+        // todo cache results?
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
 
@@ -1295,6 +1297,45 @@ public static class DbManager
             int totalArtistCount = await connection.QuerySingleAsync<int>(sqlArtist);
             int availableArtistCount = await connection.QuerySingleAsync<int>(sqlArtist + sqlWhereClause);
 
+            var mels = (await connection.QueryAsync<MusicExternalLink>("SELECT * FROM music_external_link")).ToList();
+            int videoLinkCount = mels.Count(x => x.is_video && !mels.Any(y => !y.is_video && y.music_id == x.music_id));
+            int soundLinkCount = mels.Count(x => !x.is_video && !mels.Any(y => y.is_video && y.music_id == x.music_id));
+            int bothLinkCount = mels.Count(x => x.is_video && mels.Any(y => !y.is_video && y.music_id == x.music_id));
+
+            string sqlMusicSourceMusic =
+                @"SELECT ms.id AS MId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
+FROM music m
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN music_title mt ON mt.music_id = m.id
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
+LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
+/**where**/
+group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
+            var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
+            qMsm.Append($"LIMIT 25");
+            qMsm.Where($"mst.is_main_title = true");
+            var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+            qMsm.Where($"mel.url is not null");
+            var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+
+
+            string sqlArtistMusic =
+                @"SELECT a.id AS AId, aa.latin_alias AS AALatinAlias, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
+FROM music m
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN artist_music am ON am.music_id = m.id
+LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+LEFT JOIN artist a ON a.id = aa.artist_id
+/**where**/
+group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
+            var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
+            qAm.Append($"LIMIT 25");
+            var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+            qAm.Where($"mel.url is not null");
+            var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+
             var libraryStats = new LibraryStats
             {
                 TotalMusicCount = totalMusicCount,
@@ -1302,7 +1343,14 @@ public static class DbManager
                 TotalMusicSourceCount = totalMusicSourceCount,
                 AvailableMusicSourceCount = availableMusicSourceCount,
                 TotalArtistCount = totalArtistCount,
-                AvailableArtistCount = availableArtistCount
+                AvailableArtistCount = availableArtistCount,
+                VideoLinkCount = videoLinkCount,
+                SoundLinkCount = soundLinkCount,
+                BothLinkCount = bothLinkCount,
+                msm = msm,
+                msmAvailable = msmAvailable,
+                am = am,
+                amAvailable = amAvailable,
             };
 
             return libraryStats;

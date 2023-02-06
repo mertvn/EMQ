@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using NUnit.Framework;
 
@@ -267,6 +269,23 @@ public class DbTests
                 throw new Exception();
             }
         }
+    }
+
+    [Test]
+    public async Task Test_SelectLibraryStats()
+    {
+        var libraryStats = await DbManager.SelectLibraryStats();
+        Console.WriteLine(JsonSerializer.Serialize(libraryStats, Utils.Jso));
+
+        Assert.That(libraryStats.TotalMusicCount > 0);
+        Assert.That(libraryStats.TotalMusicSourceCount > 0);
+        Assert.That(libraryStats.TotalArtistCount > 0);
+
+        Assert.That(libraryStats.msm.First().MId > 0);
+        Assert.That(libraryStats.msmAvailable.First().MId > 0);
+
+        Assert.That(libraryStats.am.First().AId > 0);
+        Assert.That(libraryStats.amAvailable.First().AId > 0);
     }
 
     [Test, Explicit]
