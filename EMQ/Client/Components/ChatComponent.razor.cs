@@ -17,6 +17,7 @@ public partial class ChatComponent
     [Parameter]
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
 
+    // todo sync only chat rather than room and get rid of this param
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
@@ -37,7 +38,6 @@ public partial class ChatComponent
             {
                 if (ChatInputText.Length < Constants.MaxChatMessageLength)
                 {
-                    // todo: too much latency - try using signalr here
                     var req = new ReqSendChatMessage(session.Token, session.RoomId.Value, ChatInputText);
                     ChatInputText = "";
                     var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);

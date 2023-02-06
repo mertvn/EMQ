@@ -281,6 +281,10 @@ public class DbTests
         Assert.That(libraryStats.TotalMusicSourceCount > 0);
         Assert.That(libraryStats.TotalArtistCount > 0);
 
+        Assert.That(libraryStats.VideoLinkCount > 0);
+        Assert.That(libraryStats.SoundLinkCount > 0);
+        Assert.That(libraryStats.BothLinkCount > 0);
+
         Assert.That(libraryStats.msm.First().MId > 0);
         Assert.That(libraryStats.msmAvailable.First().MId > 0);
 
