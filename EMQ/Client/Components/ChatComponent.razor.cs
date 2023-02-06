@@ -37,9 +37,9 @@ public partial class ChatComponent
             {
                 if (ChatInputText.Length < Constants.MaxChatMessageLength)
                 {
-                    ChatInputText = "";
                     // todo: too much latency - try using signalr here
                     var req = new ReqSendChatMessage(session.Token, session.RoomId.Value, ChatInputText);
+                    ChatInputText = "";
                     var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
                     if (res.IsSuccessStatusCode)
                     {
