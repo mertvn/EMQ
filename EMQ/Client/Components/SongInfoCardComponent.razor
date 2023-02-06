@@ -8,8 +8,7 @@
             <div>
                 <div>
                     <h5 class="songSourceSongType">
-                        @if (true)
-                        {
+                        @{
                             Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
 
                             foreach (SongSource songSource in song.Sources)
@@ -20,9 +19,9 @@
                             // couldn't get distinct to work
                             List<string> displayedIds = new();
 
-                            @foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            /*@*/foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
                             {
-                                @foreach (string songSourceVNID in songSourceVNIDs)
+                                /*@*/foreach (string songSourceVNID in songSourceVNIDs)
                                 {
                                     if (!displayedIds.Contains(songSourceVNID))
                                     {
@@ -41,7 +40,7 @@
 
                                         // todo fix underline being too long
                                         <span></span>
-                                        <a class="songSourceVNID link-primary" href="@(songSourceVNID)">
+                                        <a class="songSourceVNID link-primary" href="@songSourceVNID">
                                             <span>(VN)</span>
                                         </a>
                                         <br/>
@@ -49,6 +48,7 @@
                                 }
                             }
                         }
+
                     </h5>
                     <h5 class="songLatinTitle card-title">@song.Titles.First(x => x.IsMainTitle).LatinTitle</h5>
                 </div>
@@ -60,11 +60,7 @@
 
                         <div>
                             <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())">
-                                <span>@songArtistTitle.LatinTitle</span>
-                                @if (!string.IsNullOrEmpty(songArtistTitle.NonLatinTitle))
-                                {
-                                    <span> (@songArtistTitle.NonLatinTitle)</span>
-                                }
+                                <span>@songArtistTitle.ToString()</span>
                             </a>
                         </div>
                     }

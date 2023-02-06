@@ -106,7 +106,7 @@
                         <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
                             <DataAnnotationsValidator/>
 
-                            <div>
+                            <div style="padding: 5px">
                                 <label for="songUrl">Add link: </label>
                                 <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
                                 <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>

@@ -1,5 +1,6 @@
 ﻿@using Microsoft.Extensions.Logging
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
 @inject HttpClient _client
 @inject ILogger<ChatComponent> _logger
 @inject IJSRuntime _jsRuntime
@@ -23,7 +24,7 @@
     @* HACK: https://stackoverflow.com/a/72419307 *@
     <textarea
  id="chatInput"
- rows="4" cols="50" placeholder="Chat"
+ rows="4" cols="50" maxlength="@Constants.MaxChatMessageLength" placeholder="Chat"
  @bind="ChatInputText" @bind:event="oninput"
  @onkeydown="OnKeyDown" @onkeydown:preventDefault="_preventDefault"
  style="resize: none; overflow: auto"></textarea>

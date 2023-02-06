@@ -80,7 +80,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(25, 11).ToArray();
+        var rqIds = Enumerable.Range(37, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
