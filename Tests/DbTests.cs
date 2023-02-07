@@ -285,8 +285,8 @@ public class DbTests
         Assert.That(libraryStats.SoundLinkCount > 0);
         Assert.That(libraryStats.BothLinkCount > 0);
 
-        Assert.That(libraryStats.msm.First().MId > 0);
-        Assert.That(libraryStats.msmAvailable.First().MId > 0);
+        Assert.That(libraryStats.msm.First().MSId > 0);
+        Assert.That(libraryStats.msmAvailable.First().MSId > 0);
 
         Assert.That(libraryStats.am.First().AId > 0);
         Assert.That(libraryStats.amAvailable.First().AId > 0);

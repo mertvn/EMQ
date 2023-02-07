@@ -31,18 +31,20 @@ public struct LibraryStats
     public List<LibraryStatsAm> amAvailable { get; set; }
 }
 
-public struct LibraryStatsMsm
+public class LibraryStatsMsm
 {
-    public int MId { get; set; }
+    public int MSId { get; set; }
 
     public string MstLatinTitle { get; set; }
 
     public string MselUrl { get; set; }
 
     public int MusicCount { get; set; }
+
+    public int AvailableMusicCount { get; set; }
 }
 
-public struct LibraryStatsAm
+public class LibraryStatsAm
 {
     public int AId { get; set; }
 
@@ -51,4 +53,6 @@ public struct LibraryStatsAm
     public string VndbId { get; set; }
 
     public int MusicCount { get; set; }
+
+    public int AvailableMusicCount { get; set; }
 }

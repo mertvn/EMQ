@@ -1303,7 +1303,7 @@ public static class DbManager
             int bothLinkCount = mels.Count(x => x.is_video && mels.Any(y => !y.is_video && y.music_id == x.music_id));
 
             string sqlMusicSourceMusic =
-                @"SELECT ms.id AS MId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
+                @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
 FROM music m
 LEFT JOIN music_external_link mel ON mel.music_id = m.id
 LEFT JOIN music_title mt ON mt.music_id = m.id
@@ -1314,12 +1314,21 @@ LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
 /**where**/
 group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
             var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
-            qMsm.Append($"LIMIT 25");
             qMsm.Where($"mst.is_main_title = true");
             var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+
             qMsm.Where($"mel.url is not null");
+            // qMsm.Append($"LIMIT 25");
             var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
+            for (int index = 0; index < msmAvailable.Count; index++)
+            {
+                LibraryStatsMsm msmA = msmAvailable[index];
+
+                msmA.AvailableMusicCount = msmA.MusicCount;
+                var match = msm.Where(x => x.MstLatinTitle == msmA.MstLatinTitle);
+                msmA.MusicCount = match.Sum(x => x.MusicCount);
+            }
 
             string sqlArtistMusic =
                 @"SELECT a.id AS AId, aa.latin_alias AS AALatinAlias, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
@@ -1331,10 +1340,20 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/
 group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
-            qAm.Append($"LIMIT 25");
             var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+
             qAm.Where($"mel.url is not null");
+            // qAm.Append($"LIMIT 25");
             var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+
+            for (int index = 0; index < amAvailable.Count; index++)
+            {
+                LibraryStatsAm amA = amAvailable[index];
+
+                amA.AvailableMusicCount = amA.MusicCount;
+                var match = am.Where(x => x.AId == amA.AId).DistinctBy(y => y.AId);
+                amA.MusicCount = match.Sum(x => x.MusicCount);
+            }
 
             var libraryStats = new LibraryStats
             {
@@ -1347,9 +1366,13 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 VideoLinkCount = videoLinkCount,
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,
-                msm = msm,
+                msm = msm
+                // .Take(25).ToList()
+                ,
                 msmAvailable = msmAvailable,
-                am = am,
+                am = am
+                // .Take(25).ToList()
+                ,
                 amAvailable = amAvailable,
             };
 
