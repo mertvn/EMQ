@@ -372,7 +372,7 @@ public static class Program
                                     }
                                     else
                                     {
-                                        // super dumb shit to handle MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType that may be breaking other stuff
+                                        // super dumb shit to handle MultipleWithDifferentSongTypesCommaAndSpaceDelimiterIntoBeforeType
                                         string inp = input[cursor..^1].ToLowerInvariant();
                                         if ((inp.Contains("op") || inp.Contains("ed") || inp.Contains("insert")) &&
                                             !inp.Contains("and") && !inp.Contains('&') && !inp.Contains('('))

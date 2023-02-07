@@ -33,7 +33,11 @@ public class AuthController : ControllerBase
     public async Task<ResCreateSession> CreateSession([FromBody] ReqCreateSession req)
     {
         // todo: authenticate with db and get player
-        int playerId = new Random().Next();
+        int playerId;
+        do
+        {
+            playerId = new Random().Next();
+        } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 
         List<Label>? vns = null;
         if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
