@@ -24,10 +24,7 @@ public class Session
     [JsonIgnore]
     public HubConnection? hubConnection { get; set; }
 
-    public int? RoomId { get; set; }
-
     public PlayerVndbInfo VndbInfo { get; set; } = new();
 
     public DateTime CreatedAt { get; }
-
 }

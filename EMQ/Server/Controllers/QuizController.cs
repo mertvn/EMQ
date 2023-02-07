@@ -30,12 +30,19 @@ public class QuizController : ControllerBase
 
     [HttpGet]
     [Route("SyncRoom")]
-    public Room? SyncRoom([FromQuery] int roomId)
+    public Room? SyncRoom([FromQuery] string token)
     {
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
+        var session = ServerState.Sessions.Single(x => x.Token == token);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
-            _logger.LogError("Room not found: " + roomId);
+            _logger.LogError("Room not found: " + token);
             return null;
         }
 
@@ -47,9 +54,14 @@ public class QuizController : ControllerBase
     [Route("NextSong")]
     public ActionResult<ResNextSong> NextSong([FromBody] ReqNextSong req)
     {
-        // todo? verify user belongs in room
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
 
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is not null)
         {
             if (room.Quiz != null)
@@ -76,14 +88,14 @@ public class QuizController : ControllerBase
             }
             else
             {
-                _logger.LogError("Room does not have a quiz initialized: " + req.RoomId);
-                return BadRequest("Room does not have a quiz initialized: " + req.RoomId);
+                _logger.LogError("Room does not have a quiz initialized: " + room.Id);
+                return BadRequest("Room does not have a quiz initialized: " + room.Id);
             }
         }
         else
         {
-            _logger.LogError("Room not found: " + req.RoomId);
-            return BadRequest("Room not found: " + req.RoomId);
+            _logger.LogError("Room not found with playerToken: " + req.PlayerToken);
+            return BadRequest("Room not found with playerToken: " + req.PlayerToken);
         }
     }
 
@@ -303,13 +315,13 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
+        var room = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == player.Id));
 
         if (room is not null)
         {
             if (room.Players.Any(x => x.Id == player.Id))
             {
-                if (req.Contents.Length < Constants.MaxChatMessageLength)
+                if (req.Contents.Length <= Constants.MaxChatMessageLength)
                 {
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
@@ -321,12 +333,12 @@ public class QuizController : ControllerBase
             {
                 _logger.LogWarning(
                     "Attempt to send chat message to r{req.RoomId} which p{player.Id} does not belong to",
-                    req.RoomId, player.Id);
+                    room.Id, player.Id);
             }
         }
         else
         {
-            _logger.LogWarning("Attempt to send chat message to r{req.RoomId} which is null", req.RoomId);
+            _logger.LogWarning("Attempt to send chat message to r{req.RoomId} which is null", room.Id);
         }
     }
 }

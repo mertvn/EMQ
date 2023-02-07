@@ -34,11 +34,11 @@ public partial class ChatComponent
             _preventDefault = true;
 
             var session = ClientState.Session;
-            if (session is { RoomId: { } } && !string.IsNullOrWhiteSpace(ChatInputText))
+            if (session != null && !string.IsNullOrWhiteSpace(ChatInputText))
             {
-                if (ChatInputText.Length < Constants.MaxChatMessageLength)
+                if (ChatInputText.Length <= Constants.MaxChatMessageLength)
                 {
-                    var req = new ReqSendChatMessage(session.Token, session.RoomId.Value, ChatInputText);
+                    var req = new ReqSendChatMessage(session.Token, ChatInputText);
                     ChatInputText = "";
                     var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
                     if (res.IsSuccessStatusCode)

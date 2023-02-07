@@ -2,13 +2,13 @@
 
 public class ReqNextSong
 {
-    public ReqNextSong(int roomId, int songIndex)
+    public ReqNextSong(string playerToken, int songIndex)
     {
-        RoomId = roomId;
+        PlayerToken = playerToken;
         SongIndex = songIndex;
     }
 
-    public int RoomId { get; }
+    public string PlayerToken { get; }
 
     public int SongIndex { get; }
 }

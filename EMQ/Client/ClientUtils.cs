@@ -36,7 +36,7 @@ public class ClientUtils
 
     public async Task<Room?> SyncRoom()
     {
-        var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?roomId={ClientState.Session?.RoomId}");
+        var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?token={ClientState.Session?.Token}");
         // Console.WriteLine(JsonSerializer.Serialize(room));
 
         if (room is not null)

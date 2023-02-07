@@ -75,7 +75,6 @@ public partial class HotelPage
                 await Task.Delay(waitTime);
             }
 
-            ClientState.Session.RoomId = roomId;
             await _clientUtils.SaveSessionToLocalStorage();
 
             Navigation.NavigateTo("/RoomPage");

@@ -166,7 +166,7 @@ public partial class QuizPage
     public async Task<Song?> NextSong(int index)
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong",
-            new ReqNextSong(ClientState.Session!.RoomId!.Value, index));
+            new ReqNextSong(ClientState.Session!.Token,index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
