@@ -146,13 +146,13 @@ public partial class RoomPage
 
     private async Task Onclick_Leave()
     {
-        Room = await _clientUtils.SyncRoom();
+        // Room = await _clientUtils.SyncRoom();
 
         bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", "Really leave?");
         if (confirmed)
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
-            Room = await _clientUtils.SyncRoom();
+            // Room = await _clientUtils.SyncRoom();
             Navigation.NavigateTo("/HotelPage");
         }
     }

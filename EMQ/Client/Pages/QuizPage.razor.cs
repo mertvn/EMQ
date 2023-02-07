@@ -313,14 +313,14 @@ public partial class QuizPage
 
     private async Task Onclick_Leave()
     {
-        await SyncWithServer();
+        // await SyncWithServer();
 
         bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
             "Really leave? If you return your score will not be restored.");
         if (confirmed)
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
-            await SyncWithServer();
+            // await SyncWithServer();
 
             // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
             _navigation.NavigateTo("/RoomPage");
