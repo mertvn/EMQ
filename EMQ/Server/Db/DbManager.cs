@@ -1264,6 +1264,7 @@ public static class DbManager
 
     public static async Task<LibraryStats> SelectLibraryStats()
     {
+        const int limit = 50;
         // todo external_link vndb type check
         // todo cache results?
         const string sqlMusic =
@@ -1309,7 +1310,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
             var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
             qMsm.Where($"mel.url is not null");
-            // qMsm.Append($"LIMIT 25");
+            qMsm.Append($"LIMIT {limit:raw}");
             var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
             for (int index = 0; index < msmAvailable.Count; index++)
@@ -1334,7 +1335,7 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
             qAm.Where($"mel.url is not null");
-            // qAm.Append($"LIMIT 25");
+            qAm.Append($"LIMIT {limit:raw}");
             var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
             for (int index = 0; index < amAvailable.Count; index++)
@@ -1358,11 +1359,11 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,
                 msm = msm
-                // .Take(25).ToList()
+                .Take(limit).ToList()
                 ,
                 msmAvailable = msmAvailable,
                 am = am
-                // .Take(25).ToList()
+                .Take(limit).ToList()
                 ,
                 amAvailable = amAvailable,
             };
