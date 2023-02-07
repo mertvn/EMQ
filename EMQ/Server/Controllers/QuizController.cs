@@ -42,7 +42,7 @@ public class QuizController : ControllerBase
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
-            _logger.LogError("Room not found: " + token);
+            _logger.LogError("Room not found with playerToken: " + token);
             return null;
         }
 
