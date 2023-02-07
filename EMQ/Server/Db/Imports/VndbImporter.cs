@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 
 namespace EMQ.Server.Db.Imports;
 
+// todo mla japanese title not showing up in autocomplete
 public static class VndbImporter
 {
     public static List<Song> Songs { get; } = new();
@@ -31,7 +32,7 @@ public static class VndbImporter
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2023-01-07";
+        string date = "2023-02-07";
         string folder = $"C:\\emq\\vndb\\{date}";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
@@ -56,6 +57,10 @@ public static class VndbImporter
             await File.ReadAllTextAsync($"{folder}\\EMQ tags.json"))!;
 
         Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
+
+        await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\VndbImporter_no_categories.json",
+            System.Text.Json.JsonSerializer.Serialize(Songs.Select(x =>
+                x.Sources.Select(y => y.Categories = new List<SongSourceCategory>()))));
 
         foreach (Song song in Songs)
         {
@@ -186,7 +191,8 @@ public static class VndbImporter
             };
 
             var existingSong = songs.LastOrDefault(x =>
-                x.Sources.First().Links.First().Url.Contains((string)dynData.VNID) &&
+                x.Sources.Any(y =>
+                    y.Links.Single(z => z.Type == SongSourceLinkType.VNDB).Url.Contains((string)dynData.VNID)) &&
                 x.Titles.Any(y => string.Equals(y.LatinTitle.ToLowerInvariant(),
                     (string)dynData.ParsedSong.Title.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)));
 
@@ -297,7 +303,9 @@ public static class VndbImporter
 
             var sameSong = songs.SingleOrDefault(x =>
                 x.Artists.Any(y => song.Artists.Select(z => z.VndbId).Contains(y.VndbId)) &&
-                x.Titles.Any(y => song.Titles.Select(z => z.LatinTitle).Contains(y.LatinTitle)) &&
+                x.Titles.Any(y =>
+                    song.Titles.Select(z => z.LatinTitle.ToLowerInvariant())
+                        .Contains(y.LatinTitle.ToLowerInvariant())) &&
                 x.ProducerIds.Any(y => song.ProducerIds.Contains(y)));
 
             if (sameSong is not null)

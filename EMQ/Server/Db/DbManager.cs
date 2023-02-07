@@ -489,16 +489,7 @@ public static class DbManager
 
             foreach (SongSource songSource in song.Sources)
             {
-                string msVndbUrl = "";
-                try
-                {
-                    msVndbUrl = song.Sources.Select(x =>
-                        x.Links.Select(y => y.Url).Single(z => z.Contains("vndb"))).Single();
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
+                string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
 
                 int msId = 0;
                 if (!string.IsNullOrEmpty(msVndbUrl))
