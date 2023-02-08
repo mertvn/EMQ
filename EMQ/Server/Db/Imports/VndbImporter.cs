@@ -58,9 +58,13 @@ public static class VndbImporter
 
         Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
 
+        foreach (SongSource songSource in Songs.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
         await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\VndbImporter_no_categories.json",
-            System.Text.Json.JsonSerializer.Serialize(Songs.Select(x =>
-                x.Sources.Select(y => y.Categories = new List<SongSourceCategory>()))));
+            System.Text.Json.JsonSerializer.Serialize(Songs));
 
         foreach (Song song in Songs)
         {
