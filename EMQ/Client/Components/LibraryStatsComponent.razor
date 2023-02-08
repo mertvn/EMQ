@@ -1,5 +1,6 @@
 ﻿@using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Shared.Core.UI
 @inject HttpClient _client
 
 @if (LibraryStats is { } libraryStats)
@@ -65,7 +66,9 @@
                                                 <span>@item.MstLatinTitle</span>
                                             </a>
                                         </td>
-                                        <td>@item.MusicCount</td>
+                                        <td>
+                                          <b>@item.MusicCount</b>
+                                        </td>
                                     </tr>
                                 }
                             </table>
@@ -90,7 +93,9 @@
                                             </a>
                                         </td>
 
-                                        <td>@item.AvailableMusicCount/@item.MusicCount</td>
+                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                            <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                                        </td>
                                     </tr>
                                 }
                             </table>
@@ -120,7 +125,9 @@
                                                 <span>@item.AALatinAlias</span>
                                             </a>
                                         </td>
-                                        <td>@item.MusicCount</td>
+                                        <td>
+                                            <b>@item.MusicCount</b>
+                                        </td>
                                     </tr>
                                 }
                             </table>
@@ -145,7 +152,9 @@
                                                 <span>@item.AALatinAlias</span>
                                             </a>
                                         </td>
-                                        <td>@item.AvailableMusicCount/@item.MusicCount</td>
+                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                            <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                                        </td>
                                     </tr>
                                 }
                             </table>

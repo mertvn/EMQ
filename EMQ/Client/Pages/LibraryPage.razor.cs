@@ -3,18 +3,27 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 namespace EMQ.Client.Pages;
 
 public partial class LibraryPage
 {
+    public enum LibrarySongFilterKind
+    {
+        All,
+        MissingVideoOrSound,
+        MissingBoth
+    }
+
     public class AddSongLinkModel
     {
         [Required]
@@ -39,6 +48,10 @@ public partial class LibraryPage
     public int ActiveSongId { get; set; }
 
     private string _selectedTab = "TabAutocompleteMst";
+
+    public LibrarySongFilterKind LibrarySongFilter { get; set; }
+
+    public int VisibleSongsCount { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -156,5 +169,30 @@ public partial class LibraryPage
         }
 
         StateHasChanged();
+    }
+
+    private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
+    {
+        var session = ClientState.Session;
+        if (session?.VndbInfo.Labels != null)
+        {
+            var req = new ReqFindSongsByLabels(session.VndbInfo.Labels);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsByLabels", req);
+            if (res.IsSuccessStatusCode)
+            {
+                var content = await res.Content.ReadFromJsonAsync<List<Song>>();
+                if (content is not null)
+                {
+                    CurrentSongs = content;
+                }
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnLibrarySongFilterChanged(ChangeEventArgs arg)
+    {
+        LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
+        // StateHasChanged();
     }
 }

@@ -51,6 +51,24 @@ public class Label
 
         return ret;
     }
+
+    public static List<string> GetValidSourcesFromLabels(List<Label> labels)
+    {
+        var include = labels.Where(x => x.Kind == LabelKind.Include).ToList();
+        var exclude = labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
+
+        var validSources = include.SelectMany(x => x.VnUrls).ToList();
+        if (exclude.Any())
+        {
+            validSources = validSources.Except(exclude.SelectMany(x => x.VnUrls)).ToList();
+        }
+        else
+        {
+            validSources.AddRange(include.SelectMany(x => x.VnUrls));
+        }
+
+        return validSources;
+    }
 }
 
 public enum LabelKind

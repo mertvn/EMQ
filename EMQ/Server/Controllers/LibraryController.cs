@@ -61,6 +61,14 @@ public class LibraryController : ControllerBase
         return rqs;
     }
 
+    [HttpPost]
+    [Route("FindSongsByLabels")]
+    public async Task<IEnumerable<Song>> FindRQs([FromBody] ReqFindSongsByLabels req)
+    {
+        var songs = await DbManager.FindSongsByLabels(req.Labels);
+        return songs;
+    }
+
     [HttpGet]
     [Route("GetLibraryStats")]
     public async Task<LibraryStats> GetLibraryStats()

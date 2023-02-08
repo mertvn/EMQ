@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 @inject ClientUtils _clientUtils
@@ -38,6 +39,7 @@
     <Items>
         <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+        <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
         <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
     </Items>
     <Content>
@@ -60,71 +62,117 @@
                                     Callback="SelectedResultChangedA">
             </AutocompleteAComponent>
         </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabMyList">
+            @if (ClientState.Session?.VndbInfo.Labels != null)
+            {
+                   @* todo stats *@
+                <button id="ButtonFetchMyList" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchMyList">
+                    Fetch songs from my list
+                </button>
+            }
+            else
+            {
+                <p>Your VNDB info is not set.</p>
+            }
+        </Blazorise.TabPanel>
         <Blazorise.TabPanel Name="TabStats">
             <LibraryStatsComponent></LibraryStatsComponent>
         </Blazorise.TabPanel>
     </Content>
 </Blazorise.Tabs>
 
-<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
-    @foreach (var song in CurrentSongs)
-    {
-        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-        <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
-            <SongInfoCardComponent song="@song"/>
-            <div style="padding: 16px">
-                <div>
-                    Video link:
-                    @if (song.Links.Any(x => x.IsVideo))
-                    {
-                        <span>✓</span>
-                    }
-                    else
-                    {
-                        <span>✘</span>
-                    }
-                </div>
-                <div>
-                    Sound link:
-                    @if (song.Links.Any(x => !x.IsVideo))
-                    {
-                        <span>✓</span>
-                    }
-                    else
-                    {
-                        <span>✘</span>
-                    }
-                </div>
+<div id="songsWrapper">
+    <div>
+        <select id="SongSelectionKind" @bind="LibrarySongFilter" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
+            @foreach (LibrarySongFilterKind librarySongFilter in Enum.GetValues<LibrarySongFilterKind>())
+            {
+                <option value="@librarySongFilter">@librarySongFilter</option>
+            }
+        </select>
+        <label for="SongSelectionKind">Link filter</label>
+        <br/>
+    </div>
+    <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
 
-                @if (!(song.Links.Any(x => x.IsVideo) && song.Links.Any(x => !x.IsVideo)))
+    <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
+        @{ VisibleSongsCount = 0; }
+        @foreach (Song song in CurrentSongs)
+        {
+            @if (true)
+            {
+                bool hasVideo = song.Links.Any(x => x.IsVideo);
+                bool hasSound = song.Links.Any(x => !x.IsVideo);
+
+                bool shouldDisplay = LibrarySongFilter switch
                 {
-                    <button class="btn btn-primary" style="margin-top: 5px" @onclick="@(() => ChangeActiveSong(song.Id))" disabled="@(ClientState.Session == null)">
-                        @UiHelpers.Bool2Text(ActiveSongId == song.Id, "Hide form", "Show form")
-                    </button>
-                    if (song.Id == ActiveSongId)
-                    {
-                        <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
-                            <DataAnnotationsValidator/>
+                    LibrarySongFilterKind.All => true,
+                    LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
+                    LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
+                    _ => throw new ArgumentOutOfRangeException()
+                    };
 
-                            <div style="padding: 5px">
-                                <label for="songUrl">Add link: </label>
-                                <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
-                                <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
+                @if (shouldDisplay)
+                {
+                    VisibleSongsCount += 1;
+                    // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+                    <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
+                        <SongInfoCardComponent song="@song"/>
+                        <div style="padding: 16px">
+                            <div>
+                                Video link:
+                                @if (hasVideo)
+                                {
+                                    <span>✓</span>
+                                }
+                                else
+                                {
+                                    <span>✘</span>
+                                }
                             </div>
-                            <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                        </EditForm>
-                    }
+                            <div>
+                                Sound link:
+                                @if (hasSound)
+                                {
+                                    <span>✓</span>
+                                }
+                                else
+                                {
+                                    <span>✘</span>
+                                }
+                            </div>
+
+                            @if (!hasVideo || !hasSound)
+                            {
+                                <button class="btn btn-primary" style="margin-top: 5px" @onclick="@(() => ChangeActiveSong(song.Id))" disabled="@(ClientState.Session == null)">
+                                    @UiHelpers.Bool2Text(ActiveSongId == song.Id, "Hide form", "Show form")
+                                </button>
+                                if (song.Id == ActiveSongId)
+                                {
+                                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
+                                        <DataAnnotationsValidator/>
+
+                                        <div style="padding: 5px">
+                                            <label for="songUrl">Add link: </label>
+                                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
+                                            <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
+                                        </div>
+                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                                    </EditForm>
+                                }
+                            }
+                        </div>
+
+                    </div>
                 }
-            </div>
+            }
+        }
 
-        </div>
-    }
+        @if (!CurrentSongs.Any())
+        {
+            @NoSongsText
+        }
 
-    @if (!CurrentSongs.Any())
-    {
-        @NoSongsText
-    }
-
+    </div>
 </div>
 
 <br/>

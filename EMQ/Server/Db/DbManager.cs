@@ -489,7 +489,7 @@ public static class DbManager
 
             foreach (SongSource songSource in song.Sources)
             {
-                string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
+                string msVndbUrl = songSource.Links.Single(y => y.Type == SongSourceLinkType.VNDB).Url;
 
                 int msId = 0;
                 if (!string.IsNullOrEmpty(msVndbUrl))
@@ -1267,6 +1267,7 @@ public static class DbManager
         const int limit = 50;
         // todo external_link vndb type check
         // todo cache results?
+        // todo op ed insert stats
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
 
@@ -1358,17 +1359,69 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 VideoLinkCount = videoLinkCount,
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,
-                msm = msm
-                .Take(limit).ToList()
-                ,
+                msm = msm.Take(limit).ToList(),
                 msmAvailable = msmAvailable,
-                am = am
-                .Take(limit).ToList()
-                ,
+                am = am.Take(limit).ToList(),
                 amAvailable = amAvailable,
             };
 
             return libraryStats;
         }
+    }
+
+    public static async Task<List<Song>> FindSongsByLabels(List<Label> reqLabels)
+    {
+        var validSources = Label.GetValidSourcesFromLabels(reqLabels);
+
+        string sqlMusicIdsNoMel =
+            $@"SELECT DISTINCT ON (m.id) m.id, msel.url FROM
+                                     music m
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     WHERE msel.url = ANY(@validSources)";
+
+        var ret = new List<Song>();
+        var addedMselUrls = new List<string>();
+        var rng = new Random();
+        var duplicates = true;
+        var numSongs = int.MaxValue;
+
+        List<(int, string)> ids;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            ids = (await connection.QueryAsync<(int, string)>(sqlMusicIdsNoMel, new { validSources }))
+                .OrderBy(_ => rng.Next()).ToList();
+        }
+
+        // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
+
+        foreach ((int mId, string? mselUrl) in ids)
+        {
+            if (ret.Count >= numSongs)
+            {
+                break;
+            }
+
+            if (!addedMselUrls.Contains(mselUrl) || duplicates)
+            {
+                var songs = await SelectSongs(new Song { Id = mId });
+                if (songs.Any())
+                {
+                    var song = songs.First();
+                    song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    ret.Add(song);
+                    addedMselUrls.Add(mselUrl);
+                }
+            }
+        }
+
+        // todo
+        foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
+        return ret.OrderBy(x => x.Id).ToList();
     }
 }

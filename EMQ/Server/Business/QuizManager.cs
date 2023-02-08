@@ -312,21 +312,7 @@ public class QuizManager
                 var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
                 if (session?.VndbInfo.Labels != null)
                 {
-                    var include = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Include).ToList();
-                    var exclude = session.VndbInfo.Labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
-
-                    Quiz.Log($"includeCount: {include.SelectMany(x => x.VnUrls).Count()}");
-                    Quiz.Log($"excludeCount: {exclude.SelectMany(x => x.VnUrls).Count()}");
-
-                    validSources = include.SelectMany(x => x.VnUrls).ToList();
-                    if (exclude.Any())
-                    {
-                        validSources = validSources.Except(exclude.SelectMany(x => x.VnUrls)).ToList();
-                    }
-                    else
-                    {
-                        validSources.AddRange(include.SelectMany(x => x.VnUrls));
-                    }
+                    validSources = Label.GetValidSourcesFromLabels(session.VndbInfo.Labels);
                 }
             }
         }
