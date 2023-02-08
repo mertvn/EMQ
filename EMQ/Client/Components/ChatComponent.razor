@@ -4,6 +4,14 @@
 @inject HttpClient _client
 @inject ILogger<ChatComponent> _logger
 @inject IJSRuntime _jsRuntime
+@implements IDisposable
+
+@code {
+    public void Dispose()
+    {
+        Timer.Dispose();
+    }
+}
 
 <div id="chat">
     <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">

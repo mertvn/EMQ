@@ -11,19 +11,34 @@
 @inject ClientConnectionManager _clientConnectionManager
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
+@implements IDisposable
+
+@code {
+
+    public void Dispose()
+    {
+        _chatComponent?.Dispose();
+    }
+
+}
 
 <button class="btn btn-warning" @onclick="Onclick_Leave"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
 </button>
 
-<div id="roomInfo">
+@if (Room?.Chat != null)
+{
+    <ChatComponent @ref="_chatComponent"></ChatComponent>
+}
+
+<div id="roomInfo" style="margin: 10px; max-width: 1000px; max-height: 600px;">
     Name:<br/>
     <p>@Room?.Name</p>
     Owner:<br/>
     <p>@Room?.Owner.Username</p>
     Settings:<br/>
-    <p>@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
+    <p style="margin: 10px; max-width: 1000px; max-height: 600px; word-wrap: break-word">@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
     Tags:<br/>
     <p>
         @JsonSerializer.Serialize(
@@ -115,12 +130,12 @@
     <button class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
 }
 
-<div id="playersDiv" style="display:flex; justify-content:center; align-items:center;">
+<div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
     @if (Room?.Players.Any() ?? false)
     {
         @foreach (var player in Room.Players)
         {
-            <div class="playerDiv" style="margin: 10px">
+            <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
                 @* <p> Id: @player.Id</p> *@
                 <p> Name: @player.Username</p>
                 <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Default)" alt="Avatar">
@@ -129,7 +144,5 @@
     }
 
 </div>
-
-@* todo chat *@
 
 @* todo readying up *@

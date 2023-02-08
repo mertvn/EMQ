@@ -11,6 +11,15 @@
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
+@implements IDisposable
+
+@code {
+    public void Dispose()
+    {
+        PageState.Timer.Dispose();
+        _chatComponent?.Dispose();
+    }
+}
 
 <CascadingValue Value="@this" IsFixed="true">
     @if (!_clientConnectionManager.IsConnected)
@@ -70,7 +79,7 @@
 
     @if (Room?.Chat != null)
     {
-        <ChatComponent @ref="_chatComponent" Chat="@Room.Chat" Callback="OnChatMessage"></ChatComponent>
+        <ChatComponent @ref="_chatComponent"></ChatComponent>
     }
 
     <div id="correctAnswerInfoDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 300px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">

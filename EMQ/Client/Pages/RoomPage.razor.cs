@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
@@ -38,24 +39,38 @@ public partial class RoomPage
 
     public SongSourceCategory[] AutocompleteCData { get; set; } = Array.Empty<SongSourceCategory>();
 
+    private ChatComponent? _chatComponent;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
         await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();
-        ClientQuizSettings =
-            JsonSerializer.Deserialize<QuizSettings>(JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
-        StateHasChanged();
+        if (Room != null)
+        {
+            ClientQuizSettings =
+                JsonSerializer.Deserialize<QuizSettings>(
+                    JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
+            StateHasChanged();
 
-        // breaks the leave button on QuizPage
-        // if (Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
-        // {
-        //     Hotjoin();
-        // }
+            bool canHotjoin = Room.QuizSettings.IsHotjoinEnabled &&
+                              Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing;
+            // breaks the leave button on QuizPage
+            canHotjoin = false;
+            if (canHotjoin)
+            {
+                Hotjoin();
+            }
 
-        AutocompleteCData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
-        StateHasChanged();
+            AutocompleteCData =
+                (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
+            StateHasChanged();
+        }
+        else
+        {
+            // todo require reload etc.
+        }
     }
 
     private async Task StartQuiz()

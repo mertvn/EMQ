@@ -109,6 +109,7 @@ public partial class QuizPage
         else
         {
             // todo warn error, redirect to index page
+            throw new Exception();
         }
 
         // await Task.Delay(TimeSpan.FromSeconds(2));
@@ -166,7 +167,7 @@ public partial class QuizPage
     public async Task<Song?> NextSong(int index)
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong",
-            new ReqNextSong(ClientState.Session!.Token,index));
+            new ReqNextSong(ClientState.Session!.Token, index));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -226,14 +227,6 @@ public partial class QuizPage
 
         if (Room is { Quiz: { } })
         {
-            // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
-            if (_chatComponent != null)
-            {
-                // todo don't do this if there are no new messages
-                await _chatComponent.ScrollToEnd();
-                StateHasChanged();
-            }
-
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
             // todo ProgressDivisor
 
@@ -275,16 +268,6 @@ public partial class QuizPage
             }
         }
 
-        if (Room is { Quiz: { } })
-        {
-            // idk why but if we don't have both of these ScrollToEnd calls in this method then it doesn't work properly
-            if (_chatComponent != null)
-            {
-                // todo don't do this if there are no new messages
-                await _chatComponent.ScrollToEnd();
-            }
-        }
-
         StateHasChanged();
     }
 
@@ -323,6 +306,7 @@ public partial class QuizPage
             // await SyncWithServer();
 
             // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
+            // might be because visiting RoomPage causes a new signalr connection to be established
             _navigation.NavigateTo("/RoomPage");
             _navigation.NavigateTo("/HotelPage");
         }
@@ -406,18 +390,21 @@ public partial class QuizPage
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        PageState.ProgressValue += 100 / PageState.ProgressDivisor * Quiz.TickRate;
-
-        if (PageState.Countdown > 0)
+        if (PageState.Timer.Enabled)
         {
-            PageState.Countdown -= Quiz.TickRate;
-        }
-        else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
-        {
-            await SyncWithServer();
-        }
+            PageState.ProgressValue += 100 / PageState.ProgressDivisor * Quiz.TickRate;
 
-        StateHasChanged();
+            if (PageState.Countdown > 0)
+            {
+                PageState.Countdown -= Quiz.TickRate;
+            }
+            else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
+            {
+                await SyncWithServer();
+            }
+
+            StateHasChanged();
+        }
     }
 
     private async Task SwapSongs(int index)
@@ -576,10 +563,5 @@ public partial class QuizPage
     private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged)
     {
         await SyncWithServer(room, phaseChanged);
-    }
-
-    private async Task OnChatMessage()
-    {
-        await SyncWithServer();
     }
 }

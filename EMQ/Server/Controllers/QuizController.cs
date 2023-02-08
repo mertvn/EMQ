@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -32,7 +33,7 @@ public class QuizController : ControllerBase
     [Route("SyncRoom")]
     public Room? SyncRoom([FromQuery] string token)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == token);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
             // todo
@@ -50,11 +51,33 @@ public class QuizController : ControllerBase
         return room;
     }
 
+    [HttpGet]
+    [Route("SyncChat")]
+    public ConcurrentQueue<ChatMessage>? SyncChat([FromQuery] string token)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+        if (session is null)
+        {
+            // todo
+            throw new Exception();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            _logger.LogError("Room not found with playerToken: " + token);
+            return null;
+        }
+
+        // _logger.LogError(JsonSerializer.Serialize(room));
+        return room.Chat;
+    }
+
     [HttpPost]
     [Route("NextSong")]
     public ActionResult<ResNextSong> NextSong([FromBody] ReqNextSong req)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -114,7 +137,7 @@ public class QuizController : ControllerBase
     [Route("CreateRoom")]
     public int CreateRoom([FromBody] ReqCreateRoom req)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -137,8 +160,8 @@ public class QuizController : ControllerBase
     [Route("JoinRoom")]
     public async Task<ResJoinRoom> JoinRoom([FromBody] ReqJoinRoom req)
     {
-        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
-        var session = ServerState.Sessions.Find(x => x.Player.Id == req.PlayerId);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == req.PlayerId);
 
         if (room is null || session is null)
         {
@@ -155,7 +178,7 @@ public class QuizController : ControllerBase
                 return new ResJoinRoom(0);
             }
 
-            var oldRoom = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == req.PlayerId));
+            var oldRoom = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == req.PlayerId));
             if (oldRoom is not null)
             {
                 _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
@@ -212,7 +235,7 @@ public class QuizController : ControllerBase
     [Route("StartQuiz")]
     public async Task StartQuiz([FromBody] ReqStartQuiz req)
     {
-        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -220,7 +243,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
         if (room is not null)
         {
@@ -261,7 +284,7 @@ public class QuizController : ControllerBase
     [Route("ChangeRoomSettings")]
     public void ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
     {
-        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -269,7 +292,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.Find(x => x.Id == req.RoomId);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
         if (room is not null)
         {
@@ -307,7 +330,7 @@ public class QuizController : ControllerBase
     [Route("SendChatMessage")]
     public void SendChatMessage([FromBody] ReqSendChatMessage req)
     {
-        var session = ServerState.Sessions.Find(x => x.Token == req.PlayerToken);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             // todo
@@ -315,7 +338,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.Find(x => x.Players.Any(y => y.Id == player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
 
         if (room is not null)
         {

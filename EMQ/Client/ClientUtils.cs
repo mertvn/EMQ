@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -36,9 +38,17 @@ public class ClientUtils
 
     public async Task<Room?> SyncRoom()
     {
-        var room = await Client.GetFromJsonAsync<Room>($"Quiz/SyncRoom?token={ClientState.Session?.Token}");
-        // Console.WriteLine(JsonSerializer.Serialize(room));
+        Room? room = null;
 
+        var res = await Client.GetAsync(
+            $"Quiz/SyncRoom?token={ClientState.Session?.Token}");
+
+        if (res.StatusCode == HttpStatusCode.NoContent)
+            room = null;
+        else if (res.IsSuccessStatusCode)
+            room = await res.Content.ReadFromJsonAsync<Room>();
+
+        // Console.WriteLine(JsonSerializer.Serialize(room));
         if (room is not null)
         {
             return room;
@@ -46,7 +56,7 @@ public class ClientUtils
         else
         {
             // todo warn user and require reload
-            Logger.LogError("Desynchronized");
+            Logger.LogError("Failed to SyncRoom");
         }
 
         return null;

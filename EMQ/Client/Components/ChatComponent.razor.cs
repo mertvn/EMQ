@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Timers;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
@@ -14,18 +16,39 @@ namespace EMQ.Client.Components;
 
 public partial class ChatComponent
 {
-    [Parameter]
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
-
-    // todo sync only chat rather than room and get rid of this param
-    [Parameter]
-    public Func<Task>? Callback { get; set; }
 
     public string ChatInputText { get; set; } = "";
 
     private ElementReference _chatHistoryRef;
 
     private bool _preventDefault = false;
+
+    public Timer Timer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        SetTimer();
+    }
+
+    public void SetTimer()
+    {
+        Timer.Stop();
+        Timer.Elapsed -= OnTimedEvent;
+
+        Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        Timer.Elapsed += OnTimedEvent;
+        Timer.AutoReset = true;
+        Timer.Start();
+    }
+
+    public async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    {
+        if (Timer.Enabled)
+        {
+            await SyncChat();
+        }
+    }
 
     private async void OnKeyDown(KeyboardEventArgs arg)
     {
@@ -43,7 +66,7 @@ public partial class ChatComponent
                     var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
                     if (res.IsSuccessStatusCode)
                     {
-                        Callback?.Invoke();
+                        await SyncChat();
                     }
                 }
                 else
@@ -55,6 +78,33 @@ public partial class ChatComponent
         else
         {
             _preventDefault = false;
+        }
+    }
+
+    // todo: do this with messages sent from the server instead of polling if signalr ever gets reliable enough
+    private async Task SyncChat()
+    {
+        ConcurrentQueue<ChatMessage>? chat = null;
+        var res = await _client.GetAsync(
+            $"Quiz/SyncChat?token={ClientState.Session?.Token}");
+
+        if (res.StatusCode == HttpStatusCode.NoContent)
+            chat = null;
+        else if (res.IsSuccessStatusCode)
+            chat = await res.Content.ReadFromJsonAsync<ConcurrentQueue<ChatMessage>>();
+
+        if (chat is not null)
+        {
+            if (chat.Count > Chat.Count)
+            {
+                Chat = chat;
+
+                // need to call twice or it doesn't scroll all the way to the end /shrug
+                await ScrollToEnd();
+                StateHasChanged();
+                await ScrollToEnd();
+                StateHasChanged();
+            }
         }
     }
 
