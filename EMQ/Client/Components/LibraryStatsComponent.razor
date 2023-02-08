@@ -47,8 +47,9 @@
                     <div>
                         <p>Total:</p>
                         <ul>
-                            @foreach (var libraryStatsMusicType in libraryStats.TotalLibraryStatsMusicType)
+                            @for (int index = 0; index < libraryStats.TotalLibraryStatsMusicType.Count; index++)
                             {
+                                var libraryStatsMusicType = libraryStats.TotalLibraryStatsMusicType[index];
                                 <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
                             }
                         </ul>
@@ -57,9 +58,10 @@
                     <div>
                         <p>Available:</p>
                         <ul>
-                            @foreach (var libraryStatsMusicType in libraryStats.AvailableLibraryStatsMusicType)
+                            @for (int index = 0; index < libraryStats.AvailableLibraryStatsMusicType.Count; index++)
                             {
-                                <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
+                                var libraryStatsMusicType = libraryStats.AvailableLibraryStatsMusicType[index];
+                                <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount (@Utils.PercentageStr(libraryStats.AvailableLibraryStatsMusicType[index].MusicCount, libraryStats.TotalLibraryStatsMusicType[index].MusicCount))</li>
                             }
                         </ul>
                     </div>

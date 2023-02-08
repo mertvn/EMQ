@@ -1295,7 +1295,8 @@ FROM music m
 LEFT JOIN music_external_link mel ON mel.music_id = m.id
 LEFT JOIN music_source_music msm ON msm.music_id = m.id
 /**where**/
-group by msm.type";
+group by msm.type
+order by type";
             var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
             var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
             qMusicType.Where($"mel.url is not null");
