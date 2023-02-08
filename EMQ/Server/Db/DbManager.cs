@@ -1267,7 +1267,6 @@ public static class DbManager
         const int limit = 50;
         // todo external_link vndb type check
         // todo cache results?
-        // todo op ed insert stats
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
 
@@ -1289,6 +1288,18 @@ public static class DbManager
 
             int totalArtistCount = await connection.QuerySingleAsync<int>(sqlArtist);
             int availableArtistCount = await connection.QuerySingleAsync<int>(sqlArtist + sqlWhereClause);
+
+            string sqlMusicType =
+                @"SELECT msm.type as Type, COUNT(DISTINCT m.id) as MusicCount
+FROM music m
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+/**where**/
+group by msm.type";
+            var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
+            var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
+            qMusicType.Where($"mel.url is not null");
+            var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
 
             var mels = (await connection.QueryAsync<MusicExternalLink>("SELECT * FROM music_external_link")).ToList();
             int videoLinkCount = mels.Count(x => x.is_video && !mels.Any(y => !y.is_video && y.music_id == x.music_id));
@@ -1356,6 +1367,8 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 AvailableMusicSourceCount = availableMusicSourceCount,
                 TotalArtistCount = totalArtistCount,
                 AvailableArtistCount = availableArtistCount,
+                TotalLibraryStatsMusicType = totalMusicTypeCount,
+                AvailableLibraryStatsMusicType = availableMusicTypeCount,
                 VideoLinkCount = videoLinkCount,
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,

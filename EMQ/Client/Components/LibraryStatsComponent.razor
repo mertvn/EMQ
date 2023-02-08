@@ -43,6 +43,26 @@
                             <li>Songs with both links: @libraryStats.BothLinkCount</li>
                         </ul>
                     </div>
+
+                    <div>
+                        <p>Total:</p>
+                        <ul>
+                            @foreach (var libraryStatsMusicType in libraryStats.TotalLibraryStatsMusicType)
+                            {
+                                <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div>
+                        <p>Available:</p>
+                        <ul>
+                            @foreach (var libraryStatsMusicType in libraryStats.AvailableLibraryStatsMusicType)
+                            {
+                                <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
+                            }
+                        </ul>
+                    </div>
                 </Blazorise.TabPanel>
 
 
@@ -67,7 +87,7 @@
                                             </a>
                                         </td>
                                         <td>
-                                          <b>@item.MusicCount</b>
+                                            <b>@item.MusicCount</b>
                                         </td>
                                     </tr>
                                 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Library.Entities.Concrete;
 
@@ -15,6 +16,10 @@ public struct LibraryStats
     public int AvailableMusicSourceCount { get; set; }
 
     public int AvailableArtistCount { get; set; }
+
+    public List<LibraryStatsMusicType> TotalLibraryStatsMusicType { get; set; }
+
+    public List<LibraryStatsMusicType> AvailableLibraryStatsMusicType { get; set; }
 
     public int VideoLinkCount { get; set; }
 
@@ -55,4 +60,11 @@ public class LibraryStatsAm
     public int MusicCount { get; set; }
 
     public int AvailableMusicCount { get; set; }
+}
+
+public class LibraryStatsMusicType
+{
+    public SongSourceSongType Type { get; set; }
+
+    public int MusicCount { get; set; }
 }

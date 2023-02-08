@@ -187,12 +187,12 @@ public partial class LibraryPage
                 }
             }
         }
+
         StateHasChanged();
     }
 
-    private async Task OnLibrarySongFilterChanged(ChangeEventArgs arg)
+    private void OnLibrarySongFilterChanged(ChangeEventArgs arg)
     {
         LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
-        // StateHasChanged();
     }
 }
