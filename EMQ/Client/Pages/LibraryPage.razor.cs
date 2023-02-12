@@ -134,9 +134,7 @@ public partial class LibraryPage
         bool isVideo = url.IsVideoLink();
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 
-        var submittedBy = !string.IsNullOrEmpty(ClientState.Session.VndbInfo.VndbId)
-            ? ClientState.Session.VndbInfo.VndbId
-            : ClientState.Session.Player.Username;
+        string submittedBy = ClientState.Session.Player.Username;
         var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType },
             submittedBy);
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
