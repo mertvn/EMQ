@@ -13,7 +13,7 @@ JOIN staff_alias sa ON sa.aid = vs.aid
 WHERE r.released != 99999999
 AND rv.rtype != 'trial'
 and vs.role::text ~* 'songs' 
-AND vs.note ~* '"'
+AND vs.note ~* '(")|(“)|(”)|('')'
 GROUP BY s.id
 )
 

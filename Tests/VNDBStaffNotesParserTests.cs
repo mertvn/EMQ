@@ -37,7 +37,7 @@ public class VNDBStaffNotesParserTests
         };
         // @formatter:on
 
-        string date = "2023-02-07";
+        string date = "2023-02-11";
         string folder = $"C:\\emq\\vndb\\{date}";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music.json"))!;
@@ -114,6 +114,26 @@ public class VNDBStaffNotesParserTests
                 Type = new List<SongType> { SongType.ED },
                 Title = "DON'T LET GO",
                 AfterTitle = " [Remake]"
+            }
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_WeirdQuotes()
+    {
+        string input = "ED “Negai”";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Negai",
+                AfterTitle = ""
             }
         };
 
