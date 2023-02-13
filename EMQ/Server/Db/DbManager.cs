@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -1262,9 +1262,8 @@ public static class DbManager
         return melId;
     }
 
-    public static async Task<LibraryStats> SelectLibraryStats()
+    public static async Task<LibraryStats> SelectLibraryStats(int limit = 50)
     {
-        const int limit = 50;
         // todo external_link vndb type check
         // todo cache results?
         const string sqlMusic =
@@ -1282,12 +1281,11 @@ public static class DbManager
         {
             int totalMusicCount = await connection.QuerySingleAsync<int>(sqlMusic);
             int availableMusicCount = await connection.QuerySingleAsync<int>(sqlMusic + sqlWhereClause);
-
             int totalMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource);
             int availableMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource + sqlWhereClause);
-
             int totalArtistCount = await connection.QuerySingleAsync<int>(sqlArtist);
             int availableArtistCount = await connection.QuerySingleAsync<int>(sqlArtist + sqlWhereClause);
+
 
             string sqlMusicType =
                 @"SELECT msm.type as Type, COUNT(DISTINCT m.id) as MusicCount
@@ -1302,10 +1300,12 @@ order by type";
             qMusicType.Where($"mel.url is not null");
             var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
 
+
             var mels = (await connection.QueryAsync<MusicExternalLink>("SELECT * FROM music_external_link")).ToList();
             int videoLinkCount = mels.Count(x => x.is_video && !mels.Any(y => !y.is_video && y.music_id == x.music_id));
             int soundLinkCount = mels.Count(x => !x.is_video && !mels.Any(y => y.is_video && y.music_id == x.music_id));
             int bothLinkCount = mels.Count(x => x.is_video && mels.Any(y => !y.is_video && y.music_id == x.music_id));
+
 
             string sqlMusicSourceMusic =
                 @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
@@ -1335,15 +1335,16 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
                 msmA.MusicCount = match.Sum(x => x.MusicCount);
             }
 
+
             string sqlArtistMusic =
-                @"SELECT a.id AS AId, aa.latin_alias AS AALatinAlias, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
+                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
 FROM music m
 LEFT JOIN music_external_link mel ON mel.music_id = m.id
 LEFT JOIN artist_music am ON am.music_id = m.id
 LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
 LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/
-group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
+group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
             var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
@@ -1351,14 +1352,34 @@ group by a.id, aa.latin_alias, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             qAm.Append($"LIMIT {limit:raw}");
             var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
+            var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
+                    "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
+                .ToList();
+            foreach (LibraryStatsAm libraryStatsAm in am)
+            {
+                var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
+                libraryStatsAm.AALatinAlias =
+                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+            }
+
+            foreach (LibraryStatsAm libraryStatsAm in amAvailable)
+            {
+                var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
+                libraryStatsAm.AALatinAlias =
+                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+            }
+
             for (int index = 0; index < amAvailable.Count; index++)
             {
                 LibraryStatsAm amA = amAvailable[index];
 
                 amA.AvailableMusicCount = amA.MusicCount;
-                var match = am.Where(x => x.AId == amA.AId).DistinctBy(y => y.AId);
+                var match = am.Where(x => x.AId == amA.AId);
                 amA.MusicCount = match.Sum(x => x.MusicCount);
             }
+
 
             var libraryStats = new LibraryStats
             {

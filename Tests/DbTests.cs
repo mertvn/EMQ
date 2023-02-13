@@ -295,6 +295,15 @@ public class DbTests
         Assert.That(libraryStats.amAvailable.First().AId > 0);
     }
 
+    [Test]
+    public async Task Test_SelectLibraryStatsYoneMado()
+    {
+        var libraryStats = await DbManager.SelectLibraryStats(int.MaxValue);
+        var yoneMado = libraryStats.am.Single(x => x.AALatinAlias == "Yonezawa Madoka");
+        Console.WriteLine(yoneMado.MusicCount);
+        Assert.That(yoneMado.MusicCount > 14);
+    }
+
     [Test, Explicit]
     public async Task Test_MusicSourceDuplicationThing()
     {
