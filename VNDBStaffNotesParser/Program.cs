@@ -44,6 +44,7 @@ public static class Program
                         "Theme songs", // idk
                         "Theme song -", // idk
                         "Theme Song:", // idk
+                        "Theme music", // idk
                         "OP,",
                         "OP1",
                         "OP2",

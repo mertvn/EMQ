@@ -30,7 +30,7 @@ w
    postgresql://postgres:postgres@localhost:5432/EMQ
 2. Run the project (EMQ.Server) once in order for the database migrations to run. Terminate it after it's done.
 3. Go to https://query.vndb.org and run all of the queries located in Queries/VNDB, download the results as json and put
-   them where they belong (check EMQ/Server/DB/Imports/VndbImporter.cs for the correct filenames and where to put them)
+   them where they belong (check EMQ/Server/DB/Imports/VndbImporter.cs for the correct filenames and where to put them).
 4. Run test VNDBStaffNotesParserTests.Test_Batch() (~8 seconds).
 5. Run test EntryPoints.ImportVndbData() (~7 minutes) in order to import everything but the song links.
 6. (Optional) Run test EntryPoints.ImportSongLite() (~5 seconds) in order to import the song links if you have a

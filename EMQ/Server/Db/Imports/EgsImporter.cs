@@ -15,38 +15,7 @@ namespace EMQ.Server.Db.Imports;
 
 public static class EgsImporter
 {
-    public static readonly Dictionary<int, List<string>> createrNameOverrideDict = new()
-    {
-        // { 12569, new List<string> { "中山♡マミ", "中山マミ" } },
-        // { 5819, new List<string> { "Rita" } },
-        // { 3360, new List<string> { "榊原ゆい" } },
-        // { 12359, new List<string> { "真理絵" } },
-        // { 7436, new List<string> { "Riryka" } },
-        // { 6048, new List<string> { "計名さや香" } },
-        // { 12575, new List<string> { "Uran" } },
-        // { 4471, new List<string> { "rino" } },
-        // { 8355, new List<string> { "横手久美子" } },
-        // { 24170, new List<string> { "綺良雪" } },
-        // { 10271, new List<string> { "遊女" } },
-        // { 2545, new List<string> { "ave;new" } },
-        // { 14839, new List<string> { "KAKO" } },
-        // { 14493, new List<string> { "YUMI", "Reset" } },
-        // { 9455, new List<string> { "Arisa" } },
-        // { 8110, new List<string> { "miru" } },
-        // { 23176, new List<string> { "葉月" } },
-        // { 4525, new List<string> { "佐藤ひろ美" } },
-        // { 9081, new List<string> { "笹島かほる" } },
-        // { 24768, new List<string> { "はるか" } },
-        // { 4502, new List<string> { "yozuca*", "rino" } },
-        // { 13108, new List<string> { "真里歌" } },
-        // { 19735, new List<string> { "Ayumi." } },
-        // { 12576, new List<string> { "Toyoda Serika" } },
-        // { 4994, new List<string> { "YURIA" } },
-        // { 2808, new List<string> { "Kiyo" } },
-        // { 12649, new List<string> { "Heco" } },
-        // { 12712, new List<string> { "Yuiko" } },
-        // { 14487, new List<string> { "櫻川めぐ", "桜川めぐ" } },
-    };
+    public static readonly Dictionary<int, List<string>> CreaterNameOverrideDict = new();
 
     public static async Task ImportEgsData()
     {
@@ -58,7 +27,7 @@ public static class EgsImporter
                 await File.ReadAllTextAsync("C:\\emq\\egs\\createrNameOverrideDict.json"), Utils.JsoIndented)!;
         foreach ((int key, List<string>? value) in createrNameOverrideDictFile)
         {
-            if (!createrNameOverrideDict.TryAdd(key, value))
+            if (!CreaterNameOverrideDict.TryAdd(key, value))
             {
                 throw new Exception($"creater id {key} is repeated in the override dict");
             }
@@ -119,15 +88,32 @@ public static class EgsImporter
                 continue;
             }
 
+            gameVndbUrl = gameVndbUrl.ToVndbUrl();
+
+            var blacklist = new List<string>
+            {
+                "https://vndb.org/v1141",
+                "https://vndb.org/v2002",
+                "https://vndb.org/v18760",
+                "https://vndb.org/v1183",
+                "https://vndb.org/v28",
+                "https://vndb.org/v273",
+                "https://vndb.org/v1708",
+                "https://vndb.org/v827",
+                "https://vndb.org/v1060"
+            };
+            if (blacklist.Contains(gameVndbUrl))
+            {
+                continue;
+            }
+
             int createrId = Convert.ToInt32(split[13]);
 
             List<string> createrName = new() { split[14] };
-            if (createrNameOverrideDict.ContainsKey(createrId))
+            if (CreaterNameOverrideDict.ContainsKey(createrId))
             {
-                createrName = createrNameOverrideDict[createrId];
+                createrName = CreaterNameOverrideDict[createrId];
             }
-
-            gameVndbUrl = gameVndbUrl.ToVndbUrl();
 
             var egsData = new EgsData
             {
@@ -256,7 +242,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
                 if (!aIds.Any())
                 {
-                    if (createrNameOverrideDict.ContainsKey(egsData.CreaterId))
+                    if (CreaterNameOverrideDict.ContainsKey(egsData.CreaterId))
                     {
                         Console.WriteLine(
                             $"ERROR: invalid creater name override for {egsData.CreaterId}{JsonSerializer.Serialize(egsData.CreaterNames, Utils.Jso)}");
@@ -296,7 +282,16 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 }
                 else
                 {
+                    // if (egsImporterInnerResults.Any(x =>
+                    //         x.EgsData.MusicId == egsData.MusicId && x.ResultKind == EgsImporterInnerResultKind.Matched))
+                    // {
+                    //     innerResult.ResultKind = EgsImporterInnerResultKind.AlreadyMatched;
+                    // }
+                    // else
+                    // {
                     innerResult.ResultKind = EgsImporterInnerResultKind.NoMids;
+                    // }
+
                     return;
                 }
             }
@@ -308,6 +303,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             switch (egsImporterInnerResult.ResultKind)
             {
                 case EgsImporterInnerResultKind.Matched:
+                    Console.WriteLine("matched: ");
+                    needsPrint = true;
                     break;
                 case EgsImporterInnerResultKind.MultipleMids:
                     Console.WriteLine("multiple music matches: ");
@@ -321,6 +318,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     Console.WriteLine("no artist id matches: ");
                     needsPrint = true;
                     break;
+                // case EgsImporterInnerResultKind.AlreadyMatched:
+                //     Console.WriteLine("already matched: ");
+                //     needsPrint = true;
+                //     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -347,6 +348,9 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoMids));
         Console.WriteLine("noAids count: " +
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoAids));
+        // Console.WriteLine("alreadyMatched count: " +
+        //                   egsImporterInnerResults.Count(x =>
+        //                       x.ResultKind == EgsImporterInnerResultKind.AlreadyMatched));
 
         await File.WriteAllTextAsync($"{folder}\\noMids.json",
             JsonSerializer.Serialize(
@@ -403,8 +407,9 @@ public class EgsImporterInnerResult
 
 public enum EgsImporterInnerResultKind
 {
-    Matched,
+    NoAids,
     MultipleMids,
     NoMids,
-    NoAids,
+    Matched,
+    // AlreadyMatched
 }
