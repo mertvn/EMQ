@@ -159,6 +159,7 @@ public static class DbManager
     /// Song.Id <br/>
     /// Song.Sources.Links <br/>
     /// Song.Sources.Titles.LatinTitle <br/>
+    /// Song.Sources.Titles.NonLatinTitle <br/>
     /// Song.Sources.Categories.VndbId <br/>
     /// </summary>
     public static async Task<List<SongSource>> SelectSongSource(IDbConnection connection, Song input)
@@ -184,10 +185,21 @@ public static class DbManager
             queryMusicSource.Where($"msm.music_id = {input.Id}");
         }
 
-        var latinTitles = input.Sources.SelectMany(x => x.Titles.Select(y => y.LatinTitle)).ToList();
+        var latinTitles = input.Sources.SelectMany(x => x.Titles.Select(y => y.LatinTitle))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
         if (latinTitles.Any())
         {
+            // todo? ILIKE instead of =
             queryMusicSource.Where($"mst.latin_title = ANY({latinTitles})");
+        }
+
+        List<string> nonLatinTitles = input.Sources.SelectMany(x => x.Titles.Select(y => y.NonLatinTitle))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList()!;
+        if (nonLatinTitles.Any())
+        {
+            queryMusicSource.Where($"mst.non_latin_title = ANY({nonLatinTitles})");
         }
 
         var links = input.Sources.SelectMany(x => x.Links.Select(y => y.Url)).ToList();
@@ -920,6 +932,18 @@ public static class DbManager
                         new() { Titles = new List<Title> { new() { LatinTitle = songSourceTitle } } }
                     }
                 });
+
+            if (!songSources.Any())
+            {
+                songSources = await SelectSongSource(connection,
+                    new Song
+                    {
+                        Sources = new List<SongSource>
+                        {
+                            new() { Titles = new List<Title> { new() { NonLatinTitle = songSourceTitle } } }
+                        }
+                    });
+            }
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
 
