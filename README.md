@@ -17,7 +17,6 @@ w
 * trim before autocomplete
 * 6+ players everything stretching
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
-* Japanese song titles (VGMdb, EGS)
 * player -> (site)user + (quiz)player
 * check if players are still active ^prerequisite
 * song lengths (~~EGS~~ usually has the full-size lengths, maybe link scanning?)
@@ -32,11 +31,12 @@ w
 2. Run the project (EMQ.Server) once in order for the database migrations to run. Terminate it after it's done.
 3. Go to https://query.vndb.org and run all of the queries located in Queries/VNDB, download the results as json and put
    them where they belong (check EMQ/Server/DB/Imports/VndbImporter.cs for the correct filenames and where to put them)
-4. Run test VNDBStaffNotesParserTests.Test_Batch() (~8 seconds)
-5. Run test EntryPoints.ImportVndbData() (~7 minutes) in order to import everything but the song links
+4. Run test VNDBStaffNotesParserTests.Test_Batch() (~8 seconds).
+5. Run test EntryPoints.ImportVndbData() (~7 minutes) in order to import everything but the song links.
 6. (Optional) Run test EntryPoints.ImportSongLite() (~5 seconds) in order to import the song links if you have a
    SongLite.json file from before. You may encounter exceptions on this step if VNDB data has been modified since you
    last imported data. Manually edit your SongLite.json file to fix any discrepancies.
+7. (Optional) Run the EGS query and run test EntryPoints.ImportEgsData() (~3 minutes) in order to import Japanese song titles.
 
 ## Credits
 

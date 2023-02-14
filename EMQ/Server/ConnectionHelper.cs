@@ -5,6 +5,8 @@ namespace EMQ.Server;
 
 public static class ConnectionHelper
 {
+    private static string s_cachedCnnStr = "";
+
     public static string GetConnectionString()
     {
         string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -12,13 +14,15 @@ public static class ConnectionHelper
         {
             throw new Exception("Error getting DATABASE_URL envvar");
         }
-        return BuildConnectionString(databaseUrl);
+
+        return !string.IsNullOrWhiteSpace(s_cachedCnnStr) ? s_cachedCnnStr : BuildConnectionString(databaseUrl);
     }
 
     private static string BuildConnectionString(string databaseUrl)
     {
         var databaseUri = new Uri(databaseUrl);
         string[] userInfo = databaseUri.UserInfo.Split(':');
+
         var builder = new NpgsqlConnectionStringBuilder
         {
             Host = databaseUri.Host,
@@ -30,6 +34,9 @@ public static class ConnectionHelper
             TrustServerCertificate = true,
             IncludeErrorDetail = true
         };
-        return builder.ToString();
+
+        string str = builder.ToString();
+        s_cachedCnnStr = str;
+        return str;
     }
 }

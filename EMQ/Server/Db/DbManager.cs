@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -346,6 +346,7 @@ public static class DbManager
     /// Song.Id <br/>
     /// Song.Artists.Id <br/>
     /// Song.Artists.Titles.LatinTitle <br/>
+    /// Song.Artists.Titles.NonLatinTitle <br/>
     /// </summary>
     public static async Task<List<SongArtist>> SelectArtist(IDbConnection connection, Song input, bool needsRequery)
     {
@@ -371,10 +372,20 @@ public static class DbManager
             queryArtist.Where($"a.id = {artistId}");
         }
 
-        var latinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)).ToList();
+        var latinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
         if (latinTitles.Any())
         {
-            queryArtist.Where($"aa.latin_alias = ANY({latinTitles})");
+            queryArtist.Where($"aa.latin_alias ILIKE ANY({latinTitles})");
+        }
+
+        List<string> nonLatinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.NonLatinTitle))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList()!;
+        if (nonLatinTitles.Any())
+        {
+            queryArtist.Where($"aa.non_latin_alias = ANY({nonLatinTitles})");
         }
 
         if (queryArtist.GetFilters() is null)
@@ -445,7 +456,7 @@ public static class DbManager
         {
             var inputWithArtistId =
                 new Song { Artists = new List<SongArtist> { new() { Id = songArtists.First().Id } } };
-            input.Artists = songArtists = await SelectArtist(connection, inputWithArtistId, false);
+            songArtists = await SelectArtist(connection, inputWithArtistId, false);
         }
 
         return songArtists;

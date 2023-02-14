@@ -41,6 +41,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task ImportEgsData()
+    {
+        await EgsImporter.ImportEgsData();
+    }
+
+    [Test, Explicit]
     public async Task GenerateSong()
     {
         await File.WriteAllTextAsync("Song.json", await DbManager.ExportSong());
@@ -80,7 +86,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(1, 8).ToArray();
+        var rqIds = Enumerable.Range(218, 23).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -91,7 +97,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(61, 1).ToArray();
+        var rqIds = Enumerable.Range(200, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {

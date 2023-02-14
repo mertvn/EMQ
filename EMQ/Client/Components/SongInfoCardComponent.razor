@@ -50,7 +50,20 @@
                         }
 
                     </h5>
-                    <h5 class="songLatinTitle card-title">@song.Titles.First(x => x.IsMainTitle).LatinTitle</h5>
+                    @{
+                        Title mainTitle = song.Titles.First(x => x.IsMainTitle);
+                        string latinTitle = mainTitle.LatinTitle;
+                        string? nonLatinTitle = mainTitle.NonLatinTitle;
+
+                        <h5 class="songLatinTitle card-title">@mainTitle.LatinTitle</h5>
+                        @if (!string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            if (!string.IsNullOrWhiteSpace(nonLatinTitle))
+                            {
+                                <h5 class="songLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
+                            }
+                        }
+                    }
                 </div>
                 <div>
                     by
