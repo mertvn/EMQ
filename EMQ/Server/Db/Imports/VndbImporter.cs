@@ -10,7 +10,6 @@ using Newtonsoft.Json;
 
 namespace EMQ.Server.Db.Imports;
 
-// todo mla japanese title not showing up in autocomplete
 public static class VndbImporter
 {
     public static List<Song> Songs { get; } = new();
@@ -249,9 +248,11 @@ public static class VndbImporter
                     nonLatinTitle = dynMusicSourceTitle.title;
                 }
 
-                // we don't want titles that are exactly same
+                // we don't want titles that are exactly the same
                 if (musicSourceTitles.Any(x =>
-                        string.Equals(x.LatinTitle, latinTitle, StringComparison.OrdinalIgnoreCase)))
+                        string.Equals(x.LatinTitle, latinTitle, StringComparison.OrdinalIgnoreCase) &&
+                        (string.IsNullOrWhiteSpace(nonLatinTitle) || string.Equals(x.NonLatinTitle, nonLatinTitle,
+                            StringComparison.OrdinalIgnoreCase))))
                 {
                     continue;
                 }
