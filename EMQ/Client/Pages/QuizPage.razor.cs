@@ -62,9 +62,6 @@ public partial class QuizPage
         public bool GuessesVisibility { get; set; } = true;
         // public bool GuessInputDisabled { get; set; } = true;
 
-        // !!!
-        // IMPORTANT TODO: I BROKE GUESS RESETTING ON PHASE CHANGE SOMEHOW
-        // !!!
         public string? Guess { get; set; }
 
         public float Countdown { get; set; }
@@ -347,6 +344,9 @@ public partial class QuizPage
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
 
+                // need to clear it again here or it doesn't work(???)
+                PageState.Guess = "";
+                await _guessInputComponent.ClearInputField();
                 _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
@@ -358,6 +358,7 @@ public partial class QuizPage
 
                 _guessInputComponent.CallClose();
                 _guessInputComponent.CallStateHasChanged();
+                StateHasChanged();
                 break;
             case QuizPhaseKind.Results:
                 // TODO: restart song (option?)

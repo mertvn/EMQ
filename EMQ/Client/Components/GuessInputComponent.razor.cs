@@ -80,6 +80,7 @@ public partial class GuessInputComponent
 #pragma warning disable CS4014
         AutocompleteComponent.Clear(); // awaiting this causes signalr messages not to be processed in time (???)
 #pragma warning restore CS4014
+        Guess = "";
         await Task.Delay(100);
         StateHasChanged();
     }
