@@ -134,30 +134,6 @@ public static class EgsImporter
             egsDataList.Add(egsData);
         }
 
-        // Dictionary<int, List<string>> createrNameOverrideDicttemp = new();
-        // foreach (EgsData egsData in egsDataList)
-        // {
-        //     bool shouldOverride = false;
-        //     for (int index = 0; index < egsData.CreaterNames.Count; index++)
-        //     {
-        //         string egsDataCreaterName = egsData.CreaterNames[index];
-        //
-        //         int indexOf = egsDataCreaterName.IndexOf('(');
-        //         if (indexOf > 0)
-        //         {
-        //             egsData.CreaterNames[index] = egsDataCreaterName[..(indexOf)];
-        //             shouldOverride = true;
-        //         }
-        //     }
-        //
-        //     if (shouldOverride)
-        //     {
-        //         createrNameOverrideDicttemp.TryAdd(egsData.CreaterId, egsData.CreaterNames);
-        //     }
-        // }
-        // await File.WriteAllTextAsync("createrNameOverrideDictt.json", JsonSerializer.Serialize(createrNameOverrideDict, Utils.JsoIndented));
-        // return;
-
         // remove duplicate items caused by EGS storing releases as separate games
         List<EgsData> toRemove = new();
         for (int i = 0; i < egsDataList.Count; i++)
@@ -282,16 +258,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 }
                 else
                 {
-                    // if (egsImporterInnerResults.Any(x =>
-                    //         x.EgsData.MusicId == egsData.MusicId && x.ResultKind == EgsImporterInnerResultKind.Matched))
-                    // {
-                    //     innerResult.ResultKind = EgsImporterInnerResultKind.AlreadyMatched;
-                    // }
-                    // else
-                    // {
                     innerResult.ResultKind = EgsImporterInnerResultKind.NoMids;
-                    // }
-
                     return;
                 }
             }
@@ -299,12 +266,12 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
         foreach (EgsImporterInnerResult egsImporterInnerResult in egsImporterInnerResults)
         {
-            bool needsPrint = false;
+            bool needsPrint;
             switch (egsImporterInnerResult.ResultKind)
             {
                 case EgsImporterInnerResultKind.Matched:
                     Console.WriteLine("matched: ");
-                    needsPrint = true;
+                    needsPrint = false;
                     break;
                 case EgsImporterInnerResultKind.MultipleMids:
                     Console.WriteLine("multiple music matches: ");
@@ -318,10 +285,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     Console.WriteLine("no artist id matches: ");
                     needsPrint = true;
                     break;
-                // case EgsImporterInnerResultKind.AlreadyMatched:
-                //     Console.WriteLine("already matched: ");
-                //     needsPrint = true;
-                //     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -348,9 +311,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoMids));
         Console.WriteLine("noAids count: " +
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoAids));
-        // Console.WriteLine("alreadyMatched count: " +
-        //                   egsImporterInnerResults.Count(x =>
-        //                       x.ResultKind == EgsImporterInnerResultKind.AlreadyMatched));
 
         await File.WriteAllTextAsync($"{folder}\\noMids.json",
             JsonSerializer.Serialize(
@@ -411,5 +371,4 @@ public enum EgsImporterInnerResultKind
     MultipleMids,
     NoMids,
     Matched,
-    // AlreadyMatched
 }
