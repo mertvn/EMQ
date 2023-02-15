@@ -40,7 +40,7 @@
             <td>@rq.type</td>
             <td>@rq.is_video</td>
             <td>@rq.submitted_by</td>
-            <td>@rq.submitted_on.ToUniversalTime().ToString("s")</td>
+            <td>@rq.submitted_on.ToString("s")</td>
             <td style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
                 @rq.status
             </td>
