@@ -62,10 +62,6 @@ public class Label
         {
             validSources = validSources.Except(exclude.SelectMany(x => x.VnUrls)).ToList();
         }
-        else
-        {
-            validSources.AddRange(include.SelectMany(x => x.VnUrls));
-        }
 
         return validSources;
     }
