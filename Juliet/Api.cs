@@ -7,7 +7,6 @@ using System.Text.Json;
 using Juliet.Model.Param;
 using Juliet.Model.Response;
 using Juliet.Model.VNDBObject;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Juliet;
 
@@ -130,7 +129,7 @@ public static class Api
 
             string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid zzz
             // TODO
-            var dict = new Dictionary<string, dynamic>()
+            var dict = new Dictionary<string, object>()
             {
                 { "user", param.User },
                 { "fields", string.Join(", ", param.Fields.Select(x => x.GetDescription())) },
@@ -170,7 +169,84 @@ public static class Api
             var res = await Send<ResPOST<ResPOST_ulist>>(req);
             if (res != null)
             {
-                Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters));
+                Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters,
+                    new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+                final.Add(res);
+                more = res.More;
+                if (res.More)
+                {
+                    vndbId = res.Results.Last().Id;
+                }
+            }
+            else
+            {
+                more = false;
+            }
+        } while (param.Exhaust && more);
+
+        return final;
+    }
+
+    public static async Task<List<ResPOST<ResPOST_vn>>?> POST_vn(ParamPOST_vn param)
+    {
+        var final = new List<ResPOST<ResPOST_vn>>();
+
+        string vndbId = "v1"; // pagination by id should be faster for this type of request
+        // int page = 0;
+        bool more;
+        do
+        {
+            //  page += 1;
+
+            string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid zzz
+            // TODO
+            var dict = new Dictionary<string, object>()
+            {
+                { "fields", string.Join(", ", param.Fields.Select(x => x.GetDescription())) },
+                { "normalized_filters", param.NormalizedFilters },
+                { "compact_filters", param.CompactFilters },
+                { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
+                //  { "page", page },
+            };
+
+            if (!string.IsNullOrWhiteSpace(param.User))
+            {
+                dict.Add("user", param.User);
+            }
+
+            string filters = "";
+            if (param.Filters != null)
+            {
+                filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
+                dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+            }
+            else
+            {
+                dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
+            }
+
+            string json = JsonSerializer.Serialize(dict,
+                new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+            Console.WriteLine("json:" + json);
+
+            var req = new HttpRequestMessage
+            {
+                RequestUri = new Uri("vn", UriKind.Relative),
+                Method = HttpMethod.Post,
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+
+            if (!string.IsNullOrWhiteSpace(param.APIToken))
+            {
+                req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
+            }
+
+            var res = await Send<ResPOST<ResPOST_vn>>(req);
+            if (res != null)
+            {
+                Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters,
+                    new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
                 final.Add(res);
                 more = res.More;

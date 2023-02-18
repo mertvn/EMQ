@@ -18,5 +18,5 @@ public class ResPOST<T>
     public string? CompactFilters { get; set; }
 
     [JsonPropertyName("normalized_filters")]
-    public List<dynamic>? NormalizedFilters { get; set; }
+    public List<object>? NormalizedFilters { get; set; }
 }

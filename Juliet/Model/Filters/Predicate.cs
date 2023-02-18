@@ -2,7 +2,7 @@
 
 public class Predicate : Query
 {
-    public Predicate(FilterField name, FilterOperator @operator, dynamic value)
+    public Predicate(FilterField name, FilterOperator @operator, object value)
     {
         Name = name;
         Operator = @operator;
@@ -16,5 +16,5 @@ public class Predicate : Query
     /// <summary>
     /// <see cref="Query"/> or field_specific_json_value
     /// </summary>
-    public dynamic Value { get; init; }
+    public object Value { get; init; }
 }

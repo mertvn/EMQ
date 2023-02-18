@@ -2,6 +2,6 @@
 
 namespace Juliet.Model.Param;
 
-public class ParamPOST_ulist : ParamPOST<FieldPOST_ulist>
+public class ParamPOST_vn : ParamPOST<FieldPOST_vn>
 {
 }

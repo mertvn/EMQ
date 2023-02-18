@@ -6,4 +6,7 @@ public enum FilterField
 {
     [Description("label")]
     Label,
+
+    [Description("search")]
+    Search
 }

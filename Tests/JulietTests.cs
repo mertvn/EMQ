@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Juliet.Model.Filters;
@@ -105,5 +106,20 @@ public class JulietTests
         Console.WriteLine(JsonSerializer.Serialize(res));
 
         Assert.That(res!.First().Results.Count > 1);
+    }
+
+    [Test]
+    public async Task Test_POST_vn()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
+            Filters = new Combinator(CombinatorKind.Or,
+                new List<Query>() { new Predicate(FilterField.Search, FilterOperator.Equal, "シャマナシャマナ ～月とこころと太陽の魔法～") })
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Id == "v540");
     }
 }
