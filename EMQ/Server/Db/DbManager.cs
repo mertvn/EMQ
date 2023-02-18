@@ -1494,4 +1494,48 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
 
         return ret.OrderBy(x => x.Id).ToList();
     }
+
+    public static async Task<List<int>> FindArtistIdsByArtistNames(List<string> artistNames)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            List<string> createrNames = artistNames.ToList();
+            foreach (string createrName in artistNames)
+            {
+                for (int index = 1; index < createrName.Length; index++)
+                {
+                    string name = createrName;
+                    name = name.Insert(index, " ");
+                    createrNames.Add(name);
+                }
+            }
+
+            HashSet<int> aIds = new();
+            foreach (string createrName in createrNames)
+            {
+                var song = new Song
+                {
+                    Artists = new List<SongArtist>
+                    {
+                        new() { Titles = new List<Title> { new() { LatinTitle = createrName } } }
+                    }
+                };
+                var artist = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
+                if (artist != null)
+                {
+                    aIds.Add(artist.Id);
+                }
+
+                song.Artists.Single().Titles.Single().LatinTitle = "";
+                song.Artists.Single().Titles.Single().NonLatinTitle = createrName;
+                var artist2 = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
+                if (artist2 != null)
+                {
+                    aIds.Add(artist2.Id);
+                }
+            }
+
+            return aIds.ToList();
+        }
+    }
 }

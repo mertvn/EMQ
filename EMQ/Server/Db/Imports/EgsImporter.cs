@@ -100,7 +100,11 @@ public static class EgsImporter
                 "https://vndb.org/v273",
                 "https://vndb.org/v1708",
                 "https://vndb.org/v827",
-                "https://vndb.org/v1060"
+                "https://vndb.org/v1060",
+                "https://vndb.org/v2375",
+                "https://vndb.org/v6846",
+                "https://vndb.org/v1852",
+                "https://vndb.org/v4329"
             };
             if (blacklist.Contains(gameVndbUrl))
             {
@@ -180,41 +184,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/");
 
                 // egs stores names without spaces, vndb stores them with spaces; brute-force conversion
-                List<string> createrNames = egsData.CreaterNames.ToList();
-                foreach (string createrName in egsData.CreaterNames)
-                {
-                    for (int index = 1; index < createrName.Length; index++)
-                    {
-                        string name = createrName;
-                        name = name.Insert(index, " ");
-                        createrNames.Add(name);
-                    }
-                }
-
-                HashSet<int> aIds = new();
-                foreach (string createrName in createrNames)
-                {
-                    var song = new Song
-                    {
-                        Artists = new List<SongArtist>
-                        {
-                            new() { Titles = new List<Title> { new() { LatinTitle = createrName } } }
-                        }
-                    };
-                    var artist = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
-                    if (artist != null)
-                    {
-                        aIds.Add(artist.Id);
-                    }
-
-                    song.Artists.Single().Titles.Single().LatinTitle = "";
-                    song.Artists.Single().Titles.Single().NonLatinTitle = createrName;
-                    var artist2 = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
-                    if (artist2 != null)
-                    {
-                        aIds.Add(artist2.Id);
-                    }
-                }
+                var aIds = await DbManager.FindArtistIdsByArtistNames(egsData.CreaterNames);
 
                 if (!aIds.Any())
                 {
