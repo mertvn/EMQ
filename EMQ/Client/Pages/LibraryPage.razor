@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
@@ -83,10 +84,10 @@
 
 <div id="songsWrapper">
     <div>
-        <select id="SongSelectionKind" @bind="LibrarySongFilter" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
+        <select id="SongSelectionKind" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
             @foreach (LibrarySongFilterKind librarySongFilter in Enum.GetValues<LibrarySongFilterKind>())
             {
-                <option value="@librarySongFilter">@librarySongFilter</option>
+                <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
             }
         </select>
         <label for="SongSelectionKind">Link filter</label>

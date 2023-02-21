@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http.Json;
@@ -19,8 +20,11 @@ public partial class LibraryPage
 {
     public enum LibrarySongFilterKind
     {
+        [Description("All")]
         All,
+        [Description("Missing video or sound link")]
         MissingVideoOrSound,
+        [Description("Missing both links")]
         MissingBoth
     }
 
@@ -189,8 +193,12 @@ public partial class LibraryPage
         StateHasChanged();
     }
 
-    private void OnLibrarySongFilterChanged(ChangeEventArgs arg)
+    private async void OnLibrarySongFilterChanged(ChangeEventArgs arg)
     {
         LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
+
+        // count doesn't update correctly unless we do this (???)
+        await Task.Delay(50);
+        StateHasChanged();
     }
 }
