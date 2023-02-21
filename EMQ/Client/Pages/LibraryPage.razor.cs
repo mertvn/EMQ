@@ -18,23 +18,6 @@ namespace EMQ.Client.Pages;
 
 public partial class LibraryPage
 {
-    public enum LibrarySongFilterKind
-    {
-        [Description("All")]
-        All,
-        [Description("Missing video or sound link")]
-        MissingVideoOrSound,
-        [Description("Missing both links")]
-        MissingBoth
-    }
-
-    public class AddSongLinkModel
-    {
-        [Required]
-        [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
-        public string Url { get; set; } = "";
-    }
-
     private AddSongLinkModel _addSongLinkModel = new();
 
     private ReviewQueueComponent? _reviewQueueComponent { get; set; }
@@ -56,6 +39,27 @@ public partial class LibraryPage
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
 
     public int VisibleSongsCount { get; set; }
+
+    // https://github.com/dotnet/aspnetcore/issues/22159#issuecomment-635427175
+    private TaskCompletionSource<bool>? _scheduledRenderTcs;
+
+    private async Task StateHasChangedAsync()
+    {
+        if (_scheduledRenderTcs == null)
+        {
+            // No render is scheduled, so schedule one now
+            var tcs = _scheduledRenderTcs = new TaskCompletionSource<bool>();
+            await Task.Yield();
+            StateHasChanged();
+            _scheduledRenderTcs = null;
+            tcs.SetResult(true);
+        }
+        else
+        {
+            // Just return the task corresponding to the existing scheduled render
+            await _scheduledRenderTcs.Task;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -198,7 +202,25 @@ public partial class LibraryPage
         LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
 
         // count doesn't update correctly unless we do this (???)
-        await Task.Delay(50);
-        StateHasChanged();
+        await StateHasChangedAsync();
     }
+}
+
+public enum LibrarySongFilterKind
+{
+    [Description("All")]
+    All,
+
+    [Description("Missing video or sound link")]
+    MissingVideoOrSound,
+
+    [Description("Missing both links")]
+    MissingBoth
+}
+
+public class AddSongLinkModel
+{
+    [Required]
+    [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
+    public string Url { get; set; } = "";
 }
