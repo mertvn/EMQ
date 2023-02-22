@@ -67,6 +67,7 @@
         <Blazorise.TabPanel Name="TabVndbAdvsearch">
             <p>Enter either full VNDB search URL or just the f parameter. Only VN search is supported at the moment.</p>
             <p>Example: "https://vndb.org/v?q=&ch=&f=023gjaN3830X1o&s=j4w" or "023gjaN3830X1o" </p>
+            <p>Important: Add a Staff->Role=Vocals filter on VNDB to search faster and less wastefully. Example: "https://vndb.org/v?q=&ch=&f=0280HN385wsongs-".</p>
             <input @bind="VndbAdvsearchStr" type="text" name="VndbAdvsearchStr" style="margin: 5px"/><br/>
             <button id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr">
                 Fetch songs

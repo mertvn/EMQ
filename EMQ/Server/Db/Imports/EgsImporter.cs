@@ -90,6 +90,7 @@ public static class EgsImporter
 
             gameVndbUrl = gameVndbUrl.ToVndbUrl();
 
+            // todo extract to file
             var blacklist = new List<string>
             {
                 "https://vndb.org/v1141",
@@ -115,6 +116,9 @@ public static class EgsImporter
                 "https://vndb.org/v473",
                 "https://vndb.org/v10020",
                 "https://vndb.org/v22505",
+                "https://vndb.org/v12849",
+                "https://vndb.org/v67",
+                "https://vndb.org/v68",
             };
             if (blacklist.Contains(gameVndbUrl))
             {
