@@ -123,11 +123,11 @@ public static class Api
         var final = new List<ResPOST<ResPOST_ulist>>();
 
         string vndbId = "v1"; // pagination by id should be faster for this type of request
-        // int page = 0;
+        int page = 0;
         bool more;
         do
         {
-            //  page += 1;
+            page += 1;
 
             string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid zzz
             // TODO
@@ -138,7 +138,6 @@ public static class Api
                 { "normalized_filters", param.NormalizedFilters },
                 { "compact_filters", param.CompactFilters },
                 { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
-                //  { "page", page },
             };
 
             string filters = "";
@@ -147,6 +146,7 @@ public static class Api
                 // todo
                 filters = param.RawFilters;
                 dict.Add("filters", filters);
+                dict.Add("page", page);
             }
             else
             {
@@ -204,11 +204,11 @@ public static class Api
         var final = new List<ResPOST<ResPOST_vn>>();
 
         string vndbId = "v1"; // pagination by id should be faster for this type of request
-        // int page = 0;
+        int page = 0;
         bool more;
         do
         {
-            //  page += 1;
+            page += 1;
 
             string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid zzz
             // TODO
@@ -218,7 +218,6 @@ public static class Api
                 { "normalized_filters", param.NormalizedFilters },
                 { "compact_filters", param.CompactFilters },
                 { "results", param.Exhaust ? Constants.MaxResultsPerPage : param.ResultsPerPage },
-                //  { "page", page },
             };
 
             if (!string.IsNullOrWhiteSpace(param.User))
@@ -232,6 +231,7 @@ public static class Api
                 // todo
                 filters = param.RawFilters;
                 dict.Add("filters", filters);
+                dict.Add("page", page);
             }
             else
             {
