@@ -30,9 +30,14 @@ public class GGVCImporter
             foreach (string filePath in filePaths)
             {
                 string fileName = Path.GetFileName(filePath);
-                if (!fileName.StartsWith("【"))
+                if (!fileName.StartsWith("【") ||
+                    fileName.ToLowerInvariant().Contains("mix") ||
+                    fileName.ToLowerInvariant().Contains("arrange") ||
+                    fileName.ToLowerInvariant().Contains("アレンジ")||
+                    fileName.ToLowerInvariant().Contains("acoustic")||
+                    fileName.ToLowerInvariant().Contains("ver."))
                 {
-                    // Console.WriteLine("skipping: " + fileName);
+                    Console.WriteLine("skipping: " + fileName);
                     continue;
                 }
 
@@ -66,7 +71,7 @@ public class GGVCImporter
                 var tfile = TagLib.File.Create(filePath);
                 string? metadataSources = tfile.Tag.Album;
                 string? metadataTitle = tfile.Tag.Title;
-                string[]? metadataArtists = tfile.Tag.Performers.Concat(tfile.Tag.AlbumArtists).ToArray();
+                string[] metadataArtists = tfile.Tag.Performers.Concat(tfile.Tag.AlbumArtists).ToArray();
 
                 if (!string.IsNullOrWhiteSpace(metadataSources))
                 {
@@ -90,6 +95,11 @@ public class GGVCImporter
                 };
                 ggvcSongs.Add(ggvcSong);
             }
+        }
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
         }
 
         var ggvcInnerResults = new ConcurrentBag<GGVCInnerResult>();
@@ -231,7 +241,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             new ConcurrentBag<GGVCInnerResult>(ggvcInnerResults.Where(x =>
                 !x.GGVCSong.Path.Contains("Galgame Vocal Collection [EX]")));
 
-        const string folder = "C:\\emq\\ggvc2";
+        const string folder = "C:\\emq\\ggvc3";
         await File.WriteAllTextAsync($"{folder}\\noSources.json",
             JsonSerializer.Serialize(
                 ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoSources),

@@ -1074,29 +1074,37 @@ public static class DbManager
 
     public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy)
     {
-        int rqId;
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        try
         {
-            var rq = new ReviewQueue()
+            int rqId;
+            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
-                music_id = mId,
-                url = songLink.Url,
-                type = (int)songLink.Type,
-                is_video = songLink.IsVideo,
-                submitted_by = submittedBy,
-                submitted_on = DateTime.UtcNow,
-                status = (int)ReviewQueueStatus.Pending,
-                reason = null
-            };
+                var rq = new ReviewQueue()
+                {
+                    music_id = mId,
+                    url = songLink.Url,
+                    type = (int)songLink.Type,
+                    is_video = songLink.IsVideo,
+                    submitted_by = submittedBy,
+                    submitted_on = DateTime.UtcNow,
+                    status = (int)ReviewQueueStatus.Pending,
+                    reason = null
+                };
 
-            rqId = await connection.InsertAsync(rq);
-            if (rqId > 0)
-            {
-                Console.WriteLine($"Inserted ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
+                rqId = await connection.InsertAsync(rq);
+                if (rqId > 0)
+                {
+                    Console.WriteLine($"Inserted ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
+                }
             }
-        }
 
-        return rqId;
+            return rqId;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return -1;
+        }
     }
 
     public static async Task<string> ExportSong()
@@ -1109,15 +1117,7 @@ public static class DbManager
     {
         var songs = await GetRandomSongs(int.MaxValue, true);
 
-        var songLite = songs.Select(song => new SongLite
-        {
-            Titles = song.Titles,
-            Links = song.Links,
-            SourceVndbIds = song.Sources.SelectMany(songSource =>
-                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
-                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
-            ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
-        }).ToList();
+        var songLite = songs.Select(song => Song.ToSongLite(song)).ToList();
 
         foreach (SongLite sl in songLite)
         {
@@ -1536,6 +1536,42 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
 
             return aIds.ToList();
+        }
+    }
+
+    public static async Task<List<int>> FindMidsWithSoundLinks()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var mids = (await connection.QueryAsync<int>("SELECT * FROM music_external_link where is_video = false"))
+                .ToList();
+            return mids;
+        }
+    }
+
+    public static async Task<IEnumerable<Song>> FindSongsByVndbUrl(string vndbUrl)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sqlMusicIds =
+                $@"SELECT DISTINCT ON (m.id) m.id FROM music m
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id";
+
+            var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
+            queryMusicIds.Append($@" AND msel.url = {vndbUrl}");
+
+            var mIds = (await queryMusicIds.QueryAsync<int>()).ToList();
+
+            List<Song> songs = new();
+            foreach (int mId in mIds)
+            {
+                var song = await SelectSongs(new Song() { Id = mId });
+                songs.AddRange(song);
+            }
+
+            return songs;
         }
     }
 }

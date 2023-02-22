@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -27,6 +29,19 @@ public class Song
 
     [JsonIgnore]
     public List<string> ProducerIds { get; set; } = new();
+
+    public static SongLite ToSongLite(Song song)
+    {
+        return new SongLite
+        {
+            Titles = song.Titles,
+            Links = song.Links,
+            SourceVndbIds = song.Sources.SelectMany(songSource =>
+                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
+                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
+            ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
+        };
+    }
 }
 
 public enum SongType

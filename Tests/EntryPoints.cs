@@ -74,6 +74,7 @@ public class EntryPoints
     }
 
     // music ids can change between vndb imports, so this doesn't work correctly right now
+    // todo add songlite to rq
     // [Test, Explicit]
     // public async Task ImportReviewQueue()
     // {
@@ -86,7 +87,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(1, 11).ToArray();
+        var rqIds = Enumerable.Range(9628, 1778).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -115,8 +116,6 @@ public class EntryPoints
         var client = new HttpClient();
 
         int dlCount = 0;
-        const int waitMs = 5000;
-
         foreach (var songLite in songLites)
         {
             foreach (var link in songLite.Links)
@@ -136,12 +135,129 @@ public class EntryPoints
                     }
 
                     dlCount += 1;
-                    await Task.Delay(waitMs);
+                    await Task.Delay(5000);
                 }
             }
         }
 
         Console.WriteLine($"Downloaded {dlCount} files.");
+    }
+
+    [Test, Explicit]
+    public async Task ImportGGVC()
+    {
+        await GGVCImporter.ImportGGVC();
+    }
+
+    [Test, Explicit]
+    public async Task UploadGGVCMatched()
+    {
+        var ggvcInnerResults =
+            JsonSerializer.Deserialize<List<GGVCInnerResult>>(
+                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\matched.json"),
+                Utils.JsoIndented)!;
+
+        var uploaded =
+            JsonSerializer.Deserialize<List<Uploadable>>(
+                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                Utils.JsoIndented)!;
+
+        int oldCount = uploaded.Count;
+        var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
+
+        for (int index = 0; index < ggvcInnerResults.Count; index++)
+        {
+            GGVCInnerResult ggvcInnerResult = ggvcInnerResults[index];
+            var uploadable = new Uploadable
+            {
+                Path = ggvcInnerResult.GGVCSong.Path, MId = ggvcInnerResult.mIds.Single()
+            };
+
+            if (uploaded.Any(x => x.Path == ggvcInnerResult.GGVCSong.Path))
+            {
+                continue;
+            }
+
+            if (midsWithSoundLinks.Any(x => x == uploadable.MId))
+            {
+                if (uploaded.Count > oldCount)
+                {
+                    Console.WriteLine("Skipping uploadable with existing mId: " +
+                                      JsonSerializer.Serialize(uploadable, Utils.Jso));
+                }
+
+                continue;
+            }
+
+            if (uploaded.Count - oldCount >= 100)
+            {
+                break;
+            }
+
+            await Task.Delay(20000);
+
+            string catboxUrl = await CatboxUploader.Upload(uploadable);
+            Console.WriteLine(catboxUrl);
+            if (!catboxUrl.EndsWith(".mp3"))
+            {
+                break;
+            }
+
+            uploadable.ResultUrl = catboxUrl;
+            var songLite = Song.ToSongLite((await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single());
+            uploadable.SongLite = songLite;
+            uploaded.Add(uploadable);
+
+            await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded.json",
+                JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+        }
+
+        await File.WriteAllTextAsync($"C:\\emq\\ggvc2\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
+            JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+
+        Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
+    }
+
+    [Test, Explicit]
+    public async Task SubmitUploadedJsonForReview()
+    {
+        var uploaded =
+            JsonSerializer.Deserialize<List<Uploadable>>(
+                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                Utils.JsoIndented)!;
+
+        var dup = uploaded.SelectMany(x => uploaded.Where(y => y.MId == x.MId && y.ResultUrl != x.ResultUrl)).ToList();
+        await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded_dup.json",
+            JsonSerializer.Serialize(dup, Utils.JsoIndented));
+
+        var dup2 = uploaded.SelectMany(x => uploaded.Where(y => y.ResultUrl == x.ResultUrl && y.MId != x.MId)).ToList();
+        await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded_dup2.json",
+            JsonSerializer.Serialize(dup2, Utils.JsoIndented));
+
+        foreach (Uploadable uploadable in uploaded)
+        {
+            if (!string.IsNullOrWhiteSpace(uploadable.ResultUrl) && uploadable.ResultUrl.EndsWith(".mp3"))
+            {
+                if (!dup.Any(x => x.MId == uploadable.MId))
+                {
+                    var songLink = new SongLink()
+                    {
+                        Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
+                    };
+                    await DbManager.InsertReviewQueue(uploadable.MId, songLink, "GGVC");
+                }
+                else
+                {
+                    Console.WriteLine("Skipping duplicate uploadable: " +
+                                      JsonSerializer.Serialize(uploadable, Utils.Jso));
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid uploadable: " +
+                                  JsonSerializer.Serialize(uploadable, Utils.Jso));
+            }
+        }
     }
 
     // todo pgrestore pgdump tests

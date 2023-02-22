@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using EMQ.Shared.Quiz.Entities.Concrete;
 
-namespace EMQ.Server.Db;
+namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class SongLite
 {
