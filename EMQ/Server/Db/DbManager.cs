@@ -1571,6 +1571,12 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 songs.AddRange(song);
             }
 
+            // todo
+            foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
+            {
+                songSource.Categories = new List<SongSourceCategory>();
+            }
+
             return songs;
         }
     }

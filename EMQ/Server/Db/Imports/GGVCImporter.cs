@@ -172,6 +172,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                         return;
                     }
 
+                    // todo check if we already have a song link here
                     innerResult.ResultKind = GGVCInnerResultKind.Matched;
                     return;
                 }
