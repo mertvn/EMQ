@@ -28,4 +28,9 @@ public class ParamPOST<T> : Param
     public bool Exhaust { get; set; } = true;
 
     public Combinator? Filters { get; set; }
+
+    /// <summary>
+    /// VNDB advsearch filter string, takes precedence over Filters if set. (Example: "023gjaN3830X1o")
+    /// </summary>
+    public string? RawFilters { get; set; }
 }

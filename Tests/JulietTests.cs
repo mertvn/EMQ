@@ -122,4 +122,18 @@ public class JulietTests
 
         Assert.That(res!.Single().Results.Single().Id == "v540");
     }
+
+    [Test]
+    public async Task Test_POST_vn_RawFilters()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
+            RawFilters = "023gjaN3830X1o",
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Count > 17);
+    }
 }

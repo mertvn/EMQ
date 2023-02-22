@@ -5,6 +5,7 @@ using EMQ.Server.Db;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -75,5 +76,21 @@ public class LibraryController : ControllerBase
     {
         var libraryStats = await DbManager.SelectLibraryStats();
         return libraryStats;
+    }
+
+    [HttpPost]
+    [Route("FindSongsByVndbAdvSearchStr")]
+    public async Task<IEnumerable<Song>> FindSongsByVndbAdvSearchStr([FromBody] string[] req)
+    {
+        List<Song> songs = new();
+
+        var vndbUrls = req;
+        foreach (string vndbUrl in vndbUrls)
+        {
+            var song = await DbManager.FindSongsByVndbUrl(vndbUrl);
+            songs.AddRange(song);
+        }
+
+        return songs;
     }
 }

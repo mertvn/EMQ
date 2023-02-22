@@ -40,6 +40,7 @@
     <Items>
         <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+        <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
         <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
         <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
     </Items>
@@ -62,6 +63,14 @@
                                     @bind-Guess="@selectedArtistId"
                                     Callback="SelectedResultChangedA">
             </AutocompleteAComponent>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabVndbAdvsearch">
+            <p>Enter either full VNDB search URL or just the f parameter.</p>
+            <p>Example: "https://vndb.org/v?q=&ch=&f=023gjaN3830X1o&s=j4w" or "023gjaN3830X1o" </p>
+            <input @bind="VndbAdvsearchStr" type="text" name="VndbAdvsearchStr" style="margin: 5px"/><br/>
+            <button id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr">
+                Fetch songs
+            </button>
         </Blazorise.TabPanel>
         <Blazorise.TabPanel Name="TabMyList">
             @if (ClientState.Session?.VndbInfo.Labels != null)

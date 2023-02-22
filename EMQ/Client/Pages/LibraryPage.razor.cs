@@ -5,12 +5,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Blazorise.Components;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
@@ -39,6 +41,8 @@ public partial class LibraryPage
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
 
     public int VisibleSongsCount { get; set; }
+
+    public string VndbAdvsearchStr { get; set; } = "";
 
     // https://github.com/dotnet/aspnetcore/issues/22159#issuecomment-635427175
     private TaskCompletionSource<bool>? _scheduledRenderTcs;
@@ -182,6 +186,10 @@ public partial class LibraryPage
         var session = ClientState.Session;
         if (session?.VndbInfo.Labels != null)
         {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
             var req = new ReqFindSongsByLabels(session.VndbInfo.Labels);
             var res = await _client.PostAsJsonAsync("Library/FindSongsByLabels", req);
             if (res.IsSuccessStatusCode)
@@ -191,6 +199,11 @@ public partial class LibraryPage
                 {
                     CurrentSongs = content;
                 }
+            }
+
+            if (!CurrentSongs.Any())
+            {
+                NoSongsText = "No results.";
             }
         }
 
@@ -203,6 +216,45 @@ public partial class LibraryPage
 
         // count doesn't update correctly unless we do this (???)
         await StateHasChangedAsync();
+    }
+
+    private async Task OnclickButtonFetchByVndbAdvsearchStr(MouseEventArgs arg)
+    {
+        if (!string.IsNullOrWhiteSpace(VndbAdvsearchStr))
+        {
+            // accept both full urls and just the f param
+            var match = Regex.Match(VndbAdvsearchStr, "f=(.+)");
+            if (match.Success)
+            {
+                VndbAdvsearchStr = match.Groups[1].Value.Split('&')[0];
+            }
+
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
+            string[]? vndbUrls = await VndbMethods.GetVnUrlsMatchingAdvsearchStr(VndbAdvsearchStr);
+            if (vndbUrls != null && vndbUrls.Any())
+            {
+                var req = vndbUrls;
+                var res = await _client.PostAsJsonAsync("Library/FindSongsByVndbAdvsearchStr", req);
+                if (res.IsSuccessStatusCode)
+                {
+                    var content = await res.Content.ReadFromJsonAsync<List<Song>>();
+                    if (content is not null)
+                    {
+                        CurrentSongs = content;
+                    }
+                }
+            }
+
+            if (!CurrentSongs.Any())
+            {
+                NoSongsText = "No results.";
+            }
+
+            StateHasChanged();
+        }
     }
 }
 

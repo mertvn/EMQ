@@ -47,9 +47,11 @@ public static class Api
                     // case HttpStatusCode.BadGateway:
                     //     break;
                     default:
-                        Console.WriteLine("Error communicating with VNDB. res: " + JsonSerializer.Serialize(res));
-                        throw new Exception(
-                            $"Error communicating with VNDB. Status code: {res.StatusCode} {res.Content.ReadAsStringAsync()}"); // todo can't read the content
+                        string str =
+                            $"Error communicating with VNDB. Status code: {res.StatusCode:D} {res.StatusCode}, " +
+                            $"response content: {await res.Content.ReadAsStringAsync()}";
+                        Console.WriteLine(str);
+                        throw new Exception(str);
                 }
             }
         }
@@ -140,14 +142,23 @@ public static class Api
             };
 
             string filters = "";
-            if (param.Filters != null)
+            if (param.RawFilters != null)
             {
-                filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
-                dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+                // todo
+                filters = param.RawFilters;
+                dict.Add("filters", filters);
             }
             else
             {
-                dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
+                if (param.Filters != null)
+                {
+                    filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
+                    dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+                }
+                else
+                {
+                    dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
+                }
             }
 
             string json = JsonSerializer.Serialize(dict,
@@ -216,14 +227,23 @@ public static class Api
             }
 
             string filters = "";
-            if (param.Filters != null)
+            if (param.RawFilters != null)
             {
-                filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
-                dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+                // todo
+                filters = param.RawFilters;
+                dict.Add("filters", filters);
             }
             else
             {
-                dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
+                if (param.Filters != null)
+                {
+                    filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
+                    dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
+                }
+                else
+                {
+                    dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
+                }
             }
 
             string json = JsonSerializer.Serialize(dict,

@@ -8,6 +8,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.VNDBObject;
+using Juliet.Model.VNDBObject.Fields;
 
 namespace EMQ.Shared.VNDB.Business;
 
@@ -84,5 +85,15 @@ public static class VndbMethods
         });
 
         return res != null ? res.Labels : Array.Empty<VNDBLabel>();
+    }
+
+    public static async Task<string[]?> GetVnUrlsMatchingAdvsearchStr(string advsearchStr)
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id }, RawFilters = advsearchStr
+        });
+
+        return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
     }
 }
