@@ -33,11 +33,11 @@ public class VNDBStaffNotesParserTests
 
         List<string> graylist = new()
         {
-          "v1515","v2368", "v2527", "v4054" // AfterTitle contains quote
+          "v1515", "v2368", "v2527", "v4054" // AfterTitle contains quote
         };
         // @formatter:on
 
-        string date = "2023-02-19";
+        string date = "2023-02-25";
         string folder = $"C:\\emq\\vndb\\{date}";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music.json"))!;
