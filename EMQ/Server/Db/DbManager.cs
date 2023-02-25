@@ -911,8 +911,8 @@ public static class DbManager
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<(int, string, string)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3));
+            var res = (await connection.QueryAsync<(int, string, string?)>(sqlAutocompleteA))
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? ""));
             string autocomplete =
                 JsonSerializer.Serialize(res.DistinctBy(x => x), Utils.Jso);
             return autocomplete;
