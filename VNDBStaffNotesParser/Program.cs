@@ -1,14 +1,12 @@
-﻿using System.Collections;
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 namespace VNDBStaffNotesParser;
 
 public static class Program
 {
-    static void Main(string[] args)
+    internal static void Main(string[] args)
     {
         if (args.Any())
         {
@@ -58,6 +56,8 @@ public static class Program
                         "OP 1",
                         "OP 2",
                         "ED chorus, PSV OP", // YOLO
+                        "start theme",
+                        "Main menu theme:"
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -98,7 +98,11 @@ public static class Program
                         "ED A",
                         "ED B",
                         "EDs 1",
-                        "BGM, ED" // YOLO
+                        "BGM, ED", // YOLO
+                        "Sub-Ending",
+                        "Cast roll theme",
+                        "Happy end song",
+                        "credits theme"
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -131,7 +135,31 @@ public static class Program
                         "insert song #1",
                         "insert song #2",
                         "insert song #3",
-                        "H-scene song"
+                        "H-scene song",
+                        "Plus Communication song",
+                        "Plus Communication songs",
+                        "extra song",
+                        "PV Song",
+                        "Ep. 6 song",
+                        "Ep. 8 song",
+                        "Fu-Rin-Ka-Zan theme",
+                        "Iwasawa's songs",
+                        "µ-12's Theme",
+                        "Tristar Theme",
+                        "Celica Theme",
+                        "DLC song",
+                        "DLC son",
+                        "Promotion movie song",
+                        "Featured song",
+                        "Apeiria song",
+                        "Miu song",
+                        "Mashiro song",
+                        "Kuon song",
+                        "Apeiria song",
+                        "Rhythm segments song",
+                        "Uguisu route song",
+                        "anniversary songs",
+                        "Event song"
                     }.OrderByDescending(x => x).ToList()
                 }
             },

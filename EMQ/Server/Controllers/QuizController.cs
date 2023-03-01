@@ -59,7 +59,7 @@ public class QuizController : ControllerBase
         if (session is null)
         {
             // todo
-            throw new Exception();
+            throw new Exception($"Session wasn't found for token {token}");
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -262,7 +262,7 @@ public class QuizController : ControllerBase
                 }
                 else
                 {
-                    quiz.Log("Failed to prime - canceling");
+                    quiz.Log("Failed to prime quiz - canceling", isSystemMessage: true);
                     await quizManager.CancelQuiz();
                 }
             }

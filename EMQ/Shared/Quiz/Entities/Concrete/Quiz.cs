@@ -41,12 +41,17 @@ public class Quiz
     [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSources { get; set; } = new();
 
-    public void Log(string message, int playerId = -1)
+    public void Log(string message, int playerId = -1, bool isSystemMessage = false)
     {
         var quizLog = new QuizLog(Room.Id, Id, Room.QuizSettings, QuizState, playerId, message);
         QuizLog.Add(quizLog);
 
         Console.WriteLine(quizLog.ToString());
+
+        if (isSystemMessage)
+        {
+            Room.Chat.Enqueue(new ChatMessage(message));
+        }
     }
 }
 

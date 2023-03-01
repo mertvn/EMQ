@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -70,7 +70,7 @@ public class QuizManager
 
                         if (!lootingSuccess)
                         {
-                            Quiz.Log("Canceling due to looting failure");
+                            Quiz.Log("Canceling quiz due to looting failure", isSystemMessage: true);
                             await CancelQuiz();
                         }
 
