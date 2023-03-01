@@ -15,6 +15,31 @@ namespace EMQ.Server.Db.Imports;
 
 public class GGVCImporter
 {
+    public static async Task DeleteAlreadyImportedGGVCFiles()
+    {
+        var uploaded2 =
+            JsonSerializer.Deserialize<List<Uploadable>>(
+                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                Utils.JsoIndented)!;
+
+        var uploaded3 =
+            JsonSerializer.Deserialize<List<Uploadable>>(
+                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
+                Utils.JsoIndented)!;
+
+        var uploaded = uploaded2.Concat(uploaded3).ToList();
+
+        string output = "@echo off\r\n";
+        foreach (Uploadable uploadable in uploaded)
+        {
+            string path = uploadable.Path.Replace("\\\\", "\\")
+                .Replace(@"M:\[IMS][Galgame Vocal MP3 Collection 1996-2006]\", "");
+            output += $"del \"{path}\"\r\n";
+        }
+
+        await File.WriteAllTextAsync("ggvc_delete_uploaded.bat", output);
+    }
+
     public static async Task ImportGGVC()
     {
         var regex = new Regex("【(.+)】(?: )?(.+)(?: )?(?:\\[|【)(.*)(?:]|】)", RegexOptions.Compiled);
@@ -32,9 +57,12 @@ public class GGVCImporter
                 string fileName = Path.GetFileName(filePath);
                 if (!fileName.StartsWith("【") ||
                     fileName.ToLowerInvariant().Contains("mix") ||
-                    fileName.ToLowerInvariant().Contains("arrange") ||
-                    fileName.ToLowerInvariant().Contains("アレンジ")||
-                    fileName.ToLowerInvariant().Contains("acoustic")||
+                    fileName.ToLowerInvariant().Contains("ｍｉｘ") ||
+                    fileName.ToLowerInvariant().Contains("radioedit") ||
+                    fileName.ToLowerInvariant().Contains("arrang") ||
+                    fileName.ToLowerInvariant().Contains("アレンジ") ||
+                    fileName.ToLowerInvariant().Contains("acoustic") ||
+                    fileName.ToLowerInvariant().Contains("裏ver") ||
                     fileName.ToLowerInvariant().Contains("ver."))
                 {
                     Console.WriteLine("skipping: " + fileName);
@@ -102,6 +130,7 @@ public class GGVCImporter
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
         }
 
+        var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
         var ggvcInnerResults = new ConcurrentBag<GGVCInnerResult>();
         await Parallel.ForEachAsync(ggvcSongs, async (ggvcSong, _) =>
         {
@@ -172,9 +201,16 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                         return;
                     }
 
-                    // todo check if we already have a song link here
-                    innerResult.ResultKind = GGVCInnerResultKind.Matched;
-                    return;
+                    if (midsWithSoundLinks.Contains(mids.Single()))
+                    {
+                        innerResult.ResultKind = GGVCInnerResultKind.AlreadyHave;
+                        return;
+                    }
+                    else
+                    {
+                        innerResult.ResultKind = GGVCInnerResultKind.Matched;
+                        return;
+                    }
                 }
                 else
                 {
@@ -209,6 +245,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     Console.WriteLine("no source matches: ");
                     needsPrint = true;
                     break;
+                case GGVCInnerResultKind.AlreadyHave:
+                    Console.WriteLine("AlreadyHave: ");
+                    needsPrint = true;
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -236,13 +276,27 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                           ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.NoAids));
         Console.WriteLine("noSources count: " +
                           ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.NoSources));
-
-        // todo
-        ggvcInnerResults =
-            new ConcurrentBag<GGVCInnerResult>(ggvcInnerResults.Where(x =>
-                !x.GGVCSong.Path.Contains("Galgame Vocal Collection [EX]")));
+        Console.WriteLine("AlreadyHave count: " +
+                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.AlreadyHave));
 
         const string folder = "C:\\emq\\ggvc3";
+        Directory.CreateDirectory(folder);
+
+        await File.WriteAllTextAsync($"{folder}\\matched.json",
+            JsonSerializer.Serialize(
+                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.Matched),
+                Utils.JsoIndented));
+
+        await File.WriteAllTextAsync($"{folder}\\alreadyHave.json",
+            JsonSerializer.Serialize(
+                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.AlreadyHave),
+                Utils.JsoIndented));
+
+        // // todo
+        // ggvcInnerResults =
+        //     new ConcurrentBag<GGVCInnerResult>(ggvcInnerResults.Where(x =>
+        //         !x.GGVCSong.Path.Contains("Galgame Vocal Collection [EX]")));
+
         await File.WriteAllTextAsync($"{folder}\\noSources.json",
             JsonSerializer.Serialize(
                 ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoSources),
@@ -256,11 +310,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await File.WriteAllTextAsync($"{folder}\\noAids.json",
             JsonSerializer.Serialize(
                 ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoAids),
-                Utils.JsoIndented));
-
-        await File.WriteAllTextAsync($"{folder}\\matched.json",
-            JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.Matched),
                 Utils.JsoIndented));
     }
 }
@@ -294,4 +343,5 @@ public enum GGVCInnerResultKind
     MultipleMids,
     NoMids,
     Matched,
+    AlreadyHave
 }

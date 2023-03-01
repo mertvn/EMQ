@@ -87,7 +87,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(9628, 1778).ToArray();
+        var rqIds = Enumerable.Range(8, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -135,7 +135,7 @@ public class EntryPoints
                     }
 
                     dlCount += 1;
-                    await Task.Delay(5000);
+                    await Task.Delay(20000);
                 }
             }
         }
@@ -150,16 +150,22 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task DeleteAlreadyImportedGGVCFiles()
+    {
+        await GGVCImporter.DeleteAlreadyImportedGGVCFiles();
+    }
+
+    [Test, Explicit]
     public async Task UploadGGVCMatched()
     {
         var ggvcInnerResults =
             JsonSerializer.Deserialize<List<GGVCInnerResult>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\matched.json"),
+                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\matched.json"),
                 Utils.JsoIndented)!;
 
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         int oldCount = uploaded.Count;
@@ -194,25 +200,26 @@ public class EntryPoints
                 break;
             }
 
-            await Task.Delay(20000);
-
             string catboxUrl = await CatboxUploader.Upload(uploadable);
+            uploadable.ResultUrl = catboxUrl;
             Console.WriteLine(catboxUrl);
             if (!catboxUrl.EndsWith(".mp3"))
             {
-                break;
+                Console.WriteLine("invalid resultUrl: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
+                continue;
             }
 
-            uploadable.ResultUrl = catboxUrl;
             var songLite = Song.ToSongLite((await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single());
             uploadable.SongLite = songLite;
             uploaded.Add(uploadable);
 
-            await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded.json",
+            await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded.json",
                 JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+
+            await Task.Delay(20000);
         }
 
-        await File.WriteAllTextAsync($"C:\\emq\\ggvc2\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
+        await File.WriteAllTextAsync($"C:\\emq\\ggvc3\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
             JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
 
         Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
@@ -223,15 +230,15 @@ public class EntryPoints
     {
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         var dup = uploaded.SelectMany(x => uploaded.Where(y => y.MId == x.MId && y.ResultUrl != x.ResultUrl)).ToList();
-        await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded_dup.json",
+        await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded_dup.json",
             JsonSerializer.Serialize(dup, Utils.JsoIndented));
 
         var dup2 = uploaded.SelectMany(x => uploaded.Where(y => y.ResultUrl == x.ResultUrl && y.MId != x.MId)).ToList();
-        await File.WriteAllTextAsync("C:\\emq\\ggvc2\\uploaded_dup2.json",
+        await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded_dup2.json",
             JsonSerializer.Serialize(dup2, Utils.JsoIndented));
 
         foreach (Uploadable uploadable in uploaded)
