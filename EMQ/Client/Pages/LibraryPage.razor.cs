@@ -20,7 +20,7 @@ namespace EMQ.Client.Pages;
 
 public partial class LibraryPage
 {
-    private AddSongLinkModel _addSongLinkModel = new();
+    private Dictionary<int, AddSongLinkModel> _addSongLinkModel = new();
 
     private ReviewQueueComponent? _reviewQueueComponent { get; set; }
 
@@ -33,8 +33,6 @@ public partial class LibraryPage
     public string NoSongsText { get; set; } = "";
 
     public bool ShowUploadCriteria { get; set; }
-
-    public int ActiveSongId { get; set; }
 
     private string _selectedTab = "TabAutocompleteMst";
 
@@ -139,7 +137,7 @@ public partial class LibraryPage
             return;
         }
 
-        _addSongLinkModel.Url = "";
+        _addSongLinkModel[mId].Url = "";
         StateHasChanged();
 
         url = url.Trim().ToLowerInvariant();
@@ -164,21 +162,6 @@ public partial class LibraryPage
                 Console.WriteLine("Error importing song link");
             }
         }
-    }
-
-    private void ChangeActiveSong(int songId)
-    {
-        _addSongLinkModel.Url = "";
-        if (songId == ActiveSongId)
-        {
-            ActiveSongId = 0;
-        }
-        else
-        {
-            ActiveSongId = songId;
-        }
-
-        StateHasChanged();
     }
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)

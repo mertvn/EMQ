@@ -107,7 +107,9 @@
     <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
 
     <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
-        @{ VisibleSongsCount = 0; }
+        @{
+            VisibleSongsCount = 0;
+        }
         @foreach (Song song in CurrentSongs)
         {
             @if (true)
@@ -126,6 +128,12 @@
                 @if (shouldDisplay)
                 {
                     VisibleSongsCount += 1;
+
+                    if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
+                    {
+                        _addSongLinkModel[song.Id] = new AddSongLinkModel();
+                    }
+
                     // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
                     <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
                         <SongInfoCardComponent song="@song"/>
@@ -155,22 +163,16 @@
 
                             @if (!hasVideo || !hasSound)
                             {
-                                <button class="btn btn-primary" style="margin-top: 5px" @onclick="@(() => ChangeActiveSong(song.Id))" disabled="@(ClientState.Session == null)">
-                                    @UiHelpers.Bool2Text(ActiveSongId == song.Id, "Hide form", "Show form")
-                                </button>
-                                if (song.Id == ActiveSongId)
-                                {
-                                    <EditForm Model="@_addSongLinkModel" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel.Url))">
-                                        <DataAnnotationsValidator/>
+                                <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
+                                    <DataAnnotationsValidator/>
 
-                                        <div style="padding: 5px">
-                                            <label for="songUrl">Add link: </label>
-                                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel.Url"/>
-                                            <ValidationMessage For="@(() => _addSongLinkModel.Url)"/>
-                                        </div>
-                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                                    </EditForm>
-                                }
+                                    <div style="padding: 5px">
+                                        <label for="songUrl">Add link: </label>
+                                        <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
+                                        <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
+                                    </div>
+                                    <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                                </EditForm>
                             }
                         </div>
 
