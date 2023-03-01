@@ -122,6 +122,7 @@ public partial class PyramidPage
         {
             Timer.Stop();
             Timer.Elapsed -= OnTimedEvent;
+            // todo get status and change page
         }
 
         StateHasChanged();
