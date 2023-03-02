@@ -1,0 +1,2 @@
+[phases.setup]
+nixPkgs = ["...", "ffmpeg"] # Install the ffmpeg package from Nix

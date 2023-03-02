@@ -2,10 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Db;
 using EMQ.Server.Hubs;
+using EMQ.Shared.Core;
+using FFMpegCore;
 using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -124,6 +127,8 @@ static IServiceProvider CreateServices()
 
 async Task Init()
 {
+    string wwwrootFolder = app.Environment.IsDevelopment() ? "../Client/wwwroot" : "wwwroot";
+
     if (hasDb)
     {
         var serviceProvider = CreateServices();
@@ -138,8 +143,7 @@ async Task Init()
             runner.MigrateUp();
         }
 
-        string autocompleteFolder =
-            app.Environment.IsDevelopment() ? "../Client/wwwroot/autocomplete" : "wwwroot/autocomplete";
+        string autocompleteFolder = $"{wwwrootFolder}/autocomplete";
         Directory.CreateDirectory(autocompleteFolder);
 
         await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
@@ -148,6 +152,16 @@ async Task Init()
             await DbManager.SelectAutocompleteC());
         await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
             await DbManager.SelectAutocompleteA());
+    }
+
+    try
+    {
+        var mediaInfo = await FFProbe.AnalyseAsync($"{wwwrootFolder}/soft-piano-100-bpm-121529.mp3");
+        Console.WriteLine(JsonSerializer.Serialize(mediaInfo, Utils.JsoIndented));
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e);
     }
 }
 
