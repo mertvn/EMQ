@@ -11,7 +11,7 @@ using DapperQueryBuilder;
 using EMQ.Shared.Core;
 using Npgsql;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.GGVC;
 
 public class GGVCImporter
 {

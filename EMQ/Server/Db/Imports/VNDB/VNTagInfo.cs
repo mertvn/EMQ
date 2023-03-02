@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.VNDB;
 
 public class VNTagInfo
 {

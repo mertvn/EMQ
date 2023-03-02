@@ -11,7 +11,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Npgsql;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.EGS;
 
 public static class EgsImporter
 {

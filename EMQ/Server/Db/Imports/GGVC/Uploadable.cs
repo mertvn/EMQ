@@ -1,6 +1,6 @@
 ﻿using EMQ.Shared.Quiz.Entities.Concrete;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.GGVC;
 
 public struct Uploadable
 {

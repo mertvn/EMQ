@@ -8,7 +8,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Newtonsoft.Json;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.VNDB;
 
 public static class VndbImporter
 {

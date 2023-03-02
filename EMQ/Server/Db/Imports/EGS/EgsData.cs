@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.EGS;
 
 public readonly struct EgsData
 {

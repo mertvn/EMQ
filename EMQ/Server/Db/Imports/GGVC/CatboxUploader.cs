@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.GGVC;
 
 public static class CatboxUploader
 {

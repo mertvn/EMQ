@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using VNDBStaffNotesParser;
+﻿using VNDBStaffNotesParser;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.VNDB;
 
 public class ProcessedMusic
 {
