@@ -33,7 +33,7 @@ w
    them where they belong (check EMQ/Server/DB/Imports/VNDB/VndbImporter.cs for the correct filenames and where to put them).
 4. Run test VNDBStaffNotesParserTests.Test_Batch() (~8 seconds).
 5. Run test EntryPoints.ImportVndbData() (~7 minutes) in order to import everything but the song links.
-6. (Optional) Run test EntryPoints.ImportSongLite() (~5 seconds) in order to import the song links if you have a
+6. (Optional) Run test EntryPoints.ImportSongLite() (~15 seconds) in order to import the song links if you have a
    SongLite.json file from before. You may encounter exceptions on this step if VNDB data has been modified since you
    last imported data. Manually edit your SongLite.json file to fix any discrepancies.
 7. (Optional) Run the EGS query and run test EntryPoints.ImportEgsData() (~2 minutes) in order to import Japanese song titles.

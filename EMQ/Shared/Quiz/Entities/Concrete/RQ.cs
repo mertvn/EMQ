@@ -22,5 +22,7 @@ public class RQ
 
     public string? reason { get; set; }
 
+    public string? analysis { get; set; }
+
     public Song Song { get; set; } = new();
 }

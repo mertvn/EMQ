@@ -33,4 +33,6 @@ public class ReviewQueue
     public int status { get; set; }
 
     public string? reason { get; set; }
+
+    public string? analysis { get; set; }
 }

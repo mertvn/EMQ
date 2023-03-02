@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -50,8 +53,31 @@ public class LibraryController : ControllerBase
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     {
-        int id = await DbManager.InsertReviewQueue(req.MId, req.SongLink, req.SubmittedBy);
-        return id > 0;
+        int rqId = await DbManager.InsertReviewQueue(req.MId, req.SongLink, req.SubmittedBy, "Pending");
+
+        if (rqId > 0)
+        {
+            string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
+            bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(req.SongLink.Url));
+            if (dlSuccess)
+            {
+                var analyserResult = await MediaAnalyser.Analyse(filePath);
+
+                string analyserResultStr;
+                if (analyserResult.IsValid)
+                {
+                    analyserResultStr = "OK";
+                }
+                else
+                {
+                    analyserResultStr = string.Join(", ", analyserResult.Warnings.Select(x => x.ToString()));
+                }
+
+                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending, analysis: analyserResultStr);
+            }
+        }
+
+        return rqId > 0;
     }
 
     [HttpPost]

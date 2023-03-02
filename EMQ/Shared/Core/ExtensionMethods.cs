@@ -1,6 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Reflection;
+using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Core;
@@ -83,5 +87,29 @@ public static class ExtensionMethods
 
         throw new ArgumentException("Not found.", nameof(description));
         // return default;
+    }
+
+    public static async Task<bool> DownloadFile(this HttpClient client, string dest, Uri uri)
+    {
+        try
+        {
+            var stream = await client.GetStreamAsync(uri);
+            await using (MemoryStream ms = new())
+            {
+                await stream.CopyToAsync(ms);
+                await File.WriteAllBytesAsync(dest, ms.ToArray());
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
+    public static string LastSegment(this string input)
+    {
+        return new Uri(input).Segments.Last();
     }
 }

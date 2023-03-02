@@ -18,7 +18,8 @@ public class AddTableReview_Queue : Migration
             .WithColumn("submitted_by").AsString().NotNullable()
             .WithColumn("submitted_on").AsDateTime().NotNullable()
             .WithColumn("status").AsInt32().NotNullable()
-            .WithColumn("reason").AsString().Nullable();
+            .WithColumn("reason").AsString().Nullable()
+            .WithColumn("analysis").AsString().Nullable();
     }
 
     public override void Down()

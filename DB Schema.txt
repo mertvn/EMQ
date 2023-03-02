@@ -119,4 +119,5 @@ Table review_queue {
   submitted_on datetime
   status enum
   reason varchar
+  analysis varchar
 }

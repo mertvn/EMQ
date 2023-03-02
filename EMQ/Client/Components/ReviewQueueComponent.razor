@@ -16,6 +16,7 @@
         <th>Submitted By</th>
         <th>Submitted On</th>
         <th>Status</th>
+        <th>Analysis</th>
         <th>Reason</th>
     </tr>
     @foreach (var rq in CurrentRQs)
@@ -44,6 +45,7 @@
             <td style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
                 @rq.status
             </td>
+            <td>@rq.analysis</td>
             <td>@rq.reason</td>
         </tr>
     }

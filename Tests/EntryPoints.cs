@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using EMQ.Server;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Imports;
 using EMQ.Server.Db.Imports.EGS;
@@ -112,33 +113,32 @@ public class EntryPoints
     [Test, Explicit]
     public async Task BackupSongFilesUsingSongLite()
     {
-        string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
+        const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
+        Directory.CreateDirectory(baseDownloadDir);
+
+        const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
         var songLites =
             JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath), Utils.JsoIndented)!;
-
-        var client = new HttpClient();
 
         int dlCount = 0;
         foreach (var songLite in songLites)
         {
             foreach (var link in songLite.Links)
             {
-                var directory = "C:\\emq\\emqsongsbackup";
-                var filePath = $"{directory}\\{new Uri(link.Url).Segments.Last()}";
+                string filePath = $"{baseDownloadDir}\\{link.Url.LastSegment()}";
 
                 if (!File.Exists(filePath))
                 {
-                    var stream = await client.GetStreamAsync(link.Url);
-
-                    await using (MemoryStream ms = new())
+                    bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(link.Url));
+                    if (success)
                     {
-                        await stream.CopyToAsync(ms);
-                        Directory.CreateDirectory(directory);
-                        await File.WriteAllBytesAsync(filePath, ms.ToArray());
+                        dlCount += 1;
+                        await Task.Delay(20000);
                     }
-
-                    dlCount += 1;
-                    await Task.Delay(20000);
+                    else
+                    {
+                        return;
+                    }
                 }
             }
         }

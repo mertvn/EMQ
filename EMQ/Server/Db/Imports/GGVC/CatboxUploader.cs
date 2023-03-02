@@ -11,11 +11,6 @@ public static class CatboxUploader
 {
     private const string ApiUrl = "https://catbox.moe/user/api.php";
 
-    private static readonly HttpClient s_client = new(new HttpClientHandler { UseProxy = false })
-    {
-        DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("apparentlyweneedthis", "6.9") } }
-    };
-
     public static async Task<string> Upload(Uploadable uploadable)
     {
         Dictionary<string, string> strings = new() { { "reqtype", "fileupload" } };
@@ -41,7 +36,7 @@ public static class CatboxUploader
         var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(filepath));
         formContent.Add(fileContent, "fileToUpload", filename);
 
-        HttpResponseMessage response = await s_client.PostAsync(url, formContent);
+        HttpResponseMessage response = await ServerUtils.Client.PostAsync(url, formContent);
         return response;
     }
 }

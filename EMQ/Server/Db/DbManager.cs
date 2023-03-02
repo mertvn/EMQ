@@ -1074,7 +1074,8 @@ public static class DbManager
         return melId;
     }
 
-    public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy)
+    public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy,
+        string? analysis = null)
     {
         try
         {
@@ -1090,8 +1091,13 @@ public static class DbManager
                     submitted_by = submittedBy,
                     submitted_on = DateTime.UtcNow,
                     status = (int)ReviewQueueStatus.Pending,
-                    reason = null
+                    reason = null,
                 };
+
+                if (!string.IsNullOrWhiteSpace(analysis))
+                {
+                    rq.analysis = analysis;
+                }
 
                 rqId = await connection.InsertAsync(rq);
                 if (rqId > 0)
@@ -1245,6 +1251,7 @@ public static class DbManager
                     submitted_on = reviewQueue.submitted_on,
                     status = (ReviewQueueStatus)reviewQueue.status,
                     reason = reviewQueue.reason,
+                    analysis = reviewQueue.analysis,
                     Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single()
                 };
                 rqs.Add(rq);
@@ -1254,7 +1261,8 @@ public static class DbManager
         return rqs.OrderBy(x => x.id);
     }
 
-    public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus)
+    public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus,
+        string? reason = null, string? analysis = null)
     {
         int melId = -1;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -1292,6 +1300,17 @@ public static class DbManager
             }
 
             rq.status = (int)requestedStatus;
+
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                rq.reason = reason;
+            }
+
+            if (!string.IsNullOrWhiteSpace(analysis))
+            {
+                rq.analysis = analysis;
+            }
+
             await connection.UpdateAsync(rq);
             Console.WriteLine($"Updated ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
         }
