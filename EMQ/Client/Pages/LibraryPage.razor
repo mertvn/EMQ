@@ -36,161 +36,163 @@
     </ul>
 </div>
 
-<Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
-    <Items>
-        <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
-        <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
-        <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
-        <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
-        <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
-    </Items>
-    <Content>
-        <Blazorise.TabPanel Name="TabAutocompleteMst">
-            @* todo FreeTyping should be false after the artist autocomplete changes *@
-            <GuessInputComponent Placeholder="Enter VN title here"
-                                 FreeTyping="true"
-                                 IsDisabled="false"
-                                 IsQuizPage="false"
-                                 @bind-Guess="@selectedMusicSourceTitle"
-                                 Callback="SelectedResultChangedMst">
-            </GuessInputComponent>
-        </Blazorise.TabPanel>
-        <Blazorise.TabPanel Name="TabAutocompleteA">
-            <AutocompleteAComponent Placeholder="Enter artist name here"
-                                    FreeTyping="true"
-                                    IsDisabled="false"
-                                    IsQuizPage="false"
-                                    @bind-Guess="@selectedArtistId"
-                                    Callback="SelectedResultChangedA">
-            </AutocompleteAComponent>
-        </Blazorise.TabPanel>
-        <Blazorise.TabPanel Name="TabVndbAdvsearch">
-            <p>Enter either full VNDB search URL or just the f parameter. Only VN search is supported at the moment.</p>
-            <p>Example: "https://vndb.org/v?q=&ch=&f=023gjaN3830X1o&s=j4w" or "023gjaN3830X1o" </p>
-            <p>Important: Add a Staff->Role=Vocals filter on VNDB to search faster and less wastefully. Example: "https://vndb.org/v?q=&ch=&f=0280HN385wsongs-".</p>
-            <input @bind="VndbAdvsearchStr" type="text" name="VndbAdvsearchStr" style="margin: 5px"/><br/>
-            <button id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr">
-                Fetch songs
-            </button>
-        </Blazorise.TabPanel>
-        <Blazorise.TabPanel Name="TabMyList">
-            @if (ClientState.Session?.VndbInfo.Labels != null)
-            {
-                   @* todo stats *@
-                <button id="ButtonFetchMyList" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchMyList">
-                    Fetch songs from my list
+<div style="border: 1px solid #ddd; padding: 5px">
+    <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+        <Items>
+            <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+            <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
+            <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
+            <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
+        </Items>
+        <Content>
+            <Blazorise.TabPanel Name="TabAutocompleteMst">
+                @* todo FreeTyping should be false after the artist autocomplete changes *@
+                <GuessInputComponent Placeholder="Enter VN title here"
+                                     FreeTyping="true"
+                                     IsDisabled="false"
+                                     IsQuizPage="false"
+                                     @bind-Guess="@selectedMusicSourceTitle"
+                                     Callback="SelectedResultChangedMst">
+                </GuessInputComponent>
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabAutocompleteA">
+                <AutocompleteAComponent Placeholder="Enter artist name here"
+                                        FreeTyping="true"
+                                        IsDisabled="false"
+                                        IsQuizPage="false"
+                                        @bind-Guess="@selectedArtistId"
+                                        Callback="SelectedResultChangedA">
+                </AutocompleteAComponent>
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabVndbAdvsearch">
+                <p>Enter either full VNDB search URL or just the f parameter. Only VN search is supported at the moment.</p>
+                <p>Example: "https://vndb.org/v?q=&ch=&f=023gjaN3830X1o&s=j4w" or "023gjaN3830X1o" </p>
+                <p>Important: Add a Staff->Role=Vocals filter on VNDB to search faster and less wastefully. Example: "https://vndb.org/v?q=&ch=&f=0280HN385wsongs-".</p>
+                <input @bind="VndbAdvsearchStr" type="text" name="VndbAdvsearchStr" style="margin: 5px"/><br/>
+                <button id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr">
+                    Fetch songs
                 </button>
-            }
-            else
-            {
-                <p>Your VNDB info is not set.</p>
-            }
-        </Blazorise.TabPanel>
-        <Blazorise.TabPanel Name="TabStats">
-            <LibraryStatsComponent></LibraryStatsComponent>
-        </Blazorise.TabPanel>
-    </Content>
-</Blazorise.Tabs>
-
-<div id="songsWrapper">
-    <div>
-        <select id="SongSelectionKind" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
-            @foreach (LibrarySongFilterKind librarySongFilter in Enum.GetValues<LibrarySongFilterKind>())
-            {
-                <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
-            }
-        </select>
-        <label for="SongSelectionKind">Link filter</label>
-        <br/>
-    </div>
-    @* todo: count shows 0 after searching by vn, but not when searching by artist or MyList (???) *@
-    <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
-
-    <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px">
-        @{
-            VisibleSongsCount = 0;
-        }
-        @foreach (Song song in CurrentSongs)
-        {
-            @if (true)
-            {
-                bool hasVideo = song.Links.Any(x => x.IsVideo);
-                bool hasSound = song.Links.Any(x => !x.IsVideo);
-
-                bool shouldDisplay = LibrarySongFilter switch
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabMyList">
+                @if (ClientState.Session?.VndbInfo.Labels != null)
                 {
-                    LibrarySongFilterKind.All => true,
-                    LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
-                    LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
-                    _ => throw new ArgumentOutOfRangeException()
-                    };
-
-                @if (shouldDisplay)
+                   @* todo stats *@
+                    <button id="ButtonFetchMyList" class="btn btn-primary" type="button" style="margin: 5px" @onclick="OnclickButtonFetchMyList">
+                        Fetch songs from my list
+                    </button>
+                }
+                else
                 {
-                    VisibleSongsCount += 1;
+                    <p>Your VNDB info is not set.</p>
+                }
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabStats">
+                <LibraryStatsComponent></LibraryStatsComponent>
+            </Blazorise.TabPanel>
+        </Content>
+    </Blazorise.Tabs>
 
-                    if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
+    <div id="songsWrapper" style="border: 1px solid #ddd;">
+        <div>
+            <select id="SongSelectionKind" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
+                @foreach (LibrarySongFilterKind librarySongFilter in Enum.GetValues<LibrarySongFilterKind>())
+                {
+                    <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
+                }
+            </select>
+            <label for="SongSelectionKind">Link filter</label>
+            <br/>
+        </div>
+        @* todo: count shows 0 after searching by vn, but not when searching by artist or MyList (???) *@
+        <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
+
+        <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
+            @{
+                VisibleSongsCount = 0;
+            }
+            @foreach (Song song in CurrentSongs)
+            {
+                @if (true)
+                {
+                    bool hasVideo = song.Links.Any(x => x.IsVideo);
+                    bool hasSound = song.Links.Any(x => !x.IsVideo);
+
+                    bool shouldDisplay = LibrarySongFilter switch
                     {
-                        _addSongLinkModel[song.Id] = new AddSongLinkModel();
-                    }
+                        LibrarySongFilterKind.All => true,
+                        LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
+                        LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
+                        _ => throw new ArgumentOutOfRangeException()
+                        };
 
-                    // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-                    <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
-                        <SongInfoCardComponent song="@song"/>
-                        <div style="padding: 16px">
-                            <div>
-                                Video link:
-                                @if (hasVideo)
+                    @if (shouldDisplay)
+                    {
+                        VisibleSongsCount += 1;
+
+                        if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
+                        {
+                            _addSongLinkModel[song.Id] = new AddSongLinkModel();
+                        }
+
+                        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+                        <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
+                            <SongInfoCardComponent song="@song"/>
+                            <div style="padding: 16px">
+                                <div>
+                                    Video link:
+                                    @if (hasVideo)
+                                    {
+                                        <span style="color: green">✓</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: red">✘</span>
+                                    }
+                                </div>
+                                <div>
+                                    Sound link:
+                                    @if (hasSound)
+                                    {
+                                        <span style="color: green">✓</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: red">✘</span>
+                                    }
+                                </div>
+
+                                @if (!hasVideo || !hasSound)
                                 {
-                                    <span style="color: green">✓</span>
-                                }
-                                else
-                                {
-                                    <span style="color: red">✘</span>
+                                    <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
+                                        <DataAnnotationsValidator/>
+
+                                        <div style="padding: 5px">
+                                            <label for="songUrl">Add link: </label>
+                                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
+                                            <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
+                                        </div>
+                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                                    </EditForm>
                                 }
                             </div>
-                            <div>
-                                Sound link:
-                                @if (hasSound)
-                                {
-                                    <span style="color: green">✓</span>
-                                }
-                                else
-                                {
-                                    <span style="color: red">✘</span>
-                                }
-                            </div>
 
-                            @if (!hasVideo || !hasSound)
-                            {
-                                <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
-                                    <DataAnnotationsValidator/>
-
-                                    <div style="padding: 5px">
-                                        <label for="songUrl">Add link: </label>
-                                        <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
-                                        <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
-                                    </div>
-                                    <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                                </EditForm>
-                            }
                         </div>
-
-                    </div>
+                    }
                 }
             }
-        }
 
-        @if (!CurrentSongs.Any())
-        {
-            @NoSongsText
-        }
+            @if (!CurrentSongs.Any())
+            {
+                @NoSongsText
+            }
 
+        </div>
     </div>
 </div>
 
 <br/>
-<div>
+<div style="border: 1px solid #ddd; padding: 5px">
     <h4 style="font-size: 1.2rem">Review Queue</h4>
     <ReviewQueueComponent @ref="_reviewQueueComponent"></ReviewQueueComponent>
 </div>
