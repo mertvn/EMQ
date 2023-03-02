@@ -8,8 +8,9 @@ namespace EMQ.Server;
 
 public static class ServerUtils
 {
-    public static HttpClient Client { get; } = new(new HttpClientHandler { UseProxy = false })
-    {
-        DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("EMQ", "7.8") } }
-    };
+    public static HttpClient Client { get; } =
+        new(new HttpClientHandler
+        {
+            UseProxy = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "DEVELOPMENT"
+        }) { DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("EMQ", "7.8") } } };
 }

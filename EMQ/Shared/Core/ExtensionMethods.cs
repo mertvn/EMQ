@@ -93,6 +93,7 @@ public static class ExtensionMethods
     {
         try
         {
+            Console.WriteLine($"DownloadFile {uri}");
             var stream = await client.GetStreamAsync(uri);
             await using (MemoryStream ms = new())
             {

@@ -68,13 +68,12 @@ public static class MediaAnalyser
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooHigh);
                 }
 
-                // todo doesn't really work
+                // // todo doesn't really work
                 // // webm returns 0
                 // Console.WriteLine(new { mediaInfo.Format.BitRate });
-                // if (mediaInfo.Format.BitRate / 1000 < 500 && !mediaInfo.Format.FormatName.Contains("webm"))
+                // if (mediaInfo.Format.BitRate / 1000 < 500 && format != "webm")
                 // {
-                //     result = MediaAnalyserResult.FakeVideo;
-                //     return result;
+                //     result.Warnings.Add(MediaAnalyserWarningKind.FakeVideo);
                 // }
             }
 
