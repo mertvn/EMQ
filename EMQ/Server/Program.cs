@@ -154,10 +154,11 @@ async Task Init()
             await DbManager.SelectAutocompleteA());
     }
 
+    // test ffMPEG install
     try
     {
         var mediaInfo = await FFProbe.AnalyseAsync($"{wwwrootFolder}/soft-piano-100-bpm-121529.mp3");
-        Console.WriteLine(JsonSerializer.Serialize(mediaInfo, Utils.JsoIndented));
+        Console.WriteLine(JsonSerializer.Serialize(mediaInfo.Duration, Utils.JsoIndented));
     }
     catch (Exception e)
     {

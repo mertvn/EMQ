@@ -36,8 +36,7 @@ public class QuizController : ControllerBase
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            _logger.LogError("Session not found for playerToken: " + token);
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -58,8 +57,7 @@ public class QuizController : ControllerBase
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
-            // todo
-            throw new Exception($"Session wasn't found for token {token}");
+            _logger.LogError("Session not found for playerToken: " + token);
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));

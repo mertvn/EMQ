@@ -892,10 +892,12 @@ public static class DbManager
                     Name = category.name,
                     VndbId = category.vndb_id,
                     Type = (SongSourceCategoryType)category.type,
+                    Rating = null,
+                    SpoilerLevel = null
                 })
                 .ToList();
 
-            string autocomplete = JsonSerializer.Serialize(songSourceCategories, Utils.Jso);
+            string autocomplete = JsonSerializer.Serialize(songSourceCategories, Utils.JsoNotNull);
             return autocomplete;
         }
     }

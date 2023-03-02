@@ -18,6 +18,13 @@ public static class Utils
         WriteIndented = true
     };
 
+    public static JsonSerializerOptions JsoNotNull => new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     public static string PercentageStr(int dividend, int divisor)
     {
         return $"{(((double)dividend / divisor) * 100):N2}%";

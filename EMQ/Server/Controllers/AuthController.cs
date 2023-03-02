@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Shared.VNDB.Business;

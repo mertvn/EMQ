@@ -1,6 +1,4 @@
-﻿using EMQ.Shared.Auth.Entities.Concrete;
-
-namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
+﻿namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 
 public class ResCreateSession
 {

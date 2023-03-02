@@ -27,6 +27,7 @@ public class GGVCImporter
                 await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
                 Utils.JsoIndented)!;
 
+        // todo add alreadyHave to this
         var uploaded = uploaded2.Concat(uploaded3).ToList();
 
         string output = "@echo off\r\n";

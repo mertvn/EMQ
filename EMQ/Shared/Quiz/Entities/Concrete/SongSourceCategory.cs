@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -7,14 +8,19 @@ public class SongSourceCategory
 {
     public int Id { get; set; }
 
+    [JsonPropertyName("n")]
     public string Name { get; set; } = "";
 
+    [JsonPropertyName("v")]
     public string? VndbId { get; set; }
 
+    [JsonPropertyName("t")]
     public SongSourceCategoryType Type { get; set; } = SongSourceCategoryType.Unknown;
 
+    [JsonPropertyName("r")]
     public float? Rating { get; set; }
 
+    [JsonPropertyName("s")]
     public SpoilerLevel? SpoilerLevel { get; set; }
 }
 
