@@ -13,7 +13,4 @@ public static class ServerUtils
         {
             UseProxy = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development"
         }) { DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("EMQ", "7.8") } } };
-
-    // using the configured HttpClient times out on railway (??????)
-    public static HttpClient UnconfiguredClient { get; } = new();
 }

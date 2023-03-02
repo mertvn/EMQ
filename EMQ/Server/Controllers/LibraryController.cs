@@ -59,7 +59,10 @@ public class LibraryController : ControllerBase
         if (rqId > 0)
         {
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
-            bool dlSuccess = await ServerUtils.UnconfiguredClient.DownloadFile(filePath, new Uri(req.SongLink.Url));
+
+            // using a static HttpClient times out on railway (??????)
+            using var client = new HttpClient();
+            bool dlSuccess = await client.DownloadFile(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
