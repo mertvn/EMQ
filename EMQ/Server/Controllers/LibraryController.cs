@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
@@ -58,7 +59,7 @@ public class LibraryController : ControllerBase
         if (rqId > 0)
         {
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
-            bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(req.SongLink.Url));
+            bool dlSuccess = await new HttpClient().DownloadFile(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
