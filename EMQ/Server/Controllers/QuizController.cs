@@ -37,6 +37,7 @@ public class QuizController : ControllerBase
         if (session is null)
         {
             _logger.LogError("Session not found for playerToken: " + token);
+            return null;
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -58,6 +59,7 @@ public class QuizController : ControllerBase
         if (session is null)
         {
             _logger.LogError("Session not found for playerToken: " + token);
+             return null;
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -359,7 +361,7 @@ public class QuizController : ControllerBase
         }
         else
         {
-            _logger.LogWarning("Attempt to send chat message to r{req.RoomId} which is null", room.Id);
+            _logger.LogWarning("Attempt to send chat message to a room that is null");
         }
     }
 }
