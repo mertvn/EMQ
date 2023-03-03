@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -12,14 +13,14 @@ namespace EMQ.Client.Pages;
 
 public partial class HotelPage
 {
-    private string Name { get; set; } = "";
-
-    private string Password { get; set; } = "";
-
     // TODO allow user to change settings before creating room
     private QuizSettings QuizSettings { get; set; } = new() { };
 
     private List<Room> Rooms { get; set; } = new();
+
+    public CreateNewRoomModel _createNewRoomModel { get; set; } = new();
+
+    public string Password { get; set; } = "";
 
     public bool IsJoiningRoom = false;
 
@@ -33,7 +34,7 @@ public partial class HotelPage
         }
     }
 
-    private async Task CreateRoom()
+    private async Task SendCreateRoomReq(CreateNewRoomModel createNewRoomModel)
     {
         if (ClientState.Session is null)
         {
@@ -41,14 +42,15 @@ public partial class HotelPage
             return;
         }
 
-        ReqCreateRoom req = new(ClientState.Session.Token, Name, Password, QuizSettings);
+        ReqCreateRoom req = new(ClientState.Session.Token, createNewRoomModel.RoomName, createNewRoomModel.RoomPassword,
+            QuizSettings);
         HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
-        await JoinRoom(roomId);
+        await JoinRoom(roomId, createNewRoomModel.RoomPassword);
     }
 
-    private async Task JoinRoom(int roomId)
+    private async Task JoinRoom(int roomId, string roomPassword)
     {
         // _logger.LogError(roomId.ToString());
         // _logger.LogError(Password);
@@ -64,7 +66,7 @@ public partial class HotelPage
         StateHasChanged();
 
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom",
-            new ReqJoinRoom(roomId, Password, ClientState.Session!.Player.Id));
+            new ReqJoinRoom(roomId, roomPassword, ClientState.Session!.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
             int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;
@@ -82,5 +84,15 @@ public partial class HotelPage
 
         IsJoiningRoom = false;
         StateHasChanged();
+    }
+
+    public class CreateNewRoomModel
+    {
+        [Required]
+        [MaxLength(100)]
+        public string RoomName { get; set; } = "";
+
+        [MaxLength(16)]
+        public string RoomPassword { get; set; } = "";
     }
 }

@@ -11,13 +11,22 @@
 <p>Welcome to EMQ Hotel. Here you can join an existing room or reserve a new room in order to play.</p>
 
 <div>
-    Name:<br/>
-    <input @bind="Name" type="text" name="Name" style="margin: 5px"/><br/>
-    @* Password:<br/> *@
-    @* <input @bind="Password" type="password" name="Password"/><br/> *@
-</div>
+    <EditForm Model="@_createNewRoomModel" OnValidSubmit="@(() => SendCreateRoomReq(_createNewRoomModel))">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
 
-<button class="btn btn-primary" @onclick="CreateRoom" disabled="@(ClientState.Session == null)">Reserve Room</button>
+        <InputText id="RoomName" @bind-Value="_createNewRoomModel.RoomName" style="margin: 5px" maxlength="100"></InputText>
+        <label for="RoomName">Room name</label>
+        <br/>
+
+        @* todo type= password | text toggle *@
+        <InputText id="RoomPassword" type="text" @bind-Value="_createNewRoomModel.RoomPassword" style="margin: 5px" maxlength="16"></InputText>
+        <label for="RoomPassword">Room password</label>
+        <br/>
+
+        <input style="margin: 5px" type="submit" class="btn btn-primary" value="Reserve Room" disabled="@(ClientState.Session == null)"/>
+    </EditForm>
+</div>
 
 @if (IsJoiningRoom)
 {
@@ -40,7 +49,15 @@
                     </div>
                 </div>
             </div>
-            <button style="margin: 16px" class="btn btn-primary" disabled="@(ClientState.Session == null || IsJoiningRoom)" @onclick="@(() => JoinRoom(room.Id))">Join</button>
+
+            @* todo type= password | text toggle *@
+            <span style="margin: 5px"> Password: </span> <input @bind="Password" type="text" name="Password" style="margin: 5px" maxlength="16"/><br/>
+            <button class="btn btn-primary"
+                    style="margin: 16px"
+                    disabled="@(ClientState.Session == null || IsJoiningRoom)"
+                    @onclick="@(() => JoinRoom(room.Id, Password))">
+                Join
+            </button>
         </div>
     }
 </div>

@@ -36,14 +36,14 @@ public class QuizController : ControllerBase
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
-            _logger.LogError("Session not found for playerToken: " + token);
+            // _logger.LogError("Session not found for playerToken: " + token);
             return null;
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
-            _logger.LogError("Room not found with playerToken: " + token);
+            // _logger.LogError("Room not found with playerToken: " + token);
             return null;
         }
 
@@ -58,14 +58,14 @@ public class QuizController : ControllerBase
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
-            _logger.LogError("Session not found for playerToken: " + token);
-             return null;
+            // _logger.LogError("Session not found for playerToken: " + token);
+            return null;
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
-            _logger.LogError("Room not found with playerToken: " + token);
+            // _logger.LogError("Room not found with playerToken: " + token);
             return null;
         }
 
@@ -158,7 +158,7 @@ public class QuizController : ControllerBase
     // todo decouple joining room from joining quiz maybe?
     [HttpPost]
     [Route("JoinRoom")]
-    public async Task<ResJoinRoom> JoinRoom([FromBody] ReqJoinRoom req)
+    public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
     {
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
         var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == req.PlayerId);
@@ -170,7 +170,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        if (room.Password == req.Password)
+        if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password)
         {
             if (room.Players.Any(x => x.Id == req.PlayerId))
             {
@@ -227,7 +227,8 @@ public class QuizController : ControllerBase
         else
         {
             // todo warn wrong password
-            throw new Exception();
+            _logger.LogError($"Wrong room password for {room.Id}: {req.Password}");
+            return Unauthorized();
         }
     }
 
