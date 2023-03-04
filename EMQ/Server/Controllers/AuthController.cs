@@ -131,17 +131,17 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("ValidateSession")]
-    public ActionResult RemoveSession([FromBody] string token)
+    public async Task<ActionResult<Session>> ValidateSession([FromBody] string token)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
-        return session == null ? Unauthorized() : Ok();
+        return session == null ? Unauthorized() : session;
     }
 
     [HttpPost]
     [Route("UpdateLabel")]
     public async Task<Label> UpdateLabel([FromBody] ReqUpdateLabel req)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == req.Token);
+        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken); // todo check session
         if (session.VndbInfo.Labels != null)
         {
             var label = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
@@ -180,5 +180,20 @@ public class AuthController : ControllerBase
         {
             throw new Exception("Could not find the label to update");
         }
+    }
+
+    [HttpPost]
+    [Route("UpdatePlayerPreferences")]
+    public async Task<ActionResult<PlayerPreferences>> UpdatePlayerPreferences(
+        [FromBody] ReqUpdatePlayerPreferences req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        session.Player.Preferences = req.PlayerPreferences;
+        return session.Player.Preferences;
     }
 }

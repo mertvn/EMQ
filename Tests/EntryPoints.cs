@@ -59,7 +59,30 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateSongLite()
     {
-        await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
+        if (true)
+        {
+            await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
+        }
+        else
+        {
+            var adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                throw new Exception("EMQ_ADMIN_PASSWORD is null");
+            }
+
+            var serverUrl = "https://emq.up.railway.app";
+            var songLite =
+                await ServerUtils.Client.GetStringAsync(
+                    $"{serverUrl}/Mod/ExportSongLite?adminPassword={adminPassword}");
+
+            if (string.IsNullOrWhiteSpace(songLite))
+            {
+                throw new Exception("songLite is null");
+            }
+
+            await File.WriteAllTextAsync("SongLite.json", songLite);
+        }
     }
 
     [Test, Explicit]

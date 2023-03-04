@@ -10,6 +10,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using DapperQueryBuilder;
+using EMQ.Server.Business;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -82,10 +83,10 @@ public static class DbManager
                         song.Id = music.id;
                         song.Type = (SongType)music.type;
 
-                        if (music.length.HasValue)
-                        {
-                            song.Length = music.length.Value;
-                        }
+                        // if (music.length.HasValue)
+                        // {
+                        //     song.Length = music.length.Value;
+                        // }
 
                         songTitles.Add(new Title()
                         {
@@ -101,7 +102,8 @@ public static class DbManager
                             {
                                 Url = musicExternalLink.url,
                                 IsVideo = musicExternalLink.is_video,
-                                Type = (SongLinkType)musicExternalLink.type
+                                Type = (SongLinkType)musicExternalLink.type,
+                                Duration = musicExternalLink.duration,
                             });
                         }
 
@@ -131,6 +133,7 @@ public static class DbManager
                                     Url = musicExternalLink.url,
                                     Type = (SongLinkType)musicExternalLink.type,
                                     IsVideo = musicExternalLink.is_video,
+                                    Duration = musicExternalLink.duration,
                                 });
                             }
                         }
@@ -482,10 +485,10 @@ public static class DbManager
         await using (var transaction = await connection.BeginTransactionAsync())
         {
             var music = new Music() { type = (int)song.Type };
-            if (song.Length > 0)
-            {
-                music.length = song.Length;
-            }
+            // if (song.Length > 0)
+            // {
+            //     music.length = song.Length;
+            // }
 
             int mId = await connection.InsertAsync(music);
 
@@ -505,7 +508,11 @@ public static class DbManager
             {
                 int melId = await connection.InsertAsync(new MusicExternalLink()
                 {
-                    music_id = mId, url = songLink.Url, type = (int)songLink.Type, is_video = songLink.IsVideo
+                    music_id = mId,
+                    url = songLink.Url,
+                    type = (int)songLink.Type,
+                    is_video = songLink.IsVideo,
+                    duration = songLink.Duration
                 });
             }
 
@@ -800,7 +807,9 @@ public static class DbManager
 
                         if (!addedMselUrls.Contains(mselUrl) || duplicates)
                         {
-                            song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                            song.StartTime = rng.Next(0,
+                                Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
+                                    int.MaxValue));
                             ret.Add(song);
                             addedMselUrls.Add(mselUrl);
                         }
@@ -854,7 +863,9 @@ public static class DbManager
                 if (songs.Any())
                 {
                     var song = songs.First();
-                    song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    song.StartTime = rng.Next(0,
+                        Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
+                            int.MaxValue));
                     ret.Add(song);
                     addedMselUrls.Add(mselUrl);
                 }
@@ -1059,8 +1070,17 @@ public static class DbManager
         {
             var mel = new MusicExternalLink
             {
-                music_id = mId, url = songLink.Url, type = (int)songLink.Type, is_video = songLink.IsVideo,
+                music_id = mId,
+                url = songLink.Url,
+                type = (int)songLink.Type,
+                is_video = songLink.IsVideo,
+                duration = songLink.Duration
             };
+
+            if (mel.duration == default)
+            {
+                throw new Exception("MusicExternalLink duration cannot be 0.");
+            }
 
             Console.WriteLine(
                 $"Attempting to insert MusicExternalLink: " + JsonSerializer.Serialize(mel, Utils.Jso));
@@ -1252,7 +1272,8 @@ public static class DbManager
                     status = (ReviewQueueStatus)reviewQueue.status,
                     reason = reviewQueue.reason,
                     analysis = reviewQueue.analysis,
-                    Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single()
+                    Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single(),
+                    duration = reviewQueue.duration,
                 };
                 rqs.Add(rq);
             }
@@ -1262,7 +1283,7 @@ public static class DbManager
     }
 
     public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus,
-        string? reason = null, string? analysis = null)
+        string? reason = null, MediaAnalyserResult? analyserResult = null)
     {
         int melId = -1;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -1306,9 +1327,20 @@ public static class DbManager
                 rq.reason = reason;
             }
 
-            if (!string.IsNullOrWhiteSpace(analysis))
+            if (analyserResult != null)
             {
-                rq.analysis = analysis;
+                string analyserResultStr;
+                if (analyserResult.IsValid)
+                {
+                    analyserResultStr = "OK";
+                }
+                else
+                {
+                    analyserResultStr = string.Join(", ", analyserResult.Warnings.Select(x => x.ToString()));
+                }
+
+                rq.analysis = analyserResultStr;
+                rq.duration = analyserResult.Duration;
             }
 
             await connection.UpdateAsync(rq);
@@ -1500,7 +1532,9 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 if (songs.Any())
                 {
                     var song = songs.First();
-                    song.StartTime = rng.Next(0, Math.Clamp(song.Length - 20, 2, int.MaxValue));
+                    song.StartTime = rng.Next(0,
+                        Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
+                            int.MaxValue));
                     ret.Add(song);
                     addedMselUrls.Add(mselUrl);
                 }
@@ -1599,6 +1633,15 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
 
             return songs;
+        }
+    }
+
+    public static async Task UpdateMusicExternalLinkDuration(string url, TimeSpan resultDuration)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = @"UPDATE music_external_link SET duration = @resultDuration WHERE url = @url";
+            await connection.ExecuteAsync(sql, new { resultDuration, url });
         }
     }
 }

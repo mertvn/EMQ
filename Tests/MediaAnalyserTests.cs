@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Business;
+using EMQ.Server.Db;
 using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using NUnit.Framework;
 
 namespace Tests;
@@ -18,24 +21,60 @@ public class MediaAnalyserTests
     }
 
     [Test]
-    public async Task Test_Analyse_Batch()
+    public async Task Test_AnalyseBackupFolder()
     {
         const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
 
-        Dictionary<string, MediaAnalyserResult> invalidFiles = new();
+        Dictionary<string, MediaAnalyserResult> results = new();
 
         string[] filePaths = Directory.GetFiles(baseDownloadDir);
         foreach (string filePath in filePaths)
         {
             var result = await MediaAnalyser.Analyse(filePath);
-            bool isValid = result.IsValid;
-            if (!isValid)
-            {
-                invalidFiles.Add(filePath, result);
-            }
+            results.Add(filePath, result);
         }
 
-        Console.WriteLine(JsonSerializer.Serialize(invalidFiles, Utils.JsoIndented));
+        Console.WriteLine(JsonSerializer.Serialize(results.Where(x => !x.Value.IsValid), Utils.JsoIndented));
+    }
+
+    [Test]
+    public async Task Test_AnalyseAndUpdateDurationsOfDbSongs()
+    {
+        const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
+        string[] filePaths = Directory.GetFiles(baseDownloadDir);
+
+        var dbSongs = await DbManager.GetRandomSongs(int.MaxValue, true);
+        foreach (Song dbSong in dbSongs)
+        {
+            foreach (SongLink dbSongLink in dbSong.Links)
+            {
+                if (dbSongLink.Duration.TotalMilliseconds <= 0)
+                {
+                    var filePath = filePaths.FirstOrDefault(x => x.LastSegment() == dbSongLink.Url.LastSegment());
+                    if (filePath != null)
+                    {
+                        var result = await MediaAnalyser.Analyse(filePath);
+                        // if (result.IsValid)
+                        // {
+                            Assert.That(result.Duration != null);
+                            Assert.That(result.Duration.HasValue);
+                            Assert.That(result.Duration!.Value.TotalMilliseconds > 0);
+
+                            Console.WriteLine($"Setting {dbSongLink.Url} duration to {result.Duration!.Value}");
+                            await DbManager.UpdateMusicExternalLinkDuration(dbSongLink.Url, result.Duration!.Value);
+                            // }
+                            // else
+                            // {
+                            //     Console.WriteLine($"Skipping invalid analysis result: {dbSongLink.Url}");
+                            // }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Song backup not found: {dbSongLink.Url}");
+                    }
+                }
+            }
+        }
     }
 
     [Test]

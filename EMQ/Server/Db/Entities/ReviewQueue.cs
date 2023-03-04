@@ -35,4 +35,6 @@ public class ReviewQueue
     public string? reason { get; set; }
 
     public string? analysis { get; set; }
+
+    public TimeSpan? duration { get; set; }
 }

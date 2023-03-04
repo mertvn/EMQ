@@ -64,16 +64,24 @@ public class ClientUtils
 
     public async Task SaveSessionToLocalStorage()
     {
-        string json = JsonSerializer.Serialize(ClientState.Session);
-        // Logger.LogInformation("saving session: " + json);
-        await LocalStorage.SetItemAsync("session", json);
+        await SaveToLocalStorage("session", ClientState.Session!);
+    }
+
+    public async Task SaveToLocalStorage<T>(string key, T value)
+    {
+        await LocalStorage.SetItemAsync(key, value);
+    }
+
+    public async Task<T> LoadFromLocalStorage<T>(string key)
+    {
+        return await LocalStorage.GetItemAsync<T>(key);
     }
 
     public async Task TryRestoreSession()
     {
         if (ClientState.Session is null)
         {
-            string? sessionStr = await LocalStorage.GetItemAsync<string>("session");
+            string? sessionStr = await LoadFromLocalStorage<string?>("session");
             if (!string.IsNullOrWhiteSpace(sessionStr))
             {
                 Session? session = JsonSerializer.Deserialize<Session>(sessionStr);
@@ -84,7 +92,7 @@ public class ClientUtils
                     HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/ValidateSession", session.Token);
                     if (res.IsSuccessStatusCode)
                     {
-                        ClientState.Session = session;
+                        ClientState.Session = await res.Content.ReadFromJsonAsync<Session>();
                         await ClientConnectionManager.StartManagingConnection();
                     }
                     else

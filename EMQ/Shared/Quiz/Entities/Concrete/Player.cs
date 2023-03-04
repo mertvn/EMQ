@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -35,6 +36,8 @@ public class Player
     public PlayerLootingInfo LootingInfo { get; set; } = new();
 
     public bool IsSkipping { get; set; }
+
+    public PlayerPreferences Preferences { get; set; } = new();
 }
 
 public record PlayerLootingInfo
@@ -47,4 +50,27 @@ public record PlayerLootingInfo
     public Point TreasureRoomCoords { get; set; } = new();
 
     public List<Treasure> Inventory { get; set; } = new();
+}
+
+public class PlayerPreferences
+{
+    [Required]
+    public bool WantsVideo { get; set; } = true;
+
+    [Required]
+    public SongLinkType LinkHost { get; set; } = SongLinkType.Catbox;
+
+    [Required]
+    public int VolumeMaster { get; set; } = 70; // todo
+
+    [Required]
+    public bool AutoSkipGuessPhase { get; set; } = false; // todo
+
+    [Required]
+    public bool AutoSkipResultsPhase { get; set; } = false; // todo
+
+    [Required]
+    public bool RestartSongsOnResultsPhase { get; set; } = false; // todo
+
+    // todo language preferences
 }

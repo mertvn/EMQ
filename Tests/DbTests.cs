@@ -34,6 +34,7 @@ public class DbTests
             {
                 Assert.That(!string.IsNullOrWhiteSpace(songLink.Url));
                 Assert.That(songLink.Type != SongLinkType.Unknown);
+                Assert.That(songLink.Duration.TotalMilliseconds > 0);
             }
 
             foreach (SongSource songSource in song.Sources)
@@ -323,7 +324,7 @@ public class DbTests
     {
         var song = new Song()
         {
-            Length = 266,
+            // Length = 266,
             Titles =
                 new List<Title>()
                 {

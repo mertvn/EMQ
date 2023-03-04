@@ -41,6 +41,8 @@ public partial class Index
 
     public List<Label> Labels { get; set; } = new();
 
+    public string PreferencesSavedText { get; set; } = "";
+
     protected override async Task OnInitializedAsync()
     {
         LoginInProgress = true;
@@ -73,7 +75,7 @@ public partial class Index
         }
     }
 
-    private async Task OnValidSubmit(LoginModel loginModel)
+    private async Task Login(LoginModel loginModel)
     {
         if (ClientState.Session is null)
         {
@@ -149,10 +151,10 @@ public partial class Index
                     LoginInProgress = false;
                     StateHasChanged();
 
-                    if (ClientState.Session.VndbInfo.Labels is null)
-                    {
-                        Navigation.NavigateTo("/HotelPage");
-                    }
+                    // if (ClientState.Session.VndbInfo.Labels is null)
+                    // {
+                    //     Navigation.NavigateTo("/HotelPage");
+                    // }
                 }
             }
             else
@@ -208,5 +210,26 @@ public partial class Index
         {
             // todo
         }
+    }
+
+    private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
+    {
+        PreferencesSavedText = "Saving...";
+
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/UpdatePlayerPreferences",
+            new ReqUpdatePlayerPreferences(ClientState.Session!.Token, playerPreferencesModel));
+
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.Session.Player.Preferences = (await res.Content.ReadFromJsonAsync<PlayerPreferences>())!;
+            await _clientUtils.SaveSessionToLocalStorage();
+            PreferencesSavedText = "Saved.";
+        }
+        else
+        {
+            PreferencesSavedText = "Failed to save.";
+        }
+
+        StateHasChanged();
     }
 }

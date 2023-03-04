@@ -17,6 +17,7 @@
         <th>Submitted On</th>
         <th>Status</th>
         <th>Analysis</th>
+        <th>Duration</th>
         <th>Reason</th>
     </tr>
     @foreach (var rq in CurrentRQs)
@@ -46,6 +47,7 @@
                 @rq.status
             </td>
             <td>@rq.analysis</td>
+            <td>@(rq.duration?.ToString("mm\\:ss"))</td>
             <td>@rq.reason</td>
         </tr>
     }

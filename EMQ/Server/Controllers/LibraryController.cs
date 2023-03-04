@@ -68,17 +68,7 @@ public class LibraryController : ControllerBase
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
                 System.IO.File.Delete(filePath);
 
-                string analyserResultStr;
-                if (analyserResult.IsValid)
-                {
-                    analyserResultStr = "OK";
-                }
-                else
-                {
-                    analyserResultStr = string.Join(", ", analyserResult.Warnings.Select(x => x.ToString()));
-                }
-
-                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending, analysis: analyserResultStr);
+                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending, analyserResult: analyserResult);
             }
         }
 

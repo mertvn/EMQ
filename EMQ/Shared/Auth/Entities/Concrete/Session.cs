@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Client;

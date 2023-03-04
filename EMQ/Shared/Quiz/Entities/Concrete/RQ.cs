@@ -25,4 +25,6 @@ public class RQ
     public string? analysis { get; set; }
 
     public Song Song { get; set; } = new();
+
+    public TimeSpan? duration { get; set; }
 }

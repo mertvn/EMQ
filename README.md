@@ -19,8 +19,6 @@ w
 * https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
 * player -> (site)user + (quiz)player
 * check if players are still active ^prerequisite
-* song lengths (~~EGS~~ usually has the full-size lengths, maybe link scanning?)
-* song link selection ^prerequisite
 * ~~leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick~~ applied band-aid
 
 ## Steps to import data

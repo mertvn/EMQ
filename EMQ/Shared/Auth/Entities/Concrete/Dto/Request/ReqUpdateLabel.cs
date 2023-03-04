@@ -4,13 +4,13 @@ namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 
 public class ReqUpdateLabel
 {
-    public ReqUpdateLabel(string token, Label label)
+    public ReqUpdateLabel(string playerToken, Label label)
     {
-        Token = token;
+        PlayerToken = playerToken;
         Label = label;
     }
 
-    public string Token { get; }
+    public string PlayerToken { get; }
 
     public Label Label { get; }
 }

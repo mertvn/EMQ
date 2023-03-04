@@ -94,7 +94,28 @@ public class QuizController : ControllerBase
                     if (req.SongIndex < room.Quiz.Songs.Count)
                     {
                         var song = room.Quiz.Songs[req.SongIndex];
-                        string url = song.Links.First().Url; // todo link selection
+
+                        string? url;
+                        if (req.WantsVideo)
+                        {
+                            url = song.Links.FirstOrDefault(x => x.Type == req.Host && x.IsVideo)?.Url;
+                        }
+                        else
+                        {
+                            url = song.Links.FirstOrDefault(x => x.Type == req.Host && !x.IsVideo)?.Url;
+                        }
+
+                        // todo priority setting for host or video
+                        if (string.IsNullOrWhiteSpace(url))
+                        {
+                            url = song.Links.FirstOrDefault(x => x.Type == req.Host)?.Url;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(url))
+                        {
+                            url = song.Links.First().Url;
+                        }
+
                         return new ResNextSong(req.SongIndex, url, song.StartTime);
                     }
                     else
@@ -226,8 +247,7 @@ public class QuizController : ControllerBase
         }
         else
         {
-            // todo warn wrong password
-            _logger.LogError($"Wrong room password for {room.Id}: {req.Password}");
+            _logger.LogError($"Wrong room password for r{room.Id}: {req.Password}");
             return Unauthorized();
         }
     }

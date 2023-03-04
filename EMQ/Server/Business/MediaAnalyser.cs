@@ -19,7 +19,7 @@ public static class MediaAnalyser
 
         var result = new MediaAnalyserResult
         {
-            IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(), MediaInfo = null
+            MediaInfo = null, IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(),
         };
 
         try
@@ -28,7 +28,20 @@ public static class MediaAnalyser
             IMediaAnalysis mediaInfo = await FFProbe.AnalyseAsync(filePath);
             result.MediaInfo = mediaInfo;
 
-            Console.WriteLine(new { mediaInfo.Format.FormatName });
+            // Console.WriteLine(new { mediaInfo.Duration });
+            result.Duration = mediaInfo.Duration;
+            if (mediaInfo.Duration < TimeSpan.FromSeconds(25))
+            {
+                result.Warnings.Add(MediaAnalyserWarningKind.TooShort);
+            }
+
+            if (mediaInfo.Duration > TimeSpan.FromSeconds(720))
+            {
+                result.Warnings.Add(MediaAnalyserWarningKind.TooLong);
+            }
+
+            // Console.WriteLine(new { mediaInfo.Format.FormatName });
+            result.FormatList = mediaInfo.Format.FormatName;
             bool isVideo;
             string? format = validAudioFormats.FirstOrDefault(x => mediaInfo.Format.FormatName.Contains(x));
             if (format != null)
@@ -49,7 +62,10 @@ public static class MediaAnalyser
                 }
             }
 
-            Console.WriteLine(new { format });
+            result.IsVideo = isVideo;
+
+            // Console.WriteLine(new { format });
+            result.FormatSingle = format;
             if ($".{format}" != Path.GetExtension(filePath))
             {
                 result.Warnings.Add(MediaAnalyserWarningKind.WrongExtension);
@@ -57,13 +73,14 @@ public static class MediaAnalyser
 
             if (isVideo)
             {
-                Console.WriteLine(new { mediaInfo.PrimaryVideoStream!.AvgFrameRate });
-                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate < 24)
+                // Console.WriteLine(new { mediaInfo.PrimaryVideoStream!.AvgFrameRate });
+                result.AvgFramerate = mediaInfo.PrimaryVideoStream!.AvgFrameRate;
+                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate < 23)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooLow);
                 }
 
-                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate > 60)
+                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate > 61)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooHigh);
                 }
@@ -77,11 +94,12 @@ public static class MediaAnalyser
                 // }
             }
 
-            Console.WriteLine(new { mediaInfo.PrimaryAudioStream!.BitRate });
+            // Console.WriteLine(new { mediaInfo.PrimaryAudioStream!.BitRate });
             // webm returns 0
             if (format != "webm")
             {
                 long kbps = mediaInfo.PrimaryAudioStream!.BitRate / 1000;
+                result.AudioBitrateKbps = kbps;
                 if (kbps < 90)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooLow);
@@ -91,17 +109,6 @@ public static class MediaAnalyser
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooHigh);
                 }
-            }
-
-            Console.WriteLine(new { mediaInfo.Duration });
-            if (mediaInfo.Duration < TimeSpan.FromSeconds(25))
-            {
-                result.Warnings.Add(MediaAnalyserWarningKind.TooShort);
-            }
-
-            if (mediaInfo.Duration > TimeSpan.FromSeconds(720))
-            {
-                result.Warnings.Add(MediaAnalyserWarningKind.TooLong);
             }
 
             if (!result.Warnings.Any())
@@ -141,10 +148,22 @@ public enum MediaAnalyserWarningKind
 
 public class MediaAnalyserResult
 {
+    [JsonIgnore]
+    public IMediaAnalysis? MediaInfo { get; set; }
+
     public bool IsValid { get; set; }
 
     public List<MediaAnalyserWarningKind> Warnings { get; set; } = new();
 
-    [JsonIgnore]
-    public IMediaAnalysis? MediaInfo { get; set; }
+    public string? FormatList { get; set; }
+
+    public string? FormatSingle { get; set; }
+
+    public bool IsVideo { get; set; }
+
+    public double? AvgFramerate { get; set; }
+
+    public long? AudioBitrateKbps { get; set; }
+
+    public TimeSpan? Duration { get; set; }
 }

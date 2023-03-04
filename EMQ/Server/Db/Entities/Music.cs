@@ -10,7 +10,7 @@ public class Music
     [Required]
     public int id { get; set; }
 
-    public int? length { get; set; }
+    public int? length { get; set; } // todo remove
 
     [Required]
     public int type { get; set; }

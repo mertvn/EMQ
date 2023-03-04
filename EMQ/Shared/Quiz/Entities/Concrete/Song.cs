@@ -13,7 +13,7 @@ public class Song
     [JsonIgnore]
     public string Data { get; set; } = "";
 
-    public int Length { get; set; } = 60;
+    // public int Length { get; set; } = 60;
 
     public int StartTime { get; set; }
 

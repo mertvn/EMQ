@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -367,6 +367,28 @@ public class QuizManager
                 throw new ArgumentOutOfRangeException();
         }
 
+        foreach (Song dbSong in dbSongs)
+        {
+            // todo cleanup
+            // if (dbSong.Links.Count > 1) // todo
+            // {
+            // // todo
+            // dbSong.Links.Add(new SongLink()
+            // {
+            //     IsVideo = false,
+            //     Type = SongLinkType.Unknown,
+            //     Url = "testaudio",
+            //     Length = TimeSpan.FromMinutes(1)
+            // });
+            // dbSong.Links.Add(new SongLink()
+            // {
+            //     IsVideo = true, Type = SongLinkType.Unknown, Url = "testvideo", Length = TimeSpan.FromMinutes(1)
+            // });
+
+            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+            // }
+        }
+
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
         Quiz.QuizState.ExtraInfo = "Waiting buffering...";
 
@@ -549,7 +571,8 @@ public class QuizManager
                     Y = (int)(LootingConstants.TreasureRoomHeight / 2),
                     Inventory = new List<Treasure>(),
                     TreasureRoomCoords =
-                        new Point(rng.Next(Quiz.QuizState.LootingGridSize), rng.Next(Quiz.QuizState.LootingGridSize)),
+                        new Point(rng.Next(Quiz.QuizState.LootingGridSize),
+                            rng.Next(Quiz.QuizState.LootingGridSize)),
                 };
             }
 
@@ -618,7 +641,8 @@ public class QuizManager
         return true;
     }
 
-    public async Task OnSendPlayerMoved(Player player, float newX, float newY, DateTime dateTime, string connectionId)
+    public async Task OnSendPlayerMoved(Player player, float newX, float newY, DateTime dateTime,
+        string connectionId)
     {
         // todo anti-cheat
         player.LootingInfo.X = newX;
@@ -716,7 +740,8 @@ public class QuizManager
         var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
 
         var currentTreasureRoom =
-            Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][player.LootingInfo.TreasureRoomCoords.Y];
+            Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][
+                player.LootingInfo.TreasureRoomCoords.Y];
         var newTreasureRoom =
             Quiz.Room.TreasureRooms[treasureRoomCoords.X][treasureRoomCoords.Y];
 
@@ -830,5 +855,8 @@ public class QuizManager
         // todo
         // await HubContext.Clients.Clients(connectionId)
         //     .SendAsync("ReceiveRequestPlayerStatus");
+
+        // await HubContext.Clients.Client(oldConnectionId)
+        //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
     }
 }

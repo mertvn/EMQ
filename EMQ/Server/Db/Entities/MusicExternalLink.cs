@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EMQ.Server.Db.Entities;
@@ -19,4 +20,7 @@ public class MusicExternalLink
 
     [Required]
     public bool is_video { get; set; }
+
+    [Required]
+    public TimeSpan duration { get; set; }
 }

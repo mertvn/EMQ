@@ -21,6 +21,30 @@
             <button class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>
 
+            <div id="playerPreferences" style="border: 1px solid black; padding: 5px; margin-top: 5px;">
+                <h4>Preferences</h4>
+                <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+
+                    <InputCheckbox id="WantsVideo" @bind-Value="ClientState.Session.Player.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
+                    <label for="WantsVideo">Prefer video links over sound links</label>
+                    <br/>
+
+                    <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
+                        @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
+                        {
+                            <option value="@songLinkType">@songLinkType</option>
+                        }
+                    </InputSelect>
+                    <label for="LinkHost">Preferred host</label>
+                    <br/>
+
+                    <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Save preferences"/>
+                </EditForm>
+                <p>@PreferencesSavedText</p>
+            </div>
+
             @if (ClientState.Session.VndbInfo.Labels is not null)
             {
                 <br/>
@@ -78,7 +102,7 @@
         <p>Welcome to EMQ, please login.</p>
         <div>
 
-            <EditForm Model="@_loginModel" OnValidSubmit="@(() => OnValidSubmit(_loginModel))">
+            <EditForm Model="@_loginModel" OnValidSubmit="@(() => Login(_loginModel))">
                 <DataAnnotationsValidator/>
                 <ValidationSummary/>
 
@@ -100,7 +124,7 @@
                 <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken"/>
                 <br/>
 
-                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session != null || LoginInProgress)"/>
+                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Login" disabled="@(ClientState.Session != null || LoginInProgress)"/>
             </EditForm>
 
         </div>

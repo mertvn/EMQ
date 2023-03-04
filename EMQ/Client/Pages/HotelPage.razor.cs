@@ -98,7 +98,7 @@ public partial class HotelPage
     {
         [Required]
         [MaxLength(100)]
-        public string RoomName { get; set; } = "";
+        public string RoomName { get; set; } = "Room";
 
         [MaxLength(16)]
         public string RoomPassword { get; set; } = "";

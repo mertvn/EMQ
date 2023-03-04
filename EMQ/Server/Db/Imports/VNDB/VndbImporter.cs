@@ -274,7 +274,7 @@ public static class VndbImporter
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
-                Length = -1, // todo?
+                // Length = -1, // todo?
                 Titles =
                     new List<Title>()
                     {
