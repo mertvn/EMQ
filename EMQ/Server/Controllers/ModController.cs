@@ -19,14 +19,17 @@ public class ModController : ControllerBase
 
     [HttpGet]
     [Route("ExportSongLite")]
-    public async Task<string> ExportSongLite([FromQuery] string adminPassword)
+    public async Task<ActionResult<string>> ExportSongLite([FromQuery] string adminPassword)
     {
         string? envVar = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+
         if (string.IsNullOrWhiteSpace(envVar) || envVar != adminPassword)
         {
-            Unauthorized();
+            Console.WriteLine("Rejected ExportSongLite request");
+            return Unauthorized();
         }
 
+        Console.WriteLine("Approved ExportSongLite request");
         return await DbManager.ExportSongLite();
     }
 }
