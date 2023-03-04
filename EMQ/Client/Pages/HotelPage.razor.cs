@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Pages;
 
@@ -19,8 +21,6 @@ public partial class HotelPage
     private List<Room> Rooms { get; set; } = new();
 
     public CreateNewRoomModel _createNewRoomModel { get; set; } = new();
-
-    public string Password { get; set; } = "";
 
     public bool IsJoiningRoom = false;
 
@@ -80,6 +80,14 @@ public partial class HotelPage
             await _clientUtils.SaveSessionToLocalStorage();
 
             Navigation.NavigateTo("/RoomPage");
+        }
+        else if (res1.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            string promptRes = await _jsRuntime.InvokeAsync<string>("prompt", "Please enter room password: ");
+            if (!string.IsNullOrWhiteSpace(promptRes))
+            {
+                await JoinRoom(roomId, promptRes);
+            }
         }
 
         IsJoiningRoom = false;

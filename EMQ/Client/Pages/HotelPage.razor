@@ -5,6 +5,7 @@
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
 @inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
 
 <h3>Hotel</h3>
 
@@ -51,11 +52,10 @@
             </div>
 
             @* todo type= password | text toggle *@
-            <span style="margin: 5px"> Password: </span> <input @bind="Password" type="text" name="Password" style="margin: 5px" maxlength="16"/><br/>
             <button class="btn btn-primary"
                     style="margin: 16px"
                     disabled="@(ClientState.Session == null || IsJoiningRoom)"
-                    @onclick="@(() => JoinRoom(room.Id, Password))">
+                    @onclick="@(() => JoinRoom(room.Id, ""))">
                 Join
             </button>
         </div>
