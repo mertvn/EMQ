@@ -55,6 +55,7 @@ public class Quiz
     }
 }
 
+// todo move to room
 public class QuizLog
 {
     public QuizLog(int roomId, int quizId, QuizSettings quizSettings, QuizState quizState, int playerId, string message)
