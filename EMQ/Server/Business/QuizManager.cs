@@ -369,24 +369,7 @@ public class QuizManager
 
         foreach (Song dbSong in dbSongs)
         {
-            // todo cleanup
-            // if (dbSong.Links.Count > 1) // todo
-            // {
-            // // todo
-            // dbSong.Links.Add(new SongLink()
-            // {
-            //     IsVideo = false,
-            //     Type = SongLinkType.Unknown,
-            //     Url = "testaudio",
-            //     Length = TimeSpan.FromMinutes(1)
-            // });
-            // dbSong.Links.Add(new SongLink()
-            // {
-            //     IsVideo = true, Type = SongLinkType.Unknown, Url = "testvideo", Length = TimeSpan.FromMinutes(1)
-            // });
-
             dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
-            // }
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));

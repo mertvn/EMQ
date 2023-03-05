@@ -75,7 +75,6 @@ public static class EgsImporter
 
             if (gameMusicCategory == SongSourceSongType.Unknown)
             {
-                // todo
                 // Console.WriteLine("Skipping row with Unknown GameMusicCategory");
                 continue;
             }
@@ -83,7 +82,7 @@ public static class EgsImporter
             string gameVndbUrl = split[6];
             if (string.IsNullOrWhiteSpace(gameVndbUrl))
             {
-                // todo
+                // todo try using the EGS links attached to VNDB releases
                 // Console.WriteLine("Skipping row with no GameVndbUrl");
                 continue;
             }
@@ -332,7 +331,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     "UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle WHERE mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
                     new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId = innerResult.mIds.Single() });
 
-                // todo? insert song lengths
                 // todo? insert egs music & game links
             }
         });

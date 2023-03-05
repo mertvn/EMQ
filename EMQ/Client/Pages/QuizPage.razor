@@ -101,7 +101,6 @@
 
         <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
             <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility)">
-                @* TODO: How to select The One Link? *@
                 <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)#t=@(_currentSong?.StartTime)"
                        id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
                 </video>

@@ -69,10 +69,6 @@ public partial class ChatComponent
                         await SyncChat();
                     }
                 }
-                else
-                {
-                    // todo warn user somehow
-                }
             }
         }
         else

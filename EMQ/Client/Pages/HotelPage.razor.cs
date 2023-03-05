@@ -72,7 +72,6 @@ public partial class HotelPage
             int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;
             if (waitTime > 0)
             {
-                // todo display the wait time to the player
                 Console.WriteLine($"waiting for {waitTime} ms to join room");
                 await Task.Delay(waitTime);
             }

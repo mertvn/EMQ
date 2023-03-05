@@ -80,8 +80,7 @@ public class QuizController : ControllerBase
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            return Unauthorized();
         }
 
         var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -156,13 +155,12 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("CreateRoom")]
-    public int CreateRoom([FromBody] ReqCreateRoom req)
+    public ActionResult<int> CreateRoom([FromBody] ReqCreateRoom req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            return Unauthorized();
         }
 
         var owner = session.Player;
@@ -176,7 +174,7 @@ public class QuizController : ControllerBase
         return room.Id;
     }
 
-    // todo decouple joining room from joining quiz maybe?
+    // todo decouple joining room from joining quiz
     [HttpPost]
     [Route("JoinRoom")]
     public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
@@ -254,13 +252,12 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("StartQuiz")]
-    public async Task StartQuiz([FromBody] ReqStartQuiz req)
+    public async Task<ActionResult> StartQuiz([FromBody] ReqStartQuiz req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            return Unauthorized();
         }
 
         var player = session.Player;
@@ -299,17 +296,18 @@ public class QuizController : ControllerBase
             _logger.LogWarning("Attempt to start quiz in room {req.RoomId} that is null", req.RoomId);
             // todo
         }
+
+        return Ok();
     }
 
     [HttpPost]
     [Route("ChangeRoomSettings")]
-    public void ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
+    public ActionResult ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            return Unauthorized();
         }
 
         var player = session.Player;
@@ -345,17 +343,18 @@ public class QuizController : ControllerBase
             _logger.LogWarning("Attempt to change room settings in r{req.RoomId} which is null", req.RoomId);
             // todo
         }
+
+        return Ok();
     }
 
     [HttpPost]
     [Route("SendChatMessage")]
-    public void SendChatMessage([FromBody] ReqSendChatMessage req)
+    public ActionResult SendChatMessage([FromBody] ReqSendChatMessage req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
-            // todo
-            throw new Exception();
+            return Unauthorized();
         }
 
         var player = session.Player;
@@ -384,5 +383,7 @@ public class QuizController : ControllerBase
         {
             _logger.LogWarning("Attempt to send chat message to a room that is null");
         }
+
+        return Ok();
     }
 }

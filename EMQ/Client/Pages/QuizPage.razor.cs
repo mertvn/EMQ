@@ -448,7 +448,7 @@ public partial class QuizPage
                 {
                     new()
                     {
-                        Url = nextSong.Links.First().Url // todo
+                        Url = nextSong.Links.First().Url
                     }
                 }
             };
@@ -477,11 +477,11 @@ public partial class QuizPage
                     _clientSongs[index + i] = song;
                     if (string.IsNullOrEmpty(song.Data))
                     {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}"); // todo link selection
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
                     }
                     else
                     {
-                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}"); // todo link selection
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
                     }
 
                     // we want to send this message regardless of whether the preloading was successful or not

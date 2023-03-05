@@ -20,9 +20,9 @@ public class SongLink
         return songLinks.OrderBy(x => x.Duration).First();
     }
 
+    // todo: write tests for this
     public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks)
     {
-        // todo cleanup
         // Priorities:
         // #1 Duration (Short > Long)
         // ~~#2 Video (Video > Sound)~~ not implemented
@@ -30,13 +30,9 @@ public class SongLink
 
         // todo don't let people insert links from another host that are not similar in length to the existing hosts
         var groups = dbSongLinks.GroupBy(x => x.Type).ToList();
-        // Console.WriteLine(JsonSerializer.Serialize(groups, Utils.JsoIndented));
 
         foreach (IGrouping<SongLinkType, SongLink> group in groups)
         {
-            // Console.WriteLine("group: ");
-            // Console.WriteLine(JsonSerializer.Serialize(group, Utils.JsoIndented));
-
             var videoLink = group.FirstOrDefault(x => x.IsVideo);
             var soundLink = group.FirstOrDefault(x => !x.IsVideo);
 
@@ -44,10 +40,8 @@ public class SongLink
             {
                 bool sameDuration =
                     Math.Abs(
-                        videoLink.Duration.TotalSeconds - soundLink.Duration.TotalSeconds) < Constants.LinkToleranceSeconds;
-                // Console.WriteLine(new { videoLink.Length.TotalSeconds });
-                // Console.WriteLine(new { soundLink.Length.TotalSeconds });
-                // Console.WriteLine(new { sameDuration });
+                        videoLink.Duration.TotalSeconds - soundLink.Duration.TotalSeconds) <
+                    Constants.LinkToleranceSeconds;
 
                 if (sameDuration)
                 {
@@ -68,9 +62,6 @@ public class SongLink
                 res.Add((videoLink ?? soundLink)!);
             }
         }
-
-        // Console.WriteLine("res: ");
-        // Console.WriteLine(JsonSerializer.Serialize(res, Utils.JsoIndented));
 
         return res;
     }

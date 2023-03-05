@@ -16,7 +16,7 @@ public static class VndbImporter
 
     public static List<dynamic> musicSourcesJson { get; set; } = null!;
 
-    public static List<dynamic> musicSourcesTitlesJson { get; set; } = null!; // todo
+    public static List<dynamic> musicSourcesTitlesJson { get; set; } = null!;
 
     public static List<dynamic> artistsJson { get; set; } = null!;
 
@@ -282,10 +282,8 @@ public static class VndbImporter
                         {
                             LatinTitle = dynData.ParsedSong.Title, Language = "ja", IsMainTitle = true // todo language
                         },
-                        // todo multiple song titles?
                     }.OrderBy(y => y).ToList(),
                 Artists = new List<SongArtist> { songArtist }.OrderBy(y => y).ToList(),
-                // todo song links
                 Sources = new List<SongSource>()
                 {
                     new SongSource()

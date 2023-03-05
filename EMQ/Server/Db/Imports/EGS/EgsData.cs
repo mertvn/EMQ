@@ -11,7 +11,6 @@ public readonly struct EgsData
 
     public string MusicFurigana { get; init; }
 
-    // todo: store as seconds
     public string MusicPlaytime { get; init; }
 
     public SongSourceSongType GameMusicCategory { get; init; }

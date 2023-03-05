@@ -20,7 +20,7 @@ public class MediaAnalyserTests
     {
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_AnalyseBackupFolder()
     {
         const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
@@ -37,7 +37,7 @@ public class MediaAnalyserTests
         Console.WriteLine(JsonSerializer.Serialize(results.Where(x => !x.Value.IsValid), Utils.JsoIndented));
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_AnalyseAndUpdateDurationsOfDbSongs()
     {
         const string baseDownloadDir = "C:\\emq\\emqsongsbackup";

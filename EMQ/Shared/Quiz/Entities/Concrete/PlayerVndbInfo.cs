@@ -24,7 +24,7 @@ public class Label
 
     public List<string> VnUrls { get; set; } = new();
 
-    public LabelKind Kind { get; set; } = LabelKind.Maybe; // todo priority
+    public LabelKind Kind { get; set; } = LabelKind.Maybe;
 
     public static Label FromVndbLabel(VNDBLabel vndbLabel)
     {
