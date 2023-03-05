@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -57,13 +58,16 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    [SuppressMessage("ReSharper", "HeuristicUnreachableCode")]
     public async Task GenerateSongLite()
     {
+#pragma warning disable CS0162
         if (true)
         {
             await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
         }
         else
+
         {
             var adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
             if (string.IsNullOrWhiteSpace(adminPassword))
@@ -83,6 +87,7 @@ public class EntryPoints
 
             await File.WriteAllTextAsync("SongLite.json", songLite);
         }
+#pragma warning restore CS0162
     }
 
     [Test, Explicit]
