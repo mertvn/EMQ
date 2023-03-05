@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -87,9 +88,19 @@ public class AuthController : ControllerBase
         {
             VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, Labels = vns
         };
+
         ServerState.Sessions.Add(session);
+
+        string? ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
+        string? header = (Request.HttpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault() ??
+                          Request.HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault());
+        if (IPAddress.TryParse(header, out IPAddress? i))
+        {
+            ip = i.ToString();
+        }
+
         _logger.LogInformation(
-            $"Created new session for p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {Request.HttpContext.Connection.RemoteIpAddress}");
+            $"Created new session for p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {ip}");
 
         // var claims = new List<Claim>
         // {

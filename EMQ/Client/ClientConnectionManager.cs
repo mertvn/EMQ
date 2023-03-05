@@ -57,6 +57,19 @@ public class ClientConnectionManager
         await ClientState.Session.hubConnection.StartAsync();
     }
 
+    private async Task StopHubConnection()
+    {
+        Logger.LogInformation($"StopHubConnection to {Client.BaseAddress}");
+        try
+        {
+            await ClientState.Session!.hubConnection!.StopAsync();
+        }
+        finally
+        {
+            await ClientState.Session!.hubConnection!.DisposeAsync();
+        }
+    }
+
     private async Task EnsureHubConnection(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
     {
         if (ClientState.Session!.hubConnection is null ||
