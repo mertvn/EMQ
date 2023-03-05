@@ -4,22 +4,7 @@ No, all-ages VNs aren't excluded. Eroge = Visual Novel. Name was chosen as such 
 autocomplete). Inspired by [AMQ](https://animemusicquiz.com/).
 
 Currently running on a free service at https://emq.up.railway.app, which only provides 500 execution hours or $5 worth
-of resource usage per month, so it will be down after the 21st of every month or even earlier if people use it too much
-w
-
-## TODO
-
-* Restart songs on results phase option
-* Proper authentication/authorization
-* CSS... (help!)
-* coop: ability to click teammate's answer to switch to it
-* coop: team answers should be determined by count
-* trim before autocomplete
-* 6+ players everything stretching
-* https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event
-* player -> (site)user + (quiz)player
-* check if players are still active ^prerequisite
-* ~~leaving a room in the middle of a quiz and then starting a new quiz causes double timer tick~~ applied band-aid
+of resource usage per month, so it will be down after the 21st of every month.
 
 ## Steps to import data
 
