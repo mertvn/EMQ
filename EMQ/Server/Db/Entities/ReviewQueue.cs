@@ -15,7 +15,7 @@ public class ReviewQueue
     public int music_id { get; set; }
 
     [Required]
-    public string url { get; set; }
+    public string url { get; set; } = "";
 
     [Required]
     public int type { get; set; }
@@ -24,7 +24,7 @@ public class ReviewQueue
     public bool is_video { get; set; }
 
     [Required]
-    public string submitted_by { get; set; }
+    public string submitted_by { get; set; } = "";
 
     [Required]
     public DateTime submitted_on { get; set; }

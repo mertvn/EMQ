@@ -12,7 +12,7 @@ public class MusicSourceTitle
 
     [Dapper.Contrib.Extensions.ExplicitKey]
     [Required]
-    public string latin_title { get; set; }
+    public string latin_title { get; set; } = "";
 
     public string? non_latin_title { get; set; }
 

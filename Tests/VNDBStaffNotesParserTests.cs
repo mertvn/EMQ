@@ -129,13 +129,7 @@ public class VNDBStaffNotesParserTests
 
         var expected = new List<ParsedSong>
         {
-            new()
-            {
-                BeforeType = "",
-                Type = new List<SongType> { SongType.ED },
-                Title = "Negai",
-                AfterTitle = ""
-            }
+            new() { BeforeType = "", Type = new List<SongType> { SongType.ED }, Title = "Negai", AfterTitle = "" }
         };
 
         var actual = VNDBStaffNotesParser.Program.Parse(input);
@@ -376,7 +370,7 @@ public class VNDBStaffNotesParserTests
     [Test, Explicit]
     public void Test_MultipleWithDifferentSongTypesOxfordCommaAmpersandDelimiter()
     {
-        var _ =
+        string _ =
             "OP \"Aoiro Step\", insert songs \"Heroine Mode\", \"Sweet Mission\", & \"Seishun Meiro de Syalalala\""; // todo
         string input =
             "OP \"AI CATCH\", ED themes \"De SLASH\", \"Only finally there is the free end\", \"PARA MIDIA\", and \"Masculine Devil\"";

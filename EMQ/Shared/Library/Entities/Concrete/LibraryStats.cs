@@ -40,9 +40,9 @@ public class LibraryStatsMsm
 {
     public int MSId { get; set; }
 
-    public string MstLatinTitle { get; set; }
+    public string MstLatinTitle { get; set; } = "";
 
-    public string MselUrl { get; set; }
+    public string MselUrl { get; set; } = "";
 
     public int MusicCount { get; set; }
 
@@ -53,9 +53,9 @@ public class LibraryStatsAm
 {
     public int AId { get; set; }
 
-    public string AALatinAlias { get; set; }
+    public string AALatinAlias { get; set; } = "";
 
-    public string VndbId { get; set; }
+    public string VndbId { get; set; } = "";
 
     public int MusicCount { get; set; }
 

@@ -32,15 +32,13 @@ public class Song
 
     public static SongLite ToSongLite(Song song)
     {
-        return new SongLite
-        {
-            Titles = song.Titles,
-            Links = song.Links,
-            SourceVndbIds = song.Sources.SelectMany(songSource =>
+        return new SongLite(
+            song.Titles,
+            song.Links,
+            song.Sources.SelectMany(songSource =>
                 songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
                     .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
-            ArtistVndbIds = song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
-        };
+            song.Artists.Select(artist => artist.VndbId ?? "").ToList());
     }
 }
 

@@ -66,7 +66,7 @@ public partial class HotelPage
         StateHasChanged();
 
         HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom",
-            new ReqJoinRoom(roomId, roomPassword, ClientState.Session!.Player.Id));
+            new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
             int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;

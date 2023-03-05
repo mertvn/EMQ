@@ -589,7 +589,7 @@ public static class DbManager
                             cId = await connection.InsertAsync(newCategory);
                         }
 
-                        int mscId = 0;
+                        int mscId;
                         mscId = (await connection.QueryAsync<int>(
                             "select music_source_id from music_source_category msc where msc.music_source_id=@msId AND msc.category_id =@cId",
                             new { msId, cId })).ToList().SingleOrDefault();
@@ -1144,21 +1144,19 @@ public static class DbManager
     public static async Task<string> ExportSongLite()
     {
         var songs = await GetRandomSongs(int.MaxValue, true);
-
         var songLite = songs.Select(song => Song.ToSongLite(song)).ToList();
 
+        HashSet<string> md5Hashes = new();
         foreach (SongLite sl in songLite)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sl));
             byte[] hash = MD5.Create().ComputeHash(bytes);
             string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
 
-            if (songLite.Any(x => x.Md5Hash == encoded))
+            if (!md5Hashes.Add(encoded))
             {
                 throw new Exception("Duplicate SongLite detected");
             }
-
-            sl.Md5Hash = encoded;
         }
 
         return JsonSerializer.Serialize(songLite, Utils.JsoIndented);

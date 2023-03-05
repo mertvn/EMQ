@@ -25,11 +25,11 @@ public class ModController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(envVar) || envVar != adminPassword)
         {
-            Console.WriteLine("Rejected ExportSongLite request");
+            _logger.LogInformation("Rejected ExportSongLite request");
             return Unauthorized();
         }
 
-        Console.WriteLine("Approved ExportSongLite request");
+        _logger.LogInformation("Approved ExportSongLite request");
         return await DbManager.ExportSongLite();
     }
 }

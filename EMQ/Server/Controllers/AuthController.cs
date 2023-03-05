@@ -88,7 +88,8 @@ public class AuthController : ControllerBase
             VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, Labels = vns
         };
         ServerState.Sessions.Add(session);
-        _logger.LogInformation($"Created new session for {player.Id} {player.Username} ({session.VndbInfo.VndbId})");
+        _logger.LogInformation(
+            $"Created new session for p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {Request.HttpContext.Connection.RemoteIpAddress}");
 
         // var claims = new List<Claim>
         // {

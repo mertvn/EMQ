@@ -14,7 +14,7 @@ public class ArtistAlias
     public int artist_id { get; set; }
 
     [Required]
-    public string latin_alias { get; set; }
+    public string latin_alias { get; set; } = "";
 
     public string? non_latin_alias { get; set; }
 

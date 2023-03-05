@@ -117,11 +117,6 @@ public partial class RoomPage
         Navigation.NavigateTo("/QuizPage");
     }
 
-    private async Task ChangeTeam(int teamId)
-    {
-        // todo
-    }
-
     private void ResetQuizSettings()
     {
         ClientQuizSettings = new QuizSettings();
