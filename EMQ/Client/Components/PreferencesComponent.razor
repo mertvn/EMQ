@@ -1,0 +1,71 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using Microsoft.Extensions.Logging
+@inject HttpClient Client
+@inject ILogger<PreferencesComponent> _logger
+@inject ClientUtils _clientUtils
+
+@if (ClientState.Session != null)
+{
+    <div id="playerPreferences" style="border: 1px solid black; padding: 5px; margin-top: 5px;">
+        <h4>Preferences</h4>
+        <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+
+            <InputCheckbox id="WantsVideo" @bind-Value="ClientState.Session.Player.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
+            <label for="WantsVideo">Prefer video links over sound links</label>
+            <br/>
+
+            <InputCheckbox id="RestartSongsOnResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
+            <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
+            <br/>
+
+            <InputCheckbox id="AutoSkipGuessPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
+            <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
+            <br/>
+
+            <InputCheckbox id="AutoSkipResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
+            <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
+            <br/>
+
+            <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
+                @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
+                {
+                    <option value="@songLinkType">@songLinkType</option>
+                }
+            </InputSelect>
+            <label for="LinkHost">Preferred host</label>
+            <br/>
+
+            <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Save preferences"/>
+        </EditForm>
+        <p>@PreferencesSavedText</p>
+    </div>
+}
+
+@code {
+    public string PreferencesSavedText { get; set; } = "";
+
+    private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
+    {
+        PreferencesSavedText = "Saving...";
+
+        HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/UpdatePlayerPreferences",
+            new ReqUpdatePlayerPreferences(ClientState.Session!.Token, playerPreferencesModel));
+
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.Session.Player.Preferences = (await res.Content.ReadFromJsonAsync<PlayerPreferences>())!;
+            await _clientUtils.SaveSessionToLocalStorage();
+            PreferencesSavedText = "Saved.";
+        }
+        else
+        {
+            PreferencesSavedText = "Failed to save.";
+        }
+
+        StateHasChanged();
+    }
+
+}
