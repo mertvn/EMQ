@@ -12,6 +12,7 @@ public static class Autocomplete
 {
     public static IEnumerable<string> SearchAutocompleteMst(string[] data, string arg)
     {
+        arg = arg.Trim();
         // todo prefer Japanese latin titles
         var startsWith = data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
         var contains = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
@@ -23,6 +24,7 @@ public static class Autocomplete
 
     public static IEnumerable<SongSourceCategory> SearchAutocompleteC(SongSourceCategory[] data, string arg)
     {
+        arg = arg.Trim();
         // todo prefer Japanese latin titles
         var startsWith = data.Where(x => x.Name.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
         var contains = data.Where(x => x.Name.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
@@ -38,6 +40,7 @@ public static class Autocomplete
 
     public static IEnumerable<AutocompleteA> SearchAutocompleteA(AutocompleteA[] data, string arg)
     {
+        arg = arg.Trim();
         var startsWith = data.Where(x => x.AALatinAlias.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
             .OrderBy(x => x.AALatinAlias);
         var contains = data.Where(x => x.AALatinAlias.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
