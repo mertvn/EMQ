@@ -90,6 +90,7 @@ public partial class LibraryPage
                 if (songs != null && songs.Any())
                 {
                     CurrentSongs = songs;
+                    selectedMusicSourceTitle = null;
                 }
 
                 if (!CurrentSongs.Any())
