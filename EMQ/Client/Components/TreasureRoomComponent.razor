@@ -10,7 +10,7 @@
 @* <h6>TreasureRoomComponent</h6> *@
 
 <div id="countdownDiv" style="font-size: xxx-large; color: black;">
-    @((int) Math.Round(Countdown / 1000))
+    @((int)Math.Round(Countdown / 1000))
 </div>
 
 @* z-indexes: arrow > treasure > player *@
@@ -75,7 +75,7 @@
                 <div class="treasure" @onmouseover="@(() => { })"
                      style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer; z-index: 3000000;
                      padding: 5px 5px 1px 5px; border-style: solid; border-radius: 50%;
-                     border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");"
+                     border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");"
                      @onclick="@(() => PickupTreasure(treasure))">
 
                     @* todo title selection *@
@@ -119,8 +119,8 @@
             <div class="changeTreasureRoomArrowDiv"
                  style="position: absolute; left: @(arrowPosition.X)px; top:@(arrowPosition.Y)px; z-index: 30000000;
                           font-size: xx-large; cursor: pointer;
-                          color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y), "green", "red");
-                          pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int) ownPlayer.LootingInfo.X, (int) ownPlayer.LootingInfo.Y));"
+                          color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");
+                          pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y));"
                  @onclick="@(() => OnclickChangeTreasureRoomArrow(arrowPosition, treasureRoomCoords, direction))">
                 @arrowText
             </div>

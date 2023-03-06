@@ -109,7 +109,8 @@ public partial class AutocompleteAComponent
     private void SelectedValueChanged(AutocompleteA arg)
     {
         CurrentDataSource =
-            Autocomplete.SearchAutocompleteA(AutocompleteData, arg.AALatinAlias); // work-around for an issue I'm too lazy to submit a report for
+            Autocomplete.SearchAutocompleteA(AutocompleteData,
+                arg.AALatinAlias); // work-around for an issue I'm too lazy to submit a report for
     }
 
     public void CallClose()

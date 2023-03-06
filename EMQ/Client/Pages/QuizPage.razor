@@ -14,11 +14,13 @@
 @implements IDisposable
 
 @code {
+
     public void Dispose()
     {
         PageState.Timer.Dispose();
         _chatComponent?.Dispose();
     }
+
 }
 
 <CascadingValue Value="@this" IsFixed="true">
@@ -42,7 +44,7 @@
         }
 
         int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
-        int skipNumber = (int) Math.Round((float) Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
+        int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
         <button class="btn btn-primary"
                 disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
                 @onclick="SendToggleSkip"
@@ -143,9 +145,9 @@
 
             @if (!PageState.VideoPlayerVisibility)
             {
-@* TODO: properly center this *@
+                @* TODO: properly center this *@
                 <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                    @((int) Math.Round(PageState.Countdown / 1000))
+                    @((int)Math.Round(PageState.Countdown / 1000))
                 </div>
             }
         </div>
