@@ -37,7 +37,7 @@ VNDB: Data obtained under Open Data Commons Open Database License (ODbL) v1.0.
 
 rampaa: Help with the database schema and VNDB queries
 
-hslead: Avatar "Auu"
+hslead: Avatar "Auu" and favicon "Love"
 
 Burnal: Motivational support
 
