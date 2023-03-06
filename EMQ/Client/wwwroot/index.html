@@ -26,6 +26,26 @@
 <script src="_framework/blazor.webassembly.js"></script>
 
 <script>
+    const beforeUnloadEvent = function (event) {
+        event.preventDefault();
+    };
+
+    function addQuizPageEventListeners() {
+        addBeforeUnload();
+    }
+
+    function removeQuizPageEventListeners() {
+        removeBeforeUnload();
+    }
+
+    function addBeforeUnload() {
+        addEventListener('beforeunload', beforeUnloadEvent);
+    }
+
+    function removeBeforeUnload() {
+        removeEventListener('beforeunload', beforeUnloadEvent);
+    }
+
     function scrollToEnd(element) {
         if (element) {
             element.scrollTop = element.scrollHeight;

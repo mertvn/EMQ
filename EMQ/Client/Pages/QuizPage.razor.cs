@@ -146,6 +146,7 @@ public partial class QuizPage
 
         // we want to send this message regardless of whether the preloading was successful or not
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
+        await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
     private async Task OnReceiveCorrectAnswer(Song correctAnswer)
@@ -300,6 +301,7 @@ public partial class QuizPage
             "Really leave? If you return your score will not be restored.");
         if (confirmed)
         {
+            await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
             await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
             // await SyncWithServer();
 
