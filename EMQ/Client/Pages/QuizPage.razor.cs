@@ -399,7 +399,7 @@ public partial class QuizPage
     {
         if (PageState.Timer.Enabled)
         {
-            PageState.ProgressValue += 100 / PageState.ProgressDivisor * Quiz.TickRate;
+            PageState.ProgressValue = 100 - (100 / PageState.ProgressDivisor * PageState.Countdown);
 
             if (PageState.Countdown > 0)
             {
