@@ -323,7 +323,7 @@ public class QuizController : ControllerBase
                     room.QuizSettings = req.QuizSettings;
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
-                    room.Quiz?.Log("Changed room settings");
+                    room.Quiz?.Log("Room settings changed.", isSystemMessage: true);
                     // todo write to chat
                 }
                 else
