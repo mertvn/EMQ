@@ -5,8 +5,8 @@
 @inject ILogger<PlayerPreferencesComponent> _logger
 @inject ClientUtils _clientUtils
 
-<button id="buttonPreferences" class="btn btn-primary" style="padding: 2px; margin: 5px;" disabled="@(ClientState.Session == null)"
-        @onclick="@(() => { _modalRef.Show(); })">
+<button id="buttonPreferences" class="btn btn-primary" style="padding: 2px; margin: 5px;"
+        @onclick="@(OnclickButtonPreferences)">
     <span style="padding: 5px">Preferences</span>
 </button>
 <style>
@@ -19,14 +19,14 @@
 }
 </style>
 
-@if (ClientState.Session != null)
-{
-    <Blazorise.Modal @ref="_modalRef">
-        <Blazorise.ModalContent Centered>
-            <Blazorise.ModalHeader>
-                <Blazorise.ModalTitle>Preferences</Blazorise.ModalTitle>
-            </Blazorise.ModalHeader>
-            <Blazorise.ModalBody>
+<Blazorise.Modal @ref="_modalRef">
+    <Blazorise.ModalContent Centered>
+        <Blazorise.ModalHeader>
+            <Blazorise.ModalTitle>Preferences</Blazorise.ModalTitle>
+        </Blazorise.ModalHeader>
+        <Blazorise.ModalBody>
+            @if (ClientState.Session != null)
+            {
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
                     <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
                         <DataAnnotationsValidator/>
@@ -58,18 +58,19 @@
                         <br/>
                     </EditForm>
                 </div>
-            </Blazorise.ModalBody>
-            <Blazorise.ModalFooter>
-                <button class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
-                    Close
-                </button>
-                <button class="btn btn-primary" @onclick="@(async () => { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); })">
-                    Save preferences
-                </button>
-            </Blazorise.ModalFooter>
-        </Blazorise.ModalContent>
-    </Blazorise.Modal>
-}
+            }
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                Close
+            </button>
+            <button class="btn btn-primary" @onclick="@(async () => { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); })">
+                Save preferences
+            </button>
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>
+
 
 @code {
     private Blazorise.Modal _modalRef = null!;
@@ -90,6 +91,15 @@
         }
 
         StateHasChanged();
+    }
+
+    private void OnclickButtonPreferences()
+    {
+        StateHasChanged();
+        if (ClientState.Session != null)
+        {
+            _modalRef.Show();
+        }
     }
 
 }
