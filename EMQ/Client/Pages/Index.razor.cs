@@ -54,7 +54,7 @@ public partial class Index
     {
         if (ClientState.Session is not null)
         {
-            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/RemoveSession",
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/RemoveSession",
                 new ReqRemoveSession(ClientState.Session.Token));
             if (res.IsSuccessStatusCode)
             {
@@ -115,7 +115,7 @@ public partial class Index
 
             LoginProgressDisplay.Add($"Creating session...");
             StateHasChanged();
-            HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/CreateSession",
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/CreateSession",
                 new ReqCreateSession(
                     loginModel.Username,
                     loginModel.Password,
@@ -149,10 +149,10 @@ public partial class Index
                     LoginInProgress = false;
                     StateHasChanged();
 
-                    // if (ClientState.Session.VndbInfo.Labels is null)
-                    // {
-                    //     Navigation.NavigateTo("/HotelPage");
-                    // }
+                    if (ClientState.Session.VndbInfo.Labels is null)
+                    {
+                        Navigation.NavigateTo("/HotelPage");
+                    }
                 }
             }
             else
@@ -189,7 +189,7 @@ public partial class Index
         }
 
         label.Kind = newLabelKind;
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/UpdateLabel",
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdateLabel",
             new ReqUpdateLabel(ClientState.Session!.Token, label));
 
         if (res.IsSuccessStatusCode)

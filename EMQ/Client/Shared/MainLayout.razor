@@ -6,7 +6,7 @@
 <div class="page">
     @if (SidebarPages.Contains(new Uri(_navigation.Uri).Segments.Last()))
     {
-        <div class="sidebar">
+        <div class="sidebar" style="z-index: 30">
             <NavMenu/>
         </div>
     }

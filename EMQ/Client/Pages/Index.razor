@@ -5,7 +5,7 @@
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
 @inject NavigationManager Navigation
-@inject HttpClient Client
+@inject HttpClient _client
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
@@ -21,10 +21,7 @@
             <button class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>
 
-            <div>
-                <PreferencesComponent/>
-            </div>
-
+            @* todo move this to the PlayerPreferencesComponent *@
             @if (ClientState.Session.VndbInfo.Labels is not null)
             {
                 <br/>

@@ -1,7 +1,7 @@
 ﻿@page "/HotelPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Client.Components
-@inject HttpClient Client
+@inject HttpClient _client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager Navigation
 @inject ClientUtils _clientUtils
@@ -61,3 +61,5 @@
         </div>
     }
 </div>
+
+<PlayerPreferencesComponent/>

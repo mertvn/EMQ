@@ -27,7 +27,7 @@ public partial class HotelPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        IEnumerable<Room>? res = await Client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+        IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
         if (res is not null)
         {
             Rooms = res.ToList();
@@ -44,7 +44,7 @@ public partial class HotelPage
 
         ReqCreateRoom req = new(ClientState.Session.Token, createNewRoomModel.RoomName, createNewRoomModel.RoomPassword,
             QuizSettings);
-        HttpResponseMessage res = await Client.PostAsJsonAsync("Quiz/CreateRoom", req);
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/CreateRoom", req);
         int roomId = await res.Content.ReadFromJsonAsync<int>();
 
         await JoinRoom(roomId, createNewRoomModel.RoomPassword);
@@ -65,7 +65,7 @@ public partial class HotelPage
         IsJoiningRoom = true;
         StateHasChanged();
 
-        HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/JoinRoom",
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/JoinRoom",
             new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Player.Id));
         if (res1.IsSuccessStatusCode)
         {

@@ -80,7 +80,7 @@ public partial class RoomPage
             if (!IsStartingQuiz)
             {
                 IsStartingQuiz = true;
-                HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/StartQuiz",
+                HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/StartQuiz",
                     new ReqStartQuiz(ClientState.Session.Token, Room.Id));
                 if (res1.IsSuccessStatusCode)
                 {
@@ -127,7 +127,7 @@ public partial class RoomPage
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
             // todo room password
-            HttpResponseMessage res1 = await Client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
+            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
                 new ReqChangeRoomSettings(
                     ClientState.Session.Token, Room.Id, "", clientQuizSettings));
 

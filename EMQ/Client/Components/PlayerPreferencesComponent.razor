@@ -1,0 +1,95 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using Microsoft.Extensions.Logging
+@inject HttpClient _client
+@inject ILogger<PlayerPreferencesComponent> _logger
+@inject ClientUtils _clientUtils
+
+<button id="buttonPreferences" class="btn btn-primary" style="padding: 2px; margin: 5px;" disabled="@(ClientState.Session == null)"
+        @onclick="@(() => { _modalRef.Show(); })">
+    <span style="padding: 5px">Preferences</span>
+</button>
+<style>
+#buttonPreferences {
+   position: fixed;
+   bottom: 0;
+   right: 0;
+   text-align: center;
+   height: 40px;
+}
+</style>
+
+@if (ClientState.Session != null)
+{
+    <Blazorise.Modal @ref="_modalRef">
+        <Blazorise.ModalContent Centered>
+            <Blazorise.ModalHeader>
+                <Blazorise.ModalTitle>Preferences</Blazorise.ModalTitle>
+            </Blazorise.ModalHeader>
+            <Blazorise.ModalBody>
+                <div id="playerPreferences" style="padding: 5px; margin: 2px;">
+                    <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
+                        <DataAnnotationsValidator/>
+                        <ValidationSummary/>
+
+                        <InputCheckbox id="WantsVideo" @bind-Value="ClientState.Session.Player.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
+                        <label for="WantsVideo">Prefer video links over sound links</label>
+                        <br/>
+
+                        <InputCheckbox id="RestartSongsOnResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
+                        <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
+                        <br/>
+
+                        <InputCheckbox id="AutoSkipGuessPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
+                        <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
+                        <br/>
+
+                        <InputCheckbox id="AutoSkipResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
+                        <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
+                        <br/>
+
+                        <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
+                            @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
+                            {
+                                <option value="@songLinkType">@songLinkType</option>
+                            }
+                        </InputSelect>
+                        <label for="LinkHost">Preferred host</label>
+                        <br/>
+                    </EditForm>
+                </div>
+            </Blazorise.ModalBody>
+            <Blazorise.ModalFooter>
+                <button class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                    Close
+                </button>
+                <button class="btn btn-primary" @onclick="@(async () => { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); })">
+                    Save preferences
+                </button>
+            </Blazorise.ModalFooter>
+        </Blazorise.ModalContent>
+    </Blazorise.Modal>
+}
+
+@code {
+    private Blazorise.Modal _modalRef = null!;
+
+    private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdatePlayerPreferences",
+            new ReqUpdatePlayerPreferences(ClientState.Session!.Token, playerPreferencesModel));
+
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.Session.Player.Preferences = (await res.Content.ReadFromJsonAsync<PlayerPreferences>())!;
+            await _clientUtils.SaveSessionToLocalStorage();
+            await _modalRef.Hide();
+        }
+        else
+        {
+        }
+
+        StateHasChanged();
+    }
+
+}
