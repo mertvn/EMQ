@@ -376,6 +376,11 @@ public partial class QuizPage
                     // todo request
                 }
 
+                if (ClientState.Session!.Player.Preferences.AutoSkipResultsPhase)
+                {
+                    await SendToggleSkip();
+                }
+
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
                     PreloadCancellationSource.CancelAfter(
@@ -444,13 +449,7 @@ public partial class QuizPage
             _currentSong = new Song()
             {
                 StartTime = nextSong.StartTime,
-                Links = new List<SongLink>
-                {
-                    new()
-                    {
-                        Url = nextSong.Links.First().Url
-                    }
-                }
+                Links = new List<SongLink> { new() { Url = nextSong.Links.First().Url } }
             };
             StateHasChanged();
         }

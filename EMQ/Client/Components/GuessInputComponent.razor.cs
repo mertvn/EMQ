@@ -101,6 +101,12 @@ public partial class GuessInputComponent
                 // todo do this with callback
 
                 await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)
+                {
+                    // todo dedup
+                    await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
+                    StateHasChanged();
+                }
             }
 
             Callback?.Invoke();

@@ -470,7 +470,8 @@ public class QuizManager
 
     public async Task OnSendTogglePause()
     {
-        if (!Quiz.QuizState.ExtraInfo.Contains("Waiting buffering") &&
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+            !Quiz.QuizState.ExtraInfo.Contains("Waiting buffering") &&
             !Quiz.QuizState.ExtraInfo.Contains("Skipping")) // todo
         {
             if (Quiz.QuizState.IsPaused)
@@ -791,7 +792,8 @@ public class QuizManager
 
     public async Task OnSendToggleSkip(string connectionId, int playerId)
     {
-        if (Quiz.QuizState.RemainingMs > 2000 &&
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+            Quiz.QuizState.RemainingMs > 2000 &&
             Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
             !Quiz.QuizState.IsPaused)
         {
