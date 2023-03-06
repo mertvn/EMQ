@@ -31,14 +31,17 @@
                     <label for="WantsVideo">Prefer video links over sound links</label>
                     <br/>
 
+                    <InputCheckbox id="RestartSongsOnResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
+                    <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
+                    <br/>
+
                     <InputCheckbox id="AutoSkipGuessPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
-                    <label for="AutoSkipGuessPhase">Auto-skip Guess phase</label>
+                    <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
                     <br/>
 
                     <InputCheckbox id="AutoSkipResultsPhase" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
-                    <label for="AutoSkipResultsPhase">Auto-skip Results phase</label>
+                    <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
                     <br/>
-
 
                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))

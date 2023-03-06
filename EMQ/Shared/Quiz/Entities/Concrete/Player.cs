@@ -64,13 +64,13 @@ public class PlayerPreferences
     public int VolumeMaster { get; set; } = 70; // todo
 
     [Required]
-    public bool AutoSkipGuessPhase { get; set; } = false; // todo
+    public bool AutoSkipGuessPhase { get; set; } = false;
 
     [Required]
-    public bool AutoSkipResultsPhase { get; set; } = false; // todo
+    public bool AutoSkipResultsPhase { get; set; } = false;
 
     [Required]
-    public bool RestartSongsOnResultsPhase { get; set; } = false; // todo
+    public bool RestartSongsOnResultsPhase { get; set; } = false;
 
     // todo language preferences
 }

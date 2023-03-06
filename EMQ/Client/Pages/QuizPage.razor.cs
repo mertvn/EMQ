@@ -364,7 +364,14 @@ public partial class QuizPage
                 StateHasChanged();
                 break;
             case QuizPhaseKind.Results:
-                // TODO: restart song (option?)
+                if (ClientState.Session!.Player.Preferences.RestartSongsOnResultsPhase)
+                {
+                    if (_currentSong != null)
+                    {
+                        await _jsRuntime.InvokeAsync<string>("reloadVideo", _currentSong.StartTime);
+                    }
+                }
+
                 PageState.ProgressValue = 0;
                 PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;
