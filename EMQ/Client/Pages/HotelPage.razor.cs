@@ -82,6 +82,7 @@ public partial class HotelPage
         }
         else if (res1.StatusCode == HttpStatusCode.Unauthorized)
         {
+            // todo convert to modal
             string promptRes = await _jsRuntime.InvokeAsync<string>("prompt", "Please enter room password: ");
             if (!string.IsNullOrWhiteSpace(promptRes))
             {
