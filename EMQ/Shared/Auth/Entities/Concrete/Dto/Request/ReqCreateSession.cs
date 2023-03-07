@@ -1,4 +1,5 @@
-﻿using EMQ.Shared.Quiz.Entities.Concrete;
+﻿using System.ComponentModel.DataAnnotations;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 
@@ -11,6 +12,7 @@ public class ReqCreateSession
         VndbInfo = vndbInfo;
     }
 
+    [MinLength(1)]
     public string Username { get; }
 
     public string Password { get; }

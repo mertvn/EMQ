@@ -221,7 +221,7 @@ public class QuizManager
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
-            (Quiz.Room.QuizSettings.MaxLives > 0 && Quiz.Room.Players.All(x => x.Lives <= 0)))
+            (Quiz.Room.QuizSettings.MaxLives > 0 && !Quiz.Room.Players.Any(x => x.Lives > 0)))
         {
             await EndQuiz();
         }

@@ -3,8 +3,7 @@
 No, all-ages VNs aren't excluded. Eroge = Visual Novel. Name was chosen as such for different reasons (mainly browser
 autocomplete). Inspired by [AMQ](https://animemusicquiz.com/).
 
-Currently running on a free service at https://emq.up.railway.app, which only provides 500 execution hours or $5 worth
-of resource usage per month, so it will be down after the 21st of every month.
+Currently running on a free service at https://emq.up.railway.app, which only provides 500 execution hours per month, so it will be down after the 21st of every month.
 
 ## Steps to import data
 

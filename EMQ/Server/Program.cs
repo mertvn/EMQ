@@ -21,9 +21,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
-const bool hasDb = true;
-bool cacheSongs = true;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -109,6 +106,9 @@ app.MapControllers();
 app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
+
+const bool hasDb = true;
+bool cacheSongs = !app.Environment.IsDevelopment();
 
 static IServiceProvider CreateServices()
 {

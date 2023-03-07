@@ -64,13 +64,13 @@
             <button class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
                 Close
             </button>
-            <button class="btn btn-primary" @onclick="@(async () => { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); })">
+            <button class="btn btn-primary"
+                    @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); } })">
                 Save preferences
             </button>
         </Blazorise.ModalFooter>
     </Blazorise.ModalContent>
 </Blazorise.Modal>
-
 
 @code {
     private Blazorise.Modal _modalRef = null!;
