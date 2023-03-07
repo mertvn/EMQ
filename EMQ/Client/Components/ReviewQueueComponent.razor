@@ -15,9 +15,9 @@
         <th>Is Video</th>
         <th>Submitted By</th>
         <th>Submitted On</th>
-        <th>Status</th>
         <th>Analysis</th>
         <th>Duration</th>
+        <th>Status</th>
         <th>Reason</th>
     </tr>
     @foreach (var rq in CurrentRQs)
@@ -43,11 +43,11 @@
             <td>@rq.is_video</td>
             <td>@rq.submitted_by</td>
             <td>@rq.submitted_on.ToString("s")</td>
+            <td>@rq.analysis</td>
+            <td>@(rq.duration?.ToString("mm\\:ss"))</td>
             <td style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
                 @rq.status
             </td>
-            <td>@rq.analysis</td>
-            <td>@(rq.duration?.ToString("mm\\:ss"))</td>
             <td>@rq.reason</td>
         </tr>
     }

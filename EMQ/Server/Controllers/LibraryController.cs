@@ -105,7 +105,7 @@ public class LibraryController : ControllerBase
     {
         List<Song> songs = new();
 
-        var vndbUrls = req;
+        string[] vndbUrls = req;
         foreach (string vndbUrl in vndbUrls)
         {
             var song = await DbManager.FindSongsByVndbUrl(vndbUrl);
