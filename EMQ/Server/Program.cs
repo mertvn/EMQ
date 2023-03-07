@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +22,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 
 const bool hasDb = true;
+bool cacheSongs = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -129,6 +132,17 @@ async Task Init()
 {
     string wwwrootFolder = app.Environment.IsDevelopment() ? "../Client/wwwroot" : "wwwroot";
 
+    // test ffMPEG install
+    try
+    {
+        var mediaInfo = await FFProbe.AnalyseAsync($"{wwwrootFolder}/soft-piano-100-bpm-121529.mp3");
+        Console.WriteLine(JsonSerializer.Serialize(mediaInfo.Duration, Utils.JsoIndented));
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e);
+    }
+
     if (hasDb)
     {
         var serviceProvider = CreateServices();
@@ -152,17 +166,21 @@ async Task Init()
             await DbManager.SelectAutocompleteC());
         await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
             await DbManager.SelectAutocompleteA());
-    }
 
-    // test ffMPEG install
-    try
-    {
-        var mediaInfo = await FFProbe.AnalyseAsync($"{wwwrootFolder}/soft-piano-100-bpm-121529.mp3");
-        Console.WriteLine(JsonSerializer.Serialize(mediaInfo.Duration, Utils.JsoIndented));
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e);
+        if (cacheSongs)
+        {
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            // cache songs
+            await DbManager.GetRandomSongs(int.MaxValue, true, new List<string>());
+
+            stopWatch.Stop();
+            double ms = (stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency;
+            Console.WriteLine($"Cached songs in {Math.Round(ms / 1000, 2)}s");
+
+            GC.Collect(int.MaxValue, GCCollectionMode.Forced, true);
+        }
     }
 }
 

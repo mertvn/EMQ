@@ -21,6 +21,8 @@ namespace EMQ.Server.Db;
 
 public static class DbManager
 {
+    private static Dictionary<int, Song> CachedSongs { get; } = new();
+
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
@@ -29,6 +31,17 @@ public static class DbManager
     /// </summary>
     public static async Task<List<Song>> SelectSongs(Song input)
     {
+        var latinTitles = input.Titles.Select(x => x.LatinTitle).ToList();
+        var links = input.Links.Select(x => x.Url).ToList();
+
+        if (input.Id > 0 && !latinTitles.Any() && !links.Any())
+        {
+            if (CachedSongs.TryGetValue(input.Id, out var s))
+            {
+                return new List<Song> { s };
+            }
+        }
+
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var queryMusic = connection
@@ -44,13 +57,11 @@ public static class DbManager
                 queryMusic.Where($"m.id = {input.Id}");
             }
 
-            var latinTitles = input.Titles.Select(x => x.LatinTitle).ToList();
             if (latinTitles.Any())
             {
                 queryMusic.Where($"mt.latin_title = ANY({latinTitles})");
             }
 
-            var links = input.Links.Select(x => x.Url).ToList();
             if (links.Any())
             {
                 queryMusic.Where($"mel.url = ANY({links})");
@@ -149,6 +160,8 @@ public static class DbManager
             {
                 song.Sources = await SelectSongSource(connection, song);
                 song.Artists = await SelectArtist(connection, song, false);
+
+                CachedSongs[input.Id] = song;
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
@@ -703,7 +716,8 @@ public static class DbManager
     }
 
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
-        List<string>? validSources = null, List<CategoryFilter>? validCategories = null, bool printSql = false)
+        List<string>? validSources = null, List<CategoryFilter>? validCategories = null, bool printSql = false,
+        bool keepCategories = false)
     {
         var ret = new List<Song>();
         var rng = new Random();
@@ -815,6 +829,15 @@ public static class DbManager
                         }
                     }
                 }
+            }
+        }
+
+        if (!keepCategories)
+        {
+            // todo
+            foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
+            {
+                songSource.Categories = new List<SongSourceCategory>();
             }
         }
 
