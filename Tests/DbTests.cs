@@ -396,4 +396,16 @@ public class DbTests
         int mId = await DbManager.InsertSong(song);
         Console.WriteLine($"Inserted mId {mId}");
     }
+
+    [Test, Explicit]
+    public async Task Test_FilterSongLinks()
+    {
+        var song = (await DbManager.SelectSongs(new Song
+        {
+            Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } }
+        })).Single();
+
+        var filtered = SongLink.FilterSongLinks(song.Links);
+        Assert.That(filtered.Count == 1);
+    }
 }

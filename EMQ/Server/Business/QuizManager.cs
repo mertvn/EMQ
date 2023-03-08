@@ -622,6 +622,12 @@ public class QuizManager
 
         Quiz.Songs = dbSongs;
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+
+        foreach (Song dbSong in dbSongs)
+        {
+            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+        }
+
         return true;
     }
 
