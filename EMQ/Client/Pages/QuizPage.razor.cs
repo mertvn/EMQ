@@ -575,4 +575,22 @@ public partial class QuizPage
     {
         await SyncWithServer(room, phaseChanged);
     }
+
+    private async Task SetGuessToTeammateGuess(string guess)
+    {
+        if (Room is { Quiz: { } })
+        {
+            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing && Room.QuizSettings.TeamSize > 1)
+            {
+                PageState.Guess = guess;
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)
+                {
+                    // todo dedup
+                    await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
+                    StateHasChanged();
+                }
+            }
+        }
+    }
 }
