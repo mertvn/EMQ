@@ -27,7 +27,7 @@ public class ParamPOST<T> : Param
     [DefaultValue(true)]
     public bool Exhaust { get; set; } = true;
 
-    public Combinator? Filters { get; set; }
+    public Query? Filters { get; set; }
 
     /// <summary>
     /// VNDB advsearch filter string, takes precedence over Filters if set. (Example: "023gjaN3830X1o")

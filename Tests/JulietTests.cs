@@ -114,8 +114,7 @@ public class JulietTests
         var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
         {
             Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
-            Filters = new Combinator(CombinatorKind.Or,
-                new List<Query>() { new Predicate(FilterField.Search, FilterOperator.Equal, "シャマナシャマナ ～月とこころと太陽の魔法～") })
+            Filters = new Predicate(FilterField.Search, FilterOperator.Equal, "シャマナシャマナ ～月とこころと太陽の魔法～")
         });
         Console.WriteLine(JsonSerializer.Serialize(res,
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
@@ -128,8 +127,7 @@ public class JulietTests
     {
         var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
         {
-            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
-            RawFilters = "023gjaN3830X1o",
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id }, RawFilters = "023gjaN3830X1o",
         });
         Console.WriteLine(JsonSerializer.Serialize(res,
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.Response;
 using Juliet.Model.VNDBObject;
@@ -174,7 +175,7 @@ public static class Api
 
                 if (param.Filters != null)
                 {
-                    filters = param.Filters.ToJsonNormalized(param.Filters, ref filters, true);
+                    filters = Query.ToJsonNormalized(param.Filters, ref filters, true);
 
                     if (usePage)
                     {

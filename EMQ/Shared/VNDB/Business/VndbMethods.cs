@@ -32,17 +32,14 @@ public static class VndbMethods
                         // The ‘Voted’ label (id=7) is always included even when private.
                         if (!label.IsPrivate || !string.IsNullOrWhiteSpace(vndbInfo.VndbApiToken) || label.Id == 7)
                         {
-                            var query = new List<Query>()
-                            {
-                                new Predicate(FilterField.Label, FilterOperator.Equal, label.Id)
-                            };
+                            var query = new Predicate(FilterField.Label, FilterOperator.Equal, label.Id);
 
                             var playerVns = await Juliet.Api.POST_ulist(new ParamPOST_ulist()
                             {
                                 User = vndbInfo.VndbId,
                                 APIToken = vndbInfo.VndbApiToken,
                                 Exhaust = true,
-                                Filters = new Combinator(CombinatorKind.Or, query),
+                                Filters = query,
                             });
                             if (playerVns != null)
                             {
