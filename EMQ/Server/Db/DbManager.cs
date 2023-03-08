@@ -298,7 +298,6 @@ public static class DbManager
                             VndbId = category.vndb_id,
                             Type = (SongSourceCategoryType)category.type,
                             Rating = musicSourceCategory!.rating,
-                            SpoilerLevel = musicSourceCategory.spoiler_level as SpoilerLevel?
                         });
 
                         if (musicSourceCategory.spoiler_level.HasValue)

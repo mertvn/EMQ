@@ -112,7 +112,9 @@ bool cacheSongs = !app.Environment.IsDevelopment();
 
 static IServiceProvider CreateServices()
 {
+#pragma warning disable ASP0000
     return new ServiceCollection()
+#pragma warning restore ASP0000
         // Add common FluentMigrator services
         .AddFluentMigratorCore()
         .ConfigureRunner(rb => rb

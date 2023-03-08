@@ -159,7 +159,7 @@ public static class Api
                 dict.Add("user", param.User);
             }
 
-            string filters = "";
+            string filters;
             if (param.RawFilters != null)
             {
                 filters = param.RawFilters;
