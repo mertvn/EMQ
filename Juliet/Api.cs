@@ -175,7 +175,7 @@ public static class Api
 
                 if (param.Filters != null)
                 {
-                    filters = Query.ToJsonNormalized(param.Filters, ref filters, true);
+                    filters = Query.ToJsonNormalized(param.Filters, true);
 
                     if (usePage)
                     {
