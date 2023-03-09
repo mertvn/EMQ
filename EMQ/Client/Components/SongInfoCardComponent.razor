@@ -19,9 +19,9 @@
                             // couldn't get distinct to work
                             List<string> displayedIds = new();
 
-                            /*@*/foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
                             {
-                                /*@*/foreach (string songSourceVNID in songSourceVNIDs)
+                                foreach (string songSourceVNID in songSourceVNIDs)
                                 {
                                     if (!displayedIds.Contains(songSourceVNID))
                                     {
@@ -40,7 +40,7 @@
 
                                         // todo fix underline being too long
                                         <span></span>
-                                        <a class="songSourceVNID link-primary" href="@songSourceVNID">
+                                        <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
                                             <span>(VN)</span>
                                         </a>
                                         <br/>
@@ -72,7 +72,7 @@
                         var songArtistTitle = songArtist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First();
 
                         <div>
-                            <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())">
+                            <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
                                 <span>@songArtistTitle.ToString()</span>
                             </a>
                         </div>

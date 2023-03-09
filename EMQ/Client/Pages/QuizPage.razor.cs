@@ -86,6 +86,8 @@ public partial class QuizPage
 
     private ChatComponent? _chatComponent;
 
+    private QuizSettingsComponent? _quizSettingsComponent;
+
     private DateTime LastSync { get; set; }
 
     private bool SyncInProgress { get; set; }

@@ -27,21 +27,15 @@ public partial class RoomPage
         };
     }
 
-    private QuizSettings ClientQuizSettings { get; set; } = new();
-
     private Room? Room { get; set; }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
-    public bool ShowQuizSettings { get; set; }
-
     public bool IsStartingQuiz { get; set; }
 
-    public SongSourceCategory[] AutocompleteCData { get; set; } = Array.Empty<SongSourceCategory>();
-
-    public SongSourceCategory? selectedTag { get; set; }
-
     private ChatComponent? _chatComponent;
+
+    private QuizSettingsComponent? _quizSettingsComponent;
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,11 +45,6 @@ public partial class RoomPage
         Room = await _clientUtils.SyncRoom();
         if (Room != null)
         {
-            ClientQuizSettings =
-                JsonSerializer.Deserialize<QuizSettings>(
-                    JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
-            StateHasChanged();
-
             bool canHotjoin = Room.QuizSettings.IsHotjoinEnabled &&
                               Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing;
             // breaks the leave button on QuizPage
@@ -65,8 +54,6 @@ public partial class RoomPage
                 Hotjoin();
             }
 
-            AutocompleteCData =
-                (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
             StateHasChanged();
         }
         else
@@ -119,44 +106,6 @@ public partial class RoomPage
         Navigation.NavigateTo("/QuizPage");
     }
 
-    private void ResetQuizSettings()
-    {
-        Console.WriteLine("ResetQuizSettings ");
-        ClientQuizSettings = new QuizSettings();
-    }
-
-    private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
-    {
-        if (Room!.Owner.Id == ClientState.Session!.Player.Id)
-        {
-            // todo important room password
-            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
-                new ReqChangeRoomSettings(
-                    ClientState.Session.Token, Room.Id, "", clientQuizSettings));
-
-            if (res1.IsSuccessStatusCode)
-            {
-                ShowQuizSettings = false;
-                Room = await _clientUtils.SyncRoom();
-                StateHasChanged();
-            }
-        }
-    }
-
-    private async Task OnclickShowQuizSettings()
-    {
-        Room = await _clientUtils.SyncRoom();
-        if (Room?.QuizSettings != null)
-        {
-            ClientQuizSettings =
-                JsonSerializer.Deserialize<QuizSettings>(
-                    JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
-        }
-
-        ShowQuizSettings = !ShowQuizSettings;
-        StateHasChanged();
-    }
-
     private async Task Onclick_Leave()
     {
         // Room = await _clientUtils.SyncRoom();
@@ -170,62 +119,9 @@ public partial class RoomPage
         }
     }
 
-    private async Task RandomizeTags()
+    private async Task CallStateHasChanged()
     {
-        // todo
-        if (!AutocompleteCData.Any())
-        {
-            return;
-        }
-
-        var rng = Random.Shared;
-
-        var categoryFilters = new List<CategoryFilter>();
-        for (int i = 1; i <= rng.Next(1, 6); i++)
-        {
-            var songSourceCategory = AutocompleteCData[rng.Next(AutocompleteCData.Length)];
-
-            var trilean = (LabelKind)rng.Next(-1, 1); // we don't want Include here
-            if (trilean is LabelKind.Exclude)
-            {
-                songSourceCategory.SpoilerLevel = SpoilerLevel.Major;
-            }
-            else
-            {
-                songSourceCategory.SpoilerLevel = SpoilerLevel.None;
-            }
-
-            songSourceCategory.Rating = 2;
-            var categoryFilter = new CategoryFilter(songSourceCategory, trilean);
-            categoryFilters.Add(categoryFilter);
-        }
-
-        ClientQuizSettings.Filters.CategoryFilters = categoryFilters;
-        await SendChangeRoomSettingsReq(ClientQuizSettings);
-    }
-
-    private async Task ClearTags()
-    {
-        ClientQuizSettings.Filters.CategoryFilters = new List<CategoryFilter>();
-        await SendChangeRoomSettingsReq(ClientQuizSettings);
-    }
-
-    private async Task SelectedResultChangedC()
-    {
-        // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
-        if (selectedTag != null)
-        {
-            selectedTag.SpoilerLevel = SpoilerLevel.None;
-            selectedTag.Rating = 2f;
-
-            ClientQuizSettings.Filters.CategoryFilters.Add(new CategoryFilter(selectedTag, LabelKind.Maybe));
-            // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
-        }
-    }
-
-    private async Task RemoveTag(int tagId)
-    {
-        // Console.WriteLine("removing tagId:" + tagId);
-        ClientQuizSettings.Filters.CategoryFilters.RemoveAll(x => x.SongSourceCategory.Id == tagId);
+        Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
     }
 }

@@ -325,27 +325,27 @@ public class QuizController : ControllerBase
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
                     room.Quiz?.Log("Room settings changed.", isSystemMessage: true);
-                    // todo write to chat
+                    // todo write to chat (pretty)
+                    return Ok();
                 }
                 else
                 {
                     _logger.LogInformation("Cannot change room settings while quiz is active in r{room.Id}",
                         room.Id);
+                    return Unauthorized();
                 }
             }
             else
             {
                 _logger.LogWarning("Attempt to change room settings in r{room.Id} by non-owner player", room.Id);
-                // todo warn not owner
+                return Unauthorized();
             }
         }
         else
         {
             _logger.LogWarning("Attempt to change room settings in r{req.RoomId} which is null", req.RoomId);
-            // todo
+            return BadRequest();
         }
-
-        return Ok();
     }
 
     [HttpPost]

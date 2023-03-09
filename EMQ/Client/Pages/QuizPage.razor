@@ -24,6 +24,7 @@
 }
 
 <CascadingValue Value="@this" IsFixed="true">
+    <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
     @if (!_clientConnectionManager.IsConnected)
     {
         <p style="color: @UiHelpers.Bool2Color(_clientConnectionManager.IsConnected, "green", "red")">
@@ -50,6 +51,11 @@
                 @onclick="SendToggleSkip"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
             @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
+        </button>
+
+        <button id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px;"
+                @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
+            Room Settings
         </button>
 
         <button class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"

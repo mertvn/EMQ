@@ -15,7 +15,7 @@ namespace EMQ.Client.Components;
 
 public partial class AutocompleteCComponent
 {
-    private SongSourceCategory[] AutocompleteData { get; set; } = Array.Empty<SongSourceCategory>();
+    public SongSourceCategory[] AutocompleteData { get; set; } = Array.Empty<SongSourceCategory>();
 
     private IEnumerable<SongSourceCategory> CurrentDataSource { get; set; } = Array.Empty<SongSourceCategory>();
 

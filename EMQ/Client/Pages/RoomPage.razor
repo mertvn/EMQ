@@ -56,118 +56,27 @@
     <button type="button" class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
         Start Quiz
     </button>
-
-    // todo extract to component & modal it
-    <button type="button" class="btn btn-secondary" @onclick="OnclickShowQuizSettings" style="margin: 5px;"
-            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
-        @UiHelpers.Bool2Text(ShowQuizSettings, "Hide quiz settings", "Show quiz settings")
-    </button>
-    <div style="display: @UiHelpers.Bool2Display(ShowQuizSettings)" id="collapseQuizSettings">
-
-        <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
-            <DataAnnotationsValidator/>
-            <ValidationSummary/>
-
-            <InputCheckbox id="OnlyFromLists" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
-            <label for="OnlyFromLists">Only from VNDB lists?</label>
-            <br/>
-
-            <InputCheckbox id="Duplicates" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
-            <label for="Duplicates">Duplicates?</label>
-            <br/>
-
-            <InputCheckbox id="IsHotjoinEnabled" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
-            <label for="IsHotjoinEnabled">Enable hotjoin?</label>
-            <br/>
-
-            <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
-                @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
-                {
-                    <option value="@songSelectionKind">@songSelectionKind</option>
-                }
-            </InputSelect>
-            <label for="SongSelectionKind">Song selection method</label>
-            <br/>
-
-            <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
-            <label for="NumSongs">Maximum number of songs</label>
-            <br/>
-
-            <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
-            <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
-            <br/>
-
-            <InputNumber id="MaxLives" @bind-Value="ClientQuizSettings.MaxLives" style="margin: 5px"></InputNumber>
-            <label for="MaxLives">Lives (0 for unlimited)</label>
-            <br/>
-
-            <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.GuessMs" style="margin: 5px"></InputNumber>
-            <label for="GuessMs">Guess time (ms)</label>
-            <br/>
-
-            <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.ResultsMs" style="margin: 5px"></InputNumber>
-            <label for="ResultsMs">Results time (ms)</label>
-            <br/>
-
-            <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.LootingMs" style="margin: 5px"></InputNumber>
-            <label for="LootingMs">Looting time (ms)</label>
-            <br/>
-
-            <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
-            <label for="InventorySize">Looting inventory size</label>
-            <br/>
-
-            <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
-            <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
-            <br/>
-
-            @* <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/> *@
-            <SubmitButton class="btn btn-success" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">Submit</SubmitButton>
-            <button type="button" style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
-
-            <div id="tagEdit" style="border: 1px solid black">
-                <AutocompleteCComponent Placeholder="Enter tag name here"
-                                        FreeTyping="true"
-                                        IsDisabled="false"
-                                        IsQuizPage="false"
-                                        @bind-Guess="@selectedTag"
-                                        Callback="SelectedResultChangedC">
-                </AutocompleteCComponent>
-
-                @* @{ Console.WriteLine(DateTime.Now.ToString("O") + " c1: " + ClientQuizSettings.Filters.CategoryFilters.Count); } *@
-
-                @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
-                {
-                    <ValidationMessage For="@(() => tag.SongSourceCategory.Rating)"/>
-                    // Console.WriteLine(DateTime.Now.ToString("O") + " c2: " + ClientQuizSettings.Filters.CategoryFilters.Count);
-                    <div class="tag" @key="@tag">
-                        <p>
-                            <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
-                            <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
-                                @foreach (var labelKind in Enum.GetValues<LabelKind>())
-                                {
-                                    <option value="@labelKind">@labelKind</option>
-                                }
-                            </InputSelect>
-                            <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 40px"></InputNumber>
-                            <span>@tag.SongSourceCategory.VndbId: </span>
-                            <span>@tag.SongSourceCategory.Name</span>
-                            <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
-                                @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
-                                {
-                                    <option value="@spoilerLevel">@spoilerLevel</option>
-                                }
-                            </InputSelect>
-                        </p>
-                    </div>
-                }
-            </div>
-        </EditForm>
-    </div>
-
-    <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
-    <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
 }
+
+<div>
+    <QuizSettingsComponent @ref="_quizSettingsComponent"
+                           Room="@Room"
+                           ParentStateHasChangedCallback="@CallStateHasChanged"
+                           IsReadOnly="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"/>
+    <button id="buttonQuizSettings" class="btn btn-secondary" style="padding: 2px; margin: 5px;"
+            @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
+        <span style="padding: 5px">Room Settings</span>
+    </button>
+    <style>
+    #buttonQuizSettings {
+       position: fixed;
+       top: 0;
+       right: 50%;
+       text-align: center;
+       height: 40px;
+    }
+    </style>
+</div>
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
     @if (Room?.Players.Any() ?? false)
