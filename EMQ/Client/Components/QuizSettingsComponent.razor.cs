@@ -16,17 +16,19 @@ public partial class QuizSettingsComponent
     [Parameter]
     public Room? Room { get; set; }
 
-    public QuizSettings ClientQuizSettings { get; set; } = new();
-
     [Parameter]
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; } = true;
+
+    // we keep a separate copy of the quiz settings instead of using the one in Room
+    // because we don't want the settings to get reset while someone is editing them
+    private QuizSettings ClientQuizSettings { get; set; } = new();
 
     private SongSourceCategory? SelectedTag { get; set; }
 
     private AutocompleteCComponent AutocompleteCComponent { get; set; } = null!;
-
-    [Parameter]
-    public bool IsReadOnly { get; set; } = true;
 
     private Blazorise.Modal _modalRef = null!;
 

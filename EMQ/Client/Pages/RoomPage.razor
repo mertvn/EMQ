@@ -21,6 +21,11 @@
 
 }
 
+<QuizSettingsComponent @ref="_quizSettingsComponent"
+                       Room="@Room"
+                       ParentStateHasChangedCallback="@CallStateHasChanged"
+                       IsReadOnly="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"/>
+
 <button type="button" class="btn btn-warning" @onclick="Onclick_Leave"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
@@ -59,10 +64,6 @@
 }
 
 <div>
-    <QuizSettingsComponent @ref="_quizSettingsComponent"
-                           Room="@Room"
-                           ParentStateHasChangedCallback="@CallStateHasChanged"
-                           IsReadOnly="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"/>
     <button id="buttonQuizSettings" class="btn btn-secondary" style="padding: 2px; margin: 5px;"
             @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
         <span style="padding: 5px">Room Settings</span>

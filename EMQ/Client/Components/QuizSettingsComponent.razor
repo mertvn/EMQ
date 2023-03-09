@@ -7,7 +7,7 @@
 @inject HttpClient _client
 
 <Blazorise.Modal @ref="_modalRef">
-    <Blazorise.ModalContent Centered>
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
         <Blazorise.ModalHeader>
             <Blazorise.ModalTitle>Room Settings</Blazorise.ModalTitle>
         </Blazorise.ModalHeader>
@@ -93,43 +93,60 @@
                                                                 Callback="SelectedResultChangedC">
                                         </AutocompleteCComponent>
 
-                                        @* @{ Console.WriteLine(DateTime.Now.ToString("O") + " c1: " + ClientQuizSettings.Filters.CategoryFilters.Count); } *@
+                                        <table class="table" style="width: 65%; text-align: center">
+                                            <tr>
+                                                <th></th>
+                                                <th>Selection</th>
+                                                <th>Rating</th>
+                                                <th>VNDB Id</th>
+                                                <th>Tag Name</th>
+                                                <th>Spoiler level</th>
+                                            </tr>
+                                            @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
+                                            {
+                                                <tr class="tag" @key="@tag" style="text-align: center">
+                                                    <th>
+                                                        <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
+                                                    </th>
 
-                                        @* todo table *@
-                                        @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
-                                        {
-                                            <ValidationMessage For="@(() => tag.SongSourceCategory.Rating)"/>
-                                            // Console.WriteLine(DateTime.Now.ToString("O") + " c2: " + ClientQuizSettings.Filters.CategoryFilters.Count);
-                                            <div class="tag" @key="@tag">
-                                                <p>
-                                                    <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
+                                                    <th>
+                                                        <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
+                                                            @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                                            {
+                                                                <option value="@labelKind">@labelKind</option>
+                                                            }
+                                                        </InputSelect>
+                                                    </th>
 
-                                                    <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
-                                                        @foreach (var labelKind in Enum.GetValues<LabelKind>())
-                                                        {
-                                                            <option value="@labelKind">@labelKind</option>
-                                                        }
-                                                    </InputSelect>
+                                                    <th>
+                                                        <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 55px"></InputNumber>
+                                                    </th>
 
-                                                    <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 40px"></InputNumber>
+                                                    <th style="pointer-events: all">
+                                                        <a href="@tag.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
+                                                            <span>@tag.SongSourceCategory.VndbId</span>
+                                                        </a>
+                                                    </th>
 
-                                                    <span>@tag.SongSourceCategory.VndbId: </span>
-
-                                                    <a href="@tag.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
+                                                    <th>
                                                         <span>@tag.SongSourceCategory.Name</span>
-                                                    </a>
+                                                    </th>
 
-                                                    <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
-                                                        @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
-                                                        {
-                                                            <option value="@spoilerLevel">@spoilerLevel</option>
-                                                        }
-                                                    </InputSelect>
-                                                </p>
-                                            </div>
-                                        }
-                                        <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
-                                        <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
+                                                    <th>
+                                                        <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
+                                                            @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
+                                                            {
+                                                                <option value="@spoilerLevel">@spoilerLevel</option>
+                                                            }
+                                                        </InputSelect>
+                                                    </th>
+                                                </tr>
+                                            }
+                                        </table>
+                                        <div style="margin: 5px;">
+                                            <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
+                                            <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
+                                        </div>
                                     </div>
                                 </Blazorise.TabPanel>
                             </Content>
