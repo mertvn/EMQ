@@ -1,0 +1,27 @@
+﻿@* HACK: stop forms from auto-submitting when Enter key is pressed *@
+@* https://stackoverflow.com/a/74514709 *@
+<button type="button" @onclick="OnClick" @attributes="UnmatchedAttributes">@ChildContent</button>
+
+@code{
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [CascadingParameter]
+    public EditContext? EditContext { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? UnmatchedAttributes { get; set; }
+
+    private async Task OnClick()
+    {
+        if (EditContext != null && EditContext.Validate())
+        {
+            await OnValidSubmit.InvokeAsync();
+        }
+    }
+
+}

@@ -12,5 +12,5 @@ public class CategoryFilter
 
     public SongSourceCategory SongSourceCategory { get; }
 
-    public LabelKind Trilean { get; } // todo actual trilean type
+    public LabelKind Trilean { get; set; } // todo actual trilean type
 }

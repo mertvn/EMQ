@@ -22,18 +22,6 @@ Currently running on a free service at https://emq.up.railway.app, which only pr
 
 ## Credits
 
-### Licenses
-
-Bootstrap: MIT License.
-
-Open-iconic: MIT License and SIL OPEN FONT LICENSE Version 1.1.
-
-Blazorise: Apache License 2.0.
-
-VNDB: Data obtained under Open Data Commons Open Database License (ODbL) v1.0.
-
-### People
-
 rampaa: Help with the database schema and VNDB queries
 
 hslead: Avatar "Auu" and favicon "Love"

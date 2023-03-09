@@ -1,18 +1,17 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
-@inject ILogger<AutocompleteAComponent> _logger
-
-@* todo update guess on guess phase end even if enter is not pressed *@
+@inject ILogger<AutocompleteCComponent> _logger
 
 <Autocomplete @ref="AutocompleteComponent"
               @onkeypress="Onkeypress"
-              TItem="AutocompleteA"
-              TValue="AutocompleteA"
+              TItem="SongSourceCategory"
+              TValue="SongSourceCategory"
               Data="@CurrentDataSource"
               ReadData="@OnHandleReadData"
-              TextField="@((item) => $"{item.AALatinAlias}" + (!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : ""))"
+              TextField="@((item) => $"{item.Name}")"
               ValueField="@((item) => item)"
               Placeholder="@Placeholder"
               FreeTyping="@FreeTyping"

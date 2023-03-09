@@ -21,7 +21,7 @@
 
 }
 
-<button class="btn btn-warning" @onclick="Onclick_Leave"
+<button type="button" class="btn btn-warning" @onclick="Onclick_Leave"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
 </button>
@@ -48,16 +48,17 @@
 
 @if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && (Room?.QuizSettings.IsHotjoinEnabled ?? false))
 {
-    <button class="btn btn-primary" @onclick="Hotjoin">Hotjoin Quiz</button>
+    <button type="button" class="btn btn-primary" @onclick="Hotjoin">Hotjoin Quiz</button>
 }
 
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
-    <button class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
+    <button type="button" class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
         Start Quiz
     </button>
 
-    <button class="btn btn-secondary" type="button" @onclick="OnclickShowQuizSettings" style="margin: 5px;"
+    // todo extract to component & modal it
+    <button type="button" class="btn btn-secondary" @onclick="OnclickShowQuizSettings" style="margin: 5px;"
             disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
         @UiHelpers.Bool2Text(ShowQuizSettings, "Hide quiz settings", "Show quiz settings")
     </button>
@@ -120,13 +121,52 @@
             <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
             <br/>
 
-            <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/>
-            <button style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
+            @* <input style="margin: 5px" type="submit" class="btn btn-primary" value="Submit"/> *@
+            <SubmitButton class="btn btn-success" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">Submit</SubmitButton>
+            <button type="button" style="margin: 5px" class="btn btn-warning" @onclick="ResetQuizSettings">Reset to default</button>
+
+            <div id="tagEdit" style="border: 1px solid black">
+                <AutocompleteCComponent Placeholder="Enter tag name here"
+                                        FreeTyping="true"
+                                        IsDisabled="false"
+                                        IsQuizPage="false"
+                                        @bind-Guess="@selectedTag"
+                                        Callback="SelectedResultChangedC">
+                </AutocompleteCComponent>
+
+                @* @{ Console.WriteLine(DateTime.Now.ToString("O") + " c1: " + ClientQuizSettings.Filters.CategoryFilters.Count); } *@
+
+                @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
+                {
+                    <ValidationMessage For="@(() => tag.SongSourceCategory.Rating)"/>
+                    // Console.WriteLine(DateTime.Now.ToString("O") + " c2: " + ClientQuizSettings.Filters.CategoryFilters.Count);
+                    <div class="tag" @key="@tag">
+                        <p>
+                            <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
+                            <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
+                                @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                {
+                                    <option value="@labelKind">@labelKind</option>
+                                }
+                            </InputSelect>
+                            <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 40px"></InputNumber>
+                            <span>@tag.SongSourceCategory.VndbId: </span>
+                            <span>@tag.SongSourceCategory.Name</span>
+                            <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
+                                @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
+                                {
+                                    <option value="@spoilerLevel">@spoilerLevel</option>
+                                }
+                            </InputSelect>
+                        </p>
+                    </div>
+                }
+            </div>
         </EditForm>
     </div>
 
-    <button class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
-    <button class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
+    <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
+    <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
 }
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">

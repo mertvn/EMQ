@@ -26,12 +26,15 @@ public static class Autocomplete
     {
         arg = arg.Trim();
         // todo prefer Japanese latin titles
-        var startsWith = data.Where(x => x.Name.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
-        var contains = data.Where(x => x.Name.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
+        var startsWith = data.Where(x => x.Name.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
+            .OrderBy(x => x.Name);
+        var contains = data.Where(x => x.Name.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
+            .OrderBy(x => x.Name);
 
-        var startsWith1 = data.Where(x => x.VndbId!.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
-            .OrderBy(x => x);
-        var contains1 = data.Where(x => x.VndbId!.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
+        var startsWith1 = data.Where(x => x.VndbId.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
+            .OrderBy(x => x.VndbId);
+        var contains1 = data.Where(x => x.VndbId.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
+            .OrderBy(x => x.VndbId);
 
         var final = startsWith.Concat(startsWith1).Concat(contains).Concat(contains1).Distinct().ToArray();
         // Console.WriteLine(JsonSerializer.Serialize(final));

@@ -321,6 +321,7 @@ public class QuizController : ControllerBase
                 {
                     room.Password = req.RoomPassword;
                     room.QuizSettings = req.QuizSettings;
+                    // todo syncroom in all players
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
                     room.Quiz?.Log("Room settings changed.", isSystemMessage: true);

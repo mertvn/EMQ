@@ -39,6 +39,8 @@ public partial class RoomPage
 
     public SongSourceCategory[] AutocompleteCData { get; set; } = Array.Empty<SongSourceCategory>();
 
+    public SongSourceCategory? selectedTag { get; set; }
+
     private ChatComponent? _chatComponent;
 
     protected override async Task OnInitializedAsync()
@@ -119,6 +121,7 @@ public partial class RoomPage
 
     private void ResetQuizSettings()
     {
+        Console.WriteLine("ResetQuizSettings ");
         ClientQuizSettings = new QuizSettings();
     }
 
@@ -126,7 +129,7 @@ public partial class RoomPage
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            // todo room password
+            // todo important room password
             HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
                 new ReqChangeRoomSettings(
                     ClientState.Session.Token, Room.Id, "", clientQuizSettings));
@@ -192,6 +195,7 @@ public partial class RoomPage
                 songSourceCategory.SpoilerLevel = SpoilerLevel.None;
             }
 
+            songSourceCategory.Rating = 2;
             var categoryFilter = new CategoryFilter(songSourceCategory, trilean);
             categoryFilters.Add(categoryFilter);
         }
@@ -204,5 +208,24 @@ public partial class RoomPage
     {
         ClientQuizSettings.Filters.CategoryFilters = new List<CategoryFilter>();
         await SendChangeRoomSettingsReq(ClientQuizSettings);
+    }
+
+    private async Task SelectedResultChangedC()
+    {
+        // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
+        if (selectedTag != null)
+        {
+            selectedTag.SpoilerLevel = SpoilerLevel.None;
+            selectedTag.Rating = 2f;
+
+            ClientQuizSettings.Filters.CategoryFilters.Add(new CategoryFilter(selectedTag, LabelKind.Maybe));
+            // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
+        }
+    }
+
+    private async Task RemoveTag(int tagId)
+    {
+        // Console.WriteLine("removing tagId:" + tagId);
+        ClientQuizSettings.Filters.CategoryFilters.RemoveAll(x => x.SongSourceCategory.Id == tagId);
     }
 }
