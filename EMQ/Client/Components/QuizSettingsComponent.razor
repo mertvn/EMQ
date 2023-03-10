@@ -60,16 +60,16 @@
                                         <label for="MaxLives">Lives (0 for unlimited)</label>
                                         <br/>
 
-                                        <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.GuessMs" style="margin: 5px"></InputNumber>
-                                        <label for="GuessMs">Guess time (ms)</label>
+                                        <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.UI_GuessMs" style="margin: 5px"></InputNumber>
+                                        <label for="GuessMs">Guess time</label>
                                         <br/>
 
-                                        <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.ResultsMs" style="margin: 5px"></InputNumber>
-                                        <label for="ResultsMs">Results time (ms)</label>
+                                        <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.UI_ResultsMs" style="margin: 5px"></InputNumber>
+                                        <label for="ResultsMs">Results time</label>
                                         <br/>
 
-                                        <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.LootingMs" style="margin: 5px"></InputNumber>
-                                        <label for="LootingMs">Looting time (ms)</label>
+                                        <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
+                                        <label for="LootingMs">Looting time</label>
                                         <br/>
 
                                         <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
@@ -79,7 +79,6 @@
                                         <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
                                         <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
                                         <br/>
-                                        @* <SubmitButton class="btn btn-success" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">Submit</SubmitButton> *@
                                     </div>
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabTags">

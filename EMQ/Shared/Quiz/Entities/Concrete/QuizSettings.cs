@@ -17,9 +17,27 @@ public class QuizSettings
     public int GuessMs { get; set; } = 25000;
 
     [Required]
+    [Range(10, 60)]
+    [DefaultValue(25)]
+    public int UI_GuessMs
+    {
+        get { return GuessMs / 1000; }
+        set { GuessMs = value * 1000; }
+    }
+
+    [Required]
     [Range(10000, 60000)]
     [DefaultValue(25000)]
     public int ResultsMs { get; set; } = 25000;
+
+    [Required]
+    [Range(10, 60)]
+    [DefaultValue(25)]
+    public int UI_ResultsMs
+    {
+        get { return ResultsMs / 1000; }
+        set { ResultsMs = value * 1000; }
+    }
 
     [Required]
     [Range(1, 1)]
@@ -40,7 +58,7 @@ public class QuizSettings
     public bool Duplicates { get; set; } = false;
 
     [Required]
-    [Range(0, 5)]
+    [Range(0, 9)]
     [DefaultValue(0)]
     public int MaxLives { get; set; } = 0;
 
@@ -56,6 +74,15 @@ public class QuizSettings
     [Range(20000, 200000)]
     [DefaultValue(120000)]
     public int LootingMs { get; set; } = 120000;
+
+    [Required]
+    [Range(20, 200)]
+    [DefaultValue(120)]
+    public int UI_LootingMs
+    {
+        get { return LootingMs / 1000; }
+        set { LootingMs = value * 1000; }
+    }
 
     [Required]
     [Range(1, 25)]
