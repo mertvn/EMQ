@@ -76,7 +76,7 @@ public partial class QuizSettingsComponent
 
     private void ResetQuizSettings()
     {
-        Console.WriteLine("ResetQuizSettings ");
+        Console.WriteLine("ResetQuizSettings");
         ClientQuizSettings = new QuizSettings();
     }
 

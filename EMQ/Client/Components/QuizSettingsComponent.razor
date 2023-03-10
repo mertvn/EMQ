@@ -143,8 +143,8 @@
                                             }
                                         </table>
                                         <div style="margin: 5px;">
-                                            <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Randomize tags</button>
-                                            <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">Clear tags</button>
+                                            <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(IsReadOnly)">Randomize tags</button>
+                                            <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(IsReadOnly)">Clear tags</button>
                                         </div>
                                     </div>
                                 </Blazorise.TabPanel>

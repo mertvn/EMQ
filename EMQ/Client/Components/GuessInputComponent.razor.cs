@@ -89,7 +89,7 @@ public partial class GuessInputComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            // todo find another way to prevent spam
+            // todo important find another way to prevent spam
             // if (Guess != AutocompleteComponent.SelectedText)
             // {
             Guess = AutocompleteComponent.SelectedText;

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Db;
@@ -11,8 +12,11 @@ using EMQ.Server.Db.Imports;
 using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.GGVC;
 using EMQ.Server.Db.Imports.VNDB;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -21,6 +25,31 @@ namespace Tests;
 
 public class EntryPoints
 {
+    [Test, Explicit]
+    public async Task a_Integration_Full()
+    {
+        ServerUtils.Client.BaseAddress = new Uri("https://localhost:7021/");
+
+        HttpResponseMessage res = await ServerUtils.Client.PostAsJsonAsync("Auth/CreateSession",
+            new ReqCreateSession(
+                "p0",
+                "",
+                new PlayerVndbInfo() { VndbId = "", VndbApiToken = "" }));
+
+        ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
+        var session = resCreateSession!.Session;
+
+        for (int i = 0; i < 100; i++)
+        {
+            ReqCreateRoom req = new(session.Token, $"r{i}", "", new QuizSettings(){NumSongs = 40});
+            HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
+            int roomId = await res1.Content.ReadFromJsonAsync<int>();
+
+            HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
+                new ReqStartQuiz(session.Token, roomId));
+        }
+    }
+
     [Test, Explicit]
     public async Task GenerateAutocompleteMstJson()
     {
