@@ -41,7 +41,7 @@ public class EntryPoints
 
         for (int i = 0; i < 100; i++)
         {
-            ReqCreateRoom req = new(session.Token, $"r{i}", "", new QuizSettings(){NumSongs = 40});
+            ReqCreateRoom req = new(session.Token, $"r{i}", "", new QuizSettings() { NumSongs = 40 });
             HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
             int roomId = await res1.Content.ReadFromJsonAsync<int>();
 
@@ -96,16 +96,15 @@ public class EntryPoints
             await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
         }
         else
-
         {
-            var adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+            string? adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
             if (string.IsNullOrWhiteSpace(adminPassword))
             {
                 throw new Exception("EMQ_ADMIN_PASSWORD is null");
             }
 
-            var serverUrl = "https://emq.up.railway.app";
-            var songLite =
+            string? serverUrl = "https://emq.up.railway.app";
+            string? songLite =
                 await ServerUtils.Client.GetStringAsync(
                     $"{serverUrl}/Mod/ExportSongLite?adminPassword={adminPassword}");
 
@@ -218,14 +217,16 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadGGVCMatched()
     {
+        var dir = "C:\\emq\\tora2";
+
         var ggvcInnerResults =
             JsonSerializer.Deserialize<List<GGVCInnerResult>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\matched.json"),
+                await File.ReadAllTextAsync($"{dir}\\matched.json"),
                 Utils.JsoIndented)!;
 
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
+                await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         int oldCount = uploaded.Count;
@@ -273,13 +274,13 @@ public class EntryPoints
             uploadable.SongLite = songLite;
             uploaded.Add(uploadable);
 
-            await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded.json",
+            await File.WriteAllTextAsync($"{dir}\\uploaded.json",
                 JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
 
             await Task.Delay(20000);
         }
 
-        await File.WriteAllTextAsync($"C:\\emq\\ggvc3\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
+        await File.WriteAllTextAsync($"{dir}\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
             JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
 
         Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
@@ -325,6 +326,12 @@ public class EntryPoints
                                   JsonSerializer.Serialize(uploadable, Utils.Jso));
             }
         }
+    }
+
+    [Test, Explicit]
+    public async Task ImportTora()
+    {
+        await ToraImporter.ImportTora();
     }
 
     // todo pgrestore pgdump tests
