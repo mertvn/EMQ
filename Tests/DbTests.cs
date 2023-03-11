@@ -314,7 +314,7 @@ public class DbTests
         var songs = JsonSerializer.Deserialize<List<Song>>(json)!;
         foreach (var song in songs)
         {
-            int mId = await DbManager.InsertSong(song);
+            int _ = await DbManager.InsertSong(song);
         }
     }
 

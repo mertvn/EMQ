@@ -3,7 +3,7 @@
 @using EMQ.Client.Components
 @inject HttpClient _client
 @inject ILogger<HotelPage> _logger
-@inject NavigationManager Navigation
+@inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 @inject IJSRuntime _jsRuntime
 
@@ -52,7 +52,8 @@
             </div>
 
             @* todo type= password | text toggle *@
-            <button class="btn btn-primary"
+            <button type="button"
+                    class="btn btn-primary"
                     style="margin: 16px"
                     disabled="@(ClientState.Session == null || IsJoiningRoom)"
                     @onclick="@(() => JoinRoom(room.Id, ""))">

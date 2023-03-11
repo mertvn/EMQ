@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http;
@@ -9,9 +8,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
-using Juliet.Model.VNDBObject;
 using Microsoft.Extensions.Logging;
 
 namespace EMQ.Client.Pages;
@@ -39,8 +36,6 @@ public partial class Index
 
     public bool LoginInProgress { get; set; } = false;
 
-    public List<Label> Labels { get; set; } = new();
-
     protected override async Task OnInitializedAsync()
     {
         LoginInProgress = true;
@@ -64,7 +59,7 @@ public partial class Index
                 ClientState.Session = null;
                 await _clientUtils.SaveSessionToLocalStorage();
 
-                Navigation.NavigateTo("/", forceLoad: true);
+                _navigation.NavigateTo("/", forceLoad: true);
             }
             else
             {
@@ -134,7 +129,6 @@ public partial class Index
 
                     if (ClientState.Session.VndbInfo.Labels is not null)
                     {
-                        Labels = ClientState.Session.VndbInfo.Labels.ToList();
                         LoginProgressDisplay.Add("Grabbed VNs from VNDB.");
                         StateHasChanged();
                     }
@@ -149,10 +143,7 @@ public partial class Index
                     LoginInProgress = false;
                     StateHasChanged();
 
-                    if (ClientState.Session.VndbInfo.Labels is null)
-                    {
-                        Navigation.NavigateTo("/HotelPage");
-                    }
+                    _navigation.NavigateTo("/HotelPage");
                 }
             }
             else
@@ -161,52 +152,6 @@ public partial class Index
                 StateHasChanged();
                 LoginInProgress = false;
             }
-        }
-    }
-
-    private async Task FetchLabels(PlayerVndbInfo vndbInfo)
-    {
-        Labels.Clear();
-        List<Label> newLabels = new();
-
-        VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(vndbInfo);
-        foreach (VNDBLabel vndbLabel in vndbLabels)
-        {
-            newLabels.Add(Label.FromVndbLabel(vndbLabel));
-        }
-
-        Console.WriteLine(vndbInfo.Labels!.Count + "-" + newLabels.Count);
-        List<Label> final = Label.MergeLabels(vndbInfo.Labels!, newLabels);
-        Labels.AddRange(final);
-        StateHasChanged();
-    }
-
-    private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind)
-    {
-        if (label.Kind == newLabelKind)
-        {
-            return;
-        }
-
-        label.Kind = newLabelKind;
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdateLabel",
-            new ReqUpdateLabel(ClientState.Session!.Token, label));
-
-        if (res.IsSuccessStatusCode)
-        {
-            var updatedLabel = await res.Content.ReadFromJsonAsync<Label>();
-            if (updatedLabel != null)
-            {
-                Label oldLabel = Labels.Single(x => x.Id == updatedLabel.Id);
-                oldLabel.Kind = updatedLabel.Kind;
-                oldLabel.VnUrls = updatedLabel.VnUrls;
-
-                await _clientUtils.SaveSessionToLocalStorage();
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 }

@@ -5,7 +5,7 @@
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
 @inject ILogger<RoomPage> _logger
-@inject NavigationManager Navigation
+@inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 @inject IJSRuntime _jsRuntime
@@ -64,7 +64,7 @@
 }
 
 <div>
-    <button id="buttonQuizSettings" class="btn btn-secondary" style="padding: 2px; margin: 5px;"
+    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 2px; margin: 5px;"
             @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
         <span style="padding: 5px">Room Settings</span>
     </button>

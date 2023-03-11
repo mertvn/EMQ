@@ -78,7 +78,7 @@ public partial class HotelPage
 
             await _clientUtils.SaveSessionToLocalStorage();
 
-            Navigation.NavigateTo("/RoomPage");
+            _navigation.NavigateTo("/RoomPage");
         }
         else if (res1.StatusCode == HttpStatusCode.Unauthorized)
         {

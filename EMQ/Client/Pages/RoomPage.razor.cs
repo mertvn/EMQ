@@ -83,13 +83,13 @@ public partial class RoomPage
     private async Task OnReceiveQuizEntered()
     {
         _logger.LogInformation("Navigating from Room to Quiz");
-        Navigation.NavigateTo("/QuizPage");
+        _navigation.NavigateTo("/QuizPage");
     }
 
     private async Task OnReceivePyramidEntered()
     {
         _logger.LogInformation("Navigating from Room to Pyramid");
-        Navigation.NavigateTo("/PyramidPage");
+        _navigation.NavigateTo("/PyramidPage");
     }
 
     private async Task OnReceivePlayerJoinedRoom()
@@ -103,7 +103,7 @@ public partial class RoomPage
     private void Hotjoin()
     {
         _logger.LogInformation("Hotjoining Quiz");
-        Navigation.NavigateTo("/QuizPage");
+        _navigation.NavigateTo("/QuizPage");
     }
 
     private async Task Onclick_Leave()
@@ -115,7 +115,7 @@ public partial class RoomPage
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
             // Room = await _clientUtils.SyncRoom();
-            Navigation.NavigateTo("/HotelPage");
+            _navigation.NavigateTo("/HotelPage");
         }
     }
 

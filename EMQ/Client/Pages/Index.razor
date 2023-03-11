@@ -1,10 +1,9 @@
 ﻿@page "/"
-@using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
-@inject NavigationManager Navigation
+@inject NavigationManager _navigation
 @inject HttpClient _client
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
@@ -18,60 +17,8 @@
         <div>
             Currently logged in as @ClientState.Session.Player.Username<br/>
 
-            <button class="btn btn-primary" @onclick="Logout">Logout</button>
+            <button type="button" class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>
-
-            @* todo move this to the PlayerPreferencesComponent *@
-            @if (ClientState.Session.VndbInfo.Labels is not null)
-            {
-                <br/>
-                <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>
-
-                <button class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">Fetch labels</button>
-                <br/>
-
-                <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
-                    @foreach (var label in Labels)
-                    {
-                        <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
-                            <div class="labelCardBody card-body">
-                                <span>#@label.Id @label.Name (@label.VnUrls.Count)</span>
-                                @if (label.IsPrivate)
-                                {
-                                    <span> Private </span>
-                                }
-                                else
-                                {
-                                    <span> Public </span>
-                                }
-
-                                <br/>
-                                <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px">
-                                    <label class="btn btn-outline-primary"
-                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");">
-                                        <input type="radio" name="@("options" + label.Id)" id="option1" autocomplete="off" checked="@(label.Kind == LabelKind.Include)"
-                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
-                                    </label>
-                                    <label class="btn btn-outline-primary"
-                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");">
-                                        <input type="radio" name="@("options" + label.Id)" id="option2" autocomplete="off" checked="@(label.Kind == LabelKind.Maybe)"
-                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Maybe
-                                    </label>
-                                    <label class="btn btn-outline-primary"
-                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
-                                           color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");">
-                                        <input type="radio" name="@("options" + label.Id)" id="option3" autocomplete="off" checked="@(label.Kind == LabelKind.Exclude)"
-                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
-                                    </label>
-                                </div>
-
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
         </div>
     }
     else if (LoginInProgress || ClientState.Session == null)
@@ -107,7 +54,7 @@
         </div>
 
         <div>
-            @foreach (var item in LoginProgressDisplay)
+            @foreach (string item in LoginProgressDisplay)
             {
                 <p>@item</p>
             }

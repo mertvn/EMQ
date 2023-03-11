@@ -105,7 +105,7 @@ public partial class QuizSettingsComponent
                 songSourceCategory.SpoilerLevel = SpoilerLevel.None;
             }
 
-            songSourceCategory.Rating = 2;
+            songSourceCategory.Rating = 1;
             var categoryFilter = new CategoryFilter(songSourceCategory, trilean);
             categoryFilters.Add(categoryFilter);
         }
