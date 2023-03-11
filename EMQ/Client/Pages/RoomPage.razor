@@ -63,21 +63,10 @@
     </button>
 }
 
-<div>
-    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 2px; margin: 5px;"
-            @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
-        <span style="padding: 5px">Room Settings</span>
-    </button>
-    <style>
-    #buttonQuizSettings {
-       position: fixed;
-       top: 0;
-       right: 50%;
-       text-align: center;
-       height: 40px;
-    }
-    </style>
-</div>
+<button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 5px; margin: 5px; width: 120px; height: 35px"
+        @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
+    Room Settings
+</button>
 
 <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
     @if (Room?.Players.Any() ?? false)
@@ -93,7 +82,5 @@
     }
 
 </div>
-
-<PlayerPreferencesComponent/>
 
 @* todo readying up *@

@@ -45,7 +45,7 @@ public partial class PlayerPreferencesComponent
         StateHasChanged();
     }
 
-    private void OnclickButtonPreferences()
+    public void OnclickButtonPreferences()
     {
         StateHasChanged();
         if (ClientState.Session != null)

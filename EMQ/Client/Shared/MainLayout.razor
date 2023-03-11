@@ -1,4 +1,5 @@
-﻿@inherits LayoutComponentBase
+﻿@using EMQ.Client.Components
+@inherits LayoutComponentBase
 @inject NavigationManager _navigation
 
 <PageTitle>EMQ</PageTitle>
@@ -10,6 +11,13 @@
             <NavMenu/>
         </div>
     }
+
+    <PlayerPreferencesComponent @ref="_playerPreferencesComponent"/>
+    <button type="button" id="buttonPreferences" class="btn btn-primary"
+            style="padding: 2px; margin: 5px; position: fixed; bottom: 0; right: 0; text-align: center; height: 40px;"
+            @onclick="@(() => _playerPreferencesComponent!.OnclickButtonPreferences())">
+        <span style="padding: 5px">Preferences</span>
+    </button>
 
     <main>
         <article class="content px-4">
@@ -24,4 +32,6 @@
     {
         { "/" }, { "HotelPage" }, { "LibraryPage" }
     };
+
+    private PlayerPreferencesComponent? _playerPreferencesComponent;
 }

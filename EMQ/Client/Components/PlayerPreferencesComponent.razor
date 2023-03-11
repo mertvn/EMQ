@@ -8,20 +8,6 @@
 @inject ILogger<PlayerPreferencesComponent> _logger
 @inject ClientUtils _clientUtils
 
-<button type="button" id="buttonPreferences" class="btn btn-primary" style="padding: 2px; margin: 5px;"
-        @onclick="@(OnclickButtonPreferences)">
-    <span style="padding: 5px">Preferences</span>
-</button>
-<style>
-#buttonPreferences {
-   position: fixed;
-   bottom: 0;
-   right: 0;
-   text-align: center;
-   height: 40px;
-}
-</style>
-
 <Blazorise.Modal @ref="_modalRef">
     <Blazorise.ModalContent Centered="true" Scrollable="true" Size="Blazorise.ModalSize.ExtraLarge">
         <Blazorise.ModalHeader>
@@ -73,7 +59,9 @@
                                     {
                                         <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>
 
-                                        <button type="button" class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">Fetch labels</button>
+                                        <button type="button" class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">
+                                            Fetch labels
+                                        </button>
                                         <br/>
 
                                         <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
