@@ -72,5 +72,8 @@ public class PlayerPreferences
     [Required]
     public bool RestartSongsOnResultsPhase { get; set; } = false;
 
+    [Required]
+    public bool HideVideo { get; set; } = false;
+
     // todo language preferences
 }
