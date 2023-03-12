@@ -782,11 +782,11 @@ public static class DbManager
                     }
 
                     queryMusicIds.Append($"{sqlMusicIds:raw}");
-                    // todo rating
+                    // todo vndb_id null
                     queryMusicIds.Append(
                         $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
- AND msc.spoiler_level <= {(int)categoryFilter.SongSourceCategory.SpoilerLevel!}
- AND msc.rating >= {categoryFilter.SongSourceCategory.Rating}");
+ AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
+ AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
                 }
             }
 
