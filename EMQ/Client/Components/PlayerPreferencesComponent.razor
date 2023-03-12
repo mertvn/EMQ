@@ -58,6 +58,8 @@
                                     <br/>
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabVNDB">
+                                    <p>Your VNDB info is not set.</p>
+
                                     @* todo let people access this tab without VndbInfo *@
                                     @if (ClientState.Session.VndbInfo.Labels is not null)
                                     {

@@ -39,16 +39,19 @@
 <div id="roomInfo" style="margin: 10px; max-width: 800px; max-height: 600px;">
     Name:<br/>
     <p>@Room?.Name</p>
+
     Owner:<br/>
     <p>@Room?.Owner.Username</p>
-    Settings:<br/>
-    <p style="margin: 10px; max-width: 1000px; max-height: 600px; word-wrap: break-word">@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p>
-    Tags:<br/>
-    <p>
-        @JsonSerializer.Serialize(
-            Room?.QuizSettings.Filters.CategoryFilters.Select(x => $"{x.SongSourceCategory.VndbId} {x.SongSourceCategory.Name} ({x.Trilean})"),
-            Utils.Jso)
-    </p>
+
+    @* Settings:<br/> *@
+    @* <p style="margin: 10px; max-width: 1000px; max-height: 600px; word-wrap: break-word">@JsonSerializer.Serialize(Room?.QuizSettings, Utils.Jso)</p> *@
+    @* Tags:<br/> *@
+    @*
+    @* <p> *@
+    @*     @JsonSerializer.Serialize( *@
+    @*         Room?.QuizSettings.Filters.CategoryFilters.Select(x => $"{x.SongSourceCategory.VndbId} {x.SongSourceCategory.Name} ({x.Trilean})"), *@
+    @*         Utils.Jso) *@
+    @* </p> *@
 </div>
 
 @if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && (Room?.QuizSettings.IsHotjoinEnabled ?? false))
