@@ -214,8 +214,12 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
 
+        // Console.WriteLine("sending PlayerLabels: " +
+        //                   JsonSerializer.Serialize(Quiz.Songs[Quiz.QuizState.sp].PlayerLabels, Utils.JsoIndented));
+
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values)
-            .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp]);
+            .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
+                Quiz.Songs[Quiz.QuizState.sp].PlayerLabels);
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
@@ -312,7 +316,7 @@ public class QuizManager
                 var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
                 if (session?.VndbInfo.Labels != null)
                 {
-                    validSources = Label.GetValidSourcesFromLabels(session.VndbInfo.Labels);
+                    validSources.AddRange(Label.GetValidSourcesFromLabels(session.VndbInfo.Labels));
                 }
             }
         }
@@ -335,6 +339,11 @@ public class QuizManager
                 if (dbSongs.Count == 0)
                 {
                     return false;
+                }
+
+                foreach (Song dbSong in dbSongs)
+                {
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -361,7 +370,7 @@ public class QuizManager
                     }
                 }
 
-                Quiz.ValidSources = validSourcesLooting;
+                Quiz.ValidSourcesForLooting = validSourcesLooting;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -579,7 +588,7 @@ public class QuizManager
             return treasureRooms;
         }
 
-        Quiz.Room.TreasureRooms = GenerateTreasureRooms(Quiz.ValidSources);
+        Quiz.Room.TreasureRooms = GenerateTreasureRooms(Quiz.ValidSourcesForLooting);
         // await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceivePyramidEntered");
 
         // todo
@@ -587,12 +596,13 @@ public class QuizManager
 
     private async Task<bool> SetLootedSongs()
     {
-        var validSources = new List<string>();
+        var validSources = new Dictionary<int, List<string>>();
         foreach (var player in Quiz.Room.Players)
         {
+            validSources[player.Id] = new List<string>();
             foreach (var treasure in player.LootingInfo.Inventory)
             {
-                validSources.Add(treasure.ValidSource.Key);
+                validSources[player.Id].Add(treasure.ValidSource.Key);
             }
 
             // reduce serialized Room size & prevent Inventory leak
@@ -608,7 +618,7 @@ public class QuizManager
         var dbSongs = await DbManager.GetLootedSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
-            validSources);
+            validSources.SelectMany(x => x.Value).ToList());
 
         if (!dbSongs.Any())
         {
@@ -626,6 +636,32 @@ public class QuizManager
         foreach (Song dbSong in dbSongs)
         {
             dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+
+            // todo merge this with ValidSourcesForLooting and get rid of this
+            var currentSongSourceVndbUrls = dbSong.Sources
+                .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
+                .Select(z => z.Url)
+                .ToList();
+
+            var lootedPlayers = validSources.Where(x => x.Value.Any(y => currentSongSourceVndbUrls.Contains(y)))
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            var playerLabels = new Dictionary<int, List<Label>>();
+            foreach (KeyValuePair<int, List<string>> lootedPlayer in lootedPlayers)
+            {
+                var newLabel = new Label
+                {
+                    Id = -1,
+                    IsPrivate = false,
+                    Name = "Looted",
+                    VNs = new Dictionary<string, int> { { currentSongSourceVndbUrls.First(), -1 } },
+                    Kind = LabelKind.Include
+                };
+
+                playerLabels.Add(lootedPlayer.Key, new List<Label> { newLabel });
+            }
+
+            dbSong.PlayerLabels = playerLabels;
         }
 
         return true;
@@ -849,5 +885,59 @@ public class QuizManager
 
         // await HubContext.Clients.Client(oldConnectionId)
         //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
+    }
+
+    private Dictionary<int, List<Label>> GetPlayerLabelsForSong(Song song)
+    {
+        // todo handle hotjoining players
+        Dictionary<int, List<Label>> playerLabels = new();
+
+        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
+        foreach (Session session in playerSessions)
+        {
+            if (session.VndbInfo.Labels != null)
+            {
+                playerLabels[session.Player.Id] = new List<Label>();
+                foreach (Label label in session.VndbInfo.Labels)
+                {
+                    var currentSongSourceVndbUrls = song.Sources
+                        .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
+                        .Select(z => z.Url)
+                        .ToList();
+
+                    if (currentSongSourceVndbUrls.Any(x => label.VNs.ContainsKey(x)))
+                    {
+                        // todo? add preference for showing private labels as is
+                        if (label.IsPrivate)
+                        {
+                            var newLabel = new Label
+                            {
+                                Id = -1,
+                                IsPrivate = true,
+                                Name = "Private Label",
+                                VNs = label.VNs,
+                                Kind = label.Kind
+                            };
+                            playerLabels[session.Player.Id].Add(newLabel);
+                        }
+                        else
+                        {
+                            var newLabel = new Label
+                            {
+                                Id = label.Id,
+                                IsPrivate = label.IsPrivate,
+                                Name = label.Name,
+                                VNs = label.VNs.Where(x => currentSongSourceVndbUrls.Contains(x.Key))
+                                    .ToDictionary(x => x.Key, x => x.Value),
+                                Kind = label.Kind
+                            };
+                            playerLabels[session.Player.Id].Add(newLabel);
+                        }
+                    }
+                }
+            }
+        }
+
+        return playerLabels;
     }
 }

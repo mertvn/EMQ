@@ -30,6 +30,9 @@ public class Song
     [JsonIgnore]
     public List<string> ProducerIds { get; set; } = new();
 
+    [JsonIgnore]
+    public Dictionary<int, List<Label>> PlayerLabels { get; set; } = new();
+
     public static SongLite ToSongLite(Song song)
     {
         return new SongLite(

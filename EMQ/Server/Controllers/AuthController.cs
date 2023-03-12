@@ -166,7 +166,7 @@ public class AuthController : ControllerBase
             Console.WriteLine($"{session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " + req.Label.Kind);
             label.Kind = req.Label.Kind;
 
-            var newVnUrls = new List<string>();
+            var newVns = new Dictionary<string, int>();
             switch (req.Label.Kind)
             {
                 case LabelKind.Maybe:
@@ -179,13 +179,13 @@ public class AuthController : ControllerBase
                         VndbApiToken = session.VndbInfo.VndbApiToken,
                         Labels = new List<Label>() { label },
                     });
-                    newVnUrls = grabbed.SingleOrDefault()?.VnUrls ?? new List<string>();
+                    newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            label.VnUrls = newVnUrls;
+            label.VNs = newVns;
             return label;
         }
         else

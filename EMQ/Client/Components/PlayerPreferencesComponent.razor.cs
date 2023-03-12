@@ -95,7 +95,7 @@ public partial class PlayerPreferencesComponent
             {
                 Label oldLabel = Labels.Single(x => x.Id == updatedLabel.Id);
                 oldLabel.Kind = updatedLabel.Kind;
-                oldLabel.VnUrls = updatedLabel.VnUrls;
+                oldLabel.VNs = updatedLabel.VNs;
 
                 await _clientUtils.SaveSessionToLocalStorage();
             }

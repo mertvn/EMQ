@@ -7,6 +7,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Juliet.Model.Filters;
 using Juliet.Model.Param;
+using Juliet.Model.Response;
 using Juliet.Model.VNDBObject;
 using Juliet.Model.VNDBObject.Fields;
 
@@ -38,16 +39,21 @@ public static class VndbMethods
                             {
                                 User = vndbInfo.VndbId,
                                 APIToken = vndbInfo.VndbApiToken,
+                                Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.LabelsId, FieldPOST_ulist.Vote },
                                 Exhaust = true,
                                 Filters = query,
                             });
                             if (playerVns != null)
                             {
-                                label.VnUrls = playerVns.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl()))
-                                    .ToList();
+                                var results = playerVns.SelectMany(x => x.Results);
+                                foreach (ResPOST_ulist result in results)
+                                {
+                                    label.VNs[result.Id.ToVndbUrl()] = result.Vote ?? -1;
+                                }
+
                                 ret.Add(label);
                                 Console.WriteLine(
-                                    $"Grabbed {label.VnUrls.Count} vns for label {label.Id} ({label.Name})");
+                                    $"Grabbed {label.VNs.Count} vns for label {label.Id} ({label.Name})");
                             }
                             else
                             {

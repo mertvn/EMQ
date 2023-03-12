@@ -22,7 +22,7 @@ public class Label
 
     public string Name { get; set; } = "";
 
-    public List<string> VnUrls { get; set; } = new();
+    public Dictionary<string, int> VNs { get; set; } = new();
 
     public LabelKind Kind { get; set; } = LabelKind.Maybe;
 
@@ -57,10 +57,10 @@ public class Label
         var include = labels.Where(x => x.Kind == LabelKind.Include).ToList();
         var exclude = labels.Where(x => x.Kind == LabelKind.Exclude).ToList();
 
-        var validSources = include.SelectMany(x => x.VnUrls).ToList();
+        var validSources = include.SelectMany(x => x.VNs.Keys).ToList();
         if (exclude.Any())
         {
-            validSources = validSources.Except(exclude.SelectMany(x => x.VnUrls)).ToList();
+            validSources = validSources.Except(exclude.SelectMany(x => x.VNs.Keys)).ToList();
         }
 
         return validSources;

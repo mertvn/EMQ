@@ -4,6 +4,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Components
+@using System.Globalization
 @inject IJSRuntime _jsRuntime
 @inject ILogger<QuizPage> _logger
 @inject HttpClient _client
@@ -165,7 +166,7 @@
         </div>
 
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
-             pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
+                 pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
             @* todo should be false on judgement phase as well *@
             <GuessInputComponent @ref="_guessInputComponent"
                                  Placeholder="Enter your guess here"
@@ -184,11 +185,11 @@
                 {
                     <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
-                         cursor: @UiHelpers.Bool2Cursor(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
+                             cursor: @UiHelpers.Bool2Cursor(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
                              @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
                             <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                                 <span style="word-wrap: anywhere; height: 90px; display: block;
-                                 color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
+                                     color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                     @* todo make text smaller as it gets longer *@
                                     @player.Guess
                                 </span>
@@ -209,6 +210,22 @@
                                 <span style="color: white;">@player.Username</span>
 
                                 <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
+                                @{
+                                    if (_correctAnswerPlayerLabels.ContainsKey(player.Id))
+                                    {
+                                        var labels = _correctAnswerPlayerLabels.Single(x => x.Key == player.Id).Value;
+
+                                        @* todo *@
+                                        string text = labels.First().Name == "Looted" ? "L" : (labels.First().VNs.First().Value / 10f).ToString(CultureInfo.InvariantCulture);
+
+                                        <div style="position: absolute; top: 0%; right: 2%; visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+                                            <Blazorise.Tooltip Text="@string.Join(", ", labels.Select(x => x.Name))">
+                                                <span style="color: black;">@(text == "-1" ? "V" : text)</span>
+                                            </Blazorise.Tooltip>
+                                        </div>
+                                    }
+                                }
+
                             </div>
                         </div>
                     </div>

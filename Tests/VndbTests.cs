@@ -47,6 +47,6 @@ public class VndbTests
         var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
         Console.WriteLine(JsonSerializer.Serialize(labels, Utils.Jso));
         Assert.That(labels.Count > 1);
-        Assert.That(labels.First().VnUrls.Count > 1);
+        Assert.That(labels.First().VNs.Count > 1);
     }
 }

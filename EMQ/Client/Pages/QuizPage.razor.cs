@@ -27,8 +27,11 @@ public partial class QuizPage
             { "ReceiveQuizEnded", (Array.Empty<Type>(), async _ => { await OnReceiveQuizEnded(); }) },
             { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
             {
-                "ReceiveCorrectAnswer", (new Type[] { typeof(Song) },
-                    async param => { await OnReceiveCorrectAnswer((Song)param[0]!); })
+                "ReceiveCorrectAnswer", (new Type[] { typeof(Song), typeof(Dictionary<int, List<Label>>) },
+                    async param =>
+                    {
+                        await OnReceiveCorrectAnswer((Song)param[0]!, (Dictionary<int, List<Label>>)param[1]!);
+                    })
             },
             {
                 "ReceiveUpdateRoom", (new Type[] { typeof(Room), typeof(bool) },
@@ -76,7 +79,9 @@ public partial class QuizPage
 
     private Song? _currentSong;
 
-    private Song? _correctAnswer;
+    private Song? _correctAnswer { get; set; }
+
+    private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
 
     private CancellationTokenSource PreloadCancellationSource { get; set; }
 
@@ -151,9 +156,10 @@ public partial class QuizPage
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
-    private async Task OnReceiveCorrectAnswer(Song correctAnswer)
+    private async Task OnReceiveCorrectAnswer(Song correctAnswer, Dictionary<int, List<Label>> playerLabels)
     {
         _correctAnswer = correctAnswer;
+        _correctAnswerPlayerLabels = playerLabels;
     }
 
     public async ValueTask DisposeAsync()

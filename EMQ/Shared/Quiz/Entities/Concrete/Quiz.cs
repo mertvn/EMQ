@@ -39,7 +39,7 @@ public class Quiz
     public Queue<Session> JoinQueue { get; set; } = new();
 
     [JsonIgnore]
-    public Dictionary<string, List<Title>> ValidSources { get; set; } = new();
+    public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();
 
     public void Log(string message, int playerId = -1, bool isSystemMessage = false)
     {
