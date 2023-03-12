@@ -46,7 +46,7 @@ public class EntryPoints
             HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
             int roomId = await res1.Content.ReadFromJsonAsync<int>();
 
-            HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
+            HttpResponseMessage _ = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
                 new ReqStartQuiz(session.Token, roomId));
         }
     }
@@ -218,7 +218,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadMatchedSongs()
     {
-        var dir = "C:\\emq\\tora2";
+        string dir = "C:\\emq\\tora2";
 
         var songMatchInnerResults =
             JsonSerializer.Deserialize<List<SongMatchInnerResult>>(
@@ -290,8 +290,9 @@ public class EntryPoints
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
-        var submittedBy = "tora2";
-        var dir = "C:\\emq\\tora2";
+        string submittedBy = "tora2";
+        string dir = "C:\\emq\\tora2";
+
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
                 await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
@@ -335,6 +336,12 @@ public class EntryPoints
     public async Task ImportTora()
     {
         await ToraImporter.ImportTora();
+    }
+
+    [Test, Explicit]
+    public async Task ImportGeneric()
+    {
+        await GenericImporter.ImportGeneric();
     }
 
     // todo pgrestore pgdump tests

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
 using DapperQueryBuilder;
@@ -14,6 +15,97 @@ namespace EMQ.Server.Db.Imports.SongMatching;
 
 public static class SongMatcher
 {
+    public static List<SongMatch> ParseSongFile(string dir, Regex regex, string extension, bool cacheFilePaths = false)
+    {
+        var songMatches = new ConcurrentBag<SongMatch>();
+
+        string[] filePaths;
+        if (cacheFilePaths && File.Exists($"{dir}\\filePaths.json"))
+        {
+            filePaths = JsonSerializer.Deserialize<string[]>(
+                File.ReadAllText($"{dir}\\filePaths.json"), Utils.JsoIndented)!;
+        }
+        else
+        {
+            filePaths = Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories);
+            File.WriteAllText($"{dir}\\filePaths.json",
+                JsonSerializer.Serialize(filePaths, Utils.JsoIndented));
+        }
+
+        Parallel.ForEach(filePaths, (filePath, _) =>
+        {
+            string fileName = Path.GetFileName(filePath);
+            if (fileName.ToLowerInvariant().Contains("mix") ||
+                fileName.ToLowerInvariant().Contains("ｍｉｘ") ||
+                fileName.ToLowerInvariant().Contains("radioedit") ||
+                fileName.ToLowerInvariant().Contains("arrang") ||
+                fileName.ToLowerInvariant().Contains("アレンジ") ||
+                fileName.ToLowerInvariant().Contains("acoustic") ||
+                fileName.ToLowerInvariant().Contains("裏ver") ||
+                (fileName.ToLowerInvariant().Contains("ver.") &&
+                 !fileName.ToLowerInvariant().EndsWith("forever.mp3")))
+            {
+                Console.WriteLine("skipping: " + fileName);
+                return;
+            }
+
+            var match = regex.Match(fileName);
+            // Console.WriteLine("match: " + match.ToString());
+
+            if (string.IsNullOrWhiteSpace(match.ToString()))
+            {
+                Console.WriteLine("regex didn't match: " + filePath);
+            }
+
+            string source = match.Groups[1].Value;
+            string title = match.Groups[2].Value;
+            string artist = match.Groups[3].Value;
+
+            List<string> sources = new() { source.Trim() };
+            List<string> titles = new() { title.Trim() };
+            List<string> artists = new() { artist.Trim() };
+
+            try
+            {
+                var tFile = TagLib.File.Create(filePath);
+                string? metadataSources = tFile.Tag.Album;
+                string? metadataTitle = tFile.Tag.Title;
+                string[] metadataArtists = tFile.Tag.Performers.Concat(tFile.Tag.AlbumArtists).ToArray();
+
+                if (!string.IsNullOrWhiteSpace(metadataSources))
+                {
+                    sources.Add(metadataSources);
+                }
+
+                if (!string.IsNullOrWhiteSpace(metadataTitle))
+                {
+                    titles.Add(metadataTitle);
+                }
+
+                artists.AddRange(metadataArtists);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"TagLib exception for {filePath}: " + e.Message);
+            }
+
+            sources = sources.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+            titles = titles.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+            artists = artists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+
+            if (sources.Any() && titles.Any() && artists.Any())
+            {
+                var songMatch = new SongMatch
+                {
+                    Path = filePath, Sources = sources, Titles = titles, Artists = artists,
+                };
+                songMatches.Add(songMatch);
+            }
+        });
+
+        return songMatches.ToList();
+    }
+
     public static async Task Match(List<SongMatch> songMatches, string outputDir)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
