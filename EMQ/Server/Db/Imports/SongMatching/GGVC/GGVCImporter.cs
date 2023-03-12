@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 
-namespace EMQ.Server.Db.Imports.GGVC;
+namespace EMQ.Server.Db.Imports.SongMatching.GGVC;
 
 public static class GGVCImporter
 {
@@ -40,7 +40,7 @@ public static class GGVCImporter
     public static async Task ImportGGVC()
     {
         var regex = new Regex("【(.+)】(?: )?(.+)(?: )?(?:\\[|【)(.*)(?:]|】)", RegexOptions.Compiled);
-        var ggvcSongs = new List<GGVCSong>();
+        var songMatches = new List<SongMatch>();
 
         string dir = "M:\\[IMS][Galgame Vocal MP3 Collection 1996-2006]";
         // dir = "M:\\a";
@@ -115,46 +115,14 @@ public static class GGVCImporter
                 titles = titles.Distinct().ToList();
                 artists = artists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
 
-                var ggvcSong = new GGVCSong
+                var songMatch = new SongMatch
                 {
                     Path = filePath, Sources = sources, Titles = titles, Artists = artists,
                 };
-                ggvcSongs.Add(ggvcSong);
+                songMatches.Add(songMatch);
             }
         }
 
-        await SongMatcher.Match(ggvcSongs, "C:\\emq\\ggvc3");
+        await SongMatcher.Match(songMatches, "C:\\emq\\ggvc4");
     }
-}
-
-public readonly struct GGVCSong
-{
-    public string Path { get; init; }
-
-    public List<string> Sources { get; init; }
-
-    public List<string> Titles { get; init; }
-
-    public List<string> Artists { get; init; }
-}
-
-public class GGVCInnerResult
-{
-    public GGVCSong GGVCSong { get; set; }
-
-    public List<int> aIds { get; set; } = new();
-
-    public List<int> mIds { get; set; } = new();
-
-    public GGVCInnerResultKind ResultKind { get; set; }
-}
-
-public enum GGVCInnerResultKind
-{
-    NoSources,
-    NoAids,
-    MultipleMids,
-    NoMids,
-    Matched,
-    AlreadyHave
 }

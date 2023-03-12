@@ -4,16 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using EMQ.Server.Db.Imports.GGVC;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.SongMatching.Tora;
 
 public static class ToraImporter
 {
     public static async Task ImportTora()
     {
         var regex = new Regex("\\((.+)\\)(.+)().mp3", RegexOptions.Compiled);
-        var ggvcSongs = new List<GGVCSong>();
+        var songMatches = new List<SongMatch>();
 
         string dir = "M:\\[サントラ] ゲーム系曲集1-288 [MP3合集]";
         // dir = "M:\\a";
@@ -90,15 +89,15 @@ public static class ToraImporter
                     titles = titles.Distinct().ToList();
                     artists = artists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
 
-                    var ggvcSong = new GGVCSong
+                    var songMatch = new SongMatch
                     {
                         Path = filePath, Sources = sources, Titles = titles, Artists = artists,
                     };
-                    ggvcSongs.Add(ggvcSong);
+                    songMatches.Add(songMatch);
                 }
             }
         }
 
-        await SongMatcher.Match(ggvcSongs, "C:\\emq\\tora2");
+        await SongMatcher.Match(songMatches, "C:\\emq\\tora2");
     }
 }

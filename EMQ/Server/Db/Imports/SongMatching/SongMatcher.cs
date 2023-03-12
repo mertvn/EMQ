@@ -7,15 +7,14 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using DapperQueryBuilder;
-using EMQ.Server.Db.Imports.GGVC;
 using EMQ.Shared.Core;
 using Npgsql;
 
-namespace EMQ.Server.Db.Imports;
+namespace EMQ.Server.Db.Imports.SongMatching;
 
 public static class SongMatcher
 {
-    public static async Task Match(List<GGVCSong> ggvcSongs, string outputDir)
+    public static async Task Match(List<SongMatch> songMatches, string outputDir)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -23,21 +22,21 @@ public static class SongMatcher
         }
 
         var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
-        var ggvcInnerResults = new ConcurrentBag<GGVCInnerResult>();
-        await Parallel.ForEachAsync(ggvcSongs, async (ggvcSong, _) =>
+        var songMatchInnerResults = new ConcurrentBag<SongMatchInnerResult>();
+        await Parallel.ForEachAsync(songMatches, async (songMatch, _) =>
         {
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
-                var innerResult = new GGVCInnerResult() { GGVCSong = ggvcSong };
-                ggvcInnerResults.Add(innerResult);
+                var innerResult = new SongMatchInnerResult() { SongMatch = songMatch };
+                songMatchInnerResults.Add(innerResult);
 
-                // Console.WriteLine(JsonSerializer.Serialize(ggvcSong.Artists, Utils.Jso));
-                var aIds = await DbManager.FindArtistIdsByArtistNames(ggvcSong.Artists);
+                // Console.WriteLine(JsonSerializer.Serialize(songMatch.Artists, Utils.Jso));
+                var aIds = await DbManager.FindArtistIdsByArtistNames(songMatch.Artists);
                 innerResult.aIds = aIds;
 
                 if (!aIds.Any())
                 {
-                    innerResult.ResultKind = GGVCInnerResultKind.NoAids;
+                    innerResult.ResultKind = SongMatchInnerResultKind.NoAids;
                     return;
                 }
 
@@ -51,12 +50,12 @@ LEFT JOIN music_source_title mst on ms.id = mst.music_source_id
 
                 queryMusicSource.Where($"mst.is_main_title = true");
                 queryMusicSource.Where(
-                    $"(mst.latin_title % ANY({ggvcSong.Sources}) OR mst.non_latin_title % ANY({ggvcSong.Sources}))");
+                    $"(mst.latin_title % ANY({songMatch.Sources}) OR mst.non_latin_title % ANY({songMatch.Sources}))");
 
                 var msIds = (await queryMusicSource.QueryAsync<int>()).ToList();
                 if (!msIds.Any())
                 {
-                    innerResult.ResultKind = GGVCInnerResultKind.NoSources;
+                    innerResult.ResultKind = SongMatchInnerResultKind.NoSources;
                     return;
                 }
 
@@ -76,7 +75,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 queryMusic.Where(
                     $"ms.id = ANY({msIds})");
                 queryMusic.Where(
-                    $"(mt.latin_title % ANY({ggvcSong.Titles}) OR mt.non_latin_title % ANY({ggvcSong.Titles}))");
+                    $"(mt.latin_title % ANY({songMatch.Titles}) OR mt.non_latin_title % ANY({songMatch.Titles}))");
                 queryMusic.Where(
                     $"a.id = ANY({aIds})");
 
@@ -89,55 +88,55 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     innerResult.mIds.AddRange(mids);
                     if (mids.Count > 1)
                     {
-                        innerResult.ResultKind = GGVCInnerResultKind.MultipleMids;
+                        innerResult.ResultKind = SongMatchInnerResultKind.MultipleMids;
                         return;
                     }
 
                     if (midsWithSoundLinks.Contains(mids.Single()))
                     {
-                        innerResult.ResultKind = GGVCInnerResultKind.AlreadyHave;
+                        innerResult.ResultKind = SongMatchInnerResultKind.AlreadyHave;
                         return;
                     }
                     else
                     {
-                        innerResult.ResultKind = GGVCInnerResultKind.Matched;
+                        innerResult.ResultKind = SongMatchInnerResultKind.Matched;
                         return;
                     }
                 }
                 else
                 {
-                    innerResult.ResultKind = GGVCInnerResultKind.NoMids;
+                    innerResult.ResultKind = SongMatchInnerResultKind.NoMids;
                     return;
                 }
             }
         });
 
-        foreach (var egsImporterInnerResult in ggvcInnerResults)
+        foreach (var egsImporterInnerResult in songMatchInnerResults)
         {
             bool needsPrint;
             switch (egsImporterInnerResult.ResultKind)
             {
-                case GGVCInnerResultKind.Matched:
+                case SongMatchInnerResultKind.Matched:
                     Console.WriteLine("matched: ");
                     needsPrint = true;
                     break;
-                case GGVCInnerResultKind.MultipleMids:
+                case SongMatchInnerResultKind.MultipleMids:
                     Console.WriteLine("multiple music matches: ");
                     needsPrint = true;
                     break;
-                case GGVCInnerResultKind.NoMids:
+                case SongMatchInnerResultKind.NoMids:
                     Console.WriteLine("no music matches: ");
                     needsPrint = true;
                     break;
-                case GGVCInnerResultKind.NoAids:
+                case SongMatchInnerResultKind.NoAids:
                     Console.WriteLine("no artist id matches: ");
                     needsPrint = true;
                     break;
-                case GGVCInnerResultKind.NoSources:
+                case SongMatchInnerResultKind.NoSources:
                     Console.WriteLine("no source matches: ");
                     needsPrint = true;
                     break;
-                case GGVCInnerResultKind.AlreadyHave:
+                case SongMatchInnerResultKind.AlreadyHave:
                     Console.WriteLine("AlreadyHave: ");
                     needsPrint = true;
                     break;
@@ -147,60 +146,60 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
             if (needsPrint)
             {
-                Console.WriteLine(egsImporterInnerResult.GGVCSong.Path);
-                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.GGVCSong.Sources, Utils.Jso));
-                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.GGVCSong.Titles, Utils.Jso));
-                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.GGVCSong.Artists, Utils.Jso));
+                Console.WriteLine(egsImporterInnerResult.SongMatch.Path);
+                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.SongMatch.Sources, Utils.Jso));
+                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.SongMatch.Titles, Utils.Jso));
+                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.SongMatch.Artists, Utils.Jso));
                 Console.WriteLine($"aIds{JsonSerializer.Serialize(egsImporterInnerResult.aIds, Utils.Jso)}");
                 Console.WriteLine($"mIds{JsonSerializer.Serialize(egsImporterInnerResult.mIds, Utils.Jso)}");
                 Console.WriteLine("--------------");
             }
         }
 
-        Console.WriteLine("total count: " + ggvcSongs.Count);
+        Console.WriteLine("total count: " + songMatches.Count);
         Console.WriteLine("matchedMids count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.Matched));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.Matched));
         Console.WriteLine("multipleMids count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.MultipleMids));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.MultipleMids));
         Console.WriteLine("noMids count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.NoMids));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.NoMids));
         Console.WriteLine("noAids count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.NoAids));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.NoAids));
         Console.WriteLine("noSources count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.NoSources));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.NoSources));
         Console.WriteLine("AlreadyHave count: " +
-                          ggvcInnerResults.Count(x => x.ResultKind == GGVCInnerResultKind.AlreadyHave));
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.AlreadyHave));
 
         Directory.CreateDirectory(outputDir);
 
         await File.WriteAllTextAsync($"{outputDir}\\matched.json",
             JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.Matched),
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.Matched),
                 Utils.JsoIndented));
 
         await File.WriteAllTextAsync($"{outputDir}\\alreadyHave.json",
             JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.AlreadyHave),
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.AlreadyHave),
                 Utils.JsoIndented));
 
         // // todo
-        // ggvcInnerResults =
-        //     new ConcurrentBag<GGVCInnerResult>(ggvcInnerResults.Where(x =>
-        //         !x.GGVCSong.Path.Contains("Galgame Vocal Collection [EX]")));
+        // songMatchInnerResults =
+        //     new ConcurrentBag<SongMatchInnerResult>(songMatchInnerResults.Where(x =>
+        //         !x.SongMatch.Path.Contains("Galgame Vocal Collection [EX]")));
 
         await File.WriteAllTextAsync($"{outputDir}\\noSources.json",
             JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoSources),
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.NoSources),
                 Utils.JsoIndented));
 
         await File.WriteAllTextAsync($"{outputDir}\\noMids.json",
             JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoMids),
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.NoMids),
                 Utils.JsoIndented));
 
         await File.WriteAllTextAsync($"{outputDir}\\noAids.json",
             JsonSerializer.Serialize(
-                ggvcInnerResults.Where(x => x.ResultKind == GGVCInnerResultKind.NoAids),
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.NoAids),
                 Utils.JsoIndented));
     }
 }

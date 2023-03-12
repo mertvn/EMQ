@@ -8,9 +8,10 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Db;
-using EMQ.Server.Db.Imports;
 using EMQ.Server.Db.Imports.EGS;
-using EMQ.Server.Db.Imports.GGVC;
+using EMQ.Server.Db.Imports.SongMatching;
+using EMQ.Server.Db.Imports.SongMatching.GGVC;
+using EMQ.Server.Db.Imports.SongMatching.Tora;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -215,12 +216,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
-    public async Task UploadGGVCMatched()
+    public async Task UploadMatchedSongs()
     {
         var dir = "C:\\emq\\tora2";
 
-        var ggvcInnerResults =
-            JsonSerializer.Deserialize<List<GGVCInnerResult>>(
+        var songMatchInnerResults =
+            JsonSerializer.Deserialize<List<SongMatchInnerResult>>(
                 await File.ReadAllTextAsync($"{dir}\\matched.json"),
                 Utils.JsoIndented)!;
 
@@ -232,15 +233,15 @@ public class EntryPoints
         int oldCount = uploaded.Count;
         var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
 
-        for (int index = 0; index < ggvcInnerResults.Count; index++)
+        for (int index = 0; index < songMatchInnerResults.Count; index++)
         {
-            GGVCInnerResult ggvcInnerResult = ggvcInnerResults[index];
+            SongMatchInnerResult songMatchInnerResult = songMatchInnerResults[index];
             var uploadable = new Uploadable
             {
-                Path = ggvcInnerResult.GGVCSong.Path, MId = ggvcInnerResult.mIds.Single()
+                Path = songMatchInnerResult.SongMatch.Path, MId = songMatchInnerResult.mIds.Single()
             };
 
-            if (uploaded.Any(x => x.Path == ggvcInnerResult.GGVCSong.Path))
+            if (uploaded.Any(x => x.Path == songMatchInnerResult.SongMatch.Path))
             {
                 continue;
             }
@@ -289,17 +290,19 @@ public class EntryPoints
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
+        var submittedBy = "tora2";
+        var dir = "C:\\emq\\tora2";
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
+                await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         var dup = uploaded.SelectMany(x => uploaded.Where(y => y.MId == x.MId && y.ResultUrl != x.ResultUrl)).ToList();
-        await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded_dup.json",
+        await File.WriteAllTextAsync($"{dir}\\uploaded_dup.json",
             JsonSerializer.Serialize(dup, Utils.JsoIndented));
 
         var dup2 = uploaded.SelectMany(x => uploaded.Where(y => y.ResultUrl == x.ResultUrl && y.MId != x.MId)).ToList();
-        await File.WriteAllTextAsync("C:\\emq\\ggvc3\\uploaded_dup2.json",
+        await File.WriteAllTextAsync($"{dir}\\uploaded_dup2.json",
             JsonSerializer.Serialize(dup2, Utils.JsoIndented));
 
         foreach (Uploadable uploadable in uploaded)
@@ -312,7 +315,7 @@ public class EntryPoints
                     {
                         Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
                     };
-                    await DbManager.InsertReviewQueue(uploadable.MId, songLink, "GGVC");
+                    await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
                 }
                 else
                 {
