@@ -9,6 +9,8 @@ public partial class Hasucana
 {
     private static Dictionary<string, string> Dict { get; set; } = new()
     {
+        { " ", " " },
+        { "　", "　" },
         { "a", "の" },
         { "e", "ま" },
         { "g", "ム" },
