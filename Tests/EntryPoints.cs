@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
+using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.SongMatching;
@@ -148,7 +149,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(112, 60).ToArray();
+        var rqIds = Enumerable.Range(660, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -218,7 +219,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadMatchedSongs()
     {
-        string dir = "C:\\emq\\tora2";
+        string dir = "C:\\emq\\matching\\tora\\tora_3";
 
         var songMatchInnerResults =
             JsonSerializer.Deserialize<List<SongMatchInnerResult>>(
@@ -290,8 +291,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
-        string submittedBy = "tora2";
-        string dir = "C:\\emq\\tora2";
+        string submittedBy = "tora_3";
+        string dir = "C:\\emq\\matching\\tora\\tora_3";
 
         var uploaded =
             JsonSerializer.Deserialize<List<Uploadable>>(
@@ -316,7 +317,12 @@ public class EntryPoints
                     {
                         Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
                     };
-                    await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
+
+                    int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
+
+                    var analyserResult = await MediaAnalyser.Analyse(uploadable.Path);
+                    await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                        analyserResult: analyserResult);
                 }
                 else
                 {
@@ -342,6 +348,12 @@ public class EntryPoints
     public async Task ImportGeneric()
     {
         await GenericImporter.ImportGeneric();
+    }
+
+    [Test, Explicit]
+    public async Task ImportKnownArtist()
+    {
+        await KnownArtistImporter.ImportKnownArtist();
     }
 
     // todo pgrestore pgdump tests

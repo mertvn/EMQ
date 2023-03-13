@@ -31,5 +31,6 @@ public enum SongMatchInnerResultKind
     MultipleMids,
     NoMids,
     Matched,
-    AlreadyHave
+    AlreadyHave,
+    Duplicate,
 }

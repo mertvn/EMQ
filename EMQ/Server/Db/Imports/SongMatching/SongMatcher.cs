@@ -28,8 +28,11 @@ public static class SongMatcher
         else
         {
             filePaths = Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories);
-            File.WriteAllText($"{dir}\\filePaths.json",
-                JsonSerializer.Serialize(filePaths, Utils.JsoIndented));
+            if (cacheFilePaths)
+            {
+                File.WriteAllText($"{dir}\\filePaths.json",
+                    JsonSerializer.Serialize(filePaths, Utils.JsoIndented));
+            }
         }
 
         Parallel.ForEach(filePaths, (filePath, _) =>
@@ -42,6 +45,9 @@ public static class SongMatcher
                 fileName.ToLowerInvariant().Contains("アレンジ") ||
                 fileName.ToLowerInvariant().Contains("acoustic") ||
                 fileName.ToLowerInvariant().Contains("裏ver") ||
+                fileName.ToLowerInvariant().Contains("off vocal") ||
+                fileName.ToLowerInvariant().Contains("offvocal") ||
+                fileName.ToLowerInvariant().Contains("version-") ||
                 (fileName.ToLowerInvariant().Contains("ver.") &&
                  !fileName.ToLowerInvariant().EndsWith("forever.mp3")))
             {
@@ -52,7 +58,7 @@ public static class SongMatcher
             var match = regex.Match(fileName);
             // Console.WriteLine("match: " + match.ToString());
 
-            if (string.IsNullOrWhiteSpace(match.ToString()))
+            if (string.IsNullOrWhiteSpace(match.ToString()) && !string.IsNullOrWhiteSpace(regex.ToString()))
             {
                 Console.WriteLine("regex didn't match: " + filePath);
             }
@@ -106,7 +112,7 @@ public static class SongMatcher
         return songMatches.ToList();
     }
 
-    public static async Task Match(List<SongMatch> songMatches, string outputDir)
+    public static async Task Match(List<SongMatch> songMatches, string outputDir, bool useSource = true)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -132,23 +138,27 @@ public static class SongMatcher
                     return;
                 }
 
-                var queryMusicSource = connection
-                    .QueryBuilder($@"SELECT DISTINCT ms.id
+                List<int>? msIds = null;
+                if (useSource)
+                {
+                    var queryMusicSource = connection
+                        .QueryBuilder($@"SELECT DISTINCT ms.id
 FROM music m
 LEFT JOIN music_source_music msm ON msm.music_id = m.id
 LEFT JOIN music_source ms ON ms.id = msm.music_source_id
 LEFT JOIN music_source_title mst on ms.id = mst.music_source_id
 /**where**/");
 
-                queryMusicSource.Where($"mst.is_main_title = true");
-                queryMusicSource.Where(
-                    $"(mst.latin_title % ANY({songMatch.Sources}) OR mst.non_latin_title % ANY({songMatch.Sources}))");
+                    queryMusicSource.Where($"mst.is_main_title = true");
+                    queryMusicSource.Where(
+                        $"(mst.latin_title % ANY({songMatch.Sources}) OR mst.non_latin_title % ANY({songMatch.Sources}))");
 
-                var msIds = (await queryMusicSource.QueryAsync<int>()).ToList();
-                if (!msIds.Any())
-                {
-                    innerResult.ResultKind = SongMatchInnerResultKind.NoSources;
-                    return;
+                    msIds = (await queryMusicSource.QueryAsync<int>()).ToList();
+                    if (!msIds.Any())
+                    {
+                        innerResult.ResultKind = SongMatchInnerResultKind.NoSources;
+                        return;
+                    }
                 }
 
                 var queryMusic = connection
@@ -164,8 +174,13 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/");
 
                 queryMusic.Where($"mst.is_main_title = true");
-                queryMusic.Where(
-                    $"ms.id = ANY({msIds})");
+
+                if (useSource)
+                {
+                    queryMusic.Where(
+                        $"ms.id = ANY({msIds})");
+                }
+
                 queryMusic.Where(
                     $"(mt.latin_title % ANY({songMatch.Titles}) OR mt.non_latin_title % ANY({songMatch.Titles}))");
                 queryMusic.Where(
@@ -203,6 +218,17 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             }
         });
 
+        var matched = songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.Matched).ToList();
+        foreach (var egsImporterInnerResult in matched)
+        {
+            string currentPath = egsImporterInnerResult.SongMatch.Path;
+            if (egsImporterInnerResult.mIds.Any(x =>
+                    matched.Any(y => y.mIds.Contains(x) && y.SongMatch.Path != currentPath)))
+            {
+                egsImporterInnerResult.ResultKind = SongMatchInnerResultKind.Duplicate;
+            }
+        }
+
         foreach (var egsImporterInnerResult in songMatchInnerResults)
         {
             bool needsPrint;
@@ -230,6 +256,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     break;
                 case SongMatchInnerResultKind.AlreadyHave:
                     Console.WriteLine("AlreadyHave: ");
+                    needsPrint = true;
+                    break;
+                case SongMatchInnerResultKind.Duplicate:
+                    Console.WriteLine("Duplicate: ");
                     needsPrint = true;
                     break;
                 default:
@@ -261,6 +291,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                           songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.NoSources));
         Console.WriteLine("AlreadyHave count: " +
                           songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.AlreadyHave));
+        Console.WriteLine("Duplicate count: " +
+                          songMatchInnerResults.Count(x => x.ResultKind == SongMatchInnerResultKind.Duplicate));
 
         Directory.CreateDirectory(outputDir);
 
@@ -272,6 +304,11 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await File.WriteAllTextAsync($"{outputDir}\\alreadyHave.json",
             JsonSerializer.Serialize(
                 songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.AlreadyHave),
+                Utils.JsoIndented));
+
+        await File.WriteAllTextAsync($"{outputDir}\\duplicate.json",
+            JsonSerializer.Serialize(
+                songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.Duplicate),
                 Utils.JsoIndented));
 
         // // todo

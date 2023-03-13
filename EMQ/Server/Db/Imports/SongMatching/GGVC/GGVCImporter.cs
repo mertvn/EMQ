@@ -14,12 +14,12 @@ public static class GGVCImporter
     {
         var uploaded2 =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc2\\uploaded.json"),
+                await File.ReadAllTextAsync("C:\\emq\\matching\\ggvc\\ggvc_2\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         var uploaded3 =
             JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync("C:\\emq\\ggvc3\\uploaded.json"),
+                await File.ReadAllTextAsync("C:\\emq\\matching\\ggvc\\ggvc_3\\uploaded.json"),
                 Utils.JsoIndented)!;
 
         // todo add alreadyHave to this
@@ -44,6 +44,6 @@ public static class GGVCImporter
         string extension = "mp3";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension);
-        await SongMatcher.Match(songMatches, "C:\\emq\\ggvc4");
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\ggvc\\ggvc_4");
     }
 }

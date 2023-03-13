@@ -13,6 +13,6 @@ public static class ToraImporter
         string extension = "mp3";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension);
-        await SongMatcher.Match(songMatches, "C:\\emq\\tora3");
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\tora\\tora_3");
     }
 }

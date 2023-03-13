@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace EMQ.Server.Db.Imports.SongMatching;
@@ -35,7 +37,9 @@ public static class CatboxUploader
         var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(filepath));
         formContent.Add(fileContent, "fileToUpload", filename);
 
-        HttpResponseMessage response = await ServerUtils.Client.PostAsync(url, formContent);
+        HttpResponseMessage response =
+            await new HttpClient() { DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("a", "1") } }, Timeout = TimeSpan.FromSeconds(200)}
+                .PostAsync(url, formContent);
         return response;
     }
 }

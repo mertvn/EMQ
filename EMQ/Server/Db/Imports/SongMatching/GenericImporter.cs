@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace EMQ.Server.Db.Imports.SongMatching;
 
-public class GenericImporter
+public static class GenericImporter
 {
     public static async Task ImportGeneric()
     {
@@ -13,6 +13,6 @@ public class GenericImporter
         string extension = "*";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, true);
-        await SongMatcher.Match(songMatches, "C:\\emq\\gi2-agm");
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\gi_2-agm");
     }
 }
