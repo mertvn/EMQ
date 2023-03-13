@@ -1336,7 +1336,13 @@ public static class DbManager
                 case ReviewQueueStatus.Rejected:
                     break;
                 case ReviewQueueStatus.Approved:
-                    var songLink = new SongLink() { Url = rq.url, Type = (SongLinkType)rq.type, IsVideo = rq.is_video };
+                    var songLink = new SongLink()
+                    {
+                        Url = rq.url,
+                        Type = (SongLinkType)rq.type,
+                        IsVideo = rq.is_video,
+                        Duration = rq.duration!.Value
+                    };
                     melId = await InsertSongLink(rq.music_id, songLink);
                     break;
                 default:
