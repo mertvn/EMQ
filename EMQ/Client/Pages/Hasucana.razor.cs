@@ -34,9 +34,9 @@ public partial class Hasucana
         for (int index = 0; index < sb.Length; index++)
         {
             char c = sb[index];
-            if (Dict.ContainsKey(c.ToString()))
+            if (Dict.ContainsKey(c.ToString().ToLowerInvariant()))
             {
-                sb[index] = Dict[c.ToString()][0];
+                sb[index] = Dict[c.ToString().ToLowerInvariant()][0];
             }
             else
             {
