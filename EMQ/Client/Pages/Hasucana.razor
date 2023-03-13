@@ -1,0 +1,25 @@
+﻿@page "/Hasucana"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core.UI
+@using EMQ.Client.Components
+@inject HttpClient _client
+@inject ILogger<Index> _logger
+@inject ClientUtils _clientUtils
+
+@* inside joke please ignore *@
+<h1>Hasucana Translator</h1>
+
+<div>
+    <div style="border: 1px solid black; margin:5px; padding: 5px;">
+        <p>Encode</p>
+        <input type="text" @bind-value="@InputForEncode"/>
+        <p>@Encode(InputForEncode)</p>
+    </div>
+    <br/>
+    <div style="border: 1px solid black; margin:5px; padding: 5px;">
+        <p>Decode</p>
+        <input type="text" @bind-value="@InputForDecode"/>
+        <p>@Decode(InputForDecode)</p>
+    </div>
+</div>
