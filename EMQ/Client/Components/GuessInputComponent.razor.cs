@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
@@ -51,6 +52,9 @@ public partial class GuessInputComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
+    // todo consider using a LRU cache
+    private Dictionary<string, string[]> Cache { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete/mst.json"))!;
@@ -60,8 +64,17 @@ public partial class GuessInputComponent
     {
         if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
         {
-            CurrentDataSource =
-                Autocomplete.SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
+            if (Cache.TryGetValue(autocompleteReadDataEventArgs.SearchValue, out var r))
+            {
+                CurrentDataSource = r;
+            }
+            else
+            {
+                string[] res = Autocomplete
+                    .SearchAutocompleteMst(AutocompleteData, autocompleteReadDataEventArgs.SearchValue).ToArray();
+                Cache[autocompleteReadDataEventArgs.SearchValue] = res;
+                CurrentDataSource = res;
+            }
         }
     }
 
@@ -116,9 +129,17 @@ public partial class GuessInputComponent
 
     private void SelectedValueChanged(string arg)
     {
-        CurrentDataSource =
-            Autocomplete.SearchAutocompleteMst(AutocompleteData,
-                arg); // work-around for an issue I'm too lazy to submit a report for
+        // work-around for an issue I'm too lazy to submit a report for
+        if (Cache.TryGetValue(arg, out var r))
+        {
+            CurrentDataSource = r;
+        }
+        else
+        {
+            string[] res = Autocomplete.SearchAutocompleteMst(AutocompleteData, arg).ToArray();
+            Cache[arg] = res;
+            CurrentDataSource = res;
+        }
     }
 
     public void CallClose()
