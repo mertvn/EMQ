@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EMQ.Server.Db;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using NUnit.Framework;
 
 namespace Tests;
@@ -107,6 +108,29 @@ public class DbTests
 
         var song = songs.First(x => x.Titles.Any(y => y.LatinTitle == "WAX & WANE"));
         GenericSongsAssert(new List<Song> { song });
+    }
+
+    [Test]
+    public async Task Test_FindSongsByLabels()
+    {
+        PlayerVndbInfo vndbInfo = new PlayerVndbInfo()
+        {
+            VndbId = "u101804",
+            VndbApiToken = "",
+            Labels = new List<Label>
+            {
+                new()
+                {
+                    Id = 7, // Voted
+                    Kind = LabelKind.Include
+                },
+            }
+        };
+
+        var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+        var songs = await DbManager.FindSongsByLabels(labels);
+        Assert.That(songs.Count > 0);
+        GenericSongsAssert(songs);
     }
 
     [Test]

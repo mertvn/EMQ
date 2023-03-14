@@ -17,7 +17,13 @@ public class SongLink
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
     {
-        return songLinks.OrderBy(x => x.Duration).First();
+        IEnumerable<SongLink> enumerable = songLinks.ToArray();
+        if (!enumerable.Any())
+        {
+            return new SongLink();
+        }
+
+        return enumerable.OrderBy(x => x.Duration).First();
     }
 
     // todo: write tests for this
