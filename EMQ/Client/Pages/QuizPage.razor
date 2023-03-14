@@ -12,17 +12,6 @@
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
-@implements IDisposable
-
-@code {
-
-    public void Dispose()
-    {
-        PageState.Timer.Dispose();
-        _chatComponent?.Dispose();
-    }
-
-}
 
 <CascadingValue Value="@this" IsFixed="true">
     <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>

@@ -164,9 +164,19 @@ public partial class QuizPage
 
     public async ValueTask DisposeAsync()
     {
-        if (ClientState.Session!.hubConnection is not null)
+        try
         {
-            await ClientState.Session.hubConnection.DisposeAsync();
+            if (ClientState.Session!.hubConnection is not null)
+            {
+                await ClientState.Session.hubConnection.DisposeAsync();
+            }
+
+            PageState.Timer.Dispose();
+            _chatComponent?.Dispose();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
         }
     }
 
@@ -318,6 +328,7 @@ public partial class QuizPage
             // might be because visiting RoomPage causes a new signalr connection to be established
             _navigation.NavigateTo("/RoomPage");
             _navigation.NavigateTo("/HotelPage");
+            await DisposeAsync();
         }
     }
 
