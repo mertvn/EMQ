@@ -123,6 +123,10 @@ public static class EgsImporter
                 "https://vndb.org/v575",
                 "https://vndb.org/v804",
                 "https://vndb.org/v1967",
+                "https://vndb.org/v5939",
+                "https://vndb.org/v1899",
+                "https://vndb.org/v323",
+                "https://vndb.org/v90"
             };
             if (blacklist.Contains(gameVndbUrl))
             {

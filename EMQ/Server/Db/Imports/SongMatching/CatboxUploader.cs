@@ -37,9 +37,11 @@ public static class CatboxUploader
         var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(filepath));
         formContent.Add(fileContent, "fileToUpload", filename);
 
-        HttpResponseMessage response =
-            await new HttpClient() { DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("a", "1") } }, Timeout = TimeSpan.FromSeconds(200)}
-                .PostAsync(url, formContent);
+        HttpResponseMessage response = await new HttpClient
+        {
+            DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("a", "1") } },
+            Timeout = TimeSpan.FromSeconds(200)
+        }.PostAsync(url, formContent);
         return response;
     }
 }

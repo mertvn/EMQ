@@ -149,7 +149,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(660, 1600).ToArray();
+        var rqIds = Enumerable.Range(1318, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -219,121 +219,136 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadMatchedSongs()
     {
-        string dir = "C:\\emq\\matching\\tora\\tora_3";
-
-        var songMatchInnerResults =
-            JsonSerializer.Deserialize<List<SongMatchInnerResult>>(
-                await File.ReadAllTextAsync($"{dir}\\matched.json"),
-                Utils.JsoIndented)!;
-
-        var uploaded =
-            JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
-                Utils.JsoIndented)!;
-
-        int oldCount = uploaded.Count;
-        var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
-
-        for (int index = 0; index < songMatchInnerResults.Count; index++)
+        string root = "C:\\emq\\matching\\artist";
+        string[] dirs = Directory.GetDirectories(root);
+        foreach (string dir in dirs)
         {
-            SongMatchInnerResult songMatchInnerResult = songMatchInnerResults[index];
-            var uploadable = new Uploadable
-            {
-                Path = songMatchInnerResult.SongMatch.Path, MId = songMatchInnerResult.mIds.Single()
-            };
+            var songMatchInnerResults =
+                JsonSerializer.Deserialize<List<SongMatchInnerResult>>(
+                    await File.ReadAllTextAsync($"{dir}\\matched.json"),
+                    Utils.JsoIndented)!;
 
-            if (uploaded.Any(x => x.Path == songMatchInnerResult.SongMatch.Path))
+            if (!File.Exists($"{dir}\\uploaded.json"))
             {
-                continue;
+                await File.WriteAllTextAsync($"{dir}\\uploaded.json", "[]");
             }
 
-            if (midsWithSoundLinks.Any(x => x == uploadable.MId))
+            var uploaded =
+                JsonSerializer.Deserialize<List<Uploadable>>(
+                    await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
+                    Utils.JsoIndented)!;
+
+            int oldCount = uploaded.Count;
+            var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
+
+            for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
-                if (uploaded.Count > oldCount)
+                SongMatchInnerResult songMatchInnerResult = songMatchInnerResults[index];
+                var uploadable = new Uploadable
                 {
-                    Console.WriteLine("Skipping uploadable with existing mId: " +
-                                      JsonSerializer.Serialize(uploadable, Utils.Jso));
+                    Path = songMatchInnerResult.SongMatch.Path, MId = songMatchInnerResult.mIds.Single()
+                };
+
+                if (uploaded.Any(x => x.Path == songMatchInnerResult.SongMatch.Path))
+                {
+                    continue;
                 }
 
-                continue;
+                if (midsWithSoundLinks.Any(x => x == uploadable.MId))
+                {
+                    if (uploaded.Count > oldCount)
+                    {
+                        Console.WriteLine("Skipping uploadable with existing mId: " +
+                                          JsonSerializer.Serialize(uploadable, Utils.Jso));
+                    }
+
+                    continue;
+                }
+
+                if (uploaded.Count - oldCount >= 100)
+                {
+                    break;
+                }
+
+                string catboxUrl = await CatboxUploader.Upload(uploadable);
+                uploadable.ResultUrl = catboxUrl;
+                Console.WriteLine(catboxUrl);
+                if (!catboxUrl.EndsWith(".mp3"))
+                {
+                    Console.WriteLine("invalid resultUrl: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
+                    continue;
+                }
+
+                var songLite =
+                    Song.ToSongLite((await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single());
+                uploadable.SongLite = songLite;
+                uploaded.Add(uploadable);
+
+                await File.WriteAllTextAsync($"{dir}\\uploaded.json",
+                    JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+
+                await Task.Delay(20000);
             }
 
-            if (uploaded.Count - oldCount >= 100)
-            {
-                break;
-            }
-
-            string catboxUrl = await CatboxUploader.Upload(uploadable);
-            uploadable.ResultUrl = catboxUrl;
-            Console.WriteLine(catboxUrl);
-            if (!catboxUrl.EndsWith(".mp3"))
-            {
-                Console.WriteLine("invalid resultUrl: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
-                continue;
-            }
-
-            var songLite = Song.ToSongLite((await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single());
-            uploadable.SongLite = songLite;
-            uploaded.Add(uploadable);
-
-            await File.WriteAllTextAsync($"{dir}\\uploaded.json",
+            await File.WriteAllTextAsync($"{dir}\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
                 JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
 
-            await Task.Delay(20000);
+            Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
         }
-
-        await File.WriteAllTextAsync($"{dir}\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
-            JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
-
-        Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
     }
 
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
-        string submittedBy = "tora_3";
-        string dir = "C:\\emq\\matching\\tora\\tora_3";
-
-        var uploaded =
-            JsonSerializer.Deserialize<List<Uploadable>>(
-                await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
-                Utils.JsoIndented)!;
-
-        var dup = uploaded.SelectMany(x => uploaded.Where(y => y.MId == x.MId && y.ResultUrl != x.ResultUrl)).ToList();
-        await File.WriteAllTextAsync($"{dir}\\uploaded_dup.json",
-            JsonSerializer.Serialize(dup, Utils.JsoIndented));
-
-        var dup2 = uploaded.SelectMany(x => uploaded.Where(y => y.ResultUrl == x.ResultUrl && y.MId != x.MId)).ToList();
-        await File.WriteAllTextAsync($"{dir}\\uploaded_dup2.json",
-            JsonSerializer.Serialize(dup2, Utils.JsoIndented));
-
-        foreach (Uploadable uploadable in uploaded)
+        string root = "C:\\emq\\matching\\artist";
+        string[] dirs = Directory.GetDirectories(root);
+        foreach (string dir in dirs)
         {
-            if (!string.IsNullOrWhiteSpace(uploadable.ResultUrl) && uploadable.ResultUrl.EndsWith(".mp3"))
+            string submittedBy = Path.GetFileName(dir)!;
+
+            var uploaded =
+                JsonSerializer.Deserialize<List<Uploadable>>(
+                    await File.ReadAllTextAsync($"{dir}\\uploaded.json"),
+                    Utils.JsoIndented)!;
+
+            var dup = uploaded.SelectMany(x => uploaded.Where(y => y.MId == x.MId && y.ResultUrl != x.ResultUrl))
+                .ToList();
+            await File.WriteAllTextAsync($"{dir}\\uploaded_dup.json",
+                JsonSerializer.Serialize(dup, Utils.JsoIndented));
+
+            var dup2 = uploaded.SelectMany(x => uploaded.Where(y => y.ResultUrl == x.ResultUrl && y.MId != x.MId))
+                .ToList();
+            await File.WriteAllTextAsync($"{dir}\\uploaded_dup2.json",
+                JsonSerializer.Serialize(dup2, Utils.JsoIndented));
+
+            foreach (Uploadable uploadable in uploaded)
             {
-                if (!dup.Any(x => x.MId == uploadable.MId))
+                if (!string.IsNullOrWhiteSpace(uploadable.ResultUrl) && uploadable.ResultUrl.EndsWith(".mp3"))
                 {
-                    var songLink = new SongLink()
+                    if (!dup.Any(x => x.MId == uploadable.MId))
                     {
-                        Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
-                    };
+                        var songLink = new SongLink()
+                        {
+                            Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
+                        };
 
-                    int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
+                        int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
 
-                    var analyserResult = await MediaAnalyser.Analyse(uploadable.Path);
-                    await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
-                        analyserResult: analyserResult);
+                        var analyserResult = await MediaAnalyser.Analyse(uploadable.Path);
+                        await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                            analyserResult: analyserResult);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Skipping duplicate uploadable: " +
+                                          JsonSerializer.Serialize(uploadable, Utils.Jso));
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Skipping duplicate uploadable: " +
+                    Console.WriteLine("Invalid uploadable: " +
                                       JsonSerializer.Serialize(uploadable, Utils.Jso));
                 }
-            }
-            else
-            {
-                Console.WriteLine("Invalid uploadable: " +
-                                  JsonSerializer.Serialize(uploadable, Utils.Jso));
             }
         }
     }
@@ -354,6 +369,17 @@ public class EntryPoints
     public async Task ImportKnownArtist()
     {
         await KnownArtistImporter.ImportKnownArtist();
+    }
+
+    [Test, Explicit]
+    public async Task ImportKnownArtistWithRootDirName()
+    {
+        string root = "M:\\!matching\\gmusic\\artist";
+        string[] dirs = Directory.GetDirectories(root);
+        foreach (string dir in dirs)
+        {
+            await KnownArtistImporter.ImportKnownArtistWithDir(dir, 2);
+        }
     }
 
     // todo pgrestore pgdump tests
