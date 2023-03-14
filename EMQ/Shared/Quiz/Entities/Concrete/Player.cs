@@ -61,8 +61,9 @@ public class PlayerPreferences
     public SongLinkType LinkHost { get; set; } = SongLinkType.Catbox;
 
     [Required]
-    public int VolumeMaster { get; set; } = 70; // todo
+    public int VolumeMaster { get; set; } = 70;
 
+    // todo make these skip preferences not cause unskip
     [Required]
     public bool AutoSkipGuessPhase { get; set; } = false;
 
