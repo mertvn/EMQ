@@ -70,7 +70,7 @@ public partial class QuizPage
         public float Countdown { get; set; }
         public Timer Timer { get; } = new();
 
-        public int CurrentMasterVolume { get; set; } = 70;
+        public int CurrentMasterVolume { get; set; } = -1;
     }
 
     public static QuizPageState PageState { get; set; } = new() { };
