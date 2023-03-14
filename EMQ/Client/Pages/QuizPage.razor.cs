@@ -428,6 +428,13 @@ public partial class QuizPage
                 await SyncWithServer();
             }
 
+            // well i hope this isn't slow
+            if (ClientState.Session != null)
+            {
+                await _jsRuntime.InvokeVoidAsync("setVideoVolume",
+                    ClientState.Session.Player.Preferences.VolumeMaster / 100f);
+            }
+
             StateHasChanged();
         }
     }

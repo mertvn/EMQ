@@ -72,6 +72,16 @@
     //     return typeAttr === 'text';
     // }
 
+    async function setVideoVolume(volume) {
+        try {
+            const video = document.getElementById('video');
+            video.volume = volume;
+            // console.log("set video volume to " + volume)
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
     async function reloadVideo(startTime) {
         // console.log("here")
         try {

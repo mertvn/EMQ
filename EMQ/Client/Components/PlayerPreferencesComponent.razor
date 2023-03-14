@@ -56,6 +56,13 @@
                                     </InputSelect>
                                     <label for="LinkHost">Preferred host</label>
                                     <br/>
+
+                                    <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+                                        <Blazorise.Slider style="max-width: 150px;" id="VolumeMaster" @bind-Value="@ClientState.Session.Player.Preferences.VolumeMaster" Min="0" Max="100"/>
+                                        <label for="VolumeMaster" style="margin-left: 5px;">Master Volume</label>
+                                        <br/>
+                                    </div>
+
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabVNDB">
                                     @* todo let people access this tab without VndbInfo *@
