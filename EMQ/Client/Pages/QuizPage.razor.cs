@@ -69,6 +69,8 @@ public partial class QuizPage
 
         public float Countdown { get; set; }
         public Timer Timer { get; } = new();
+
+        public int CurrentMasterVolume { get; set; } = 70;
     }
 
     public static QuizPageState PageState { get; set; } = new() { };
@@ -439,11 +441,11 @@ public partial class QuizPage
                 await SyncWithServer();
             }
 
-            // well i hope this isn't slow
-            if (ClientState.Session != null)
+            if (ClientState.Session != null &&
+                PageState.CurrentMasterVolume != ClientState.Session.Player.Preferences.VolumeMaster)
             {
-                await _jsRuntime.InvokeVoidAsync("setVideoVolume",
-                    ClientState.Session.Player.Preferences.VolumeMaster / 100f);
+                PageState.CurrentMasterVolume = ClientState.Session.Player.Preferences.VolumeMaster;
+                await _jsRuntime.InvokeVoidAsync("setVideoVolume", PageState.CurrentMasterVolume / 100f);
             }
 
             StateHasChanged();
