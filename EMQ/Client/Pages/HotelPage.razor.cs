@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Client.Components;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
@@ -23,6 +24,12 @@ public partial class HotelPage
     public CreateNewRoomModel _createNewRoomModel { get; set; } = new();
 
     public bool IsJoiningRoom = false;
+
+    private GenericModal? _passwordModalRef;
+
+    public int SelectedRoomId { get; set; } = -1;
+
+    public string SelectedRoomPassword { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,12 +89,7 @@ public partial class HotelPage
         }
         else if (res1.StatusCode == HttpStatusCode.Unauthorized)
         {
-            // todo convert to modal
-            string promptRes = await _jsRuntime.InvokeAsync<string>("prompt", "Please enter room password: ");
-            if (!string.IsNullOrWhiteSpace(promptRes))
-            {
-                await JoinRoom(roomId, promptRes);
-            }
+            _passwordModalRef?.Show();
         }
 
         IsJoiningRoom = false;

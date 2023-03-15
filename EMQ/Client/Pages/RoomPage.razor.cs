@@ -37,6 +37,8 @@ public partial class RoomPage
 
     private QuizSettingsComponent? _quizSettingsComponent;
 
+    private GenericModal? _leaveModalRef;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -106,17 +108,13 @@ public partial class RoomPage
         _navigation.NavigateTo("/QuizPage");
     }
 
-    private async Task Onclick_Leave()
+    private async Task LeaveRoom()
     {
         // Room = await _clientUtils.SyncRoom();
 
-        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", "Really leave?");
-        if (confirmed)
-        {
-            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
-            // Room = await _clientUtils.SyncRoom();
-            _navigation.NavigateTo("/HotelPage");
-        }
+        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
+        // Room = await _clientUtils.SyncRoom();
+        _navigation.NavigateTo("/HotelPage");
     }
 
     private async Task CallStateHasChanged()

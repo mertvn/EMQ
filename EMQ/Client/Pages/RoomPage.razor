@@ -26,7 +26,14 @@
                        ParentStateHasChangedCallback="@CallStateHasChanged"
                        IsReadOnly="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"/>
 
-<button type="button" class="btn btn-warning" @onclick="Onclick_Leave"
+<GenericModal @ref="@_leaveModalRef"
+              Title="Leave?"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await LeaveRoom(); })">
+    <span>Are you sure you want to leave the room?</span>
+</GenericModal>
+
+<button type="button" class="btn btn-warning" @onclick="@(() => _leaveModalRef?.Show())"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
 </button>

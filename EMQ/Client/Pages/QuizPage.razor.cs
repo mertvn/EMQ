@@ -95,6 +95,8 @@ public partial class QuizPage
 
     private QuizSettingsComponent? _quizSettingsComponent;
 
+    private GenericModal? _leaveModalRef;
+
     private DateTime LastSync { get; set; }
 
     private bool SyncInProgress { get; set; }
@@ -314,24 +316,19 @@ public partial class QuizPage
         _navigation.NavigateTo("/RoomPage");
     }
 
-    private async Task Onclick_Leave()
+    private async Task LeaveQuiz()
     {
         // await SyncWithServer();
 
-        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
-            "Really leave? If you return your score will not be restored.");
-        if (confirmed)
-        {
-            await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
-            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
-            // await SyncWithServer();
+        await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
+        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
+        // await SyncWithServer();
 
-            // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
-            // might be because visiting RoomPage causes a new signalr connection to be established
-            _navigation.NavigateTo("/RoomPage");
-            _navigation.NavigateTo("/HotelPage");
-            await DisposeAsync();
-        }
+        // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
+        // might be because visiting RoomPage causes a new signalr connection to be established
+        _navigation.NavigateTo("/RoomPage");
+        _navigation.NavigateTo("/HotelPage");
+        await DisposeAsync();
     }
 
     public async Task OnReceivePhaseChanged(int phase)

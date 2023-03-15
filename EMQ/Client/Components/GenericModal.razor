@@ -1,0 +1,62 @@
+﻿<Blazorise.Modal @ref="_modalRef">
+    <Blazorise.ModalContent Centered="true" Scrollable="true" Size="Size">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <Blazorise.ModalHeader>
+                <Blazorise.ModalTitle>@Title</Blazorise.ModalTitle>
+            </Blazorise.ModalHeader>
+        }
+        <Blazorise.ModalBody>
+            @ChildContent
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                @if (OkAction != null)
+                {
+                    <span>Cancel</span>
+                }
+                else
+                {
+                    <span>Close</span>
+                }
+            </button>
+            @if (OkAction != null)
+            {
+                <button type="button" class="btn btn-primary"
+                        @onclick="@(async () => { { await OkAction(); } })">
+                    OK
+                </button>
+            }
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public Blazorise.ModalSize Size { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public Func<Task>? OkAction { get; set; }
+
+    private Blazorise.Modal? _modalRef;
+
+    public void Show()
+    {
+        StateHasChanged();
+        _modalRef!.Show();
+    }
+
+    public void Hide()
+    {
+        StateHasChanged();
+        _modalRef!.Hide();
+    }
+
+}

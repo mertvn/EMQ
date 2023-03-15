@@ -14,7 +14,15 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="@this" IsFixed="true">
+
     <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
+
+    <GenericModal @ref="@_leaveModalRef"
+                  Title="Leave?"
+                  Size="@Blazorise.ModalSize.Default"
+                  OkAction="@(async () => { await LeaveQuiz(); })">
+        <span>Are you sure you want to leave the quiz? Your score will not be restored if you return.</span>
+    </GenericModal>
 
     @if (!_clientConnectionManager.IsConnected)
     {
@@ -49,7 +57,7 @@
             Room Settings
         </button>
 
-        <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="Onclick_Leave"
+        <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(() => _leaveModalRef?.Show())"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
             Leave
         </button>
@@ -155,7 +163,7 @@
         </div>
 
         <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
-                 pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
+                         pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
             @* todo should be false on judgement phase as well *@
             <GuessInputComponent @ref="_guessInputComponent"
                                  Placeholder="Enter your guess here"
@@ -174,11 +182,11 @@
                 {
                     <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
                         <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
-                             cursor: @UiHelpers.Bool2Cursor(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
+                                     cursor: @UiHelpers.Bool2Cursor(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
                              @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
                             <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                                 <span style="word-wrap: anywhere; height: 90px; display: block;
-                                     color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
+                                             color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                     @* todo make text smaller as it gets longer *@
                                     @player.Guess
                                 </span>

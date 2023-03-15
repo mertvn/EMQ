@@ -11,6 +11,13 @@
 
 <p>Welcome to EMQ Hotel. Here you can join an existing room or reserve a new room in order to play.</p>
 
+<GenericModal @ref="@_passwordModalRef"
+              Title="Enter room password"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await JoinRoom(SelectedRoomId, SelectedRoomPassword); })">
+    <input type="text" @bind="SelectedRoomPassword"/>
+</GenericModal>
+
 <div>
     <EditForm Model="@_createNewRoomModel" OnValidSubmit="@(() => SendCreateRoomReq(_createNewRoomModel))">
         <DataAnnotationsValidator/>
@@ -56,7 +63,7 @@
                     class="btn btn-primary"
                     style="margin: 16px"
                     disabled="@(ClientState.Session == null || IsJoiningRoom)"
-                    @onclick="@(() => JoinRoom(room.Id, ""))">
+                    @onclick="@(async () => { SelectedRoomId = room.Id; SelectedRoomPassword = ""; await JoinRoom(SelectedRoomId, SelectedRoomPassword); })">
                 Join
             </button>
         </div>
