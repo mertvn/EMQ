@@ -506,6 +506,7 @@ public static class DbManager
 
             foreach (Title songTitle in song.Titles)
             {
+                // ReSharper disable once UnusedVariable
                 int mtId = await connection.InsertAsync(new MusicTitle()
                 {
                     music_id = mId,
@@ -518,6 +519,7 @@ public static class DbManager
 
             foreach (SongLink songLink in song.Links)
             {
+                // ReSharper disable once UnusedVariable
                 int melId = await connection.InsertAsync(new MusicExternalLink()
                 {
                     music_id = mId,
@@ -529,11 +531,11 @@ public static class DbManager
             }
 
 
+            int msId = 0;
             foreach (SongSource songSource in song.Sources)
             {
                 string msVndbUrl = songSource.Links.Single(y => y.Type == SongSourceLinkType.VNDB).Url;
 
-                int msId = 0;
                 if (!string.IsNullOrEmpty(msVndbUrl))
                 {
                     msId = (await connection.QueryAsync<int>(
@@ -557,6 +559,7 @@ public static class DbManager
 
                     foreach (Title songSourceAlias in songSource.Titles)
                     {
+                        // ReSharper disable once UnusedVariable
                         int mstId = await connection.InsertAsync(new MusicSourceTitle()
                         {
                             music_source_id = msId,
@@ -569,6 +572,7 @@ public static class DbManager
 
                     foreach (SongSourceLink songSourceLink in songSource.Links)
                     {
+                        // ReSharper disable once UnusedVariable
                         int mselId = await connection.InsertAsync(new MusicSourceExternalLink()
                         {
                             music_source_id = msId, url = songSourceLink.Url, type = (int)songSourceLink.Type
@@ -577,8 +581,7 @@ public static class DbManager
 
                     foreach (SongSourceCategory songSourceCategory in songSource.Categories)
                     {
-                        int cId = 0;
-                        cId = (await connection.QueryAsync<int>(
+                        int cId = (await connection.QueryAsync<int>(
                             "select id from category c where c.vndb_id=@songSourceCategoryVndbId AND c.type=@songSourceCategoryType",
                             new
                             {
@@ -601,8 +604,7 @@ public static class DbManager
                             cId = await connection.InsertAsync(newCategory);
                         }
 
-                        int mscId;
-                        mscId = (await connection.QueryAsync<int>(
+                        int mscId = (await connection.QueryAsync<int>(
                             "select music_source_id from music_source_category msc where msc.music_source_id=@msId AND msc.category_id =@cId",
                             new { msId, cId })).ToList().SingleOrDefault();
 
@@ -611,6 +613,7 @@ public static class DbManager
                         }
                         else
                         {
+                            // ReSharper disable once RedundantAssignment
                             mscId = await connection.InsertAsync(
                                 new MusicSourceCategory()
                                 {
@@ -625,8 +628,7 @@ public static class DbManager
 
                 foreach (var songSourceSongType in songSource.SongTypes)
                 {
-                    int msmId = 0;
-                    msmId = (await connection.QueryAsync<int>(
+                    int msmId = (await connection.QueryAsync<int>(
                         "select music_id from music_source_music msm where msm.music_id=@mId AND msm.music_source_id =@msId AND msm.type=@songSourceSongType",
                         new { mId, msId, songSourceSongType })).ToList().SingleOrDefault();
 
@@ -635,6 +637,7 @@ public static class DbManager
                     }
                     else
                     {
+                        // ReSharper disable once RedundantAssignment
                         msmId = await connection.InsertAsync(new MusicSourceMusic()
                         {
                             music_id = mId, music_source_id = msId, type = (int)songSourceSongType
@@ -697,11 +700,17 @@ public static class DbManager
                     throw new Exception("mId is invalid");
                 }
 
+                if (msId < 1)
+                {
+                    throw new Exception("msId is invalid");
+                }
+
                 if (aaId < 1)
                 {
                     throw new Exception("aaId is invalid");
                 }
 
+                // ReSharper disable once UnusedVariable
                 int amId = await connection.InsertAsync(
                     new ArtistMusic()
                     {
@@ -846,7 +855,7 @@ public static class DbManager
         return ret;
     }
 
-    // todo categoryfilter
+    // todo CategoryFilter
     public static async Task<List<Song>> GetLootedSongs(int numSongs, bool duplicates, List<string> validSources)
     {
         if (!validSources.Any())
@@ -1536,8 +1545,8 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         var ret = new List<Song>();
         var addedMselUrls = new List<string>();
         var rng = new Random();
-        var duplicates = true;
-        var numSongs = int.MaxValue;
+        bool duplicates = true;
+        int numSongs = int.MaxValue;
 
         List<(int, string)> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))

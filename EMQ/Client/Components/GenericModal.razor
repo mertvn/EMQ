@@ -10,7 +10,7 @@
             @ChildContent
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>
-            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef?.Hide(); })">
                 @if (OkAction != null)
                 {
                     <span>Cancel</span>

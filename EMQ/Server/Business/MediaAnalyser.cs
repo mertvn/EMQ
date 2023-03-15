@@ -66,7 +66,7 @@ public static class MediaAnalyser
 
             // Console.WriteLine(new { format });
             result.FormatSingle = format;
-            if ($".{format}" != Path.GetExtension(filePath))
+            if (!string.Equals($".{format}", Path.GetExtension(filePath), StringComparison.OrdinalIgnoreCase))
             {
                 result.Warnings.Add(MediaAnalyserWarningKind.WrongExtension);
             }

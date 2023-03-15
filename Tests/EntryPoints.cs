@@ -149,7 +149,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(2193, 1600).ToArray();
+        var rqIds = Enumerable.Range(2200, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -191,7 +191,7 @@ public class EntryPoints
                     if (success)
                     {
                         dlCount += 1;
-                        await Task.Delay(20000);
+                        await Task.Delay(10000);
                     }
                     else
                     {
