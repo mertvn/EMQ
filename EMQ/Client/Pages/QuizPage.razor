@@ -15,221 +15,222 @@
 
 <CascadingValue Value="@this" IsFixed="true">
 
-    <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
+<QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
 
-    <GenericModal @ref="@_leaveModalRef"
-                  Title="Leave?"
-                  Size="@Blazorise.ModalSize.Default"
-                  OkAction="@(async () => { await LeaveQuiz(); })">
-        <span>Are you sure you want to leave the quiz? Your score will not be restored if you return.</span>
-    </GenericModal>
+<GenericModal @ref="@_leaveModalRef"
+              Title="Leave?"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await LeaveQuiz(); })">
+    <span>Are you sure you want to leave the quiz? Your score will not be restored if you return.</span>
+</GenericModal>
 
-    @if (!_clientConnectionManager.IsConnected)
+@if (!_clientConnectionManager.IsConnected)
+{
+    <p style="color: @UiHelpers.Bool2Color(_clientConnectionManager.IsConnected, "green", "red")">
+        @UiHelpers.Bool2Text(_clientConnectionManager.IsConnected, "Connected", "Disconnected")
+    </p>
+}
+
+@if (Room?.Quiz != null)
+{
+    @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
-        <p style="color: @UiHelpers.Bool2Color(_clientConnectionManager.IsConnected, "green", "red")">
-            @UiHelpers.Bool2Text(_clientConnectionManager.IsConnected, "Connected", "Disconnected")
-        </p>
-    }
-
-    @if (Room?.Quiz != null)
-    {
-        @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
-        {
-            <button type="button" class="btn btn-primary"
-                    disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)"
-                    @onclick="SendTogglePause"
-                    style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
-                @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
-            </button>
-        }
-
-        int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
-        int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
         <button type="button" class="btn btn-primary"
-                disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
-                @onclick="SendToggleSkip"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
-            @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
-        </button>
-
-        <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px;"
-                @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
-            Room Settings
-        </button>
-
-        <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(() => _leaveModalRef?.Show())"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
-            Leave
+                disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id)"
+                @onclick="SendTogglePause"
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
+            @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
         </button>
     }
 
-    <div style="display:flex; justify-content:center; align-items:center;">
-        @(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs
+    int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
+    int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
+    <button type="button" class="btn btn-primary"
+            disabled="@(!(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
+            @onclick="SendToggleSkip"
+            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
+        @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
+    </button>
+
+    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px;"
+            @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
+        Room Settings
+    </button>
+
+    <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(() => _leaveModalRef?.Show())"
+            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
+        Leave
+    </button>
+}
+
+<div style="display:flex; justify-content:center; align-items:center;">
+    @(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs
+</div>
+
+@if (PageState.IsDebug)
+{
+    <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
+        <p>Quiz status: @Room?.Quiz?.QuizState.QuizStatus</p>
+        @* <p>Phase: @_quizState.Phase</p> *@
+        <p>RemainingMs: @Room?.Quiz?.QuizState.RemainingMs</p>
+        <p>sp: @Room?.Quiz?.QuizState.sp</p>
     </div>
 
-    @if (PageState.IsDebug)
-    {
-        <div style="visibility: @UiHelpers.Bool2Vis(PageState.IsDebug)">
-            <p>Quiz status: @Room?.Quiz?.QuizState.QuizStatus</p>
-            @* <p>Phase: @_quizState.Phase</p> *@
-            <p>RemainingMs: @Room?.Quiz?.QuizState.RemainingMs</p>
-            <p>sp: @Room?.Quiz?.QuizState.sp</p>
-        </div>
-
-        <div style="float:right;">
-            @foreach (var debug in PageState.DebugOut)
-            {
-                <p style="padding: 0; margin:0;">@debug</p>
-            }
-        </div>
-    }
-
-    @if (Room?.Chat != null)
-    {
-        <ChatComponent @ref="_chatComponent"></ChatComponent>
-    }
-
-    <div id="correctAnswerInfoDiv"
-         style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 300px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">
-        @* todo Latin vs NonLatin title option *@
-        <SongInfoCardComponent song="@_correctAnswer"/>
+    <div style="float:right;">
+        @foreach (var debug in PageState.DebugOut)
+        {
+            <p style="padding: 0; margin:0;">@debug</p>
+        }
     </div>
+}
 
-    <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
+@if (Room?.Chat != null)
+{
+    <ChatComponent @ref="_chatComponent"></ChatComponent>
+}
 
-        <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 720px; min-height: 52px">
-            @JsonSerializer.Serialize(_correctAnswer?
+<div id="correctAnswerInfoDiv"
+     style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 300px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">
+    @* todo Latin vs NonLatin title option *@
+    <SongInfoCardComponent song="@_correctAnswer"/>
+</div>
+
+<div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
+
+    <div id="correctAnswerSourceDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 720px; min-height: 52px">
+        @JsonSerializer.Serialize(_correctAnswer?
+            .Sources.SelectMany(x => x.Titles)
+            .Where(x => x.Language is "ja" or "en" or "tr") // todo
+            .Select(x => x.LatinTitle).Concat(_correctAnswer?
                 .Sources.SelectMany(x => x.Titles)
                 .Where(x => x.Language is "ja" or "en" or "tr") // todo
-                .Select(x => x.LatinTitle).Concat(_correctAnswer?
-                    .Sources.SelectMany(x => x.Titles)
-                    .Where(x => x.Language is "ja" or "en" or "tr") // todo
-                    .Select(x => x.NonLatinTitle).Where(x => x != null)!).Distinct(), Utils.Jso)
+                .Select(x => x.NonLatinTitle).Where(x => x != null)!).Distinct(), Utils.Jso)
+    </div>
+
+    <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
+        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
+            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)#t=@(_currentSong?.StartTime)"
+                   id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+            </video>
+            @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
+            {
+                <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 300000">Sound only</p>
+            }
         </div>
 
-        <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
-            <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
-                <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)#t=@(_currentSong?.StartTime)"
-                       id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
-                </video>
-                @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
-                {
-                    <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 300000">Sound only</p>
-                }
-            </div>
-
-            <div id="quizInfoDiv" style="position: absolute; top: 3%; left: 3%; font-size: xx-large; color: white; z-index: 300000;">
-                @if (Room?.Quiz?.QuizState.IsPaused ?? false)
-                {
-                    <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
-                        Paused
-                    </p>
-                }
-
+        <div id="quizInfoDiv" style="position: absolute; top: 3%; left: 3%; font-size: xx-large; color: white; z-index: 300000;">
+            @if (Room?.Quiz?.QuizState.IsPaused ?? false)
+            {
                 <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
-                    @(Room?.Quiz?.QuizState.ExtraInfo)
+                    Paused
                 </p>
+            }
 
-                @if (Room is {Quiz: { } })
+            <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;">
+                @(Room?.Quiz?.QuizState.ExtraInfo)
+            </p>
+
+            @if (Room is {Quiz: { } })
+            {
+                @if (Room.Quiz.QuizState.RemainingMs <= 0)
                 {
-                    @if (Room.Quiz.QuizState.RemainingMs <= 0)
+                    List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
+                    List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
+                    @if (buffered.Count > 0 && notBuffered.Count < 5)
                     {
-                        List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
-                        List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
-                        @if (buffered.Count > 0 && notBuffered.Count < 5)
+                        @foreach (Player player in notBuffered)
                         {
-                            @foreach (Player player in notBuffered)
-                            {
-                                <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; font-size: x-large;">
-                                    Waiting for @player.Username
-                                </p>
-                            }
+                            <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; font-size: x-large;">
+                                Waiting for @player.Username
+                            </p>
                         }
                     }
                 }
-            </div>
-
-            @if (!PageState.VideoPlayerVisibility)
-            {
-                @* TODO: properly center this *@
-                <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                    @((int)Math.Round(PageState.Countdown / 1000))
-                </div>
             }
         </div>
 
-        <div class="progress" style="height: 5px; max-width: 720px">
-            <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
-        </div>
+        @if (!PageState.VideoPlayerVisibility)
+        {
+            @* TODO: properly center this *@
+            <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                @((int)Math.Round(PageState.Countdown / 1000))
+            </div>
+        }
+    </div>
 
-        <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+    <div class="progress" style="height: 5px; max-width: 720px">
+        <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
+    </div>
+
+    <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
-            @* todo should be false on judgement phase as well *@
-            <GuessInputComponent @ref="_guessInputComponent"
-                                 Placeholder="Enter your guess here"
-                                 FreeTyping="true"
-                                 IsDisabled="@PageState.VideoPlayerVisibility"
-                                 IsQuizPage="true"
-                                 @bind-Guess="@PageState.Guess">
-            </GuessInputComponent>
-            <br/>
-        </div>
+        @* todo should be false on judgement phase as well *@
+        <GuessInputComponent @ref="_guessInputComponent"
+                             Placeholder="Enter your guess here"
+                             FreeTyping="true"
+                             IsDisabled="@PageState.VideoPlayerVisibility"
+                             IsQuizPage="true"
+                             @bind-Guess="@PageState.Guess">
+        </GuessInputComponent>
+        <br/>
+    </div>
 
-        <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
-            @if (Room?.Players.Any() ?? false)
+    <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+        @if (Room?.Players.Any() ?? false)
+        {
+            @foreach (var player in Room.Players)
             {
-                @foreach (var player in Room.Players)
-                {
-                    <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
-                        <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
+                <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
+                    <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
                                      cursor: @UiHelpers.Bool2Cursor(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
-                             @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
-                            <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                                <span style="word-wrap: anywhere; height: 90px; display: block;
+                         @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
+                        <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
+                            <span style="word-wrap: anywhere; height: 90px; display: block;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
-                                    @* todo make text smaller as it gets longer *@
-                                    @player.Guess
-                                </span>
-                            </div>
-                        </div>
-
-                        @if (Room?.QuizSettings.MaxLives > 0)
-                        {
-                            <p> Lives: @player.Lives</p>
-                        }
-
-                        <div style="position: relative">
-                            <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
-
-                            <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
-
                                 @* todo make text smaller as it gets longer *@
-                                <span style="color: white;">@player.Username</span>
-
-                                <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
-                                @{
-                                    if (_correctAnswerPlayerLabels.ContainsKey(player.Id))
-                                    {
-                                        var labels = _correctAnswerPlayerLabels.Single(x => x.Key == player.Id).Value;
-
-                                        @* todo *@
-                                        string text = labels.First().Name == "Looted" ? "L" : (labels.First().VNs.First().Value / 10f).ToString(CultureInfo.InvariantCulture);
-
-                                        <div style="position: absolute; top: 0%; right: 2%; visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-                                            <Blazorise.Tooltip Text="@string.Join(", ", labels.Select(x => x.Name))">
-                                                <span style="color: black;">@(text == "-0.1" ? "V" : text)</span>
-                                            </Blazorise.Tooltip>
-                                        </div>
-                                    }
-                                }
-
-                            </div>
+                                @player.Guess
+                            </span>
                         </div>
                     </div>
-                }
-            }
 
-        </div>
+                    @if (Room?.QuizSettings.MaxLives > 0)
+                    {
+                        <p> Lives: @player.Lives</p>
+                    }
+
+                    <div style="position: relative">
+                        <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
+
+                        <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
+
+                            @* todo make text smaller as it gets longer *@
+                            <span style="color: white;">@player.Username</span>
+
+                            <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
+                            @{
+                                if (_correctAnswerPlayerLabels.ContainsKey(player.Id))
+                                {
+                                    var labels = _correctAnswerPlayerLabels.Single(x => x.Key == player.Id).Value;
+
+                                    @* todo *@
+                                    string text = labels.First().Name == "Looted" ? "L" : (labels.First().VNs.First().Value / 10f).ToString(CultureInfo.InvariantCulture);
+                                    text = text == "-0.1" ? "V" : text;
+
+                                    <div style="position: absolute; top: 0%; right: 2%; visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+                                        <Blazorise.Tooltip Text="@string.Join(", ", labels.Select(x => x.Name))">
+                                            <span style="color: black;">@(text)</span>
+                                        </Blazorise.Tooltip>
+                                    </div>
+                                }
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
     </div>
+</div>
 
 </CascadingValue>
