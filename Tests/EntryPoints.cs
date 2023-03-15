@@ -265,6 +265,12 @@ public class EntryPoints
                     continue;
                 }
 
+                if (string.IsNullOrWhiteSpace(uploadable.Path))
+                {
+                    Console.WriteLine("path is null: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
+                    continue;
+                }
+
                 if (uploaded.Count - oldCount >= 100)
                 {
                     break;
@@ -287,11 +293,14 @@ public class EntryPoints
                 await File.WriteAllTextAsync($"{dir}\\uploaded.json",
                     JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
 
-                await Task.Delay(20000);
+                await Task.Delay(10000);
             }
 
-            await File.WriteAllTextAsync($"{dir}\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
-                JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+            if (uploaded.Count - oldCount > 0)
+            {
+                await File.WriteAllTextAsync($"{dir}\\uploaded_backup_{DateTime.UtcNow:yyyyMMddTHHmmss}.json",
+                    JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
+            }
 
             Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
         }
