@@ -292,6 +292,10 @@ public static class VndbImporter
                         SongTypes = dynData.ParsedSong.Type.Select(x => (int)x).Cast<SongSourceSongType>().ToList(),
                         LanguageOriginal = dynMusicSource.olang,
                         RatingAverage = dynMusicSource.c_average,
+                        // todo
+                        // RatingBayesian = dynMusicSource.c_rating,
+                        // Popularity = dynMusicSource.c_popularity,
+                        // VoteCount = dynMusicSource.c_votecount,
                         Type = SongSourceType.VN,
                         Links = new List<SongSourceLink>()
                         {
