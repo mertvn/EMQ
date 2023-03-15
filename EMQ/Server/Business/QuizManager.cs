@@ -614,7 +614,7 @@ public class QuizManager
             return false;
         }
 
-        Quiz.Log($"Players looted {validSources.Distinct().Count()} distinct sources");
+        Quiz.Log($"Players looted {validSources.SelectMany(x => x.Value).Distinct().Count()} distinct sources");
         var dbSongs = await DbManager.GetLootedSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,

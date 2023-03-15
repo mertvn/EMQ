@@ -36,6 +36,7 @@ public static class KnownArtistImporter
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, false);
         foreach (SongMatch songMatch in songMatches)
         {
+            songMatch.Artists.Clear();
             songMatch.Artists.AddRange(artistName);
         }
 

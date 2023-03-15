@@ -149,7 +149,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(1318, 1600).ToArray();
+        var rqIds = Enumerable.Range(2193, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -302,7 +302,7 @@ public class EntryPoints
                     JsonSerializer.Serialize(uploaded, Utils.JsoIndented));
             }
 
-            Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files.");
+            Console.WriteLine($"Uploaded {uploaded.Count - oldCount} files in {dir}.");
         }
     }
 
@@ -381,13 +381,13 @@ public class EntryPoints
     }
 
     [Test, Explicit]
-    public async Task ImportKnownArtistWithRootDirName()
+    public async Task ImportKnownArtistWithDir()
     {
-        string root = "M:\\!matching\\gmusic\\artist";
+        string root = "M:\\!matching\\artist";
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
-            await KnownArtistImporter.ImportKnownArtistWithDir(dir, 2);
+            await KnownArtistImporter.ImportKnownArtistWithDir(dir, 3);
         }
     }
 

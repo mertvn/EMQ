@@ -40,6 +40,7 @@ public static class SongMatcher
             string fileName = Path.GetFileName(filePath);
             if (fileName.ToLowerInvariant().Contains("mix") ||
                 fileName.ToLowerInvariant().Contains("ｍｉｘ") ||
+                fileName.ToLowerInvariant().Contains("rmx") ||
                 fileName.ToLowerInvariant().Contains("radioedit") ||
                 fileName.ToLowerInvariant().Contains("arrang") ||
                 fileName.ToLowerInvariant().Contains("アレンジ") ||

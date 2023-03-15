@@ -30,33 +30,3 @@
         </Blazorise.ModalFooter>
     </Blazorise.ModalContent>
 </Blazorise.Modal>
-
-@code {
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    [Parameter]
-    public Blazorise.ModalSize Size { get; set; }
-
-    [Parameter]
-    public string? Title { get; set; }
-
-    [Parameter]
-    public Func<Task>? OkAction { get; set; }
-
-    private Blazorise.Modal? _modalRef;
-
-    public void Show()
-    {
-        StateHasChanged();
-        _modalRef!.Show();
-    }
-
-    public void Hide()
-    {
-        StateHasChanged();
-        _modalRef!.Hide();
-    }
-
-}
