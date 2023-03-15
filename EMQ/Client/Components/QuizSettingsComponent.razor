@@ -68,13 +68,16 @@
                                         <label for="ResultsMs">Results time</label>
                                         <br/>
 
-                                        <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
-                                        <label for="LootingMs">Looting time</label>
-                                        <br/>
+                                        @if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.Looting)
+                                        {
+                                            <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
+                                            <label for="LootingMs">Looting time</label>
+                                            <br/>
 
-                                        <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
-                                        <label for="InventorySize">Looting inventory size</label>
-                                        <br/>
+                                            <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
+                                            <label for="InventorySize">Looting inventory size</label>
+                                            <br/>
+                                        }
 
                                         <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
                                         <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
