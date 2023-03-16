@@ -10,6 +10,7 @@
             <Items>
                 <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
                 <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
+                <Blazorise.Tab Name="TabVNYear">VN year</Blazorise.Tab>
                 <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
                 <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
             </Items>
@@ -66,6 +67,32 @@
                         </ul>
                     </div>
                 </Blazorise.TabPanel>
+
+
+            <Blazorise.TabPanel Name="TabVNYear">
+                <div class="libraryStatsRow">
+                    <div class="libraryStatsColumn">
+                        <p>Available:</p>
+                        <table style="max-width: 400px">
+                            <tr>
+                                <th>Year</th>
+                                <th>Songs</th>
+                                <th>Percentage</th>
+                            </tr>
+                            @foreach ((DateTime year, int count) in libraryStats.msYearAvailable)
+                            {
+                                <tr>
+                                    <td>@year.Year.ToString()</td>
+                                    <td>
+                                        <b>@count/@libraryStats.msYear[year]</b>
+                                    </td>
+                                    <td>@Utils.PercentageStr(count, libraryStats.msYear[year])</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </Blazorise.TabPanel>
 
 
                 <Blazorise.TabPanel Name="TabVN">

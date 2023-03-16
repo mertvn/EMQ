@@ -318,6 +318,10 @@ public class DbTests
 
         Assert.That(libraryStats.am.First().AId > 0);
         Assert.That(libraryStats.amAvailable.First().AId > 0);
+
+        Assert.That(libraryStats.msYear.First().Value > 0);
+        Assert.That(libraryStats.msYearAvailable.ElementAtOrDefault(10).Value > 0);
+        Assert.That(libraryStats.msYear.Keys.Count == libraryStats.msYearAvailable.Keys.Count);
     }
 
     [Test]

@@ -1507,6 +1507,36 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
 
 
+            string sqlMsYear =
+                @"SELECT date_trunc('year', ms.air_date_start) AS year, Count(m.id)
+FROM music m
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+/**where**/
+group by year
+order by year";
+            var qMsYear = connection.QueryBuilder($"{sqlMsYear:raw}");
+            var msYear =
+                (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
+
+            qMsYear.Where($"mel.url is not null");
+            var msYearAvailable =
+                (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
+
+            if (msYear.Keys.Count > msYearAvailable.Keys.Count)
+            {
+                foreach ((DateTime key, _) in msYear)
+                {
+                    if (!msYearAvailable.ContainsKey(key))
+                    {
+                        msYearAvailable.Add(key, 0);
+                    }
+                }
+                msYearAvailable = msYearAvailable.OrderBy(x => x.Key.Year).ToDictionary(x=> x.Key, x=> x.Value);
+            }
+
+
             var libraryStats = new LibraryStats
             {
                 TotalMusicCount = totalMusicCount,
@@ -1524,6 +1554,8 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 msmAvailable = msmAvailable,
                 am = am.Take(limit).ToList(),
                 amAvailable = amAvailable,
+                msYear = msYear,
+                msYearAvailable = msYearAvailable,
             };
 
             return libraryStats;

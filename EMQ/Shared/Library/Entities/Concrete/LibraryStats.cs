@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Library.Entities.Concrete;
@@ -34,6 +35,10 @@ public struct LibraryStats
     public List<LibraryStatsAm> am { get; set; }
 
     public List<LibraryStatsAm> amAvailable { get; set; }
+
+    public Dictionary<DateTime, int> msYear { get; set; }
+
+    public Dictionary<DateTime, int> msYearAvailable { get; set; }
 }
 
 public class LibraryStatsMsm
