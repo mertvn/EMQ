@@ -803,13 +803,15 @@ public static class DbManager
             var validSongSourceSongTypes = filters?.SongSourceSongTypeFilters.Where(x => x.Value).ToList();
             if (validSongSourceSongTypes != null && validSongSourceSongTypes.Any())
             {
+                queryMusicIds.Append($"\n");
                 for (int index = 0; index < validSongSourceSongTypes.Count; index++)
                 {
                     (SongSourceSongType songSourceSongType, _) = validSongSourceSongTypes.ElementAt(index);
                     queryMusicIds.Append(index == 0
-                        ? (FormattableString)$" AND msm.type = {(int)songSourceSongType}"
+                        ? (FormattableString)$" AND (msm.type = {(int)songSourceSongType}"
                         : (FormattableString)$" OR msm.type = {(int)songSourceSongType}");
                 }
+                queryMusicIds.Append($")");
             }
 
             if (printSql)
