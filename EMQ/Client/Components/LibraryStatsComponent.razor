@@ -72,7 +72,6 @@
             <Blazorise.TabPanel Name="TabVNYear">
                 <div class="libraryStatsRow">
                     <div class="libraryStatsColumn">
-                        <p>Available:</p>
                         <table style="max-width: 400px">
                             <tr>
                                 <th>Year</th>
@@ -86,7 +85,9 @@
                                     <td>
                                         <b>@count/@libraryStats.msYear[year]</b>
                                     </td>
-                                    <td>@Utils.PercentageStr(count, libraryStats.msYear[year])</td>
+                                    <td>
+                                        <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
+                                    </td>
                                 </tr>
                             }
                         </table>
