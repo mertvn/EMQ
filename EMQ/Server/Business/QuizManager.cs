@@ -334,7 +334,8 @@ public class QuizManager
         {
             case SongSelectionKind.Random:
                 dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
-                    Quiz.Room.QuizSettings.Duplicates, validSources, validCategories);
+                    Quiz.Room.QuizSettings.Duplicates, validSources,
+                    filters: Quiz.Room.QuizSettings.Filters);
 
                 if (dbSongs.Count == 0)
                 {
@@ -352,7 +353,8 @@ public class QuizManager
             case SongSelectionKind.Looting:
                 dbSongs = await DbManager.GetRandomSongs(
                     Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 4) / 2),
-                    Quiz.Room.QuizSettings.Duplicates, validSources, validCategories);
+                    Quiz.Room.QuizSettings.Duplicates, validSources,
+                    filters: Quiz.Room.QuizSettings.Filters);
 
                 if (dbSongs.Count == 0)
                 {

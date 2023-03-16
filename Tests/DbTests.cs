@@ -207,7 +207,8 @@ public class DbTests
                 LabelKind.Include) { },
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        var songs = await DbManager.GetRandomSongs(100000, false,
+            filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
         Assert.That(songs.Any(song => song.Sources.Any(source =>
@@ -237,7 +238,8 @@ public class DbTests
                 LabelKind.Exclude) { },
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        var songs = await DbManager.GetRandomSongs(100000, false,
+            filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
         Assert.That(songs.Any(song => song.Sources.Any(source =>
@@ -266,7 +268,8 @@ public class DbTests
                 LabelKind.Maybe),
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false, validCategories: categories, printSql: true);
+        var songs = await DbManager.GetRandomSongs(100000, false,
+            filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
         Assert.That(songs.Any(song => song.Sources.Any(source =>
@@ -277,6 +280,35 @@ public class DbTests
 
         Assert.That(songs.Count > 4);
         Assert.That(songs.Count < 100);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_SongSourceSongTypeFilter_OPOrED()
+    {
+        Dictionary<SongSourceSongType, bool> validSongSourceSongTypes =
+            new() { { SongSourceSongType.OP, true }, { SongSourceSongType.ED, true } };
+
+        var songs = await DbManager.GetRandomSongs(100000, true,
+            filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes }, printSql: true);
+
+        Assert.That(songs.All(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP) ||
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.ED)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_SongSourceSongTypeFilter_Insert()
+    {
+        Dictionary<SongSourceSongType, bool> validSongSourceSongTypes =
+           new() { { SongSourceSongType.Insert, true } };
+
+        var songs = await DbManager.GetRandomSongs(100000, true,
+            filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes }, printSql: true);
+
+        Assert.That(songs.All(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert)));
+        GenericSongsAssert(songs);
     }
 
     [Test]

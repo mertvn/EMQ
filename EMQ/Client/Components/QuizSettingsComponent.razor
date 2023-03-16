@@ -2,6 +2,7 @@
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
+@using System.Collections.Generic
 @inject ILogger<QuizSettingsComponent> _logger
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
@@ -22,20 +23,21 @@
                         <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
                             <Items>
                                 <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
+                                <Blazorise.Tab Name="TabFilters">Filters</Blazorise.Tab>
                                 <Blazorise.Tab Name="TabTags">Tags</Blazorise.Tab>
                             </Items>
                             <Content>
                                 <Blazorise.TabPanel Name="TabGeneral">
                                     <div style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
-                                        <InputCheckbox id="OnlyFromLists" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
+                                        <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
                                         <label for="OnlyFromLists">Only from VNDB lists?</label>
                                         <br/>
 
-                                        <InputCheckbox id="Duplicates" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
+                                        <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
                                         <label for="Duplicates">Duplicates?</label>
                                         <br/>
 
-                                        <InputCheckbox id="IsHotjoinEnabled" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
+                                        <InputCheckbox id="IsHotjoinEnabled" class="form-check-input" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
                                         <label for="IsHotjoinEnabled">Enable hotjoin?</label>
                                         <br/>
 
@@ -82,6 +84,19 @@
                                         <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
                                         <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
                                         <br/>
+
+                                    </div>
+                                </Blazorise.TabPanel>
+                                <Blazorise.TabPanel Name="TabFilters">
+                                    @* https://stackoverflow.com/a/63384981 *@
+                                    <div style="border: 1px black solid; margin: 5px; padding: 5px; max-width: 150px;">
+                                        <h5>Song types</h5>
+                                        @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
+                                        {
+                                            <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
+                                            <label for="@key">@key.ToString()</label>
+                                            <br/>
+                                        }
                                     </div>
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabTags">

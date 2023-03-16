@@ -8,8 +8,6 @@ public class CategoryFilter
         Trilean = trilean;
     }
 
-    public static QuizFilterKind QuizFilterKind => QuizFilterKind.Category;
-
     public SongSourceCategory SongSourceCategory { get; }
 
     public LabelKind Trilean { get; set; } // todo actual trilean type

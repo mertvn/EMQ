@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -19,6 +18,7 @@ public class QuizSettings
     [Required]
     [Range(10, 60)]
     [DefaultValue(25)]
+    // ReSharper disable once InconsistentNaming
     public int UI_GuessMs
     {
         get { return GuessMs / 1000; }
@@ -33,6 +33,7 @@ public class QuizSettings
     [Required]
     [Range(10, 60)]
     [DefaultValue(25)]
+    // ReSharper disable once InconsistentNaming
     public int UI_ResultsMs
     {
         get { return ResultsMs / 1000; }
@@ -78,6 +79,7 @@ public class QuizSettings
     [Required]
     [Range(20, 250)]
     [DefaultValue(120)]
+    // ReSharper disable once InconsistentNaming
     public int UI_LootingMs
     {
         get { return LootingMs / 1000; }
@@ -96,9 +98,4 @@ public class QuizSettings
 
     [Required]
     public QuizFilters Filters { get; set; } = new();
-}
-
-public class QuizFilters
-{
-    public List<CategoryFilter> CategoryFilters { get; set; } = new();
 }

@@ -724,7 +724,7 @@ public static class DbManager
     }
 
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
-        List<string>? validSources = null, List<CategoryFilter>? validCategories = null, bool printSql = false,
+        List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool keepCategories = false)
     {
         var ret = new List<Song>();
@@ -751,6 +751,7 @@ public static class DbManager
                 queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
             }
 
+            var validCategories = filters?.CategoryFilters;
             if (validCategories != null && validCategories.Any())
             {
                 var trileans = validCategories.Select(x => x.Trilean);
@@ -796,6 +797,18 @@ public static class DbManager
                         $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
  AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
  AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
+                }
+            }
+
+            var validSongSourceSongTypes = filters?.SongSourceSongTypeFilters.Where(x => x.Value).ToList();
+            if (validSongSourceSongTypes != null && validSongSourceSongTypes.Any())
+            {
+                for (int index = 0; index < validSongSourceSongTypes.Count; index++)
+                {
+                    (SongSourceSongType songSourceSongType, _) = validSongSourceSongTypes.ElementAt(index);
+                    queryMusicIds.Append(index == 0
+                        ? (FormattableString)$" AND msm.type = {(int)songSourceSongType}"
+                        : (FormattableString)$" OR msm.type = {(int)songSourceSongType}");
                 }
             }
 
@@ -855,7 +868,7 @@ public static class DbManager
         return ret;
     }
 
-    // todo CategoryFilter
+    // todo merge with the other method
     public static async Task<List<Song>> GetLootedSongs(int numSongs, bool duplicates, List<string> validSources)
     {
         if (!validSources.Any())
@@ -1533,7 +1546,8 @@ order by year";
                         msYearAvailable.Add(key, 0);
                     }
                 }
-                msYearAvailable = msYearAvailable.OrderBy(x => x.Key.Year).ToDictionary(x=> x.Key, x=> x.Value);
+
+                msYearAvailable = msYearAvailable.OrderBy(x => x.Key.Year).ToDictionary(x => x.Key, x => x.Value);
             }
 
 
