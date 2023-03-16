@@ -130,6 +130,7 @@
                                     <th>#</th>
                                     <th>VN</th>
                                     <th>Songs</th>
+                                    <th>Percentage</th>
                                 </tr>
                                 @for (int i = 0; i < libraryStats.msmAvailable.Count; i++)
                                 {
@@ -142,8 +143,11 @@
                                             </a>
                                         </td>
 
-                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                        <td>
                                             <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                                        </td>
+                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                           <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
                                         </td>
                                     </tr>
                                 }
@@ -189,6 +193,7 @@
                                     <th>#</th>
                                     <th>Artist</th>
                                     <th>Songs</th>
+                                    <th>Percentage</th>
                                 </tr>
                                 @for (int i = 0; i < libraryStats.amAvailable.Count; i++)
                                 {
@@ -201,8 +206,11 @@
                                                 <span>@item.AALatinAlias</span>
                                             </a>
                                         </td>
-                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                        <td>
                                             <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                                        </td>
+                                        <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                                            <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
                                         </td>
                                     </tr>
                                 }
