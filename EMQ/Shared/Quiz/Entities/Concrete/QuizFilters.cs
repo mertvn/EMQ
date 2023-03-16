@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,7 +9,9 @@ public class QuizFilters
     public List<CategoryFilter> CategoryFilters { get; set; } = new();
 
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
-        Enum.GetValues<SongSourceSongType>().ToDictionary(x => x, _ => true);
+        Enum.GetValues<SongSourceSongType>().Where(x => x != SongSourceSongType.Unknown)
+            .ToDictionary(x => x, _ => true);
+
 
     // todo move all applicable filters here
 }
