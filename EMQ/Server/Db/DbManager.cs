@@ -808,9 +808,19 @@ public static class DbManager
                 {
                     (SongSourceSongType songSourceSongType, _) = validSongSourceSongTypes.ElementAt(index);
                     queryMusicIds.Append(index == 0
-                        ? (FormattableString)$" AND (msm.type = {(int)songSourceSongType}"
+                        ? (FormattableString)$" AND ( msm.type = {(int)songSourceSongType}"
                         : (FormattableString)$" OR msm.type = {(int)songSourceSongType}");
                 }
+
+                queryMusicIds.Append($")");
+            }
+
+            if (filters != null)
+            {
+                queryMusicIds.Append($"\n");
+                queryMusicIds.Append($" AND (");
+                queryMusicIds.Append($"ms.air_date_start >= {filters.StartDateFilter}");
+                queryMusicIds.Append($" AND ms.air_date_start <= {filters.EndDateFilter}");
                 queryMusicIds.Append($")");
             }
 

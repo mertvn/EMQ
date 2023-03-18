@@ -89,14 +89,39 @@
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabFilters">
                                     @* https://stackoverflow.com/a/63384981 *@
-                                    <div style="border: 1px black solid; margin: 5px; padding: 5px; max-width: 150px;">
-                                        <h5>Song types</h5>
-                                        @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
-                                        {
-                                            <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
-                                            <label for="@key">@key.ToString()</label>
+                                    <div style="display: flex;">
+                                        <div style="border: 1px black solid; margin: 10px; padding: 5px; max-width: 160px;">
+                                            <h5>Song types</h5>
+
+                                            @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
+                                            {
+                                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
+                                                <label for="@key">@key.ToString()</label>
+                                                <br/>
+                                            }
+                                        </div>
+
+                                        <div style="border: 1px black solid; margin: 10px; padding: 10px; max-width: 260px;">
+                                            <h5>VN release date range</h5>
+
+                                            <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+                                                <Blazorise.DatePicker TValue="DateTime"
+                                                                      @bind-Date="@ClientQuizSettings.Filters.StartDateFilter"
+                                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
+                                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
+                                            </div>
+                                            <label for="StartDateFilter">Start date</label>
                                             <br/>
-                                        }
+                                            <br/>
+                                            <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+                                                <Blazorise.DatePicker TValue="DateTime"
+                                                                      @bind-Date="@ClientQuizSettings.Filters.EndDateFilter"
+                                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
+                                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
+                                            </div>
+                                            <label for="EndDateFilter">End date</label>
+                                            <br/>
+                                        </div>
                                     </div>
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabTags">

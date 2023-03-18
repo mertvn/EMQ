@@ -301,13 +301,30 @@ public class DbTests
     public async Task Test_GetRandomSongs_SongSourceSongTypeFilter_Insert()
     {
         Dictionary<SongSourceSongType, bool> validSongSourceSongTypes =
-           new() { { SongSourceSongType.Insert, true } };
+            new() { { SongSourceSongType.Insert, true } };
 
         var songs = await DbManager.GetRandomSongs(100000, true,
             filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes }, printSql: true);
 
         Assert.That(songs.All(song =>
             song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_DateFilter()
+    {
+        var startDate = new DateTime(1990, 1, 1);
+        var endDate = new DateTime(1997, 1, 1);
+
+        var songs = await DbManager.GetRandomSongs(100000, true,
+            filters: new QuizFilters { StartDateFilter = startDate, EndDateFilter = endDate }, printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.Count < 200);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.AirDateStart).Any(x => x >= startDate) &&
+            song.Sources.Select(x => x.AirDateStart).Any(x => x <= endDate)));
         GenericSongsAssert(songs);
     }
 
