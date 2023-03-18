@@ -133,6 +133,17 @@
                                         <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingAverageStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingAverageEnd / 100f).ToString("N2"))</p>
                                     </div>
                                 </div>
+
+                                <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                                    <h5>VN rating (bayesian)</h5>
+                                    <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                        <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingBayesianStart"
+                                                      @bind-ValueHigh="@ClientQuizSettings.Filters.RatingBayesianEnd"
+                                                      MinValue="100" MaxValue="1000">
+                                        </RangeControl>
+                                        <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingBayesianStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingBayesianEnd / 100f).ToString("N2"))</p>
+                                    </div>
+                                </div>
                             </div>
                         </Blazorise.TabPanel>
                         <Blazorise.TabPanel Name="TabTags">

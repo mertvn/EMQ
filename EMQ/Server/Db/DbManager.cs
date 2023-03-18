@@ -264,6 +264,7 @@ public static class DbManager
                         AirDateEnd = musicSource.air_date_end,
                         LanguageOriginal = musicSource.language_original,
                         RatingAverage = musicSource.rating_average,
+                        RatingBayesian = musicSource.rating_bayesian,
                         SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                         Titles = new List<Title>
                         {
@@ -554,6 +555,7 @@ public static class DbManager
                         air_date_end = songSource.AirDateEnd,
                         language_original = songSource.LanguageOriginal,
                         rating_average = songSource.RatingAverage,
+                        rating_bayesian = songSource.RatingBayesian,
                         type = (int)songSource.Type
                     });
 
@@ -831,6 +833,15 @@ public static class DbManager
                 queryMusicIds.Append($" AND (");
                 queryMusicIds.Append($"ms.rating_average >= {filters.RatingAverageStart}");
                 queryMusicIds.Append($" AND ms.rating_average <= {filters.RatingAverageEnd}");
+                queryMusicIds.Append($")");
+            }
+
+            if (filters != null)
+            {
+                queryMusicIds.Append($"\n");
+                queryMusicIds.Append($" AND (");
+                queryMusicIds.Append($"ms.rating_bayesian >= {filters.RatingBayesianStart}");
+                queryMusicIds.Append($" AND ms.rating_bayesian <= {filters.RatingBayesianEnd}");
                 queryMusicIds.Append($")");
             }
 

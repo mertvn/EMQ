@@ -15,6 +15,7 @@ public class AddTableMusic_Source : Migration
             .WithColumn("air_date_end").AsDateTime().Nullable()
             .WithColumn("language_original").AsString().NotNullable()
             .WithColumn("rating_average").AsInt32().Nullable()
+            .WithColumn("rating_bayesian").AsInt32().Nullable()
             .WithColumn("type").AsInt32().NotNullable();
     }
 

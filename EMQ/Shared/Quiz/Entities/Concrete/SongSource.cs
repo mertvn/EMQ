@@ -15,6 +15,8 @@ public class SongSource
 
     public int? RatingAverage { get; set; }
 
+    public int? RatingBayesian { get; set; }
+
     public SongSourceType Type { get; set; } = SongSourceType.Unknown;
 
     public List<Title> Titles { get; set; } = new();

@@ -28,5 +28,9 @@ public class QuizFilters
 
     public int RatingAverageEnd { get; set; } = 1000;
 
+    public int RatingBayesianStart { get; set; } = 100;
+
+    public int RatingBayesianEnd { get; set; } = 1000;
+
     // todo move all applicable filters here
 }

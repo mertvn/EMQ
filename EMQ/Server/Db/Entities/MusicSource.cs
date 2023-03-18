@@ -20,6 +20,8 @@ public class MusicSource
 
     public int? rating_average { get; set; }
 
+    public int? rating_bayesian { get; set; }
+
     // todo
     // public int? rating_bayesian { get; set; }
     //

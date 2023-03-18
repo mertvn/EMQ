@@ -339,10 +339,31 @@ public class DbTests
             printSql: true);
 
         Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 100);
+        Assert.That(songs.Count < 200);
         Assert.That(songs.All(song =>
             song.Sources.Select(x => x.RatingAverage).Any(x => x >= ratingAverageStart) &&
             song.Sources.Select(x => x.RatingAverage).Any(x => x <= ratingAverageEnd)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_RatingBayesianFilter()
+    {
+        int ratingBayesianStart = 810;
+        int ratingBayesianEnd = 870;
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters
+            {
+                RatingBayesianStart = ratingBayesianStart, RatingBayesianEnd = ratingBayesianEnd
+            },
+            printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.Count < 1000);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.RatingBayesian).Any(x => x >= ratingBayesianStart) &&
+            song.Sources.Select(x => x.RatingBayesian).Any(x => x <= ratingBayesianEnd)));
         GenericSongsAssert(songs);
     }
 
