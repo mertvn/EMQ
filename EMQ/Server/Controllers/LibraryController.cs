@@ -112,6 +112,6 @@ public class LibraryController : ControllerBase
             songs.AddRange(song);
         }
 
-        return songs;
+        return songs.DistinctBy(x=> x.Id);
     }
 }
