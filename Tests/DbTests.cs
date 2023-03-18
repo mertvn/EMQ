@@ -207,7 +207,7 @@ public class DbTests
                 LabelKind.Include) { },
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
             filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
@@ -238,7 +238,7 @@ public class DbTests
                 LabelKind.Exclude) { },
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
             filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
@@ -268,7 +268,7 @@ public class DbTests
                 LabelKind.Maybe),
         };
 
-        var songs = await DbManager.GetRandomSongs(100000, false,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
             filters: new QuizFilters { CategoryFilters = categories }, printSql: true);
         GenericSongsAssert(songs);
 
@@ -288,7 +288,7 @@ public class DbTests
         Dictionary<SongSourceSongType, bool> validSongSourceSongTypes =
             new() { { SongSourceSongType.OP, true }, { SongSourceSongType.ED, true } };
 
-        var songs = await DbManager.GetRandomSongs(100000, true,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes }, printSql: true);
 
         Assert.That(songs.All(song =>
@@ -303,7 +303,7 @@ public class DbTests
         Dictionary<SongSourceSongType, bool> validSongSourceSongTypes =
             new() { { SongSourceSongType.Insert, true } };
 
-        var songs = await DbManager.GetRandomSongs(100000, true,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes }, printSql: true);
 
         Assert.That(songs.All(song =>
@@ -317,7 +317,7 @@ public class DbTests
         var startDate = new DateTime(1990, 1, 1);
         var endDate = new DateTime(1997, 1, 1);
 
-        var songs = await DbManager.GetRandomSongs(100000, true,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { StartDateFilter = startDate, EndDateFilter = endDate }, printSql: true);
 
         Assert.That(songs.Count > 0);
