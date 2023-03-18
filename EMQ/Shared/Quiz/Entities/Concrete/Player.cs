@@ -42,10 +42,9 @@ public class Player
 
 public record PlayerLootingInfo
 {
-    // todo convert to int
-    public float X { get; set; }
+    public int X { get; set; }
 
-    public float Y { get; set; }
+    public int Y { get; set; }
 
     public Point TreasureRoomCoords { get; set; } = new();
 

@@ -218,7 +218,7 @@ public class QuizHub : Hub
     }
 
     // [Authorize]
-    public async Task SendPlayerMoved(float newX, float newY, DateTime dateTime)
+    public async Task SendPlayerMoved(int newX, int newY, DateTime dateTime)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
         if (session != null)

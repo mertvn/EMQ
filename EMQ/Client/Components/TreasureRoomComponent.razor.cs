@@ -44,7 +44,7 @@ public partial class TreasureRoomComponent
     private void MovementTimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
         // todo? fix diagonal movement being faster
-        const float speed = 4f; // todo make this a quiz setting?
+        const int speed = 4; // todo make this a quiz setting?
 
         var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
         var newX = player.LootingInfo.X;
@@ -98,7 +98,7 @@ public partial class TreasureRoomComponent
         }
     }
 
-    private async Task ReportPositionToServer(float newX, float newY)
+    private async Task ReportPositionToServer(int newX, int newY)
     {
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerMoved", newX, newY, DateTime.UtcNow);
     }

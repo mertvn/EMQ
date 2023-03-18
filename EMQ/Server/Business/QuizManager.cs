@@ -562,8 +562,8 @@ public class QuizManager
                 player.PlayerStatus = PlayerStatus.Looting;
                 player.LootingInfo = new PlayerLootingInfo
                 {
-                    X = (int)(LootingConstants.TreasureRoomWidth / 2),
-                    Y = (int)(LootingConstants.TreasureRoomHeight / 2),
+                    X = LootingConstants.TreasureRoomWidth / 2,
+                    Y = LootingConstants.TreasureRoomHeight / 2,
                     Inventory = new List<Treasure>(),
                     TreasureRoomCoords =
                         new Point(rng.Next(Quiz.QuizState.LootingGridSize),
@@ -669,7 +669,7 @@ public class QuizManager
         return true;
     }
 
-    public async Task OnSendPlayerMoved(Player player, float newX, float newY, DateTime dateTime,
+    public async Task OnSendPlayerMoved(Player player, int newX, int newY, DateTime dateTime,
         string connectionId)
     {
         // todo anti-cheat
