@@ -36,7 +36,9 @@ public static class UiHelpers
 
     public static string Bool2PointerEvents(bool b) => b ? "auto" : "none";
 
-    public static string Bool2Cursor(bool b) => b ? "pointer" : "auto";
+    public static string Bool2CursorPointer(bool b) => b ? "pointer" : "auto";
+
+    public static string Bool2CursorNotAllowed(bool b) => b ? "not-allowed" : "auto";
 
     public static string Bool2Text(bool? b, string trueValue, string falseValue, string nullValue = "")
     {

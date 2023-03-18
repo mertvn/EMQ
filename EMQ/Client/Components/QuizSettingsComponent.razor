@@ -15,20 +15,20 @@
 <Blazorise.ModalBody>
 @if (ClientState.Session != null)
 {
-    <div id="collapseQuizSettings">
+    <div id="collapseQuizSettings" style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly); cursor: @UiHelpers.Bool2CursorNotAllowed(IsReadOnly);">
     <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
         <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
             <Items>
-                <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
-                <Blazorise.Tab Name="TabFilters">Filters</Blazorise.Tab>
-                <Blazorise.Tab Name="TabTags">Tags</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabGeneral">General</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters">Filters</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabTags">Tags</Blazorise.Tab>
             </Items>
             <Content>
                 <Blazorise.TabPanel Name="TabGeneral">
-                    <div style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
+                    <div>
                         <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
                         <label for="OnlyFromLists">Only from VNDB lists?</label>
                         <br/>
@@ -170,7 +170,7 @@
                     </div>
                 </Blazorise.TabPanel>
                 <Blazorise.TabPanel Name="TabTags">
-                    <div id="tagEdit" style="margin: 5px; padding: 5px; pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
+                    <div id="tagEdit" style="margin: 5px; padding: 5px;">
                         <AutocompleteCComponent @ref="AutocompleteCComponent"
                                                 Placeholder="Enter tag name here"
                                                 FreeTyping="true"
