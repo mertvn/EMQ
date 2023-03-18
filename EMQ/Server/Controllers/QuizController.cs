@@ -169,7 +169,7 @@ public class QuizController : ControllerBase
             Password = req.Password, QuizSettings = req.QuizSettings
         };
         ServerState.Rooms.Add(room);
-        _logger.LogInformation("Created room " + room.Id);
+        _logger.LogInformation("Created room {room.Id} {room.Name}", room.Id, room.Name);
 
         return room.Id;
     }
