@@ -13,211 +13,211 @@
     <Blazorise.ModalTitle>Room Settings</Blazorise.ModalTitle>
 </Blazorise.ModalHeader>
 <Blazorise.ModalBody>
-    @if (ClientState.Session != null)
-    {
-        <div id="collapseQuizSettings">
-            <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
-                <DataAnnotationsValidator/>
-                <ValidationSummary/>
+@if (ClientState.Session != null)
+{
+    <div id="collapseQuizSettings">
+    <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
 
-                <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
-                    <Items>
-                        <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
-                        <Blazorise.Tab Name="TabFilters">Filters</Blazorise.Tab>
-                        <Blazorise.Tab Name="TabTags">Tags</Blazorise.Tab>
-                    </Items>
-                    <Content>
-                        <Blazorise.TabPanel Name="TabGeneral">
-                            <div style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
-                                <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
-                                <label for="OnlyFromLists">Only from VNDB lists?</label>
+        <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+            <Items>
+                <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
+                <Blazorise.Tab Name="TabFilters">Filters</Blazorise.Tab>
+                <Blazorise.Tab Name="TabTags">Tags</Blazorise.Tab>
+            </Items>
+            <Content>
+                <Blazorise.TabPanel Name="TabGeneral">
+                    <div style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
+                        <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
+                        <label for="OnlyFromLists">Only from VNDB lists?</label>
+                        <br/>
+
+                        <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
+                        <label for="Duplicates">Duplicates?</label>
+                        <br/>
+
+                        <InputCheckbox id="IsHotjoinEnabled" class="form-check-input" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
+                        <label for="IsHotjoinEnabled">Enable hotjoin?</label>
+                        <br/>
+
+                        <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
+                            @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
+                            {
+                                <option value="@songSelectionKind">@songSelectionKind</option>
+                            }
+                        </InputSelect>
+                        <label for="SongSelectionKind">Song selection method</label>
+                        <br/>
+
+                        <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
+                        <label for="NumSongs">Maximum number of songs</label>
+                        <br/>
+
+                        <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
+                        <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
+                        <br/>
+
+                        <InputNumber id="MaxLives" @bind-Value="ClientQuizSettings.MaxLives" style="margin: 5px"></InputNumber>
+                        <label for="MaxLives">Lives (0 for unlimited)</label>
+                        <br/>
+
+                        <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.UI_GuessMs" style="margin: 5px"></InputNumber>
+                        <label for="GuessMs">Guess time</label>
+                        <br/>
+
+                        <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.UI_ResultsMs" style="margin: 5px"></InputNumber>
+                        <label for="ResultsMs">Results time</label>
+                        <br/>
+
+                        @if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.Looting)
+                        {
+                            <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
+                            <label for="LootingMs">Looting time</label>
+                            <br/>
+
+                            <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
+                            <label for="InventorySize">Looting inventory size</label>
+                            <br/>
+                        }
+
+                        <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
+                        <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
+                        <br/>
+
+                    </div>
+                </Blazorise.TabPanel>
+                <Blazorise.TabPanel Name="TabFilters">
+                    @* https://stackoverflow.com/a/63384981 *@
+                    <div style="display: flex;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 120px;">
+                            <h5>Song types</h5>
+
+                            @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
+                            {
+                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
+                                <label for="@key">@key.ToString()</label>
                                 <br/>
+                            }
+                        </div>
 
-                                <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
-                                <label for="Duplicates">Duplicates?</label>
-                                <br/>
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
+                            <h5>VN release date range</h5>
 
-                                <InputCheckbox id="IsHotjoinEnabled" class="form-check-input" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
-                                <label for="IsHotjoinEnabled">Enable hotjoin?</label>
-                                <br/>
-
-                                <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
-                                    @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
-                                    {
-                                        <option value="@songSelectionKind">@songSelectionKind</option>
-                                    }
-                                </InputSelect>
-                                <label for="SongSelectionKind">Song selection method</label>
-                                <br/>
-
-                                <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
-                                <label for="NumSongs">Maximum number of songs</label>
-                                <br/>
-
-                                <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
-                                <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
-                                <br/>
-
-                                <InputNumber id="MaxLives" @bind-Value="ClientQuizSettings.MaxLives" style="margin: 5px"></InputNumber>
-                                <label for="MaxLives">Lives (0 for unlimited)</label>
-                                <br/>
-
-                                <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.UI_GuessMs" style="margin: 5px"></InputNumber>
-                                <label for="GuessMs">Guess time</label>
-                                <br/>
-
-                                <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.UI_ResultsMs" style="margin: 5px"></InputNumber>
-                                <label for="ResultsMs">Results time</label>
-                                <br/>
-
-                                @if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.Looting)
-                                {
-                                    <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
-                                    <label for="LootingMs">Looting time</label>
-                                    <br/>
-
-                                    <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
-                                    <label for="InventorySize">Looting inventory size</label>
-                                    <br/>
-                                }
-
-                                <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
-                                <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
-                                <br/>
-
+                            <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+                                <Blazorise.DatePicker TValue="DateTime"
+                                                      @bind-Date="@ClientQuizSettings.Filters.StartDateFilter"
+                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
                             </div>
-                        </Blazorise.TabPanel>
-                        <Blazorise.TabPanel Name="TabFilters">
-                            @* https://stackoverflow.com/a/63384981 *@
-                            <div style="display: flex;">
-                                <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 120px;">
-                                    <h5>Song types</h5>
-
-                                    @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
-                                    {
-                                        <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
-                                        <label for="@key">@key.ToString()</label>
-                                        <br/>
-                                    }
-                                </div>
-
-                                <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
-                                    <h5>VN release date range</h5>
-
-                                    <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
-                                        <Blazorise.DatePicker TValue="DateTime"
-                                                              @bind-Date="@ClientQuizSettings.Filters.StartDateFilter"
-                                                              Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
-                                                              Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
-                                    </div>
-                                    <label for="StartDateFilter">Start date</label>
-                                    <br/>
-                                    <br/>
-                                    <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
-                                        <Blazorise.DatePicker TValue="DateTime"
-                                                              @bind-Date="@ClientQuizSettings.Filters.EndDateFilter"
-                                                              Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
-                                                              Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
-                                    </div>
-                                    <label for="EndDateFilter">End date</label>
-                                    <br/>
-                                </div>
-
-                                <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
-                                    <h5>VN rating (average)</h5>
-                                    <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
-                                        <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingAverageStart"
-                                                      @bind-ValueHigh="@ClientQuizSettings.Filters.RatingAverageEnd"
-                                                      MinValue="100" MaxValue="1000">
-                                        </RangeControl>
-                                        <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingAverageStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingAverageEnd / 100f).ToString("N2"))</p>
-                                    </div>
-                                </div>
-
-                                <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
-                                    <h5>VN rating (bayesian)</h5>
-                                    <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
-                                        <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingBayesianStart"
-                                                      @bind-ValueHigh="@ClientQuizSettings.Filters.RatingBayesianEnd"
-                                                      MinValue="100" MaxValue="1000">
-                                        </RangeControl>
-                                        <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingBayesianStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingBayesianEnd / 100f).ToString("N2"))</p>
-                                    </div>
-                                </div>
+                            <label for="StartDateFilter">Start date</label>
+                            <br/>
+                            <br/>
+                            <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+                                <Blazorise.DatePicker TValue="DateTime"
+                                                      @bind-Date="@ClientQuizSettings.Filters.EndDateFilter"
+                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
                             </div>
-                        </Blazorise.TabPanel>
-                        <Blazorise.TabPanel Name="TabTags">
-                            <div id="tagEdit" style="margin: 5px; padding: 5px; pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
-                                <AutocompleteCComponent @ref="AutocompleteCComponent"
-                                                        Placeholder="Enter tag name here"
-                                                        FreeTyping="true"
-                                                        IsDisabled="false"
-                                                        IsQuizPage="false"
-                                                        @bind-Guess="@SelectedTag"
-                                                        Callback="SelectedResultChangedC">
-                                </AutocompleteCComponent>
+                            <label for="EndDateFilter">End date</label>
+                            <br/>
+                        </div>
 
-                                <table class="table" style="width: 65%; text-align: center">
-                                    <tr>
-                                        <th></th>
-                                        <th>Selection</th>
-                                        <th>Rating</th>
-                                        <th>VNDB Id</th>
-                                        <th>Tag Name</th>
-                                        <th>Spoiler level</th>
-                                    </tr>
-                                    @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
-                                    {
-                                        <tr class="tag" @key="@tag" style="text-align: center">
-                                            <th>
-                                                <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
-                                            </th>
-
-                                            <th>
-                                                <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
-                                                    @foreach (var labelKind in Enum.GetValues<LabelKind>())
-                                                    {
-                                                        <option value="@labelKind">@labelKind</option>
-                                                    }
-                                                </InputSelect>
-                                            </th>
-
-                                            <th>
-                                                <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
-                                            </th>
-
-                                            <th style="pointer-events: all">
-                                                <a href="@tag.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
-                                                    <span>@tag.SongSourceCategory.VndbId</span>
-                                                </a>
-                                            </th>
-
-                                            <th>
-                                                <span>@tag.SongSourceCategory.Name</span>
-                                            </th>
-
-                                            <th>
-                                                <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
-                                                    @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
-                                                    {
-                                                        <option value="@spoilerLevel">@spoilerLevel</option>
-                                                    }
-                                                </InputSelect>
-                                            </th>
-                                        </tr>
-                                    }
-                                </table>
-                                <div style="margin: 5px;">
-                                    <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(IsReadOnly)">Randomize tags</button>
-                                    <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(IsReadOnly)">Clear tags</button>
-                                </div>
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                            <h5>VN rating (average)</h5>
+                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingAverageStart"
+                                              @bind-ValueHigh="@ClientQuizSettings.Filters.RatingAverageEnd"
+                                              MinValue="100" MaxValue="1000">
+                                </RangeControl>
+                                <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingAverageStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingAverageEnd / 100f).ToString("N2"))</p>
                             </div>
-                        </Blazorise.TabPanel>
-                    </Content>
-                </Blazorise.Tabs>
-            </EditForm>
-        </div>
-    }
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                            <h5>VN rating (bayesian)</h5>
+                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingBayesianStart"
+                                              @bind-ValueHigh="@ClientQuizSettings.Filters.RatingBayesianEnd"
+                                              MinValue="100" MaxValue="1000">
+                                </RangeControl>
+                                <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingBayesianStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingBayesianEnd / 100f).ToString("N2"))</p>
+                            </div>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+                <Blazorise.TabPanel Name="TabTags">
+                    <div id="tagEdit" style="margin: 5px; padding: 5px; pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly)">
+                        <AutocompleteCComponent @ref="AutocompleteCComponent"
+                                                Placeholder="Enter tag name here"
+                                                FreeTyping="true"
+                                                IsDisabled="false"
+                                                IsQuizPage="false"
+                                                @bind-Guess="@SelectedTag"
+                                                Callback="SelectedResultChangedC">
+                        </AutocompleteCComponent>
+
+                        <table class="table" style="width: 65%; text-align: center">
+                            <tr>
+                                <th></th>
+                                <th>Selection</th>
+                                <th>Rating</th>
+                                <th>VNDB Id</th>
+                                <th>Tag Name</th>
+                                <th>Spoiler level</th>
+                            </tr>
+                            @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
+                            {
+                                <tr class="tag" @key="@tag" style="text-align: center">
+                                    <th>
+                                        <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
+                                    </th>
+
+                                    <th>
+                                        <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
+                                            @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                            {
+                                                <option value="@labelKind">@labelKind</option>
+                                            }
+                                        </InputSelect>
+                                    </th>
+
+                                    <th>
+                                        <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
+                                    </th>
+
+                                    <th style="pointer-events: all">
+                                        <a href="@tag.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
+                                            <span>@tag.SongSourceCategory.VndbId</span>
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <span>@tag.SongSourceCategory.Name</span>
+                                    </th>
+
+                                    <th>
+                                        <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
+                                            @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
+                                            {
+                                                <option value="@spoilerLevel">@spoilerLevel</option>
+                                            }
+                                        </InputSelect>
+                                    </th>
+                                </tr>
+                            }
+                        </table>
+                        <div style="margin: 5px;">
+                            <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(IsReadOnly)">Randomize tags</button>
+                            <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(IsReadOnly)">Clear tags</button>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+            </Content>
+        </Blazorise.Tabs>
+    </EditForm>
+    </div>
+}
 </Blazorise.ModalBody>
 <Blazorise.ModalFooter>
     <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
