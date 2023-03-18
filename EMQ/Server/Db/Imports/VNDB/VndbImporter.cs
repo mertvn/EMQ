@@ -293,9 +293,8 @@ public static class VndbImporter
                         LanguageOriginal = dynMusicSource.olang,
                         RatingAverage = dynMusicSource.c_average,
                         RatingBayesian = dynMusicSource.c_rating,
-                        // todo
-                        // Popularity = dynMusicSource.c_popularity,
-                        // VoteCount = dynMusicSource.c_votecount,
+                        Popularity = dynMusicSource.c_popularity,
+                        VoteCount = dynMusicSource.c_votecount,
                         Type = SongSourceType.VN,
                         Links = new List<SongSourceLink>()
                         {

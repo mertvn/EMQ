@@ -368,6 +368,42 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_RatingPopularityFilter()
+    {
+        int popularityStart = 7700;
+        int popularityEnd = 10000;
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
+            printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.Count < 100);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
+            song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_RatingVoteCountFilter()
+    {
+        int voteCountStart = 3000;
+        int voteCountEnd = 4000;
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { VoteCountStart = voteCountStart, VoteCountEnd = voteCountEnd },
+            printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.Count < 200);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.VoteCount).Any(x => x >= voteCountStart) &&
+            song.Sources.Select(x => x.VoteCount).Any(x => x <= voteCountEnd)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_IsDistinct()
     {
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);

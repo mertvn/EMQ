@@ -265,6 +265,8 @@ public static class DbManager
                         LanguageOriginal = musicSource.language_original,
                         RatingAverage = musicSource.rating_average,
                         RatingBayesian = musicSource.rating_bayesian,
+                        Popularity = musicSource.popularity,
+                        VoteCount = musicSource.votecount,
                         SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                         Titles = new List<Title>
                         {
@@ -556,6 +558,8 @@ public static class DbManager
                         language_original = songSource.LanguageOriginal,
                         rating_average = songSource.RatingAverage,
                         rating_bayesian = songSource.RatingBayesian,
+                        popularity = songSource.Popularity,
+                        votecount = songSource.VoteCount,
                         type = (int)songSource.Type
                     });
 
@@ -842,6 +846,24 @@ public static class DbManager
                 queryMusicIds.Append($" AND (");
                 queryMusicIds.Append($"ms.rating_bayesian >= {filters.RatingBayesianStart}");
                 queryMusicIds.Append($" AND ms.rating_bayesian <= {filters.RatingBayesianEnd}");
+                queryMusicIds.Append($")");
+            }
+
+            if (filters != null)
+            {
+                queryMusicIds.Append($"\n");
+                queryMusicIds.Append($" AND (");
+                queryMusicIds.Append($"ms.popularity >= {filters.PopularityStart}");
+                queryMusicIds.Append($" AND ms.popularity <= {filters.PopularityEnd}");
+                queryMusicIds.Append($")");
+            }
+
+            if (filters != null)
+            {
+                queryMusicIds.Append($"\n");
+                queryMusicIds.Append($" AND (");
+                queryMusicIds.Append($"ms.votecount >= {filters.VoteCountStart}");
+                queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
                 queryMusicIds.Append($")");
             }
 

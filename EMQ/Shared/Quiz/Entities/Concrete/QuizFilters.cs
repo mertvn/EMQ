@@ -32,5 +32,13 @@ public class QuizFilters
 
     public int RatingBayesianEnd { get; set; } = 1000;
 
+    public int PopularityStart { get; set; } = 0;
+
+    public int PopularityEnd { get; set; } = 10000;
+
+    public int VoteCountStart { get; set; } = 0;
+
+    public int VoteCountEnd { get; set; } = 25000; // todo const
+
     // todo move all applicable filters here
 }

@@ -89,7 +89,7 @@
                 </Blazorise.TabPanel>
                 <Blazorise.TabPanel Name="TabFilters">
                     @* https://stackoverflow.com/a/63384981 *@
-                    <div style="display: flex;">
+                    <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 120px;">
                             <h5>Song types</h5>
 
@@ -123,6 +123,7 @@
                             <br/>
                         </div>
 
+                        @* todo add text inputs for ranges *@
                         <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
                             <h5>VN rating (average)</h5>
                             <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
@@ -142,6 +143,28 @@
                                               MinValue="100" MaxValue="1000">
                                 </RangeControl>
                                 <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingBayesianStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingBayesianEnd / 100f).ToString("N2"))</p>
+                            </div>
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                            <h5>VN popularity</h5>
+                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.PopularityStart"
+                                              @bind-ValueHigh="@ClientQuizSettings.Filters.PopularityEnd"
+                                              MinValue="0" MaxValue="10000">
+                                </RangeControl>
+                                <p style="text-align: center;">@((ClientQuizSettings.Filters.PopularityStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.PopularityEnd / 100f).ToString("N2"))</p>
+                            </div>
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                            <h5>VN vote count</h5>
+                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.VoteCountStart"
+                                              @bind-ValueHigh="@ClientQuizSettings.Filters.VoteCountEnd"
+                                              MinValue="0" MaxValue="25000">
+                                </RangeControl>
+                                <p style="text-align: center;">@(ClientQuizSettings.Filters.VoteCountStart)-@(ClientQuizSettings.Filters.VoteCountEnd)</p>
                             </div>
                         </div>
                     </div>

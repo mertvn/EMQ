@@ -16,6 +16,8 @@ public class AddTableMusic_Source : Migration
             .WithColumn("language_original").AsString().NotNullable()
             .WithColumn("rating_average").AsInt32().Nullable()
             .WithColumn("rating_bayesian").AsInt32().Nullable()
+            .WithColumn("popularity").AsInt32().Nullable()
+            .WithColumn("votecount").AsInt32().Nullable()
             .WithColumn("type").AsInt32().NotNullable();
     }
 
