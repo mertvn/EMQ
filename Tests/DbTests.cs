@@ -386,6 +386,24 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_RatingPopularityFilter_0()
+    {
+        int popularityStart = 0;
+        int popularityEnd = 0;
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
+            printSql: true);
+
+        Assert.That(songs.Count > 100);
+        Assert.That(songs.Count < 10000);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
+            song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_RatingVoteCountFilter()
     {
         int voteCountStart = 3000;

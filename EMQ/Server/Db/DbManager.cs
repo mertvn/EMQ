@@ -824,47 +824,55 @@ public static class DbManager
 
             if (filters != null)
             {
-                queryMusicIds.Append($"\n");
-                queryMusicIds.Append($" AND (");
-                queryMusicIds.Append($"ms.air_date_start >= {filters.StartDateFilter}");
-                queryMusicIds.Append($" AND ms.air_date_start <= {filters.EndDateFilter}");
-                queryMusicIds.Append($")");
-            }
+                if (filters.StartDateFilter != DateTime.Parse(Constants.QFDateMin) ||
+                    filters.EndDateFilter != DateTime.Parse(Constants.QFDateMax))
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append($"ms.air_date_start >= {filters.StartDateFilter}");
+                    queryMusicIds.Append($" AND ms.air_date_start <= {filters.EndDateFilter}");
+                    queryMusicIds.Append($")");
+                }
 
-            if (filters != null)
-            {
-                queryMusicIds.Append($"\n");
-                queryMusicIds.Append($" AND (");
-                queryMusicIds.Append($"ms.rating_average >= {filters.RatingAverageStart}");
-                queryMusicIds.Append($" AND ms.rating_average <= {filters.RatingAverageEnd}");
-                queryMusicIds.Append($")");
-            }
+                if (filters.RatingAverageStart != Constants.QFRatingAverageMin ||
+                    filters.RatingAverageEnd != Constants.QFRatingAverageMax)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append($"ms.rating_average >= {filters.RatingAverageStart}");
+                    queryMusicIds.Append($" AND ms.rating_average <= {filters.RatingAverageEnd}");
+                    queryMusicIds.Append($")");
+                }
 
-            if (filters != null)
-            {
-                queryMusicIds.Append($"\n");
-                queryMusicIds.Append($" AND (");
-                queryMusicIds.Append($"ms.rating_bayesian >= {filters.RatingBayesianStart}");
-                queryMusicIds.Append($" AND ms.rating_bayesian <= {filters.RatingBayesianEnd}");
-                queryMusicIds.Append($")");
-            }
+                if (filters.RatingBayesianStart != Constants.QFRatingBayesianMin ||
+                    filters.RatingBayesianEnd != Constants.QFRatingBayesianMax)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append($"ms.rating_bayesian >= {filters.RatingBayesianStart}");
+                    queryMusicIds.Append($" AND ms.rating_bayesian <= {filters.RatingBayesianEnd}");
+                    queryMusicIds.Append($")");
+                }
 
-            if (filters != null)
-            {
-                queryMusicIds.Append($"\n");
-                queryMusicIds.Append($" AND (");
-                queryMusicIds.Append($"ms.popularity >= {filters.PopularityStart}");
-                queryMusicIds.Append($" AND ms.popularity <= {filters.PopularityEnd}");
-                queryMusicIds.Append($")");
-            }
+                if (filters.PopularityStart != Constants.QFPopularityMin ||
+                    filters.PopularityEnd != Constants.QFPopularityMax)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append($"ms.popularity >= {filters.PopularityStart}");
+                    queryMusicIds.Append($" AND ms.popularity <= {filters.PopularityEnd}");
+                    queryMusicIds.Append($")");
+                }
 
-            if (filters != null)
-            {
-                queryMusicIds.Append($"\n");
-                queryMusicIds.Append($" AND (");
-                queryMusicIds.Append($"ms.votecount >= {filters.VoteCountStart}");
-                queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
-                queryMusicIds.Append($")");
+                if (filters.VoteCountStart != Constants.QFVoteCountMin ||
+                    filters.VoteCountEnd != Constants.QFVoteCountMax)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append($"ms.votecount >= {filters.VoteCountStart}");
+                    queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
+                    queryMusicIds.Append($")");
+                }
             }
 
             if (printSql)

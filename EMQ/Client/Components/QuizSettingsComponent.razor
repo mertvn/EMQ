@@ -107,8 +107,8 @@
                             <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
                                 <Blazorise.DatePicker TValue="DateTime"
                                                       @bind-Date="@ClientQuizSettings.Filters.StartDateFilter"
-                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
-                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
+                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax)"/>
                             </div>
                             <label for="StartDateFilter">Start date</label>
                             <br/>
@@ -116,8 +116,8 @@
                             <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
                                 <Blazorise.DatePicker TValue="DateTime"
                                                       @bind-Date="@ClientQuizSettings.Filters.EndDateFilter"
-                                                      Min="@DateTimeOffset.Parse(Constants.QuizFilterDateMin)"
-                                                      Max="@DateTimeOffset.Parse(Constants.QuizFilterDateMax)"/>
+                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax)"/>
                             </div>
                             <label for="EndDateFilter">End date</label>
                             <br/>
@@ -129,7 +129,7 @@
                             <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
                                 <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingAverageStart"
                                               @bind-ValueHigh="@ClientQuizSettings.Filters.RatingAverageEnd"
-                                              MinValue="100" MaxValue="1000">
+                                              MinValue="@Constants.QFRatingAverageMin" MaxValue="@Constants.QFRatingAverageMax">
                                 </RangeControl>
                                 <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingAverageStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingAverageEnd / 100f).ToString("N2"))</p>
                             </div>
@@ -140,7 +140,7 @@
                             <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
                                 <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingBayesianStart"
                                               @bind-ValueHigh="@ClientQuizSettings.Filters.RatingBayesianEnd"
-                                              MinValue="100" MaxValue="1000">
+                                              MinValue="@Constants.QFRatingBayesianMin" MaxValue="@Constants.QFRatingBayesianMax">
                                 </RangeControl>
                                 <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingBayesianStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingBayesianEnd / 100f).ToString("N2"))</p>
                             </div>
@@ -151,7 +151,7 @@
                             <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
                                 <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.PopularityStart"
                                               @bind-ValueHigh="@ClientQuizSettings.Filters.PopularityEnd"
-                                              MinValue="0" MaxValue="10000">
+                                              MinValue="@Constants.QFPopularityMin" MaxValue="@Constants.QFPopularityMax">
                                 </RangeControl>
                                 <p style="text-align: center;">@((ClientQuizSettings.Filters.PopularityStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.PopularityEnd / 100f).ToString("N2"))</p>
                             </div>
@@ -162,7 +162,7 @@
                             <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
                                 <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.VoteCountStart"
                                               @bind-ValueHigh="@ClientQuizSettings.Filters.VoteCountEnd"
-                                              MinValue="0" MaxValue="25000">
+                                              MinValue="@Constants.QFVoteCountMin" MaxValue="@Constants.QFVoteCountMax">
                                 </RangeControl>
                                 <p style="text-align: center;">@(ClientQuizSettings.Filters.VoteCountStart)-@(ClientQuizSettings.Filters.VoteCountEnd)</p>
                             </div>

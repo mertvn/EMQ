@@ -14,31 +14,31 @@ public class QuizFilters
         Enum.GetValues<SongSourceSongType>().Where(x => x != SongSourceSongType.Unknown)
             .ToDictionary(x => x, _ => true);
 
-    [Range(typeof(DateTime), Constants.QuizFilterDateMin, Constants.QuizFilterDateMax,
+    [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
         ErrorMessage =
-            $"Start date must be in range of {Constants.QuizFilterDateMin} to {Constants.QuizFilterDateMax}")]
-    public DateTime StartDateFilter { get; set; } = DateTime.Parse(Constants.QuizFilterDateMin);
+            $"Start date must be in range of {Constants.QFDateMin} to {Constants.QFDateMax}")]
+    public DateTime StartDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMin);
 
-    [Range(typeof(DateTime), Constants.QuizFilterDateMin, Constants.QuizFilterDateMax,
+    [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
         ErrorMessage =
-            $"End date must be in range of {Constants.QuizFilterDateMin} to {Constants.QuizFilterDateMax}")]
-    public DateTime EndDateFilter { get; set; } = DateTime.Parse(Constants.QuizFilterDateMax);
+            $"End date must be in range of {Constants.QFDateMin} to {Constants.QFDateMax}")]
+    public DateTime EndDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMax);
 
-    public int RatingAverageStart { get; set; } = 100;
+    public int RatingAverageStart { get; set; } = Constants.QFRatingAverageMin;
 
-    public int RatingAverageEnd { get; set; } = 1000;
+    public int RatingAverageEnd { get; set; } = Constants.QFRatingAverageMax;
 
-    public int RatingBayesianStart { get; set; } = 100;
+    public int RatingBayesianStart { get; set; } = Constants.QFRatingBayesianMin;
 
-    public int RatingBayesianEnd { get; set; } = 1000;
+    public int RatingBayesianEnd { get; set; } = Constants.QFRatingBayesianMax;
 
-    public int PopularityStart { get; set; } = 0;
+    public int PopularityStart { get; set; } = Constants.QFPopularityMin;
 
-    public int PopularityEnd { get; set; } = 10000;
+    public int PopularityEnd { get; set; } = Constants.QFPopularityMax;
 
-    public int VoteCountStart { get; set; } = 0;
+    public int VoteCountStart { get; set; } = Constants.QFVoteCountMin;
 
-    public int VoteCountEnd { get; set; } = 25000; // todo const
+    public int VoteCountEnd { get; set; } = Constants.QFVoteCountMax;
 
     // todo move all applicable filters here
 }
