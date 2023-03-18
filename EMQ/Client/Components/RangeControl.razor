@@ -1,0 +1,110 @@
+﻿@* https://stackoverflow.com/a/58544684 *@
+<div id="rc-@ID">
+    @(new MarkupString($@"<style>
+        #rc-{ID} {{
+            position: relative;
+            width: {Width}px;
+        }}
+
+        #rc-{ID} > input[type='range'] {{
+            padding: 0;
+            margin: 0;
+            display: inline-block;
+            vertical-align: top;
+            width: 100%;
+            --range-color: hsl(190, 80%, 40%);
+            background: var(--track-background);
+        }}
+        #rc-{ID} > input[type='range']::-moz-range-track {{
+            border-color: transparent; /* needed to switch FF to 'styleable' control */
+        }}
+        #rc-{ID} > input[name='low-range'] {{
+            position: absolute;
+            --track-background: linear-gradient(to right, transparent {100 * (ValueLow - MinValue) / (MaxValue - MinValue) + 1}%, var(--range-color) 0, var(--range-color) {100 * (ValueHigh - MinValue) / (MaxValue - MinValue) - 1}%, transparent 0 ) no-repeat 0 45% / 100% 40%;
+        }}
+        #rc-{ID} > input[name='low-range']::-webkit-slider-thumb {{
+            position: relative;
+            z-index: 2;
+        }}
+        #rc-{ID} > input[name='low-range']::-moz-range-thumb {{
+                transform: scale(1); /* FF doesn't apply position it seems */
+                z-index: 1;
+            }}
+        #rc-{ID} > input[name='high-range'] {{
+            position: relative;
+            --track-background: linear-gradient(to right, transparent {100 * (ValueLow - MinValue) / (MaxValue - MinValue) + 1}%, var(--range-color) 0, var(--range-color) {100 * (ValueHigh - MinValue) / (MaxValue - MinValue) - 1}%, transparent 0 ) no-repeat 0 45% / 100% 40%;
+            clip-path: polygon({50 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 0, 100% 0, 100% 100%, {50 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 100%);
+        }}
+
+        #rc-{ID} > input[type='range']::-webkit-slider-runnable-track {{
+            background: var(--track-background);
+        }}
+
+        #rc-{ID} > input[type='range']::-moz-range-track {{
+            background: var(--track-background);
+        }}
+    </style>"))
+    <input name="low-range" type="range" min="@MinValue" max="@MaxValue" @bind="@ValueLow" @bind:event="oninput"/>
+    <input name="high-range" type="range" min="@MinValue" max="@MaxValue" @bind="@ValueHigh" @bind:event="oninput"/>
+</div>
+
+@code
+{
+    int _valueLow = 0;
+    int _valueHigh = 100;
+
+    [Parameter]
+    public int Width { get; set; } = 200;
+
+    [Parameter]
+    public int MinValue { get; set; } = 0;
+
+    [Parameter]
+    public int MaxValue { get; set; } = 100;
+
+    [Parameter]
+    public int ValueLow
+    {
+        get => Math.Min(_valueLow, _valueHigh);
+        set
+        {
+            if (_valueLow.Equals(value))
+                return;
+            _valueLow = value;
+            if (_valueLow >= _valueHigh)
+            {
+                _valueLow = _valueHigh;
+                _valueHigh = value;
+                ValueHighChanged.InvokeAsync(_valueHigh);
+            }
+            ValueLowChanged.InvokeAsync(_valueLow);
+        }
+    }
+
+    [Parameter]
+    public int ValueHigh
+    {
+        get => Math.Max(_valueLow, _valueHigh);
+        set
+        {
+            if (_valueHigh.Equals(value))
+                return;
+            _valueHigh = value;
+            if (_valueLow >= _valueHigh)
+            {
+                _valueHigh = _valueLow;
+                _valueLow = value;
+                ValueLowChanged.InvokeAsync(_valueLow);
+            }
+            ValueHighChanged.InvokeAsync(_valueHigh);
+        }
+    }
+
+    [Parameter]
+    public EventCallback<int> ValueLowChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> ValueHighChanged { get; set; }
+
+    string ID = Guid.NewGuid().ToString().Replace("-", "").Substring(15);
+}

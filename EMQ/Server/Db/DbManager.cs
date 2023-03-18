@@ -723,6 +723,7 @@ public static class DbManager
         }
     }
 
+    // todo make Filters required
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool keepCategories = false)
@@ -821,6 +822,15 @@ public static class DbManager
                 queryMusicIds.Append($" AND (");
                 queryMusicIds.Append($"ms.air_date_start >= {filters.StartDateFilter}");
                 queryMusicIds.Append($" AND ms.air_date_start <= {filters.EndDateFilter}");
+                queryMusicIds.Append($")");
+            }
+
+            if (filters != null)
+            {
+                queryMusicIds.Append($"\n");
+                queryMusicIds.Append($" AND (");
+                queryMusicIds.Append($"ms.rating_average >= {filters.RatingAverageStart}");
+                queryMusicIds.Append($" AND ms.rating_average <= {filters.RatingAverageEnd}");
                 queryMusicIds.Append($")");
             }
 

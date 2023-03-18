@@ -329,6 +329,24 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_RatingAverageFilter()
+    {
+        int ratingAverageStart = 920;
+        int ratingAverageEnd = 1000;
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { RatingAverageStart = ratingAverageStart, RatingAverageEnd = ratingAverageEnd },
+            printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.Count < 100);
+        Assert.That(songs.All(song =>
+            song.Sources.Select(x => x.RatingAverage).Any(x => x >= ratingAverageStart) &&
+            song.Sources.Select(x => x.RatingAverage).Any(x => x <= ratingAverageEnd)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_IsDistinct()
     {
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);

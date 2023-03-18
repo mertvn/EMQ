@@ -90,7 +90,7 @@
                                 <Blazorise.TabPanel Name="TabFilters">
                                     @* https://stackoverflow.com/a/63384981 *@
                                     <div style="display: flex;">
-                                        <div style="border: 1px black solid; margin: 10px; padding: 5px; max-width: 160px;">
+                                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 120px;">
                                             <h5>Song types</h5>
 
                                             @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
@@ -101,7 +101,7 @@
                                             }
                                         </div>
 
-                                        <div style="border: 1px black solid; margin: 10px; padding: 10px; max-width: 260px;">
+                                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
                                             <h5>VN release date range</h5>
 
                                             <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
@@ -121,6 +121,17 @@
                                             </div>
                                             <label for="EndDateFilter">End date</label>
                                             <br/>
+                                        </div>
+
+                                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                                            <h5>VN rating (average)</h5>
+                                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.RatingAverageStart"
+                                                              @bind-ValueHigh="@ClientQuizSettings.Filters.RatingAverageEnd"
+                                                              MinValue="100" MaxValue="1000">
+                                                </RangeControl>
+                                                <p style="text-align: center;">@((ClientQuizSettings.Filters.RatingAverageStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.RatingAverageEnd / 100f).ToString("N2"))</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </Blazorise.TabPanel>

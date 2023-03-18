@@ -24,5 +24,9 @@ public class QuizFilters
             $"End date must be in range of {Constants.QuizFilterDateMin} to {Constants.QuizFilterDateMax}")]
     public DateTime EndDateFilter { get; set; } = DateTime.Parse(Constants.QuizFilterDateMax);
 
+    public int RatingAverageStart { get; set; } = 100;
+
+    public int RatingAverageEnd { get; set; } = 1000;
+
     // todo move all applicable filters here
 }
