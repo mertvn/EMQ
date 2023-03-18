@@ -31,9 +31,9 @@ public static class Autocomplete
         var contains = data.Where(x => x.Name.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
             .OrderBy(x => x.Name);
 
-        var startsWith1 = data.Where(x => x.VndbId.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()))
+        var startsWith1 = data.Where(x => x.VndbId?.ToLowerInvariant().StartsWith(arg.ToLowerInvariant()) ?? false)
             .OrderBy(x => x.VndbId);
-        var contains1 = data.Where(x => x.VndbId.ToLowerInvariant().Contains(arg.ToLowerInvariant()))
+        var contains1 = data.Where(x => x.VndbId?.ToLowerInvariant().Contains(arg.ToLowerInvariant()) ?? false)
             .OrderBy(x => x.VndbId);
 
         var final = startsWith.Concat(startsWith1).Concat(contains).Concat(contains1).Distinct().ToArray();
