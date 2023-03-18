@@ -319,7 +319,7 @@ public class QuizController : ControllerBase
             {
                 if (room.Quiz is null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing)
                 {
-                    room.Password = req.RoomPassword;
+                    // room.Password = req.RoomPassword; // todo
                     room.QuizSettings = req.QuizSettings;
                     // todo syncroom in all players
 
