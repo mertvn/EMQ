@@ -9,8 +9,6 @@ public partial class Hasucana
 {
     private static Dictionary<string, string> Dict { get; set; } = new()
     {
-        { " ", " " },
-        { "　", "　" },
         { "a", "の" },
         { "e", "ま" },
         { "g", "ム" },
@@ -40,10 +38,6 @@ public partial class Hasucana
             {
                 sb[index] = Dict[c.ToString().ToLowerInvariant()][0];
             }
-            else
-            {
-                sb[index] = "?"[0];
-            }
         }
 
         return sb.ToString();
@@ -58,10 +52,6 @@ public partial class Hasucana
             if (Dict.ContainsValue(c.ToString()))
             {
                 sb[index] = Dict.Single(x => x.Value == c.ToString()).Key[0];
-            }
-            else
-            {
-                sb[index] = "?"[0];
             }
         }
 
