@@ -7,6 +7,7 @@
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
 
+@* todo z index for all modals *@
 <Blazorise.Modal @ref="_modalRef">
 <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
 <Blazorise.ModalHeader>
@@ -164,7 +165,10 @@
                                               @bind-ValueHigh="@ClientQuizSettings.Filters.VoteCountEnd"
                                               MinValue="@Constants.QFVoteCountMin" MaxValue="@Constants.QFVoteCountMax">
                                 </RangeControl>
-                                <p style="text-align: center;">@(ClientQuizSettings.Filters.VoteCountStart)-@(ClientQuizSettings.Filters.VoteCountEnd)</p>
+                                <div style="display: inline-block">
+                                    <InputNumber @bind-Value="ClientQuizSettings.Filters.VoteCountStart" style="width: 75px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.VoteCountEnd" style="width: 75px;"></InputNumber>
+                                </div>
+                                @* <p style="text-align: center;">@(ClientQuizSettings.Filters.VoteCountStart)-@(ClientQuizSettings.Filters.VoteCountEnd)</p> *@
                             </div>
                         </div>
                     </div>
