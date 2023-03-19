@@ -55,6 +55,25 @@ public static class VndbImporter
         tagsJson = JsonConvert.DeserializeObject<List<Tag>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ tags.json"))!;
 
+        var hashSetAId = new HashSet<int>();
+        foreach (dynamic dyn in artists_aliasesJson)
+        {
+            int? aId = (int?)dyn.aid;
+            if (!hashSetAId.Add(aId.Value))
+            {
+                throw new Exception();
+            }
+        }
+
+        var hashSetTagId = new HashSet<string>();
+        foreach (var dyn in tagsJson)
+        {
+            if (!hashSetTagId.Add(dyn.Id))
+            {
+                throw new Exception();
+            }
+        }
+
         Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
 
         await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\VndbImporter.json",
@@ -79,10 +98,15 @@ public static class VndbImporter
     {
         var songs = new List<Song>();
 
+        var musicSourcesDict = musicSourcesJson.ToDictionary(x => (string)x.id);
+        var musicSourcesTitlesLookup = musicSourcesTitlesJson.ToLookup(x => (string)x.id);
+        var artists_aliasesDict = artists_aliasesJson.ToDictionary(x => (int)x.aid);
+        var tagsDict = tagsJson.ToDictionary(x => x.Id);
+
         foreach (ProcessedMusic dynData in dataJson)
         {
             // Console.WriteLine($"Processing {JsonConvert.SerializeObject(dynData)}");
-            var dynMusicSource = musicSourcesJson.Find(x => x.id == dynData.VNID)!;
+            var dynMusicSource = musicSourcesDict[dynData.VNID];
             try
             {
                 dynamic? _ = dynMusicSource.id;
@@ -93,8 +117,7 @@ public static class VndbImporter
                 throw;
             }
 
-            List<dynamic> dynMusicSourceTitles =
-                musicSourcesTitlesJson.FindAll(x => (x.id == dynData.VNID) && (bool)x.official);
+            List<dynamic> dynMusicSourceTitles = musicSourcesTitlesLookup[dynData.VNID].ToList();
             try
             {
                 dynamic? _ = dynMusicSourceTitles.First().id;
@@ -105,7 +128,7 @@ public static class VndbImporter
                 throw;
             }
 
-            var dynArtistAlias = artists_aliasesJson.Single(x => (int)x.aid == (int)dynData.ArtistAliasID);
+            dynamic dynArtistAlias = artists_aliasesDict[dynData.ArtistAliasID];
             try
             {
                 dynamic? _ = dynArtistAlias.aid;
@@ -134,7 +157,7 @@ public static class VndbImporter
             {
                 foreach (var tvi in vnTagInfo.TVIs)
                 {
-                    var tag = tagsJson.Single(x => x.Id == tvi.t);
+                    var tag = tagsDict[tvi.t];
                     // Console.WriteLine(JsonConvert.SerializeObject(tag));
 
                     categories.Add(new SongSourceCategory
@@ -238,6 +261,11 @@ public static class VndbImporter
 
             foreach (dynamic dynMusicSourceTitle in dynMusicSourceTitles)
             {
+                if (!(bool)dynMusicSourceTitle.official)
+                {
+                    continue;
+                }
+
                 string latinTitle;
                 string? nonLatinTitle;
                 if (string.IsNullOrEmpty((string)dynMusicSourceTitle.latin))
@@ -274,7 +302,6 @@ public static class VndbImporter
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
-                // Length = -1, // todo?
                 Titles =
                     new List<Title>()
                     {
