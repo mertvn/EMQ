@@ -185,6 +185,12 @@ public static class Program
             return new List<ParsedSong>();
         }
 
+        var jso =  new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            Converters = { new JsonStringEnumConverter() }
+        };
+
         var songs = new List<ParsedSong>();
 
         Mode mode = Mode.SongType;
@@ -526,12 +532,7 @@ public static class Program
             break;
         }
 
-        Console.WriteLine("final output: " + JsonSerializer.Serialize(songs,
-            new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                Converters = { new JsonStringEnumConverter() }
-            }));
+        Console.WriteLine("final output: " + JsonSerializer.Serialize(songs, jso));
 
         if (doIntegrityCheck)
         {
