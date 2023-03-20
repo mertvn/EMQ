@@ -14,6 +14,8 @@ public class AddTableArtist : Migration
             .WithColumn("sex").AsInt32().Nullable()
             .WithColumn("primary_language").AsString().Nullable()
             .WithColumn("vndb_id").AsString().Nullable();
+
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("vndb_id").Unique();
     }
 
     public override void Down()

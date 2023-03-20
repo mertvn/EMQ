@@ -13,6 +13,12 @@ public class AddTableMusic_Source_Music : Migration
             .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
             .WithColumn("type").AsInt32().PrimaryKey().NotNullable();
+
+        Create.Index().OnTable(tableName).InSchema("public")
+            .OnColumn("music_id").Ascending()
+            .OnColumn("music_source_id").Ascending()
+            .OnColumn("type").Ascending();
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("type");
     }
 
     public override void Down()

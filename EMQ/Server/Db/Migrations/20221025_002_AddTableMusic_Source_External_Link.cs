@@ -13,6 +13,8 @@ public class AddTableMusic_Source_External_Link : Migration
             .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
             .WithColumn("url").AsString().PrimaryKey()
             .WithColumn("type").AsInt32().NotNullable();
+
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("url");
     }
 
     public override void Down()

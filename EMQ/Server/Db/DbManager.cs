@@ -407,7 +407,7 @@ public static class DbManager
             .ToList();
         if (latinTitles.Any())
         {
-            queryArtist.Where($"aa.latin_alias ILIKE ANY({latinTitles})");
+            queryArtist.Where($"lower(aa.latin_alias) = ANY(lower({latinTitles}::text)::text[])");
         }
 
         List<string> nonLatinTitles = input.Artists.SelectMany(x => x.Titles.Select(y => y.NonLatinTitle))
@@ -741,8 +741,11 @@ public static class DbManager
         List<(int, string)> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            const string sqlMusicIds =
-                $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+            string sqlMusicIds;
+            if (filters != null && filters.CategoryFilters.Any())
+            {
+                sqlMusicIds =
+                    $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -751,13 +754,20 @@ public static class DbManager
                                      JOIN category c on c.id = msc.category_id
                                      WHERE 1=1
                                      ";
+            }
+            else
+            {
+                sqlMusicIds =
+                    $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     WHERE 1=1
+                                     ";
+            }
 
             var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
-
-            if (validSources != null && validSources.Any())
-            {
-                queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
-            }
 
             // Apply filters
             if (filters != null)
@@ -768,41 +778,39 @@ public static class DbManager
                     var trileans = validCategories.Select(x => x.Trilean);
                     bool hasInclude = trileans.Any(y => y is LabelKind.Include);
 
-                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Maybe)
-                        .ThenByDescending(y => y.Trilean == LabelKind.Include)
+                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
                         .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
                     for (int index = 0; index < ordered.Count; index++)
                     {
                         CategoryFilter categoryFilter = ordered[index];
                         // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
 
-                        switch (categoryFilter.Trilean)
+                        if (index > 0)
                         {
-                            case LabelKind.Maybe:
-                                if (hasInclude)
-                                {
-                                    continue;
-                                }
+                            switch (categoryFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
 
-                                if (index == 0)
-                                    queryMusicIds.AppendLine($"INTERSECT");
-                                else
                                     queryMusicIds.AppendLine($"UNION");
-                                break;
-                            case LabelKind.Include:
-                                queryMusicIds.AppendLine($"INTERSECT");
-                                break;
-                            case LabelKind.Exclude:
-                                if (index == 0)
+                                    break;
+                                case LabelKind.Include:
                                     queryMusicIds.AppendLine($"INTERSECT");
-                                else
+                                    break;
+                                case LabelKind.Exclude:
                                     queryMusicIds.AppendLine($"EXCEPT");
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryMusicIds.Append($"{sqlMusicIds:raw}");
                         }
 
-                        queryMusicIds.Append($"{sqlMusicIds:raw}");
                         // todo vndb_id null
                         queryMusicIds.Append(
                             $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
@@ -875,6 +883,11 @@ public static class DbManager
                     queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
                     queryMusicIds.Append($")");
                 }
+            }
+
+            if (validSources != null && validSources.Any())
+            {
+                queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
             }
 
             if (printSql)
@@ -1645,6 +1658,7 @@ order by year";
     public static async Task<List<Song>> FindSongsByLabels(List<Label> reqLabels)
     {
         var validSources = Label.GetValidSourcesFromLabels(reqLabels);
+        // return await GetRandomSongs(int.MaxValue, true, validSources); // todo make mel param
 
         string sqlMusicIdsNoMel =
             $@"SELECT DISTINCT ON (m.id) m.id, msel.url FROM

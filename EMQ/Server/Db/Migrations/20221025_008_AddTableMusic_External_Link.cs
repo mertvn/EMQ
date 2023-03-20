@@ -14,6 +14,8 @@ public class AddTableMusic_External_Link : Migration
             .WithColumn("url").AsString().PrimaryKey()
             .WithColumn("type").AsInt32().NotNullable()
             .WithColumn("is_video").AsBoolean().NotNullable();
+
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("url");
     }
 
     public override void Down()
