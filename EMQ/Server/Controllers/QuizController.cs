@@ -302,7 +302,7 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("ChangeRoomSettings")]
-    public ActionResult ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
+    public async Task<ActionResult> ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
@@ -321,7 +321,9 @@ public class QuizController : ControllerBase
                 {
                     // room.Password = req.RoomPassword; // todo
                     room.QuizSettings = req.QuizSettings;
+
                     // todo syncroom in all players
+                    // await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom");
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
                     room.Quiz?.Log("Room settings changed.", isSystemMessage: true);
