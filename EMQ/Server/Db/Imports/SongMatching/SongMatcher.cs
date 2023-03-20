@@ -50,7 +50,8 @@ public static class SongMatcher
                 fileName.ToLowerInvariant().Contains("offvocal") ||
                 fileName.ToLowerInvariant().Contains("version-") ||
                 (fileName.ToLowerInvariant().Contains("ver.") &&
-                 !fileName.ToLowerInvariant().EndsWith("forever.mp3")))
+                 !fileName.ToLowerInvariant().EndsWith($"forever.{extension}")
+                 && !fileName.ToLowerInvariant().EndsWith($"lover.{extension}")))
             {
                 Console.WriteLine("skipping: " + fileName);
                 return;

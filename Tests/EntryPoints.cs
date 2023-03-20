@@ -19,6 +19,8 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+using FFMpegCore;
+using FFMpegCore.Enums;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -149,7 +151,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(2200, 1600).ToArray();
+        var rqIds = Enumerable.Range(1, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -219,7 +221,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadMatchedSongs()
     {
-        string root = "C:\\emq\\matching\\artist";
+        string root = "C:\\emq\\matching\\acg";
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
@@ -276,6 +278,32 @@ public class EntryPoints
                     break;
                 }
 
+                if (!uploadable.Path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Console.WriteLine("skipping non .mp3: " + uploadable.Path);
+                    // continue;
+
+                    string newPath = uploadable.Path.Replace(Path.GetExtension(uploadable.Path), ".mp3");
+                    if (!File.Exists(newPath))
+                    {
+                        Console.WriteLine("converting non .mp3: " + uploadable.Path);
+                        FFMpegArguments
+                            .FromFileInput(uploadable.Path)
+                            .OutputToFile(newPath, false, options => options
+                                .WithAudioCodec(AudioCodec.LibMp3Lame)
+                                .WithAudioBitrate(192)
+                                .WithTagVersion())
+                            .ProcessSynchronously();
+                    }
+
+                    if (uploaded.Any(x => x.Path == newPath))
+                    {
+                        continue;
+                    }
+
+                    uploadable.Path = newPath;
+                }
+
                 string catboxUrl = await CatboxUploader.Upload(uploadable);
                 uploadable.ResultUrl = catboxUrl;
                 Console.WriteLine(catboxUrl);
@@ -309,7 +337,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
-        string root = "C:\\emq\\matching\\artist";
+        string root = "C:\\emq\\matching\\acg";
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
@@ -375,6 +403,17 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task ImportGenericWithDir()
+    {
+        string root = "";
+        string[] dirs = Directory.GetDirectories(root);
+        foreach (string dir in dirs)
+        {
+            await GenericImporter.ImportGenericWithDir(dir, 1);
+        }
+    }
+
+    [Test, Explicit]
     public async Task ImportKnownArtist()
     {
         await KnownArtistImporter.ImportKnownArtist();
@@ -389,6 +428,12 @@ public class EntryPoints
         {
             await KnownArtistImporter.ImportKnownArtistWithDir(dir, 3);
         }
+    }
+
+    [Test, Explicit]
+    public async Task ImportACG()
+    {
+        await ACGImporter.ImportACG();
     }
 
     // todo pgrestore pgdump tests

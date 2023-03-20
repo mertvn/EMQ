@@ -39,8 +39,8 @@ public static class CatboxUploader
 
         HttpResponseMessage response = await new HttpClient
         {
-            DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("a", "1") } },
-            Timeout = TimeSpan.FromSeconds(300)
+            DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("b", "2") } },
+            Timeout = TimeSpan.FromSeconds(600)
         }.PostAsync(url, formContent);
         return response;
     }

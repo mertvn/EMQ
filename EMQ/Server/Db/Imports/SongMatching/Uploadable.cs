@@ -4,7 +4,7 @@ namespace EMQ.Server.Db.Imports.SongMatching;
 
 public struct Uploadable
 {
-    public string Path { get; init; }
+    public string Path { get; set; }
 
     public int MId { get; init; }
 

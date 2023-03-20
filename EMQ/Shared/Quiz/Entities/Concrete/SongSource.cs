@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -32,6 +33,11 @@ public class SongSource
     public List<SongSourceSongType> SongTypes { get; set; } = new();
 
     public HashSet<int> MusicIds { get; set; } = new();
+
+    public override string ToString() =>
+        $"{Titles.First().LatinTitle}" + (!string.IsNullOrWhiteSpace(Titles.First().NonLatinTitle)
+            ? $" ({Titles.First().NonLatinTitle})"
+            : "");
 }
 
 public enum SongSourceSongType
