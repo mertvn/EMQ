@@ -35,7 +35,7 @@ public static class MediaAnalyser
                 result.Warnings.Add(MediaAnalyserWarningKind.TooShort);
             }
 
-            if (mediaInfo.Duration > TimeSpan.FromSeconds(720))
+            if (mediaInfo.Duration > TimeSpan.FromSeconds(900))
             {
                 result.Warnings.Add(MediaAnalyserWarningKind.TooLong);
             }
