@@ -31,7 +31,7 @@ public static class VndbImporter
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2023-03-01";
+        string date = "2023-03-22";
         string folder = $"C:\\emq\\vndb\\{date}";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
@@ -106,7 +106,7 @@ public static class VndbImporter
         foreach (ProcessedMusic dynData in dataJson)
         {
             // Console.WriteLine($"Processing {JsonConvert.SerializeObject(dynData)}");
-            var dynMusicSource = musicSourcesDict[dynData.VNID];
+            dynamic dynMusicSource = musicSourcesDict[dynData.VNID];
             try
             {
                 dynamic? _ = dynMusicSource.id;
@@ -139,7 +139,7 @@ public static class VndbImporter
                 throw;
             }
 
-            var dynArtist = artistsJson.Find(x => x.id == dynArtistAlias.id)!;
+            dynamic dynArtist = artistsJson.Find(x => x.id == dynArtistAlias.id)!;
             try
             {
                 dynamic? _ = dynArtist.aid;
@@ -200,6 +200,9 @@ public static class VndbImporter
                 _ => throw new Exception("Invalid artist sex")
             };
 
+            (string artistLatinTitle, string? artistNonLatinTitle) = VndbTitleToEmqTitle((string)dynArtistAlias.name,
+                (string?)dynArtistAlias.latin);
+
             SongArtist songArtist = new SongArtist()
             {
                 VndbId = dynArtist.id,
@@ -210,8 +213,8 @@ public static class VndbImporter
                     {
                         new Title()
                         {
-                            LatinTitle = dynArtistAlias.name,
-                            NonLatinTitle = dynArtistAlias.original,
+                            LatinTitle = artistLatinTitle,
+                            NonLatinTitle = artistNonLatinTitle,
                             Language = dynArtist.lang, // todo
                             IsMainTitle = artistAliasIsMain
                         },
@@ -266,18 +269,8 @@ public static class VndbImporter
                     continue;
                 }
 
-                string latinTitle;
-                string? nonLatinTitle;
-                if (string.IsNullOrEmpty((string)dynMusicSourceTitle.latin))
-                {
-                    latinTitle = dynMusicSourceTitle.title;
-                    nonLatinTitle = null;
-                }
-                else
-                {
-                    latinTitle = dynMusicSourceTitle.latin;
-                    nonLatinTitle = dynMusicSourceTitle.title;
-                }
+                (string latinTitle, string? nonLatinTitle) = VndbTitleToEmqTitle((string)dynMusicSourceTitle.title,
+                    (string?)dynMusicSourceTitle.latin);
 
                 // we don't want titles that are exactly the same
                 if (musicSourceTitles.Any(x =>
@@ -357,5 +350,23 @@ public static class VndbImporter
         }
 
         return songs;
+    }
+
+    private static (string latinTitle, string? nonLatinTitle) VndbTitleToEmqTitle(string vndbName, string? vndbLatin)
+    {
+        string latinTitle;
+        string? nonLatinTitle;
+        if (string.IsNullOrEmpty(vndbLatin))
+        {
+            latinTitle = vndbName;
+            nonLatinTitle = null;
+        }
+        else
+        {
+            latinTitle = vndbLatin;
+            nonLatinTitle = vndbName;
+        }
+
+        return (latinTitle, nonLatinTitle);
     }
 }
