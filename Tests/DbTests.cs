@@ -168,6 +168,18 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_FindSongsByArtistTitle_EbataIkuko()
+    {
+        var songs = (await DbManager.FindSongsByArtistTitle("Ebata Ikuko")).ToList();
+        var song = songs.Single(x => x.Titles.Any(y => y.LatinTitle == "Hikaru no Uta"));
+
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 7);
+        Assert.That(song.Links.Any());
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_100()
     {
         var songs = await DbManager.GetRandomSongs(100, true);
