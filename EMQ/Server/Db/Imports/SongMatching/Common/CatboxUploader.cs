@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace EMQ.Server.Db.Imports.SongMatching;
+namespace EMQ.Server.Db.Imports.SongMatching.Common;
 
 public static class CatboxUploader
 {

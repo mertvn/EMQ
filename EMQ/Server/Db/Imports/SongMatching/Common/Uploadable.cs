@@ -1,6 +1,6 @@
 ﻿using EMQ.Shared.Quiz.Entities.Concrete;
 
-namespace EMQ.Server.Db.Imports.SongMatching;
+namespace EMQ.Server.Db.Imports.SongMatching.Common;
 
 public struct Uploadable
 {

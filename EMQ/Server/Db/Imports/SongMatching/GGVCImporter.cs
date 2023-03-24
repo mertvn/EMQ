@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EMQ.Server.Db.Imports.SongMatching.Common;
 using EMQ.Shared.Core;
 
-namespace EMQ.Server.Db.Imports.SongMatching.GGVC;
+namespace EMQ.Server.Db.Imports.SongMatching;
 
 public static class GGVCImporter
 {

@@ -1,7 +1,8 @@
 ﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EMQ.Server.Db.Imports.SongMatching.Common;
 
-namespace EMQ.Server.Db.Imports.SongMatching.Tora;
+namespace EMQ.Server.Db.Imports.SongMatching;
 
 public static class ToraImporter
 {
@@ -13,6 +14,6 @@ public static class ToraImporter
         string extension = "mp3";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension);
-        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\tora\\tora_3");
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\tora\\tora_5", false);
     }
 }

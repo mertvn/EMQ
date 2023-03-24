@@ -11,8 +11,7 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.SongMatching;
-using EMQ.Server.Db.Imports.SongMatching.GGVC;
-using EMQ.Server.Db.Imports.SongMatching.Tora;
+using EMQ.Server.Db.Imports.SongMatching.Common;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -221,7 +220,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task UploadMatchedSongs()
     {
-        string root = "C:\\emq\\matching\\acg";
+        string root = "C:\\emq\\matching\\generic\\";
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
@@ -337,7 +336,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task SubmitUploadedJsonForReview()
     {
-        string root = "C:\\emq\\matching\\acg";
+        string root = "C:\\emq\\matching\\generic\\";
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
@@ -434,6 +433,18 @@ public class EntryPoints
     public async Task ImportACG()
     {
         await ACGImporter.ImportACG();
+    }
+
+    [Test, Explicit]
+    public async Task P1()
+    {
+        await Conv.FixCUEEncoding();
+    }
+
+    [Test, Explicit]
+    public async Task P2()
+    {
+        await Conv.SplitTracks();
     }
 
     // todo pgrestore pgdump tests

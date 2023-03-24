@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EMQ.Server.Db.Imports.SongMatching;
+namespace EMQ.Server.Db.Imports.SongMatching.Common;
 
 public readonly struct SongMatch
 {

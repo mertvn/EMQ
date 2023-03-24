@@ -11,11 +11,12 @@ using DapperQueryBuilder;
 using EMQ.Shared.Core;
 using Npgsql;
 
-namespace EMQ.Server.Db.Imports.SongMatching;
+namespace EMQ.Server.Db.Imports.SongMatching.Common;
 
 public static class SongMatcher
 {
-    public static List<SongMatch> ParseSongFile(string dir, Regex regex, string extension, bool cacheFilePaths = false)
+    public static List<SongMatch> ParseSongFile(string dir, Regex regex, string extension,
+        bool cacheFilePaths = false, bool alwaysUseMetadata = true)
     {
         var songMatches = new ConcurrentBag<SongMatch>();
 
@@ -48,6 +49,8 @@ public static class SongMatcher
                 fileName.ToLowerInvariant().Contains("裏ver") ||
                 fileName.ToLowerInvariant().Contains("off vocal") ||
                 fileName.ToLowerInvariant().Contains("offvocal") ||
+                fileName.ToLowerInvariant().Contains("no vocal") ||
+                fileName.ToLowerInvariant().Contains("instrumental") ||
                 fileName.ToLowerInvariant().Contains("version-") ||
                 (fileName.ToLowerInvariant().Contains("ver.") &&
                  !fileName.ToLowerInvariant().EndsWith($"forever.{extension}")
@@ -73,35 +76,38 @@ public static class SongMatcher
             List<string> titles = new() { title.Trim() };
             List<string> artists = new() { artist.Trim() };
 
-            try
+            if (alwaysUseMetadata || string.IsNullOrWhiteSpace(match.ToString()))
             {
-                var tFile = TagLib.File.Create(filePath);
-                string? metadataSources = tFile.Tag.Album;
-                string? metadataTitle = tFile.Tag.Title;
-                string[] metadataArtists = tFile.Tag.Performers.Concat(tFile.Tag.AlbumArtists).ToArray();
-
-                if (!string.IsNullOrWhiteSpace(metadataSources))
+                try
                 {
-                    sources.Add(metadataSources);
-                }
+                    var tFile = TagLib.File.Create(filePath);
+                    string? metadataSources = tFile.Tag.Album;
+                    string? metadataTitle = tFile.Tag.Title;
+                    string[] metadataArtists = tFile.Tag.Performers.Concat(tFile.Tag.AlbumArtists).ToArray();
 
-                if (!string.IsNullOrWhiteSpace(metadataTitle))
+                    if (!string.IsNullOrWhiteSpace(metadataSources))
+                    {
+                        sources.Add(metadataSources);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(metadataTitle))
+                    {
+                        titles.Add(metadataTitle);
+                    }
+
+                    artists.AddRange(metadataArtists);
+                }
+                catch (Exception e)
                 {
-                    titles.Add(metadataTitle);
+                    Console.WriteLine($"TagLib exception for {filePath}: " + e.Message);
                 }
-
-                artists.AddRange(metadataArtists);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"TagLib exception for {filePath}: " + e.Message);
             }
 
             sources = sources.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             titles = titles.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             artists = artists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
 
-            if (sources.Any() && titles.Any() && artists.Any())
+            if (titles.Any() && artists.Any())
             {
                 var songMatch = new SongMatch
                 {

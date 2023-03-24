@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EMQ.Server.Db.Imports.SongMatching.Common;
 
 namespace EMQ.Server.Db.Imports.SongMatching;
 
