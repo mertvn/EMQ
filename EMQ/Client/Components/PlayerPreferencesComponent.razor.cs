@@ -84,7 +84,8 @@ public partial class PlayerPreferencesComponent
             return;
         }
 
-        label.Kind = newLabelKind;
+        label = await UpdateLabel(label, newLabelKind);
+
         HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdateLabel",
             new ReqUpdateLabel(ClientState.Session!.Token, label));
 
@@ -103,6 +104,52 @@ public partial class PlayerPreferencesComponent
         else
         {
             // todo
+        }
+    }
+
+    public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind)
+    {
+        if (ClientState.Session != null)
+        {
+            if (ClientState.Session.VndbInfo.Labels != null)
+            {
+
+                Console.WriteLine($"{ClientState.Session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " +
+                                  newLabelKind);
+                label.Kind = newLabelKind;
+
+                var newVns = new Dictionary<string, int>();
+                switch (label.Kind)
+                {
+                    case LabelKind.Maybe:
+                        break;
+                    case LabelKind.Include:
+                    case LabelKind.Exclude:
+                        var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
+                        {
+                            VndbId = ClientState.Session.VndbInfo.VndbId,
+                            VndbApiToken = ClientState.Session.VndbInfo.VndbApiToken,
+                            Labels = new List<Label>() { label },
+                        });
+                        newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                label.VNs = newVns;
+                return label;
+            }
+            else
+            {
+                // todo
+                throw new Exception();
+            }
+        }
+        else
+        {
+            // todo
+            throw new Exception();
         }
     }
 }

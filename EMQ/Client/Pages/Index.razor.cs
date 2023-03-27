@@ -8,7 +8,9 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
+using Juliet.Model.VNDBObject;
 using Microsoft.Extensions.Logging;
 
 namespace EMQ.Client.Pages;
@@ -108,13 +110,60 @@ public partial class Index
                 }
             }
 
+            LoginProgressDisplay.Add("Grabbing VNs from VNDB...");
+            StateHasChanged();
+
+            List<Label>? vns = null;
+            var playerVndbInfo = new PlayerVndbInfo()
+            {
+                VndbId = loginModel.VndbId, VndbApiToken = loginModel.VndbApiToken, Labels = vns,
+            };
+
+            if (!string.IsNullOrWhiteSpace(playerVndbInfo.VndbId))
+            {
+                var labels = new List<Label>();
+                VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(playerVndbInfo);
+
+                foreach (VNDBLabel vndbLabel in vndbLabels)
+                {
+                    labels.Add(Label.FromVndbLabel(vndbLabel));
+                }
+
+                // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
+                foreach (Label label in labels)
+                {
+                    switch (label.Name.ToLowerInvariant())
+                    {
+                        case "playing":
+                        case "finished":
+                        case "stalled":
+                        case "voted":
+                        case "emq-wl":
+                            label.Kind = LabelKind.Include;
+                            break;
+                        case "emq-bl":
+                            label.Kind = LabelKind.Exclude;
+                            break;
+                    }
+                }
+
+                playerVndbInfo.Labels = labels;
+                vns = await VndbMethods.GrabPlayerVNsFromVndb(playerVndbInfo);
+            }
+
+            if (vns is not null)
+            {
+                LoginProgressDisplay.Add("Grabbed VNs from VNDB.");
+                StateHasChanged();
+            }
+
             LoginProgressDisplay.Add($"Creating session...");
             StateHasChanged();
             HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/CreateSession",
                 new ReqCreateSession(
                     loginModel.Username,
                     loginModel.Password,
-                    new PlayerVndbInfo() { VndbId = loginModel.VndbId, VndbApiToken = loginModel.VndbApiToken }));
+                    new PlayerVndbInfo() { VndbId = loginModel.VndbId, Labels = vns }));
 
             if (res.IsSuccessStatusCode)
             {
@@ -125,13 +174,8 @@ public partial class Index
                     StateHasChanged();
 
                     ClientState.Session = resCreateSession.Session;
+                    ClientState.Session.VndbInfo.VndbApiToken = loginModel.VndbApiToken;
                     await _clientUtils.SaveSessionToLocalStorage();
-
-                    if (ClientState.Session.VndbInfo.Labels is not null)
-                    {
-                        LoginProgressDisplay.Add("Grabbed VNs from VNDB.");
-                        StateHasChanged();
-                    }
 
                     LoginProgressDisplay.Add($"Initializing websocket connection...");
                     StateHasChanged();

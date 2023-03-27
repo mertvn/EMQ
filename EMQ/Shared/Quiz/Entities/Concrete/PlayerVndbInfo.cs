@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Juliet.Model.VNDBObject;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -9,6 +10,7 @@ public class PlayerVndbInfo
 {
     public string? VndbId { get; set; }
 
+    [JsonIgnore]
     public string? VndbApiToken { get; set; }
 
     public List<Label>? Labels { get; set; }

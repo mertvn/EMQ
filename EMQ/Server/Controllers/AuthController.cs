@@ -9,9 +9,6 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
-using EMQ.Shared.VNDB.Business;
-using Juliet.Model.VNDBObject;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -41,53 +38,13 @@ public class AuthController : ControllerBase
             playerId = new Random().Next();
         } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 
-        List<Label>? vns = null;
-        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
-        {
-            var labels = new List<Label>();
-            VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(req.VndbInfo);
-
-            foreach (VNDBLabel vndbLabel in vndbLabels)
-            {
-                labels.Add(Label.FromVndbLabel(vndbLabel));
-            }
-
-            // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
-            foreach (Label label in labels)
-            {
-                switch (label.Name.ToLowerInvariant())
-                {
-                    case "playing":
-                    case "finished":
-                    case "stalled":
-                    case "voted":
-                    case "emq-wl":
-                        label.Kind = LabelKind.Include;
-                        break;
-                    case "emq-bl":
-                        label.Kind = LabelKind.Exclude;
-                        break;
-                }
-            }
-
-            vns = await VndbMethods.GrabPlayerVNsFromVndb(
-                new PlayerVndbInfo()
-                {
-                    VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, Labels = labels,
-                }
-            );
-        }
-
         var player = new Player(playerId, req.Username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
 
         // todo: invalidate previous session with the same playerId if it exists
         string token = Guid.NewGuid().ToString();
 
         var session = new Session(player, token);
-        session.VndbInfo = new PlayerVndbInfo()
-        {
-            VndbId = req.VndbInfo.VndbId, VndbApiToken = req.VndbInfo.VndbApiToken, Labels = vns
-        };
+        session.VndbInfo = new PlayerVndbInfo() { VndbId = req.VndbInfo.VndbId, Labels = req.VndbInfo.Labels };
 
         ServerState.Sessions.Add(session);
 
@@ -156,37 +113,19 @@ public class AuthController : ControllerBase
         var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken); // todo check session
         if (session.VndbInfo.Labels != null)
         {
-            var label = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
-            if (label == null)
+            var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
+
+            Console.WriteLine(
+                $"{session.VndbInfo.VndbId}: {existingLabel?.Id} ({existingLabel?.Name}), {existingLabel?.Kind} => {req.Label.Kind}");
+
+            if (existingLabel != null)
             {
-                label = req.Label;
-                session.VndbInfo.Labels.Add(label);
+                session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
             }
 
-            Console.WriteLine($"{session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " + req.Label.Kind);
-            label.Kind = req.Label.Kind;
+            session.VndbInfo.Labels.Add(req.Label);
 
-            var newVns = new Dictionary<string, int>();
-            switch (req.Label.Kind)
-            {
-                case LabelKind.Maybe:
-                    break;
-                case LabelKind.Include:
-                case LabelKind.Exclude:
-                    var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
-                    {
-                        VndbId = session.VndbInfo.VndbId,
-                        VndbApiToken = session.VndbInfo.VndbApiToken,
-                        Labels = new List<Label>() { label },
-                    });
-                    newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            label.VNs = newVns;
-            return label;
+            return req.Label;
         }
         else
         {
