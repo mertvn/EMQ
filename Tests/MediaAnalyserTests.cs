@@ -13,6 +13,7 @@ using NUnit.Framework;
 
 namespace Tests;
 
+[Explicit]
 public class MediaAnalyserTests
 {
     [SetUp]

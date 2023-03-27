@@ -19,7 +19,7 @@ public static class Conv
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-        var dir = "L:\\olil355 - Copy\\FolderH";
+        var dir = "L:\\olil355 - Copy\\FolderA";
         // var dir = "L:\\FolderI";
         var filePaths = Directory.GetFiles(dir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
 
@@ -79,30 +79,27 @@ public static class Conv
             if (result.Detected == null)
             {
                 Console.WriteLine("!!! DETECTED IS NULL !!!");
-                // todo
-                continue;
+                result = new DetectionResult(new DetectionDetail("GB18030", 0));
             }
-            else
+
+            if (result.Detected.Confidence < 0.5)
             {
-                if (result.Detected.Confidence < 0.5)
+                Console.WriteLine("!!! LOW CONFIDENCE !!!");
+                result.Detected.Encoding = Encoding.GetEncoding("GB18030");
+            }
+
+            if (result.Detected.Encoding.EncodingName != Encoding.UTF8.EncodingName || !result.Detected.HasBOM)
+            {
+                Console.WriteLine($"Converting from {result.Detected.Encoding.EncodingName} to UTF8");
+                // var outputPath = $"L:\\!cue\\{Path.GetFileName(filePath)}";
+
+                if (!File.Exists($"{filePath}.bak"))
                 {
-                    Console.WriteLine("!!! LOW CONFIDENCE !!!");
-                    result.Detected.Encoding = Encoding.GetEncoding("GB18030");
+                    File.Copy(filePath, $"{filePath}.bak");
                 }
 
-                if (result.Detected.Encoding.EncodingName != Encoding.UTF8.EncodingName || !result.Detected.HasBOM)
-                {
-                    Console.WriteLine($"Converting from {result.Detected.Encoding.EncodingName} to UTF8");
-                    // var outputPath = $"L:\\!cue\\{Path.GetFileName(filePath)}";
-
-                    if (!File.Exists($"{filePath}.bak"))
-                    {
-                        File.Copy(filePath, $"{filePath}.bak");
-                    }
-
-                    var file = await File.ReadAllTextAsync(filePath, result.Detected.Encoding);
-                    await File.WriteAllTextAsync(filePath, file, new UTF8Encoding(true));
-                }
+                var file = await File.ReadAllTextAsync(filePath, result.Detected.Encoding);
+                await File.WriteAllTextAsync(filePath, file, new UTF8Encoding(true));
             }
         }
     }
@@ -112,7 +109,7 @@ public static class Conv
         var fileRegex = new Regex("FILE \"(.+)\" WAVE", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         var dict = new ConcurrentDictionary<string, string>(); // todo string, info class
 
-        string inputDir = "L:\\olil355 - Copy\\FolderH";
+        string inputDir = "L:\\olil355 - Copy\\FolderA";
         var filePaths = Directory.GetFiles(inputDir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
         await Parallel.ForEachAsync(filePaths,
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 }, async (cueFilePath, _) =>
@@ -229,6 +226,7 @@ public static class Conv
 
                     if (!File.Exists(outputPath))
                     {
+                        Console.WriteLine($"converting to {outputPath}");
                         await FFMpegArguments
                             .FromFileInput(containerFilePath)
                             .OutputToFile(outputPath, false, options => options
@@ -242,6 +240,7 @@ public static class Conv
                                 .WithCustomArgument($"-metadata album=\"{album}\"")
                                 .WithCustomArgument($"-metadata track=\"{trackNumber}\"")
                                 .UsingThreads(1)
+                                .WithCustomArgument("-nostdin")
                             ).ProcessAsynchronously();
                     }
                 }
