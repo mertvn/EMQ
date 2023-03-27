@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.VNDBObject;
@@ -103,7 +106,7 @@ public partial class PlayerPreferencesComponent
         }
         else
         {
-            // todo
+            // todo warn user & restore old label state
         }
     }
 
@@ -113,9 +116,8 @@ public partial class PlayerPreferencesComponent
         {
             if (ClientState.Session.VndbInfo.Labels != null)
             {
-
-                Console.WriteLine($"{ClientState.Session.VndbInfo.VndbId}: " + label.Id + ", " + label.Kind + " => " +
-                                  newLabelKind);
+                Console.WriteLine(
+                    $"{ClientState.Session.VndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
                 label.Kind = newLabelKind;
 
                 var newVns = new Dictionary<string, int>();
@@ -150,6 +152,58 @@ public partial class PlayerPreferencesComponent
         {
             // todo
             throw new Exception();
+        }
+    }
+
+    private async Task SetVndbInfo(PlayerVndbInfo vndbInfo)
+    {
+        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId)
+            // && new Regex(RegexPatterns.VndbIdRegex).IsMatch(vndbInfo.VndbId)
+           )
+        {
+            Labels.Clear();
+            vndbInfo.Labels = new List<Label>();
+            await FetchLabels(vndbInfo);
+            vndbInfo.Labels =
+                JsonSerializer.Deserialize<List<Label>>(
+                    JsonSerializer.Serialize(Labels))!; // need a deep copy
+
+            // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
+            foreach (Label label in vndbInfo.Labels)
+            {
+                switch (label.Name.ToLowerInvariant())
+                {
+                    case "playing":
+                    case "finished":
+                    case "stalled":
+                    case "voted":
+                    case "emq-wl":
+                        label.Kind = LabelKind.Include;
+                        break;
+                    case "emq-bl":
+                        label.Kind = LabelKind.Exclude;
+                        break;
+                }
+            }
+
+            var vns = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+            vndbInfo.Labels = vns;
+
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
+                new ReqSetVndbInfo(ClientState.Session!.Token, vndbInfo));
+
+            if (res.IsSuccessStatusCode)
+            {
+                ClientState.Session.VndbInfo = vndbInfo;
+                await FetchLabels(vndbInfo);
+            }
+            else
+            {
+                // todo warn user
+                Labels.Clear();
+            }
+
+            StateHasChanged();
         }
     }
 }

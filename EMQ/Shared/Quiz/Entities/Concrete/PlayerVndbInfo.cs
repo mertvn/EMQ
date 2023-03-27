@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
+using EMQ.Shared.Core;
 using Juliet.Model.VNDBObject;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class PlayerVndbInfo
 {
+    [RegularExpression(RegexPatterns.VndbIdRegex,
+        ErrorMessage = "Invalid VNDB Id: make sure it looks like u1234567")]
     public string? VndbId { get; set; }
 
     [JsonIgnore]

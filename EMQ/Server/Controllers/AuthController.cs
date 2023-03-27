@@ -114,9 +114,8 @@ public class AuthController : ControllerBase
         if (session.VndbInfo.Labels != null)
         {
             var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
-
             Console.WriteLine(
-                $"{session.VndbInfo.VndbId}: {existingLabel?.Id} ({existingLabel?.Name}), {existingLabel?.Kind} => {req.Label.Kind}");
+                $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
 
             if (existingLabel != null)
             {
@@ -124,7 +123,6 @@ public class AuthController : ControllerBase
             }
 
             session.VndbInfo.Labels.Add(req.Label);
-
             return req.Label;
         }
         else
@@ -146,5 +144,29 @@ public class AuthController : ControllerBase
 
         session.Player.Preferences = req.PlayerPreferences;
         return session.Player.Preferences;
+    }
+
+    [HttpPost]
+    [Route("SetVndbInfo")]
+    public async Task<ActionResult> SetVndbInfo([FromBody] ReqSetVndbInfo req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session != null)
+        {
+            if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
+            {
+                _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
+                session.VndbInfo = req.VndbInfo;
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+        else
+        {
+            return Unauthorized();
+        }
     }
 }

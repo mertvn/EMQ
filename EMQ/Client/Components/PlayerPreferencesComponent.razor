@@ -66,6 +66,21 @@
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabVNDB">
                                     @* todo let people access this tab without VndbInfo *@
+
+                                    <InputText id="VndbId" type="text" @bind-Value="@ClientState.Session.VndbInfo.VndbId" style="margin: 5px"/>
+                                    <label for="VndbId">VNDB Id</label>
+                                    <br/>
+                                    <br/>
+                                    <InputText id="VndbApiToken" type="text" @bind-Value="@ClientState.Session.VndbInfo.VndbApiToken" style="margin: 5px"/>
+                                    <label for="VndbApiToken">VNDB API Token</label>
+                                    <br/>
+
+                                    <button type="button" class="btn btn-primary" @onclick="@(() => SetVndbInfo(ClientState.Session.VndbInfo))" style="margin: 5px">
+                                        Set VNDB info
+                                    </button>
+                                    <br/>
+
+                                    <h5> Labels</h5>
                                     @if (ClientState.Session.VndbInfo.Labels is not null)
                                     {
                                         <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>

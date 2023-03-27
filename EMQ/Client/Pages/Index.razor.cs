@@ -110,9 +110,6 @@ public partial class Index
                 }
             }
 
-            LoginProgressDisplay.Add("Grabbing VNs from VNDB...");
-            StateHasChanged();
-
             List<Label>? vns = null;
             var playerVndbInfo = new PlayerVndbInfo()
             {
@@ -121,6 +118,9 @@ public partial class Index
 
             if (!string.IsNullOrWhiteSpace(playerVndbInfo.VndbId))
             {
+                LoginProgressDisplay.Add("Grabbing VNs from VNDB...");
+                StateHasChanged();
+
                 var labels = new List<Label>();
                 VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(playerVndbInfo);
 
