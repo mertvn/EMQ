@@ -9,13 +9,13 @@ public static class GenericImporter
 {
     public static async Task ImportGeneric()
     {
-        string dir = "L:\\olil355 - Copy\\FolderA";
+        string dir = "L:\\olil355 - Copy";
         // dir = "M:\\a";
         var regex = new Regex("\\. ()(.*) - \\((.*)\\).mp3", RegexOptions.Compiled);
         string extension = "*";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, false, false);
-        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_F_1", false);
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_all_1", false);
     }
 
     // public static async Task ImportGeneric()

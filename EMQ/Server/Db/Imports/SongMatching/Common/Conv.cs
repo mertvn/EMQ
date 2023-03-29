@@ -19,7 +19,7 @@ public static class Conv
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-        var dir = "L:\\olil355 - Copy\\FolderA";
+        var dir = "L:\\olil355 - Copy";
         // var dir = "L:\\FolderI";
         var filePaths = Directory.GetFiles(dir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
 
@@ -109,7 +109,7 @@ public static class Conv
         var fileRegex = new Regex("FILE \"(.+)\" WAVE", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         var dict = new ConcurrentDictionary<string, string>(); // todo string, info class
 
-        string inputDir = "L:\\olil355 - Copy\\FolderA";
+        string inputDir = "L:\\olil355 - Copy";
         var filePaths = Directory.GetFiles(inputDir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
         await Parallel.ForEachAsync(filePaths,
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 }, async (cueFilePath, _) =>
@@ -130,7 +130,16 @@ public static class Conv
                 //     Console.WriteLine("Single cue file");
                 // }
 
-                var cueSheet = new CueSheet(cueFilePath, Encoding.UTF8);
+                CueSheet cueSheet;
+                try
+                {
+                    cueSheet = new CueSheet(cueFilePath, Encoding.UTF8);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    return;
+                }
 
                 var cue = (await File.ReadAllLinesAsync(cueFilePath)).ToList();
                 var fileLine = cue.FindAll(x => x.StartsWith("FILE", StringComparison.OrdinalIgnoreCase));
@@ -160,11 +169,13 @@ public static class Conv
                     return;
                 }
 
+                bool isInvalidFormat = false;
                 // apparently ffmpeg can't parse some .tak files
                 if (Path.GetExtension(containerFilePath) == ".tak")
                 {
                     Console.WriteLine("invalid containerFile format");
-                    return;
+                    isInvalidFormat = true;
+                    // return;
                 }
 
                 if (!dict.TryAdd(cueFilePath, containerFilePath))
@@ -227,21 +238,36 @@ public static class Conv
                     if (!File.Exists(outputPath))
                     {
                         Console.WriteLine($"converting to {outputPath}");
-                        await FFMpegArguments
-                            .FromFileInput(containerFilePath)
-                            .OutputToFile(outputPath, false, options => options
-                                .Seek(start)
-                                .WithDuration(duration)
-                                .WithAudioCodec(AudioCodec.LibMp3Lame)
-                                .WithAudioBitrate(192)
-                                .WithTagVersion()
-                                .WithCustomArgument($"-metadata artist=\"{artist}\"")
-                                .WithCustomArgument($"-metadata title=\"{title}\"")
-                                .WithCustomArgument($"-metadata album=\"{album}\"")
-                                .WithCustomArgument($"-metadata track=\"{trackNumber}\"")
-                                .UsingThreads(1)
-                                .WithCustomArgument("-nostdin")
-                            ).ProcessAsynchronously();
+
+                        try
+                        {
+                            await FFMpegArguments
+                                .FromFileInput(containerFilePath)
+                                .OutputToFile(outputPath, false, options => options
+                                    .Seek(start)
+                                    .WithDuration(duration)
+                                    .WithAudioCodec(AudioCodec.LibMp3Lame)
+                                    .WithAudioBitrate(192)
+                                    .WithTagVersion()
+                                    .WithCustomArgument($"-metadata artist=\"{artist}\"")
+                                    .WithCustomArgument($"-metadata title=\"{title}\"")
+                                    .WithCustomArgument($"-metadata album=\"{album}\"")
+                                    .WithCustomArgument($"-metadata track=\"{trackNumber}\"")
+                                    .UsingThreads(1)
+                                    .WithCustomArgument("-nostdin")
+                                ).ProcessAsynchronously();
+                        }
+                        catch (Exception)
+                        {
+                            if (isInvalidFormat)
+                            {
+                                return;
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                     }
                 }
             });
