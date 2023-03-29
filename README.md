@@ -3,8 +3,7 @@
 No, all-ages VNs aren't excluded. Eroge = Visual Novel. Name was chosen as such for different reasons (mainly browser
 autocomplete). Inspired by [AMQ](https://animemusicquiz.com/).
 
-Currently running on a free service at https://emq.up.railway.app, which only provides 500 execution hours per month, so it will be down after the 21st of every month.
-
+Currently running at https://emq.up.railway.app.
 ## Steps to import data
 
 1. Create a new postgres database, set the DATABASE_URL environment variable to
