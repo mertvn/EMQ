@@ -150,7 +150,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(817, 1600).ToArray();
+        var rqIds = Enumerable.Range(832, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -436,13 +436,13 @@ public class EntryPoints
     }
 
     [Test, Explicit]
-    public async Task P1()
+    public async Task Conv1_FixCUEEncoding()
     {
         await Conv.FixCUEEncoding();
     }
 
     [Test, Explicit]
-    public async Task P2()
+    public async Task Conv2_SplitTracks()
     {
         await Conv.SplitTracks();
     }
