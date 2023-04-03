@@ -143,7 +143,10 @@
                                     Video link:
                                     @if (hasVideo)
                                     {
-                                        <span style="color: green">✓</span>
+                                        var videoLink = song.Links.First(x => x.IsVideo);
+                                        <a href="@videoLink.Url" target="_blank">
+                                            <span style="color: green">✓</span>
+                                        </a>
                                     }
                                     else
                                     {
@@ -154,7 +157,10 @@
                                     Sound link:
                                     @if (hasSound)
                                     {
-                                        <span style="color: green">✓</span>
+                                        var soundLink = song.Links.First(x => !x.IsVideo);
+                                        <a href="@soundLink.Url" target="_blank">
+                                            <span style="color: green">✓</span>
+                                        </a>
                                     }
                                     else
                                     {
