@@ -1,5 +1,6 @@
-﻿@* https://stackoverflow.com/a/58544684 *@
+﻿@* adapted from https://stackoverflow.com/a/58544684 *@
 <div id="rc-@ID">
+    @* ReSharper disable once HeapView.BoxingAllocation *@
     @(new MarkupString($@"<style>
         #rc-{ID} {{
             position: relative;
@@ -33,7 +34,7 @@
         #rc-{ID} > input[name='high-range'] {{
             position: relative;
             --track-background: linear-gradient(to right, transparent {100 * (ValueLow - MinValue) / (MaxValue - MinValue) + 1}%, var(--range-color) 0, var(--range-color) {100 * (ValueHigh - MinValue) / (MaxValue - MinValue) - 1}%, transparent 0 ) no-repeat 0 45% / 100% 40%;
-            clip-path: polygon({50 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 0, 100% 0, 100% 100%, {50 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 100%);
+            clip-path: polygon({30 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 0, 100% 0, 100% 100%, {30 * (ValueLow + ValueHigh) / (MaxValue - MinValue) + 1}% 100%);
         }}
 
         #rc-{ID} > input[type='range']::-webkit-slider-runnable-track {{
