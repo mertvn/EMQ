@@ -1,4 +1,5 @@
-﻿<Blazorise.Modal @ref="_modalRef">
+﻿@* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
+<Blazorise.Modal @ref="_modalRef" style="z-index: 400000">
     <Blazorise.ModalContent Centered="true" Scrollable="true" Size="Size">
         @if (!string.IsNullOrWhiteSpace(Title))
         {

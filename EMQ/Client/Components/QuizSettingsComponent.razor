@@ -7,8 +7,8 @@
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
 
-@* todo z index for all modals *@
-<Blazorise.Modal @ref="_modalRef">
+@* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
+<Blazorise.Modal @ref="_modalRef" style="z-index: 400000">
 <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
 <Blazorise.ModalHeader>
     <Blazorise.ModalTitle>Room Settings</Blazorise.ModalTitle>
