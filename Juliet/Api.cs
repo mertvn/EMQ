@@ -137,15 +137,11 @@ public static class Api
     {
         var final = new List<ResPOST<TReturn>>();
 
-        bool usePage = true; // todo option?
-        string vndbId = "v1"; // pagination by id is faster for certain types of requests
         int page = 0;
         bool more;
         do
         {
             page += 1;
-
-            string op = vndbId == "v1" ? ">=" : ">"; // >= causes duplicate entries, but v0 isn't an accepted vndbid
             var dict = new Dictionary<string, object>()
             {
                 { "fields", string.Join(", ", param.Fields.Select(x => ((Enum)(object)x!).GetDescription())) },
@@ -168,30 +164,13 @@ public static class Api
             }
             else
             {
-                if (usePage)
-                {
-                    dict.Add("page", page);
-                }
+                dict.Add("page", page);
 
                 if (param.Filters != null)
                 {
                     filters = Query.ToJsonNormalized(param.Filters, true);
 
-                    if (usePage)
-                    {
-                        dict.Add("filters", filters);
-                    }
-                    else
-                    {
-                        dict.Add("filters", "[\"and\"," + filters + $",[\"id\",\"{op}\",\"{vndbId}\"]]");
-                    }
-                }
-                else
-                {
-                    if (!usePage)
-                    {
-                        dict.Add("filters", $"[\"id\",\"{op}\",\"{vndbId}\"]");
-                    }
+                    dict.Add("filters", filters);
                 }
             }
 
@@ -219,12 +198,6 @@ public static class Api
 
                 final.Add(res);
                 more = res.More;
-
-                if (!usePage && res.More)
-                {
-                    // todo
-                    vndbId = (string)((dynamic)res.Results.Last()!).Id;
-                }
             }
             else
             {
