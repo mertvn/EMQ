@@ -62,12 +62,7 @@ public class LibraryController : ControllerBase
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
 
             // using a static HttpClient times out on railway (???????)
-            using var client = new HttpClient()
-            {
-                Timeout = TimeSpan.FromSeconds(300),
-                DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("c", "3") } }
-            };
-            bool dlSuccess = await client.DownloadFile(filePath, new Uri(req.SongLink.Url));
+            bool dlSuccess = await new HttpClient().DownloadFile(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
