@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
@@ -61,7 +62,11 @@ public class LibraryController : ControllerBase
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
 
             // using a static HttpClient times out on railway (???????)
-            using var client = new HttpClient();
+            using var client = new HttpClient()
+            {
+                Timeout = TimeSpan.FromSeconds(300),
+                DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("c", "3") } }
+            };
             bool dlSuccess = await client.DownloadFile(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
@@ -112,6 +117,6 @@ public class LibraryController : ControllerBase
             songs.AddRange(song);
         }
 
-        return songs.DistinctBy(x=> x.Id);
+        return songs.DistinctBy(x => x.Id);
     }
 }
