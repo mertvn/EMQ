@@ -132,6 +132,16 @@ static IServiceProvider CreateServices()
 
 async Task Init()
 {
+    AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+    {
+        Console.WriteLine($"UnhandledException: {(Exception)args.ExceptionObject}");
+    };
+
+    TaskScheduler.UnobservedTaskException += (_, args) =>
+    {
+        Console.WriteLine($"UnobservedTaskException: {args.Exception}");
+    };
+
     string wwwrootFolder = app.Environment.IsDevelopment() ? "../Client/wwwroot" : "wwwroot";
 
     // test ffMPEG install
