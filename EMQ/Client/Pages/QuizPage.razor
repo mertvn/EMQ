@@ -175,7 +175,7 @@
         <br/>
     </div>
 
-    <div id="playersDiv" style="display:flex; justify-content:center; align-items:flex-end;">
+    <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
         @if (Room?.Players.Any() ?? false)
         {
             @foreach (var player in Room.Players)

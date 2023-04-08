@@ -13,6 +13,7 @@ using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.SongMatching;
 using EMQ.Server.Db.Imports.SongMatching.Common;
 using EMQ.Server.Db.Imports.VNDB;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
@@ -29,7 +30,7 @@ namespace Tests;
 public class EntryPoints
 {
     [Test, Explicit]
-    public async Task a_Integration_Full()
+    public async Task a_Integration_100RoomsWith1Player()
     {
         ServerUtils.Client.BaseAddress = new Uri("https://localhost:7021/");
 
@@ -51,6 +52,41 @@ public class EntryPoints
             HttpResponseMessage _ = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
                 new ReqStartQuiz(session.Token, roomId));
         }
+    }
+
+    [Test, Explicit]
+    public async Task a_Integration_1RoomWith10Players()
+    {
+        ServerUtils.Client.BaseAddress = new Uri("https://localhost:7021/");
+
+        int numPlayers = 10;
+        int roomId = -1;
+        Session? p0Session = null;
+        for (int currentPlayer = 0; currentPlayer < numPlayers; currentPlayer++)
+        {
+            HttpResponseMessage res = await ServerUtils.Client.PostAsJsonAsync("Auth/CreateSession",
+                new ReqCreateSession(
+                    $"p{currentPlayer}",
+                    "",
+                    new PlayerVndbInfo() { VndbId = "", VndbApiToken = "" }));
+
+            ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
+            var session = resCreateSession!.Session;
+
+            if (currentPlayer == 0)
+            {
+                ReqCreateRoom req = new(session.Token, $"r0", "", new QuizSettings() { NumSongs = 40 });
+                HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
+                roomId = await res1.Content.ReadFromJsonAsync<int>();
+                p0Session = session;
+            }
+
+            HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/JoinRoom",
+                new ReqJoinRoom(roomId, "", session.Player.Id));
+        }
+
+        HttpResponseMessage _ = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
+            new ReqStartQuiz(p0Session!.Token, roomId));
     }
 
     [Test, Explicit]
