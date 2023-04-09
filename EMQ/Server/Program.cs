@@ -109,7 +109,7 @@ app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
-bool cacheSongs = !app.Environment.IsDevelopment();
+bool cacheSongs = false && !app.Environment.IsDevelopment();
 
 static IServiceProvider CreateServices()
 {
