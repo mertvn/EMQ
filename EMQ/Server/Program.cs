@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server;
@@ -190,9 +191,13 @@ async Task Init()
             stopWatch.Stop();
             double ms = (stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency;
             Console.WriteLine($"Cached songs in {Math.Round(ms / 1000, 2)}s");
-
-            GC.Collect(int.MaxValue, GCCollectionMode.Forced, true);
         }
+
+        // yes, we really need to do this twice
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
     }
 }
 
