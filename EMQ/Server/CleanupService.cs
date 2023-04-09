@@ -10,7 +10,7 @@ namespace EMQ.Server;
 
 public sealed class CleanupService : IHostedService, IDisposable
 {
-    private int _executionCount;
+    // private int _executionCount;
     private readonly ILogger<CleanupService> _logger;
     private Timer? _timer;
 
@@ -21,14 +21,14 @@ public sealed class CleanupService : IHostedService, IDisposable
 
     public Task StartAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("CleanupService is running");
+        // _logger.LogInformation("CleanupService is running");
         _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(60));
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("CleanupService is stopping");
+        // _logger.LogInformation("CleanupService is stopping");
         _timer?.Change(Timeout.Infinite, 0);
         return Task.CompletedTask;
     }
@@ -40,9 +40,10 @@ public sealed class CleanupService : IHostedService, IDisposable
 
     private void DoWork(object? state)
     {
-        int count = Interlocked.Increment(ref _executionCount);
-        _logger.LogInformation("CleanupService is working. Count: {Count}", count);
+        // int count = Interlocked.Increment(ref _executionCount);
+        // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
 
+        Console.WriteLine("------------------------------------------");
         Console.WriteLine(
             $"Rooms count: {ServerState.Rooms.Count}");
         Console.WriteLine(
