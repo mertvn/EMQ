@@ -386,4 +386,17 @@ public class QuizController : ControllerBase
 
         return Ok();
     }
+
+    [HttpGet]
+    [Route("GetServerStats")]
+    public ServerStats GetServerStats()
+    {
+        return new ServerStats()
+        {
+            RoomsCount = ServerState.Rooms.Count,
+            QuizManagersCount = ServerState.QuizManagers.Count,
+            ActiveSessionsCount = ServerState.Sessions.Count(x => x.HasActiveConnection),
+            SessionsCount = ServerState.Sessions.Count,
+        };
+    }
 }

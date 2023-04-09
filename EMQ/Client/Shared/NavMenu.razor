@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">EMQ</a>
         <button type="button" title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -31,6 +34,13 @@
         </div>
     </nav>
 
+    <div>
+        <ul>
+            <li>Rooms: @ClientState.ServerStats.RoomsCount</li>
+            <li>QMs: @ClientState.ServerStats.QuizManagersCount</li>
+            <li>Sessions: @ClientState.ServerStats.ActiveSessionsCount/@ClientState.ServerStats.SessionsCount</li>
+        </ul>
+    </div>
     <div style="position: absolute; bottom: 5px; left: 5px;">
         <a href="https://github.com/mertvn/EMQ">Source code</a>
     </div>
@@ -44,6 +54,19 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Quiz/GetServerStats");
+            if (res is not null)
+            {
+                ClientState.ServerStats = res;
+            }
+            StateHasChanged();
+        }
     }
 
 }

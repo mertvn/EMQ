@@ -44,13 +44,13 @@ public sealed class CleanupService : IHostedService, IDisposable
         // int count = Interlocked.Increment(ref _executionCount);
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
 
-        Console.WriteLine("------------------------------------------");
-        Console.WriteLine(
-            $"Rooms: {ServerState.Rooms.Count}");
-        Console.WriteLine(
-            $"QuizManagers: {ServerState.QuizManagers.Count}");
-        Console.WriteLine(
-            $"Sessions: {ServerState.Sessions.Count(x => x.HasActiveConnection)}/{ServerState.Sessions.Count}");
+        // Console.WriteLine("------------------------------------------");
+        // Console.WriteLine(
+        //     $"Rooms: {ServerState.Rooms.Count}");
+        // Console.WriteLine(
+        //     $"QuizManagers: {ServerState.QuizManagers.Count}");
+        // Console.WriteLine(
+        //     $"Sessions: {ServerState.Sessions.Count(x => x.HasActiveConnection)}/{ServerState.Sessions.Count}");
 
         foreach (Room room in ServerState.Rooms.ToList())
         {
