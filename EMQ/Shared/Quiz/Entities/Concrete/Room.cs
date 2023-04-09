@@ -8,7 +8,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 // Anything that's in this class that's not JsonIgnore'd will be visible to ALL players in a room,
 // so be careful not to leak player-specific information.
 // TODO: Other players' guesses are leaked currently (but hidden with CSS).
-public class Room
+public sealed class Room : IDisposable
 {
     public Room(int id, string name, Player owner)
     {
@@ -40,4 +40,9 @@ public class Room
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
+
+    public void Dispose()
+    {
+        Quiz?.Dispose();
+    }
 }

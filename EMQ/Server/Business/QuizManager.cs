@@ -92,7 +92,6 @@ public class QuizManager
         Quiz.Timer.Elapsed -= OnTimedEvent;
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizCanceled");
-        // Quiz.Room.Quiz = null; // todo
     }
 
     private async Task EnterGuessingPhase()
@@ -103,11 +102,15 @@ public class QuizManager
         }
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        int timeoutMs = Quiz.Room.QuizSettings.ResultsMs * 6;
+        int timeoutMs = Quiz.Room.QuizSettings.ResultsMs * 6; // todo make this a quiz setting
         // Console.WriteLine("ibc " + isBufferedCount);
 
+        int activePlayers = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .Count(x => x.HasActiveConnection);
+        Quiz.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
+
         float waitNumber = (float)Math.Round(
-            Quiz.Room.Players.Count * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
+            activePlayers * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
             MidpointRounding.AwayFromZero);
 
         while (isBufferedCount < waitNumber &&
@@ -275,7 +278,6 @@ public class QuizManager
 
     public async Task EndQuiz()
     {
-        // todo other cleanup
         Quiz.Log("Ended");
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Timer.Stop();
@@ -283,7 +285,6 @@ public class QuizManager
         Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizEnded");
-        // Quiz.Room.Quiz = null; // todo
 
         Directory.CreateDirectory("QuizLog");
         await File.WriteAllTextAsync($"QuizLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
@@ -312,9 +313,8 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
-                // todo session shouldn't be null here after implementing the removal of logged out players from rooms
-                var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
-                if (session?.VndbInfo.Labels != null)
+                var session = ServerState.Sessions.Single(x => x.Player.Id == player.Id);
+                if (session.VndbInfo.Labels != null)
                 {
                     validSources.AddRange(Label.GetValidSourcesFromLabels(session.VndbInfo.Labels));
                 }

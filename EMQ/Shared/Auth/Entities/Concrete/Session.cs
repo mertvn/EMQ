@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace EMQ.Shared.Auth.Entities.Concrete;
 
-// todo: should be split into two: Persist and Session
 public class Session
 {
     public Session(Player player, string token)
@@ -22,9 +21,15 @@ public class Session
     public string? ConnectionId { get; set; }
 
     [JsonIgnore]
+    // Only available client-side.
     public HubConnection? hubConnection { get; set; }
 
     public PlayerVndbInfo VndbInfo { get; set; } = new();
 
     public DateTime CreatedAt { get; }
+
+    public DateTime LastHeartbeatTimestamp { get; set; }
+
+    public bool HasActiveConnection => (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(20);
+
 }

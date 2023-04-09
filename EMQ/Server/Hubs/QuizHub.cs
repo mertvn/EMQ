@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Hubs;
@@ -54,11 +56,18 @@ public class QuizHub : Hub
             }
 
             session.ConnectionId = Context.ConnectionId;
+            var heartbeat = Context.Features.Get<IConnectionHeartbeatFeature>();
+            heartbeat!.OnHeartbeat(OnHeartbeat, session);
         }
         else
         {
             Console.WriteLine($"Player session wasn't found for token {accessToken}");
         }
+    }
+
+    private static void OnHeartbeat(object obj)
+    {
+        ((Session)obj).LastHeartbeatTimestamp = DateTime.UtcNow;
     }
 
     // [Authorize]
@@ -204,7 +213,18 @@ public class QuizHub : Hub
                 room.Players.Remove(player);
                 room.AllPlayerConnectionIds.Remove(player.Id);
 
-                // todo check if there are any players left in the room
+                if (!room.Players.Any())
+                {
+                    ServerState.CleanupRoom(room);
+                    return;
+                }
+                else
+                {
+                    if (room.Owner.Id == player.Id)
+                    {
+                        room.Owner = room.Players.First();
+                    }
+                }
             }
             else
             {

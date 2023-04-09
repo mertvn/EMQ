@@ -74,6 +74,8 @@ builder.Services.AddResponseCompression(opts =>
 //             .AllowCredentials());
 // });
 
+builder.Services.AddHostedService<CleanupService>();
+
 var app = builder.Build();
 
 // app.UseCors();

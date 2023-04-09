@@ -7,7 +7,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class Quiz
+public sealed class Quiz : IDisposable
 {
     public Quiz(Room room, int id)
     {
@@ -52,6 +52,11 @@ public class Quiz
         {
             Room.Chat.Enqueue(new ChatMessage(message));
         }
+    }
+
+    public void Dispose()
+    {
+        Timer.Dispose();
     }
 }
 

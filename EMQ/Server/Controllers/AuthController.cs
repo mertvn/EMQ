@@ -91,11 +91,22 @@ public class AuthController : ControllerBase
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
         _logger.LogInformation("Removing session " + session?.Token);
-        if (session != null)
+        if (session == null)
         {
-            ServerState.Sessions.Remove(session);
+            return;
         }
-        // todo notify room?
+
+        var room = ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room != null)
+        {
+            room.Players.RemoveAll(x => x.Id == session.Player.Id);
+            if (!room.Players.Any())
+            {
+                ServerState.CleanupRoom(room);
+            }
+        }
+
+        ServerState.Sessions.Remove(session);
     }
 
     [HttpPost]

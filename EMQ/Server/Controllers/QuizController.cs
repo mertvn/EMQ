@@ -146,10 +146,6 @@ public class QuizController : ControllerBase
     [Route("GetRooms")]
     public IEnumerable<Room> GetRooms()
     {
-        // todo
-        // return ServerState.Rooms.Where(x => x.Quiz is null ||
-        //                                     x.Quiz?.QuizState.QuizStatus is QuizStatus.Starting or QuizStatus.Playing);
-
         return ServerState.Rooms;
     }
 
