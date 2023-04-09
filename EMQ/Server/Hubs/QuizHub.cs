@@ -210,7 +210,7 @@ public class QuizHub : Hub
                 // await quizManager.OnSendPlayerLeaving(session.Player.Id);
                 Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
                 var player = room.Players.Single(player => player.Id == session.Player.Id)!;
-                room.Players.Remove(player);
+                room.Players.RemoveAll(x => x.Id == player.Id);
                 room.AllPlayerConnectionIds.Remove(player.Id);
 
                 if (!room.Players.Any())

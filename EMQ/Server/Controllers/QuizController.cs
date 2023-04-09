@@ -198,6 +198,7 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
                 oldRoom.Players.RemoveAll(x => x.Id == player.Id);
+                oldRoom.AllPlayerConnectionIds.Remove(player.Id);
             }
 
             // hotjoins have to be handled differently

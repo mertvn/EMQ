@@ -100,6 +100,7 @@ public class AuthController : ControllerBase
         if (room != null)
         {
             room.Players.RemoveAll(x => x.Id == session.Player.Id);
+            room.AllPlayerConnectionIds.Remove(session.Player.Id);
             if (!room.Players.Any())
             {
                 ServerState.CleanupRoom(room);
