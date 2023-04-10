@@ -7,8 +7,6 @@
 @using Point = EMQ.Shared.Quiz.Entities.Concrete.Point
 @inject ClientUtils _clientUtils
 
-@* <h6>TreasureRoomComponent</h6> *@
-
 <div id="countdownDiv" style="font-size: xxx-large; color: black;">
     @((int)Math.Round(Countdown / 1000))
 </div>
@@ -16,7 +14,7 @@
 @* z-indexes: arrow > treasure > player *@
 <div id="treasureRoomMainDiv" tabindex="0" @ref="_treasureRoomMainDivRef"
      style="width: @(LootingConstants.TreasureRoomWidth)px; height: @(LootingConstants.TreasureRoomHeight)px;
-      background-color: gray; word-wrap: break-word; position: absolute; left: 50%; transform: translate(-50%, 0);"
+      background-color: gray; word-wrap: break-word; position: absolute; left: 50%;"
      @onkeydown="OnKeyDown" @onkeyup="OnKeyUp">
 
     @if (Room != null)
