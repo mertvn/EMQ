@@ -208,7 +208,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task BackupSongFilesUsingSongLite()
     {
-        const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
+        const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
         Directory.CreateDirectory(baseDownloadDir);
 
         const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";

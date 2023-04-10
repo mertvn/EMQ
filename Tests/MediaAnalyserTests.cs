@@ -24,7 +24,7 @@ public class MediaAnalyserTests
     [Test, Explicit]
     public async Task Test_AnalyseBackupFolder()
     {
-        const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
+        const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
 
         Dictionary<string, MediaAnalyserResult> results = new();
 
@@ -41,7 +41,7 @@ public class MediaAnalyserTests
     [Test, Explicit]
     public async Task Test_AnalyseAndUpdateDurationsOfDbSongs()
     {
-        const string baseDownloadDir = "C:\\emq\\emqsongsbackup";
+        const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
         string[] filePaths = Directory.GetFiles(baseDownloadDir);
 
         var dbSongs = await DbManager.GetRandomSongs(int.MaxValue, true);
