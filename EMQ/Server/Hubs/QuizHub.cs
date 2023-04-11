@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
@@ -210,12 +211,12 @@ public class QuizHub : Hub
                 // await quizManager.OnSendPlayerLeaving(session.Player.Id);
                 Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
                 var player = room.Players.Single(player => player.Id == session.Player.Id)!;
-                room.Players.RemoveAll(x => x.Id == player.Id);
-                room.AllPlayerConnectionIds.Remove(player.Id);
+                room.RemovePlayer(player);
+                room.AllPlayerConnectionIds.Remove(player.Id, out _);
 
                 if (!room.Players.Any())
                 {
-                    ServerState.CleanupRoom(room);
+                    ServerState.RemoveRoom(room, "SendPlayerLeaving");
                     return;
                 }
                 else

@@ -16,9 +16,11 @@ public sealed class Quiz : IDisposable
     }
 
     [JsonIgnore]
-    public List<QuizLog> QuizLog = new();
+    public List<QuizLog> QuizLog = new(); // todo move to room
 
     public const float TickRate = 17;
+
+    public bool IsDisposed;
 
     public int Id { get; }
 
@@ -36,7 +38,7 @@ public sealed class Quiz : IDisposable
     public List<Song> Songs { get; set; } = new();
 
     [JsonIgnore]
-    public Queue<Session> JoinQueue { get; set; } = new();
+    public Queue<Session> JoinQueue { get; set; } = new(); // todo implement spectating and remove/repurpose
 
     [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();
@@ -56,6 +58,8 @@ public sealed class Quiz : IDisposable
 
     public void Dispose()
     {
+        IsDisposed = true;
+        Timer.Stop();
         Timer.Dispose();
     }
 }

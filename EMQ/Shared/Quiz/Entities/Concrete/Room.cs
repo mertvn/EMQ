@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -17,6 +17,8 @@ public sealed class Room : IDisposable
         Owner = owner;
     }
 
+    private readonly object _lock = new();
+
     public int Id { get; }
 
     // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
@@ -30,12 +32,13 @@ public sealed class Room : IDisposable
 
     public Quiz? Quiz { get; set; }
 
-    public List<Player> Players { get; set; } = new();
+    // TODO: would be better if this was a ConcurrentDictionary
+    public ConcurrentQueue<Player> Players { get; set; } = new();
 
     public Player Owner { get; set; }
 
     [JsonIgnore]
-    public Dictionary<int, string> AllPlayerConnectionIds { get; set; } = new();
+    public ConcurrentDictionary<int, string> AllPlayerConnectionIds { get; set; } = new();
 
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 
@@ -44,5 +47,20 @@ public sealed class Room : IDisposable
     public void Dispose()
     {
         Quiz?.Dispose();
+    }
+
+    public void RemovePlayer(Player toRemove)
+    {
+        lock (_lock)
+        {
+            int oldPlayersCount = Players.Count;
+            Players = new ConcurrentQueue<Player>(Players.Where(x => x != toRemove));
+            int newPlayersCount = Players.Count;
+
+            if (oldPlayersCount <= newPlayersCount)
+            {
+                throw new Exception();
+            }
+        }
     }
 }

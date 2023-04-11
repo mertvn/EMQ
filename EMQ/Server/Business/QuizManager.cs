@@ -31,13 +31,16 @@ public class QuizManager
 
     private void SetTimer()
     {
-        Quiz.Timer.Stop();
-        Quiz.Timer.Elapsed -= OnTimedEvent;
+        if (!Quiz.IsDisposed)
+        {
+            Quiz.Timer.Stop();
+            Quiz.Timer.Elapsed -= OnTimedEvent;
 
-        Quiz.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
-        Quiz.Timer.Elapsed += OnTimedEvent;
-        Quiz.Timer.AutoReset = true;
-        Quiz.Timer.Start();
+            Quiz.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
+            Quiz.Timer.Elapsed += OnTimedEvent;
+            Quiz.Timer.AutoReset = true;
+            Quiz.Timer.Start();
+        }
     }
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
@@ -51,7 +54,10 @@ public class QuizManager
 
             if (Quiz.QuizState.RemainingMs <= 0)
             {
-                Quiz.Timer.Stop();
+                if (!Quiz.IsDisposed)
+                {
+                    Quiz.Timer.Stop();
+                }
 
                 switch (Quiz.QuizState.Phase)
                 {
@@ -80,7 +86,10 @@ public class QuizManager
                         throw new ArgumentOutOfRangeException();
                 }
 
-                Quiz.Timer.Start();
+                if (!Quiz.IsDisposed)
+                {
+                    Quiz.Timer.Start();
+                }
             }
         }
     }
@@ -88,8 +97,12 @@ public class QuizManager
     public async Task CancelQuiz()
     {
         Quiz.QuizState.QuizStatus = QuizStatus.Canceled;
-        Quiz.Timer.Stop();
-        Quiz.Timer.Elapsed -= OnTimedEvent;
+
+        if (!Quiz.IsDisposed)
+        {
+            Quiz.Timer.Stop();
+            Quiz.Timer.Elapsed -= OnTimedEvent;
+        }
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizCanceled");
     }
@@ -236,8 +249,8 @@ public class QuizManager
         while (Quiz.JoinQueue.Any())
         {
             var session = Quiz.JoinQueue.Dequeue();
-            Quiz.Room.Players.Add(session.Player);
-            Quiz.Room.AllPlayerConnectionIds.Add(session.Player.Id, session.ConnectionId!);
+            Quiz.Room.Players.Enqueue(session.Player);
+            Quiz.Room.AllPlayerConnectionIds.TryAdd(session.Player.Id, session.ConnectionId!);
         }
     }
 
@@ -280,8 +293,13 @@ public class QuizManager
     {
         Quiz.Log("Ended");
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
-        Quiz.Timer.Stop();
-        Quiz.Timer.Elapsed -= OnTimedEvent;
+
+        if (!Quiz.IsDisposed)
+        {
+            Quiz.Timer.Stop();
+            Quiz.Timer.Elapsed -= OnTimedEvent;
+        }
+
         Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
 
         await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizEnded");
@@ -463,7 +481,7 @@ public class QuizManager
     {
         if (Quiz.QuizState.Phase == QuizPhaseKind.Guess)
         {
-            var player = Quiz.Room.Players.Find(x => x.Id == playerId);
+            var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
             {
                 player.Guess = guess;

@@ -160,11 +160,11 @@ public class QuizController : ControllerBase
         }
 
         var owner = session.Player;
-        var room = new Room(new Random().Next(), req.Name, owner)
+        var room = new Room(Random.Shared.Next(), req.Name, owner)
         {
             Password = req.Password, QuizSettings = req.QuizSettings
         };
-        ServerState.Rooms.Add(room);
+        ServerState.Rooms.Enqueue(room);
         _logger.LogInformation("Created room {room.Id} {room.Name}", room.Id, room.Name);
 
         return room.Id;
@@ -197,8 +197,8 @@ public class QuizController : ControllerBase
             if (oldRoom is not null)
             {
                 _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
-                oldRoom.Players.RemoveAll(x => x.Id == player.Id);
-                oldRoom.AllPlayerConnectionIds.Remove(player.Id);
+                oldRoom.RemovePlayer(player);
+                oldRoom.AllPlayerConnectionIds.Remove(player.Id, out _);
             }
 
             // hotjoins have to be handled differently
@@ -222,7 +222,7 @@ public class QuizController : ControllerBase
             else if (room.Quiz is null || room.Quiz.QuizState.Phase == QuizPhaseKind.Results)
             {
                 _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
-                room.Players.Add(player);
+                room.Players.Enqueue(player);
                 // _logger.LogInformation("cnnid: " + session.ConnectionId!);
                 room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
 
@@ -264,16 +264,16 @@ public class QuizController : ControllerBase
         {
             if (room.Owner.Id == player.Id)
             {
-                var quiz = new Quiz(room, new Random().Next());
+                var quiz = new Quiz(room, Random.Shared.Next());
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);
-                ServerState.QuizManagers.Add(quizManager);
+                ServerState.QuizManagers.Enqueue(quizManager);
                 quiz.Log("Created");
 
                 if (await quizManager.PrimeQuiz())
                 {
                     quiz.Log("Primed");
-                    await quizManager.StartQuiz();
+                    await Task.Run(async () => { await quizManager.StartQuiz(); });
                 }
                 else
                 {

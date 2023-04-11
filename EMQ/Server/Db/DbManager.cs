@@ -736,7 +736,7 @@ public static class DbManager
     {
         // 1. Find all valid music ids
         var ret = new List<Song>();
-        var rng = new Random();
+        var rng = Random.Shared;
 
         List<(int, string)> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -965,7 +965,7 @@ public static class DbManager
 
         var ret = new List<Song>();
         var addedMselUrls = new List<string>();
-        var rng = new Random();
+        var rng = Random.Shared;
 
         List<(int, string)> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -1670,7 +1670,7 @@ order by year";
 
         var ret = new List<Song>();
         var addedMselUrls = new List<string>();
-        var rng = new Random();
+        var rng = Random.Shared;
         bool duplicates = true;
         int numSongs = int.MaxValue;
 

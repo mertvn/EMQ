@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ namespace EMQ.Server;
 
 public sealed class CleanupService : IHostedService, IDisposable
 {
-    // private int _executionCount;
     private readonly ILogger<CleanupService> _logger;
     private Timer? _timer;
 
@@ -41,18 +41,9 @@ public sealed class CleanupService : IHostedService, IDisposable
 
     private void DoWork(object? state)
     {
-        // int count = Interlocked.Increment(ref _executionCount);
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
 
-        // Console.WriteLine("------------------------------------------");
-        // Console.WriteLine(
-        //     $"Rooms: {ServerState.Rooms.Count}");
-        // Console.WriteLine(
-        //     $"QuizManagers: {ServerState.QuizManagers.Count}");
-        // Console.WriteLine(
-        //     $"Sessions: {ServerState.Sessions.Count(x => x.HasActiveConnection)}/{ServerState.Sessions.Count}");
-
-        foreach (Room room in ServerState.Rooms.ToList())
+        foreach (Room room in ServerState.Rooms)
         {
             var roomSessions = ServerState.Sessions.Where(x => room.Players.Any(y => y.Id == x.Player.Id)).ToList();
             var activeSessions = roomSessions
@@ -61,8 +52,8 @@ public sealed class CleanupService : IHostedService, IDisposable
                 //  && (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing) // not sure if we need this
                )
             {
-                ServerState.CleanupRoom(room);
-                return;
+                ServerState.RemoveRoom(room, "CleanupService");
+                continue;
             }
 
             if (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing)
@@ -72,8 +63,8 @@ public sealed class CleanupService : IHostedService, IDisposable
                 {
                     Console.WriteLine(
                         $"Cleaning up p{inactiveSession.Player.Id} {inactiveSession.Player.Username} from r{room.Id} {room.Name}");
-                    room.Players.RemoveAll(x => x.Id == inactiveSession.Player.Id);
-                    room.AllPlayerConnectionIds.Remove(inactiveSession.Player.Id);
+                    room.RemovePlayer(inactiveSession.Player);
+                    room.AllPlayerConnectionIds.Remove(inactiveSession.Player.Id, out _);
                 }
                 // todo make players spectators if they are connected but AFK
             }

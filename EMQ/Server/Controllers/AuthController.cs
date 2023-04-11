@@ -35,7 +35,7 @@ public class AuthController : ControllerBase
         int playerId;
         do
         {
-            playerId = new Random().Next();
+            playerId = Random.Shared.Next();
         } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 
         var player = new Player(playerId, req.Username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
         var session = new Session(player, token);
         session.VndbInfo = new PlayerVndbInfo() { VndbId = req.VndbInfo.VndbId, Labels = req.VndbInfo.Labels };
 
-        ServerState.Sessions.Add(session);
+        ServerState.Sessions.Enqueue(session);
 
         string? ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
         string? header = (Request.HttpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault() ??
@@ -99,15 +99,15 @@ public class AuthController : ControllerBase
         var room = ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room != null)
         {
-            room.Players.RemoveAll(x => x.Id == session.Player.Id);
-            room.AllPlayerConnectionIds.Remove(session.Player.Id);
+            room.RemovePlayer(session.Player);
+            room.AllPlayerConnectionIds.Remove(session.Player.Id, out _);
             if (!room.Players.Any())
             {
-                ServerState.CleanupRoom(room);
+                ServerState.RemoveRoom(room, "RemoveSession");
             }
         }
 
-        ServerState.Sessions.Remove(session);
+        ServerState.RemoveSession(session, "RemoveSession");
     }
 
     [HttpPost]
