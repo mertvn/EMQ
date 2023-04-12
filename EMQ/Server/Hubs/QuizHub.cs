@@ -37,7 +37,7 @@ public class QuizHub : Hub
                     room.Quiz?.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
                         session.Player.Id);
 
-                    room.AllPlayerConnectionIds[session.Player.Id] = newConnectionId!;
+                    room.AllConnectionIds[session.Player.Id] = newConnectionId!;
                     if (room.Quiz != null)
                     {
                         var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
@@ -217,7 +217,7 @@ public class QuizHub : Hub
                 if (player != null)
                 {
                     room.RemovePlayer(player);
-                    room.AllPlayerConnectionIds.Remove(player.Id, out _);
+                    room.AllConnectionIds.Remove(player.Id, out _);
 
                     if (!room.Players.Any())
                     {
@@ -236,7 +236,7 @@ public class QuizHub : Hub
                 {
                     var spectator = room.Spectators.Single(spectator => spectator.Id == session.Player.Id);
                     room.RemoveSpectator(spectator);
-                    room.AllPlayerConnectionIds.Remove(spectator.Id, out _);
+                    room.AllConnectionIds.Remove(spectator.Id, out _);
                 }
             }
             else

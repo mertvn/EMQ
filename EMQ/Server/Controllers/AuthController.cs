@@ -100,7 +100,7 @@ public class AuthController : ControllerBase
         if (room != null)
         {
             room.RemovePlayer(session.Player);
-            room.AllPlayerConnectionIds.Remove(session.Player.Id, out _);
+            room.AllConnectionIds.Remove(session.Player.Id, out _);
             if (!room.Players.Any())
             {
                 ServerState.RemoveRoom(room, "RemoveSession");

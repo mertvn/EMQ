@@ -200,25 +200,25 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
                 oldRoom.RemovePlayer(player);
-                oldRoom.AllPlayerConnectionIds.Remove(player.Id, out _);
+                oldRoom.AllConnectionIds.Remove(player.Id, out _);
             }
 
             if (room.CanJoinDirectly)
             {
                 _logger.LogInformation("Added p{req.PlayerId} to r{room.Id}", req.PlayerId, room.Id);
                 room.Players.Enqueue(player);
-                room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
+                room.AllConnectionIds[player.Id] = session.ConnectionId!;
             }
             else
             {
                 _logger.LogInformation("Added p{req.PlayerId} to r{room.Id} as a spectator", req.PlayerId, room.Id);
                 room.Spectators.Enqueue(player);
-                room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
+                room.AllConnectionIds[player.Id] = session.ConnectionId!;
             }
 
             // let every other player in the room know that a new player joined,
             // we can't send this message to the joining player because their room page hasn't initialized yet
-            await _hubContext.Clients.Clients(room.AllPlayerConnectionIds
+            await _hubContext.Clients.Clients(room.AllConnectionIds
                     .Where(x => x.Value != session.ConnectionId).Select(x => x.Value))
                 .SendAsync("ReceivePlayerJoinedRoom");
 

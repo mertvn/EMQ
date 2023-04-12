@@ -42,7 +42,7 @@ public sealed class Room : IDisposable
     public Player Owner { get; set; }
 
     [JsonIgnore]
-    public ConcurrentDictionary<int, string> AllPlayerConnectionIds { get; set; } = new();
+    public ConcurrentDictionary<int, string> AllConnectionIds { get; set; } = new();
 
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 
