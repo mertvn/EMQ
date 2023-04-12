@@ -82,7 +82,7 @@ public class ClientUtils
         if (ClientState.Session is null)
         {
             string? sessionStr = await LoadFromLocalStorage<string?>("session");
-            if (!string.IsNullOrWhiteSpace(sessionStr))
+            if (!string.IsNullOrWhiteSpace(sessionStr) && sessionStr != "null")
             {
                 Session? session = JsonSerializer.Deserialize<Session>(sessionStr);
                 if (session != null)
