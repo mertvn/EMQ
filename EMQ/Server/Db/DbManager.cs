@@ -772,53 +772,6 @@ public static class DbManager
             // Apply filters
             if (filters != null)
             {
-                var validCategories = filters.CategoryFilters;
-                if (validCategories.Any())
-                {
-                    var trileans = validCategories.Select(x => x.Trilean);
-                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
-
-                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
-                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
-                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
-                    for (int index = 0; index < ordered.Count; index++)
-                    {
-                        CategoryFilter categoryFilter = ordered[index];
-                        // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
-
-                        if (index > 0)
-                        {
-                            switch (categoryFilter.Trilean)
-                            {
-                                case LabelKind.Maybe:
-                                    if (hasInclude)
-                                    {
-                                        continue;
-                                    }
-
-                                    queryMusicIds.AppendLine($"UNION");
-                                    break;
-                                case LabelKind.Include:
-                                    queryMusicIds.AppendLine($"INTERSECT");
-                                    break;
-                                case LabelKind.Exclude:
-                                    queryMusicIds.AppendLine($"EXCEPT");
-                                    break;
-                                default:
-                                    throw new ArgumentOutOfRangeException();
-                            }
-
-                            queryMusicIds.Append($"{sqlMusicIds:raw}");
-                        }
-
-                        // todo vndb_id null
-                        queryMusicIds.Append(
-                            $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
- AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
- AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
-                    }
-                }
-
                 var validSongSourceSongTypes = filters.SongSourceSongTypeFilters.Where(x => x.Value).ToList();
                 if (validSongSourceSongTypes.Any())
                 {
@@ -882,6 +835,53 @@ public static class DbManager
                     queryMusicIds.Append($"ms.votecount >= {filters.VoteCountStart}");
                     queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
                     queryMusicIds.Append($")");
+                }
+
+                var validCategories = filters.CategoryFilters;
+                if (validCategories.Any())
+                {
+                    var trileans = validCategories.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        CategoryFilter categoryFilter = ordered[index];
+                        // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
+
+                        if (index > 0)
+                        {
+                            switch (categoryFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    queryMusicIds.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    queryMusicIds.AppendLine($"INTERSECT");
+                                    break;
+                                case LabelKind.Exclude:
+                                    queryMusicIds.AppendLine($"EXCEPT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryMusicIds.Append($"{sqlMusicIds:raw}");
+                        }
+
+                        // todo vndb_id null
+                        queryMusicIds.Append(
+                            $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
+ AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
+ AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
+                    }
                 }
             }
 
