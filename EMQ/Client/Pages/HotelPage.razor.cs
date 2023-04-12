@@ -76,16 +76,17 @@ public partial class HotelPage
             new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Player.Id));
         if (res1.IsSuccessStatusCode)
         {
-            int waitTime = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).WaitMs;
-            if (waitTime > 0)
-            {
-                Console.WriteLine($"waiting for {waitTime} ms to join room");
-                await Task.Delay(waitTime);
-            }
-
             await _clientUtils.SaveSessionToLocalStorage();
 
-            _navigation.NavigateTo("/RoomPage");
+            var quizStatus = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).QuizStatus;
+            if (quizStatus == QuizStatus.Playing)
+            {
+                _navigation.NavigateTo("/QuizPage");
+            }
+            else
+            {
+                _navigation.NavigateTo("/RoomPage");
+            }
         }
         else if (res1.StatusCode == HttpStatusCode.Unauthorized)
         {

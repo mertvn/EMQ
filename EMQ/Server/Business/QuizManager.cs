@@ -246,11 +246,21 @@ public class QuizManager
             await EndQuiz();
         }
 
-        while (Quiz.JoinQueue.Any())
+        if (Quiz.Room.HotjoinQueue.Any())
         {
-            var session = Quiz.JoinQueue.Dequeue();
-            Quiz.Room.Players.Enqueue(session.Player);
-            Quiz.Room.AllPlayerConnectionIds.TryAdd(session.Player.Id, session.ConnectionId!);
+            while (Quiz.Room.HotjoinQueue.Any())
+            {
+                Quiz.Room.HotjoinQueue.TryDequeue(out Player? player);
+                if (player != null)
+                {
+                    Quiz.Room.Players.Enqueue(player);
+                    Quiz.Room.RemoveSpectator(player);
+                    Quiz.Log($"{player.Username} hotjoined.", player.Id, true);
+                }
+            }
+
+            await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
         }
     }
 
@@ -437,9 +447,14 @@ public class QuizManager
 
     public async Task OnSendPlayerIsBuffered(int playerId)
     {
-        Player player = Quiz.Room.Players.Single(player => player.Id == playerId);
-        player.IsBuffered = true;
+        Player? player = Quiz.Room.Players.SingleOrDefault(player => player.Id == playerId);
+        if (player == null)
+        {
+            // early return if spectator
+            return;
+        }
 
+        player.IsBuffered = true;
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
         Quiz.Log($"isBufferedCount: {isBufferedCount}");
     }
@@ -451,7 +466,13 @@ public class QuizManager
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
 
             // todo player initialization logic shouldn't be here at all after the user + player separation
-            var player = Quiz.Room.Players.Single(x => x.Id == playerId);
+            var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
+            if (player == null)
+            {
+                // early return if spectator
+                return;
+            }
+
             if (player.Score > 0 || player.Guess != "" || (Quiz.Room.QuizSettings.MaxLives > 0 &&
                                                            player.Lives != Quiz.Room.QuizSettings.MaxLives))
             {

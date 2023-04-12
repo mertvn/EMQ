@@ -2,10 +2,10 @@
 
 public class ResJoinRoom
 {
-    public ResJoinRoom(int waitMs)
+    public ResJoinRoom(QuizStatus quizStatus)
     {
-        WaitMs = waitMs;
+        QuizStatus = quizStatus;
     }
 
-    public int WaitMs { get; }
+    public QuizStatus QuizStatus { get; }
 }

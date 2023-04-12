@@ -61,11 +61,6 @@
     @* </p> *@
 </div>
 
-@if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && (Room?.QuizSettings.IsHotjoinEnabled ?? false))
-{
-    <button type="button" class="btn btn-primary" @onclick="Hotjoin">Hotjoin Quiz</button>
-}
-
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
     <button type="button" class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">

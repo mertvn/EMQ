@@ -40,7 +40,8 @@ public class QuizController : ControllerBase
             return null;
         }
 
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -62,7 +63,8 @@ public class QuizController : ControllerBase
             return null;
         }
 
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -83,7 +85,8 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is not null)
         {
             if (room.Quiz != null)
@@ -170,7 +173,6 @@ public class QuizController : ControllerBase
         return room.Id;
     }
 
-    // todo decouple joining room from joining quiz
     [HttpPost]
     [Route("JoinRoom")]
     public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
@@ -190,7 +192,7 @@ public class QuizController : ControllerBase
             if (room.Players.Any(x => x.Id == req.PlayerId))
             {
                 // TODO probably shouldn't allow this after the necessary changes for detecting players leaving rooms is completed
-                return new ResJoinRoom(0);
+                return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
             var oldRoom = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == req.PlayerId));
@@ -201,44 +203,26 @@ public class QuizController : ControllerBase
                 oldRoom.AllPlayerConnectionIds.Remove(player.Id, out _);
             }
 
-            // hotjoins have to be handled differently
-            if (room.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement
-                or QuizPhaseKind.Looting)
+            if (room.CanJoinDirectly)
             {
-                if (!room.Quiz.JoinQueue.Any(x => x.Player.Id == req.PlayerId))
-                {
-                    // todo quizlog
-                    room.Quiz.Log("Added player to JoinQueue", player.Id);
-                    room.Quiz.JoinQueue.Enqueue(session);
-
-                    return new ResJoinRoom((int)(room.Quiz.QuizState.RemainingMs + 5));
-                }
-                else
-                {
-                    // todo
-                    throw new Exception();
-                }
-            }
-            else if (room.Quiz is null || room.Quiz.QuizState.Phase == QuizPhaseKind.Results)
-            {
-                _logger.LogInformation($"Added player {req.PlayerId} to room " + room.Id);
+                _logger.LogInformation("Added p{req.PlayerId} to r{room.Id}", req.PlayerId, room.Id);
                 room.Players.Enqueue(player);
-                // _logger.LogInformation("cnnid: " + session.ConnectionId!);
                 room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
-
-                // let every other player in the room know that a new player joined,
-                // we can't send this message to the joining player because their room page hasn't initialized yet
-                await _hubContext.Clients.Clients(room.AllPlayerConnectionIds
-                        .Where(x => x.Value != session.ConnectionId).Select(x => x.Value))
-                    .SendAsync("ReceivePlayerJoinedRoom");
-
-                return new ResJoinRoom(0);
             }
             else
             {
-                _logger.LogError("Invalid room/quiz state when attempting to add new player to room");
-                throw new Exception("Invalid room/quiz state when attempting to add new player to room");
+                _logger.LogInformation("Added p{req.PlayerId} to r{room.Id} as a spectator", req.PlayerId, room.Id);
+                room.Spectators.Enqueue(player);
+                room.AllPlayerConnectionIds[player.Id] = session.ConnectionId!;
             }
+
+            // let every other player in the room know that a new player joined,
+            // we can't send this message to the joining player because their room page hasn't initialized yet
+            await _hubContext.Clients.Clients(room.AllPlayerConnectionIds
+                    .Where(x => x.Value != session.ConnectionId).Select(x => x.Value))
+                .SendAsync("ReceivePlayerJoinedRoom");
+
+            return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
         }
         else
         {
@@ -358,11 +342,12 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == player.Id) || x.Spectators.Any(y => y.Id == player.Id));
 
         if (room is not null)
         {
-            if (room.Players.Any(x => x.Id == player.Id))
+            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(y => y.Id == player.Id))
             {
                 if (req.Contents.Length <= Constants.MaxChatMessageLength)
                 {

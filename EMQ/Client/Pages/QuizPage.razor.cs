@@ -103,6 +103,8 @@ public partial class QuizPage
 
     private bool PhaseChangeInProgress { get; set; }
 
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -615,6 +617,17 @@ public partial class QuizPage
                     await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
                     StateHasChanged();
                 }
+            }
+        }
+    }
+
+    private async Task SendHotjoinQuiz()
+    {
+        if (Room is { Quiz: { } })
+        {
+            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
+            {
+                await ClientState.Session!.hubConnection!.SendAsync("SendHotjoinQuiz");
             }
         }
     }

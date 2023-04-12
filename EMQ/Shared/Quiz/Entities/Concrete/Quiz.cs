@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Timers;
-using EMQ.Shared.Auth.Entities.Concrete;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -36,9 +35,6 @@ public sealed class Quiz : IDisposable
 
     [JsonIgnore]
     public List<Song> Songs { get; set; } = new();
-
-    [JsonIgnore]
-    public Queue<Session> JoinQueue { get; set; } = new(); // todo implement spectating and remove/repurpose
 
     [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();

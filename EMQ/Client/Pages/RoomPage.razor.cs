@@ -47,14 +47,19 @@ public partial class RoomPage
         Room = await _clientUtils.SyncRoom();
         if (Room != null)
         {
-            bool canHotjoin = Room.QuizSettings.IsHotjoinEnabled &&
-                              Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing;
-            // breaks the leave button on QuizPage
-            canHotjoin = false;
-            if (canHotjoin)
-            {
-                Hotjoin();
-            }
+            // bool canHotjoin = Room.QuizSettings.IsHotjoinEnabled &&
+            //                   Room!.Quiz?.QuizState.QuizStatus is QuizStatus.Playing;
+            // // breaks the leave button on QuizPage
+            // canHotjoin = false;
+            // if (canHotjoin)
+            // {
+            //     Hotjoin();
+            // }
+            //
+            // if (Room.Spectators.Any(x => x.Id == ClientState.Session!.Player.Id))
+            // {
+            //     Hotjoin();
+            // }
 
             StateHasChanged();
         }

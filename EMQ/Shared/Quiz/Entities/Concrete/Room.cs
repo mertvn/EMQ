@@ -35,6 +35,10 @@ public sealed class Room : IDisposable
     // TODO: would be better if this was a ConcurrentDictionary
     public ConcurrentQueue<Player> Players { get; set; } = new();
 
+    public ConcurrentQueue<Player> Spectators { get; set; } = new();
+
+    public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
+
     public Player Owner { get; set; }
 
     [JsonIgnore]
@@ -43,6 +47,8 @@ public sealed class Room : IDisposable
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
+
+    public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
 
     public void Dispose()
     {
@@ -61,6 +67,24 @@ public sealed class Room : IDisposable
             {
                 throw new Exception();
             }
+        }
+    }
+
+    public void RemoveSpectator(Player toRemove)
+    {
+        lock (_lock)
+        {
+            int oldSpectatorsCount = Spectators.Count;
+            Spectators = new ConcurrentQueue<Player>(Spectators.Where(x => x != toRemove));
+            int newSpectatorsCount = Spectators.Count;
+
+            if (oldSpectatorsCount <= newSpectatorsCount)
+            {
+                throw new Exception();
+            }
+
+            // toRemove may or may not be here
+            HotjoinQueue = new ConcurrentQueue<Player>(HotjoinQueue.Where(x => x != toRemove));
         }
     }
 }
