@@ -16,6 +16,7 @@ public class AddTableArtist_Music : Migration
             .WithColumn("artist_alias_id").AsInt32().NotNullable().ForeignKey("artist_alias", "id");
 
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("music_id");
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("artist_alias_id");
     }
 
     public override void Down()
