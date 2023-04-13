@@ -167,7 +167,7 @@ public class QuizController : ControllerBase
         {
             Password = req.Password, QuizSettings = req.QuizSettings
         };
-        ServerState.Rooms.Enqueue(room);
+        ServerState.AddRoom(room);
         _logger.LogInformation("Created room {room.Id} {room.Name}", room.Id, room.Name);
 
         return room.Id;
@@ -251,12 +251,13 @@ public class QuizController : ControllerBase
                 var quiz = new Quiz(room, Random.Shared.Next());
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);
-                ServerState.QuizManagers.Enqueue(quizManager);
+                ServerState.AddQuizManager(quizManager);
                 quiz.Log("Created");
 
                 if (await quizManager.PrimeQuiz())
                 {
                     quiz.Log("Primed");
+                    // _ = Task.Run(async () => { await quizManager.StartQuiz(); });
                     await Task.Run(async () => { await quizManager.StartQuiz(); });
                 }
                 else

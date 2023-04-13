@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
         var session = new Session(player, token);
         session.VndbInfo = new PlayerVndbInfo() { VndbId = req.VndbInfo.VndbId, Labels = req.VndbInfo.Labels };
 
-        ServerState.Sessions.Enqueue(session);
+       ServerState.AddSession(session);
 
         string? ip = Request.HttpContext.Connection.RemoteIpAddress?.ToString();
         string? header = (Request.HttpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault() ??

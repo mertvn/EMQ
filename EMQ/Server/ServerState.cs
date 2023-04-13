@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Linq;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -12,13 +13,13 @@ public static class ServerState
     private static readonly object s_serverStateLock = new();
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ConcurrentQueue<Room> Rooms { get; private set; } = new();
+    public static ImmutableList<Room> Rooms { get; private set; } = ImmutableList<Room>.Empty;
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ConcurrentQueue<QuizManager> QuizManagers { get; private set; } = new();
+    public static ImmutableList<QuizManager> QuizManagers { get; private set; } = ImmutableList<QuizManager>.Empty;
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ConcurrentQueue<Session> Sessions { get; private set; } = new();
+    public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
 
     public static void RemoveRoom(Room room, string source)
     {
@@ -28,10 +29,10 @@ public static class ServerState
             room.Dispose();
             if (room.Quiz != null)
             {
-                var qm = QuizManagers.Single(x => x.Quiz.Id == room.Quiz.Id);
+                var qm = QuizManagers.First(x => x.Quiz.Id == room.Quiz.Id);
 
                 int oldQMCount = QuizManagers.Count;
-                QuizManagers = new ConcurrentQueue<QuizManager>(QuizManagers.Where(x => x != qm));
+                QuizManagers = QuizManagers.Remove(qm);
                 int newQMCount = QuizManagers.Count;
 
                 if (oldQMCount <= newQMCount)
@@ -43,7 +44,7 @@ public static class ServerState
             // room.Quiz = null;
 
             int oldRoomsCount = Rooms.Count;
-            Rooms = new ConcurrentQueue<Room>(Rooms.Where(x => x != room));
+            Rooms = Rooms.Remove(room);
             int newRoomsCount = Rooms.Count;
 
             if (oldRoomsCount <= newRoomsCount)
@@ -58,11 +59,56 @@ public static class ServerState
         Console.WriteLine($"Removing session for p{session.Player.Id} {session.Player.Username}. Source: {source}");
         lock (s_serverStateLock)
         {
-            int oldSessionsCount = Rooms.Count;
-            Sessions = new ConcurrentQueue<Session>(Sessions.Where(x => x != session));
-            int newSessionsCount = Rooms.Count;
+            int oldSessionsCount = Sessions.Count;
+            Sessions = Sessions.Remove(session);
+            int newSessionsCount = Sessions.Count;
 
             if (oldSessionsCount <= newSessionsCount)
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    public static void AddRoom(Room session)
+    {
+        lock (s_serverStateLock)
+        {
+            int oldRoomsCount = Rooms.Count;
+            Rooms = Rooms.Add(session);
+            int newRoomsCount = Rooms.Count;
+
+            if (oldRoomsCount >= newRoomsCount)
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    public static void AddQuizManager(QuizManager quizManager)
+    {
+        lock (s_serverStateLock)
+        {
+            int oldQuizManagersCount = QuizManagers.Count;
+            QuizManagers = QuizManagers.Add(quizManager);
+            int newQuizManagersCount = QuizManagers.Count;
+
+            if (oldQuizManagersCount >= newQuizManagersCount)
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    public static void AddSession(Session session)
+    {
+        lock (s_serverStateLock)
+        {
+            int oldSessionsCount = Sessions.Count;
+            Sessions = Sessions.Add(session);
+            int newSessionsCount = Sessions.Count;
+
+            if (oldSessionsCount >= newSessionsCount)
             {
                 throw new Exception();
             }

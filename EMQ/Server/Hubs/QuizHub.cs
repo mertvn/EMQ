@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Net.Http.Headers;
 
 namespace EMQ.Server.Hubs;
 
@@ -14,7 +16,15 @@ public class QuizHub : Hub
 {
     public override async Task OnConnectedAsync()
     {
+        // In standard web APIs, bearer tokens are sent in an HTTP header.
+        // However, SignalR is unable to set these headers in browsers when using some transports.
+        // When using WebSockets and Server-Sent Events, the token is transmitted as a query string parameter.
         var accessToken = Context.GetHttpContext()!.Request.Query["access_token"];
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            accessToken = Context.GetHttpContext()!.Request.Headers[HeaderNames.Authorization].ToString()
+                .Replace("Bearer ", "");
+        }
 
         var session = ServerState.Sessions.SingleOrDefault(x => accessToken == x.Token);
         if (session != null)
@@ -413,7 +423,7 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == session.Player.Id));
-            if (room?.Quiz != null )
+            if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                 if (quizManager != null)
