@@ -189,9 +189,9 @@ public class QuizController : ControllerBase
         var player = session.Player;
         if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password)
         {
-            if (room.Players.Any(x => x.Id == req.PlayerId))
+            if (room.Players.Any(x => x.Id == req.PlayerId) || room.Spectators.Any(x => x.Id == req.PlayerId))
             {
-                // TODO probably shouldn't allow this after the necessary changes for detecting players leaving rooms is completed
+                // TODO we really shouldn't allow this (we should handle players manually changing pages better)
                 return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
@@ -246,6 +246,7 @@ public class QuizController : ControllerBase
 
         if (room is not null)
         {
+            // TODO: Check that quiz is not in the process of being started already
             if (room.Owner.Id == player.Id)
             {
                 var quiz = new Quiz(room, Random.Shared.Next());
