@@ -35,6 +35,7 @@ public sealed class Room : IDisposable
     // TODO: would be better if this was a ConcurrentDictionary
     public ConcurrentQueue<Player> Players { get; set; } = new();
 
+    // TODO: would be better if this was a ConcurrentDictionary
     public ConcurrentQueue<Player> Spectators { get; set; } = new();
 
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
@@ -87,4 +88,6 @@ public sealed class Room : IDisposable
             HotjoinQueue = new ConcurrentQueue<Player>(HotjoinQueue.Where(x => x != toRemove));
         }
     }
+
+    // TODO: AddPlayer etc.
 }
