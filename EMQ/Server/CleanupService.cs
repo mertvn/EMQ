@@ -63,7 +63,16 @@ public sealed class CleanupService : IHostedService, IDisposable
                 {
                     Console.WriteLine(
                         $"Cleaning up p{inactiveSession.Player.Id} {inactiveSession.Player.Username} from r{room.Id} {room.Name}");
-                    room.RemovePlayer(inactiveSession.Player);
+
+                    if (room.Spectators.Any(x => x.Id == inactiveSession.Player.Id))
+                    {
+                        room.RemoveSpectator(inactiveSession.Player);
+                    }
+                    else
+                    {
+                        room.RemovePlayer(inactiveSession.Player);
+                    }
+
                     room.AllConnectionIds.Remove(inactiveSession.Player.Id, out _);
                 }
                 // todo make players spectators if they are connected but AFK
