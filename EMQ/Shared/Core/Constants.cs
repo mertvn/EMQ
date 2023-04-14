@@ -1,7 +1,13 @@
-﻿namespace EMQ.Shared.Core;
+﻿using System;
+
+namespace EMQ.Shared.Core;
 
 public static class Constants
 {
+    public const string ImportDateVndb = "2023-03-22";
+
+    public const string ImportDateEgs = "2023-02-12";
+
     public const int MaxChatMessageLength = 300;
 
     public const int LinkToleranceSeconds = 14;

@@ -31,7 +31,7 @@ public static class VndbImporter
     public static async Task ImportVndbData()
     {
         Songs.Clear();
-        string date = "2023-03-22";
+        string date = Constants.ImportDateVndb;
         string folder = $"C:\\emq\\vndb\\{date}";
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(

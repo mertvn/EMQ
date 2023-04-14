@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Server.Db.Imports;
 using EMQ.Server.Db.Imports.VNDB;
+using EMQ.Shared.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -38,7 +39,7 @@ public class VNDBStaffNotesParserTests
         };
         // @formatter:on
 
-        string date = "2023-03-22";
+        string date = Constants.ImportDateVndb;
         string folder = $"C:\\emq\\vndb\\{date}";
         var musicJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music.json"))!;

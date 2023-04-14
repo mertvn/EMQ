@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,7 @@ public static class EgsImporter
 
     public static async Task ImportEgsData()
     {
-        string date = "2023-02-12";
+        string date = Constants.ImportDateEgs;
         string folder = $"C:\\emq\\egs\\{date}";
 
         var createrNameOverrideDictFile =
