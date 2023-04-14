@@ -109,6 +109,29 @@ public static class ExtensionMethods
         }
     }
 
+    public static async Task<bool> DownloadFile2(string dest, Uri uri)
+    {
+        try
+        {
+            Console.WriteLine($"DownloadFile2 {uri}");
+            using (var client = new HttpClient())
+            {
+                var stream = await client.GetStreamAsync(uri);
+                await using (MemoryStream ms = new())
+                {
+                    await stream.CopyToAsync(ms);
+                    await File.WriteAllBytesAsync(dest, ms.ToArray());
+                    return true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
     public static string LastSegment(this string input)
     {
         return new Uri(input).Segments.Last();

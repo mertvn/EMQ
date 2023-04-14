@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
@@ -61,8 +60,7 @@ public class LibraryController : ControllerBase
         {
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
 
-            // using a static HttpClient or using an "using" statement causes timeouts on railway (???????)
-            bool dlSuccess = await new HttpClient().DownloadFile(filePath, new Uri(req.SongLink.Url));
+            bool dlSuccess = await ExtensionMethods.DownloadFile2(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
