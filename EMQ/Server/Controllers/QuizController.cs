@@ -249,6 +249,11 @@ public class QuizController : ControllerBase
             // TODO: Check that quiz is not in the process of being started already
             if (room.Owner.Id == player.Id)
             {
+                if (room.Quiz != null)
+                {
+                    ServerState.RemoveQuizManager(room.Quiz);
+                }
+
                 var quiz = new Quiz(room, Random.Shared.Next());
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);

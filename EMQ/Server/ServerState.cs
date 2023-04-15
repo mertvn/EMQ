@@ -54,6 +54,24 @@ public static class ServerState
         }
     }
 
+    public static void RemoveQuizManager(Quiz quiz)
+    {
+        Console.WriteLine($"Removing qm{quiz.Id}");
+        lock (s_serverStateLock)
+        {
+            var qm = QuizManagers.First(x => x.Quiz.Id == quiz.Id);
+
+            int oldQMCount = QuizManagers.Count;
+            QuizManagers = QuizManagers.Remove(qm);
+            int newQMCount = QuizManagers.Count;
+
+            if (oldQMCount <= newQMCount)
+            {
+                throw new Exception();
+            }
+        }
+    }
+
     public static void RemoveSession(Session session, string source)
     {
         Console.WriteLine($"Removing session for p{session.Player.Id} {session.Player.Username}. Source: {source}");
