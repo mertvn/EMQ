@@ -120,7 +120,7 @@ public class QuizManager
 
         int activePlayers = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
             .Count(x => x.HasActiveConnection);
-        Quiz.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
+        // Quiz.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
         float waitNumber = (float)Math.Round(
             activePlayers * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
