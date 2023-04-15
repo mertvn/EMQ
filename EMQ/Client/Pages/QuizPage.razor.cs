@@ -236,6 +236,11 @@ public partial class QuizPage
         {
             Room = room;
             LastSync = DateTime.UtcNow;
+            if (_chatComponent != null)
+            {
+                _chatComponent.Chat = room.Chat;
+                await _chatComponent.CallStateHasChanged();
+            }
         }
         else if (!SyncInProgress)
         {

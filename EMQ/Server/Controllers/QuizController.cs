@@ -340,7 +340,7 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("SendChatMessage")]
-    public ActionResult SendChatMessage([FromBody] ReqSendChatMessage req)
+    public async Task<ActionResult> SendChatMessage([FromBody] ReqSendChatMessage req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
@@ -360,8 +360,8 @@ public class QuizController : ControllerBase
                 {
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom", room, false);
                     _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
-                    // todo sync room for all players
                 }
             }
             else

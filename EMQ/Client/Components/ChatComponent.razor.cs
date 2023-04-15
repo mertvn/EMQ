@@ -36,6 +36,7 @@ public partial class ChatComponent
         Timer.Stop();
         Timer.Elapsed -= OnTimedEvent;
 
+        // todo increase this interval after making sure Room can get WS chat updates too
         Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
         Timer.Elapsed += OnTimedEvent;
         Timer.AutoReset = true;
@@ -115,5 +116,13 @@ public partial class ChatComponent
         {
             Console.WriteLine(e.ToString());
         }
+    }
+
+    public async Task CallStateHasChanged()
+    {
+        await ScrollToEnd();
+        StateHasChanged();
+        await ScrollToEnd();
+        StateHasChanged();
     }
 }
