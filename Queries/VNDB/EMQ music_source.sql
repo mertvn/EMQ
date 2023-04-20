@@ -2,7 +2,7 @@ SELECT v.id, v.title, min(r.released) AS "air_date_start", v.original, v.alias, 
 FROM vn v
 JOIN releases_vn rv ON rv.vid = v.id
 JOIN releases r ON r.id = rv.id
-WHERE r.released != 99999999 AND rv.rtype != 'trial' AND v.id IN
+WHERE r.released != 99999999 AND v.id IN
 
 (
 SELECT v.id
@@ -12,7 +12,6 @@ JOIN releases_vn rv ON rv.vid = v.id
 JOIN releases r ON r.id = rv.id
 JOIN staff_alias sa ON sa.aid = vs.aid
 WHERE r.released != 99999999
-AND rv.rtype != 'trial'
 and vs.role::text ~* 'songs'
 AND vs.note ~* '(")|(“)|(”)|('')'
 GROUP BY v.id
