@@ -104,6 +104,26 @@ public class VNDBStaffNotesParserTests
     }
 
     [Test]
+    public void Test_SingleWithDoubleSpaceBeforeTitle()
+    {
+        string input = "Starry☆Sky～Summer Stories～ OP  \"Sea-staR\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "Starry☆Sky～Summer Stories～ ",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Sea-staR",
+                AfterTitle = ""
+            }
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
     public void Test_WeirdShitThatIDontKnowIfWeShouldAccept()
     {
         string input = "\"Kuroi Hitomi no Aria\", \"Sie Null\", ED \"DON'T LET GO\" [Remake]";

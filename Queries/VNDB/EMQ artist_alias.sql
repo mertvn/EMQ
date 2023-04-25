@@ -1,4 +1,4 @@
-SELECT sa.id, sa.aid, name, original
+SELECT sa.id, sa.aid, name, latin
 FROM staff s
 JOIN staff_alias sa ON sa.id = s.id
 WHERE s.id IN

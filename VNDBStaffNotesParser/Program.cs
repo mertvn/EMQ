@@ -185,10 +185,9 @@ public static class Program
             return new List<ParsedSong>();
         }
 
-        var jso =  new JsonSerializerOptions
+        var jso = new JsonSerializerOptions
         {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            Converters = { new JsonStringEnumConverter() }
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, Converters = { new JsonStringEnumConverter() }
         };
 
         var songs = new List<ParsedSong>();
@@ -285,7 +284,13 @@ public static class Program
                     {
                         // normal
                         case '"':
+                            break;
                         case ' ':
+                            if (input[cursor - 1] == ' ' && input[cursor + 1] == '"')
+                            {
+                                cursor += 1; // band-aid for double space between type and title
+                            }
+
                             break;
                         // parentheses before song title
                         case '(':

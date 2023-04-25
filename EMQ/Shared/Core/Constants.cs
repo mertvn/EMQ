@@ -4,7 +4,7 @@ namespace EMQ.Shared.Core;
 
 public static class Constants
 {
-    public const string ImportDateVndb = "2023-04-20";
+    public const string ImportDateVndb = "2023-04-25";
 
     public const string ImportDateEgs = "2023-04-20";
 
