@@ -31,6 +31,8 @@ public partial class HotelPage
 
     public string SelectedRoomPassword { get; set; } = "";
 
+    private DateTime LastSync { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -38,6 +40,19 @@ public partial class HotelPage
         if (res is not null)
         {
             Rooms = res.ToList();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(1))
+        {
+            LastSync = DateTime.UtcNow;
+            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+            if (res is not null)
+            {
+                Rooms = res.ToList();
+            }
         }
     }
 

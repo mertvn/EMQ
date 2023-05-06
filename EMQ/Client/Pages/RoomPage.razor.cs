@@ -105,6 +105,7 @@ public partial class RoomPage
 
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
         // Room = await _clientUtils.SyncRoom();
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
         _navigation.NavigateTo("/HotelPage");
     }
 

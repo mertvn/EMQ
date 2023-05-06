@@ -331,6 +331,7 @@ public partial class QuizPage
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
         // await SyncWithServer();
 
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
         // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
         // might be because visiting RoomPage causes a new signalr connection to be established
         _navigation.NavigateTo("/RoomPage");
