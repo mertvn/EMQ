@@ -217,7 +217,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(7, 1600).ToArray();
+        var rqIds = Enumerable.Range(23, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -233,6 +233,29 @@ public class EntryPoints
         foreach (int rqId in rqIds)
         {
             await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected);
+        }
+    }
+
+    [Test, Explicit]
+    public async Task AnalyzeReviewQueueItems()
+    {
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        foreach (RQ rq in rqs)
+        {
+            if (rq.analysis == "Pending")
+            {
+                string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
+
+                bool dlSuccess = await ExtensionMethods.DownloadFile2(filePath, new Uri(rq.url));
+                if (dlSuccess)
+                {
+                    var analyserResult = await MediaAnalyser.Analyse(filePath);
+                    System.IO.File.Delete(filePath);
+
+                    await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
+                        analyserResult: analyserResult);
+                }
+            }
         }
     }
 
