@@ -112,7 +112,7 @@ public partial class PyramidPage
         Timer.Start();
     }
 
-    private void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
         if (Countdown > 0)
         {
@@ -122,7 +122,12 @@ public partial class PyramidPage
         {
             Timer.Stop();
             Timer.Elapsed -= OnTimedEvent;
-            // todo get status and change page
+
+            await SyncWithServer();
+            if (Countdown <= 0 || Room!.Quiz!.QuizState.Phase != QuizPhaseKind.Looting)
+            {
+                await OnReceiveQuizEntered();
+            }
         }
 
         StateHasChanged();

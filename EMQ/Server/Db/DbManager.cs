@@ -1283,6 +1283,11 @@ public static class DbManager
             {
                 throw new Exception("Duplicate SongLite detected");
             }
+
+            if (!sl.Links.Any())
+            {
+                throw new Exception("SongLite must have at least one link to export.");
+            }
         }
 
         return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
