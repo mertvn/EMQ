@@ -29,6 +29,8 @@ public class QuizManager
 
     private Dictionary<int, List<string>> CorrectAnswersDict { get; set; } = new();
 
+    private Dictionary<int, SongStats> SongStatsDict { get; set; } = new();
+
     private void SetTimer()
     {
         if (!Quiz.IsDisposed)
@@ -150,6 +152,7 @@ public class QuizManager
         foreach (var player in Quiz.Room.Players)
         {
             player.Guess = "";
+            player.FirstGuessMs = 0;
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
             player.IsSkipping = false;
@@ -268,6 +271,12 @@ public class QuizManager
     {
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
+        var songStats = new SongStats();
+        int numCorrect = 0;
+        int numActivePlayers = 0;
+        int numGuesses = 0;
+        int totalGuessMs = 0;
+
         foreach (var player in Quiz.Room.Players)
         {
             if (player.PlayerStatus == PlayerStatus.Dead)
@@ -296,7 +305,33 @@ public class QuizManager
                     }
                 }
             }
+
+            var playerSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
+            if (playerSession != null)
+            {
+                if (playerSession.HasActiveConnection)
+                {
+                    numActivePlayers += 1;
+
+                    if (!string.IsNullOrWhiteSpace(player.Guess))
+                    {
+                        numGuesses += 1;
+                        totalGuessMs += player.FirstGuessMs;
+                    }
+
+                    if (correct)
+                    {
+                        numCorrect += 1;
+                    }
+                }
+            }
         }
+
+        songStats.TimesCorrect = numCorrect;
+        songStats.TimesPlayed = numActivePlayers;
+        songStats.TimesGuessed = numGuesses;
+        songStats.TotalGuessMs = totalGuessMs;
+        SongStatsDict.Add(Quiz.Songs[Quiz.QuizState.sp].Id, songStats);
     }
 
     public async Task EndQuiz()
@@ -317,6 +352,19 @@ public class QuizManager
         Directory.CreateDirectory("QuizLog");
         await File.WriteAllTextAsync($"QuizLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.QuizLog, Utils.JsoIndented));
+
+        await UpdateStats(SongStatsDict);
+    }
+
+    private static async Task UpdateStats(Dictionary<int, SongStats> songStatsDict)
+    {
+        foreach ((int mId, SongStats songStats) in songStatsDict)
+        {
+            if (songStats.TimesPlayed > 0)
+            {
+                await DbManager.IncrementSongStats(mId, songStats, null);
+            }
+        }
     }
 
     private async Task EnterQuiz()
@@ -335,6 +383,7 @@ public class QuizManager
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
             player.Guess = "";
+            player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.PlayerStatus = PlayerStatus.Default;
             player.LootingInfo = new PlayerLootingInfo();
@@ -482,6 +531,7 @@ public class QuizManager
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
             player.Guess = "";
+            player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.PlayerStatus = PlayerStatus.Thinking;
 
@@ -507,6 +557,12 @@ public class QuizManager
             {
                 player.Guess = guess;
                 player.PlayerStatus = PlayerStatus.Guessed;
+
+                if (player.FirstGuessMs <= 0)
+                {
+                    // be careful with this if we ever allow guesses after guess phase ends
+                    player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs - (int)Quiz.QuizState.RemainingMs;
+                }
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);

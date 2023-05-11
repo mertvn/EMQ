@@ -402,8 +402,7 @@ public class EntryPoints
                     continue;
                 }
 
-                var songLite =
-                    Song.ToSongLite((await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single());
+                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single().ToSongLite();
                 uploadable.SongLite = songLite;
                 uploaded.Add(uploadable);
 

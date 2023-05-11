@@ -136,4 +136,17 @@ public static class ExtensionMethods
     {
         return new Uri(input).Segments.Last();
     }
+
+    public static SongLite ToSongLite(this Song song)
+    {
+        var songLite = new SongLite(
+            song.Titles,
+            song.Links,
+            song.Sources.SelectMany(songSource =>
+                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
+                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
+            song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
+            song.Stats);
+        return songLite;
+    }
 }

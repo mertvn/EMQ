@@ -19,7 +19,11 @@ public class Player
 
     // public string DisplayName { get; }
 
+    // TODO: GuessInfo class
     public string Guess { get; set; } = "";
+
+    // todo: do we want last guess or first guess here?
+    public int FirstGuessMs { get; set; }
 
     public int Score { get; set; }
 

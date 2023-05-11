@@ -1,17 +1,17 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 
-@if (song != null)
+@if (Song != null)
 {
     <div class="songInfoCard card">
         <div class="songInfoCardBody card-body">
-            <div>
+            <div class="songInfo">
                 <div>
                     <h5 class="songSourceSongType">
                         @{
                             Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
 
-                            foreach (SongSource songSource in song.Sources)
+                            foreach (SongSource songSource in Song.Sources)
                             {
                                 songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
                             }
@@ -51,7 +51,7 @@
 
                     </h5>
                     @{
-                        Title mainTitle = song.Titles.First(x => x.IsMainTitle);
+                        Title mainTitle = Song.Titles.First(x => x.IsMainTitle);
                         string latinTitle = mainTitle.LatinTitle;
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
 
@@ -67,7 +67,7 @@
                 </div>
                 <div>
                     by
-                    @foreach (SongArtist songArtist in song.Artists)
+                    @foreach (SongArtist songArtist in Song.Artists)
                     {
                         var songArtistTitle = songArtist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First();
 
@@ -78,7 +78,25 @@
                         </div>
                     }
                 </div>
+                @if (Song.Stats.TimesPlayed > 0)
+                {
+                    <br/>
+                    <div class="songStats">
+                        <div class="songStatsDifficulty">
+                            @* todo coloring *@
+                            @* todo tooltip  *@
+                            Difficulty: @(Song.Stats.TimesCorrect)/@(Song.Stats.TimesPlayed) (@(Math.Round(Song.Stats.CorrectPercentage, 2))%)
+                        </div>
+                        @if (Song.Stats.TimesGuessed > 0)
+                        {
+                            <div class="songStatsGuessTime">
+                                Average guess time: @(Math.Round((float)Song.Stats.AverageGuessMs / 1000, 2))s (@Song.Stats.TimesGuessed)
+                            </div>
+                        }
+                    </div>
+                }
             </div>
+
         </div>
     </div>
 }

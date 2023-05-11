@@ -6,5 +6,5 @@ namespace EMQ.Client.Components;
 public partial class SongInfoCardComponent
 {
     [Parameter]
-    public Song? song { get; set; }
+    public Song? Song { get; set; }
 }

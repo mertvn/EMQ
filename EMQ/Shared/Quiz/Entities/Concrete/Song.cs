@@ -13,8 +13,6 @@ public class Song
     [JsonIgnore]
     public string Data { get; set; } = "";
 
-    // public int Length { get; set; } = 60;
-
     public int StartTime { get; set; }
 
     public List<Title> Titles { get; set; } = new();
@@ -33,16 +31,7 @@ public class Song
     [JsonIgnore]
     public Dictionary<int, List<Label>> PlayerLabels { get; set; } = new();
 
-    public static SongLite ToSongLite(Song song)
-    {
-        return new SongLite(
-            song.Titles,
-            song.Links,
-            song.Sources.SelectMany(songSource =>
-                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
-                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
-            song.Artists.Select(artist => artist.VndbId ?? "").ToList());
-    }
+    public SongStats Stats { get; set; } = new();
 }
 
 public enum SongType

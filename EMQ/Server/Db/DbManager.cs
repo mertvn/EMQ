@@ -93,11 +93,15 @@ public static class DbManager
 
                         song.Id = music.id;
                         song.Type = (SongType)music.type;
-
-                        // if (music.length.HasValue)
-                        // {
-                        //     song.Length = music.length.Value;
-                        // }
+                        song.Stats = new SongStats()
+                        {
+                            TimesCorrect = music.stat_correct,
+                            TimesPlayed = music.stat_played,
+                            CorrectPercentage = music.stat_correctpercentage,
+                            TimesGuessed = music.stat_guessed,
+                            TotalGuessMs = music.stat_totalguessms,
+                            AverageGuessMs = music.stat_averageguessms,
+                        };
 
                         songTitles.Add(new Title()
                         {
@@ -500,11 +504,6 @@ public static class DbManager
         await using (var transaction = await connection.BeginTransactionAsync())
         {
             var music = new Music() { type = (int)song.Type };
-            // if (song.Length > 0)
-            // {
-            //     music.length = song.Length;
-            // }
-
             int mId = await connection.InsertAsync(music);
 
             foreach (Title songTitle in song.Titles)
@@ -1189,7 +1188,7 @@ public static class DbManager
         return songs;
     }
 
-    public static async Task<int> InsertSongLink(int mId, SongLink songLink)
+    public static async Task<int> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
     {
         int melId;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -1210,7 +1209,7 @@ public static class DbManager
 
             Console.WriteLine(
                 $"Attempting to insert MusicExternalLink: " + JsonSerializer.Serialize(mel, Utils.Jso));
-            melId = await connection.InsertAsync(mel);
+            melId = await connection.InsertAsync(mel, transaction);
             if (melId > 0)
             {
                 // todo
@@ -1218,6 +1217,42 @@ public static class DbManager
         }
 
         return melId;
+    }
+
+    public static async Task<bool> SetSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var querySongStats = connection.QueryBuilder($@"UPDATE music SET
+                 stat_correct = {songStats.TimesCorrect},
+                 stat_played = {songStats.TimesPlayed},
+                 stat_guessed = {songStats.TimesGuessed},
+                 stat_totalguessms = {songStats.TotalGuessMs}
+WHERE id = {mId};
+                 ");
+
+            Console.WriteLine(
+                $"Attempting to set SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
+            return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
+        }
+    }
+
+    public static async Task<bool> IncrementSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var querySongStats = connection.QueryBuilder($@"UPDATE music SET
+                 stat_correct = stat_correct + {songStats.TimesCorrect},
+                 stat_played = stat_played + {songStats.TimesPlayed},
+                 stat_guessed = stat_guessed + {songStats.TimesGuessed},
+                 stat_totalguessms = stat_totalguessms + {songStats.TotalGuessMs}
+WHERE id = {mId};
+                 ");
+
+            Console.WriteLine(
+                $"Attempting to increment SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
+            return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
+        }
     }
 
     public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy,
@@ -1270,13 +1305,13 @@ public static class DbManager
     public static async Task<string> ExportSongLite()
     {
         var songs = await GetRandomSongs(int.MaxValue, true);
-        var songLite = songs.Select(song => Song.ToSongLite(song)).ToList();
+        var songLite = songs.Select(song => song.ToSongLite()).ToList();
 
         HashSet<string> md5Hashes = new();
         foreach (SongLite sl in songLite)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sl));
-            byte[] hash = MD5.Create().ComputeHash(bytes);
+            byte[] hash = MD5.HashData(bytes);
             string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
 
             if (!md5Hashes.Add(encoded))
@@ -1287,6 +1322,11 @@ public static class DbManager
             if (!sl.Links.Any())
             {
                 throw new Exception("SongLite must have at least one link to export.");
+            }
+
+            if (sl.SongStats?.TimesPlayed <= 0)
+            {
+                sl.SongStats = null;
             }
         }
 
@@ -1356,7 +1396,12 @@ public static class DbManager
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mId, link);
+                        await InsertSongLink(mId, link, transaction);
+                    }
+
+                    if (songLite.SongStats != null)
+                    {
+                        await SetSongStats(mId, songLite.SongStats, transaction);
                     }
                 }
             }
@@ -1449,7 +1494,7 @@ public static class DbManager
                         IsVideo = rq.is_video,
                         Duration = rq.duration!.Value
                     };
-                    melId = await InsertSongLink(rq.music_id, songLink);
+                    melId = await InsertSongLink(rq.music_id, songLink, null);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);

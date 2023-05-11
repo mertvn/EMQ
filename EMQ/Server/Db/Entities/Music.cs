@@ -10,8 +10,28 @@ public class Music
     [Required]
     public int id { get; set; }
 
-    public int? length { get; set; } // todo remove
-
     [Required]
     public int type { get; set; }
+
+    [Required]
+    public long stat_correct { get; set; }
+
+    [Required]
+    public long stat_played { get; set; }
+
+    [Required]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Dapper.Contrib.Extensions.Write(false)]
+    public float stat_correctpercentage { get; set; }
+
+    [Required]
+    public long stat_guessed { get; set; }
+
+    [Required]
+    public long stat_totalguessms { get; set; }
+
+    [Required]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Dapper.Contrib.Extensions.Write(false)]
+    public int stat_averageguessms { get; set; }
 }
