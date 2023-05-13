@@ -11,12 +11,12 @@ public class QuizSettings
     public int NumSongs { get; set; } = 40;
 
     [Required]
-    [Range(10000, 60000)]
+    [Range(5000, 60000)]
     [DefaultValue(25000)]
     public int GuessMs { get; set; } = 25000;
 
     [Required]
-    [Range(10, 60)]
+    [Range(5, 60)]
     [DefaultValue(25)]
     // ReSharper disable once InconsistentNaming
     public int UI_GuessMs
@@ -26,12 +26,12 @@ public class QuizSettings
     }
 
     [Required]
-    [Range(10000, 60000)]
+    [Range(5000, 60000)]
     [DefaultValue(25000)]
     public int ResultsMs { get; set; } = 25000;
 
     [Required]
-    [Range(10, 60)]
+    [Range(5, 60)]
     [DefaultValue(25)]
     // ReSharper disable once InconsistentNaming
     public int UI_ResultsMs
@@ -50,7 +50,7 @@ public class QuizSettings
     public bool IsHotjoinEnabled { get; set; } = true;
 
     [Required]
-    [Range(1, 8)]
+    [Range(1, 777)]
     [DefaultValue(1)]
     public int TeamSize { get; set; } = 1;
 
@@ -72,12 +72,12 @@ public class QuizSettings
     public SongSelectionKind SongSelectionKind { get; set; } = SongSelectionKind.Random;
 
     [Required]
-    [Range(20000, 250000)]
+    [Range(10000, 250000)]
     [DefaultValue(120000)]
     public int LootingMs { get; set; } = 120000;
 
     [Required]
-    [Range(20, 250)]
+    [Range(10, 250)]
     [DefaultValue(120)]
     // ReSharper disable once InconsistentNaming
     public int UI_LootingMs
