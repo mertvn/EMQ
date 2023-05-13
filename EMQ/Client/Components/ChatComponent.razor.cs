@@ -29,6 +29,7 @@ public partial class ChatComponent
     protected override async Task OnInitializedAsync()
     {
         SetTimer();
+        await SyncChat();
     }
 
     public void SetTimer()
@@ -36,8 +37,7 @@ public partial class ChatComponent
         Timer.Stop();
         Timer.Elapsed -= OnTimedEvent;
 
-        // todo increase this interval after making sure Room can get WS chat updates too
-        Timer.Interval = TimeSpan.FromSeconds(1).TotalMilliseconds;
+        Timer.Interval = TimeSpan.FromSeconds(20).TotalMilliseconds;
         Timer.Elapsed += OnTimedEvent;
         Timer.AutoReset = true;
         Timer.Start();
@@ -78,7 +78,6 @@ public partial class ChatComponent
         }
     }
 
-    // todo: do this with messages sent from the server instead of polling if signalr ever gets reliable enough
     private async Task SyncChat()
     {
         ConcurrentQueue<ChatMessage>? chat = null;

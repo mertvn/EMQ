@@ -24,6 +24,10 @@ public partial class RoomPage
             { "ReceivePlayerJoinedRoom", (new Type[] { }, async _ => { await OnReceivePlayerJoinedRoom(); }) },
             { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
             { "ReceivePyramidEntered", (new Type[] { }, async _ => { await OnReceivePyramidEntered(); }) },
+            {
+                "ReceiveUpdateRoomForRoom", (new Type[] { typeof(Room) },
+                    async param => { await OnReceiveUpdateRoomForRoom((Room)param[0]!); })
+            },
         };
     }
 
@@ -112,6 +116,18 @@ public partial class RoomPage
     private async Task CallStateHasChanged()
     {
         Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
+    }
+
+    private async Task OnReceiveUpdateRoomForRoom(Room room)
+    {
+        Room = room;
+        if (_chatComponent != null)
+        {
+            _chatComponent.Chat = room.Chat;
+            await _chatComponent.CallStateHasChanged();
+        }
+
         StateHasChanged();
     }
 }

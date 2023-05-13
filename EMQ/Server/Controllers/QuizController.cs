@@ -360,6 +360,8 @@ public class QuizController : ControllerBase
                 {
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
+                    // todo we should only need 1 method here after a SignalR refactor
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
                     await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom", room, false);
                     _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
                 }
