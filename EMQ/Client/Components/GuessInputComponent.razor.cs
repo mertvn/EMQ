@@ -55,6 +55,8 @@ public partial class GuessInputComponent
     // todo consider using a LRU cache
     private Dictionary<string, string[]> Cache { get; set; } = new();
 
+    public string? GetSelectedText() => AutocompleteComponent.SelectedText;
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete/mst.json"))!;

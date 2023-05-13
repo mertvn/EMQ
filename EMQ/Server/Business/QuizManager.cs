@@ -550,7 +550,7 @@ public class QuizManager
     // todo: avoid sending other players' guesses in non-team games
     public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
     {
-        if (Quiz.QuizState.Phase == QuizPhaseKind.Guess)
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
         {
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
@@ -560,8 +560,19 @@ public class QuizManager
 
                 if (player.FirstGuessMs <= 0)
                 {
-                    // be careful with this if we ever allow guesses after guess phase ends
-                    player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs - (int)Quiz.QuizState.RemainingMs;
+                    switch (Quiz.QuizState.Phase)
+                    {
+                        case QuizPhaseKind.Guess:
+                            player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs - (int)Quiz.QuizState.RemainingMs;
+                            break;
+                        case QuizPhaseKind.Judgement:
+                            player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs;
+                            break;
+                        case QuizPhaseKind.Results:
+                        case QuizPhaseKind.Looting:
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)

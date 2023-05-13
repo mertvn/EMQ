@@ -380,7 +380,17 @@ public partial class QuizPage
                 _guessInputComponent.CallStateHasChanged();
                 break;
             case QuizPhaseKind.Judgement:
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                // send the non-Entered guess if the player hasn't sent a guess before for the current song
+                if (string.IsNullOrEmpty(PageState.Guess))
+                {
+                    PageState.Guess = _guessInputComponent.GetSelectedText();
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                }
+
                 // await SyncWithServer();
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
