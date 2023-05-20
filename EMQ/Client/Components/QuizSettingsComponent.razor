@@ -194,15 +194,15 @@
                                 <th>Tag Name</th>
                                 <th>Spoiler level</th>
                             </tr>
-                            @foreach (var tf in ClientQuizSettings.Filters.CategoryFilters)
+                            @foreach (var cf in ClientQuizSettings.Filters.CategoryFilters)
                             {
-                                <tr class="tag" @key="@tf" style="text-align: center">
+                                <tr class="tag" @key="@cf" style="text-align: center">
                                     <th>
-                                        <button type="button" @onclick="@(() => RemoveTag(tf.SongSourceCategory.Id))">X</button>
+                                        <button type="button" @onclick="@(() => RemoveTag(cf.SongSourceCategory.Id))">X</button>
                                     </th>
 
                                     <th>
-                                        <InputSelect @bind-Value="@tf.Trilean" style="margin: 5px">
+                                        <InputSelect @bind-Value="@cf.Trilean" style="margin: 5px">
                                             @foreach (var labelKind in Enum.GetValues<LabelKind>())
                                             {
                                                 <option value="@labelKind">@labelKind</option>
@@ -211,21 +211,21 @@
                                     </th>
 
                                     <th>
-                                        <InputNumber @bind-Value="@tf.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
+                                        <InputNumber @bind-Value="@cf.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
                                     </th>
 
                                     <th style="pointer-events: all">
-                                        <a href="@tf.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
-                                            <span>@tf.SongSourceCategory.VndbId</span>
+                                        <a href="@cf.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
+                                            <span>@cf.SongSourceCategory.VndbId</span>
                                         </a>
                                     </th>
 
                                     <th>
-                                        <span>@tf.SongSourceCategory.Name</span>
+                                        <span>@cf.SongSourceCategory.Name</span>
                                     </th>
 
                                     <th>
-                                        <InputSelect @bind-Value="@tf.SongSourceCategory.SpoilerLevel" style="margin: 5px">
+                                        <InputSelect @bind-Value="@cf.SongSourceCategory.SpoilerLevel" style="margin: 5px">
                                             @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
                                             {
                                                 <option value="@spoilerLevel">@spoilerLevel</option>
