@@ -26,6 +26,7 @@
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabGeneral">General</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters">Filters</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabTags">Tags</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabArtists">Artists</Blazorise.Tab>
             </Items>
             <Content>
                 <Blazorise.TabPanel Name="TabGeneral">
@@ -193,15 +194,15 @@
                                 <th>Tag Name</th>
                                 <th>Spoiler level</th>
                             </tr>
-                            @foreach (var tag in ClientQuizSettings.Filters.CategoryFilters)
+                            @foreach (var tf in ClientQuizSettings.Filters.CategoryFilters)
                             {
-                                <tr class="tag" @key="@tag" style="text-align: center">
+                                <tr class="tag" @key="@tf" style="text-align: center">
                                     <th>
-                                        <button type="button" @onclick="@(() => RemoveTag(tag.SongSourceCategory.Id))">X</button>
+                                        <button type="button" @onclick="@(() => RemoveTag(tf.SongSourceCategory.Id))">X</button>
                                     </th>
 
                                     <th>
-                                        <InputSelect @bind-Value="@tag.Trilean" style="margin: 5px">
+                                        <InputSelect @bind-Value="@tf.Trilean" style="margin: 5px">
                                             @foreach (var labelKind in Enum.GetValues<LabelKind>())
                                             {
                                                 <option value="@labelKind">@labelKind</option>
@@ -210,21 +211,21 @@
                                     </th>
 
                                     <th>
-                                        <InputNumber @bind-Value="@tag.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
+                                        <InputNumber @bind-Value="@tf.SongSourceCategory.Rating" style="margin: 5px; width: 70px"></InputNumber>
                                     </th>
 
                                     <th style="pointer-events: all">
-                                        <a href="@tag.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
-                                            <span>@tag.SongSourceCategory.VndbId</span>
+                                        <a href="@tf.SongSourceCategory.VndbId.ToVndbUrl()" target="_blank">
+                                            <span>@tf.SongSourceCategory.VndbId</span>
                                         </a>
                                     </th>
 
                                     <th>
-                                        <span>@tag.SongSourceCategory.Name</span>
+                                        <span>@tf.SongSourceCategory.Name</span>
                                     </th>
 
                                     <th>
-                                        <InputSelect @bind-Value="@tag.SongSourceCategory.SpoilerLevel" style="margin: 5px">
+                                        <InputSelect @bind-Value="@tf.SongSourceCategory.SpoilerLevel" style="margin: 5px">
                                             @foreach (var spoilerLevel in Enum.GetValues<SpoilerLevel>())
                                             {
                                                 <option value="@spoilerLevel">@spoilerLevel</option>
@@ -237,6 +238,58 @@
                         <div style="margin: 5px;">
                             <button type="button" class="btn btn-primary" @onclick="RandomizeTags" disabled="@(IsReadOnly)">Randomize tags</button>
                             <button type="button" class="btn btn-primary" @onclick="ClearTags" disabled="@(IsReadOnly)">Clear tags</button>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+                <Blazorise.TabPanel Name="TabArtists">
+                    <div id="artistEdit" style="margin: 5px; padding: 5px;">
+                        <AutocompleteAComponent @ref="AutocompleteAComponent"
+                                                Placeholder="Enter artist name here"
+                                                FreeTyping="true"
+                                                IsDisabled="false"
+                                                IsQuizPage="false"
+                                                @bind-Guess="@SelectedArtist"
+                                                Callback="SelectedResultChangedA">
+                        </AutocompleteAComponent>
+
+                        <table class="table" style="width: 65%; text-align: center">
+                            <tr>
+                                <th></th>
+                                <th>Selection</th>
+                                <th>VNDB Id</th>
+                                <th>Artist Name</th>
+                            </tr>
+                            @foreach (var af in ClientQuizSettings.Filters.ArtistFilters)
+                            {
+                                <tr class="tag" @key="@af" style="text-align: center">
+                                    <th>
+                                        <button type="button" @onclick="@(() => RemoveArtist(af.Artist.AId))">X</button>
+                                    </th>
+
+                                    <th>
+                                        <InputSelect @bind-Value="@af.Trilean" style="margin: 5px">
+                                            @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                            {
+                                                <option value="@labelKind">@labelKind</option>
+                                            }
+                                        </InputSelect>
+                                    </th>
+
+                                    <th style="pointer-events: all">
+                                        <a href="@af.Artist.VndbId.ToVndbUrl()" target="_blank">
+                                            <span>@af.Artist.VndbId</span>
+                                        </a>
+                                    </th>
+
+                                    <th>
+                                        <span>@($"{af.Artist.AALatinAlias}" + (!string.IsNullOrWhiteSpace(af.Artist.AANonLatinAlias) ? $" ({af.Artist.AANonLatinAlias})" : ""))</span>
+                                    </th>
+                                </tr>
+                            }
+                        </table>
+                        <div style="margin: 5px;">
+                            <button type="button" class="btn btn-primary" @onclick="RandomizeArtists" disabled="@(IsReadOnly)">Randomize artists</button>
+                            <button type="button" class="btn btn-primary" @onclick="ClearArtists" disabled="@(IsReadOnly)">Clear artists</button>
                         </div>
                     </div>
                 </Blazorise.TabPanel>

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
@@ -28,7 +29,11 @@ public partial class QuizSettingsComponent
 
     private SongSourceCategory? SelectedTag { get; set; }
 
+    private AutocompleteA? SelectedArtist { get; set; }
+
     private AutocompleteCComponent AutocompleteCComponent { get; set; } = null!;
+
+    private AutocompleteAComponent AutocompleteAComponent { get; set; } = null!;
 
     private Blazorise.Modal _modalRef = null!;
 
@@ -113,9 +118,37 @@ public partial class QuizSettingsComponent
         ClientQuizSettings.Filters.CategoryFilters = categoryFilters;
     }
 
+    private async Task RandomizeArtists()
+    {
+        if (!AutocompleteAComponent.AutocompleteData.Any())
+        {
+            return;
+        }
+
+        var rng = Random.Shared;
+
+        var categoryFilters = new List<ArtistFilter>();
+        for (int i = 1; i <= rng.Next(1, 6); i++)
+        {
+            var songSourceCategory =
+                AutocompleteAComponent.AutocompleteData[rng.Next(AutocompleteAComponent.AutocompleteData.Length)];
+
+            var trilean = (LabelKind)rng.Next(-1, 1); // we don't want Include here
+            var categoryFilter = new ArtistFilter(songSourceCategory, trilean);
+            categoryFilters.Add(categoryFilter);
+        }
+
+        ClientQuizSettings.Filters.ArtistFilters = categoryFilters;
+    }
+
     private async Task ClearTags()
     {
         ClientQuizSettings.Filters.CategoryFilters = new List<CategoryFilter>();
+    }
+
+    private async Task ClearArtists()
+    {
+        ClientQuizSettings.Filters.ArtistFilters = new List<ArtistFilter>();
     }
 
     private async Task SelectedResultChangedC()
@@ -135,9 +168,27 @@ public partial class QuizSettingsComponent
         }
     }
 
+    private async Task SelectedResultChangedA()
+    {
+        // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
+        if (SelectedArtist != null)
+        {
+            ClientQuizSettings.Filters.ArtistFilters.Add(new ArtistFilter(SelectedArtist, LabelKind.Maybe));
+            // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
+
+            // need to call it twice for it to work
+            await AutocompleteAComponent.ClearInputField();
+            await AutocompleteAComponent.ClearInputField();
+        }
+    }
+
     private async Task RemoveTag(int tagId)
     {
-        // Console.WriteLine("removing tagId:" + tagId);
         ClientQuizSettings.Filters.CategoryFilters.RemoveAll(x => x.SongSourceCategory.Id == tagId);
+    }
+
+    private async Task RemoveArtist(int artistId)
+    {
+        ClientQuizSettings.Filters.ArtistFilters.RemoveAll(x => x.Artist.AId == artistId);
     }
 }

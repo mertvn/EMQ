@@ -750,6 +750,8 @@ public static class DbManager
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
                                      JOIN music_source_category msc on msc.music_source_id = ms.id
+                                     JOIN artist_music am ON am.music_id = m.id
+                                     JOIN artist a ON a.id = am.artist_id
                                      JOIN category c on c.id = msc.category_id
                                      WHERE 1=1
                                      ";
@@ -762,6 +764,8 @@ public static class DbManager
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     JOIN artist_music am ON am.music_id = m.id
+                                     JOIN artist a ON a.id = am.artist_id
                                      WHERE 1=1
                                      ";
             }
@@ -880,6 +884,49 @@ public static class DbManager
                             $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
  AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
  AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
+                    }
+                }
+
+                var validArtists = filters.ArtistFilters;
+                if (validArtists.Any())
+                {
+                    var trileans = validArtists.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validArtists.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        ArtistFilter artistFilter = ordered[index];
+
+                        if (index > 0)
+                        {
+                            switch (artistFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    queryMusicIds.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    queryMusicIds.AppendLine($"INTERSECT");
+                                    break;
+                                case LabelKind.Exclude:
+                                    queryMusicIds.AppendLine($"EXCEPT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryMusicIds.Append($"{sqlMusicIds:raw}");
+                        }
+
+                        queryMusicIds.Append(
+                            $@" AND a.id = {artistFilter.Artist.AId}");
                     }
                 }
             }
@@ -1041,7 +1088,7 @@ public static class DbManager
     public static async Task<string> SelectAutocompleteA()
     {
         const string sqlAutocompleteA =
-            @"SELECT a.id, aa.latin_alias, aa.non_latin_alias
+            @"SELECT DISTINCT a.id, a.vndb_id, aa.latin_alias, aa.non_latin_alias
             FROM artist_music am
             LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
             LEFT JOIN artist a ON a.id = aa.artist_id
@@ -1049,10 +1096,10 @@ public static class DbManager
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<(int, string, string?)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? ""));
+            var res = (await connection.QueryAsync<(int, string, string, string?)>(sqlAutocompleteA))
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3, x.Item4 ?? ""));
             string autocomplete =
-                JsonSerializer.Serialize(res.DistinctBy(x => x), Utils.Jso);
+                JsonSerializer.Serialize(res, Utils.Jso);
             return autocomplete;
         }
     }

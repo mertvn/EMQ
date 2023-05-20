@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Blazorise.Components;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
@@ -26,7 +27,7 @@ public partial class LibraryPage
 
     public string? selectedMusicSourceTitle { get; set; }
 
-    public int? selectedArtistId { get; set; }
+    public AutocompleteA? selectedArtist { get; set; }
 
     public List<Song> CurrentSongs { get; set; } = new();
 
@@ -105,20 +106,20 @@ public partial class LibraryPage
 
     private async Task SelectedResultChangedA()
     {
-        if (selectedArtistId is > 0)
+        if (selectedArtist?.AId is > 0)
         {
             CurrentSongs = new List<Song>();
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            var res = await _client.PostAsJsonAsync("Library/FindSongsByArtistId", selectedArtistId);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsByArtistId", selectedArtist.AId);
             if (res.IsSuccessStatusCode)
             {
                 List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
                 if (songs != null && songs.Any())
                 {
                     CurrentSongs = songs;
-                    selectedArtistId = null;
+                    selectedArtist = null;
                 }
             }
 

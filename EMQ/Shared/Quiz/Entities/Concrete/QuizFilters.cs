@@ -10,6 +10,8 @@ public class QuizFilters
 {
     public List<CategoryFilter> CategoryFilters { get; set; } = new();
 
+    public List<ArtistFilter> ArtistFilters { get; set; } = new();
+
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
         Enum.GetValues<SongSourceSongType>().Where(x => x != SongSourceSongType.Unknown)
             .ToDictionary(x => x, _ => true);

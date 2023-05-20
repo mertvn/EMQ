@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
 using EMQ.Shared.Core;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using NUnit.Framework;
@@ -291,6 +292,19 @@ public class DbTests
             source.Titles.Any(title => title.LatinTitle.Contains("Magical Charming"))))));
 
         Assert.That(songs.Count > 4);
+        Assert.That(songs.Count < 100);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_ArtistFilter_1()
+    {
+        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, "", ""), LabelKind.Maybe), };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
+            filters: new QuizFilters { ArtistFilters = artists }, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 1);
         Assert.That(songs.Count < 100);
     }
 

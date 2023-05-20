@@ -12,7 +12,7 @@ namespace EMQ.Client.Components;
 
 public partial class AutocompleteAComponent
 {
-    private AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
+    public AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
 
     private IEnumerable<AutocompleteA> CurrentDataSource { get; set; } = Array.Empty<AutocompleteA>();
 
@@ -30,10 +30,10 @@ public partial class AutocompleteAComponent
     [Parameter]
     public bool IsQuizPage { get; set; }
 
-    private int? _guess;
+    private AutocompleteA? _guess;
 
     [Parameter]
-    public int? Guess
+    public AutocompleteA? Guess
     {
         get => _guess;
         set
@@ -47,7 +47,7 @@ public partial class AutocompleteAComponent
     }
 
     [Parameter]
-    public EventCallback<int?> GuessChanged { get; set; }
+    public EventCallback<AutocompleteA?> GuessChanged { get; set; }
 
     [Parameter]
     public Func<Task>? Callback { get; set; }
@@ -89,9 +89,9 @@ public partial class AutocompleteAComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            if (Guess != AutocompleteComponent.SelectedValue.AId)
+            if (Guess?.AId != AutocompleteComponent.SelectedValue.AId)
             {
-                Guess = AutocompleteComponent.SelectedValue.AId;
+                Guess = AutocompleteComponent.SelectedValue;
                 await AutocompleteComponent.Close();
                 StateHasChanged();
 

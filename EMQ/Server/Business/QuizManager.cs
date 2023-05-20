@@ -406,6 +406,10 @@ public class QuizManager
         Quiz.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
         Quiz.Log($"validCategoriesCount: {validCategories.Count}");
 
+        var validArtists = Quiz.Room.QuizSettings.Filters.ArtistFilters;
+        Quiz.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
+        Quiz.Log($"validArtistsCount: {validArtists.Count}");
+
         List<Song> dbSongs;
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
