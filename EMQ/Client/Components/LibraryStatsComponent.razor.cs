@@ -1,6 +1,8 @@
 ﻿using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Client.Pages;
 using EMQ.Shared.Library.Entities.Concrete;
+using Microsoft.AspNetCore.Components;
 
 namespace EMQ.Client.Components;
 
@@ -9,6 +11,9 @@ public partial class LibraryStatsComponent
     public LibraryStats? LibraryStats { get; set; }
 
     public string SelectedTab { get; set; } = "TabGeneral";
+
+    [CascadingParameter]
+    public LibraryPage? LibraryPage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,5 +33,25 @@ public partial class LibraryStatsComponent
     private void OnSelectedTabChanged(string name)
     {
         SelectedTab = name;
+    }
+
+    private async Task Onclick_Mst(string mst)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
+            LibraryPage.selectedMusicSourceTitle = mst;
+            await LibraryPage.SelectedResultChangedMst();
+        }
+    }
+
+    private async Task Onclick_A(int aId)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteA");
+            LibraryPage.selectedArtist = new AutocompleteA(aId, "", "");
+            await LibraryPage.SelectedResultChangedA();
+        }
     }
 }

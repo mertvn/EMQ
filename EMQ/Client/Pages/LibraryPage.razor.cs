@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Blazorise;
 using Blazorise.Components;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
@@ -43,6 +44,8 @@ public partial class LibraryPage
 
     public string VndbAdvsearchStr { get; set; } = "";
 
+    public Tabs? TabsComponent { get; set; }
+
     // https://github.com/dotnet/aspnetcore/issues/22159#issuecomment-635427175
     private TaskCompletionSource<bool>? _scheduledRenderTcs;
 
@@ -75,7 +78,7 @@ public partial class LibraryPage
         return Task.CompletedTask;
     }
 
-    private async Task SelectedResultChangedMst()
+    public async Task SelectedResultChangedMst()
     {
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
@@ -104,7 +107,7 @@ public partial class LibraryPage
         }
     }
 
-    private async Task SelectedResultChangedA()
+    public async Task SelectedResultChangedA()
     {
         if (selectedArtist?.AId is > 0)
         {

@@ -119,7 +119,7 @@
                                 </a>
                             </td>
                             <td>
-                                <b>@item.MusicCount</b>
+                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.MusicCount</b>
                             </td>
                         </tr>
                     }
@@ -147,7 +147,7 @@
                             </td>
 
                             <td>
-                                <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                               <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
                             </td>
                             <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
                                 <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
@@ -182,7 +182,7 @@
                                 </a>
                             </td>
                             <td>
-                                <b>@item.MusicCount</b>
+                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.MusicCount</b>
                             </td>
                         </tr>
                     }
@@ -210,7 +210,7 @@
                                 </a>
                             </td>
                             <td>
-                                <b>@item.AvailableMusicCount/@item.MusicCount</b>
+                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
                             </td>
                             <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
                                 <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>

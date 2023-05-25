@@ -8,6 +8,8 @@
 @inject ILogger<GuessInputComponent> _logger
 @inject ClientUtils _clientUtils
 
+<CascadingValue Value="@this" IsFixed="true">
+
 <h3>Library</h3>
 
 <p>Welcome to EMQ Library. Here you can contribute new song links to the game. Please read the upload criteria first. You also need to be logged in.</p>
@@ -37,7 +39,7 @@
 </div>
 
 <div style="border: 1px solid #ddd; padding: 5px">
-    <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+    <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
         <Items>
             <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
@@ -202,3 +204,5 @@
     <h4 style="font-size: 1.2rem">Review Queue</h4>
     <ReviewQueueComponent @ref="_reviewQueueComponent"></ReviewQueueComponent>
 </div>
+
+</CascadingValue>
