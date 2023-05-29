@@ -44,7 +44,7 @@ public class QuizHub : Hub
                 if (room != null)
                 {
                     // todo notify joinqueue?
-                    room.Quiz?.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
+                    room.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
                         session.Player.Id);
 
                     room.AllConnectionIds[session.Player.Id] = newConnectionId!;
@@ -228,6 +228,7 @@ public class QuizHub : Hub
                 {
                     room.RemovePlayer(player);
                     room.AllConnectionIds.Remove(player.Id, out _);
+                    room.Log($"{player.Username} left the room.", -1, true);
 
                     if (!room.Players.Any())
                     {

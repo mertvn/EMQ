@@ -49,11 +49,27 @@ public sealed class Room : IDisposable
 
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
 
+    [JsonIgnore]
+    public ConcurrentQueue<RoomLog> RoomLog { get; set; } = new();
+
     public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
 
     public void Dispose()
     {
         Quiz?.Dispose();
+    }
+
+    public void Log(string message, int playerId = -1, bool isSystemMessage = false)
+    {
+        var roomLog = new RoomLog(Id, Quiz?.Id ?? -1, QuizSettings, Quiz?.QuizState ?? null, playerId, message);
+        RoomLog.Enqueue(roomLog);
+
+        Console.WriteLine(roomLog.ToString());
+
+        if (isSystemMessage)
+        {
+            Chat.Enqueue(new ChatMessage(message));
+        }
     }
 
     public void RemovePlayer(Player toRemove)

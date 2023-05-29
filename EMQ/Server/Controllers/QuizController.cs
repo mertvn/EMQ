@@ -201,6 +201,7 @@ public class QuizController : ControllerBase
                 _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
                 oldRoom.RemovePlayer(player);
                 oldRoom.AllConnectionIds.Remove(player.Id, out _);
+                room.Log($"{player.Username} left the room.", -1, true);
             }
 
             if (room.CanJoinDirectly)
@@ -208,12 +209,19 @@ public class QuizController : ControllerBase
                 _logger.LogInformation("Added p{req.PlayerId} to r{room.Id}", req.PlayerId, room.Id);
                 room.Players.Enqueue(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
+
+                // we don't want to show this message right after room creation
+                if (room.Players.Count > 1)
+                {
+                    room.Log($"{player.Username} joined the room.", -1, true);
+                }
             }
             else
             {
                 _logger.LogInformation("Added p{req.PlayerId} to r{room.Id} as a spectator", req.PlayerId, room.Id);
                 room.Spectators.Enqueue(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
+                room.Log($"{player.Username} started spectating.", -1, true);
             }
 
             // let every other player in the room know that a new player joined,
@@ -258,17 +266,17 @@ public class QuizController : ControllerBase
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);
                 ServerState.AddQuizManager(quizManager);
-                quiz.Log("Created");
+                room.Log("Created");
 
                 if (await quizManager.PrimeQuiz())
                 {
-                    quiz.Log("Primed");
+                    room.Log("Primed");
                     // _ = Task.Run(async () => { await quizManager.StartQuiz(); });
                     await Task.Run(async () => { await quizManager.StartQuiz(); });
                 }
                 else
                 {
-                    quiz.Log("Failed to prime quiz - canceling", isSystemMessage: true);
+                    room.Log("Failed to prime quiz - canceling", isSystemMessage: true);
                     await quizManager.CancelQuiz();
                 }
             }
@@ -314,7 +322,7 @@ public class QuizController : ControllerBase
                     // await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom");
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
-                    room.Quiz?.Log("Room settings changed.", isSystemMessage: true);
+                    room.Log("Room settings changed.", isSystemMessage: true);
                     // todo write to chat (pretty)
                     return Ok();
                 }

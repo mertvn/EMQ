@@ -78,7 +78,7 @@ public class QuizManager
 
                         if (!lootingSuccess)
                         {
-                            Quiz.Log("Canceling quiz due to looting failure", isSystemMessage: true);
+                            Quiz.Room.Log("Canceling quiz due to looting failure", isSystemMessage: true);
                             await CancelQuiz();
                         }
 
@@ -122,7 +122,7 @@ public class QuizManager
 
         int activePlayers = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
             .Count(x => x.HasActiveConnection);
-        // Quiz.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
+        // Room.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
         float waitNumber = (float)Math.Round(
             activePlayers * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
@@ -219,7 +219,7 @@ public class QuizManager
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
             // Console.WriteLine("-------");
-            Quiz.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
         bool correct = correctAnswers.Any(correctAnswer =>
@@ -258,7 +258,7 @@ public class QuizManager
                 {
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
-                    Quiz.Log($"{player.Username} hotjoined.", player.Id, true);
+                    Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
                 }
             }
 
@@ -284,7 +284,7 @@ public class QuizManager
                 continue;
             }
 
-            Quiz.Log("pG: " + player.Guess, player.Id);
+            Quiz.Room.Log("pG: " + player.Guess, player.Id);
 
             bool correct = IsGuessCorrect(player.Guess);
             if (correct)
@@ -336,7 +336,7 @@ public class QuizManager
 
     public async Task EndQuiz()
     {
-        Quiz.Log("Ended");
+        Quiz.Room.Log("Ended");
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
 
         if (!Quiz.IsDisposed)
@@ -349,9 +349,9 @@ public class QuizManager
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEnded");
 
-        Directory.CreateDirectory("QuizLog");
-        await File.WriteAllTextAsync($"QuizLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
-            JsonSerializer.Serialize(Quiz.QuizLog, Utils.JsoIndented));
+        Directory.CreateDirectory("RoomLog");
+        await File.WriteAllTextAsync($"RoomLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
+            JsonSerializer.Serialize(Quiz.Room.RoomLog, Utils.JsoIndented));
 
         await UpdateStats(SongStatsDict);
     }
@@ -399,16 +399,16 @@ public class QuizManager
         }
 
         validSources = validSources.Distinct().ToList();
-        Quiz.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
-        Quiz.Log($"validSourcesCount: {validSources.Count}");
+        Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+        Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
 
         var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;
-        Quiz.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
-        Quiz.Log($"validCategoriesCount: {validCategories.Count}");
+        Quiz.Room.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
+        Quiz.Room.Log($"validCategoriesCount: {validCategories.Count}");
 
         var validArtists = Quiz.Room.QuizSettings.Filters.ArtistFilters;
-        Quiz.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
-        Quiz.Log($"validArtistsCount: {validArtists.Count}");
+        Quiz.Room.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
+        Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
         List<Song> dbSongs;
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
@@ -509,7 +509,7 @@ public class QuizManager
 
         player.IsBuffered = true;
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        Quiz.Log($"isBufferedCount: {isBufferedCount}");
+        Quiz.Room.Log($"isBufferedCount: {isBufferedCount}");
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
@@ -598,12 +598,12 @@ public class QuizManager
             if (Quiz.QuizState.IsPaused)
             {
                 Quiz.QuizState.IsPaused = false;
-                Quiz.Log("Unpaused");
+                Quiz.Room.Log("Unpaused");
             }
             else
             {
                 Quiz.QuizState.IsPaused = true;
-                Quiz.Log("Paused");
+                Quiz.Room.Log("Paused");
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -726,7 +726,7 @@ public class QuizManager
             return false;
         }
 
-        Quiz.Log($"Players looted {validSources.SelectMany(x => x.Value).Distinct().Count()} distinct sources");
+        Quiz.Room.Log($"Players looted {validSources.SelectMany(x => x.Value).Distinct().Count()} distinct sources");
         var dbSongs = await DbManager.GetLootedSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
@@ -737,7 +737,7 @@ public class QuizManager
             return false;
         }
 
-        Quiz.Log($"Selected {dbSongs.Count} looted songs");
+        Quiz.Room.Log($"Selected {dbSongs.Count} looted songs");
 
         // reduce serialized Room size
         Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
@@ -824,19 +824,19 @@ public class QuizManager
                 }
                 else
                 {
-                    Quiz.Log(
+                    Quiz.Room.Log(
                         $"Player is not close enough to the treasure to pickup: {player.LootingInfo.X},{player.LootingInfo.Y} -> " +
                         $"{treasure.Position.X},{treasure.Position.Y}", player.Id);
                 }
             }
             else
             {
-                Quiz.Log("Could not find the treasure to pickup");
+                Quiz.Room.Log("Could not find the treasure to pickup");
             }
         }
         else
         {
-            Quiz.Log("Invalid player treasure room coords", player.Id);
+            Quiz.Room.Log("Invalid player treasure room coords", player.Id);
         }
     }
 
@@ -932,7 +932,7 @@ public class QuizManager
             }
             else
             {
-                Quiz.Log(
+                Quiz.Room.Log(
                     $"Failed to use non-existing exit {player.LootingInfo.TreasureRoomCoords.X},{player.LootingInfo.TreasureRoomCoords.Y} -> " +
                     $"{treasureRoomCoords.X},{treasureRoomCoords.Y}", player.Id);
                 // Console.WriteLine(JsonSerializer.Serialize(Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][player.LootingInfo.TreasureRoomCoords.Y].Exits));
@@ -940,7 +940,7 @@ public class QuizManager
         }
         else
         {
-            Quiz.Log($"Failed to move to non-existing treasure room {treasureRoomCoords}", player.Id);
+            Quiz.Room.Log($"Failed to move to non-existing treasure room {treasureRoomCoords}", player.Id);
         }
     }
 
@@ -966,12 +966,12 @@ public class QuizManager
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
             int skipNumber = (int)Math.Round((float)Quiz.Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
 
-            Quiz.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
+            Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
             if (isSkippingCount >= skipNumber)
             {
                 Quiz.QuizState.RemainingMs = 500;
                 Quiz.QuizState.ExtraInfo = "Skipping...";
-                Quiz.Log($"Skipping...");
+                Quiz.Room.Log($"Skipping...");
 
                 foreach (Player p in Quiz.Room.Players)
                 {
