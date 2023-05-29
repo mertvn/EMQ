@@ -74,6 +74,8 @@ public sealed class CleanupService : IHostedService, IDisposable
                     }
 
                     room.AllConnectionIds.Remove(inactiveSession.Player.Id, out _);
+                    room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
+                        true);
                 }
                 // todo make players spectators if they are connected but AFK
             }
