@@ -43,7 +43,9 @@
                 <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId"/>
                 <br/>
 
-                <label for="VndbApiToken">VNDB API Token (Optional, only required if your list is private, not sent to server): </label>
+                <label for="VndbApiToken">
+                    <a href="https://vndb.org/u/tokens" target="_blank">VNDB API Token</a> (Optional, only required if your list is private, not sent to server):
+                </label>
                 <br/>
                 <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken"/>
                 <br/>
