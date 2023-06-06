@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -118,7 +118,7 @@ public class ClientConnectionManager
         //     Logger.LogWarning($"parameter {i} is {type}");
         // }
 
-        if (!CurrentHandlers.ContainsKey(key))
+        if (!CurrentHandlers.ContainsKey(key)) // todo room and pyramid have conflicting method name
         {
             CurrentHandlers.Add(key, (types, value));
         }

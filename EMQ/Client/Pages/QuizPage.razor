@@ -1,4 +1,4 @@
-﻿@page "/QuizPage"
+@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -165,6 +165,7 @@
                     List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
                     @if (buffered.Count > 0 && notBuffered.Count < 5)
                     {
+                        // TODO: this says that we are waiting on inactive players even though we actually aren't
                         @foreach (Player player in notBuffered)
                         {
                             <p style="text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000; font-size: x-large;">

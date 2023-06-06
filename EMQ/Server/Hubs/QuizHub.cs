@@ -239,7 +239,9 @@ public class QuizHub : Hub
                     {
                         if (room.Owner.Id == player.Id)
                         {
-                            room.Owner = room.Players.First();
+                            var newOwner = room.Players.First();
+                            room.Owner = newOwner;
+                            room.Log($"{newOwner.Username} is the new owner.", -1, true);
                         }
                     }
                 }

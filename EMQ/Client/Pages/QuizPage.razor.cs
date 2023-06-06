@@ -75,11 +75,11 @@ public partial class QuizPage
 
     public static QuizPageState PageState { get; set; } = new() { };
 
-    private static Room? Room { get; set; }
+    private Room? Room { get; set; }
 
     private readonly List<Song?> _clientSongs;
 
-    private Song? _currentSong;
+    private Song? _currentSong { get; set; }
 
     private Song? _correctAnswer { get; set; }
 
