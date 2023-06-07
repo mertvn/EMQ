@@ -55,7 +55,13 @@
                         string latinTitle = mainTitle.LatinTitle;
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
 
-                        <h5 class="songLatinTitle card-title">@mainTitle.ToString()</h5>
+                        // we're not using Title.ToString() here to force a newline between the Latin and NonLatin titles
+                        <h5 class="songLatinTitle card-title">@mainTitle.LatinTitle</h5>
+                        @if (!string.IsNullOrWhiteSpace(nonLatinTitle) &&
+                             !string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            <h5 class="songLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
+                        }
                     }
                 </div>
                 <div>
