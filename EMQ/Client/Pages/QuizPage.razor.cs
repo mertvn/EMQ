@@ -256,7 +256,6 @@ public partial class QuizPage
         if (Room is { Quiz: { } })
         {
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
-            // todo ProgressDivisor
 
             if (!PhaseChangeInProgress || room is not null || forcePhaseChange)
             {

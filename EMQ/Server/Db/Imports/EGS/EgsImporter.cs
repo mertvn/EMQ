@@ -276,7 +276,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             switch (egsImporterInnerResult.ResultKind)
             {
                 case EgsImporterInnerResultKind.Matched:
-                    Console.WriteLine("matched: ");
+                    // Console.WriteLine("matched: ");
                     needsPrint = false;
                     break;
                 case EgsImporterInnerResultKind.MultipleMids:

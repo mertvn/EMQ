@@ -157,7 +157,7 @@ public partial class QuizSettingsComponent
         if (SelectedTag != null)
         {
             SelectedTag.SpoilerLevel = SpoilerLevel.None;
-            SelectedTag.Rating = 2f;
+            SelectedTag.Rating = 1f;
 
             ClientQuizSettings.Filters.CategoryFilters.Add(new CategoryFilter(SelectedTag, LabelKind.Maybe));
             // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));

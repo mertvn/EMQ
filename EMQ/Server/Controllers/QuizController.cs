@@ -318,12 +318,12 @@ public class QuizController : ControllerBase
                     // room.Password = req.RoomPassword; // todo
                     room.QuizSettings = req.QuizSettings;
 
-                    // todo syncroom in all players
-                    // await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom");
-
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
                     room.Log("Room settings changed.", isSystemMessage: true);
                     // todo write to chat (pretty)
+
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
+
                     return Ok();
                 }
                 else

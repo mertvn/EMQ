@@ -3,8 +3,6 @@
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
-@* todo update guess on guess phase end even if enter is not pressed *@
-
 <Autocomplete @ref="AutocompleteComponent"
               @onkeypress="Onkeypress"
               TItem="string"

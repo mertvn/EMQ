@@ -28,7 +28,7 @@ public partial class Index
             ErrorMessage = "Invalid VNDB Id: make sure it looks like u1234567")]
         public string? VndbId { get; set; }
 
-        // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // todo prevents login if users enter something random, and then deletes it
+        // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // prevents login if users enter something random, and then deletes it
         public string? VndbApiToken { get; set; }
     }
 
@@ -57,7 +57,7 @@ public partial class Index
             {
                 _logger.LogInformation("Logged out");
 
-                // todo disconnect hub connection
+                await _clientConnectionManager.StopHubConnection();
                 ClientState.Session = null;
                 await _clientUtils.SaveSessionToLocalStorage();
 
@@ -65,7 +65,7 @@ public partial class Index
             }
             else
             {
-                // todo
+                // todo display error
             }
         }
     }

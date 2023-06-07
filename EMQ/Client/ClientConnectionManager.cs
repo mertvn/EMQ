@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -57,7 +57,7 @@ public class ClientConnectionManager
         await ClientState.Session.hubConnection.StartAsync();
     }
 
-    private async Task StopHubConnection()
+    public async Task StopHubConnection()
     {
         Logger.LogInformation($"StopHubConnection to {Client.BaseAddress}");
         try

@@ -16,7 +16,6 @@ namespace EMQ.Client.Pages;
 
 public partial class HotelPage
 {
-    // TODO allow user to change settings before creating room
     private QuizSettings QuizSettings { get; set; } = new() { };
 
     private List<Room> Rooms { get; set; } = new();
