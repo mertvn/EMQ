@@ -152,12 +152,16 @@
                     </EditForm>
                 </div>
             }
+            else
+            {
+                <span> You must be logged in to change your preferences.</span>
+            }
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>
             <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
                 Close
             </button>
-            <button type="button" class="btn btn-primary"
+            <button type="button" class="btn btn-primary" disabled="@(ClientState.Session == null)"
                     @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); } })">
                 Save preferences
             </button>

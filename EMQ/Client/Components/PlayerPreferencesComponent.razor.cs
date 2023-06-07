@@ -51,10 +51,7 @@ public partial class PlayerPreferencesComponent
     public void OnclickButtonPreferences()
     {
         StateHasChanged();
-        if (ClientState.Session != null)
-        {
-            _modalRef.Show();
-        }
+        _modalRef.Show();
     }
 
     private Task OnSelectedTabChanged(string name)
