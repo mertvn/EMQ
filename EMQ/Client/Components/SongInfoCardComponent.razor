@@ -60,7 +60,7 @@
                         @if (!string.IsNullOrWhiteSpace(nonLatinTitle) &&
                              !string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            <h5 class="songLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
+                            <h5 class="songNonLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
                         }
                     }
                 </div>
@@ -71,7 +71,7 @@
                         Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
                         <div>
-                            <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
+                            <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
                                 <span>@songArtistTitle.ToString()</span>
                             </a>
                         </div>
