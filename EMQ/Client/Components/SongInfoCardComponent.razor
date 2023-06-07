@@ -51,25 +51,18 @@
 
                     </h5>
                     @{
-                        Title mainTitle = Song.Titles.First(x => x.IsMainTitle);
+                        Title mainTitle = Converters.GetSingleTitle(Song.Titles);
                         string latinTitle = mainTitle.LatinTitle;
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
 
-                        <h5 class="songLatinTitle card-title">@mainTitle.LatinTitle</h5>
-                        @if (!string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            if (!string.IsNullOrWhiteSpace(nonLatinTitle))
-                            {
-                                <h5 class="songLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
-                            }
-                        }
+                        <h5 class="songLatinTitle card-title">@mainTitle.ToString()</h5>
                     }
                 </div>
                 <div>
                     by
                     @foreach (SongArtist songArtist in Song.Artists)
                     {
-                        var songArtistTitle = songArtist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First();
+                        Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
                         <div>
                             <a class="songArtistsLatinTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">

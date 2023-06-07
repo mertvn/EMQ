@@ -37,10 +37,9 @@
                         {
                             @foreach (var treasure in player.LootingInfo.Inventory)
                             {
-                                var sourceLatinTitle = @treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle;
+                                var sourceLatinTitle = Converters.GetSingleTitle(@treasure.ValidSource.Value).LatinTitle;
                                 <span style="cursor: pointer"
                                       @onclick="@(() => DropTreasure(treasure))">
-                                    @* todo title selection *@
                                     <Blazorise.Tooltip Text="@sourceLatinTitle">
                                         @sourceLatinTitle
                                     </Blazorise.Tooltip>
@@ -70,15 +69,15 @@
         {
             @foreach (var treasure in Room.TreasureRooms[currentTreasureRoomCoords.X][currentTreasureRoomCoords.Y].Treasures)
             {
+                var sourceLatinTitle = Converters.GetSingleTitle(@treasure.ValidSource.Value).LatinTitle;
                 <div class="treasure" @onmouseover="@(() => { })"
                      style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer; z-index: 4000;
                      padding: 5px 5px 1px 5px; border-style: solid; border-radius: 50%;
                      border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");"
                      @onclick="@(() => PickupTreasure(treasure))">
 
-                    @* todo title selection *@
                     @* todo invisible until picked up quiz setting or until in range *@
-                    <Blazorise.Tooltip Text="@treasure.ValidSource.Value.First(x => x.IsMainTitle).LatinTitle">
+                    <Blazorise.Tooltip Text="@sourceLatinTitle">
                         <img width="@(LootingConstants.PlayerAvatarSize - 20)px" height="@(LootingConstants.PlayerAvatarSize - 20)px"
                              src="assets/gem.svg" alt="Treasure"
                              style="display: inline-block">

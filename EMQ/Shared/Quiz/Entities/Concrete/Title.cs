@@ -13,7 +13,12 @@ public class Title
 
     public bool IsMainTitle { get; set; }
 
-    // todo: use this
-    public override string ToString() =>
-        $"{LatinTitle}" + (!string.IsNullOrWhiteSpace(NonLatinTitle) ? $" ({NonLatinTitle})" : "");
+    public override string ToString()
+    {
+        return $"{LatinTitle}" +
+               (!string.IsNullOrWhiteSpace(NonLatinTitle) && !string.Equals(NonLatinTitle, LatinTitle,
+                   StringComparison.InvariantCultureIgnoreCase)
+                   ? $" ({NonLatinTitle})"
+                   : "");
+    }
 }

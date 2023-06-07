@@ -79,5 +79,6 @@ public class PlayerPreferences
     [Required]
     public bool HideVideo { get; set; } = false;
 
-    // todo language preferences
+    [Required]
+    public bool WantsEnglish { get; set; } = false;
 }

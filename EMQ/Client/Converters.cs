@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -7,14 +6,21 @@ namespace EMQ.Client;
 
 public static class Converters
 {
-    // public static Title GetSingleTitle(IEnumerable<Title> titles)
-    // {
-    //     var languagePreference = "ja";
-    //     var romanizationPreference = true;
-    //
-    //     titles = titles.OrderByDescending(x => x.Language == languagePreference);
-    //     foreach (Title title in titles)
-    //     {
-    //     }
-    // }
+    public static Title GetSingleTitle(IEnumerable<Title> titles, string language1 = "ja", string language2 = "en")
+    {
+        // todo proper language preferences
+        if (ClientState.Session != null && ClientState.Session.Player.Preferences.WantsEnglish)
+        {
+            language1 = "en";
+            language2 = "ja";
+        }
+        // var romanizationPreference = true;
+
+        // not chained together for debugging purposes
+        var one = titles.OrderByDescending(x => x.Language == language1);
+        var two = one.ThenByDescending(x => x.Language == language2);
+        var three = two.ThenByDescending(x => x.IsMainTitle);
+
+        return three.First();
+    }
 }

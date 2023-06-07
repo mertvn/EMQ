@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
@@ -25,16 +26,13 @@
         <tr>
             <td>@rq.id</td>
             <td>
-                @* todo title converter method *@
                 @* todo link might be different from what's displayed *@
                 <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url">
-                    @((rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
-                       ?? rq.Song.Sources.First().Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+                    @(Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle)
                 </a>
             </td>
             <td>
-                @((rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").FirstOrDefault(x => x.IsMainTitle)
-                   ?? rq.Song.Titles.OrderByDescending(x => x.Language is "ja").ThenByDescending(x => x.Language is "en").First()).LatinTitle)
+                @(Converters.GetSingleTitle(rq.Song.Titles).LatinTitle)
             </td>
             <td>
                 <a href="@rq.url">@rq.url</a>

@@ -34,10 +34,15 @@ public class SongSource
 
     public HashSet<int> MusicIds { get; set; } = new();
 
-    public override string ToString() =>
-        $"{Titles.First().LatinTitle}" + (!string.IsNullOrWhiteSpace(Titles.First().NonLatinTitle)
-            ? $" ({Titles.First().NonLatinTitle})"
-            : "");
+    public override string ToString()
+    {
+        var first = Titles.First();
+        return $"{first.LatinTitle}" +
+               (!string.IsNullOrWhiteSpace(first.NonLatinTitle) && !string.Equals(first.NonLatinTitle, first.LatinTitle,
+                   StringComparison.InvariantCultureIgnoreCase)
+                   ? $" ({first.NonLatinTitle})"
+                   : "");
+    }
 }
 
 public enum SongSourceSongType

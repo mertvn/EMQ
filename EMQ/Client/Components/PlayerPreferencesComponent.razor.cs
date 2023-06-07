@@ -144,13 +144,13 @@ public partial class PlayerPreferencesComponent
             }
             else
             {
-                // todo
+                // should never be hit under normal circumstances
                 throw new Exception();
             }
         }
         else
         {
-            // todo
+            // should never be hit under normal circumstances
             throw new Exception();
         }
     }

@@ -275,13 +275,13 @@ public static class VndbImporter
                     (string?)dynMusicSourceTitle.latin);
 
                 // we don't want titles that are exactly the same
-                if (musicSourceTitles.Any(x =>
-                        string.Equals(x.LatinTitle, latinTitle, StringComparison.OrdinalIgnoreCase) &&
-                        (string.IsNullOrWhiteSpace(nonLatinTitle) || string.Equals(x.NonLatinTitle, nonLatinTitle,
-                            StringComparison.OrdinalIgnoreCase))))
-                {
-                    continue;
-                }
+                // if (musicSourceTitles.Any(x =>
+                //         string.Equals(x.LatinTitle, latinTitle, StringComparison.OrdinalIgnoreCase) &&
+                //         (string.IsNullOrWhiteSpace(nonLatinTitle) || string.Equals(x.NonLatinTitle, nonLatinTitle,
+                //             StringComparison.OrdinalIgnoreCase))))
+                // {
+                //     continue;
+                // }
 
                 var musicSourceTitle = new Title()
                 {
@@ -289,9 +289,16 @@ public static class VndbImporter
                     NonLatinTitle = nonLatinTitle,
                     Language = dynMusicSourceTitle.lang,
                     IsMainTitle = string.Equals(latinTitle, (string)dynMusicSource.title,
-                        StringComparison.OrdinalIgnoreCase)
+                                      StringComparison.OrdinalIgnoreCase) &&
+                                  string.Equals((string)dynMusicSourceTitle.lang, (string)dynMusicSource.olang,
+                                      StringComparison.OrdinalIgnoreCase)
                 };
                 musicSourceTitles.Add(musicSourceTitle);
+            }
+
+            if (!musicSourceTitles.Any(x => x.IsMainTitle))
+            {
+                throw new Exception();
             }
 
             var song = new Song()

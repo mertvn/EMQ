@@ -129,7 +129,8 @@ public static class DbManager
                     }
                     else
                     {
-                        if (!existingSong.Titles.Any(x => x.LatinTitle == musicTitle.latin_title))
+                        if (!existingSong.Titles.Any(x =>
+                                x.LatinTitle == musicTitle.latin_title && x.Language == musicTitle.language))
                         {
                             existingSong.Titles.Add(new Title()
                             {
@@ -316,7 +317,8 @@ public static class DbManager
                 }
                 else
                 {
-                    if (!existingSongSource.Titles.Any(x => x.LatinTitle == musicSourceTitle.latin_title))
+                    if (!existingSongSource.Titles.Any(x =>
+                            x.LatinTitle == musicSourceTitle.latin_title && x.Language == musicSourceTitle.language))
                     {
                         existingSongSource.Titles.Add(new Title()
                         {
