@@ -149,7 +149,7 @@
                             <td>
                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
                             </td>
-                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
                                 <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
                             </td>
                         </tr>
@@ -212,7 +212,7 @@
                             <td>
                                 <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
                             </td>
-                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "initial")">
+                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
                                 <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
                             </td>
                         </tr>
