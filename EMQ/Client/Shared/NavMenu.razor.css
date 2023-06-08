@@ -18,6 +18,11 @@
     top: -2px;
 }
 
+.oi::before {
+    display: inline-block;
+    width: 1.7em;
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
