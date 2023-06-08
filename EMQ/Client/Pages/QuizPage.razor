@@ -212,7 +212,7 @@
         {
             @foreach (var player in Room.Players)
             {
-                <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 280px;">
+                <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px;">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
                          @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
@@ -227,7 +227,7 @@
 
                     @if (Room?.QuizSettings.MaxLives > 0)
                     {
-                        <p> Lives: @player.Lives</p>
+                        <span> Lives: @player.Lives</span>
                     }
 
                     <div style="position: relative">
