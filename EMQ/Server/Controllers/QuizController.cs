@@ -278,6 +278,7 @@ public class QuizController : ControllerBase
                 {
                     room.Log("Failed to prime quiz - canceling", isSystemMessage: true);
                     await quizManager.CancelQuiz();
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
                 }
             }
             else
