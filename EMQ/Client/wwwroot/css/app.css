@@ -1,7 +1,10 @@
 ﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
-:root{
-    /*--bs-body-color: #e0e4e8*/
+/* :root {
+} */
+
+[data-bs-theme=dark] {
+    --bs-body-color: #e0e4e8
 }
 
 html, body {
