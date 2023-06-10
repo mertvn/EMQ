@@ -47,7 +47,7 @@ public partial class PyramidPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        if (ClientState.Session is null)
+        if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
         {
             _navigation.NavigateTo("/", true);
             return;
