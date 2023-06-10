@@ -12,14 +12,14 @@
         <th>Source Title</th>
         <th>Song Title</th>
         <th>Url</th>
-        <th>Type</th>
+        @* <th>Type</th> *@
         <th>Is Video</th>
         <th>Submitted By</th>
         <th>Submitted On</th>
         <th>Analysis</th>
         <th>Duration</th>
         <th>Status</th>
-        <th>Reason</th>
+        <th>Notes</th>
     </tr>
     @foreach (var rq in CurrentRQs)
     {
@@ -37,7 +37,7 @@
             <td>
                 <a href="@rq.url">@rq.url</a>
             </td>
-            <td>@rq.type</td>
+            @* <td>@rq.type</td> *@
             <td>@rq.is_video</td>
             <td>@rq.submitted_by</td>
             <td>@rq.submitted_on.ToString("s")</td>
