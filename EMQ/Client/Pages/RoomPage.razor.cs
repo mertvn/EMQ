@@ -46,6 +46,12 @@ public partial class RoomPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        if (ClientState.Session is null)
+        {
+            _navigation.NavigateTo("/", true);
+            return;
+        }
+
         await _clientConnectionManager.SetHandlers(_handlers);
 
         Room = await _clientUtils.SyncRoom();

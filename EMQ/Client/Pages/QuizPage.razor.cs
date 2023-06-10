@@ -108,6 +108,11 @@ public partial class QuizPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        if (ClientState.Session is null)
+        {
+            _navigation.NavigateTo("/", true);
+            return;
+        }
 
         // todo reset page state between quizzes
         PageState.DebugOut.Add("init QuizPage");

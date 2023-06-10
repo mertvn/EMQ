@@ -47,6 +47,12 @@ public partial class PyramidPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        if (ClientState.Session is null)
+        {
+            _navigation.NavigateTo("/", true);
+            return;
+        }
+
         await SyncWithServer();
         if (!Room!.TreasureRooms.Any(x => x.Any(y => y.Treasures.Any(z => z.ValidSource.Value.Any()))))
         {
