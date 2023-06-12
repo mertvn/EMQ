@@ -120,26 +120,33 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("UpdateLabel")]
-    public async Task<Label> UpdateLabel([FromBody] ReqUpdateLabel req)
+    public async Task<ActionResult<Label>> UpdateLabel([FromBody] ReqUpdateLabel req)
     {
-        var session = ServerState.Sessions.Single(x => x.Token == req.PlayerToken); // todo check session
-        if (session.VndbInfo.Labels != null)
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session != null)
         {
-            var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
-            Console.WriteLine(
-                $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
-
-            if (existingLabel != null)
+            if (session.VndbInfo.Labels != null)
             {
-                session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
-            }
+                var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
+                Console.WriteLine(
+                    $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
 
-            session.VndbInfo.Labels.Add(req.Label);
-            return req.Label;
+                if (existingLabel != null)
+                {
+                    session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
+                }
+
+                session.VndbInfo.Labels.Add(req.Label);
+                return req.Label;
+            }
+            else
+            {
+                throw new Exception("Could not find the label to update");
+            }
         }
         else
         {
-            throw new Exception("Could not find the label to update");
+            return Unauthorized();
         }
     }
 

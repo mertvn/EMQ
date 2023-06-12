@@ -165,7 +165,7 @@ public partial class PlayerPreferencesComponent
                 JsonSerializer.Deserialize<List<Label>>(
                     JsonSerializer.Serialize(Labels))!; // need a deep copy
 
-            // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
+            // we try processing playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
             foreach (Label label in vndbInfo.Labels)
             {
                 switch (label.Name.ToLowerInvariant())
