@@ -30,7 +30,10 @@
                                         for (int index = 0; index < songTypes.Count; index++)
                                         {
                                             SongSourceSongType songType = songTypes[index];
-                                            <span>@songType</span>
+
+                                            <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
+                                                <span>@songType</span>
+                                            </a>
 
                                             if (index + 1 != songTypes.Count)
                                             {
@@ -38,11 +41,6 @@
                                             }
                                         }
 
-                                        // todo fix underline being too long
-                                        <span></span>
-                                        <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
-                                            <span>(VN)</span>
-                                        </a>
                                         <br/>
                                     }
                                 }
