@@ -440,6 +440,10 @@ public static class Program
                                     if (boundsCheck3 >= 0 && input.Length > boundsCheck3)
                                     {
                                         Console.WriteLine(input[boundsCheck3]);
+                                        if (input[boundsCheck3] == ' ') // todo terrible hack
+                                        {
+                                            boundsCheck3 += 1;
+                                        }
 
                                         if (string.Equals(input.Substring(boundsCheck3, "and".Length), "and",
                                                 StringComparison.OrdinalIgnoreCase))

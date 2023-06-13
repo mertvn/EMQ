@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -442,6 +442,34 @@ public class VNDBStaffNotesParserTests
                 BeforeType = "",
                 Type = new List<SongType> { SongType.ED },
                 Title = "Ashita wo Egaku Omoi no Iro",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_MultipleWithDifferentSongTypesAndDelimiterWithDoubleSpaceBefore()
+    {
+        string input =
+            "OP \"Harukaze ni Kiss Shite\"  and ED \"Ano Natsu o Wasurenai\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Harukaze ni Kiss Shite",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Ano Natsu o Wasurenai",
                 AfterTitle = ""
             },
         };
