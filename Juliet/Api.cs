@@ -168,8 +168,7 @@ public static class Api
 
                 if (param.Filters != null)
                 {
-                    filters = Query.ToJsonNormalized(param.Filters, true);
-
+                    filters = Query.ToJson(param.Filters, true);
                     dict.Add("filters", filters);
                 }
             }

@@ -111,7 +111,7 @@ app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
-bool cacheSongs = false && !app.Environment.IsDevelopment();
+bool precacheSongs = false && !app.Environment.IsDevelopment();
 
 static IServiceProvider CreateServices()
 {
@@ -182,17 +182,16 @@ async Task Init()
         await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
             await DbManager.SelectAutocompleteA());
 
-        if (cacheSongs)
+        if (precacheSongs)
         {
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            // cache songs
             await DbManager.GetRandomSongs(int.MaxValue, true, new List<string>());
 
             stopWatch.Stop();
             double ms = (stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency;
-            Console.WriteLine($"Cached songs in {Math.Round(ms / 1000, 2)}s");
+            Console.WriteLine($"Precached songs in {Math.Round(ms / 1000, 2)}s");
         }
 
         // yes, we really need to do this twice
