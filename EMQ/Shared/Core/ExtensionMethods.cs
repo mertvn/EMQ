@@ -93,7 +93,7 @@ public static class ExtensionMethods
     {
         try
         {
-            Console.WriteLine($"DownloadFile2 {uri}");
+            Console.WriteLine($"DownloadFile {uri}");
             await using (var stream = await client.GetStreamAsync(uri))
             await using (var fs = new FileStream(dest, FileMode.OpenOrCreate))
             {
