@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Npgsql;
 
 namespace EMQ.Server;
@@ -6,6 +6,17 @@ namespace EMQ.Server;
 public static class ConnectionHelper
 {
     private static string s_cachedCnnStr = "";
+
+    private static string GetDatabaseUrl()
+    {
+        string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        if (string.IsNullOrWhiteSpace(databaseUrl))
+        {
+            throw new Exception("Error getting DATABASE_URL envvar");
+        }
+
+        return databaseUrl;
+    }
 
     public static string GetConnectionString()
     {
@@ -21,17 +32,6 @@ public static class ConnectionHelper
             s_cachedCnnStr = str;
             return str;
         }
-    }
-
-    private static string GetDatabaseUrl()
-    {
-        string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-        if (string.IsNullOrWhiteSpace(databaseUrl))
-        {
-            throw new Exception("Error getting DATABASE_URL envvar");
-        }
-
-        return databaseUrl;
     }
 
     public static NpgsqlConnectionStringBuilder GetConnectionStringBuilder(string databaseUrl)
