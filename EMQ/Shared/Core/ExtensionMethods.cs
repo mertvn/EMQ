@@ -93,12 +93,11 @@ public static class ExtensionMethods
     {
         try
         {
-            Console.WriteLine($"DownloadFile {uri}");
-            var stream = await client.GetStreamAsync(uri);
-            await using (MemoryStream ms = new())
+            Console.WriteLine($"DownloadFile2 {uri}");
+            await using (var stream = await client.GetStreamAsync(uri))
+            await using (var fs = new FileStream(dest, FileMode.OpenOrCreate))
             {
-                await stream.CopyToAsync(ms);
-                await File.WriteAllBytesAsync(dest, ms.ToArray());
+                await stream.CopyToAsync(fs);
                 return true;
             }
         }
@@ -115,14 +114,11 @@ public static class ExtensionMethods
         {
             Console.WriteLine($"DownloadFile2 {uri}");
             using (var client = new HttpClient())
+            await using (var stream = await client.GetStreamAsync(uri))
+            await using (var fs = new FileStream(dest, FileMode.OpenOrCreate))
             {
-                var stream = await client.GetStreamAsync(uri);
-                await using (MemoryStream ms = new())
-                {
-                    await stream.CopyToAsync(ms);
-                    await File.WriteAllBytesAsync(dest, ms.ToArray());
-                    return true;
-                }
+                await stream.CopyToAsync(fs);
+                return true;
             }
         }
         catch (Exception e)

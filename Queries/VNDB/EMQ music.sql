@@ -1,4 +1,4 @@
-SELECT v.id AS "VNID", v.title, s.id AS "StaffID", vs.aid AS "ArtistAliasID", sa.name, vs.role, vs.note AS "MusicName", json_agg(p.id) AS "ProducerIds"
+SELECT v.id AS "VNID", s.id AS "StaffID", vs.aid AS "ArtistAliasID", sa.name, vs.role, vs.note AS "MusicName", json_agg(p.id) AS "ProducerIds"
 FROM vn_staff vs
 JOIN vn v ON v.id = vs.id
 JOIN staff_alias sa ON sa.aid = vs.aid
@@ -25,4 +25,4 @@ WHERE r.released != 99999999
 GROUP BY v.id
 )
 AND r.official = true
-group by v.id, v.title, s.id, vs.aid, sa.name, vs.role, vs.note
+group by v.id, s.id, vs.aid, sa.name, vs.role, vs.note

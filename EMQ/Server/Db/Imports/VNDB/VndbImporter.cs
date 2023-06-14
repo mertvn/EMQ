@@ -288,10 +288,12 @@ public static class VndbImporter
                     LatinTitle = latinTitle,
                     NonLatinTitle = nonLatinTitle,
                     Language = dynMusicSourceTitle.lang,
-                    IsMainTitle = string.Equals(latinTitle, (string)dynMusicSource.title,
-                                      StringComparison.OrdinalIgnoreCase) &&
-                                  string.Equals((string)dynMusicSourceTitle.lang, (string)dynMusicSource.olang,
-                                      StringComparison.OrdinalIgnoreCase)
+                    // IsMainTitle = string.Equals(latinTitle, (string)dynMusicSource.title,
+                    //                   StringComparison.OrdinalIgnoreCase) &&
+                    //               string.Equals((string)dynMusicSourceTitle.lang, (string)dynMusicSource.olang,
+                    //                   StringComparison.OrdinalIgnoreCase)
+                    IsMainTitle = string.Equals((string)dynMusicSourceTitle.lang, (string)dynMusicSource.olang,
+                        StringComparison.OrdinalIgnoreCase)
                 };
                 musicSourceTitles.Add(musicSourceTitle);
             }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -73,7 +73,8 @@ public class VNDBStaffNotesParserTests
                     name = dynData.name,
                     role = dynData.role,
                     ParsedSong = parsedSong,
-                    ProducerIds = ((JArray)dynData.ProducerIds).ToObject<string[]>()!.Distinct().ToArray(),
+                    ProducerIds = (JArray.Parse((string)(dynData.ProducerIds.ToString()))).ToObject<string[]>()!
+                        .Distinct().ToArray(),
                 };
                 processedMusics.Add(processedMusic);
             }

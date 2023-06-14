@@ -9,16 +9,45 @@ public static class ConnectionHelper
 
     public static string GetConnectionString()
     {
+        if (!string.IsNullOrWhiteSpace(s_cachedCnnStr))
+        {
+            return s_cachedCnnStr;
+        }
+        else
+        {
+            string databaseUrl = GetDatabaseUrl();
+            NpgsqlConnectionStringBuilder builder = GetConnectionStringBuilder(databaseUrl);
+            string str = builder.ToString();
+            s_cachedCnnStr = str;
+            return str;
+        }
+    }
+
+    private static string GetDatabaseUrl()
+    {
         string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
         if (string.IsNullOrWhiteSpace(databaseUrl))
         {
             throw new Exception("Error getting DATABASE_URL envvar");
         }
 
-        return !string.IsNullOrWhiteSpace(s_cachedCnnStr) ? s_cachedCnnStr : BuildConnectionString(databaseUrl);
+        return databaseUrl;
     }
 
-    private static string BuildConnectionString(string databaseUrl)
+    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilder(string databaseUrl)
+    {
+        var builder = GetConnectionStringBuilderInner(databaseUrl);
+        return builder;
+    }
+
+    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilder()
+    {
+        string databaseUrl = GetDatabaseUrl();
+        var builder = GetConnectionStringBuilderInner(databaseUrl);
+        return builder;
+    }
+
+    private static NpgsqlConnectionStringBuilder GetConnectionStringBuilderInner(string databaseUrl)
     {
         var databaseUri = new Uri(databaseUrl);
         string[] userInfo = databaseUri.UserInfo.Split(':');
@@ -35,8 +64,6 @@ public static class ConnectionHelper
             IncludeErrorDetail = true
         };
 
-        string str = builder.ToString();
-        s_cachedCnnStr = str;
-        return str;
+        return builder;
     }
 }
