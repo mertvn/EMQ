@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -1404,7 +1404,7 @@ WHERE id = {mId};
             LEFT JOIN artist_music am ON am.music_id = m.id
             LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
             LEFT JOIN artist a ON a.id = aa.artist_id
-            WHERE mt.latin_title = ANY(@mtLatinTitle)
+            WHERE lower(mt.latin_title) = ANY(lower(@mtLatinTitle::text)::text[])
               AND msel.url = ANY(@mselUrl)
               AND a.vndb_id = ANY(@aVndbId)";
 
