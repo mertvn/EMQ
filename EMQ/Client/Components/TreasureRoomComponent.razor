@@ -90,24 +90,24 @@
         @foreach ((Direction direction, Point treasureRoomCoords) in Room.TreasureRooms[currentTreasureRoomCoords.X][currentTreasureRoomCoords.Y].Exits)
         {
             Point arrowPosition;
-            string arrowText; // todo needs to be bigger
+            string arrowClass;
             switch (direction)
             {
                 case Direction.North:
                     arrowPosition = new Point(LootingConstants.TreasureRoomWidth / 2, 0);
-                    arrowText = "↑";
+                    arrowClass = "bi bi-arrow-up-circle me-2";
                     break;
                 case Direction.East:
                     arrowPosition = new Point(LootingConstants.TreasureRoomWidth - 40, LootingConstants.TreasureRoomHeight / 2);
-                    arrowText = "→";
+                    arrowClass = "bi bi-arrow-right-circle me-2";
                     break;
                 case Direction.South:
                     arrowPosition = new Point(LootingConstants.TreasureRoomWidth / 2, LootingConstants.TreasureRoomHeight - 50);
-                    arrowText = "↓";
+                    arrowClass = "bi bi-arrow-down-circle me-2";
                     break;
                 case Direction.West:
                     arrowPosition = new Point(5, LootingConstants.TreasureRoomHeight / 2);
-                    arrowText = "←";
+                    arrowClass = "bi bi-arrow-left-circle me-2";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -119,7 +119,7 @@
                           color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");
                           pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y));"
                  @onclick="@(() => OnclickChangeTreasureRoomArrow(arrowPosition, treasureRoomCoords, direction))">
-                @arrowText
+                <i class="@arrowClass" style="width: 3em"></i>
             </div>
         }
     }
