@@ -9,4 +9,4 @@ where vs.role::text ~* 'songs'
 AND vs.note ~* '(")|(“)|(”)|('')'
 AND r.released != 99999999
 GROUP BY s.id
-order by s.id
+ORDER BY SPLIT_PART(s.id::text, 's', 2)::int -- fixes sorting for local copies where we don't have the vndbid type

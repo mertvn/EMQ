@@ -18,4 +18,4 @@ GROUP BY v.id
 )
 
 GROUP BY v.id
-ORDER BY v.id
+ORDER BY SPLIT_PART(v.id::text, 'v', 2)::int -- fixes sorting for local copies where we don't have the vndbid type

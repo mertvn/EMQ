@@ -26,4 +26,4 @@ GROUP BY v.id
 )
 AND r.official = true
 group by v.id, s.id, vs.aid, sa.name, vs.role, vs.note
-order by v.id
+ORDER BY SPLIT_PART(v.id::text, 'v', 2)::int -- fixes sorting for local copies where we don't have the vndbid type
