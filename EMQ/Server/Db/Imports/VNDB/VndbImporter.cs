@@ -96,6 +96,7 @@ public static class VndbImporter
 
     private static List<Song> ImportVndbDataInner(List<ProcessedMusic> dataJson)
     {
+        var existingSongBlacklist = new List<(string, string)> { ("v236", "POWDER SNOW"), };
         var songs = new List<Song>();
 
         var musicSourcesDict = musicSourcesJson.ToDictionary(x => (string)x.id);
@@ -232,21 +233,32 @@ public static class VndbImporter
 
             if (existingSong is not null)
             {
-                var existingSongExistingArtist =
-                    existingSong.Artists.SingleOrDefault(z => z.VndbId == (string)dynArtist.id);
-                if (existingSongExistingArtist is not null)
+                bool isBlacklisted =
+                    existingSongBlacklist.Any(x => x.Item1 == dynData.VNID && x.Item2 == dynData.ParsedSong.Title);
+
+                if (isBlacklisted)
                 {
-                    // todo
-                    continue;
-
-                    // Console.WriteLine(
-                    //     $"Adding new role ({dynData.role}) to existing artist ({(string)dynArtist.id}) for source ({dynData.VNID})");
-                    // existingSongExistingArtist.Roles.Add(songArtist);
+                    Console.WriteLine($"Blacklisted existing song: {dynData.VNID} {dynData.ParsedSong.Title}");
                 }
+                else
+                {
+                    var existingSongExistingArtist =
+                        existingSong.Artists.SingleOrDefault(z => z.VndbId == (string)dynArtist.id);
+                    if (existingSongExistingArtist is not null)
+                    {
+                        // todo
+                        continue;
 
-                // Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing source ({dynData.VNID})");
-                existingSong.Artists.Add(songArtist);
-                continue;
+                        // Console.WriteLine(
+                        //     $"Adding new role ({dynData.role}) to existing artist ({(string)dynArtist.id}) for source ({dynData.VNID})");
+                        // existingSongExistingArtist.Roles.Add(songArtist);
+                    }
+
+                    // Console.WriteLine($"Adding new artist ({dynArtist.id}) to existing source ({dynData.VNID})");
+
+                    existingSong.Artists.Add(songArtist);
+                    continue;
+                }
             }
 
             // Why yes, I did have fun writing this
@@ -347,6 +359,11 @@ public static class VndbImporter
                     song.Titles.Select(z => z.LatinTitle.ToLowerInvariant())
                         .Contains(y.LatinTitle.ToLowerInvariant())) &&
                 x.ProducerIds.Any(y => song.ProducerIds.Contains(y)));
+
+            // if (song.Titles.Any(x=> x.LatinTitle == "Unmei -SADAME-"))
+            // {
+            //     Console.WriteLine("here");
+            // }
 
             if (sameSong is not null)
             {
