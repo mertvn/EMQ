@@ -1536,12 +1536,17 @@ WHERE id = {mId};
                 case ReviewQueueStatus.Rejected:
                     break;
                 case ReviewQueueStatus.Approved:
+                    if (rq.duration == null)
+                    {
+                        throw new Exception("Cannot approve item without duration.");
+                    }
+
                     var songLink = new SongLink()
                     {
                         Url = rq.url,
                         Type = (SongLinkType)rq.type,
                         IsVideo = rq.is_video,
-                        Duration = rq.duration!.Value
+                        Duration = rq.duration.Value
                     };
                     melId = await InsertSongLink(rq.music_id, songLink, null);
                     break;

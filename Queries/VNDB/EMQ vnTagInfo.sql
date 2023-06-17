@@ -25,3 +25,4 @@ GROUP BY v.id
 )
 AND r.official = true
 group by v.id
+order by v.id

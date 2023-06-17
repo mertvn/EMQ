@@ -9,3 +9,4 @@ where vs.role::text ~* 'songs'
 AND vs.note ~* '(")|(“)|(”)|('')'
 AND r.released != 99999999
 GROUP BY s.id
+order by s.id

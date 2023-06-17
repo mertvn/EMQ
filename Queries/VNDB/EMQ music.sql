@@ -26,3 +26,4 @@ GROUP BY v.id
 )
 AND r.official = true
 group by v.id, s.id, vs.aid, sa.name, vs.role, vs.note
+order by v.id

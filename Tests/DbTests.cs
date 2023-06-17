@@ -304,8 +304,8 @@ public class DbTests
             filters: new QuizFilters { ArtistFilters = artists }, printSql: true);
         GenericSongsAssert(songs);
 
-        Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 300);
+        Assert.That(songs.Count > 1);
+        Assert.That(songs.Count < 100);
     }
 
     [Test]

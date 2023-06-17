@@ -351,7 +351,7 @@ public static class VndbImporter
             if (sameSong is not null)
             {
                 Console.WriteLine(
-                    $"Same song! {dynData.title} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
+                    $"Same song! {dynData.VNID} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
                 sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
             }
             else

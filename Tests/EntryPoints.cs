@@ -164,7 +164,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateSongLite()
     {
-        bool useLocal = true;
+        bool useLocal = false;
         if (useLocal)
         {
             await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
@@ -177,8 +177,8 @@ public class EntryPoints
                 throw new Exception("EMQ_ADMIN_PASSWORD is null");
             }
 
-            string? serverUrl = "https://emq.up.railway.app";
-            string? songLite =
+            string serverUrl = "https://emq.up.railway.app";
+            string songLite =
                 await ServerUtils.Client.GetStringAsync(
                     $"{serverUrl}/Mod/ExportSongLite?adminPassword={adminPassword}");
 
@@ -220,7 +220,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        var rqIds = Enumerable.Range(40, 1600).ToArray();
+        var rqIds = Enumerable.Range(86, 1600).ToArray();
 
         foreach (int rqId in rqIds)
         {
@@ -542,7 +542,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task FreshSetup()
     {
-        // Requirements: DATABASE_URL env var set; tar, zstd, postgres(psql) all installed/in PATH
+        // Requirements: DATABASE_URL env var set, with the database name as 'EMQ'; tar, zstd, postgres(psql) all installed/in PATH
+        // don't forget to change Constants.ImportDateVndb
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
@@ -558,6 +559,11 @@ public class EntryPoints
         string executingDirectory = Directory.GetCurrentDirectory();
         Directory.SetCurrentDirectory(dumpDirectory);
         string dbDumpFilePath = $"{dumpDirectory}/vndb-db-latest.tar.zst";
+
+        if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Database name in the connstr must be 'EMQ'");
+        }
 
         Console.WriteLine(
             $"StartSection downloading VNDB dump: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -760,6 +766,9 @@ public class EntryPoints
             Console.WriteLine(
                 $"StartSection ImportEgsData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             await entryPoints.ImportEgsData();
+
+            Console.WriteLine(
+                $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
         }
 
         stopWatch.Stop();
