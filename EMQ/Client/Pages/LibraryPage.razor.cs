@@ -221,7 +221,8 @@ public partial class LibraryPage
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            string[]? vndbUrls = await VndbMethods.GetVnUrlsMatchingAdvsearchStr(VndbAdvsearchStr);
+            string[]? vndbUrls =
+                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(ClientState.Session?.VndbInfo, VndbAdvsearchStr);
             if (vndbUrls != null && vndbUrls.Any())
             {
                 var req = vndbUrls;

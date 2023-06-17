@@ -90,11 +90,13 @@ public static class VndbMethods
         return res != null ? res.Labels : Array.Empty<VNDBLabel>();
     }
 
-    public static async Task<string[]?> GetVnUrlsMatchingAdvsearchStr(string advsearchStr)
+    public static async Task<string[]?> GetVnUrlsMatchingAdvsearchStr(PlayerVndbInfo? vndbInfo, string advsearchStr)
     {
         var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
         {
-            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id }, RawFilters = advsearchStr
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
+            RawFilters = advsearchStr,
+            APIToken = vndbInfo?.VndbApiToken
         });
 
         return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
