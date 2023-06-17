@@ -27,19 +27,16 @@
                                     {
                                         displayedIds.Add(songSourceVNID);
 
+                                        string final = "";
                                         for (int index = 0; index < songTypes.Count; index++)
                                         {
                                             SongSourceSongType songType = songTypes[index];
-
-                                            <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
-                                                <span>@songType</span>
-                                            </a>
-
-                                            if (index + 1 != songTypes.Count)
-                                            {
-                                                <span>, </span>
-                                            }
+                                            final += $"{songType}{(index + 1 != songTypes.Count ? ", " : "")}";
                                         }
+
+                                        <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
+                                            <span>@(final)</span>
+                                        </a>
 
                                         <br/>
                                     }
