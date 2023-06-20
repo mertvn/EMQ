@@ -12,6 +12,8 @@ public class QuizFilters
 
     public List<ArtistFilter> ArtistFilters { get; set; } = new();
 
+    public string VndbAdvsearchFilter { get; set; } = "";
+
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
         Enum.GetValues<SongSourceSongType>().Where(x => x != SongSourceSongType.Unknown)
             .ToDictionary(x => x, _ => true);

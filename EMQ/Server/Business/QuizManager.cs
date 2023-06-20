@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.SignalR;
 
 namespace EMQ.Server.Business;
@@ -398,8 +399,30 @@ public class QuizManager
             }
         }
 
-        validSources = validSources.Distinct().ToList();
-        Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+        if (!string.IsNullOrWhiteSpace(Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter))
+        {
+            Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
+                Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
+
+            string[]? vndbUrls =
+                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(null,
+                    Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter);
+
+            if (vndbUrls == null || !vndbUrls.Any())
+            {
+                return false;
+            }
+
+            validSources = vndbUrls.Distinct().ToList();
+            Quiz.Room.Log("validSources overridden by VndbAdvsearchFilter: " +
+                          JsonSerializer.Serialize(validSources, Utils.Jso));
+        }
+        else
+        {
+            validSources = validSources.Distinct().ToList();
+            Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+        }
+
         Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
 
         var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;

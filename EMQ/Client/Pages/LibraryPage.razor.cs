@@ -210,12 +210,7 @@ public partial class LibraryPage
     {
         if (!string.IsNullOrWhiteSpace(VndbAdvsearchStr))
         {
-            // accept both full urls and just the f param
-            var match = Regex.Match(VndbAdvsearchStr, "f=(.+)");
-            if (match.Success)
-            {
-                VndbAdvsearchStr = match.Groups[1].Value.Split('&')[0];
-            }
+            VndbAdvsearchStr = VndbAdvsearchStr.SanitizeVndbAdvsearchStr();
 
             CurrentSongs = new List<Song>();
             NoSongsText = "Loading...";
