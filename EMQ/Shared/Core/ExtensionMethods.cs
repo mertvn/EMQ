@@ -41,11 +41,19 @@ public static class ExtensionMethods
 
     public static string SanitizeVndbAdvsearchStr(this string vndbAdvsearchStr)
     {
-        // accept both full urls and just the f param
-        var match = Regex.Match(vndbAdvsearchStr, "f=(.+)");
-        return match.Success
-            ? match.Groups[1].Value.Split('&')[0]
-            : vndbAdvsearchStr;
+        try
+        {
+            // accept both full urls and just the f param
+            var match = Regex.Match(vndbAdvsearchStr, "f=(.+)");
+            return match.Success
+                ? match.Groups[1].Value.Split('&')[0]
+                : vndbAdvsearchStr;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return vndbAdvsearchStr;
+        }
     }
 
     public static bool IsReachableFromCoords(this Point point, int x, int y,
