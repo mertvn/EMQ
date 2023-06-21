@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -543,9 +543,9 @@ public class EntryPoints
     public async Task FreshSetup()
     {
         // Requirements: DATABASE_URL env var set, with the database name as 'EMQ'; tar, zstd, postgres(psql) all installed/in PATH
-        // don't forget to change Constants.ImportDateVndb
         var stopWatch = new Stopwatch();
         stopWatch.Start();
+        Constants.ImportDateVndb = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
         bool recreateEmqDb = true;
         string emqDbName = "EMQ";
@@ -553,12 +553,12 @@ public class EntryPoints
         bool recreateVndbDb = true;
         string vndbDbName = "vndbforemq";
 
-        string dumpDirectory = $"C:/emq/vndbdumps/{DateTime.UtcNow:yyyy-MM-dd}";
-        Directory.CreateDirectory(dumpDirectory);
+        string vndbDumpDirectory = $"C:/emq/vndbdumps/{DateTime.UtcNow:yyyy-MM-dd}";
+        Directory.CreateDirectory(vndbDumpDirectory);
 
         string executingDirectory = Directory.GetCurrentDirectory();
-        Directory.SetCurrentDirectory(dumpDirectory);
-        string dbDumpFilePath = $"{dumpDirectory}/vndb-db-latest.tar.zst";
+        Directory.SetCurrentDirectory(vndbDumpDirectory);
+        string dbDumpFilePath = $"{vndbDumpDirectory}/vndb-db-latest.tar.zst";
 
         if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
         {
@@ -595,15 +595,15 @@ public class EntryPoints
 
         Console.WriteLine(
             $"StartSection extracting tar: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-        string importScriptPath = $@"{dumpDirectory}/import.sql";
-        if (!File.Exists(importScriptPath))
+        string vndbImportScriptPath = $@"{vndbDumpDirectory}/import.sql";
+        if (!File.Exists(vndbImportScriptPath))
         {
             var proc = new Process()
             {
                 StartInfo = new ProcessStartInfo()
                 {
                     FileName = "tar",
-                    Arguments = $"--force-local -xvf {tarFilePath} -C {dumpDirectory}",
+                    Arguments = $"--force-local -xvf {tarFilePath} -C {vndbDumpDirectory}",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -618,7 +618,7 @@ public class EntryPoints
             }
         }
 
-        if (!File.Exists(importScriptPath))
+        if (!File.Exists(vndbImportScriptPath))
         {
             throw new Exception("tar failed");
         }
@@ -669,7 +669,7 @@ public class EntryPoints
                 StartInfo = new ProcessStartInfo()
                 {
                     FileName = "psql",
-                    Arguments = $"-U postgres -d {vndbDbName} -f {importScriptPath}",
+                    Arguments = $"-U postgres -d {vndbDbName} -f {vndbImportScriptPath}",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -766,12 +766,22 @@ public class EntryPoints
             Console.WriteLine(
                 $"StartSection ImportEgsData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             await entryPoints.ImportEgsData();
+        }
 
-            Console.WriteLine(
-                $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        Console.WriteLine(
+            $"StartSection cleanup: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        Directory.Delete($"{vndbDumpDirectory}/db", true);
+        foreach (string filePath in Directory.GetFiles(vndbDumpDirectory))
+        {
+            if (!filePath.EndsWith(".zst"))
+            {
+                File.Delete(filePath);
+            }
         }
 
         stopWatch.Stop();
+        Console.WriteLine(
+            $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
     }
 
     [Test, Explicit]
@@ -815,7 +825,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilder();
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-06-17_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-06-21_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
