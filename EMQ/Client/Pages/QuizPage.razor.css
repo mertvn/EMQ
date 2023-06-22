@@ -1,0 +1,41 @@
+﻿@media only screen and (max-width: 5000px) {
+    #quizGrid {
+        transform: scale(2);
+    }
+}
+
+@media only screen and (max-width: 3000px) {
+    #quizGrid {
+        transform: scale(1.2);
+    }
+}
+
+@media only screen and (max-width: 2400px) {
+    #quizGrid {
+        transform: scale(1);
+    }
+}
+
+@media only screen and (max-width: 1600px) {
+    #quizGrid {
+        transform: scale(0.9);
+    }
+}
+
+@media only screen and (max-width: 1300px) {
+    #quizGrid {
+        transform: scale(0.8);
+    }
+}
+
+@media only screen and (max-width: 1000px) {
+    #quizGrid {
+        transform: scale(0.7);
+    }
+}
+
+@media only screen and (max-width: 700px) {
+    #quizGrid {
+        transform: scale(0.6);
+    }
+}
