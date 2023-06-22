@@ -30,24 +30,21 @@
                 <DataAnnotationsValidator/>
                 <ValidationSummary/>
 
-                <label for="Username">Username: </label>
-                <br/>
-                <InputText id="Username" type="text" @bind-Value="_loginModel.Username"/>
+                <InputText id="Username" type="text" @bind-Value="_loginModel.Username" style="margin: 5px"/>
+                <label for="Username">Username</label>
                 <br/>
 
                 @* Password:<br/> *@
                 @* <input @bind="Password" type="password" name="Password"/><br/> *@
 
-                <label for="VndbId">VNDB Id (Optional): </label>
-                <br/>
-                <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId"/>
+                <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId" style="margin: 5px"/>
+                <label for="VndbId">VNDB Id (Optional)</label>
                 <br/>
 
+                <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken" style="margin: 5px"/>
                 <label for="VndbApiToken">
-                    <a href="https://vndb.org/u/tokens" target="_blank">VNDB API Token</a> (Optional, only required if your list is private, not sent to server):
+                    <a href="https://vndb.org/u/tokens" target="_blank">VNDB API Token</a> (Optional, only required if your list is private, not sent to server)
                 </label>
-                <br/>
-                <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken"/>
                 <br/>
 
                 <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Login" disabled="@(ClientState.Session != null || LoginInProgress)"/>
@@ -56,10 +53,12 @@
         </div>
 
         <div>
-            @foreach (string item in LoginProgressDisplay)
-            {
-                <p>@item</p>
-            }
+            <ul>
+                @foreach (string item in LoginProgressDisplay)
+                {
+                    <li>@item</li>
+                }
+            </ul>
         </div>
     }
 </div>
