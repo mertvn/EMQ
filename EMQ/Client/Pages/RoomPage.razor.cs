@@ -43,6 +43,8 @@ public partial class RoomPage
 
     private GenericModal? _leaveModalRef;
 
+    private GenericModal? _forceStartModalRef;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -66,6 +68,17 @@ public partial class RoomPage
     }
 
     private async Task StartQuiz()
+    {
+        if (Room!.Players.Any(x => !x.IsReadiedUp && Room.Owner.Id != x.Id))
+        {
+            _forceStartModalRef?.Show();
+            return;
+        }
+
+        await ForceStartQuiz();
+    }
+
+    private async Task ForceStartQuiz()
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
@@ -134,6 +147,13 @@ public partial class RoomPage
             await _chatComponent.CallStateHasChanged();
         }
 
+        StateHasChanged();
+    }
+
+    private async Task SendToggleReadiedUp()
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendToggleReadiedUp");
+        Room = await _clientUtils.SyncRoom();
         StateHasChanged();
     }
 }

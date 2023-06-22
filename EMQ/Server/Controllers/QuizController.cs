@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -214,6 +214,7 @@ public class QuizController : ControllerBase
                 if (room.Players.Count > 1)
                 {
                     room.Log($"{player.Username} joined the room.", -1, true);
+                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
                 }
             }
             else
@@ -425,9 +426,10 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
-                        if (room.Quiz.QuizState.sp > 0)
+                        if (room.Quiz.QuizState.sp >= 0)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
+                            await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom", room, false);
                             await qm.EndQuiz();
                         }
                     }

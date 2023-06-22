@@ -157,6 +157,7 @@ public class QuizManager
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
             player.IsSkipping = false;
+            player.IsReadiedUp = false;
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)

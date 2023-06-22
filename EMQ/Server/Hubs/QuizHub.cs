@@ -453,4 +453,27 @@ public class QuizHub : Hub
             // todo
         }
     }
+
+    public async Task SendToggleReadiedUp()
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        if (session != null)
+        {
+            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            if (room != null)
+            {
+                session.Player.IsReadiedUp = !session.Player.IsReadiedUp;
+                await Clients.Clients(room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+            }
+            else
+            {
+                // todo
+            }
+        }
+        else
+        {
+            // todo
+        }
+    }
 }

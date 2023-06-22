@@ -42,6 +42,9 @@ public class Player
     public bool IsSkipping { get; set; }
 
     public PlayerPreferences Preferences { get; set; } = new();
+
+    // do not rename to IsReady
+    public bool IsReadiedUp { get; set; }
 }
 
 public record PlayerLootingInfo

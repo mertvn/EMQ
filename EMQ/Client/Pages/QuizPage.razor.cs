@@ -157,7 +157,7 @@ public partial class QuizPage
                 await Task.Delay(TimeSpan.FromSeconds(3));
                 await SyncWithServer();
 
-                if (Room!.Quiz!.QuizState.QuizStatus == QuizStatus.Canceled)
+                if (Room!.Quiz!.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
                 {
                     await OnReceiveQuizCanceled();
                 }
@@ -325,6 +325,7 @@ public partial class QuizPage
     private async Task OnReceiveQuizCanceled()
     {
         await SyncWithServer();
+        await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
         await Task.Delay(TimeSpan.FromSeconds(1));
         _navigation.NavigateTo("/RoomPage");
     }
@@ -579,6 +580,12 @@ public partial class QuizPage
                 if (Room!.Quiz!.QuizState.sp > startSp)
                 {
                     Console.WriteLine("Canceling preload due to sp change");
+                    PreloadCancellationSource.Cancel();
+                }
+
+                if (Room!.Quiz!.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
+                {
+                    Console.WriteLine("Canceling preload due to quiz canceled or ended");
                     PreloadCancellationSource.Cancel();
                 }
 
