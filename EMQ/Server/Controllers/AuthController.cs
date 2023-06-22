@@ -123,30 +123,28 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<Label>> UpdateLabel([FromBody] ReqUpdateLabel req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
-        if (session != null)
+        if (session == null)
         {
-            if (session.VndbInfo.Labels != null)
-            {
-                var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
-                Console.WriteLine(
-                    $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
+            return Unauthorized();
+        }
 
-                if (existingLabel != null)
-                {
-                    session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
-                }
+        if (session.VndbInfo.Labels != null)
+        {
+            var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
+            Console.WriteLine(
+                $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
 
-                session.VndbInfo.Labels.Add(req.Label);
-                return req.Label;
-            }
-            else
+            if (existingLabel != null)
             {
-                throw new Exception("Could not find the label to update");
+                session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
             }
+
+            session.VndbInfo.Labels.Add(req.Label);
+            return req.Label;
         }
         else
         {
-            return Unauthorized();
+            throw new Exception("Could not find the label to update");
         }
     }
 
@@ -170,22 +168,20 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> SetVndbInfo([FromBody] ReqSetVndbInfo req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
-        if (session != null)
+        if (session == null)
         {
-            if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
-            {
-                _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
-                session.VndbInfo = req.VndbInfo;
-                return Ok();
-            }
-            else
-            {
-                return BadRequest();
-            }
+            return Unauthorized();
+        }
+
+        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
+        {
+            _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
+            session.VndbInfo = req.VndbInfo;
+            return Ok();
         }
         else
         {
-            return Unauthorized();
+            return BadRequest();
         }
     }
 }
