@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -214,7 +214,8 @@ public class QuizController : ControllerBase
                 if (room.Players.Count > 1)
                 {
                     room.Log($"{player.Username} joined the room.", -1, true);
-                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
                 }
             }
             else
@@ -279,7 +280,8 @@ public class QuizController : ControllerBase
                 {
                     room.Log("Failed to prime quiz - canceling", isSystemMessage: true);
                     await quizManager.CancelQuiz();
-                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
                 }
             }
             else
@@ -324,7 +326,8 @@ public class QuizController : ControllerBase
                     room.Log("Room settings changed.", isSystemMessage: true);
                     // todo write to chat (pretty)
 
-                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
 
                     return Ok();
                 }
@@ -371,8 +374,10 @@ public class QuizController : ControllerBase
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
                     // todo we should only need 1 method here after a SignalR refactor
-                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoomForRoom", room);
-                    await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom", room, false);
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoom", room, false);
                     _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
                 }
             }
@@ -429,7 +434,8 @@ public class QuizController : ControllerBase
                         if (room.Quiz.QuizState.sp >= 0)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
-                            await _hubContext.Clients.All.SendAsync("ReceiveUpdateRoom", room, false);
+                            await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                                .SendAsync("ReceiveUpdateRoom", room, false);
                             await qm.EndQuiz();
                         }
                     }
