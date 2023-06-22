@@ -121,12 +121,12 @@ public class QuizManager
         int timeoutMs = Quiz.Room.QuizSettings.ResultsMs * 6; // todo make this a quiz setting
         // Console.WriteLine("ibc " + isBufferedCount);
 
-        int activePlayers = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
-            .Count(x => x.HasActiveConnection);
+        int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .Count(x => x.Player.HasActiveConnection);
         // Room.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
         float waitNumber = (float)Math.Round(
-            activePlayers * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
+            activePlayersCount * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
             MidpointRounding.AwayFromZero);
 
         while (isBufferedCount < waitNumber &&
@@ -137,6 +137,14 @@ public class QuizManager
             timeoutMs -= 1000;
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+
+            activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+                .Count(x => x.Player.HasActiveConnection);
+
+            waitNumber = (float)Math.Round(
+                activePlayersCount * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
+                MidpointRounding.AwayFromZero);
+
             Quiz.QuizState.ExtraInfo =
                 $"Waiting buffering... {isBufferedCount}/{waitNumber} timeout in {timeoutMs / 1000}s";
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
@@ -308,23 +316,19 @@ public class QuizManager
                 }
             }
 
-            var playerSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == player.Id);
-            if (playerSession != null)
+            if (player.HasActiveConnection)
             {
-                if (playerSession.HasActiveConnection)
+                numActivePlayers += 1;
+
+                if (!string.IsNullOrWhiteSpace(player.Guess))
                 {
-                    numActivePlayers += 1;
+                    numGuesses += 1;
+                    totalGuessMs += player.FirstGuessMs;
+                }
 
-                    if (!string.IsNullOrWhiteSpace(player.Guess))
-                    {
-                        numGuesses += 1;
-                        totalGuessMs += player.FirstGuessMs;
-                    }
-
-                    if (correct)
-                    {
-                        numCorrect += 1;
-                    }
+                if (correct)
+                {
+                    numCorrect += 1;
                 }
             }
         }
@@ -988,7 +992,11 @@ public class QuizManager
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
 
             int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
-            int skipNumber = (int)Math.Round((float)Quiz.Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
+
+            int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+                .Count(x => x.Player.HasActiveConnection);
+
+            int skipNumber = (int)Math.Round((float)activePlayersCount * 0.8, MidpointRounding.AwayFromZero);
 
             Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
             if (isSkippingCount >= skipNumber)

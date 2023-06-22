@@ -45,6 +45,10 @@ public class Player
 
     // do not rename to IsReady
     public bool IsReadiedUp { get; set; }
+
+    public DateTime LastHeartbeatTimestamp { get; set; }
+
+    public bool HasActiveConnection => (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
 }
 
 public record PlayerLootingInfo

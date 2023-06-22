@@ -399,7 +399,7 @@ public class QuizController : ControllerBase
         {
             RoomsCount = ServerState.Rooms.Count,
             QuizManagersCount = ServerState.QuizManagers.Count,
-            ActiveSessionsCount = ServerState.Sessions.Count(x => x.HasActiveConnection),
+            ActiveSessionsCount = ServerState.Sessions.Count(x => x.Player.HasActiveConnection),
             SessionsCount = ServerState.Sessions.Count,
         };
     }

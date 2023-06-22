@@ -106,8 +106,8 @@ else
     {
         @foreach (var player in Room.Players)
         {
-            <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px;">
-                <p style="text-align: center">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
+            <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
+                <p style="text-align: center;">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
 
                 <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Default)" alt="Avatar">
 

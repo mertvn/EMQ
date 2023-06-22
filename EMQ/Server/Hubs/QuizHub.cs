@@ -29,6 +29,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrDefault(x => accessToken == x.Token);
         if (session != null)
         {
+            session.Player.LastHeartbeatTimestamp = DateTime.UtcNow;
             string? oldConnectionId = session.ConnectionId;
             string newConnectionId = Context.ConnectionId;
 
@@ -69,7 +70,7 @@ public class QuizHub : Hub
 
             session.ConnectionId = Context.ConnectionId;
             var heartbeat = Context.Features.Get<IConnectionHeartbeatFeature>();
-            heartbeat!.OnHeartbeat(OnHeartbeat, session);
+            heartbeat!.OnHeartbeat(OnHeartbeat, session.Player);
         }
         else
         {
@@ -79,7 +80,7 @@ public class QuizHub : Hub
 
     private static void OnHeartbeat(object obj)
     {
-        ((Session)obj).LastHeartbeatTimestamp = DateTime.UtcNow;
+        ((Player)obj).LastHeartbeatTimestamp = DateTime.UtcNow;
     }
 
     // [Authorize]

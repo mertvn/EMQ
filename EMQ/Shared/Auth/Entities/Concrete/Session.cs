@@ -27,9 +27,4 @@ public class Session
     public PlayerVndbInfo VndbInfo { get; set; } = new();
 
     public DateTime CreatedAt { get; }
-
-    public DateTime LastHeartbeatTimestamp { get; set; }
-
-    public bool HasActiveConnection => (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(20);
-
 }

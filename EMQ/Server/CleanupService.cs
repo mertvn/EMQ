@@ -47,7 +47,7 @@ public sealed class CleanupService : IHostedService, IDisposable
         {
             var roomSessions = ServerState.Sessions.Where(x => room.Players.Any(y => y.Id == x.Player.Id)).ToList();
             var activeSessions = roomSessions
-                .Where(x => (DateTime.UtcNow - x.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5)).ToList();
+                .Where(x => (DateTime.UtcNow - x.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5)).ToList();
             if (!activeSessions.Any()
                 //  && (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing) // not sure if we need this
                )
