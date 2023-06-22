@@ -69,6 +69,8 @@ public partial class RoomPage
 
     private async Task StartQuiz()
     {
+        Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
         if (Room!.Players.Any(x => !x.IsReadiedUp && Room.Owner.Id != x.Id))
         {
             _forceStartModalRef?.Show();
