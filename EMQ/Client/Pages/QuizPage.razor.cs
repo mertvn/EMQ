@@ -97,6 +97,8 @@ public partial class QuizPage
 
     private GenericModal? _leaveModalRef;
 
+    private GenericModal? _returnToRoomModalRef;
+
     private DateTime LastSync { get; set; }
 
     private bool SyncInProgress { get; set; }
@@ -648,6 +650,23 @@ public partial class QuizPage
             if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing && Room.QuizSettings.IsHotjoinEnabled)
             {
                 await ClientState.Session!.hubConnection!.SendAsync("SendHotjoinQuiz");
+            }
+        }
+    }
+
+    private async Task ReturnToRoom()
+    {
+        if (Room!.Owner.Id == ClientState.Session!.Player.Id)
+        {
+            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ReturnToRoom",
+                new ReqReturnToRoom(ClientState.Session.Token, Room.Id));
+            if (res1.IsSuccessStatusCode)
+            {
+                _returnToRoomModalRef?.Hide();
+            }
+            else
+            {
+                // todo display error
             }
         }
     }

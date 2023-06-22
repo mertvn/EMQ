@@ -402,4 +402,60 @@ public class QuizController : ControllerBase
             SessionsCount = ServerState.Sessions.Count,
         };
     }
+
+    [HttpPost]
+    [Route("ReturnToRoom")]
+    public async Task<ActionResult> ReturnToRoom([FromBody] ReqReturnToRoom req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+
+        if (room is not null)
+        {
+            if (room.Owner.Id == player.Id)
+            {
+                if (room.Quiz != null)
+                {
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                    if (qm != null)
+                    {
+                        if (room.Quiz.QuizState.sp > 0)
+                        {
+                            room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
+                            await qm.EndQuiz();
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("qm not found for q{quiz.Id} in r{room.Id}",
+                            room.Quiz.Id, room.Id);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Attempt to return to room in r{room.Id} with null quiz",
+                        room.Id);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Attempt to return to room in r{room.Id} by non-owner p{req.playerId}",
+                    room.Id, req.PlayerToken);
+                // todo warn not owner
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to return to room in r{req.RoomId} that is null", req.RoomId);
+            // todo
+        }
+
+        return Ok();
+    }
 }
