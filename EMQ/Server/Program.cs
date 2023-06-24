@@ -17,10 +17,13 @@ using FluentMigrator.Runner;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +58,12 @@ builder.Services.AddResponseCompression(opts =>
         new[] { "application/octet-stream" });
 });
 
+builder.Services.Configure<MvcOptions>(options =>
+{
+    options.InputFormatters.OfType<SystemTextJsonInputFormatter>().First().SupportedMediaTypes.Add(
+        new MediaTypeHeaderValue("application/csp-report"));
+});
+
 builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
 builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
 
@@ -74,8 +83,6 @@ builder.Services.AddHsts(options =>
     options.MaxAge = TimeSpan.FromDays(365);
 });
 
-// TODO: https://learn.microsoft.com/en-us/aspnet/core/blazor/security/content-security-policy?view=aspnetcore-7.0
-
 builder.Services.AddHostedService<CleanupService>();
 
 var app = builder.Build();
@@ -93,13 +100,12 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 
-// <!--    we have to use unsafe-eval because blazor wasm requires it -->
+// <!--    we have to use unsafe-eval because blazor wasm requires it (check again after .NET 8) -->
 // <!--    we have to use unsafe-inline because unsafe-hashes is very new, -->
 // <!--    and we have to use unsafe-hashes because styles don't work otherwise -->
 // <!--    hashes for styles as of 2023-06-24 -->
@@ -125,11 +131,24 @@ const string csp = @"
                form-action 'self';
                frame-ancestors 'none';
                upgrade-insecure-requests;
+               report-uri /Auth/CspReport/;
+               report-to csp-endpoint;
+";
+
+const string reportTo = @"
+{
+""group"": ""csp-endpoint"",
+""max_age"": 10886400,
+""endpoints"": [
+                  { ""url"": ""/Auth/CspReport/"" }
+               ]
+}
 ";
 
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Add("Content-Security-Policy", $"{csp.Replace("\n", " ")}");
+    context.Response.Headers.Add("Report-To", $"{reportTo.Replace("\n", " ")}");
     await next();
 });
 

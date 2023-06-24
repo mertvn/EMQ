@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -157,5 +159,19 @@ public class AuthController : ControllerBase
         {
             return BadRequest();
         }
+    }
+
+    [HttpPost]
+    [Route("CspReport")]
+    public async Task<IActionResult> CspReport([FromBody] dynamic report)
+    {
+        string serialized = (string)JsonSerializer.Serialize(report, Utils.JsoIndented);
+        if (!serialized.Contains("blazor.webassembly.js") &&
+            !serialized.Contains("moz-extension"))
+        {
+            _logger.LogError("CSP violation: " + serialized);
+        }
+
+        return Ok();
     }
 }
