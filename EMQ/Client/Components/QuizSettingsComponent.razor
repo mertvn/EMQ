@@ -298,7 +298,10 @@
                 <p>Enter either full VNDB search URL or just the f parameter. Only VN search is supported at the moment.</p>
                 <p>Example: "https://vndb.org/v?q=&ch=&f=023gjaN3830X1o&s=j4w" or "023gjaN3830X1o" </p>
                 <p>Important: Add a Staff->Role=Vocals filter on VNDB to search faster and less wastefully. Example: "https://vndb.org/v?q=&ch=&f=0280HN385wsongs-".</p>
+                <br/>
+
                 <p>Your API token cannot be used for this, so any query with private labels will return no results.</p>
+                <p>Using this filter will also override your VNDB label settings.</p>
                 <div>
                     <InputText
                         @bind-Value="@ClientQuizSettings.Filters.VndbAdvsearchFilter"
