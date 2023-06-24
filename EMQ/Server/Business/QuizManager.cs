@@ -391,6 +391,8 @@ public class QuizManager
             player.Guess = "";
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
+            player.IsSkipping = false;
+            // do not set player.IsReadiedUp to false here, because it would be annoying to ready up again if we return false
             player.PlayerStatus = PlayerStatus.Default;
             player.LootingInfo = new PlayerLootingInfo();
 
