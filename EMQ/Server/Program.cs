@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime;
@@ -13,7 +14,6 @@ using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
 using FFMpegCore;
 using FluentMigrator.Runner;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -34,20 +34,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//     .AddCookie(options =>
-//     {
-//         options.Cookie = new CookieBuilder()
-//         {
-//             Name = "EMQSessionCookie",
-//             SameSite = SameSiteMode.Strict,
-//             HttpOnly = false,
-//         };
-//         options.ExpireTimeSpan = TimeSpan.FromHours(6);
-//         options.SlidingExpiration = true;
-//         options.AccessDeniedPath = "/Forbidden/";
-//     });
-
 builder.Services.AddSignalR().AddHubOptions<QuizHub>(opt => { opt.EnableDetailedErrors = true; })
 //     .AddJsonProtocol(options =>
 // {
@@ -61,9 +47,15 @@ builder.Services.AddSignalR().AddHubOptions<QuizHub>(opt => { opt.EnableDetailed
 
 builder.Services.AddResponseCompression(opts =>
 {
+    opts.EnableForHttps = true;
+    opts.Providers.Add<BrotliCompressionProvider>();
+    opts.Providers.Add<GzipCompressionProvider>();
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
+builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.Level = CompressionLevel.Optimal; });
 
 // builder.Services.AddCors(options =>
 // {
@@ -77,6 +69,7 @@ builder.Services.AddResponseCompression(opts =>
 builder.Services.AddHostedService<CleanupService>();
 
 var app = builder.Build();
+app.UseResponseCompression();
 
 // app.UseCors();
 

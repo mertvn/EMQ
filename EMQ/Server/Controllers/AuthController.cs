@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -58,29 +55,6 @@ public class AuthController : ControllerBase
 
         _logger.LogInformation(
             $"Created new session for p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {ip}");
-
-        // var claims = new List<Claim>
-        // {
-        //     new Claim(ClaimTypes.Sid, player.Id.ToString()),
-        //     new Claim(ClaimTypes.Name, player.Username),
-        //     new Claim(ClaimTypes.Role, "User"),
-        // };
-        //
-        // var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        // var authProperties = new AuthenticationProperties
-        // {
-        //     AllowRefresh = true,
-        //     IsPersistent = true,
-        //
-        //     //RedirectUri = <string>
-        //     // The full path or absolute URI to be used as an http
-        //     // redirect response value.
-        // };
-        //
-        // await HttpContext.SignInAsync(
-        //     CookieAuthenticationDefaults.AuthenticationScheme,
-        //     new ClaimsPrincipal(claimsIdentity),
-        //     authProperties);
 
         return new ResCreateSession(session);
     }
