@@ -92,6 +92,40 @@ else
 
 app.UseHttpsRedirection();
 
+// <!--    we have to use unsafe-eval because blazor wasm requires it -->
+// <!--    we have to use unsafe-inline because unsafe-hashes is very new, -->
+// <!--    and we have to use unsafe-hashes because styles don't work otherwise -->
+// <!--    hashes for styles as of 2023-06-24 -->
+// <!--    'sha256-WH8R6xeOeuJVdbp+/qEeNlldljI6BQWXRzvQ3aY5WaI='-->
+// <!--    'sha256-LNyLHt0iPlXA2SjFUXL9wqxHp5dJGBldj7LSb1gNgjA='-->
+// <!--    'sha256-q37xv29FWTxrl539g+ajXTokv196Spat4bpoxeQqDTw='-->
+// <!--    'sha256-eznNOzOF8kRuSmqjmCsetTase4gDYgWA0sSMry6PUKY='-->
+// <!--    'sha256-KbrxNa5b5DaDi2OvquFvHtsYxspVRCBjG7Kek5I4mRI='-->
+const string csp = @"
+               base-uri 'self';
+               default-src 'self';
+               connect-src 'self' *.vndb.org *.catbox.moe;
+               media-src 'self' blob: *.catbox.moe;
+               img-src data: https:;
+               object-src 'none';
+               script-src 'self'
+                          'unsafe-eval'
+                          'sha256-HVHuC1UXgy61iWGjr5Y3qB/N4raEppZ6b7QHep21UFg='
+                          ;
+               style-src 'self'
+                         'unsafe-inline'
+                         ;
+               form-action 'self';
+               frame-ancestors 'none';
+               upgrade-insecure-requests;
+";
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Content-Security-Policy", $"{csp.Replace("\n", " ")}");
+    await next();
+});
+
 app.UseBlazorFrameworkFiles();
 
 app.UseStaticFiles(new StaticFileOptions
