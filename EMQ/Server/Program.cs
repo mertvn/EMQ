@@ -67,6 +67,13 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options => { options.
 //             .AllowCredentials());
 // });
 
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
 // TODO: https://learn.microsoft.com/en-us/aspnet/core/blazor/security/content-security-policy?view=aspnetcore-7.0
 
 builder.Services.AddHostedService<CleanupService>();
@@ -136,8 +143,7 @@ app.UseStaticFiles(new StaticFileOptions
         var headers = ctx.Context.Response.GetTypedHeaders();
         headers.CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue
         {
-            Public = true,
-            MaxAge = TimeSpan.FromDays(30)
+            Public = true, MaxAge = TimeSpan.FromDays(30)
         };
     }
 });
