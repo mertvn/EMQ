@@ -159,10 +159,16 @@ app.UseStaticFiles(new StaticFileOptions
     HttpsCompression = HttpsCompressionMode.Compress,
     OnPrepareResponse = ctx =>
     {
+        var maxAge = TimeSpan.FromDays(30);
+        if (ctx.File.Name is "mst.json" or "a.json" or "c.json" )
+        {
+            maxAge = TimeSpan.FromHours(16);
+        }
+
         var headers = ctx.Context.Response.GetTypedHeaders();
         headers.CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue
         {
-            Public = true, MaxAge = TimeSpan.FromDays(30)
+            Public = true, MaxAge = maxAge
         };
     }
 });
