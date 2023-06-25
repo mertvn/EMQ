@@ -426,10 +426,12 @@ public class QuizManager
 
             if (vndbUrls == null || !vndbUrls.Any())
             {
+                Quiz.Room.Log($"VNDB search filter returned no results.", -1, true);
                 return false;
             }
 
             validSources = vndbUrls.Distinct().ToList();
+            Quiz.Room.Log($"VNDB search filter returned {validSources.Count} results.", -1, true);
             Quiz.Room.Log("validSources overridden by VndbAdvsearchFilter: " +
                           JsonSerializer.Serialize(validSources, Utils.Jso));
         }
