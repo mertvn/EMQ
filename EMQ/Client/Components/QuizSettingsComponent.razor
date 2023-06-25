@@ -66,17 +66,17 @@
                         <br/>
 
                         <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.UI_GuessMs" style="margin: 5px"></InputNumber>
-                        <label for="GuessMs">Guess time</label>
+                        <label for="GuessMs">Guess time (seconds)</label>
                         <br/>
 
                         <InputNumber id="ResultsMs" @bind-Value="ClientQuizSettings.UI_ResultsMs" style="margin: 5px"></InputNumber>
-                        <label for="ResultsMs">Results time</label>
+                        <label for="ResultsMs">Results time (seconds)</label>
                         <br/>
 
                         @if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.Looting)
                         {
                             <InputNumber id="LootingMs" @bind-Value="ClientQuizSettings.UI_LootingMs" style="margin: 5px"></InputNumber>
-                            <label for="LootingMs">Looting time</label>
+                            <label for="LootingMs">Looting time (seconds)</label>
                             <br/>
 
                             <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
