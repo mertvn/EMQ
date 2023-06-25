@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -7,7 +8,6 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 // Anything that's in this class that's not JsonIgnore'd will be visible to ALL players in a room,
 // so be careful not to leak player-specific information.
-// TODO: Other players' guesses are leaked currently (but hidden with CSS).
 public sealed class Room : IDisposable
 {
     public Room(int id, string name, Player owner)
@@ -53,6 +53,9 @@ public sealed class Room : IDisposable
     public ConcurrentQueue<RoomLog> RoomLog { get; set; } = new();
 
     public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
+
+    [JsonIgnore]
+    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x=> x.Id, x=> x.Guess);
 
     public void Dispose()
     {

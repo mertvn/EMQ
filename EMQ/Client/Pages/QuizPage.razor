@@ -236,15 +236,19 @@
         {
             @foreach (var player in Room.Players)
             {
+                if (_playerGuesses.TryGetValue(player.Id, out string? playerGuess))
+                {
+                }
+
                 <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
-                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(player.Guess));"
-                         @onclick="@(() => SetGuessToTeammateGuess(player.Guess))">
+                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(playerGuess));"
+                         @onclick="@(() => SetGuessToTeammateGuess(playerGuess))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                             <span style="word-wrap: anywhere; height: 90px; display: block;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @* todo make text smaller as it gets longer *@
-                                @player.Guess
+                                @playerGuess
                             </span>
                         </div>
                     </div>

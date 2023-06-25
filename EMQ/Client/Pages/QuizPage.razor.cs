@@ -27,15 +27,22 @@ public partial class QuizPage
             { "ReceiveQuizEnded", (Array.Empty<Type>(), async _ => { await OnReceiveQuizEnded(); }) },
             { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
             {
-                "ReceiveCorrectAnswer", (new Type[] { typeof(Song), typeof(Dictionary<int, List<Label>>) },
+                "ReceiveCorrectAnswer", (
+                    new Type[] { typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, string>) },
                     async param =>
                     {
-                        await OnReceiveCorrectAnswer((Song)param[0]!, (Dictionary<int, List<Label>>)param[1]!);
+                        await OnReceiveCorrectAnswer((Song)param[0]!,
+                            (Dictionary<int, List<Label>>)param[1]!,
+                            (Dictionary<int, string>)param[2]!);
                     })
             },
             {
                 "ReceiveUpdateRoom", (new Type[] { typeof(Room), typeof(bool) },
                     async param => { await OnReceiveUpdateRoom((Room)param[0]!, (bool)param[1]!); })
+            },
+            {
+                "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, string>) },
+                    async param => { await OnReceivePlayerGuesses((Dictionary<int, string>)param[0]!); })
             },
         };
 
@@ -84,6 +91,8 @@ public partial class QuizPage
     private Song? _correctAnswer { get; set; }
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
+
+    private Dictionary<int, string> _playerGuesses { get; set; } = new();
 
     private CancellationTokenSource PreloadCancellationSource { get; set; }
 
@@ -169,10 +178,21 @@ public partial class QuizPage
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
-    private async Task OnReceiveCorrectAnswer(Song correctAnswer, Dictionary<int, List<Label>> playerLabels)
+    private async Task OnReceiveCorrectAnswer(Song correctAnswer,
+        Dictionary<int, List<Label>> playerLabels,
+        Dictionary<int, string> playerGuesses)
     {
         _correctAnswer = correctAnswer;
         _correctAnswerPlayerLabels = playerLabels;
+        _playerGuesses = playerGuesses;
+    }
+
+    private async Task OnReceivePlayerGuesses(Dictionary<int, string> playerGuesses)
+    {
+        foreach ((int playerId, string? playerGuess) in playerGuesses)
+        {
+            _playerGuesses[playerId] = playerGuess;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -632,7 +652,7 @@ public partial class QuizPage
         await SyncWithServer(room, phaseChanged);
     }
 
-    private async Task SetGuessToTeammateGuess(string guess)
+    private async Task SetGuessToTeammateGuess(string? guess)
     {
         if (Room is { Quiz: { } })
         {

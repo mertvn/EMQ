@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -168,6 +168,10 @@ public class QuizManager
             player.IsReadiedUp = false;
         }
 
+        // reset the guesses
+        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
+
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
     }
@@ -184,6 +188,10 @@ public class QuizManager
         {
             await DetermineTeamGuesses();
         }
+
+        // need to do this AFTER the team guesses have been determined
+        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
 
         await JudgeGuesses();
     }
@@ -248,7 +256,8 @@ public class QuizManager
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
-                Quiz.Songs[Quiz.QuizState.sp].PlayerLabels);
+                Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
+                Quiz.Room.PlayerGuesses);
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
@@ -581,7 +590,6 @@ public class QuizManager
         }
     }
 
-    // todo: avoid sending other players' guesses in non-team games
     public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
     {
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
@@ -607,6 +615,23 @@ public class QuizManager
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
+                }
+
+                if (Quiz.Room.QuizSettings.TeamSize > 1)
+                {
+                    // also includes the player themselves
+                    var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId);
+                    IEnumerable<string> teammateConnectionIds = ServerState.Sessions
+                        .Where(x => teammates.Select(y => y.Id).Contains(x.Player.Id))
+                        .Select(z => z.ConnectionId)!;
+
+                    await HubContext.Clients.Clients(teammateConnectionIds)
+                        .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
+                }
+                else
+                {
+                    await HubContext.Clients.Clients(connectionId)
+                        .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
                 }
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)

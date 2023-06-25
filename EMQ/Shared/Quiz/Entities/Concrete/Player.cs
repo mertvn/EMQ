@@ -20,6 +20,7 @@ public class Player
     // public string DisplayName { get; }
 
     // TODO: GuessInfo class
+    [JsonIgnore]
     public string Guess { get; set; } = "";
 
     // todo: do we want last guess or first guess here?
