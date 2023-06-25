@@ -62,14 +62,14 @@ public sealed class Room : IDisposable
         Quiz?.Dispose();
     }
 
-    public void Log(string message, int playerId = -1, bool isSystemMessage = false)
+    public void Log(string message, int playerId = -1, bool writeToChat = false)
     {
         var roomLog = new RoomLog(Id, Quiz?.Id ?? -1, QuizSettings, Quiz?.QuizState ?? null, playerId, message);
         RoomLog.Enqueue(roomLog);
 
         Console.WriteLine(roomLog.ToString());
 
-        if (isSystemMessage)
+        if (writeToChat)
         {
             Chat.Enqueue(new ChatMessage(message));
         }

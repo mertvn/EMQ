@@ -278,7 +278,7 @@ public class QuizController : ControllerBase
                 }
                 else
                 {
-                    room.Log("Failed to prime quiz - canceling", isSystemMessage: true);
+                    room.Log("Failed to prime quiz - canceling", writeToChat: true);
                     await quizManager.CancelQuiz();
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                         .SendAsync("ReceiveUpdateRoomForRoom", room);
@@ -323,7 +323,7 @@ public class QuizController : ControllerBase
                     room.QuizSettings = req.QuizSettings;
 
                     _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
-                    room.Log("Room settings changed.", isSystemMessage: true);
+                    room.Log("Room settings changed.", writeToChat: true);
                     // todo write to chat (pretty)
 
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)

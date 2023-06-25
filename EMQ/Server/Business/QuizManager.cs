@@ -79,7 +79,7 @@ public class QuizManager
 
                         if (!lootingSuccess)
                         {
-                            Quiz.Room.Log("Canceling quiz due to looting failure", isSystemMessage: true);
+                            Quiz.Room.Log("Canceling quiz due to looting failure", writeToChat: true);
                             await CancelQuiz();
                         }
 
