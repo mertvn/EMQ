@@ -97,5 +97,20 @@ public class QuizSettings
     public int WaitPercentage { get; set; } = 90;
 
     [Required]
+    [Range(5000, 250000)]
+    [DefaultValue(150000)]
+    public int TimeoutMs { get; set; } = 120000;
+
+    [Required]
+    [Range(5, 250)]
+    [DefaultValue(150)]
+    // ReSharper disable once InconsistentNaming
+    public int UI_TimeoutMs
+    {
+        get { return TimeoutMs / 1000; }
+        set { TimeoutMs = value * 1000; }
+    }
+
+    [Required]
     public QuizFilters Filters { get; set; } = new();
 }

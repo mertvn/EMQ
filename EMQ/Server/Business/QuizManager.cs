@@ -118,7 +118,7 @@ public class QuizManager
         }
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        int timeoutMs = Quiz.Room.QuizSettings.ResultsMs * 6; // todo make this a quiz setting
+        int timeoutMs = Quiz.Room.QuizSettings.TimeoutMs;
         // Console.WriteLine("ibc " + isBufferedCount);
 
         int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
@@ -251,8 +251,10 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
 
-        // Console.WriteLine("sending PlayerLabels: " +
-        //                   JsonSerializer.Serialize(Quiz.Songs[Quiz.QuizState.sp].PlayerLabels, Utils.JsoIndented));
+        foreach (var player in Quiz.Room.Players)
+        {
+            player.IsBuffered = false;
+        }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
@@ -578,7 +580,9 @@ public class QuizManager
             player.Guess = "";
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
-            player.PlayerStatus = PlayerStatus.Thinking;
+            player.IsSkipping = false;
+            player.IsReadiedUp = false;
+            player.PlayerStatus = PlayerStatus.Default;
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {

@@ -84,6 +84,10 @@
                             <br/>
                         }
 
+                        <InputNumber id="TimeoutMs" @bind-Value="ClientQuizSettings.UI_TimeoutMs" style="margin: 5px"></InputNumber>
+                        <label for="TimeoutMs">Timeout time (seconds)</label>
+                        <br/>
+
                         <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>
                         <label for="WaitPercentage">The percentage of players that need to have finished buffering in order to start the next song</label>
                         <br/>
