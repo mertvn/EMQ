@@ -45,6 +45,10 @@ public partial class RoomPage
 
     private GenericModal? _forceStartModalRef;
 
+    private GenericModal? _changeRoomPasswordModalRef;
+
+    private string? RoomPassword { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -157,5 +161,28 @@ public partial class RoomPage
         await ClientState.Session!.hubConnection!.SendAsync("SendToggleReadiedUp");
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
+    }
+
+    private async Task OnclickChangeRoomPassword()
+    {
+        var res = await _client.GetAsync(
+            $"Quiz/GetRoomPassword?token={ClientState.Session?.Token}&roomId={Room?.Id}");
+        if (res.IsSuccessStatusCode)
+        {
+            RoomPassword = await res.Content.ReadAsStringAsync();
+            _changeRoomPasswordModalRef?.Show();
+        }
+    }
+
+    private async Task ChangeRoomPassword()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ChangeRoomPassword",
+            new ReqChangeRoomPassword(ClientState.Session!.Token, Room!.Id, RoomPassword!));
+        if (res.IsSuccessStatusCode)
+        {
+            Room = await _clientUtils.SyncRoom();
+            StateHasChanged();
+            _changeRoomPasswordModalRef?.Hide();
+        }
     }
 }

@@ -466,4 +466,72 @@ public class QuizController : ControllerBase
 
         return Ok();
     }
+
+    [HttpGet]
+    [Route("GetRoomPassword")]
+    public async Task<ActionResult<string>> GetRoomPassword(string token, int roomId)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
+
+        if (room is not null)
+        {
+            if (room.Owner.Id == player.Id)
+            {
+                return room.Password;
+            }
+            else
+            {
+                _logger.LogWarning("Attempt to get room password in r{room.Id} by non-owner p{req.playerId}",
+                    room.Id, token);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to get room password in r{req.RoomId} that is null", roomId);
+            // todo
+        }
+
+        return Ok();
+    }
+
+    [HttpPost]
+    [Route("ChangeRoomPassword")]
+    public async Task<ActionResult> ChangeRoomPassword([FromBody] ReqChangeRoomPassword req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+
+        if (room is not null)
+        {
+            if (room.Owner.Id == player.Id)
+            {
+                room.Password = req.NewPassword;
+            }
+            else
+            {
+                _logger.LogWarning("Attempt to change room password in r{room.Id} by non-owner p{req.playerId}",
+                    room.Id, req.PlayerToken);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to change room password in r{req.RoomId} that is null", req.RoomId);
+            // todo
+        }
+
+        return Ok();
+    }
 }

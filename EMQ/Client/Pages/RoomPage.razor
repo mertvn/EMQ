@@ -51,6 +51,13 @@
     <p>Are you sure you still want to start the quiz?</p>
 </GenericModal>
 
+<GenericModal @ref="@_changeRoomPasswordModalRef"
+              Title="Change room password"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await ChangeRoomPassword(); })">
+    <input type="text" @bind="RoomPassword"/>
+</GenericModal>
+
 <button type="button" class="btn btn-warning" @onclick="@(() => _leaveModalRef?.Show())"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
@@ -88,6 +95,10 @@
             @onclick="StartQuiz"
             disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing } || ClientState.Session?.hubConnection?.State is not HubConnectionState.Connected)">
         Start Quiz
+    </button>
+
+    <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomPassword" style="margin:5px; padding: 5px;">
+        Change password
     </button>
 }
 else
