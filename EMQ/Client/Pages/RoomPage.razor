@@ -93,7 +93,8 @@
     <button type="button"
             class="btn btn-primary"
             @onclick="StartQuiz"
-            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
+            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })"
+            style="margin: 5px;">
         Start Quiz
     </button>
 }
