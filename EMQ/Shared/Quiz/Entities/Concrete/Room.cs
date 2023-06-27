@@ -10,7 +10,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 // so be careful not to leak player-specific information.
 public sealed class Room : IDisposable
 {
-    public Room(int id, string name, Player owner)
+    public Room(Guid id, string name, Player owner)
     {
         Id = id;
         Name = name;
@@ -19,9 +19,7 @@ public sealed class Room : IDisposable
 
     private readonly object _lock = new();
 
-    public int Id { get; }
-
-    // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
+    public Guid Id { get; }
 
     public string Name { get; set; }
 
@@ -55,7 +53,7 @@ public sealed class Room : IDisposable
     public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
 
     [JsonIgnore]
-    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x=> x.Id, x=> x.Guess);
+    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x => x.Id, x => x.Guess);
 
     public void Dispose()
     {
@@ -64,7 +62,7 @@ public sealed class Room : IDisposable
 
     public void Log(string message, int playerId = -1, bool writeToChat = false)
     {
-        var roomLog = new RoomLog(Id, Quiz?.Id ?? -1, QuizSettings, Quiz?.QuizState ?? null, playerId, message);
+        var roomLog = new RoomLog(Id, Quiz?.Id ?? Guid.Empty, QuizSettings, Quiz?.QuizState ?? null, playerId, message);
         RoomLog.Enqueue(roomLog);
 
         Console.WriteLine(roomLog.ToString());

@@ -8,7 +8,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public sealed class Quiz : IDisposable
 {
-    public Quiz(Room room, int id)
+    public Quiz(Room room, Guid id)
     {
         Room = room;
         Id = id;
@@ -18,9 +18,7 @@ public sealed class Quiz : IDisposable
 
     public bool IsDisposed;
 
-    public int Id { get; }
-
-    // [JsonIgnore] public Guid Guid { get; set; } = Guid.NewGuid();
+    public Guid Id { get; }
 
     public QuizState QuizState { get; set; } = new();
 

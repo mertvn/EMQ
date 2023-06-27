@@ -1,8 +1,10 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+﻿using System;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 
 public class ReqChangeRoomPassword
 {
-    public ReqChangeRoomPassword(string playerToken, int roomId, string newPassword)
+    public ReqChangeRoomPassword(string playerToken, Guid roomId, string newPassword)
     {
         PlayerToken = playerToken;
         RoomId = roomId;
@@ -11,7 +13,7 @@ public class ReqChangeRoomPassword
 
     public string PlayerToken { get; }
 
-    public int RoomId { get; }
+    public Guid RoomId { get; }
 
     public string NewPassword { get; }
 }

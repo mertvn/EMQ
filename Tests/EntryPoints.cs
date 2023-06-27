@@ -66,7 +66,7 @@ public class EntryPoints
             {
                 ReqCreateRoom req = new(session.Token, $"r{i}", "", new QuizSettings() { NumSongs = 40 });
                 HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
-                int roomId = await res1.Content.ReadFromJsonAsync<int>();
+                var roomId = await res1.Content.ReadFromJsonAsync<Guid>();
 
                 HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/JoinRoom",
                     new ReqJoinRoom(roomId, "", session.Player.Id));
@@ -85,7 +85,7 @@ public class EntryPoints
         for (int outerIndex = 0; outerIndex < 1000; outerIndex++)
         {
             int numPlayers = 10;
-            int roomId = -1;
+            Guid roomId = Guid.Empty;
             Session? p0Session = null;
             for (int currentPlayer = 0; currentPlayer < numPlayers; currentPlayer++)
             {
@@ -112,7 +112,7 @@ public class EntryPoints
                 {
                     ReqCreateRoom req = new(session.Token, $"r0", "", new QuizSettings() { NumSongs = 40 });
                     HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
-                    roomId = await res1.Content.ReadFromJsonAsync<int>();
+                    roomId = await res1.Content.ReadFromJsonAsync<Guid>();
                     p0Session = session;
                 }
 

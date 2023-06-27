@@ -1,8 +1,10 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+﻿using System;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 
 public class ReqReturnToRoom
 {
-    public ReqReturnToRoom(string playerToken, int roomId)
+    public ReqReturnToRoom(string playerToken, Guid roomId)
     {
         PlayerToken = playerToken;
         RoomId = roomId;
@@ -10,5 +12,5 @@ public class ReqReturnToRoom
 
     public string PlayerToken { get; }
 
-    public int RoomId { get; }
+    public Guid RoomId { get; }
 }

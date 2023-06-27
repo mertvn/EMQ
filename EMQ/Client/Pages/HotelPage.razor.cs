@@ -26,7 +26,7 @@ public partial class HotelPage
 
     private GenericModal? _passwordModalRef;
 
-    public int SelectedRoomId { get; set; } = -1;
+    public Guid SelectedRoomId { get; set; } = Guid.Empty;
 
     public string SelectedRoomPassword { get; set; } = "";
 
@@ -65,12 +65,12 @@ public partial class HotelPage
         ReqCreateRoom req = new(ClientState.Session.Token, createNewRoomModel.RoomName, createNewRoomModel.RoomPassword,
             QuizSettings);
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/CreateRoom", req);
-        int roomId = await res.Content.ReadFromJsonAsync<int>();
+        Guid roomId = await res.Content.ReadFromJsonAsync<Guid>();
 
         await JoinRoom(roomId, createNewRoomModel.RoomPassword);
     }
 
-    private async Task JoinRoom(int roomId, string roomPassword)
+    private async Task JoinRoom(Guid roomId, string roomPassword)
     {
         // _logger.LogError(roomId.ToString());
         // _logger.LogError(Password);

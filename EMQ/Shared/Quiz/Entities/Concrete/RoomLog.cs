@@ -5,7 +5,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class RoomLog
 {
-    public RoomLog(int roomId, int quizId, QuizSettings quizSettings, QuizState? quizState, int playerId,
+    public RoomLog(Guid roomId, Guid quizId, QuizSettings quizSettings, QuizState? quizState, int playerId,
         string message)
     {
         DateTime = DateTime.UtcNow;
@@ -20,9 +20,9 @@ public class RoomLog
 
     public DateTime DateTime { get; set; }
 
-    public int RoomId { get; set; }
+    public Guid RoomId { get; set; }
 
-    public int QuizId { get; set; }
+    public Guid QuizId { get; set; }
 
     // public QuizSettings QuizSettings { get; set; }
 

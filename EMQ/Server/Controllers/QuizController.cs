@@ -154,7 +154,7 @@ public class QuizController : ControllerBase
 
     [HttpPost]
     [Route("CreateRoom")]
-    public ActionResult<int> CreateRoom([FromBody] ReqCreateRoom req)
+    public ActionResult<Guid> CreateRoom([FromBody] ReqCreateRoom req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
@@ -163,7 +163,7 @@ public class QuizController : ControllerBase
         }
 
         var owner = session.Player;
-        var room = new Room(Random.Shared.Next(), req.Name, owner)
+        var room = new Room(Guid.NewGuid(), req.Name, owner)
         {
             Password = req.Password, QuizSettings = req.QuizSettings
         };
@@ -264,7 +264,7 @@ public class QuizController : ControllerBase
                     ServerState.RemoveQuizManager(room.Quiz);
                 }
 
-                var quiz = new Quiz(room, Random.Shared.Next());
+                var quiz = new Quiz(room, Guid.NewGuid());
                 room.Quiz = quiz;
                 var quizManager = new QuizManager(quiz, _hubContext);
                 ServerState.AddQuizManager(quizManager);
@@ -469,7 +469,7 @@ public class QuizController : ControllerBase
 
     [HttpGet]
     [Route("GetRoomPassword")]
-    public async Task<ActionResult<string>> GetRoomPassword(string token, int roomId)
+    public async Task<ActionResult<string>> GetRoomPassword(string token, Guid roomId)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)

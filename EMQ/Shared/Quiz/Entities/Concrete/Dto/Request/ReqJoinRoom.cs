@@ -1,15 +1,17 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+﻿using System;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 
 public class ReqJoinRoom
 {
-    public ReqJoinRoom(int roomId, string password, int playerId)
+    public ReqJoinRoom(Guid roomId, string password, int playerId)
     {
         RoomId = roomId;
         Password = password;
         PlayerId = playerId;
     }
 
-    public int RoomId { get; }
+    public Guid RoomId { get; }
 
     public string Password { get; }
 
