@@ -519,6 +519,9 @@ public class QuizController : ControllerBase
             if (room.Owner.Id == player.Id)
             {
                 room.Password = req.NewPassword;
+                room.Log("Room password changed.", -1, true);
+                await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoomForRoom", room);
             }
             else
             {
