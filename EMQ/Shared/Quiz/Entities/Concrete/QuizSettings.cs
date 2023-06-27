@@ -99,7 +99,7 @@ public class QuizSettings
     [Required]
     [Range(5000, 250000)]
     [DefaultValue(150000)]
-    public int TimeoutMs { get; set; } = 120000;
+    public int TimeoutMs { get; set; } = 150000;
 
     [Required]
     [Range(5, 250)]

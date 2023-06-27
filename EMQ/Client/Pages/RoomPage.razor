@@ -4,6 +4,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using Microsoft.AspNetCore.SignalR.Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
@@ -82,7 +83,10 @@
 
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
-    <button type="button" class="btn btn-primary" @onclick="StartQuiz" disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
+    <button type="button"
+            class="btn btn-primary"
+            @onclick="StartQuiz"
+            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing } || ClientState.Session?.hubConnection?.State is not HubConnectionState.Connected)">
         Start Quiz
     </button>
 }
