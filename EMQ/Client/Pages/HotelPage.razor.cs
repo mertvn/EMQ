@@ -59,7 +59,6 @@ public partial class HotelPage
     {
         if (ClientState.Session is null)
         {
-            // todo warn not logged in
             return;
         }
 
@@ -79,7 +78,6 @@ public partial class HotelPage
 
         if (ClientState.Session is null)
         {
-            // todo warn not logged in
             return;
         }
 
