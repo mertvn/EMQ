@@ -100,7 +100,18 @@ public partial class QuizSettingsComponent
             var songSourceCategory =
                 AutocompleteCComponent.AutocompleteData[rng.Next(AutocompleteCComponent.AutocompleteData.Length)];
 
-            var trilean = (LabelKind)rng.Next(-1, 1); // we don't want Include here
+            LabelKind trilean;
+            if (i == 1)
+            {
+                // we want at least 1 Maybe
+                trilean = LabelKind.Maybe;
+            }
+            else
+            {
+                // we don't want Include here
+                trilean = (LabelKind)rng.Next(-1, 1);
+            }
+
             if (trilean is LabelKind.Exclude)
             {
                 songSourceCategory.SpoilerLevel = SpoilerLevel.Major;
@@ -133,7 +144,18 @@ public partial class QuizSettingsComponent
             var songSourceCategory =
                 AutocompleteAComponent.AutocompleteData[rng.Next(AutocompleteAComponent.AutocompleteData.Length)];
 
-            var trilean = (LabelKind)rng.Next(-1, 1); // we don't want Include here
+            LabelKind trilean;
+            if (i == 1)
+            {
+                // we want at least 1 Maybe
+                trilean = LabelKind.Maybe;
+            }
+            else
+            {
+                // we don't want Include here
+                trilean = (LabelKind)rng.Next(-1, 1);
+            }
+
             var categoryFilter = new ArtistFilter(songSourceCategory, trilean);
             categoryFilters.Add(categoryFilter);
         }
