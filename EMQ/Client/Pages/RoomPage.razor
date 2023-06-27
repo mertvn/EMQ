@@ -93,12 +93,8 @@
     <button type="button"
             class="btn btn-primary"
             @onclick="StartQuiz"
-            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing } || ClientState.Session?.hubConnection?.State is not HubConnectionState.Connected)">
+            disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })">
         Start Quiz
-    </button>
-
-    <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomPassword" style="margin:5px; padding: 5px;">
-        Change password
     </button>
 }
 else
@@ -115,6 +111,13 @@ else
         @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
     Room Settings
 </button>
+
+@if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+{
+    <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomPassword" style="margin:5px; padding: 5px;">
+        Change password
+    </button>
+}
 
 <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
     @if (Room?.Players.Any() ?? false)

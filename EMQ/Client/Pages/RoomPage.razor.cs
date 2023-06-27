@@ -73,6 +73,11 @@ public partial class RoomPage
 
     private async Task StartQuiz()
     {
+        while (ClientState.Session?.hubConnection?.State is not HubConnectionState.Connected)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+        }
+
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
         if (Room!.Players.Any(x => !x.IsReadiedUp && Room.Owner.Id != x.Id))

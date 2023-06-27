@@ -69,7 +69,7 @@ public class EntryPoints
                 var roomId = await res1.Content.ReadFromJsonAsync<Guid>();
 
                 HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/JoinRoom",
-                    new ReqJoinRoom(roomId, "", session.Player.Id));
+                    new ReqJoinRoom(roomId, "", session.Token));
 
                 HttpResponseMessage res3 = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",
                     new ReqStartQuiz(session.Token, roomId));
@@ -117,7 +117,7 @@ public class EntryPoints
                 }
 
                 HttpResponseMessage res2 = await ServerUtils.Client.PostAsJsonAsync("Quiz/JoinRoom",
-                    new ReqJoinRoom(roomId, "", session.Player.Id));
+                    new ReqJoinRoom(roomId, "", session.Token));
             }
 
             HttpResponseMessage res3 = await ServerUtils.Client.PostAsJsonAsync("Quiz/StartQuiz",

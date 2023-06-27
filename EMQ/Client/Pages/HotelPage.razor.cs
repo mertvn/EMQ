@@ -85,7 +85,7 @@ public partial class HotelPage
         StateHasChanged();
 
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/JoinRoom",
-            new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Player.Id));
+            new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Token));
         if (res1.IsSuccessStatusCode)
         {
             await _clientUtils.SaveSessionToLocalStorage();

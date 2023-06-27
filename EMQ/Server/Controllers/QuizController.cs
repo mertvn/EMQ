@@ -177,28 +177,31 @@ public class QuizController : ControllerBase
     [Route("JoinRoom")]
     public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
     {
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == req.PlayerId);
-
-        if (room is null || session is null)
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session == null)
         {
-            // todo warn error
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+        if (room is null)
+        {
             throw new Exception();
         }
 
         var player = session.Player;
         if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password)
         {
-            if (room.Players.Any(x => x.Id == req.PlayerId) || room.Spectators.Any(x => x.Id == req.PlayerId))
+            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
             {
                 // TODO we really shouldn't allow this (we should handle players manually changing pages better)
                 return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
-            var oldRoom = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == req.PlayerId));
+            var oldRoom = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
             if (oldRoom is not null)
             {
-                _logger.LogInformation($"Removed player {req.PlayerId} from room " + oldRoom.Id);
+                _logger.LogInformation($"Removed player {player.Id} from room " + oldRoom.Id);
                 oldRoom.RemovePlayer(player);
                 oldRoom.AllConnectionIds.Remove(player.Id, out _);
                 room.Log($"{player.Username} left the room.", -1, true);
@@ -206,7 +209,7 @@ public class QuizController : ControllerBase
 
             if (room.CanJoinDirectly)
             {
-                _logger.LogInformation("Added p{req.PlayerId} to r{room.Id}", req.PlayerId, room.Id);
+                _logger.LogInformation("Added p{player.Id} to r{room.Id}", player.Id, room.Id);
                 room.Players.Enqueue(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
 
@@ -220,7 +223,7 @@ public class QuizController : ControllerBase
             }
             else
             {
-                _logger.LogInformation("Added p{req.PlayerId} to r{room.Id} as a spectator", req.PlayerId, room.Id);
+                _logger.LogInformation("Added p{player.Id} to r{room.Id} as a spectator", player.Id, room.Id);
                 room.Spectators.Enqueue(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
                 room.Log($"{player.Username} started spectating.", -1, true);

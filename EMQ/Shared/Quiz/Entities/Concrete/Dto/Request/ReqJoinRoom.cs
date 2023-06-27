@@ -4,16 +4,16 @@ namespace EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 
 public class ReqJoinRoom
 {
-    public ReqJoinRoom(Guid roomId, string password, int playerId)
+    public ReqJoinRoom(Guid roomId, string password, string playerToken)
     {
         RoomId = roomId;
         Password = password;
-        PlayerId = playerId;
+        PlayerToken = playerToken;
     }
 
     public Guid RoomId { get; }
 
     public string Password { get; }
 
-    public int PlayerId { get; } // todo ???
+    public string PlayerToken { get; }
 }
