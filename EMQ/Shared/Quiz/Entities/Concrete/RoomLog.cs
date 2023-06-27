@@ -34,7 +34,7 @@ public class RoomLog
 
     public override string ToString()
     {
-        string final = $"r{RoomId}q{QuizId}@{QuizState?.sp ?? -1} p{PlayerId} {Message}";
+        string final = $"r{RoomId}@{QuizState?.sp ?? -1} p{PlayerId} {Message}";
         return final;
     }
 }
