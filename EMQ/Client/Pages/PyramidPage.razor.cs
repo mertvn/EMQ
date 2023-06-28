@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Logging;
 
 namespace EMQ.Client.Pages;
@@ -34,7 +35,7 @@ public partial class PyramidPage
         };
     }
 
-    private static Room? Room { get; set; }
+    private Room? Room { get; set; }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
@@ -44,11 +45,14 @@ public partial class PyramidPage
 
     public float Countdown { get; set; }
 
+    private IDisposable? _locationChangingRegistration;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
         {
+            _locationChangingRegistration?.Dispose();
             _navigation.NavigateTo("/", true);
             return;
         }
@@ -65,6 +69,22 @@ public partial class PyramidPage
         SetTimer();
         StateHasChanged();
         _treasureRoomComponentRef.CallStateHasChanged(Room);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (context.TargetLocation is not "/QuizPage")
+        {
+            context.PreventNavigation();
+        }
     }
 
     private async Task SyncWithServer()
@@ -145,8 +165,16 @@ public partial class PyramidPage
 
     private async Task OnReceiveQuizEntered()
     {
+        // Double-entering QuizPage can trigger the Leave Quiz modal to pop up for some reason
+        await Task.Delay(TimeSpan.FromMilliseconds(300));
+        if (_navigation.Uri.EndsWith("/QuizPage"))
+        {
+            return;
+        }
+
         _treasureRoomComponentRef.StopTimers();
 
+        _locationChangingRegistration?.Dispose();
         _logger.LogInformation("Navigating from Pyramid to Quiz");
         _navigation.NavigateTo("/QuizPage");
     }

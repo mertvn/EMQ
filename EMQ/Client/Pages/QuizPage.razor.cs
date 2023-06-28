@@ -10,6 +10,7 @@ using EMQ.Client.Components;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -120,6 +121,8 @@ public partial class QuizPage
 
     private bool _isDisposed;
 
+    private IDisposable? _locationChangingRegistration;
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -128,6 +131,7 @@ public partial class QuizPage
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
         {
+            _locationChangingRegistration?.Dispose();
             _navigation.NavigateTo("/", true);
             return;
         }
@@ -185,6 +189,24 @@ public partial class QuizPage
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        Console.WriteLine(context.TargetLocation);
+        if (context.TargetLocation is not "/RoomPage" or "/QuizPage")
+        {
+            context.PreventNavigation();
+            _leaveModalRef?.Show();
+        }
+    }
+
     private async Task OnReceiveCorrectAnswer(Song correctAnswer,
         Dictionary<int, List<Label>> playerLabels,
         Dictionary<int, string> playerGuesses)
@@ -227,6 +249,7 @@ public partial class QuizPage
             PageState.Timer.Dispose();
 
             _chatComponent?.Dispose();
+            _locationChangingRegistration?.Dispose();
             PageState = null!;
             // Console.WriteLine("disposed quizpage");
         }
@@ -402,8 +425,9 @@ public partial class QuizPage
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
         // await SyncWithServer();
+        _locationChangingRegistration?.Dispose();
 
-        await Task.Delay(TimeSpan.FromMilliseconds(500));
+        await Task.Delay(TimeSpan.FromMilliseconds(300));
         _navigation.NavigateTo("/HotelPage");
     }
 

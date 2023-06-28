@@ -9,6 +9,7 @@ using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -49,11 +50,14 @@ public partial class RoomPage
 
     private string? RoomPassword { get; set; }
 
+    private IDisposable? _locationChangingRegistration;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session is null)
         {
+            _locationChangingRegistration?.Dispose();
             _navigation.NavigateTo("/", true);
             return;
         }
@@ -68,6 +72,23 @@ public partial class RoomPage
         else
         {
             // todo require reload etc.
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (context.TargetLocation is not "/QuizPage" or "/PyramidPage")
+        {
+            context.PreventNavigation();
+            _leaveModalRef?.Show();
         }
     }
 
@@ -109,12 +130,28 @@ public partial class RoomPage
 
     private async Task OnReceiveQuizEntered()
     {
+        // Double-entering QuizPage can trigger the Leave Quiz modal to pop up for some reason
+        await Task.Delay(TimeSpan.FromMilliseconds(300));
+        if (_navigation.Uri.EndsWith("/QuizPage"))
+        {
+            return;
+        }
+
+        _locationChangingRegistration?.Dispose();
         _logger.LogInformation("Navigating from Room to Quiz");
         _navigation.NavigateTo("/QuizPage");
     }
 
     private async Task OnReceivePyramidEntered()
     {
+        // Double-entering QuizPage can trigger the Leave Quiz modal to pop up for some reason
+        await Task.Delay(TimeSpan.FromMilliseconds(300));
+        if (_navigation.Uri.EndsWith("/QuizPage"))
+        {
+            return;
+        }
+
+        _locationChangingRegistration?.Dispose();
         _logger.LogInformation("Navigating from Room to Pyramid");
         _navigation.NavigateTo("/PyramidPage");
     }
@@ -140,6 +177,7 @@ public partial class RoomPage
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerLeaving");
         // Room = await _clientUtils.SyncRoom();
         await Task.Delay(TimeSpan.FromMilliseconds(500));
+        _locationChangingRegistration?.Dispose();
         _navigation.NavigateTo("/HotelPage");
     }
 
