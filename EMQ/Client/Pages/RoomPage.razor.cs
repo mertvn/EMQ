@@ -146,7 +146,7 @@ public partial class RoomPage
     {
         // Double-entering QuizPage can trigger the Leave Quiz modal to pop up for some reason
         await Task.Delay(TimeSpan.FromMilliseconds(300));
-        if (_navigation.Uri.EndsWith("/QuizPage"))
+        if (_navigation.Uri.EndsWith("/PyramidPage"))
         {
             return;
         }
