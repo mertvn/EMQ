@@ -13,8 +13,6 @@
 @inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
 
-<CascadingValue Value="@this" IsFixed="true">
-
 <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
 
 <GenericModal @ref="@_leaveModalRef"
@@ -294,5 +292,3 @@
 
     </div>
 </div>
-
-</CascadingValue>

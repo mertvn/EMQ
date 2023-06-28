@@ -80,7 +80,7 @@ public partial class QuizPage
         public int CurrentMasterVolume { get; set; } = -1;
     }
 
-    public static QuizPageState PageState { get; set; } = new() { };
+    public QuizPageState PageState { get; set; } = new() { };
 
     private Room? Room { get; set; }
 
@@ -116,8 +116,15 @@ public partial class QuizPage
 
     private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
+    private Guid Id = Guid.NewGuid();
+
+    private bool _isDisposed;
+
     protected override async Task OnInitializedAsync()
     {
+        // Console.WriteLine(
+        //     $"OnInitialized on Component {Id.ToString().Substring(32)} ran at {DateTime.UtcNow.ToLongTimeString()}");
+
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
         {
@@ -182,6 +189,11 @@ public partial class QuizPage
         Dictionary<int, List<Label>> playerLabels,
         Dictionary<int, string> playerGuesses)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _correctAnswer = correctAnswer;
         _correctAnswerPlayerLabels = playerLabels;
         _playerGuesses = playerGuesses;
@@ -189,6 +201,11 @@ public partial class QuizPage
 
     private async Task OnReceivePlayerGuesses(Dictionary<int, string> playerGuesses)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         foreach ((int playerId, string? playerGuess) in playerGuesses)
         {
             _playerGuesses[playerId] = playerGuess;
@@ -199,13 +216,19 @@ public partial class QuizPage
     {
         try
         {
-            if (ClientState.Session!.hubConnection is not null)
-            {
-                await ClientState.Session.hubConnection.DisposeAsync();
-            }
+            _isDisposed = true;
 
+            PreloadCancellationSource.Cancel();
+            PreloadCancellationRegistration.Unregister();
+            PreloadCancellationSource.Dispose();
+
+            PageState.Timer.Stop();
+            PageState.Timer.Elapsed -= OnTimedEvent;
             PageState.Timer.Dispose();
+
             _chatComponent?.Dispose();
+            PageState = null!;
+            // Console.WriteLine("disposed quizpage");
         }
         catch (Exception e)
         {
@@ -251,6 +274,14 @@ public partial class QuizPage
 
     private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        // Console.WriteLine(
+        //     $"SyncWithServer on Component {Id.ToString().Substring(32)} ran at {DateTime.UtcNow.ToLongTimeString()}");
+
         int? oldPhase = null;
         int? oldSp = null;
         if (Room is { Quiz: { } })
@@ -271,7 +302,6 @@ public partial class QuizPage
         }
         else if (!SyncInProgress)
         {
-            // Console.WriteLine("slow sync");
             // Console.WriteLine($"start slow sync {DateTime.UtcNow:O}");
             SyncInProgress = true;
             Room = await _clientUtils.SyncRoom();
@@ -327,6 +357,11 @@ public partial class QuizPage
 
     private async Task OnReceiveQuizStarted()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         await SyncWithServer();
         PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
         StateHasChanged();
@@ -335,6 +370,11 @@ public partial class QuizPage
 
     private async Task OnReceiveQuizEnded()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         await SyncWithServer();
         // TODO: do endgame stuff
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
@@ -344,6 +384,11 @@ public partial class QuizPage
 
     private async Task OnReceiveQuizCanceled()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         await SyncWithServer();
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -359,11 +404,7 @@ public partial class QuizPage
         // await SyncWithServer();
 
         await Task.Delay(TimeSpan.FromMilliseconds(500));
-        // i have no idea why, but if we don't visit RoomPage first, the next room a player enters will have double timer tick etc.
-        // might be because visiting RoomPage causes a new signalr connection to be established
-        _navigation.NavigateTo("/RoomPage");
         _navigation.NavigateTo("/HotelPage");
-        await DisposeAsync();
     }
 
     public async Task OnReceivePhaseChanged(int phase)
@@ -470,7 +511,7 @@ public partial class QuizPage
 
     private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
     {
-        if (PageState.Timer.Enabled)
+        if (PageState.Timer.Enabled && !_isDisposed)
         {
             PageState.ProgressValue = 100 - (100 / PageState.ProgressDivisor * PageState.Countdown);
 
@@ -649,6 +690,11 @@ public partial class QuizPage
 
     private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         await SyncWithServer(room, phaseChanged);
     }
 
