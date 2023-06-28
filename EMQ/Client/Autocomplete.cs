@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -10,14 +11,32 @@ namespace EMQ.Client;
 
 public static class Autocomplete
 {
-    public static IEnumerable<string> SearchAutocompleteMst(string[] data, string arg)
+    public static IEnumerable<string> SearchAutocompleteMst(AutocompleteMst[] data, string arg)
     {
-        arg = arg.Trim();
         // todo prefer Japanese latin titles
-        var startsWith = data.Where(x => x.ToLowerInvariant().StartsWith(arg.ToLowerInvariant())).OrderBy(x => x);
-        var contains = data.Where(x => x.ToLowerInvariant().Contains(arg.ToLowerInvariant())).OrderBy(x => x);
+        arg = arg.NormalizeForAutocomplete();
+        // Console.WriteLine(arg);
 
-        string[] final = (startsWith.Concat(contains)).Distinct().ToArray();
+        var startsWith = data.Where(x =>
+                x.MSTLatinTitleNormalized.StartsWith(arg) || x.MSTNonLatinTitleNormalized.StartsWith(arg))
+            .OrderBy(x => x.MSTLatinTitle)
+            .ToArray();
+
+        var contains = data.Where(x =>
+                x.MSTLatinTitleNormalized.Contains(arg) || x.MSTNonLatinTitleNormalized.Contains(arg))
+            .OrderBy(x => x.MSTLatinTitle)
+            .ToArray();
+
+        var startsWithLT = startsWith.Select(x => x.MSTLatinTitle);
+        var startsWithNLT = startsWith.Select(x => x.MSTNonLatinTitle);
+
+        var containsLT = contains.Select(x => x.MSTLatinTitle);
+        var containsNLT = contains.Select(x => x.MSTNonLatinTitle);
+
+        string[] final = startsWithLT.Concat(containsLT)
+            .Concat(startsWithNLT).Concat(containsNLT)
+            .Distinct()
+            .Where(x => x != "").ToArray();
         // Console.WriteLine(JsonSerializer.Serialize(final));
         return final.Any() ? final.Take(25) : Array.Empty<string>();
     }

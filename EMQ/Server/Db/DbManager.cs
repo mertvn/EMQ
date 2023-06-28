@@ -1052,16 +1052,27 @@ public static class DbManager
     public static async Task<string> SelectAutocompleteMst()
     {
         const string sqlAutocompleteMst =
-            @"SELECT mst.latin_title, mst.non_latin_title
+            @"SELECT DISTINCT music_source_id AS msId, mst.latin_title AS mstLatinTitle, COALESCE(mst.non_latin_title, '') AS mstNonLatinTitle,
+                '' AS mstLatinTitleNormalized, '' AS mstNonLatinTitleNormalized
             FROM music_source_title mst where language IN ('ja','en','tr')
             "; // #blamerampaa
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<(string, string?)>(sqlAutocompleteMst))
-                .Select(x => new[] { x.Item1, x.Item2 }).SelectMany(x => x);
-            string autocomplete =
-                JsonSerializer.Serialize(res.Distinct().Where(x => x != null).OrderBy(x => x), Utils.Jso);
+            // todo language preferences
+            AutocompleteMst[] res = (await connection.QueryAsync<AutocompleteMst>(sqlAutocompleteMst))
+                .Where(x => x != null)
+                // .DistinctBy(x=> x!.ToLowerInvariant())
+                .OrderBy(x => x.MSTLatinTitle)
+                .ToArray();
+
+            foreach (var re in res)
+            {
+                re.MSTLatinTitleNormalized = re.MSTLatinTitle.NormalizeForAutocomplete();
+                re.MSTNonLatinTitleNormalized = re.MSTNonLatinTitle.NormalizeForAutocomplete();
+            }
+
+            string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
             return autocomplete;
         }
     }

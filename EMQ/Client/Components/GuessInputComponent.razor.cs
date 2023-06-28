@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
+using EMQ.Shared.Library.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -12,7 +13,7 @@ namespace EMQ.Client.Components;
 
 public partial class GuessInputComponent
 {
-    private string[] AutocompleteData { get; set; } = Array.Empty<string>();
+    private AutocompleteMst[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMst>();
 
     private IEnumerable<string> CurrentDataSource { get; set; } = Array.Empty<string>();
 
@@ -59,7 +60,7 @@ public partial class GuessInputComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<string[]>("autocomplete/mst.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
     }
 
     private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)

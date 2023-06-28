@@ -163,4 +163,14 @@ public static class ExtensionMethods
             song.Stats);
         return songLite;
     }
+
+    public static string NormalizeForAutocomplete(this string input)
+    {
+        // var ignoredChars = new[] { "-", "/" };
+        return new string(input
+            .Trim()
+            .ToLowerInvariant()
+            .Where(y => char.IsLetterOrDigit(y) || char.IsWhiteSpace(y))
+            .ToArray());
+    }
 }
