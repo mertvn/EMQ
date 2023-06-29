@@ -1059,10 +1059,8 @@ public static class DbManager
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            // todo language preferences
             AutocompleteMst[] res = (await connection.QueryAsync<AutocompleteMst>(sqlAutocompleteMst))
                 .Where(x => x != null)
-                // .DistinctBy(x=> x!.ToLowerInvariant())
                 .OrderBy(x => x.MSTLatinTitle)
                 .ToArray();
 
@@ -1877,7 +1875,7 @@ order by year";
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var mids = (await connection.QueryAsync<int>("SELECT * FROM music_external_link where is_video = false"))
+            var mids = (await connection.QueryAsync<int>("SELECT music_id FROM music_external_link where is_video = false"))
                 .ToList();
             return mids;
         }

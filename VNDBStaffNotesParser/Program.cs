@@ -140,6 +140,7 @@ public static class Program
                         "Plus Communication songs",
                         "extra song",
                         "PV Song",
+                        "PV",
                         "Ep. 6 song",
                         "Ep. 8 song",
                         "Fu-Rin-Ka-Zan theme",
