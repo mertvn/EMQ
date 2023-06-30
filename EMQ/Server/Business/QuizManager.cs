@@ -856,6 +856,11 @@ public class QuizManager
 
     public async Task OnSendPickupTreasure(Session session, Guid treasureGuid)
     {
+        if (!Quiz.Room.TreasureRooms.Any())
+        {
+            return;
+        }
+
         var player = session.Player;
         if (player.LootingInfo.TreasureRoomCoords.X < Quiz.QuizState.LootingGridSize &&
             player.LootingInfo.TreasureRoomCoords.Y < Quiz.QuizState.LootingGridSize)
