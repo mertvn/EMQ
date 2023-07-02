@@ -1,4 +1,6 @@
-﻿using System.Text.Encodings.Web;
+﻿using System;
+using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -33,5 +35,10 @@ public static class Utils
     public static string PercentageStr(double dividend, double divisor)
     {
         return $"{((dividend / divisor) * 100):N2}%";
+    }
+
+    public static string FixFileName(string name)
+    {
+        return string.Join(" ", name.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
     }
 }

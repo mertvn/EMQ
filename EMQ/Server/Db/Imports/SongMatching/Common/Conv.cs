@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CueSharp;
+using EMQ.Shared.Core;
 using FFMpegCore;
 using FFMpegCore.Enums;
 using UtfUnknown;
@@ -233,7 +234,7 @@ public static class Conv
 
                     Directory.CreateDirectory(od);
                     string outputPath =
-                        $"{od}\\{trackNumber:000}. {FixFileName(title)} - ({FixFileName(artist)}).mp3";
+                        $"{od}\\{trackNumber:000}. {Utils.FixFileName(title)} - ({Utils.FixFileName(artist)}).mp3";
 
                     if (!File.Exists(outputPath))
                     {
@@ -271,10 +272,5 @@ public static class Conv
                     }
                 }
             });
-    }
-
-    private static string FixFileName(string name)
-    {
-        return string.Join(" ", name.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
     }
 }
