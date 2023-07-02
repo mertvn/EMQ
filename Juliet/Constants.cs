@@ -6,5 +6,5 @@ public static class Constants
 
     public const int MaxResultsPerPage = 100;
 
-    // public const string UserAgent = "Juliet";
+    public const string UserAgent = "Juliet";
 }

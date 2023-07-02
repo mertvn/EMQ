@@ -40,7 +40,25 @@ public abstract class Query
                     ret.Append(']');
                     break;
                 case Predicate p:
-                    ret.Append($"[\"{p.Name.GetDescription()}\",\"{p.Operator.GetDescription()}\",\"{p.Value}\"]");
+                    // todo find the right way to do this
+                    if (p.Value is Combinator vc)
+                    {
+                        // ToJson(vq, false, ret);
+
+                        // ret.Append(
+                        //     $"[\"{p.Name.GetDescription()}\",\"{p.Operator.GetDescription()}\",{ToJson(vq, false, ret)}");
+                        // ret.Append(']');
+                    }
+                    else if (p.Value is Predicate vp)
+                    {
+                        ret.Append(
+                            $"[\"{p.Name.GetDescription()}\",\"{p.Operator.GetDescription()}\",[\"{vp.Name.GetDescription()}\",\"{vp.Operator.GetDescription()}\",\"{vp.Value}\"]]");
+                    }
+                    else
+                    {
+                        ret.Append($"[\"{p.Name.GetDescription()}\",\"{p.Operator.GetDescription()}\",\"{p.Value}\"]");
+                    }
+
                     break;
             }
         }

@@ -109,7 +109,7 @@ public class JulietTests
     }
 
     [Test]
-    public async Task Test_POST_vn()
+    public async Task Test_POST_vn_GetIdBySearchingTitle()
     {
         var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
         {
@@ -133,5 +133,85 @@ public class JulietTests
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
         Assert.That(res!.Single().Results.Count > 17);
+    }
+
+    [Test]
+    public async Task Test_POST_vn_GetTitles()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>()
+            {
+                FieldPOST_vn.Id, FieldPOST_vn.Title, FieldPOST_vn.AltTitle, FieldPOST_vn.Released
+            },
+            Filters = new Predicate(FilterField.Search, FilterOperator.Equal, "シャマナシャマナ ～月とこころと太陽の魔法～")
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Title == "Shamana Shamana ~Tsuki to Kokoro to Taiyou no Mahou~");
+    }
+
+    [Test]
+    public async Task Test_POST_vn_GetTitleBySearchingId()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id, FieldPOST_vn.Title, FieldPOST_vn.AltTitle },
+            Filters = new Predicate(FilterField.Id, FilterOperator.Equal, "v7")
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Title == "Tsukihime");
+    }
+
+    [Test]
+    public async Task Test_POST_release_RawFilters()
+    {
+        var res = await Juliet.Api.POST_release(new ParamPOST_release()
+        {
+            Fields = new List<FieldPOST_release>()
+            {
+                FieldPOST_release.Id,
+                FieldPOST_release.Title,
+                FieldPOST_release.AltTitle,
+                FieldPOST_release.Released,
+                FieldPOST_release.ProducersDeveloper,
+                FieldPOST_release.ProducersPublisher,
+                FieldPOST_release.ProducersName,
+                FieldPOST_release.ProducersOriginal,
+            },
+            RawFilters = "N482gla",
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.First().Producers.First(x => x.Publisher ?? false).Name == "Ezo2");
+    }
+
+    [Test]
+    public async Task Test_POST_release_WithPredicateAsValue()
+    {
+        var res = await Juliet.Api.POST_release(new ParamPOST_release()
+        {
+            Fields = new List<FieldPOST_release>()
+            {
+                FieldPOST_release.Id,
+                FieldPOST_release.Title,
+                FieldPOST_release.AltTitle,
+                FieldPOST_release.Released,
+                FieldPOST_release.ProducersDeveloper,
+                FieldPOST_release.ProducersPublisher,
+                FieldPOST_release.ProducersName,
+                FieldPOST_release.ProducersOriginal,
+            },
+            Filters = new Predicate(FilterField.Vn, FilterOperator.Equal,
+                new Predicate(FilterField.Id, FilterOperator.Equal, "v7")),
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.First().Producers.First(x => x.Developer ?? false).Name == "TYPE-MOON");
     }
 }

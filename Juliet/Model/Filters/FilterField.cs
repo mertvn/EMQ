@@ -4,9 +4,15 @@ namespace Juliet.Model.Filters;
 
 public enum FilterField
 {
+    [Description("id")]
+    Id,
+
+    [Description("search")]
+    Search,
+
     [Description("label")]
     Label,
 
-    [Description("search")]
-    Search
+    [Description("vn")]
+    Vn,
 }

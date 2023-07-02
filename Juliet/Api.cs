@@ -23,6 +23,7 @@ public static class Api
         try
         {
             // Console.WriteLine($"Sending request {JsonSerializer.Serialize(req)}"); // TODO
+            req.Headers.Add("User-Agent", Constants.UserAgent);
             var res = await Client.SendAsync(req);
             // Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
 
@@ -129,6 +130,11 @@ public static class Api
     public static async Task<List<ResPOST<ResPOST_vn>>?> POST_vn(ParamPOST_vn param)
     {
         return await POST_Generic<FieldPOST_vn, ResPOST_vn>(param, new Uri("vn", UriKind.Relative));
+    }
+
+    public static async Task<List<ResPOST<ResPOST_release>>?> POST_release(ParamPOST_release param)
+    {
+        return await POST_Generic<FieldPOST_release, ResPOST_release>(param, new Uri("release", UriKind.Relative));
     }
 
     private static async Task<List<ResPOST<TReturn>>?> POST_Generic<TParam, TReturn>(

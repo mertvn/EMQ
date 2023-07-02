@@ -6,6 +6,7 @@ namespace Juliet.Model.Response;
 public class ResPOST<T>
 {
     [JsonPropertyName("results")]
+    // ReSharper disable once CollectionNeverUpdated.Global
     public List<T> Results { get; set; } = new();
 
     [JsonPropertyName("more")]

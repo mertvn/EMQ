@@ -3,7 +3,7 @@ using Juliet.Model.VNDBObject;
 
 namespace Juliet.Model.Response;
 
-public class ResPOST_vn
+public class ResPOST_release
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = "";
@@ -16,4 +16,7 @@ public class ResPOST_vn
 
     [JsonPropertyName("released")]
     public string? Released { get; set; }
+
+    [JsonPropertyName("producers")]
+    public List<Producer> Producers { get; set; } = new();
 }
