@@ -23,7 +23,10 @@ public static class Api
         try
         {
             // Console.WriteLine($"Sending request {JsonSerializer.Serialize(req)}"); // TODO
-            req.Headers.Add("User-Agent", Constants.UserAgent);
+
+            // header ‘user-agent’ is not allowed according to header ‘Access-Control-Allow-Headers’ from CORS preflight response
+            // req.Headers.Add("User-Agent", Constants.UserAgent);
+
             var res = await Client.SendAsync(req);
             // Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
 
