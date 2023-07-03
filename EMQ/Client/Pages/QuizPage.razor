@@ -262,7 +262,9 @@
                         <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
 
                             @* todo make text smaller as it gets longer *@
-                            <span style="color: white;">@player.Username</span>
+                            <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                @player.Username
+                            </span>
 
                             <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
                             @{

@@ -132,7 +132,10 @@ else
                 <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Default)" alt="Avatar">
 
                 <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
-                    <span style="color: white;">@player.Username</span>
+                    @* todo make text smaller as it gets longer *@
+                    <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @player.Username
+                    </span>
                 </div>
             </div>
         }
