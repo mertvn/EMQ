@@ -89,7 +89,7 @@ public partial class AutocompleteAComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            if (Guess?.AId != AutocompleteComponent.SelectedValue.AId)
+            if (Guess?.AId != AutocompleteComponent.SelectedValue?.AId)
             {
                 Guess = AutocompleteComponent.SelectedValue;
                 await AutocompleteComponent.Close();
