@@ -68,7 +68,6 @@ public sealed class CleanupService : IHostedService, IDisposable
                     room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
                         true);
 
-                    // todo host change
                     if (room.Spectators.Any(x => x.Id == inactiveSession.Player.Id))
                     {
                         room.RemoveSpectator(inactiveSession.Player);
@@ -79,7 +78,6 @@ public sealed class CleanupService : IHostedService, IDisposable
                         if (!room.Players.Any())
                         {
                             ServerState.RemoveRoom(room, "CleanupService2");
-                            return;
                         }
                         else
                         {
