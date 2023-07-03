@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -52,7 +52,7 @@ public sealed class CleanupService : IHostedService, IDisposable
                 //  && (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing) // not sure if we need this
                )
             {
-                ServerState.RemoveRoom(room, "CleanupService");
+                ServerState.RemoveRoom(room, "CleanupService1");
                 continue;
             }
 
@@ -64,6 +64,11 @@ public sealed class CleanupService : IHostedService, IDisposable
                     Console.WriteLine(
                         $"Cleaning up p{inactiveSession.Player.Id} {inactiveSession.Player.Username} from r{room.Id} {room.Name}");
 
+                    room.AllConnectionIds.Remove(inactiveSession.Player.Id, out _);
+                    room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
+                        true);
+
+                    // todo host change
                     if (room.Spectators.Any(x => x.Id == inactiveSession.Player.Id))
                     {
                         room.RemoveSpectator(inactiveSession.Player);
@@ -71,11 +76,21 @@ public sealed class CleanupService : IHostedService, IDisposable
                     else
                     {
                         room.RemovePlayer(inactiveSession.Player);
+                        if (!room.Players.Any())
+                        {
+                            ServerState.RemoveRoom(room, "CleanupService2");
+                            return;
+                        }
+                        else
+                        {
+                            if (room.Owner.Id == inactiveSession.Player.Id)
+                            {
+                                var newOwner = room.Players.First();
+                                room.Owner = newOwner;
+                                room.Log($"{newOwner.Username} is the new owner.", -1, true);
+                            }
+                        }
                     }
-
-                    room.AllConnectionIds.Remove(inactiveSession.Player.Id, out _);
-                    room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
-                        true);
                 }
                 // todo make players spectators if they are connected but AFK
             }
