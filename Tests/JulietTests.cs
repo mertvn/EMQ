@@ -43,6 +43,15 @@ public class JulietTests
         Assert.That(res!.Labels.Length > 5);
     }
 
+    [Test, Explicit]
+    public async Task Test_PATCH_ulist_labels()
+    {
+        await Juliet.Api.PATCH_ulist(new ParamPATCH_ulist()
+        {
+            APIToken = "", Id = "v1", labels_set = new[] { 5 }
+        });
+    }
+
     [Test]
     public async Task Test_POST_ulist()
     {

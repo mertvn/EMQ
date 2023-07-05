@@ -32,7 +32,13 @@ public static class Api
 
             if (res.IsSuccessStatusCode)
             {
-                var content = (await res.Content.ReadFromJsonAsync<T>())!;
+                string str = await res.Content.ReadAsStringAsync();
+                if (str == "")
+                {
+                    return default;
+                }
+
+                var content = JsonSerializer.Deserialize<T>(str)!;
                 return content;
             }
             else
@@ -138,6 +144,29 @@ public static class Api
     public static async Task<List<ResPOST<ResPOST_release>>?> POST_release(ParamPOST_release param)
     {
         return await POST_Generic<FieldPOST_release, ResPOST_release>(param, new Uri("release", UriKind.Relative));
+    }
+
+    public static async Task PATCH_ulist(ParamPATCH_ulist param)
+    {
+        var requestUri = new Uri($"ulist/{param.Id}", UriKind.Relative);
+
+        var json = JsonSerializer.Serialize(param,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        Console.WriteLine("json:" + json);
+
+        var req = new HttpRequestMessage
+        {
+            RequestUri = requestUri,
+            Method = HttpMethod.Patch,
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrWhiteSpace(param.APIToken))
+        {
+            req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
+        }
+
+        await Send<object>(req);
     }
 
     private static async Task<List<ResPOST<TReturn>>?> POST_Generic<TParam, TReturn>(
