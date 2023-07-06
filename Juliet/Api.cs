@@ -15,7 +15,9 @@ namespace Juliet;
 // todo return IEnumerable everywhere
 public static class Api
 {
-    private static HttpClient Client { get; } = new() { BaseAddress = new Uri(Constants.VndbApiUrl), };
+    private static ThrottleHandler ThrottleHandler { get; } = new() { InnerHandler = new HttpClientHandler() };
+
+    private static HttpClient Client { get; } = new(ThrottleHandler) { BaseAddress = new Uri(Constants.VndbApiUrl), };
 
     // todo: return IResult<T> type with success, message, result properties
     private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
@@ -30,43 +32,16 @@ public static class Api
             var res = await Client.SendAsync(req);
             // Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
 
-            if (res.IsSuccessStatusCode)
+            // Exception will be thrown by the ThrottleHandler if the request is not successful,
+            // so we don't have to check it here.
+            string str = await res.Content.ReadAsStringAsync();
+            if (str == "")
             {
-                string str = await res.Content.ReadAsStringAsync();
-                if (str == "")
-                {
-                    return default;
-                }
+                return default;
+            }
 
-                var content = JsonSerializer.Deserialize<T>(str)!;
-                return content;
-            }
-            else
-            {
-                switch (res.StatusCode)
-                {
-                    // case HttpStatusCode.BadRequest:
-                    //     break;
-                    case HttpStatusCode.Unauthorized:
-                        // todo auth logic?
-                        throw new Exception("Unauthorized.");
-                    // case HttpStatusCode.NotFound:
-                    //     break;
-                    case HttpStatusCode.TooManyRequests:
-                        // todo throttling logic?
-                        throw new Exception("Throttled.");
-                    // case HttpStatusCode.InternalServerError:
-                    //     break;
-                    // case HttpStatusCode.BadGateway:
-                    //     break;
-                    default:
-                        string str =
-                            $"Error communicating with VNDB. Status code: {res.StatusCode:D} {res.StatusCode}, " +
-                            $"response content: {await res.Content.ReadAsStringAsync()}";
-                        Console.WriteLine(str);
-                        throw new Exception(str);
-                }
-            }
+            var content = JsonSerializer.Deserialize<T>(str)!;
+            return content;
         }
         catch (Exception e)
         {
