@@ -144,6 +144,29 @@ public static class Api
         await Send<object>(req);
     }
 
+    public static async Task PATCH_rlist(ParamPATCH_rlist param)
+    {
+        var requestUri = new Uri($"rlist/{param.Id}", UriKind.Relative);
+
+        var json = JsonSerializer.Serialize(param,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        Console.WriteLine("json:" + json);
+
+        var req = new HttpRequestMessage
+        {
+            RequestUri = requestUri,
+            Method = HttpMethod.Patch,
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        if (!string.IsNullOrWhiteSpace(param.APIToken))
+        {
+            req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
+        }
+
+        await Send<object>(req);
+    }
+
     private static async Task<List<ResPOST<TReturn>>?> POST_Generic<TParam, TReturn>(
         ParamPOST<TParam> param,
         Uri requestUri)
