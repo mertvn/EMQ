@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,39 +10,28 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server;
 
-public sealed class CleanupService : IHostedService, IDisposable
+public sealed class CleanupService : BackgroundService
 {
     private readonly ILogger<CleanupService> _logger;
-    private Timer? _timer;
 
     public CleanupService(ILogger<CleanupService> logger)
     {
         _logger = logger;
     }
 
-    public Task StartAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("CleanupService is starting");
-        _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(60));
-        return Task.CompletedTask;
+        var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        while (await timer.WaitForNextTickAsync(stoppingToken))
+        {
+            DoWork();
+        }
     }
 
-    public Task StopAsync(CancellationToken stoppingToken)
-    {
-        _logger.LogInformation("CleanupService is stopping");
-        _timer?.Change(Timeout.Infinite, 0);
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        _timer?.Dispose();
-    }
-
-    private void DoWork(object? state)
+    private static void DoWork()
     {
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
-
         foreach (Room room in ServerState.Rooms)
         {
             var roomSessions = ServerState.Sessions.Where(x => room.Players.Any(y => y.Id == x.Player.Id)).ToList();
