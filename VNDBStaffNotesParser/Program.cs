@@ -38,6 +38,7 @@ public static class Program
                         "OP song",
                         "Main theme",
                         "Main themes",
+                        "Main theme song",
                         "Theme Song", // idk
                         "Theme songs", // idk
                         "Theme song -", // idk
