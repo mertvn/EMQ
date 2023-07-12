@@ -13,6 +13,12 @@ public enum FieldPOST_release
     [Description("alttitle")]
     AltTitle,
 
+    [Description("vns.rtype")]
+    VNsRType,
+
+    [Description("vns.id")]
+    VNsId,
+
     [Description("producers.developer")]
     ProducersDeveloper,
 

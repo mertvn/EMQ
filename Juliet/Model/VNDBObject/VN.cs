@@ -4,9 +4,12 @@ namespace Juliet.Model.VNDBObject;
 
 public class VN
 {
-    // yorhel pls
-    // [JsonPropertyName("id")]
-    // public string? Id { get; set; }
+    /// only available with POST /release
+    [JsonPropertyName("rtype")]
+    public string RType { get; set; } = "";
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; }  = "";
 
     [JsonPropertyName("title")]
     public string Title { get; set; } = "";

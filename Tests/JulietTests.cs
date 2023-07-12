@@ -194,13 +194,19 @@ public class JulietTests
                 FieldPOST_release.ProducersPublisher,
                 FieldPOST_release.ProducersName,
                 FieldPOST_release.ProducersOriginal,
+                FieldPOST_release.VNsRType,
+                FieldPOST_release.VNsId
             },
             RawFilters = "N482gla",
         });
         Console.WriteLine(JsonSerializer.Serialize(res,
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
-        Assert.That(res!.Single().Results.First().Producers.First(x => x.Publisher ?? false).Name == "Ezo2");
+        var release = res!.Single().Results.First();
+        Assert.That(release.Producers.First(x => x.Publisher ?? false).Name == "Ezo2");
+        var vn = release.VNs.Single();
+        Assert.That(vn.RType == "complete");
+        Assert.That(vn.Id == "v31039");
     }
 
     [Test]

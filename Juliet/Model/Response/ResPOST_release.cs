@@ -19,4 +19,7 @@ public class ResPOST_release
 
     [JsonPropertyName("producers")]
     public List<Producer> Producers { get; set; } = new();
+
+    [JsonPropertyName("vns")]
+    public List<VN> VNs { get; set; } = new();
 }
