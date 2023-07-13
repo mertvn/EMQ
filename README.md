@@ -1,7 +1,6 @@
 # Eroge Music Quiz
 
-No, all-ages VNs aren't excluded. Eroge = Visual Novel. Name was chosen as such for different reasons (mainly browser
-autocomplete). Inspired by [AMQ](https://animemusicquiz.com/).
+EMQ is an [AMQ](https://animemusicquiz.com/)-clone for eroge/visual novel songs.
 
 Currently running at https://emq.up.railway.app.
 ## Steps to import data
