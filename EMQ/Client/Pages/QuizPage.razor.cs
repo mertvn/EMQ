@@ -418,11 +418,11 @@ public partial class QuizPage
         _navigation.NavigateTo("/RoomPage");
     }
 
-    private void ForceReturnToRoomImmediately()
+    private async Task ForceReturnToRoomImmediately()
     {
         Console.WriteLine("Force returning to Room");
-        _navigation.NavigateTo("/RoomPage", true);
-        StateHasChanged();
+        // NavigationManager.NavigateTo just does nothing sometimes on Firefox
+        await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}/RoomPage");
     }
 
     private async Task LeaveQuiz()
@@ -556,7 +556,7 @@ public partial class QuizPage
                 if (Room is null || Room.Quiz is null ||
                     Room.Quiz.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
                 {
-                    ForceReturnToRoomImmediately();
+                    await ForceReturnToRoomImmediately();
                 }
             }
 
