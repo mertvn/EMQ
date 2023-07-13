@@ -1,6 +1,6 @@
 # Eroge Music Quiz
 
-EMQ is an [AMQ](https://animemusicquiz.com/)-clone for eroge/visual novel songs.
+EMQ is an [AMQ](https://animemusicquiz.com/)-like quiz game for eroge/visual novel songs.
 
 Currently running at https://emq.up.railway.app.
 ## Steps to import data
