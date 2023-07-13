@@ -418,6 +418,13 @@ public partial class QuizPage
         _navigation.NavigateTo("/RoomPage");
     }
 
+    private void ForceReturnToRoomImmediately()
+    {
+        Console.WriteLine("Force returning to Room");
+        _navigation.NavigateTo("/RoomPage", true);
+        StateHasChanged();
+    }
+
     private async Task LeaveQuiz()
     {
         // await SyncWithServer();
@@ -546,6 +553,11 @@ public partial class QuizPage
             else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
             {
                 await SyncWithServer();
+                if (Room is null || Room.Quiz is null ||
+                    Room.Quiz.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
+                {
+                    ForceReturnToRoomImmediately();
+                }
             }
 
             if (ClientState.Session != null &&
