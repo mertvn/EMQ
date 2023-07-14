@@ -34,13 +34,14 @@ public static class DbManager
         var latinTitles = input.Titles.Select(x => x.LatinTitle).ToList();
         var links = input.Links.Select(x => x.Url).ToList();
 
-        if (input.Id > 0 && !latinTitles.Any() && !links.Any())
-        {
-            if (CachedSongs.TryGetValue(input.Id, out var s))
-            {
-                return new List<Song> { s };
-            }
-        }
+        // todo
+        // if (input.Id > 0 && !latinTitles.Any() && !links.Any())
+        // {
+        //     if (CachedSongs.TryGetValue(input.Id, out var s))
+        //     {
+        //         return new List<Song> { s };
+        //     }
+        // }
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -166,7 +167,7 @@ public static class DbManager
                 song.Sources = await SelectSongSource(connection, song);
                 song.Artists = await SelectArtist(connection, song, false);
 
-                CachedSongs[input.Id] = song;
+                // CachedSongs[input.Id] = song; // todo
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
