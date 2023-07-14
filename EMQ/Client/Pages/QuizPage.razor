@@ -271,18 +271,20 @@
                                 if (_correctAnswerPlayerLabels.ContainsKey(player.Id))
                                 {
                                     var labels = _correctAnswerPlayerLabels.Single(x => x.Key == player.Id).Value;
+                                    @if (labels.Any() && (labels.First().Name == "Looted" || labels.First().VNs.Any())) // todo this is a band-aid
+                                    {
+                                        @* todo *@
+                                        string text = labels.First().Name == "Looted" ? "L" : (labels.First().VNs.First().Value / 10f).ToString(CultureInfo.InvariantCulture);
 
-                                    @* todo *@
-                                    string text = labels.First().Name == "Looted" ? "L" : (labels.First().VNs.First().Value / 10f).ToString(CultureInfo.InvariantCulture);
+                                        @* todo special cases for default labels (S for Stalled etc.) *@
+                                        text = text == "-0.1" ? "V" : text;
 
-                                    @* todo special cases for default labels (S for Stalled etc.) *@
-                                    text = text == "-0.1" ? "V" : text;
-
-                                    <div style="position: absolute; top: 0%; right: 2%; visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
-                                        <Blazorise.Tooltip Text="@string.Join(", ", labels.Select(x => x.Name))">
-                                            <span>@(text)</span>
-                                        </Blazorise.Tooltip>
-                                    </div>
+                                        <div style="position: absolute; top: 0%; right: 2%; visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility);">
+                                            <Blazorise.Tooltip Text="@string.Join(", ", labels.Select(x => x.Name))">
+                                                <span>@(text)</span>
+                                            </Blazorise.Tooltip>
+                                        </div>
+                                    }
                                 }
                             }
 
