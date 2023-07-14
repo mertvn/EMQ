@@ -167,7 +167,8 @@ public class AuthController : ControllerBase
     {
         string serialized = (string)JsonSerializer.Serialize(report, Utils.JsoIndented);
         if (!serialized.Contains("blazor.webassembly.js") &&
-            !serialized.Contains("moz-extension"))
+            !serialized.Contains("moz-extension") &&
+            !serialized.Contains("chrome-extension"))
         {
             _logger.LogError("CSP violation: " + serialized);
         }
