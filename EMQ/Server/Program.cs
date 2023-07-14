@@ -117,7 +117,8 @@ app.UseHttpsRedirection();
 const string csp = @"
                base-uri 'self';
                default-src 'self';
-               connect-src 'self' *.vndb.org *.catbox.moe;
+               connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com;
+               font-src 'self' fonts.gstatic.com;
                media-src 'self' blob: *.catbox.moe;
                img-src data: https:;
                object-src 'none';
