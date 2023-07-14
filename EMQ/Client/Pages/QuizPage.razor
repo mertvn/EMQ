@@ -45,7 +45,7 @@
                             Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
                             Room?.Quiz?.QuizState.sp < 0)"
                 @onclick="SendTogglePause"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px;">
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px; z-index: 10;">
             @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
         </button>
     }
@@ -57,7 +57,7 @@
                             !Room.QuizSettings.IsHotjoinEnabled ||
                             Room.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id))"
                 @onclick="SendHotjoinQuiz"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
                       @UiHelpers.Bool2Text(Room?.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id), $"Hotjoining...", "Hotjoin Quiz")
 
         </button>
@@ -71,12 +71,12 @@
                             Room?.Quiz?.QuizState.sp < 0 ||
                             !(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
                 @onclick="SendToggleSkip"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
             @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
         </button>
     }
 
-    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px;"
+    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
             @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
         Room Settings
     </button>
@@ -87,13 +87,13 @@
                 disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
                             Room?.Quiz?.QuizState.sp < 0)"
                 @onclick="@(() => _returnToRoomModalRef?.Show())"
-                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px;">
+                style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
             Return to room
         </button>
     }
 
     <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(() => _leaveModalRef?.Show())"
-            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px;">
+            style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
         Leave
     </button>
 
