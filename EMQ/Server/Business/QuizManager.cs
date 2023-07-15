@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -233,6 +233,7 @@ public class QuizManager
                 .Select(x => x.LatinTitle).ToList();
             correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
                 .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+            correctAnswers = correctAnswers.Distinct().ToList();
 
             CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
 
