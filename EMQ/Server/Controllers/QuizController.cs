@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -198,12 +198,20 @@ public class QuizController : ControllerBase
                 return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
-            var oldRoom = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
-            if (oldRoom is not null)
+            var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+            var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == player.Id));
+            if (oldRoomPlayer is not null)
             {
-                _logger.LogInformation($"Removed player {player.Id} from room " + oldRoom.Id);
-                oldRoom.RemovePlayer(player);
-                oldRoom.AllConnectionIds.Remove(player.Id, out _);
+                _logger.LogInformation($"Removed player {player.Id} from room " + oldRoomPlayer.Id);
+                oldRoomPlayer.RemovePlayer(player);
+                oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
+                room.Log($"{player.Username} left the room.", -1, true);
+            }
+            else if(oldRoomSpec is not null)
+            {
+                _logger.LogInformation($"Removed spectator {player.Id} from room " + oldRoomSpec.Id);
+                oldRoomSpec.RemoveSpectator(player);
+                oldRoomSpec.AllConnectionIds.Remove(player.Id, out _);
                 room.Log($"{player.Username} left the room.", -1, true);
             }
 
