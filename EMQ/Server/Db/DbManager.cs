@@ -1508,6 +1508,13 @@ WHERE id = {mId};
                     Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single(),
                     duration = reviewQueue.duration,
                 };
+
+                // todo
+                foreach (SongSource songSource in rq.Song.Sources)
+                {
+                    songSource.Categories = new List<SongSourceCategory>();
+                }
+
                 rqs.Add(rq);
             }
         }

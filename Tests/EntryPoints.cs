@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -159,6 +159,12 @@ public class EntryPoints
                 }
             }
         }
+    }
+
+    [Test]
+    public async Task FindRQs()
+    {
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
     }
 
     [Test, Explicit]
