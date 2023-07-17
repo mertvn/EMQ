@@ -444,6 +444,11 @@ public partial class QuizPage
 
     public async Task OnReceivePhaseChanged(int phase)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         // await SyncWithServer();
 
         QuizPhaseKind phaseKind = (QuizPhaseKind)phase;
