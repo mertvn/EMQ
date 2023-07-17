@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -163,6 +163,7 @@ public partial class QuizPage
 
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz");
 
+        bool success = false;
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
             Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp == -1)
         {
@@ -174,6 +175,7 @@ public partial class QuizPage
                 {
                     nextSong.Data = dledSong.Data;
                     _clientSongs[0] = nextSong;
+                    success = true;
                 }
             }
             else
@@ -190,7 +192,7 @@ public partial class QuizPage
 
         // we want to send this message regardless of whether the preloading was successful or not
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
-            "OnInitializedAsync");
+            $"OnInitializedAsync|{success}");
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
@@ -641,22 +643,24 @@ public partial class QuizPage
                     }
 
                     _clientSongs[index + i] = song;
-                    if (string.IsNullOrEmpty(song.Data))
+                    bool success = !string.IsNullOrEmpty(song.Data);
+                    if (success)
                     {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
+                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
                     }
                     else
                     {
-                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
+                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
                     }
 
                     // we want to send this message regardless of whether the preloading was successful or not
                     await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
-                        ClientState.Session.Player.Id, "Preload");
+                        ClientState.Session.Player.Id, $"Preload|{success}");
                 }
                 else
                 {
                     _logger.LogWarning("preload failed");
+                    // todo post error message to server
                 }
             }
             else
