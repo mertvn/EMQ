@@ -13,6 +13,7 @@
         <Blazorise.Tab Name="TabVNYear">VN year</Blazorise.Tab>
         <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
+        <Blazorise.Tab Name="TabUploaders">Uploaders</Blazorise.Tab>
     </Items>
     <Content>
     <Blazorise.TabPanel Name="TabGeneral">
@@ -147,7 +148,7 @@
                             </td>
 
                             <td>
-                               <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
+                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
                             </td>
                             <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
                                 <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
@@ -221,6 +222,33 @@
             </div>
         </div>
     </Blazorise.TabPanel>
+
+
+    <Blazorise.TabPanel Name="TabUploaders">
+        <div class="libraryStatsRow">
+            <div class="libraryStatsColumn">
+                <table style="max-width: 350px">
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Upload count</th>
+                    </tr>
+                    @{ int i = 1; }
+                    @foreach ((string username, int count) in libraryStats.UploaderCounts)
+                    {
+                        <tr>
+                            <td>@i</td>
+                            <td>@username</td>
+                            <td>@count</td>
+                        </tr>
+                        i += 1;
+                    }
+                </table>
+            </div>
+        </div>
+    </Blazorise.TabPanel>
+
+
     </Content>
     </Blazorise.Tabs>
     </div>

@@ -1756,6 +1756,14 @@ order by year";
             }
 
 
+            var uploaderCounts = (await connection.QueryAsync<(string, int)>(@"
+select lower(submitted_by), count(music_id) from music_external_link mel
+where submitted_by is not null
+group by lower(submitted_by)
+order by count(music_id) desc
+")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+
+
             var libraryStats = new LibraryStats
             {
                 TotalMusicCount = totalMusicCount,
@@ -1775,6 +1783,7 @@ order by year";
                 amAvailable = amAvailable,
                 msYear = msYear,
                 msYearAvailable = msYearAvailable,
+                UploaderCounts = uploaderCounts,
             };
 
             return libraryStats;
