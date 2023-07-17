@@ -53,7 +53,11 @@
                     <div>
                         <p> Owner: @room.Owner.Username</p>
                         <p> Players: @room.Players.Count</p>
-                        <p> Status: @room.Quiz?.QuizState.QuizStatus</p>
+                        @if (room.Quiz != null)
+                        {
+                            <p> Status: @room.Quiz?.QuizState.QuizStatus</p>
+                            <p> Progress: @(room.Quiz?.QuizState.sp + 1)/@(room.Quiz?.QuizState.NumSongs)</p>
+                        }
                     </div>
                 </div>
             </div>
