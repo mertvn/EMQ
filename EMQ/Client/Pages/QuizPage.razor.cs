@@ -136,7 +136,11 @@ public partial class QuizPage
             return;
         }
 
-        // todo reset page state between quizzes
+        if (_isDisposed)
+        {
+            return;
+        }
+
         PageState.DebugOut.Add("init QuizPage");
         if (ClientState.Session!.hubConnection is not null)
         {
