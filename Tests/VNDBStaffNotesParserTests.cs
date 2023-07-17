@@ -35,7 +35,7 @@ public class VNDBStaffNotesParserTests
 
         List<string> graylist = new()
         {
-          "v1515", "v2368", "v2527", "v4054" // AfterTitle contains quote
+          "v1515", "v2368", "v2527", "v4054", "v16044" // AfterTitle contains quote
         };
         // @formatter:on
 
