@@ -553,7 +553,7 @@ public class QuizManager
         SetTimer();
     }
 
-    public async Task OnSendPlayerIsBuffered(int playerId)
+    public async Task OnSendPlayerIsBuffered(int playerId, string source)
     {
         Player? player = Quiz.Room.Players.SingleOrDefault(player => player.Id == playerId);
         if (player == null)
@@ -564,7 +564,7 @@ public class QuizManager
 
         player.IsBuffered = true;
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        Quiz.Room.Log($"isBufferedCount: {isBufferedCount}");
+        Quiz.Room.Log($"isBufferedCount: {isBufferedCount} Source: {source}");
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)
@@ -1070,7 +1070,7 @@ public class QuizManager
     {
         if (Quiz.QuizState.QuizStatus is QuizStatus.Playing)
         {
-            await OnSendPlayerIsBuffered(playerId);
+            await OnSendPlayerIsBuffered(playerId, "OnConnectedAsync");
         }
 
         // todo

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -189,7 +189,8 @@ public partial class QuizPage
         }
 
         // we want to send this message regardless of whether the preloading was successful or not
-        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id);
+        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
+            "OnInitializedAsync");
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
@@ -651,7 +652,7 @@ public partial class QuizPage
 
                     // we want to send this message regardless of whether the preloading was successful or not
                     await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
-                        ClientState.Session.Player.Id);
+                        ClientState.Session.Player.Id, "Preload");
                 }
                 else
                 {
