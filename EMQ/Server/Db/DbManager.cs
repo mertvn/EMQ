@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -997,6 +997,7 @@ public static class DbManager
     }
 
     // todo merge with the other method
+    // todo tags and artists filters are ORed, option to AND or default to AND? (not just for looting)
     public static async Task<List<Song>> GetLootedSongs(int numSongs, bool duplicates, List<string> validSources)
     {
         if (!validSources.Any())

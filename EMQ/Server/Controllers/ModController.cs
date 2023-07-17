@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,12 @@ public class ModController : ControllerBase
         }
 
         _logger.LogInformation("Approved ExportSongLite request");
-        return await DbManager.ExportSongLite();
+        string songLite = await DbManager.ExportSongLite();
+        // todo test this when things are calmer
+        // GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        // GC.Collect(int.MaxValue, GCCollectionMode.Aggressive, true, true);
+        // GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        // GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
+        return songLite;
     }
 }
