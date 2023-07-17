@@ -371,7 +371,18 @@ public class QuizManager
         await File.WriteAllTextAsync($"RoomLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.Room.RoomLog, Utils.JsoIndented));
 
-        await UpdateStats(SongStatsDict);
+        bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
+                                 !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
+                                 !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
+                                 !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any();
+        if (shouldUpdateStats)
+        {
+            await UpdateStats(SongStatsDict);
+        }
+        else
+        {
+            Quiz.Room.Log("Not updating stats");
+        }
     }
 
     private static async Task UpdateStats(Dictionary<int, SongStats> songStatsDict)
