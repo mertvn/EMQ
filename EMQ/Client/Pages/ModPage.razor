@@ -1,0 +1,16 @@
+﻿@page "/ModPage"
+@using Microsoft.Extensions.Logging
+@inject HttpClient _client
+@inject ILogger<ModPage> _logger
+@inject ClientUtils _clientUtils
+
+<h3>ModPage</h3>
+
+<p>Enter admin password</p>
+<input type="text" @bind-value="@AdminPassword"/>
+<br/>
+
+<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
+    Run GC
+</button>
+    

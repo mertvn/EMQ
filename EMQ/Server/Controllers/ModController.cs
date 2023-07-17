@@ -23,7 +23,6 @@ public class ModController : ControllerBase
     public async Task<ActionResult<string>> ExportSongLite([FromQuery] string adminPassword)
     {
         string? envVar = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
-
         if (string.IsNullOrWhiteSpace(envVar) || envVar != adminPassword)
         {
             _logger.LogInformation("Rejected ExportSongLite request");
@@ -32,11 +31,29 @@ public class ModController : ControllerBase
 
         _logger.LogInformation("Approved ExportSongLite request");
         string songLite = await DbManager.ExportSongLite();
-        // todo test this when things are calmer
-        // GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        // GC.Collect(int.MaxValue, GCCollectionMode.Aggressive, true, true);
-        // GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        // GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
         return songLite;
+    }
+
+    [HttpPost]
+    [Route("RunGc")]
+    public async Task<ActionResult> RunGc([FromBody] string adminPassword)
+    {
+        string? envVar = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+        if (string.IsNullOrWhiteSpace(envVar) || envVar != adminPassword)
+        {
+            _logger.LogInformation("Rejected RunGc request");
+            return Unauthorized();
+        }
+
+        long before = GC.GetTotalMemory(false);
+        _logger.LogInformation("Running GC");
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
+        long after = GC.GetTotalMemory(false);
+        _logger.LogInformation($"GC freed {(before - after) / 1000 / 1000} MB");
+
+        return Ok();
     }
 }

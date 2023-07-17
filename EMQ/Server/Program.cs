@@ -271,9 +271,9 @@ async Task Init()
 
         // yes, we really need to do this twice
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(int.MaxValue, GCCollectionMode.Forced, true, true);
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
     }
 }
 
