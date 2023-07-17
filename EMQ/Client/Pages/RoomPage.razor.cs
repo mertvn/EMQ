@@ -52,6 +52,8 @@ public partial class RoomPage
 
     private IDisposable? _locationChangingRegistration;
 
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -227,5 +229,12 @@ public partial class RoomPage
             StateHasChanged();
             _changeRoomPasswordModalRef?.Hide();
         }
+    }
+
+    private async Task SendConvertSpectatorToPlayerInRoom()
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendConvertSpectatorToPlayerInRoom");
+        Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
     }
 }
