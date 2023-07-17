@@ -11,10 +11,13 @@ public class AlterTableMusic_External_Link : Migration
     {
         Alter.Table(tableName)
             .AddColumn("duration").AsTime().NotNullable();
+        Alter.Table(tableName)
+            .AddColumn("submitted_by").AsString().Nullable();
     }
 
     public override void Down()
     {
         Delete.Column("duration").FromTable(tableName);
+        Delete.Column("submitted_by").FromTable(tableName);
     }
 }

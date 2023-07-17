@@ -148,6 +148,10 @@
                                         <a href="@videoLink.Url" target="_blank">
                                             <span style="color: green">✓</span>
                                         </a>
+                                        @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
+                                        {
+                                            <span> by @videoLink.SubmittedBy</span>
+                                        }
                                     }
                                     else
                                     {
@@ -162,6 +166,10 @@
                                         <a href="@soundLink.Url" target="_blank">
                                             <span style="color: green">✓</span>
                                         </a>
+                                        @if (!string.IsNullOrEmpty(@soundLink.SubmittedBy))
+                                        {
+                                            <span> by @soundLink.SubmittedBy</span>
+                                        }
                                     }
                                     else
                                     {

@@ -178,10 +178,13 @@ public class EntryPoints_SongMatching
                     {
                         var songLink = new SongLink()
                         {
-                            Url = uploadable.ResultUrl, Type = SongLinkType.Catbox, IsVideo = false
+                            Url = uploadable.ResultUrl,
+                            Type = SongLinkType.Catbox,
+                            IsVideo = false,
+                            SubmittedBy = "SongMatcher"
                         };
 
-                        int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink, submittedBy);
+                        int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink);
 
                         var analyserResult = await MediaAnalyser.Analyse(uploadable.Path);
                         await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,

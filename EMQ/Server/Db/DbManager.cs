@@ -120,6 +120,7 @@ public static class DbManager
                                 IsVideo = musicExternalLink.is_video,
                                 Type = (SongLinkType)musicExternalLink.type,
                                 Duration = musicExternalLink.duration,
+                                SubmittedBy = musicExternalLink.submitted_by,
                             });
                         }
 
@@ -151,6 +152,7 @@ public static class DbManager
                                     Type = (SongLinkType)musicExternalLink.type,
                                     IsVideo = musicExternalLink.is_video,
                                     Duration = musicExternalLink.duration,
+                                    SubmittedBy = musicExternalLink.submitted_by,
                                 });
                             }
                         }
@@ -531,7 +533,8 @@ public static class DbManager
                     url = songLink.Url,
                     type = (int)songLink.Type,
                     is_video = songLink.IsVideo,
-                    duration = songLink.Duration
+                    duration = songLink.Duration,
+                    submitted_by = songLink.SubmittedBy,
                 });
             }
 
@@ -1259,7 +1262,8 @@ public static class DbManager
                 url = songLink.Url,
                 type = (int)songLink.Type,
                 is_video = songLink.IsVideo,
-                duration = songLink.Duration
+                duration = songLink.Duration,
+                submitted_by = songLink.SubmittedBy,
             };
 
             if (mel.duration == default)
@@ -1315,8 +1319,7 @@ WHERE id = {mId};
         }
     }
 
-    public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string submittedBy,
-        string? analysis = null)
+    public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string? analysis = null)
     {
         try
         {
@@ -1329,7 +1332,7 @@ WHERE id = {mId};
                     url = songLink.Url,
                     type = (int)songLink.Type,
                     is_video = songLink.IsVideo,
-                    submitted_by = submittedBy,
+                    submitted_by = songLink.SubmittedBy!,
                     submitted_on = DateTime.UtcNow,
                     status = (int)ReviewQueueStatus.Pending,
                     reason = null,
@@ -1397,7 +1400,7 @@ WHERE id = {mId};
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var reviewQueue = (await connection.GetAllAsync<ReviewQueue>()).ToList();
+            var reviewQueue = (await connection.GetAllAsync<ReviewQueue>()).OrderBy(x => x.id).ToList();
             return JsonSerializer.Serialize(reviewQueue, Utils.JsoIndented);
         }
     }
@@ -1564,7 +1567,8 @@ WHERE id = {mId};
                         Url = rq.url,
                         Type = (SongLinkType)rq.type,
                         IsVideo = rq.is_video,
-                        Duration = rq.duration.Value
+                        Duration = rq.duration.Value,
+                        SubmittedBy = rq.submitted_by,
                     };
                     melId = await InsertSongLink(rq.music_id, songLink, null);
                     break;
@@ -1884,7 +1888,8 @@ order by year";
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var mids = (await connection.QueryAsync<int>("SELECT music_id FROM music_external_link where is_video = false"))
+            var mids = (await connection.QueryAsync<int>(
+                    "SELECT music_id FROM music_external_link where is_video = false"))
                 .ToList();
             return mids;
         }

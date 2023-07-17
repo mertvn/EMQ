@@ -15,6 +15,10 @@ public class SongLink
 
     public TimeSpan Duration { get; set; }
 
+    public string? SubmittedBy { get; set; }
+
+    // todo add total_bytes
+
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
     {
         IEnumerable<SongLink> enumerable = songLinks.ToArray();

@@ -54,7 +54,7 @@ public class LibraryController : ControllerBase
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     {
-        int rqId = await DbManager.InsertReviewQueue(req.MId, req.SongLink, req.SubmittedBy, "Pending");
+        int rqId = await DbManager.InsertReviewQueue(req.MId, req.SongLink, "Pending");
 
         if (rqId > 0)
         {

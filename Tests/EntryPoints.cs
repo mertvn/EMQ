@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,6 +9,7 @@ using Dapper;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Core;
@@ -97,6 +98,27 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task SetMelSubmittedByUsingReviewQueue()
+    {
+        const string reviewQueuePath = "C:\\emq\\emqsongsmetadata\\ReviewQueue.json";
+        var reviewQueues =
+            JsonSerializer.Deserialize<List<ReviewQueue>>(await File.ReadAllTextAsync(reviewQueuePath),
+                Utils.JsoIndented)!;
+
+        foreach (ReviewQueue reviewQueue in reviewQueues.Where(x =>
+                     (ReviewQueueStatus)x.status == ReviewQueueStatus.Approved))
+        {
+            string submittedBy = reviewQueue.submitted_by;
+            string url = reviewQueue.url;
+            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+            {
+                const string sql = @"UPDATE music_external_link SET submitted_by = @submittedBy WHERE url = @url";
+                await connection.ExecuteAsync(sql, new { submittedBy, url });
+            }
+        }
+    }
+
+    [Test, Explicit]
     public async Task ImportSongLite()
     {
         var deserialized =
@@ -119,22 +141,22 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        int[] rqIds = Enumerable.Range(3, 1600).ToArray();
+        int[] rqIds = Enumerable.Range(1, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Approved);
+            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Approved, "");
         }
     }
 
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        int[] rqIds = Enumerable.Range(1, 1).ToArray();
+        int[] rqIds = Enumerable.Range(273, 1).ToArray();
 
         foreach (int rqId in rqIds)
         {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected, "");
+            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected, "Bad audio");
         }
     }
 

@@ -23,4 +23,6 @@ public class MusicExternalLink
 
     [Required]
     public TimeSpan duration { get; set; }
+
+    public string? submitted_by { get; set; }
 }

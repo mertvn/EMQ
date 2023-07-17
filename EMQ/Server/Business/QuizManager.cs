@@ -564,7 +564,7 @@ public class QuizManager
 
         player.IsBuffered = true;
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
-        Quiz.Room.Log($"isBufferedCount: {isBufferedCount} Source: {source}");
+        Quiz.Room.Log($"isBufferedCount: {isBufferedCount} Source: {source}", playerId);
     }
 
     public async Task OnSendPlayerJoinedQuiz(string connectionId, int playerId)

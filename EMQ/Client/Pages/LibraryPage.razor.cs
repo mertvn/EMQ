@@ -150,8 +150,8 @@ public partial class LibraryPage
         SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
 
         string submittedBy = ClientState.Session.Player.Username;
-        var req = new ReqImportSongLink(mId, new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType },
-            submittedBy);
+        var req = new ReqImportSongLink(mId,
+            new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType, SubmittedBy = submittedBy });
         var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
         if (res.IsSuccessStatusCode)
         {
