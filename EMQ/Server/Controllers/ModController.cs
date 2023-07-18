@@ -45,15 +45,7 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
-        long before = GC.GetTotalMemory(false);
-        _logger.LogInformation("Running GC");
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
-        long after = GC.GetTotalMemory(false);
-        _logger.LogInformation($"GC freed {(before - after) / 1000 / 1000} MB");
-
+        ServerUtils.RunAggressiveGc();
         return Ok();
     }
 }

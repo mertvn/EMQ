@@ -161,7 +161,7 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         var maxAge = TimeSpan.FromDays(30);
-        if (ctx.File.Name is "mst.json" or "c.json" or "a.json" )
+        if (ctx.File.Name is "mst.json" or "c.json" or "a.json")
         {
             maxAge = TimeSpan.FromHours(16);
         }
@@ -269,11 +269,7 @@ async Task Init()
             Console.WriteLine($"Precached songs in {Math.Round(ms / 1000, 2)}s");
         }
 
-        // yes, we really need to do this twice
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
+        ServerUtils.RunAggressiveGc();
     }
 }
 
