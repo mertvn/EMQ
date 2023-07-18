@@ -88,10 +88,18 @@ public class AuthController : ControllerBase
 
     [HttpPost]
     [Route("ValidateSession")]
-    public async Task<ActionResult<Session>> ValidateSession([FromBody] string token)
+    public async Task<ActionResult<Session>> ValidateSession([FromBody] Session req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
-        return session == null ? Unauthorized() : session;
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
+        if (session == null)
+        {
+            // todo remove this if we ever implement persistent user accounts
+            Console.WriteLine($"Creating new session for {req.Player.Username} using previous session");
+            var reqCreateSession = new ReqCreateSession(req.Player.Username, "", req.VndbInfo);
+            session = (await CreateSession(reqCreateSession)).Session;
+        }
+
+        return session;
     }
 
     [HttpPost]

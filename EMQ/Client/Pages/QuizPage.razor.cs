@@ -129,7 +129,8 @@ public partial class QuizPage
         //     $"OnInitialized on Component {Id.ToString().Substring(32)} ran at {DateTime.UtcNow.ToLongTimeString()}");
 
         await _clientUtils.TryRestoreSession();
-        if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
+        var room = await _clientUtils.SyncRoom();
+        if (ClientState.Session is null || room is null)
         {
             _locationChangingRegistration?.Dispose();
             _navigation.NavigateTo("/", true);

@@ -89,7 +89,7 @@ public class ClientUtils
                 {
                     Console.WriteLine($"Attempting to restore session with token {session.Token}");
 
-                    HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/ValidateSession", session.Token);
+                    HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/ValidateSession", session);
                     if (res.IsSuccessStatusCode)
                     {
                         ClientState.Session = await res.Content.ReadFromJsonAsync<Session>();
