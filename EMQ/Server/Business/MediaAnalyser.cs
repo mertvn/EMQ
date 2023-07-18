@@ -100,12 +100,12 @@ public static class MediaAnalyser
             {
                 long kbps = mediaInfo.PrimaryAudioStream!.BitRate / 1000;
                 result.AudioBitrateKbps = kbps;
-                if (kbps < 90)
+                if (kbps < 89)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooLow);
                 }
 
-                if (kbps > 320)
+                if (kbps > 321)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooHigh);
                 }
