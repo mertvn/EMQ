@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -542,7 +542,7 @@ public partial class QuizPage
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
                     PreloadCancellationSource.CancelAfter(
-                        TimeSpan.FromMilliseconds((float)Room.QuizSettings.ResultsMs * 5));
+                        TimeSpan.FromMilliseconds((float)Room.QuizSettings.TimeoutMs - 4));
                     await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
                 }
 

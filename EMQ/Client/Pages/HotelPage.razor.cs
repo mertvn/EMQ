@@ -104,6 +104,14 @@ public partial class HotelPage
         {
             _passwordModalRef?.Show();
         }
+        else
+        {
+            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+            if (res is not null)
+            {
+                Rooms = res.ToList();
+            }
+        }
 
         IsJoiningRoom = false;
         StateHasChanged();
