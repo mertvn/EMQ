@@ -1048,7 +1048,7 @@ public class QuizManager
 
             int skipNumber = (int)Math.Round((float)activePlayersCount * 0.8, MidpointRounding.AwayFromZero);
 
-            Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
+            Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}", playerId);
             if (isSkippingCount >= skipNumber)
             {
                 Quiz.QuizState.RemainingMs = 500;

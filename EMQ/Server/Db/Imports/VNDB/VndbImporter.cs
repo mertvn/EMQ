@@ -96,9 +96,12 @@ public static class VndbImporter
 
     private static List<Song> ImportVndbDataInner(List<ProcessedMusic> dataJson)
     {
-        var existingSongBlacklist = new List<(string, string)> { ("v236", "POWDER SNOW"), };
-        var songs = new List<Song>();
+        var existingSongBlacklist = new List<(string, string)>
+        {
+            ("v236", "POWDER SNOW"), ("v12984", "Yuki no Elfin Lied"),
+        };
 
+        var songs = new List<Song>();
         var musicSourcesDict = musicSourcesJson.ToDictionary(x => (string)x.id);
         var musicSourcesTitlesLookup = musicSourcesTitlesJson.ToLookup(x => (string)x.id);
         var artists_aliasesDict = artists_aliasesJson.ToDictionary(x => (int)x.aid);

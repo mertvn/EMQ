@@ -229,7 +229,7 @@ public class QuizHub : Hub
                 {
                     room.RemovePlayer(player);
                     room.AllConnectionIds.Remove(player.Id, out _);
-                    room.Log($"{player.Username} left the room.", -1, true);
+                    room.Log($"{player.Username} left the room.", player.Id, true);
 
                     if (!room.Players.Any())
                     {
@@ -251,6 +251,7 @@ public class QuizHub : Hub
                     var spectator = room.Spectators.Single(spectator => spectator.Id == session.Player.Id);
                     room.RemoveSpectator(spectator);
                     room.AllConnectionIds.Remove(spectator.Id, out _);
+                    room.Log($"{spectator.Username} stopped spectating.", spectator.Id, true);
                 }
             }
             else
