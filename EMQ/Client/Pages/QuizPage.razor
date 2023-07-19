@@ -218,11 +218,10 @@
 
     <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
-        @* todo should be false on judgement phase as well *@
         <GuessInputComponent @ref="_guessInputComponent"
                              Placeholder="Enter your guess here"
                              FreeTyping="true"
-                             IsDisabled="@(PageState.VideoPlayerVisibility || IsSpectator)"
+                             IsDisabled="@(Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                              IsQuizPage="true"
                              @bind-Guess="@PageState.Guess">
         </GuessInputComponent>
