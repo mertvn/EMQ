@@ -123,6 +123,8 @@ public partial class QuizPage
 
     private IDisposable? _locationChangingRegistration;
 
+    public DateTime? QuizEndedTime { get; set; } = null;
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -406,6 +408,7 @@ public partial class QuizPage
             return;
         }
 
+        QuizEndedTime = DateTime.UtcNow;
         await SyncWithServer();
         // TODO: do endgame stuff
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
@@ -566,10 +569,20 @@ public partial class QuizPage
             else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
             {
                 await SyncWithServer();
-                if (Room is null || Room.Quiz is null ||
-                    Room.Quiz.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
+                if (Room is null || Room.Quiz is null)
                 {
                     await ForceReturnToRoomImmediately();
+                }
+                else if (Room.Quiz.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
+                {
+                    if (QuizEndedTime is not null && DateTime.UtcNow - QuizEndedTime > TimeSpan.FromSeconds(10))
+                    {
+                        await ForceReturnToRoomImmediately();
+                    }
+                    else if (QuizEndedTime is null)
+                    {
+                        QuizEndedTime = DateTime.UtcNow;
+                    }
                 }
             }
 
