@@ -686,6 +686,13 @@ public partial class QuizPage
 
     private async Task<Song> DlSong(Song song)
     {
+        var bufferingInfo = new BufferingInfo
+        {
+            PlayerToken = ClientState.Session!.Token,
+            RoomId = Room!.Id,
+            sp = Room!.Quiz!.QuizState.sp,
+            StartjsTime = DateTime.UtcNow
+        };
         var ret = new Song { Links = song.Links, };
 
         try
@@ -704,12 +711,14 @@ public partial class QuizPage
                 // Console.WriteLine($"sps {Room!.Quiz!.QuizState.sp} {startSp}");
                 if (Room!.Quiz!.QuizState.sp > startSp)
                 {
+                    bufferingInfo.CancellationReason = "Canceling preload due to sp change";
                     Console.WriteLine("Canceling preload due to sp change");
                     PreloadCancellationSource.Cancel();
                 }
 
                 if (Room!.Quiz!.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
                 {
+                    bufferingInfo.CancellationReason = "Canceling preload due to quiz canceled or ended";
                     Console.WriteLine("Canceling preload due to quiz canceled or ended");
                     PreloadCancellationSource.Cancel();
                 }
@@ -717,18 +726,40 @@ public partial class QuizPage
                 // Console.WriteLine(Room!.Quiz!.QuizState.ExtraInfo);
             }
 
+            bufferingInfo.EndjsTime = DateTime.UtcNow;
             _logger.LogInformation($"Endjs success: {task.IsCompletedSuccessfully}");
-            PreloadCancellationRegistration.Unregister();
 
             if (task.IsCompletedSuccessfully)
             {
                 string data = task.Result;
                 ret.Data = data;
+                bufferingInfo.Success = true;
+                bufferingInfo.Data = data;
             }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(bufferingInfo.CancellationReason))
+                {
+                    bufferingInfo.CancellationReason = PreloadCancellationRegistration.Token.IsCancellationRequested
+                        ? "CancellationRequested"
+                        : "task wasn't completed successfully";
+                }
+            }
+
+            PreloadCancellationRegistration.Unregister();
         }
         catch (Exception e)
         {
+            bufferingInfo.CancellationReason = e.ToString();
             _logger.LogWarning($"download cancelled {e}");
+        }
+
+        if (true || !bufferingInfo.Success) // todo
+        {
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/PostBufferingInfo", bufferingInfo);
+            if (res.IsSuccessStatusCode)
+            {
+            }
         }
 
         return ret;
