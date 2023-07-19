@@ -553,12 +553,6 @@ public class QuizController : ControllerBase
     [Route("PostBufferingInfo")]
     public async Task<ActionResult> PostBufferingInfo([FromBody] BufferingInfo req)
     {
-        // var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
-        // if (session is null)
-        // {
-        //     return Unauthorized();
-        // }
-
         Console.WriteLine($"BufferingInfo: {JsonSerializer.Serialize(req, Utils.JsoIndented)}");
         return Ok();
     }

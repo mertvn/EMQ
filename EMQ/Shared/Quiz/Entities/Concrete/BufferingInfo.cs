@@ -4,7 +4,7 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class BufferingInfo
 {
-    public string PlayerToken { get; set; } = "";
+    public int PlayerId { get; set; }
 
     public Guid RoomId { get; set; }
 

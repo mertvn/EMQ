@@ -688,7 +688,7 @@ public partial class QuizPage
     {
         var bufferingInfo = new BufferingInfo
         {
-            PlayerToken = ClientState.Session!.Token,
+            PlayerId = ClientState.Session!.Player.Id,
             RoomId = Room!.Id,
             sp = Room!.Quiz!.QuizState.sp,
             StartjsTime = DateTime.UtcNow
