@@ -512,4 +512,38 @@ public class QuizHub : Hub
             // todo
         }
     }
+
+    public async Task SendConvertPlayerToSpectatorInRoom()
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        if (session != null)
+        {
+            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            if (room != null)
+            {
+                var player = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
+                if (player != null)
+                {
+                    room.Spectators.Enqueue(player);
+                    room.RemovePlayer(player);
+                    room.Log($"{player.Username} converted to spectator.", player.Id, true);
+
+                    await Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                }
+                else
+                {
+                    // todo
+                }
+            }
+            else
+            {
+                // todo
+            }
+        }
+        else
+        {
+            // todo
+        }
+    }
 }

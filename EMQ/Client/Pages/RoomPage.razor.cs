@@ -238,4 +238,11 @@ public partial class RoomPage
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
     }
+
+    private async Task SendConvertPlayerToSpectatorInRoom()
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendConvertPlayerToSpectatorInRoom");
+        Room = await _clientUtils.SyncRoom();
+        StateHasChanged();
+    }
 }
