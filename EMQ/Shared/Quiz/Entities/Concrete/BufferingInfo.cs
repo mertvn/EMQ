@@ -10,6 +10,8 @@ public class BufferingInfo
 
     public int nextSp { get; set; }
 
+    public string Url { get; set; } = "";
+
     public bool Success { get; set; }
 
     public DateTime StartjsTime { get; set; }

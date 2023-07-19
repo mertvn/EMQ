@@ -685,6 +685,7 @@ public partial class QuizPage
             PlayerId = ClientState.Session!.Player.Id,
             RoomId = Room!.Id,
             nextSp = Room!.Quiz!.QuizState.sp + 1,
+            Url = song.Links.First().Url,
             StartjsTime = DateTime.UtcNow
         };
         var ret = new Song { Links = song.Links, };
