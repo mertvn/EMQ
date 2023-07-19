@@ -186,7 +186,8 @@ public class QuizController : ControllerBase
         var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
         if (room is null)
         {
-            throw new Exception();
+            _logger.LogWarning("p{player.Id} tried to join inexisting room r{room.Id}", session.Player.Id, req.RoomId);
+            return BadRequest();
         }
 
         var player = session.Player;
@@ -289,7 +290,9 @@ public class QuizController : ControllerBase
                 }
                 else
                 {
-                    room.Log("Failed to prime quiz - canceling", writeToChat: true);
+                    room.Log(
+                        "No songs match the current filters - canceling quiz",
+                        writeToChat: true);
                     await quizManager.CancelQuiz();
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                         .SendAsync("ReceiveUpdateRoomForRoom", room);
