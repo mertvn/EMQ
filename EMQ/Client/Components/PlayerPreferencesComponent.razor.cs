@@ -63,6 +63,13 @@ public partial class PlayerPreferencesComponent
     private async Task FetchLabels(PlayerVndbInfo vndbInfo)
     {
         Labels.Clear();
+        var final = await FetchLabelsInner(vndbInfo);
+        Labels.AddRange(final);
+        StateHasChanged();
+    }
+
+    public async Task<List<Label>> FetchLabelsInner(PlayerVndbInfo vndbInfo)
+    {
         List<Label> newLabels = new();
 
         VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(vndbInfo);
@@ -73,8 +80,7 @@ public partial class PlayerPreferencesComponent
 
         Console.WriteLine(vndbInfo.Labels!.Count + "-" + newLabels.Count);
         List<Label> final = Label.MergeLabels(vndbInfo.Labels!, newLabels);
-        Labels.AddRange(final);
-        StateHasChanged();
+        return final;
     }
 
     private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind)

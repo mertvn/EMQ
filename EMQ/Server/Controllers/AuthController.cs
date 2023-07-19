@@ -95,8 +95,10 @@ public class AuthController : ControllerBase
         {
             // todo remove this if we ever implement persistent user accounts
             Console.WriteLine($"Creating new session for {req.Player.Username} using previous session");
+            // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
             var reqCreateSession = new ReqCreateSession(req.Player.Username, "", req.VndbInfo);
             session = (await CreateSession(reqCreateSession)).Session;
+            // Console.WriteLine($"new vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
         }
 
         return session;
