@@ -52,11 +52,18 @@
     <p>Are you sure you still want to start the quiz?</p>
 </GenericModal>
 
-<GenericModal @ref="@_changeRoomPasswordModalRef"
-              Title="Change room password"
+<GenericModal @ref="@_changeRoomNameAndPasswordModalRef"
+              Title="Change room name and password"
               Size="@Blazorise.ModalSize.Default"
-              OkAction="@(async () => { await ChangeRoomPassword(); })">
-    <input type="text" @bind="RoomPassword"/>
+              OkAction="@(async () => { await ChangeRoomNameAndPassword(); })">
+    <input id="RoomName" type="text" @bind="RoomName"/>
+    <label for="RoomName">Room name</label>
+    <br/>
+    <br/>
+
+    <input id="RoomPassword" type="text" @bind="RoomPassword"/>
+    <label for="RoomPassword">Room password</label>
+    <br/>
 </GenericModal>
 
 <button type="button" class="btn btn-warning" @onclick="@(() => _leaveModalRef?.Show())"
@@ -132,8 +139,8 @@ else
 
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
-    <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomPassword" style="margin:5px; padding: 5px;">
-        Change password
+    <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomNameAndPassword" style="margin:5px; padding: 5px;">
+        Change room name and password
     </button>
 }
 

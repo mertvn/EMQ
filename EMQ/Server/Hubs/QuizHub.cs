@@ -213,7 +213,7 @@ public class QuizHub : Hub
     }
 
     // [Authorize]
-    public void SendPlayerLeaving()
+    public async Task SendPlayerLeaving()
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
         if (session != null)
@@ -253,6 +253,11 @@ public class QuizHub : Hub
                     room.AllConnectionIds.Remove(spectator.Id, out _);
                     room.Log($"{spectator.Username} stopped spectating.", spectator.Id, true);
                 }
+
+                await Clients.Clients(Context.ConnectionId)
+                    .SendAsync("ReceiveUpdateRoom", room, false);
+                await Clients.Clients(room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoomForRoom", room);
             }
             else
             {

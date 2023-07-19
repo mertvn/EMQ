@@ -46,7 +46,9 @@ public partial class RoomPage
 
     private GenericModal? _forceStartModalRef;
 
-    private GenericModal? _changeRoomPasswordModalRef;
+    private GenericModal? _changeRoomNameAndPasswordModalRef;
+
+    private string RoomName { get; set; }
 
     private string? RoomPassword { get; set; }
 
@@ -209,26 +211,27 @@ public partial class RoomPage
         StateHasChanged();
     }
 
-    private async Task OnclickChangeRoomPassword()
+    private async Task OnclickChangeRoomNameAndPassword()
     {
         var res = await _client.GetAsync(
             $"Quiz/GetRoomPassword?token={ClientState.Session?.Token}&roomId={Room?.Id}");
         if (res.IsSuccessStatusCode)
         {
+            RoomName = Room!.Name;
             RoomPassword = await res.Content.ReadAsStringAsync();
-            _changeRoomPasswordModalRef?.Show();
+            _changeRoomNameAndPasswordModalRef?.Show();
         }
     }
 
-    private async Task ChangeRoomPassword()
+    private async Task ChangeRoomNameAndPassword()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ChangeRoomPassword",
-            new ReqChangeRoomPassword(ClientState.Session!.Token, Room!.Id, RoomPassword!));
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ChangeRoomNameAndPassword",
+            new ReqChangeRoomNameAndPassword(ClientState.Session!.Token, Room!.Id, RoomName, RoomPassword!));
         if (res.IsSuccessStatusCode)
         {
             Room = await _clientUtils.SyncRoom();
             StateHasChanged();
-            _changeRoomPasswordModalRef?.Hide();
+            _changeRoomNameAndPasswordModalRef?.Hide();
         }
     }
 

@@ -208,7 +208,7 @@ public class QuizController : ControllerBase
                 oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
                 room.Log($"{player.Username} left the room.", -1, true);
             }
-            else if(oldRoomSpec is not null)
+            else if (oldRoomSpec is not null)
             {
                 _logger.LogInformation($"Removed spectator {player.Id} from room " + oldRoomSpec.Id);
                 oldRoomSpec.RemoveSpectator(player);
@@ -516,8 +516,8 @@ public class QuizController : ControllerBase
     }
 
     [HttpPost]
-    [Route("ChangeRoomPassword")]
-    public async Task<ActionResult> ChangeRoomPassword([FromBody] ReqChangeRoomPassword req)
+    [Route("ChangeRoomNameAndPassword")]
+    public async Task<ActionResult> ChangeRoomNameAndPassword([FromBody] ReqChangeRoomNameAndPassword req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
@@ -532,20 +532,22 @@ public class QuizController : ControllerBase
         {
             if (room.Owner.Id == player.Id)
             {
+                room.Name = req.NewName;
                 room.Password = req.NewPassword;
-                room.Log("Room password changed.", -1, true);
+                room.Log("Room name and password changed.", -1, true);
                 await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoomForRoom", room);
             }
             else
             {
-                _logger.LogWarning("Attempt to change room password in r{room.Id} by non-owner p{req.playerId}",
+                _logger.LogWarning(
+                    "Attempt to change room name and password in r{room.Id} by non-owner p{req.playerId}",
                     room.Id, req.PlayerToken);
             }
         }
         else
         {
-            _logger.LogWarning("Attempt to change room password in r{req.RoomId} that is null", req.RoomId);
+            _logger.LogWarning("Attempt to change room name and password in r{req.RoomId} that is null", req.RoomId);
             // todo
         }
 
