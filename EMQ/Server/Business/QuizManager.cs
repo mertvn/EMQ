@@ -377,7 +377,10 @@ public class QuizManager
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any();
         if (shouldUpdateStats)
         {
-            await UpdateStats(SongStatsDict);
+            // If we don't create a new dictionary,
+            // when a player uses 'Return to room' right before the correct answer is revealed, we can get a Collection was modified exception
+            // might be better to just disallow returning to room except on results phase
+            await UpdateStats(SongStatsDict.ToDictionary(x => x.Key, x => x.Value));
         }
         else
         {
