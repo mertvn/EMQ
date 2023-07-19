@@ -546,7 +546,7 @@ public partial class QuizPage
                 {
                     PreloadCancellationSource.CancelAfter(
                         TimeSpan.FromMilliseconds((float)Room.QuizSettings.TimeoutMs - 4000));
-                    await Preload(Room.Quiz!.QuizState.sp, Room.QuizSettings.PreloadAmount);
+                    await Preload(Room.Quiz!.QuizState.sp + 1);
                 }
 
                 break;
@@ -642,45 +642,39 @@ public partial class QuizPage
         }
     }
 
-    private async Task Preload(int index, int amount = 1)
+    private async Task Preload(int index)
     {
-        for (int i = 1; i <= amount; i++)
+        if (index < _clientSongs.Count)
         {
-            if (index + i < _clientSongs.Count)
+            var song = await NextSong(index);
+            if (song is not null)
             {
-                var song = await NextSong(index + i);
-                if (song is not null)
+                song.Data = (await DlSong(song)).Data;
+                _clientSongs[index] = song;
+
+                bool success = !string.IsNullOrEmpty(song.Data);
+                if (success)
                 {
-                    if (string.IsNullOrEmpty(song.Data))
-                    {
-                        song.Data = (await DlSong(song)).Data;
-                    }
-
-                    _clientSongs[index + i] = song;
-                    bool success = !string.IsNullOrEmpty(song.Data);
-                    if (success)
-                    {
-                        PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
-                    }
-                    else
-                    {
-                        PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
-                    }
-
-                    // we want to send this message regardless of whether the preloading was successful or not
-                    await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
-                        ClientState.Session.Player.Id, $"Preload|{success}");
+                    PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
                 }
                 else
                 {
-                    _logger.LogWarning("preload failed");
-                    // todo post error message to server
+                    PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
                 }
+
+                // we want to send this message regardless of whether the preloading was successful or not
+                await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
+                    ClientState.Session.Player.Id, $"Preload|{success}");
             }
             else
             {
-                _logger.LogWarning("no song to preload");
+                _logger.LogWarning("preload failed");
+                // todo post error message to server
             }
+        }
+        else
+        {
+            _logger.LogWarning("no song to preload");
         }
     }
 
@@ -690,7 +684,7 @@ public partial class QuizPage
         {
             PlayerId = ClientState.Session!.Player.Id,
             RoomId = Room!.Id,
-            sp = Room!.Quiz!.QuizState.sp,
+            nextSp = Room!.Quiz!.QuizState.sp + 1,
             StartjsTime = DateTime.UtcNow
         };
         var ret = new Song { Links = song.Links, };

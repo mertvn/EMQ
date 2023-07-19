@@ -8,7 +8,7 @@ public class BufferingInfo
 
     public Guid RoomId { get; set; }
 
-    public int sp { get; set; }
+    public int nextSp { get; set; }
 
     public bool Success { get; set; }
 
