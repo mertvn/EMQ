@@ -93,6 +93,7 @@ public class ClientUtils
                     if (res.IsSuccessStatusCode)
                     {
                         ClientState.Session = await res.Content.ReadFromJsonAsync<Session>();
+                        await SaveSessionToLocalStorage();
                         await ClientConnectionManager.StartManagingConnection();
                     }
                     else
