@@ -124,7 +124,7 @@ const string csp = @"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-0S7GFe6imJavfCst0OiDp9tf+2cCdK1ta0/8eaxBd5I='
+                          'sha256-4NSSYUlAxKQRdlWkPIXlD/jiRbyBf02cmgiE8GiycYM='
                           ;
                style-src 'self'
                          'unsafe-inline'
@@ -164,6 +164,11 @@ app.UseStaticFiles(new StaticFileOptions
         if (ctx.File.Name is "mst.json" or "c.json" or "a.json")
         {
             maxAge = TimeSpan.FromHours(16);
+        }
+
+        if (ctx.File.Name is "index.html" or "/")
+        {
+            maxAge = TimeSpan.FromMinutes(1);
         }
 
         var headers = ctx.Context.Response.GetTypedHeaders();

@@ -1,12 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
@@ -116,8 +118,6 @@ public partial class QuizPage
     private bool PhaseChangeInProgress { get; set; }
 
     private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
-
-    private Guid Id = Guid.NewGuid();
 
     private bool _isDisposed;
 
@@ -372,6 +372,8 @@ public partial class QuizPage
                             throw new ArgumentOutOfRangeException();
                     }
 
+                    // todo we're entering this multiple times in a row at results phase sometimes,
+                    // which causes the player to not preload at all (i think this is the cause at least)
                     if (phaseChanged || forcePhaseChange)
                     {
                         Console.WriteLine(
@@ -615,6 +617,7 @@ public partial class QuizPage
             }
 
             await _jsRuntime.InvokeAsync<string>("reloadVideo", _currentSong!.StartTime);
+            // todo revoke previous object url
         }
         else
         {
@@ -696,7 +699,7 @@ public partial class QuizPage
             _logger.LogInformation($"Startjs {song.Links.First().Url}");
 
             int startSp = Room!.Quiz!.QuizState.sp;
-            var task = _jsRuntime.InvokeAsync<string>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token,
+            var task = _jsRuntime.InvokeAsync<string?>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token,
                 song.Links.First().Url);
             while (!task.IsCompleted && !task.IsCanceled)
             {
@@ -724,12 +727,14 @@ public partial class QuizPage
             bufferingInfo.EndjsTime = DateTime.UtcNow;
             _logger.LogInformation($"Endjs success: {task.IsCompletedSuccessfully}");
 
+            // data is either an ObjectUrl or a string with error details
+            string? data = task.Result;
+            bufferingInfo.Data = data;
+
             if (task.IsCompletedSuccessfully)
             {
-                string data = task.Result;
                 ret.Data = data;
                 bufferingInfo.Success = true;
-                bufferingInfo.Data = data;
             }
             else
             {
@@ -749,7 +754,9 @@ public partial class QuizPage
             _logger.LogWarning($"download cancelled {e}");
         }
 
-        if (true || !bufferingInfo.Success) // todo
+        // Console.WriteLine(JsonSerializer.Serialize(bufferingInfo, Utils.JsoIndented));
+        if (!bufferingInfo.Success || bufferingInfo.TotaljsTime < TimeSpan.FromSeconds(2) ||
+            bufferingInfo.Data is null || !bufferingInfo.Data.StartsWith("blob:"))
         {
             HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/PostBufferingInfo", bufferingInfo);
             if (res.IsSuccessStatusCode)

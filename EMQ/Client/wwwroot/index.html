@@ -5,6 +5,11 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <meta name="description" content="Eroge Music Quiz">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>EMQ</title>
     <base href="/"/>
 
@@ -25,11 +30,11 @@
 
 <body>
 <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+    <svg class="loading-progress">
+        <circle r="40%" cx="50%" cy="50%"/>
+        <circle r="40%" cx="50%" cy="50%"/>
+    </svg>
+    <div class="loading-progress-text"></div>
 </div>
 
 <div id="blazor-error-ui">
@@ -165,20 +170,6 @@
         window.location.href = input;
     }
 
-    // todo: this only should be active on the quiz page
-    // function disableBackspaceNavigation() {
-    //     window.onkeydown = function (e) {
-    //         if (e.keyCode === 8 && !isTextBox(e.target)) e.preventDefault();
-    //     }
-    // }
-    // function isTextBox(element) {
-    //     const tagName = element.tagName.toLowerCase();
-    //     if (tagName !== "input") return false;
-    //
-    //     const typeAttr = element.getAttribute('type').toLowerCase();
-    //     return typeAttr === 'text';
-    // }
-
     async function setVideoVolume(volume) {
         try {
             const video = document.getElementById('video');
@@ -205,14 +196,36 @@
         static controller = new AbortController();
 
         static async fetchObjectUrl(src) {
-            // disableBackspaceNavigation() // todo move to init method
-
             this.controller = new AbortController(); // not sure if we need this line
             const signal = this.controller.signal;
-            const res = await fetch(src, {signal});
-            const blob = await res.blob();
-            console.log("dled");
-            return URL.createObjectURL(blob); // todo revoke
+
+            return await fetch(src, {signal})
+                .then((response) => {
+                    if (response.ok) {
+                        return response;
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(async (response) => {
+                    const blob = await response.blob();
+                    console.log("dled");
+                    return URL.createObjectURL(blob);
+                })
+                .catch((response) => {
+                    let s = `response was null or empty`;
+                    if (response != null && response !== '') {
+                        s = `${response.status}|${response.statusText}|`;
+                        if (response.body != null) {
+                            response.json().then((json) => {
+                                s += json
+                            })
+                        }
+                    }
+
+                    console.log(s);
+                    return s;
+                });
         }
 
         static abortFetch() {
