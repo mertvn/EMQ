@@ -10,6 +10,7 @@ using FFMpegCore;
 
 namespace EMQ.Server.Business;
 
+// todo detect transcodes
 public static class MediaAnalyser
 {
     public static async Task<MediaAnalyserResult> Analyse(string filePath)

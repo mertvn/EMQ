@@ -755,8 +755,8 @@ public partial class QuizPage
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(bufferingInfo, Utils.JsoIndented));
-        if (!bufferingInfo.Success || bufferingInfo.TotaljsTime < TimeSpan.FromSeconds(2) ||
-            bufferingInfo.Data is null || !bufferingInfo.Data.StartsWith("blob:"))
+        if (!IsSpectator && (!bufferingInfo.Success || bufferingInfo.TotaljsTime < TimeSpan.FromSeconds(2) ||
+            bufferingInfo.Data is null || !bufferingInfo.Data.StartsWith("blob:")))
         {
             HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/PostBufferingInfo", bufferingInfo);
             if (res.IsSuccessStatusCode)
