@@ -48,7 +48,7 @@ public partial class RoomPage
 
     private GenericModal? _changeRoomNameAndPasswordModalRef;
 
-    private string RoomName { get; set; }
+    private string? RoomName { get; set; }
 
     private string? RoomPassword { get; set; }
 
@@ -226,7 +226,7 @@ public partial class RoomPage
     private async Task ChangeRoomNameAndPassword()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ChangeRoomNameAndPassword",
-            new ReqChangeRoomNameAndPassword(ClientState.Session!.Token, Room!.Id, RoomName, RoomPassword!));
+            new ReqChangeRoomNameAndPassword(ClientState.Session!.Token, Room!.Id, RoomName!, RoomPassword!));
         if (res.IsSuccessStatusCode)
         {
             Room = await _clientUtils.SyncRoom();

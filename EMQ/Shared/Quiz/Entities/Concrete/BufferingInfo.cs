@@ -12,6 +12,8 @@ public class BufferingInfo
 
     public string Url { get; set; } = "";
 
+    // this only shows whether the task was completed without being cancelled,
+    // it doesn't show whether the player was actually able to buffer correctly
     public bool Success { get; set; }
 
     public DateTime StartjsTime { get; set; }
@@ -22,5 +24,5 @@ public class BufferingInfo
 
     public string CancellationReason { get; set; } = "";
 
-    public string Data { get; set; }
+    public string? Data { get; set; }
 }

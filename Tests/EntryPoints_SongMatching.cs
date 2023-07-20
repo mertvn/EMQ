@@ -153,7 +153,7 @@ public class EntryPoints_SongMatching
         string[] dirs = Directory.GetDirectories(root);
         foreach (string dir in dirs)
         {
-            string submittedBy = Path.GetFileName(dir)!;
+            // string submittedBy = Path.GetFileName(dir)!;
 
             var uploaded =
                 JsonSerializer.Deserialize<List<Uploadable>>(

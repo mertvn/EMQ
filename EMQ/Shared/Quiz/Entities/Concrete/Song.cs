@@ -11,7 +11,7 @@ public class Song
     public int Id { get; set; }
 
     [JsonIgnore]
-    public string Data { get; set; } = "";
+    public string? Data { get; set; } = "";
 
     public int StartTime { get; set; }
 

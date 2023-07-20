@@ -141,22 +141,22 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        int[] rqIds = Enumerable.Range(1, 1).ToArray();
-
-        foreach (int rqId in rqIds)
+        const int start = 547;
+        const int end = 547;
+        for (int i = start; i <= end; i++)
         {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Approved, "");
+            await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
         }
     }
 
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        int[] rqIds = Enumerable.Range(273, 1).ToArray();
-
-        foreach (int rqId in rqIds)
+        const int start = 531;
+        const int end = 531;
+        for (int i = start; i <= end; i++)
         {
-            await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Rejected, "Bad audio");
+            await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "Bad audio");
         }
     }
 

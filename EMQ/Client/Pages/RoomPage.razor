@@ -109,7 +109,7 @@
 else if (IsSpectator)
 {
     <button type="button" class="btn btn-primary"
-            disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+            disabled="@(Room is null || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
             @onclick="SendConvertSpectatorToPlayerInRoom"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
         Join as player
@@ -118,14 +118,14 @@ else if (IsSpectator)
 else
 {
     <button type="button" class="btn btn-primary"
-            disabled="@false"
+            disabled="@(Room is null)"
             @onclick="SendToggleReadiedUp"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 78px; height: 30px;">
         @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsReadiedUp, $"Unready", "Ready", "Ready")
     </button>
 
     <button type="button" class="btn btn-primary"
-            disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+            disabled="@(Room is null || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
             @onclick="SendConvertPlayerToSpectatorInRoom"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
         Spectate

@@ -12,6 +12,8 @@ using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.SignalR.Client;
 using NUnit.Framework;
 
+// ReSharper disable UnusedVariable
+
 namespace Tests;
 
 public class IntegrationTests
