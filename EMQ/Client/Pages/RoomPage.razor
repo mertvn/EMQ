@@ -149,7 +149,7 @@ else
     {
         @foreach (var player in Room.Players)
         {
-            <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
+            <div class="playerDiv" style="margin: 10px; width: 160px; height: 310px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                 <p style="text-align: center;">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
 
                 <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Default)" alt="Avatar">
@@ -160,6 +160,21 @@ else
                         @player.Username
                     </span>
                 </div>
+                @if (Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id)
+                {
+                    <div style="display: flex; justify-content:center; align-items:center;">
+                        <button type="button" class="btn btn-primary"
+                                disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+                                @onclick="@(() => OnclickTransferRoomOwnership(player.Id))" style="margin:5px; padding: 5px;">
+                            Transfer ownership
+                        </button>
+                        <button type="button" class="btn btn-primary"
+                                disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+                                @onclick="@(() => OnclickKickFromRoom(player.Id))" style="margin:5px; padding: 5px;">
+                            Kick
+                        </button>
+                    </div>
+                }
             </div>
         }
     }

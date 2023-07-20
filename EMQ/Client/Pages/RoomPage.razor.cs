@@ -29,6 +29,7 @@ public partial class RoomPage
                 "ReceiveUpdateRoomForRoom", (new Type[] { typeof(Room) },
                     async param => { await OnReceiveUpdateRoomForRoom((Room)param[0]!); })
             },
+            { "ReceiveKickedFromRoom", (new Type[] { }, async param => { await OnReceiveKickedFromRoom(); }) },
         };
     }
 
@@ -207,8 +208,6 @@ public partial class RoomPage
     private async Task SendToggleReadiedUp()
     {
         await ClientState.Session!.hubConnection!.SendAsync("SendToggleReadiedUp");
-        Room = await _clientUtils.SyncRoom();
-        StateHasChanged();
     }
 
     private async Task OnclickChangeRoomNameAndPassword()
@@ -238,14 +237,27 @@ public partial class RoomPage
     private async Task SendConvertSpectatorToPlayerInRoom()
     {
         await ClientState.Session!.hubConnection!.SendAsync("SendConvertSpectatorToPlayerInRoom");
-        Room = await _clientUtils.SyncRoom();
-        StateHasChanged();
     }
 
     private async Task SendConvertPlayerToSpectatorInRoom()
     {
         await ClientState.Session!.hubConnection!.SendAsync("SendConvertPlayerToSpectatorInRoom");
-        Room = await _clientUtils.SyncRoom();
-        StateHasChanged();
+    }
+
+    private async Task OnclickTransferRoomOwnership(int playerId)
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendTransferRoomOwnership", playerId);
+    }
+
+    private async Task OnclickKickFromRoom(int playerId)
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendKickFromRoom", playerId);
+    }
+
+    private async Task OnReceiveKickedFromRoom()
+    {
+        await _jsRuntime.InvokeVoidAsync("alert", "You were kicked from the room.");
+        _locationChangingRegistration?.Dispose();
+        _navigation.NavigateTo("/HotelPage", true);
     }
 }

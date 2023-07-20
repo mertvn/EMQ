@@ -551,4 +551,77 @@ public class QuizHub : Hub
             // todo
         }
     }
+
+    public async Task SendTransferRoomOwnership(int playerId)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        if (session != null)
+        {
+            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            if (room?.Owner.Id == session.Player.Id)
+            {
+                var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
+                if (targetPlayer != null)
+                {
+                    room.Owner = targetPlayer;
+                    room.Log($"{targetPlayer.Username} is the new owner.", -1, true);
+                    await Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to find the player that is going to be the new owner.");
+                }
+            }
+            else
+            {
+                // todo
+            }
+        }
+        else
+        {
+            // todo
+        }
+    }
+
+    // todo spectators?
+    public async Task SendKickFromRoom(int playerId)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        if (session != null)
+        {
+            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            if (room?.Owner.Id == session.Player.Id)
+            {
+                var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
+                if (targetPlayer != null)
+                {
+                    room.RemovePlayer(targetPlayer);
+                    room.AllConnectionIds.Remove(targetPlayer.Id, out string? targetPlayerConnectionId);
+                    room.Log($"{targetPlayer.Username} was kicked from the room.", targetPlayer.Id, true);
+
+                    if (!string.IsNullOrWhiteSpace(targetPlayerConnectionId))
+                    {
+                        await Clients.Clients(targetPlayerConnectionId)
+                            .SendAsync("ReceiveKickedFromRoom");
+                    }
+
+                    await Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to find the player that is going to be kicked.");
+                }
+            }
+            else
+            {
+                // todo
+            }
+        }
+        else
+        {
+            // todo
+        }
+    }
 }
