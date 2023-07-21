@@ -3,50 +3,88 @@
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
+@using Blazorise
+@using Blazorise.DataGrid
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
 
-<table class="table">
-    <tr>
-        <th>Id</th>
-        <th>Source Title</th>
-        <th>Song Title</th>
-        <th>Url</th>
-        @* <th>Type</th> *@
-        <th>Video?</th>
-        <th>Submitted By</th>
-        <th>Submitted On</th>
-        <th>Analysis</th>
-        <th>Duration</th>
-        <th>Status</th>
-        <th>Notes</th>
-    </tr>
-    @foreach (var rq in CurrentRQs)
-    {
-        <tr>
-            <td>@rq.id</td>
-            <td>
-                @* todo link might be different from what's displayed *@
-                <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url">
-                    @(Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle)
-                </a>
-            </td>
-            <td>
-                @(Converters.GetSingleTitle(rq.Song.Titles).LatinTitle)
-            </td>
-            <td>
-                <a href="@rq.url">@rq.url</a>
-            </td>
-            @* <td>@rq.type</td> *@
-            <td>@(rq.is_video ? "Video" : "")</td>
-            <td>@rq.submitted_by</td>
-            <td>@rq.submitted_on.ToString("s")</td>
-            <td>@rq.analysis</td>
-            <td>@(rq.duration?.ToString("mm\\:ss"))</td>
-            <td style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
-                @rq.status
-            </td>
-            <td>@rq.reason</td>
-        </tr>
-    }
-</table>
+<DataGrid TItem="RQ"
+          Data="@CurrentRQs"
+          PageSize="50"
+          Responsive
+          ShowPager
+          ShowPageSizes
+          Sortable
+          SortMode="DataGridSortMode.Single"
+          RowSelectable="@(_ => { return true; })"
+          PagerPosition="DataGridPagerPosition.TopAndBottom"
+          PagerOptions="new DataGridPagerOptions { ButtonSize = Size.Small }">
+    <DataGridColumns>
+        <DataGridCommandColumn/>
+        <DataGridColumn Field="@nameof(RQ.id)" Caption="ID"/>
+        <DataGridColumn Field="@nameof(RQ.id)" Caption="Source Title" Sortable="false">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    @* todo link might be different from what's displayed *@
+                    <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
+                        @(Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle)
+                    </a>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.id)" Caption="Song Title" Sortable="false">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <span> @(Converters.GetSingleTitle(rq.Song.Titles).LatinTitle)</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.url)" Caption="Url">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <a href="@rq.url" target="_blank">@rq.url</a>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.is_video)" Caption="Video?">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <span>@(rq.is_video ? "Video" : "")</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.submitted_by)" Caption="Submitted By"/>
+        <DataGridColumn Field="@nameof(RQ.submitted_on)" Caption="Submitted On">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <span>@rq.submitted_on.ToString("s")</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.analysis)" Caption="Analysis"/>
+        <DataGridColumn Field="@nameof(RQ.duration)" Caption="Duration">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <span>@(rq.duration?.ToString("mm\\:ss"))</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.status)" Caption="Status">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <span style="color: @UiHelpers.Bools2Color(@rq.status == ReviewQueueStatus.Approved, @rq.status == ReviewQueueStatus.Rejected, "green", "red")">
+                        @rq.status
+                    </span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(RQ.reason)" Caption="Notes"/>
+    </DataGridColumns>
+</DataGrid>
