@@ -10,13 +10,15 @@
 
 <DataGrid TItem="RQ"
           Data="@CurrentRQs"
-          PageSize="50"
+          PageSize="25"
           Responsive
           ShowPager
           ShowPageSizes
           Sortable
           SortMode="DataGridSortMode.Single"
-          RowSelectable="@(_ => { return true; })"
+          ShowDefaultSortIcon
+          RowHoverCursor="@(_ => { return Cursor.Default; })"
+          RowSelectable="@(_ => { return false; })"
           PagerPosition="DataGridPagerPosition.TopAndBottom"
           PagerOptions="new DataGridPagerOptions { ButtonSize = Size.Small }">
     <DataGridColumns>
@@ -27,8 +29,11 @@
                 @{
                     var rq = (context as RQ)!;
                     @* todo link might be different from what's displayed *@
+                    string title = Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle;
                     <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
-                        @(Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle)
+                        <Blazorise.Tooltip Text="@(title)">
+                            <span>@(title)</span>
+                        </Blazorise.Tooltip>
                     </a>
                 }
             </DisplayTemplate>
@@ -37,7 +42,10 @@
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
-                    <span> @(Converters.GetSingleTitle(rq.Song.Titles).LatinTitle)</span>
+                    string title = Converters.GetSingleTitle(rq.Song.Titles).LatinTitle;
+                    <Blazorise.Tooltip Text="@(title)">
+                        <span>@(title)</span>
+                    </Blazorise.Tooltip>
                 }
             </DisplayTemplate>
         </DataGridColumn>
