@@ -21,8 +21,8 @@
           PagerOptions="new DataGridPagerOptions { ButtonSize = Size.Small }">
     <DataGridColumns>
         <DataGridCommandColumn/>
-        <DataGridColumn Field="@nameof(RQ.id)" Caption="ID"/>
-        <DataGridColumn Field="@nameof(RQ.id)" Caption="Source Title" Sortable="false">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="ID"/>
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="Source Title" Sortable="false">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -33,7 +33,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.id)" Caption="Song Title" Sortable="false">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="Song Title" Sortable="false">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -41,7 +41,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.url)" Caption="Url">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.url)" Caption="Url">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -49,7 +49,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.is_video)" Caption="Video?">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.is_video)" Caption="Video?">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -57,8 +57,8 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.submitted_by)" Caption="Submitted By"/>
-        <DataGridColumn Field="@nameof(RQ.submitted_on)" Caption="Submitted On">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.submitted_by)" Caption="Submitted By"/>
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.submitted_on)" Caption="Submitted On">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -66,8 +66,8 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.analysis)" Caption="Analysis"/>
-        <DataGridColumn Field="@nameof(RQ.duration)" Caption="Duration">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.analysis)" Caption="Analysis"/>
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.duration)" Caption="Duration">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -75,7 +75,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.status)" Caption="Status">
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.status)" Caption="Status">
             <DisplayTemplate>
                 @{
                     var rq = (context as RQ)!;
@@ -85,6 +85,15 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(RQ.reason)" Caption="Notes"/>
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.reason)" Caption="Notes">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    <Blazorise.Tooltip Text="@rq.reason">
+                        <span>@(rq.reason)</span>
+                    </Blazorise.Tooltip>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
     </DataGridColumns>
 </DataGrid>

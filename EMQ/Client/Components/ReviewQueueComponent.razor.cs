@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Blazorise.DataGrid;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,9 @@ namespace EMQ.Client.Components;
 public partial class ReviewQueueComponent
 {
     public List<RQ> CurrentRQs { get; set; } = new();
+
+    public string CellStyle { get; set; } =
+        "max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
 
     protected override async Task OnInitializedAsync()
     {
