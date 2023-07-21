@@ -141,8 +141,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int start = 547;
-        const int end = 547;
+        const int start = 570;
+        const int end = 57777;
         for (int i = start; i <= end; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -152,8 +152,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        const int start = 531;
-        const int end = 531;
+        const int start = 3;
+        const int end = 3;
         for (int i = start; i <= end; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "Bad audio");
