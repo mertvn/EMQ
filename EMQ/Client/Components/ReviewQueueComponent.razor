@@ -32,7 +32,7 @@
                     string title = Converters.GetSingleTitle(rq.Song.Sources.First().Titles).LatinTitle;
                     <a href="@rq.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
                         <Blazorise.Tooltip Text="@(title)">
-                            <span>@(title)</span>
+                            <span style="@CellStyleInlineBlock">@(title)</span>
                         </Blazorise.Tooltip>
                     </a>
                 }
@@ -44,7 +44,7 @@
                     var rq = (context as RQ)!;
                     string title = Converters.GetSingleTitle(rq.Song.Titles).LatinTitle;
                     <Blazorise.Tooltip Text="@(title)">
-                        <span>@(title)</span>
+                        <span style="@CellStyleInlineBlock ">@(title)</span>
                     </Blazorise.Tooltip>
                 }
             </DisplayTemplate>
@@ -98,7 +98,7 @@
                 @{
                     var rq = (context as RQ)!;
                     <Blazorise.Tooltip Text="@rq.reason">
-                        <span>@(rq.reason)</span>
+                        <span style="@CellStyleInlineBlock">@(rq.reason)</span>
                     </Blazorise.Tooltip>
                 }
             </DisplayTemplate>

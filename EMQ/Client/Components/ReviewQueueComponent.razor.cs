@@ -16,6 +16,9 @@ public partial class ReviewQueueComponent
     public string CellStyle { get; set; } =
         "max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
 
+    public string CellStyleInlineBlock { get; set; } =
+        "max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshRQs();
