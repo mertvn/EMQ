@@ -1497,6 +1497,12 @@ WHERE id = {mId};
             var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList();
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
+                if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
+                {
+                    song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single();
+                    CachedSongs[reviewQueue.music_id] = song;
+                }
+
                 var rq = new RQ
                 {
                     id = reviewQueue.id,
@@ -1509,7 +1515,7 @@ WHERE id = {mId};
                     status = (ReviewQueueStatus)reviewQueue.status,
                     reason = reviewQueue.reason,
                     analysis = reviewQueue.analysis,
-                    Song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single(),
+                    Song = song,
                     duration = reviewQueue.duration,
                 };
 
