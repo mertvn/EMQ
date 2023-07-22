@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -94,11 +95,12 @@ public static class VndbImporter
             System.Text.Json.JsonSerializer.Serialize(Songs, Utils.Jso));
     }
 
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
     private static List<Song> ImportVndbDataInner(List<ProcessedMusic> dataJson)
     {
         var existingSongBlacklist = new List<(string, string)>
         {
-            ("v236", "POWDER SNOW"), ("v12984", "Yuki no Elfin Lied"),
+            ("v236", "POWDER SNOW"), ("v12984", "Yuki no Elfin Lied"), ("v21901", "Ohime-sama datte XXX Shitai!!")
         };
 
         var songs = new List<Song>();
