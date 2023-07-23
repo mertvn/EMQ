@@ -20,7 +20,7 @@ public static class Api
     private static HttpClient Client { get; } = new(ThrottleHandler) { BaseAddress = new Uri(Constants.VndbApiUrl), };
 
     // todo: return IResult<T> type with success, message, result properties
-    private static async Task<T?> Send<T>(HttpRequestMessage req) where T : class
+    private static async Task<T?> Send<T>(HttpRequestMessage req, CancellationToken? cancellationToken = null) where T : class
     {
         try
         {
@@ -29,7 +29,7 @@ public static class Api
             // header ‘user-agent’ is not allowed according to header ‘Access-Control-Allow-Headers’ from CORS preflight response
             // req.Headers.Add("User-Agent", Constants.UserAgent);
 
-            var res = await Client.SendAsync(req);
+            var res = await Client.SendAsync(req, cancellationToken ?? CancellationToken.None);
             // Console.WriteLine("Res: " + JsonSerializer.Serialize(res)); // TODO
 
             // Exception will be thrown by the ThrottleHandler if the request is not successful,
@@ -50,7 +50,7 @@ public static class Api
         }
     }
 
-    public static async Task<Dictionary<string, User>?> GET_user(Param param)
+    public static async Task<Dictionary<string, User>?> GET_user(Param param, CancellationToken? cancellationToken = null)
     {
         if (string.IsNullOrWhiteSpace(param.User))
         {
@@ -63,11 +63,11 @@ public static class Api
             RequestUri = new Uri($"user?q={param.User}", UriKind.Relative),
         };
 
-        var res = await Send<Dictionary<string, User>>(req);
+        var res = await Send<Dictionary<string, User>>(req, cancellationToken);
         return res;
     }
 
-    public static async Task<ResGET_authinfo?> GET_authinfo(Param param)
+    public static async Task<ResGET_authinfo?> GET_authinfo(Param param, CancellationToken? cancellationToken = null)
     {
         if (string.IsNullOrWhiteSpace(param.APIToken))
         {
@@ -77,11 +77,11 @@ public static class Api
         var req = new HttpRequestMessage { RequestUri = new Uri("authinfo", UriKind.Relative), };
         req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
 
-        var res = await Send<ResGET_authinfo>(req);
+        var res = await Send<ResGET_authinfo>(req, cancellationToken);
         return res;
     }
 
-    public static async Task<ResGET_ulist_labels?> GET_ulist_labels(Param param)
+    public static async Task<ResGET_ulist_labels?> GET_ulist_labels(Param param, CancellationToken? cancellationToken = null)
     {
         if (string.IsNullOrWhiteSpace(param.User))
         {
@@ -96,11 +96,12 @@ public static class Api
             req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
         }
 
-        var res = await Send<ResGET_ulist_labels>(req);
+        var res = await Send<ResGET_ulist_labels>(req, cancellationToken);
         return res;
     }
 
-    public static async Task<List<ResPOST<ResPOST_ulist>>?> POST_ulist(ParamPOST_ulist param)
+    public static async Task<List<ResPOST<ResPOST_ulist>>?> POST_ulist(ParamPOST_ulist param,
+        CancellationToken? cancellationToken = null)
     {
         // todo validate other params
         if (string.IsNullOrWhiteSpace(param.User))
@@ -108,20 +109,24 @@ public static class Api
             return null;
         }
 
-        return await POST_Generic<FieldPOST_ulist, ResPOST_ulist>(param, new Uri("ulist", UriKind.Relative));
+        return await POST_Generic<FieldPOST_ulist, ResPOST_ulist>(param, new Uri("ulist", UriKind.Relative),
+            cancellationToken);
     }
 
-    public static async Task<List<ResPOST<ResPOST_vn>>?> POST_vn(ParamPOST_vn param)
+    public static async Task<List<ResPOST<ResPOST_vn>>?> POST_vn(ParamPOST_vn param,
+        CancellationToken? cancellationToken = null)
     {
-        return await POST_Generic<FieldPOST_vn, ResPOST_vn>(param, new Uri("vn", UriKind.Relative));
+        return await POST_Generic<FieldPOST_vn, ResPOST_vn>(param, new Uri("vn", UriKind.Relative), cancellationToken);
     }
 
-    public static async Task<List<ResPOST<ResPOST_release>>?> POST_release(ParamPOST_release param)
+    public static async Task<List<ResPOST<ResPOST_release>>?> POST_release(ParamPOST_release param,
+        CancellationToken? cancellationToken = null)
     {
-        return await POST_Generic<FieldPOST_release, ResPOST_release>(param, new Uri("release", UriKind.Relative));
+        return await POST_Generic<FieldPOST_release, ResPOST_release>(param, new Uri("release", UriKind.Relative),
+            cancellationToken);
     }
 
-    public static async Task PATCH_ulist(ParamPATCH_ulist param)
+    public static async Task PATCH_ulist(ParamPATCH_ulist param, CancellationToken? cancellationToken = null)
     {
         var requestUri = new Uri($"ulist/{param.Id}", UriKind.Relative);
 
@@ -141,10 +146,10 @@ public static class Api
             req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
         }
 
-        await Send<object>(req);
+        await Send<object>(req, cancellationToken);
     }
 
-    public static async Task PATCH_rlist(ParamPATCH_rlist param)
+    public static async Task PATCH_rlist(ParamPATCH_rlist param, CancellationToken? cancellationToken = null)
     {
         var requestUri = new Uri($"rlist/{param.Id}", UriKind.Relative);
 
@@ -164,12 +169,11 @@ public static class Api
             req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
         }
 
-        await Send<object>(req);
+        await Send<object>(req, cancellationToken);
     }
 
-    private static async Task<List<ResPOST<TReturn>>?> POST_Generic<TParam, TReturn>(
-        ParamPOST<TParam> param,
-        Uri requestUri)
+    private static async Task<List<ResPOST<TReturn>>?> POST_Generic<TParam, TReturn>(ParamPOST<TParam> param,
+        Uri requestUri, CancellationToken? cancellationToken = null)
     {
         var final = new List<ResPOST<TReturn>>();
 
@@ -225,7 +229,7 @@ public static class Api
                 req.Headers.Authorization = new AuthenticationHeaderValue("token", param.APIToken);
             }
 
-            var res = await Send<ResPOST<TReturn>>(req);
+            var res = await Send<ResPOST<TReturn>>(req, cancellationToken);
             if (res != null)
             {
                 Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters,
