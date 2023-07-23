@@ -15,7 +15,8 @@ public class QuizFilters
     public string VndbAdvsearchFilter { get; set; } = "";
 
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
-        Enum.GetValues<SongSourceSongType>().Where(x => x != SongSourceSongType.Unknown)
+        Enum.GetValues<SongSourceSongType>()
+            .Where(x => x is SongSourceSongType.OP or SongSourceSongType.ED or SongSourceSongType.Insert)
             .ToDictionary(x => x, _ => true);
 
     [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
@@ -40,11 +41,11 @@ public class QuizFilters
     [Range(Constants.QFRatingBayesianMin, Constants.QFRatingBayesianMax)]
     public int RatingBayesianEnd { get; set; } = Constants.QFRatingBayesianMax;
 
-    [Range(Constants.QFPopularityMin, Constants.QFPopularityMax)]
-    public int PopularityStart { get; set; } = Constants.QFPopularityMin;
-
-    [Range(Constants.QFPopularityMin, Constants.QFPopularityMax)]
-    public int PopularityEnd { get; set; } = Constants.QFPopularityMax;
+    // [Range(Constants.QFPopularityMin, Constants.QFPopularityMax)]
+    // public int PopularityStart { get; set; } = Constants.QFPopularityMin;
+    //
+    // [Range(Constants.QFPopularityMin, Constants.QFPopularityMax)]
+    // public int PopularityEnd { get; set; } = Constants.QFPopularityMax;
 
     [Range(Constants.QFVoteCountMin, Constants.QFVoteCountMax)]
     public int VoteCountStart { get; set; } = Constants.QFVoteCountMin;

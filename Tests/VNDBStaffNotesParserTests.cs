@@ -738,7 +738,6 @@ public class VNDBStaffNotesParserTests
         Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
     }
 
-
     [Test]
     public void Test_ComplexShit1()
     {
@@ -857,6 +856,170 @@ public class VNDBStaffNotesParserTests
                 BeforeType = "Switch version ",
                 Type = new List<SongType> { SongType.OP },
                 Title = "Einsatz -zugabe-",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_WA2Merge1()
+    {
+        string input = "IC ED \"Twinkle Snow\", CC ED1 \"Aisuru Kokoro\", Kazusa ED2 \"Kokoro wa Itsumo Anata no Soba ni\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "IC ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Twinkle Snow",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "CC ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Aisuru Kokoro",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Kazusa ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Kokoro wa Itsumo Anata no Soba ni",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_WA2Merge2()
+    {
+        string input = "IC OP & CC OP2 \"Todokanai Koi\", IC Insert Song \"After All ~Tsuzuru Omoi~\", CC First OP \"Shiawase na Kioku\", CC Second OP \"Todokanai Koi\", Kazusa ED1 \"Closing\", 3 Side heroines' ED \"Yasashii Uso\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "CC ",
+                Type = new List<SongType> { SongType.OP, SongType.OP }, // maybe do .Distinct() on these?
+                Title = "Todokanai Koi",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "IC ",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "After All ~Tsuzuru Omoi~",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "CC First ",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Shiawase na Kioku",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "CC Second ",
+                Type = new List<SongType> { SongType.OP },
+                Title = "Todokanai Koi",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Kazusa ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Closing",
+                AfterTitle = ""
+            },    new()
+            {
+                BeforeType = "3 Side heroines' ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Yasashii Uso",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_WA2Merge3()
+    {
+        string input = "IC Insert Songs \"Shin'ai\", \"WHITE ALBUM\", \"SOUND OF DESTINY\", \"Todokanai Koi -live at campus Fes-\", CC Insert songs \"Todokanai Koi -Valentine Live-\", \"Routes\", \"Anata wo Omoitai\", \"POWDER SNOW\", Setsuna ED \"Toki no Mahou\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = "IC ",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Shin'ai",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "WHITE ALBUM",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "SOUND OF DESTINY",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Todokanai Koi -live at campus Fes-",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "CC ",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Todokanai Koi -Valentine Live-",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Routes",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "Anata wo Omoitai",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "",
+                Type = new List<SongType> { SongType.Insert },
+                Title = "POWDER SNOW",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "Setsuna ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Toki no Mahou",
                 AfterTitle = ""
             },
         };

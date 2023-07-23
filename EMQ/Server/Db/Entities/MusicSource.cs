@@ -22,7 +22,7 @@ public class MusicSource
 
     public int? rating_bayesian { get; set; }
 
-    public int? popularity { get; set; }
+    // public int? popularity { get; set; }
 
     public int? votecount { get; set; }
 

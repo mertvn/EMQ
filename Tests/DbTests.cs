@@ -393,41 +393,41 @@ public class DbTests
         GenericSongsAssert(songs);
     }
 
-    [Test]
-    public async Task Test_GetRandomSongs_RatingPopularityFilter()
-    {
-        int popularityStart = 7700;
-        int popularityEnd = 10000;
+    // [Test]
+    // public async Task Test_GetRandomSongs_RatingPopularityFilter()
+    // {
+    //     int popularityStart = 7700;
+    //     int popularityEnd = 10000;
+    //
+    //     var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+    //         filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
+    //         printSql: true);
+    //
+    //     Assert.That(songs.Count > 0);
+    //     Assert.That(songs.Count < 100);
+    //     Assert.That(songs.All(song =>
+    //         song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
+    //         song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
+    //     GenericSongsAssert(songs);
+    // }
 
-        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
-            filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
-            printSql: true);
-
-        Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 100);
-        Assert.That(songs.All(song =>
-            song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
-            song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
-        GenericSongsAssert(songs);
-    }
-
-    [Test]
-    public async Task Test_GetRandomSongs_RatingPopularityFilter_0()
-    {
-        int popularityStart = 0;
-        int popularityEnd = 0;
-
-        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
-            filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
-            printSql: true);
-
-        Assert.That(songs.Count > 100);
-        Assert.That(songs.Count < 10000);
-        Assert.That(songs.All(song =>
-            song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
-            song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
-        GenericSongsAssert(songs);
-    }
+    // [Test]
+    // public async Task Test_GetRandomSongs_RatingPopularityFilter_0()
+    // {
+    //     int popularityStart = 0;
+    //     int popularityEnd = 0;
+    //
+    //     var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+    //         filters: new QuizFilters { PopularityStart = popularityStart, PopularityEnd = popularityEnd },
+    //         printSql: true);
+    //
+    //     Assert.That(songs.Count > 100);
+    //     Assert.That(songs.Count < 10000);
+    //     Assert.That(songs.All(song =>
+    //         song.Sources.Select(x => x.Popularity).Any(x => x >= popularityStart) &&
+    //         song.Sources.Select(x => x.Popularity).Any(x => x <= popularityEnd)));
+    //     GenericSongsAssert(songs);
+    // }
 
     [Test]
     public async Task Test_GetRandomSongs_RatingVoteCountFilter()

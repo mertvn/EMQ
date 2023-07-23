@@ -273,7 +273,7 @@ public static class DbManager
                         LanguageOriginal = musicSource.language_original,
                         RatingAverage = musicSource.rating_average,
                         RatingBayesian = musicSource.rating_bayesian,
-                        Popularity = musicSource.popularity,
+                        // Popularity = musicSource.popularity,
                         VoteCount = musicSource.votecount,
                         SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                         Titles = new List<Title>
@@ -563,7 +563,7 @@ public static class DbManager
                         language_original = songSource.LanguageOriginal,
                         rating_average = songSource.RatingAverage,
                         rating_bayesian = songSource.RatingBayesian,
-                        popularity = songSource.Popularity,
+                        // popularity = songSource.Popularity,
                         votecount = songSource.VoteCount,
                         type = (int)songSource.Type
                     });
@@ -826,15 +826,15 @@ public static class DbManager
                     queryMusicIds.Append($")");
                 }
 
-                if (filters.PopularityStart != Constants.QFPopularityMin ||
-                    filters.PopularityEnd != Constants.QFPopularityMax)
-                {
-                    queryMusicIds.Append($"\n");
-                    queryMusicIds.Append($" AND (");
-                    queryMusicIds.Append($"ms.popularity >= {filters.PopularityStart}");
-                    queryMusicIds.Append($" AND ms.popularity <= {filters.PopularityEnd}");
-                    queryMusicIds.Append($")");
-                }
+                // if (filters.PopularityStart != Constants.QFPopularityMin ||
+                //     filters.PopularityEnd != Constants.QFPopularityMax)
+                // {
+                //     queryMusicIds.Append($"\n");
+                //     queryMusicIds.Append($" AND (");
+                //     queryMusicIds.Append($"ms.popularity >= {filters.PopularityStart}");
+                //     queryMusicIds.Append($" AND ms.popularity <= {filters.PopularityEnd}");
+                //     queryMusicIds.Append($")");
+                // }
 
                 if (filters.VoteCountStart != Constants.QFVoteCountMin ||
                     filters.VoteCountEnd != Constants.QFVoteCountMax)

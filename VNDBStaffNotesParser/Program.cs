@@ -112,6 +112,8 @@ public static class Program
                 {
                     SongType.Insert, new List<string>
                     {
+                        "BGM",
+                        "BGMs",
                         "INS",
                         "Insert",
                         "Inserts",
@@ -165,10 +167,10 @@ public static class Program
                     }.OrderByDescending(x => x).ToList()
                 }
             },
-            new Dictionary<SongType, List<string>>
-            {
-                { SongType.BGM, new List<string> { "BGM", "BGMs", }.OrderByDescending(x => x).ToList() }
-            },
+            // new Dictionary<SongType, List<string>>
+            // {
+            //     { SongType.BGM, new List<string> { "BGM", "BGMs", }.OrderByDescending(x => x).ToList() }
+            // },
         };
 
     public static List<ParsedSong> Parse(string input, bool doIntegrityCheck = true)

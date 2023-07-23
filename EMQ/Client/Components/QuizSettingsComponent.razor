@@ -154,16 +154,16 @@
                             </div>
                         </div>
 
-                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
-                            <h5>VN popularity</h5>
-                            <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
-                                <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.PopularityStart"
-                                              @bind-ValueHigh="@ClientQuizSettings.Filters.PopularityEnd"
-                                              MinValue="@Constants.QFPopularityMin" MaxValue="@Constants.QFPopularityMax">
-                                </RangeControl>
-                                <p style="text-align: center;">@((ClientQuizSettings.Filters.PopularityStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.PopularityEnd / 100f).ToString("N2"))</p>
-                            </div>
-                        </div>
+                        @* <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;"> *@
+                        @*     <h5>VN popularity</h5> *@
+                        @*     <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;"> *@
+                        @*         <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.PopularityStart" *@
+                        @*                       @bind-ValueHigh="@ClientQuizSettings.Filters.PopularityEnd" *@
+                        @*                       MinValue="@Constants.QFPopularityMin" MaxValue="@Constants.QFPopularityMax"> *@
+                        @*         </RangeControl> *@
+                        @*         <p style="text-align: center;">@((ClientQuizSettings.Filters.PopularityStart / 100f).ToString("N2"))-@((ClientQuizSettings.Filters.PopularityEnd / 100f).ToString("N2"))</p> *@
+                        @*     </div> *@
+                        @* </div> *@
 
                         <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
                             <h5>VN vote count</h5>

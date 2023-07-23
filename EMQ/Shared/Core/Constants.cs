@@ -4,7 +4,7 @@ namespace EMQ.Shared.Core;
 
 public static class Constants
 {
-    public static string ImportDateVndb { get; set; } = "2023-07-11";
+    public static string ImportDateVndb { get; set; } = "2023-07-23";
 
     public const string ImportDateEgs = "2023-04-20";
 
@@ -24,9 +24,9 @@ public static class Constants
 
     public const int QFRatingBayesianMax = 1000;
 
-    public const int QFPopularityMin = 0;
-
-    public const int QFPopularityMax = 10000;
+    // public const int QFPopularityMin = 0;
+    //
+    // public const int QFPopularityMax = 10000;
 
     public const int QFVoteCountMin = 0;
 
