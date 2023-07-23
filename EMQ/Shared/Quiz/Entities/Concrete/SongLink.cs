@@ -43,8 +43,8 @@ public class SongLink
 
         foreach (IGrouping<SongLinkType, SongLink> group in groups)
         {
-            var videoLink = group.FirstOrDefault(x => x.IsVideo);
-            var soundLink = group.FirstOrDefault(x => !x.IsVideo);
+            var videoLink = group.OrderBy(x=> x.Duration).FirstOrDefault(x => x.IsVideo);
+            var soundLink = group.OrderBy(x=> x.Duration).FirstOrDefault(x => !x.IsVideo);
 
             if (videoLink != null && soundLink != null)
             {
