@@ -211,10 +211,11 @@ public partial class QuizPage
             if (nextSong is not null)
             {
                 _clientSongs[0] = nextSong;
-                while (!nextSong.DoneBuffering &&
+                bool success = false;
+                while (!success &&
                        DateTime.UtcNow - startedAt < TimeSpan.FromMilliseconds(room.QuizSettings.TimeoutMs))
                 {
-                    await Preload2(nextSong);
+                    success = await Preload2(nextSong);
                     await Task.Delay(TimeSpan.FromMilliseconds(500));
                 }
             }
@@ -630,16 +631,21 @@ public partial class QuizPage
                 await _jsRuntime.InvokeVoidAsync("setVideoVolume", PageState.CurrentMasterVolume / 100f);
             }
 
-            await Preload2(_nextSong);
+            bool _ = await Preload2(_nextSong);
             StateHasChanged();
         }
     }
 
-    private async Task Preload2(Song? song)
+    private async Task<bool> Preload2(Song? song)
     {
-        if (Room?.Quiz == null || song is null || song.DoneBuffering)
+        if (Room?.Quiz == null || song is null)
         {
-            return;
+            return false;
+        }
+
+        if (song.DoneBuffering)
+        {
+            return true;
         }
 
         if (DateTime.UtcNow - LastBufferCheck > TimeSpan.FromMilliseconds(500) &&
@@ -673,10 +679,12 @@ public partial class QuizPage
                     song.DoneBuffering = true;
                     await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
                         ClientState.Session.Player.Id, $"Preload2|true");
-                    break;
+                    return true;
                 }
             }
         }
+
+        return false;
     }
 
     private async Task SwapSongs(int index)
