@@ -674,12 +674,12 @@ public class QuizManager
             if (Quiz.QuizState.IsPaused)
             {
                 Quiz.QuizState.IsPaused = false;
-                Quiz.Room.Log("Unpaused");
+                Quiz.Room.Log("Unpaused", -1, true);
             }
             else
             {
                 Quiz.QuizState.IsPaused = true;
-                Quiz.Room.Log("Paused");
+                Quiz.Room.Log("Paused", -1, true);
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
