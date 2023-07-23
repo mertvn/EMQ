@@ -434,23 +434,47 @@ public class QuizManager
 
         if (!string.IsNullOrWhiteSpace(Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter))
         {
-            Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
-                Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
+            bool success = false;
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(15));
 
-            string[]? vndbUrls =
-                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(null,
-                    Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter);
-
-            if (vndbUrls == null || !vndbUrls.Any())
+            var task = Task.Run(async () =>
             {
-                Quiz.Room.Log($"VNDB search filter returned no results.", -1, true);
-                return false;
+                Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
+                    Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
+
+                string[]? vndbUrls =
+                    await VndbMethods.GetVnUrlsMatchingAdvsearchStr(null,
+                        Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter, cancellationTokenSource.Token);
+
+                if (vndbUrls == null || !vndbUrls.Any())
+                {
+                    Quiz.Room.Log($"VNDB search filter returned no results.", -1, true);
+                    success = false;
+                    return;
+                }
+
+                validSources = vndbUrls.Distinct().ToList();
+                Quiz.Room.Log($"VNDB search filter returned {validSources.Count} results.", -1, true);
+                Quiz.Room.Log("validSources overridden by VndbAdvsearchFilter: " +
+                              JsonSerializer.Serialize(validSources, Utils.Jso));
+
+                success = true;
+            }, cancellationTokenSource.Token);
+
+            try
+            {
+                await task;
+            }
+            catch (Exception)
+            {
+                Quiz.Room.Log($"VNDB search took longer than 15 seconds - canceling.", -1, true);
             }
 
-            validSources = vndbUrls.Distinct().ToList();
-            Quiz.Room.Log($"VNDB search filter returned {validSources.Count} results.", -1, true);
-            Quiz.Room.Log("validSources overridden by VndbAdvsearchFilter: " +
-                          JsonSerializer.Serialize(validSources, Utils.Jso));
+            if (!success)
+            {
+                return false;
+            }
         }
         else
         {

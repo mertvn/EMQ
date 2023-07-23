@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -15,7 +16,8 @@ namespace EMQ.Shared.VNDB.Business;
 
 public static class VndbMethods
 {
-    public static async Task<List<Label>> GrabPlayerVNsFromVndb(PlayerVndbInfo vndbInfo)
+    public static async Task<List<Label>> GrabPlayerVNsFromVndb(PlayerVndbInfo vndbInfo,
+        CancellationToken? cancellationToken = null)
     {
         var ret = new List<Label>();
 
@@ -42,7 +44,7 @@ public static class VndbMethods
                                 Fields = new List<FieldPOST_ulist>() { FieldPOST_ulist.LabelsId, FieldPOST_ulist.Vote },
                                 Exhaust = true,
                                 Filters = query,
-                            });
+                            }, cancellationToken);
                             if (playerVns != null)
                             {
                                 var results = playerVns.SelectMany(x => x.Results);
@@ -80,24 +82,25 @@ public static class VndbMethods
         return ret;
     }
 
-    public static async Task<VNDBLabel[]> GetLabels(PlayerVndbInfo vndbInfo)
+    public static async Task<VNDBLabel[]> GetLabels(PlayerVndbInfo vndbInfo,
+        CancellationToken? cancellationToken = null)
     {
-        var res = await Juliet.Api.GET_ulist_labels(new Param()
-        {
-            User = vndbInfo.VndbId, APIToken = vndbInfo.VndbApiToken
-        });
+        var res = await Juliet.Api.GET_ulist_labels(
+            new Param() { User = vndbInfo.VndbId, APIToken = vndbInfo.VndbApiToken }, cancellationToken);
 
         return res != null ? res.Labels : Array.Empty<VNDBLabel>();
     }
 
-    public static async Task<string[]?> GetVnUrlsMatchingAdvsearchStr(PlayerVndbInfo? vndbInfo, string advsearchStr)
+    public static async Task<string[]?> GetVnUrlsMatchingAdvsearchStr(PlayerVndbInfo? vndbInfo, string advsearchStr,
+        CancellationToken? cancellationToken = null)
     {
-        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
-        {
-            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
-            RawFilters = advsearchStr,
-            APIToken = vndbInfo?.VndbApiToken
-        });
+        var res = await Juliet.Api.POST_vn(
+            new ParamPOST_vn()
+            {
+                Fields = new List<FieldPOST_vn>() { FieldPOST_vn.Id },
+                RawFilters = advsearchStr,
+                APIToken = vndbInfo?.VndbApiToken
+            }, cancellationToken);
 
         return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
     }
