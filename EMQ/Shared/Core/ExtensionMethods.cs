@@ -1,9 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -166,11 +168,13 @@ public static class ExtensionMethods
 
     public static string NormalizeForAutocomplete(this string input)
     {
-        // var ignoredChars = new[] { "-", "/" };
         return new string(input
-            .Trim()
-            .ToLowerInvariant()
-            .Where(y => char.IsLetterOrDigit(y) || char.IsWhiteSpace(y))
-            .ToArray());
+                .Trim()
+                .ToLowerInvariant()
+                .Normalize(NormalizationForm.FormD)
+                .Where(ch => CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                .Where(y => (char.IsLetterOrDigit(y) || char.IsWhiteSpace(y)))
+                .ToArray())
+            .Normalize(NormalizationForm.FormC);
     }
 }
