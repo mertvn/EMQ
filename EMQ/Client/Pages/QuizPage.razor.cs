@@ -380,6 +380,11 @@ public partial class QuizPage
 
         if (Room is { Quiz: { } })
         {
+            if (Room.Quiz.QuizState.Phase != QuizPhaseKind.Results)
+            {
+                PageState.VideoPlayerVisibility = false;
+            }
+
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
 
             if (!PhaseChangeInProgress || room is not null || forcePhaseChange)
