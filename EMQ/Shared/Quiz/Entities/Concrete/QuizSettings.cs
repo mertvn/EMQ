@@ -92,14 +92,14 @@ public class QuizSettings
     public int InventorySize { get; set; } = 7;
 
     [Required]
-    [Range(50, 100)]
+    [Range(51, 100)]
     [DefaultValue(90)]
     public int WaitPercentage { get; set; } = 90;
 
     [Required]
     [Range(5000, 250000)]
-    [DefaultValue(150000)]
-    public int TimeoutMs { get; set; } = 150000;
+    [DefaultValue(60000)]
+    public int TimeoutMs { get; set; } = 60000;
 
     [Required]
     [Range(5, 250)]

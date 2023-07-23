@@ -41,9 +41,7 @@
     @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
         <button type="button" class="btn btn-primary"
-                disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id ||
-                            Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
-                            Room?.Quiz?.QuizState.sp < 0)"
+                disabled="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || Room?.Quiz?.QuizState.sp < 0)"
                 @onclick="SendTogglePause"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 80px; height: 30px; z-index: 10;">
             @UiHelpers.Bool2Text(Room?.Quiz?.QuizState.IsPaused, "Unpause", "Pause")
@@ -53,12 +51,10 @@
     @if (IsSpectator)
     {
         <button type="button" class="btn btn-primary"
-                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
-                            !Room.QuizSettings.IsHotjoinEnabled ||
-                            Room.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id))"
+                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || !Room.QuizSettings.IsHotjoinEnabled || Room.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id))"
                 @onclick="SendHotjoinQuiz"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
-                      @UiHelpers.Bool2Text(Room?.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id), $"Hotjoining...", "Hotjoin Quiz")
+            @UiHelpers.Bool2Text(Room?.HotjoinQueue.Any(x => x.Id == ClientState.Session!.Player.Id), $"Hotjoining...", "Hotjoin Quiz")
 
         </button>
     }
@@ -67,9 +63,7 @@
         int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
         int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
         <button type="button" class="btn btn-primary"
-                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
-                            Room?.Quiz?.QuizState.sp < 0 ||
-                            !(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
+                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || Room?.Quiz?.QuizState.sp < 0 || !(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
                 @onclick="SendToggleSkip"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
             @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
@@ -84,8 +78,7 @@
     @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
         <button type="button" class="btn btn-warning"
-                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing ||
-                            Room?.Quiz?.QuizState.sp < 0)"
+                disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || Room?.Quiz?.QuizState.sp < 0)"
                 @onclick="@(() => _returnToRoomModalRef?.Show())"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
             Return to room
@@ -162,9 +155,48 @@
 
     <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
         <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
-            <video src="@(string.IsNullOrEmpty(_currentSong?.Data) ? _currentSong?.Links.First().Url : _currentSong?.Data)#t=@(_currentSong?.StartTime)"
-                   id="video" width="720px" height="400px" autoplay="autoplay" style="background: black;">
+
+            @{
+                string? video1Src;
+                string? video2Src;
+
+                if (VisibleVideoElementId == "video1")
+                {
+                    video1Src = _currentSong != null ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
+                    video2Src = _nextSong != null ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
+
+                    if (DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(50))
+                    {
+                        LastSetVideoMuted = DateTime.UtcNow;
+                        _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                        _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+                    }
+                }
+                else
+                {
+                    video2Src = _currentSong != null ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
+                    video1Src = _nextSong != null ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
+
+                    if (DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(50))
+                    {
+                        LastSetVideoMuted = DateTime.UtcNow;
+                        _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                        _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+                    }
+                }
+            }
+
+            @* todo prevent video from showing up for half a sec when the phase switches from result to guess sometimes *@
+            <video src="@(video1Src)"
+                   id="video1" width="720px" height="400px" autoplay
+                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video1")">
             </video>
+
+            <video src="@(video2Src)"
+                   id="video2" width="720px" height="400px" autoplay
+                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video2")">
+            </video>
+
             @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
             {
                 <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000">Sound only</p>

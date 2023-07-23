@@ -174,68 +174,63 @@
     async function setVideoVolume(volume) {
         try {
             const video = document.getElementById('video');
-            video.volume = volume;
-            // console.log("set video volume to " + volume)
+            if (video) {
+                video.volume = volume;
+                // console.log("set video volume to " + volume)
+            }
         } catch (err) {
             console.log(err)
         }
     }
 
-    async function reloadVideo(startTime) {
+    async function reloadVideo(id, startTime) {
         // console.log("here")
         try {
-            const video = document.getElementById('video');
-            // console.log(video)
-            console.log("seeking to startTime " + startTime)
-            video.currentTime = startTime;
+            const video = document.getElementById(id);
+            if (video) {
+                // console.log(video)
+                console.log("seeking to startTime " + startTime)
+                video.currentTime = startTime;
+            }
         } catch (err) {
             console.log(err)
         }
     }
 
-    class Helpers {
-        static controller = new AbortController();
-
-        static async fetchObjectUrl(src) {
-            this.controller = new AbortController(); // not sure if we need this line
-            const signal = this.controller.signal;
-
-            return await fetch(src, {signal})
-                .then((response) => {
-                    if (response.ok) {
-                        return response;
-                    } else {
-                        return Promise.reject(response);
+    async function getVideoBuffered(id) {
+        try {
+            const video = document.getElementById(id);
+            if (video) {
+                const ret = [];
+                for (let index = 0; index < video.buffered.length; index++) {
+                    const start = Math.round(video.buffered.start(index));
+                    const end = Math.round(video.buffered.end(index));
+                    ret[index] = {
+                        index,
+                        start,
+                        end,
                     }
-                })
-                .then(async (response) => {
-                    const blob = await response.blob();
-                    console.log("dled");
-                    return URL.createObjectURL(blob);
-                })
-                .catch((response) => {
-                    let s = `response was null or empty`;
-                    if (response != null && response !== '') {
-                        s = `${response.status}|${response.statusText}|`;
-                        if (response.body != null) {
-                            response.json().then((json) => {
-                                s += json
-                            })
-                        }
-                    }
+                }
 
-                    console.log(s);
-                    return s;
-                });
-        }
-
-        static abortFetch() {
-            this.controller.abort();
-            console.log('fetchObjectUrl aborted!');
+                // console.log(JSON.stringify(ret))
+                return ret;
+            }
+        } catch (err) {
+            console.log(err)
         }
     }
 
-    window.Helpers = Helpers;
+    async function setVideoMuted(id, muted) {
+        try {
+            // console.log(`setVideoMuted ${id} ${muted}`)
+            const video = document.getElementById(id);
+            if (video != null){
+                video.muted = muted;
+            }
+        } catch (err) {
+            console.log(err)
+        }
+    }
 </script>
 
 </body>

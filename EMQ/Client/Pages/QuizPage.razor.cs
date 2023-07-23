@@ -4,12 +4,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components.Routing;
@@ -54,10 +54,7 @@ public partial class QuizPage
         PageState = new QuizPageState();
         Room = null;
         _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 1000]) { };
-        _currentSong = null;
         _correctAnswer = null;
-        PreloadCancellationSource = new CancellationTokenSource();
-        PreloadCancellationRegistration = new CancellationTokenRegistration();
     }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
@@ -89,17 +86,37 @@ public partial class QuizPage
 
     private readonly List<Song?> _clientSongs;
 
-    private Song? _currentSong { get; set; }
+    private Song? _currentSong
+    {
+        get
+        {
+            if (Room != null && Room.Quiz != null)
+            {
+                return _clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp);
+            }
+
+            return null;
+        }
+    }
+
+    private Song? _nextSong
+    {
+        get
+        {
+            if (Room != null && Room.Quiz != null)
+            {
+                return _clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp + 1);
+            }
+
+            return null;
+        }
+    }
 
     private Song? _correctAnswer { get; set; }
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
 
     private Dictionary<int, string> _playerGuesses { get; set; } = new();
-
-    private CancellationTokenSource PreloadCancellationSource { get; set; }
-
-    private CancellationTokenRegistration PreloadCancellationRegistration { get; set; }
 
     private GuessInputComponent _guessInputComponent = null!;
 
@@ -124,6 +141,25 @@ public partial class QuizPage
     private IDisposable? _locationChangingRegistration;
 
     public DateTime? QuizEndedTime { get; set; } = null;
+
+    public DateTime LastBufferCheck { get; set; }
+
+    public string VisibleVideoElementId
+    {
+        get
+        {
+            if (Room is null || Room.Quiz is null)
+            {
+                return "video1";
+            }
+
+            return Room.Quiz.QuizState.sp % 2 == 0 ? "video1" : "video2";
+        }
+    }
+
+    public string HiddenVideoElementId => VisibleVideoElementId == "video1" ? "video2" : "video1";
+
+    public DateTime LastSetVideoMuted { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,19 +202,20 @@ public partial class QuizPage
 
         await ClientState.Session.hubConnection!.SendAsync("SendPlayerJoinedQuiz");
 
-        bool success = false;
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
             Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp == -1)
         {
             Song? nextSong = await NextSong(0);
+            var startedAt = DateTime.UtcNow;
+
             if (nextSong is not null)
             {
-                var dledSong = await DlSong(nextSong);
-                if (!string.IsNullOrEmpty(dledSong.Data))
+                _clientSongs[0] = nextSong;
+                while (!nextSong.DoneBuffering &&
+                       DateTime.UtcNow - startedAt < TimeSpan.FromMilliseconds(room.QuizSettings.TimeoutMs))
                 {
-                    nextSong.Data = dledSong.Data;
-                    _clientSongs[0] = nextSong;
-                    success = true;
+                    await Preload2(nextSong);
+                    await Task.Delay(TimeSpan.FromMilliseconds(500));
                 }
             }
             else
@@ -195,7 +232,7 @@ public partial class QuizPage
 
         // we want to send this message regardless of whether the preloading was successful or not
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
-            $"OnInitializedAsync|{success}");
+            $"OnInitializedAsync");
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
     }
 
@@ -248,11 +285,12 @@ public partial class QuizPage
     {
         try
         {
-            _isDisposed = true;
+            if (_isDisposed)
+            {
+                return;
+            }
 
-            PreloadCancellationSource.Cancel();
-            PreloadCancellationRegistration.Unregister();
-            PreloadCancellationSource.Dispose();
+            _isDisposed = true;
 
             PageState.Timer.Stop();
             PageState.Timer.Elapsed -= OnTimedEvent;
@@ -285,10 +323,6 @@ public partial class QuizPage
                 };
                 return song;
             }
-        }
-        else
-        {
-            // todo
         }
 
         return null;
@@ -372,8 +406,6 @@ public partial class QuizPage
                             throw new ArgumentOutOfRangeException();
                     }
 
-                    // todo we're entering this multiple times in a row at results phase sometimes,
-                    // which causes the player to not preload at all (i think this is the cause at least)
                     if (phaseChanged || forcePhaseChange)
                     {
                         Console.WriteLine(
@@ -464,13 +496,6 @@ public partial class QuizPage
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
-                PreloadCancellationSource.Cancel();
-                PreloadCancellationRegistration.Unregister();
-                PreloadCancellationSource.Dispose();
-                PreloadCancellationSource = new CancellationTokenSource();
-                PreloadCancellationRegistration =
-                    PreloadCancellationSource.Token.Register(() => _jsRuntime.InvokeVoidAsync("Helpers.abortFetch"));
-
                 PageState.Guess = "";
                 await _guessInputComponent.ClearInputField();
 
@@ -522,7 +547,8 @@ public partial class QuizPage
                 {
                     if (_currentSong != null)
                     {
-                        await _jsRuntime.InvokeAsync<string>("reloadVideo", _currentSong.StartTime);
+                        await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId,
+                            _currentSong.StartTime);
                     }
                 }
 
@@ -546,9 +572,18 @@ public partial class QuizPage
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    PreloadCancellationSource.CancelAfter(
-                        TimeSpan.FromMilliseconds((float)Room.QuizSettings.TimeoutMs - 4000));
-                    await Preload(Room.Quiz!.QuizState.sp + 1);
+                    if (Room.Quiz!.QuizState.sp + 1 < _clientSongs.Count)
+                    {
+                        var song = await NextSong(Room.Quiz!.QuizState.sp + 1);
+                        if (song is not null)
+                        {
+                            _clientSongs[Room.Quiz!.QuizState.sp + 1] = song;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("no song to preload");
+                    }
                 }
 
                 break;
@@ -595,7 +630,52 @@ public partial class QuizPage
                 await _jsRuntime.InvokeVoidAsync("setVideoVolume", PageState.CurrentMasterVolume / 100f);
             }
 
+            await Preload2(_nextSong);
             StateHasChanged();
+        }
+    }
+
+    private async Task Preload2(Song? song)
+    {
+        if (Room?.Quiz == null || song is null || song.DoneBuffering)
+        {
+            return;
+        }
+
+        if (DateTime.UtcNow - LastBufferCheck > TimeSpan.FromMilliseconds(500) &&
+            (Room.Quiz.QuizState.Phase is QuizPhaseKind.Results ||
+             Room.Quiz.QuizState.sp == -1 && Room.Quiz.QuizState.Phase is QuizPhaseKind.Guess))
+        {
+            LastBufferCheck = DateTime.UtcNow;
+
+            var timeRanges = await _jsRuntime.InvokeAsync<JsTimeRange[]>("getVideoBuffered", HiddenVideoElementId);
+            // Console.WriteLine(JsonSerializer.Serialize(timeRanges, Utils.JsoIndented));
+
+            foreach (JsTimeRange timeRange in timeRanges)
+            {
+                bool foundStart = false;
+                bool foundEnd = false;
+                for (int i = timeRange.start; i <= timeRange.end; i++)
+                {
+                    if (i == song.StartTime)
+                    {
+                        foundStart = true;
+                    }
+
+                    if (i == song.StartTime + Room.QuizSettings.UI_GuessMs)
+                    {
+                        foundEnd = true;
+                    }
+                }
+
+                if (foundStart && foundEnd)
+                {
+                    song.DoneBuffering = true;
+                    await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
+                        ClientState.Session.Player.Id, $"Preload2|true");
+                    break;
+                }
+            }
         }
     }
 
@@ -604,167 +684,13 @@ public partial class QuizPage
         if (index < _clientSongs.Count)
         {
             PageState.DebugOut.Add("index: " + index);
-            // _clientState._debug.Add("cs: " + JsonSerializer.Serialize(_clientSongs));
-
-            if (_clientSongs.ElementAtOrDefault(index) is not null)
-            {
-                _currentSong = _clientSongs[index];
-            }
-
-            if (string.IsNullOrEmpty(_currentSong?.Data))
-            {
-                await LoadMissingSong(index);
-            }
-
-            await _jsRuntime.InvokeAsync<string>("reloadVideo", _currentSong!.StartTime);
-            // todo revoke previous object url
+            await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId, _currentSong!.StartTime);
         }
         else
         {
             _logger.LogError($"Attempted to swap to a song that does not exist -- probably desynchronized;" +
                              $" index: {index}, clientSongs.Count: {_clientSongs.Count}");
         }
-    }
-
-    private async Task LoadMissingSong(int index)
-    {
-        PageState.DebugOut.Add("Loading missing song");
-        var nextSong = await NextSong(index);
-        if (nextSong is not null)
-        {
-            _currentSong = new Song()
-            {
-                StartTime = nextSong.StartTime,
-                Links = new List<SongLink> { new() { Url = nextSong.Links.First().Url } }
-            };
-            StateHasChanged();
-        }
-        else
-        {
-            PageState.DebugOut.Add("Failed loading missing song");
-        }
-    }
-
-    private async Task Preload(int index)
-    {
-        if (index < _clientSongs.Count)
-        {
-            var song = await NextSong(index);
-            if (song is not null)
-            {
-                song.Data = (await DlSong(song)).Data;
-                _clientSongs[index] = song;
-
-                bool success = !string.IsNullOrEmpty(song.Data);
-                if (success)
-                {
-                    PageState.DebugOut.Add($"preloaded: {song.Links.First().Url}");
-                }
-                else
-                {
-                    PageState.DebugOut.Add($"preload cancelled: {song.Links.First().Url}");
-                }
-
-                // we want to send this message regardless of whether the preloading was successful or not
-                await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
-                    ClientState.Session.Player.Id, $"Preload|{success}");
-            }
-            else
-            {
-                _logger.LogWarning("preload failed");
-                // todo post error message to server
-            }
-        }
-        else
-        {
-            _logger.LogWarning("no song to preload");
-        }
-    }
-
-    private async Task<Song> DlSong(Song song)
-    {
-        var bufferingInfo = new BufferingInfo
-        {
-            PlayerId = ClientState.Session!.Player.Id,
-            RoomId = Room!.Id,
-            nextSp = Room!.Quiz!.QuizState.sp + 1,
-            Url = song.Links.First().Url,
-            StartjsTime = DateTime.UtcNow
-        };
-        var ret = new Song { Links = song.Links, };
-
-        try
-        {
-            PageState.DebugOut.Add($"downloading {song.Links.First().Url}");
-            _logger.LogInformation($"Startjs {song.Links.First().Url}");
-
-            int startSp = Room!.Quiz!.QuizState.sp;
-            var task = _jsRuntime.InvokeAsync<string?>("Helpers.fetchObjectUrl", PreloadCancellationSource.Token,
-                song.Links.First().Url);
-            while (!task.IsCompleted && !task.IsCanceled)
-            {
-                await Task.Delay(1000);
-
-                await SyncWithServer();
-                // Console.WriteLine($"sps {Room!.Quiz!.QuizState.sp} {startSp}");
-                if (Room!.Quiz!.QuizState.sp > startSp)
-                {
-                    bufferingInfo.CancellationReason = "Canceling preload due to sp change";
-                    Console.WriteLine("Canceling preload due to sp change");
-                    PreloadCancellationSource.Cancel();
-                }
-
-                if (Room!.Quiz!.QuizState.QuizStatus is QuizStatus.Canceled or QuizStatus.Ended)
-                {
-                    bufferingInfo.CancellationReason = "Canceling preload due to quiz canceled or ended";
-                    Console.WriteLine("Canceling preload due to quiz canceled or ended");
-                    PreloadCancellationSource.Cancel();
-                }
-
-                // Console.WriteLine(Room!.Quiz!.QuizState.ExtraInfo);
-            }
-
-            bufferingInfo.EndjsTime = DateTime.UtcNow;
-            _logger.LogInformation($"Endjs success: {task.IsCompletedSuccessfully}");
-
-            // data is either an ObjectUrl or a string with error details
-            string? data = task.Result;
-            bufferingInfo.Data = data;
-
-            if (task.IsCompletedSuccessfully)
-            {
-                ret.Data = data;
-                bufferingInfo.Success = true;
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(bufferingInfo.CancellationReason))
-                {
-                    bufferingInfo.CancellationReason = PreloadCancellationRegistration.Token.IsCancellationRequested
-                        ? "CancellationRequested"
-                        : "task wasn't completed successfully";
-                }
-            }
-
-            PreloadCancellationRegistration.Unregister();
-        }
-        catch (Exception e)
-        {
-            bufferingInfo.CancellationReason = e.ToString();
-            _logger.LogWarning($"download cancelled {e}");
-        }
-
-        // Console.WriteLine(JsonSerializer.Serialize(bufferingInfo, Utils.JsoIndented));
-        if (!IsSpectator && (!bufferingInfo.Success || bufferingInfo.TotaljsTime < TimeSpan.FromSeconds(2) ||
-            bufferingInfo.Data is null || !bufferingInfo.Data.StartsWith("blob:")))
-        {
-            HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/PostBufferingInfo", bufferingInfo);
-            if (res.IsSuccessStatusCode)
-            {
-            }
-        }
-
-        return ret;
     }
 
     private async Task SendTogglePause()
