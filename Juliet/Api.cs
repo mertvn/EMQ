@@ -20,7 +20,8 @@ public static class Api
     private static HttpClient Client { get; } = new(ThrottleHandler) { BaseAddress = new Uri(Constants.VndbApiUrl), };
 
     // todo: return IResult<T> type with success, message, result properties
-    private static async Task<T?> Send<T>(HttpRequestMessage req, CancellationToken? cancellationToken = null) where T : class
+    private static async Task<T?> Send<T>(HttpRequestMessage req, CancellationToken? cancellationToken = null)
+        where T : class
     {
         try
         {
@@ -50,7 +51,8 @@ public static class Api
         }
     }
 
-    public static async Task<Dictionary<string, User>?> GET_user(Param param, CancellationToken? cancellationToken = null)
+    public static async Task<Dictionary<string, User>?> GET_user(Param param,
+        CancellationToken? cancellationToken = null)
     {
         if (string.IsNullOrWhiteSpace(param.User))
         {
@@ -81,7 +83,8 @@ public static class Api
         return res;
     }
 
-    public static async Task<ResGET_ulist_labels?> GET_ulist_labels(Param param, CancellationToken? cancellationToken = null)
+    public static async Task<ResGET_ulist_labels?> GET_ulist_labels(Param param,
+        CancellationToken? cancellationToken = null)
     {
         if (string.IsNullOrWhiteSpace(param.User))
         {
