@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
@@ -178,6 +179,15 @@ app.UseStaticFiles(new StaticFileOptions
         };
     }
 });
+
+if (Constants.UseLocalSongFilesForDevelopment)
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(@"K:\emq\emqsongsbackup"),
+        RequestPath = "/emqsongsbackup"
+    });
+}
 
 app.UseRouting();
 

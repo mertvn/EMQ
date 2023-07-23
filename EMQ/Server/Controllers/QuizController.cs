@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,6 +116,11 @@ public class QuizController : ControllerBase
                         if (string.IsNullOrWhiteSpace(url))
                         {
                             url = song.Links.First().Url;
+                        }
+
+                        if (Constants.UseLocalSongFilesForDevelopment)
+                        {
+                            url = url.Replace("https://files.catbox.moe/","emqsongsbackup/");
                         }
 
                         return new ResNextSong(req.SongIndex, url, song.StartTime);

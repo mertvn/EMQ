@@ -4,6 +4,9 @@ namespace EMQ.Shared.Core;
 
 public static class Constants
 {
+    public static bool UseLocalSongFilesForDevelopment { get; set; } =
+        true && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
     public static string ImportDateVndb { get; set; } = "2023-07-23";
 
     public const string ImportDateEgs = "2023-04-20";
