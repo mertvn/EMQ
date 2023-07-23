@@ -171,9 +171,9 @@
         window.location.href = input;
     }
 
-    async function setVideoVolume(volume) {
+    async function setVideoVolume(id, volume) {
         try {
-            const video = document.getElementById('video');
+            const video = document.getElementById(id);
             if (video) {
                 video.volume = volume;
                 // console.log("set video volume to " + volume)

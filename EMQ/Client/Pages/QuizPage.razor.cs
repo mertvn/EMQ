@@ -628,7 +628,8 @@ public partial class QuizPage
                 PageState.CurrentMasterVolume != ClientState.Session.Player.Preferences.VolumeMaster)
             {
                 PageState.CurrentMasterVolume = ClientState.Session.Player.Preferences.VolumeMaster;
-                await _jsRuntime.InvokeVoidAsync("setVideoVolume", PageState.CurrentMasterVolume / 100f);
+                await _jsRuntime.InvokeVoidAsync("setVideoVolume", VisibleVideoElementId,
+                    PageState.CurrentMasterVolume / 100f);
             }
 
             bool _ = await Preload2(_nextSong);

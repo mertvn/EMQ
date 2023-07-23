@@ -124,7 +124,7 @@ const string csp = @"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-ZGdh7EDuh0G5fsHKmQ/BAs30s1pj+Xpo0Ban/RqQZLQ='
+                          'sha256-PEWbiIHhO1ky9ebNF+s/VcvPmNW2891qrVb4BzgNVQM='
                           ;
                style-src 'self'
                          'unsafe-inline'
