@@ -307,6 +307,7 @@
 
                 <p>Your API token cannot be used for this, so any query with private labels will return no results.</p>
                 <p>Using this filter will also override VNDB label settings for all players.</p>
+                <p>DO NOT USE THIS FILTER WITH A QUERY THAT RETURNS MORE THAN 5000 RESULTS AS YOU WILL JUST GET THROTTLED BY THE VNDB API UNTIL THE END OF TIME.</p>
                 <div>
                     <InputText
                         @bind-Value="@ClientQuizSettings.Filters.VndbAdvsearchFilter"

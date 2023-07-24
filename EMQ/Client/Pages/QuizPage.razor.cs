@@ -698,6 +698,20 @@ public partial class QuizPage
         if (index < _clientSongs.Count)
         {
             PageState.DebugOut.Add("index: " + index);
+
+            if (VisibleVideoElementId == "video1")
+            {
+                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+            }
+            else
+            {
+                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+            }
+
             await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId, _currentSong!.StartTime);
         }
         else

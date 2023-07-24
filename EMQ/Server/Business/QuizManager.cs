@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Server.Db;
@@ -444,6 +445,7 @@ public class QuizManager
 
         if (!string.IsNullOrWhiteSpace(Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter))
         {
+            Quiz.Room.Log($"VNDB search filter is being processed.", -1, true);
             bool success = false;
             var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(15));
