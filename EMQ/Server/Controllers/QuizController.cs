@@ -211,14 +211,14 @@ public class QuizController : ControllerBase
                 _logger.LogInformation($"Removed player {player.Id} from room " + oldRoomPlayer.Id);
                 oldRoomPlayer.RemovePlayer(player);
                 oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
-                room.Log($"{player.Username} left the room.", -1, true);
+                oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
             }
             else if (oldRoomSpec is not null)
             {
                 _logger.LogInformation($"Removed spectator {player.Id} from room " + oldRoomSpec.Id);
                 oldRoomSpec.RemoveSpectator(player);
                 oldRoomSpec.AllConnectionIds.Remove(player.Id, out _);
-                room.Log($"{player.Username} left the room.", -1, true);
+                oldRoomSpec.Log($"{player.Username} left the room.", -1, true);
             }
 
             if (room.CanJoinDirectly)
