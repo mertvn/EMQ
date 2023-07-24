@@ -712,7 +712,6 @@ public partial class QuizPage
         if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendTogglePause");
-            await SyncWithServer();
         }
     }
 
@@ -721,7 +720,6 @@ public partial class QuizPage
         if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
-            await SyncWithServer();
         }
     }
 
@@ -747,7 +745,6 @@ public partial class QuizPage
                 {
                     // todo dedup
                     await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
-                    StateHasChanged();
                 }
             }
         }

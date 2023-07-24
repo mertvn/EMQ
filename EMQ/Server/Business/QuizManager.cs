@@ -32,6 +32,8 @@ public class QuizManager
 
     private Dictionary<int, SongStats> SongStatsDict { get; set; } = new();
 
+    public DateTime LastUpdate { get; set; }
+
     private void SetTimer()
     {
         if (!Quiz.IsDisposed)
@@ -50,6 +52,14 @@ public class QuizManager
     {
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
+            if (DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
+            {
+                // Console.WriteLine($"sending update at {DateTime.UtcNow}");
+                LastUpdate = DateTime.UtcNow;
+                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+            }
+
             if (Quiz.QuizState.RemainingMs >= 0)
             {
                 Quiz.QuizState.RemainingMs -= Quiz.TickRate;
