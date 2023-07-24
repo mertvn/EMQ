@@ -53,7 +53,7 @@ public class QuizManager
     {
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
-            if (DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
+            if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
             {
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
                 LastUpdate = DateTime.UtcNow;
