@@ -901,7 +901,8 @@ public class QuizManager
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values.Where(x => x != connectionId))
             .SendAsync("ReceiveUpdatePlayerLootingInfo",
                 player.Id,
-                player.LootingInfo with { Inventory = new List<Treasure>() }
+                player.LootingInfo with { Inventory = new List<Treasure>() },
+                true
             );
     }
 
@@ -936,7 +937,7 @@ public class QuizManager
                             .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
                         await HubContext.Clients.Clients(session.ConnectionId!)
-                            .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
+                            .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo, false);
                     }
                 }
                 else
@@ -986,7 +987,7 @@ public class QuizManager
                 .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
             await HubContext.Clients.Clients(session.ConnectionId!)
-                .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo);
+                .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo, false);
         }
     }
 
@@ -1037,14 +1038,16 @@ public class QuizManager
                 await HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdatePlayerLootingInfo",
                         player.Id,
-                        player.LootingInfo
+                        player.LootingInfo,
+                        true
                     );
 
                 await HubContext.Clients
                     .Clients(Quiz.Room.AllConnectionIds.Values.Where(x => x != session.ConnectionId))
                     .SendAsync("ReceiveUpdatePlayerLootingInfo",
                         player.Id,
-                        player.LootingInfo with { Inventory = new List<Treasure>() }
+                        player.LootingInfo with { Inventory = new List<Treasure>() },
+                        true
                     );
             }
             else

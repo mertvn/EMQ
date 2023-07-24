@@ -17,10 +17,11 @@ public partial class PyramidPage
         _handlers = new()
         {
             {
-                "ReceiveUpdatePlayerLootingInfo", (new Type[] { typeof(int), typeof(PlayerLootingInfo), },
+                "ReceiveUpdatePlayerLootingInfo", (new Type[] { typeof(int), typeof(PlayerLootingInfo), typeof(bool) },
                     async param =>
                     {
-                        await OnReceiveUpdatePlayerLootingInfo((int)param[0]!, (PlayerLootingInfo)param[1]!);
+                        await OnReceiveUpdatePlayerLootingInfo((int)param[0]!, (PlayerLootingInfo)param[1]!,
+                            (bool)param[2]!);
                     })
             },
             {
@@ -96,27 +97,31 @@ public partial class PyramidPage
         _treasureRoomComponentRef.CallStateHasChanged(Room);
     }
 
-    private async Task OnReceiveUpdatePlayerLootingInfo(int playerId, PlayerLootingInfo playerLootingInfo)
+    private async Task OnReceiveUpdatePlayerLootingInfo(int playerId, PlayerLootingInfo playerLootingInfo,
+        bool shouldUpdatePosition)
     {
         if (Room != null)
         {
             Player player = Room.Players.Single(x => x.Id == playerId);
-            player.LootingInfo = playerLootingInfo;
 
-            // player.LootingInfo.TreasureRoomId = playerLootingInfo.TreasureRoomId;
-
-            // if (playerId == ClientState.Session!.Player.Id)
-            // {
-            //     player.LootingInfo.Inventory = playerLootingInfo.Inventory;
-            // }
-            // else
-            // {
-            //     player.LootingInfo.X = playerLootingInfo.X;
-            //     player.LootingInfo.Y = playerLootingInfo.Y;
-            // }
+            player.LootingInfo.TreasureRoomCoords = playerLootingInfo.TreasureRoomCoords;
+            if (playerId == ClientState.Session!.Player.Id)
+            {
+                player.LootingInfo.Inventory = playerLootingInfo.Inventory;
+                if (shouldUpdatePosition)
+                {
+                    player.LootingInfo.X = playerLootingInfo.X;
+                    player.LootingInfo.Y = playerLootingInfo.Y;
+                }
+            }
+            else
+            {
+                // we are not updating inventory here because it should be private (server shouldn't sending it anyways but just in case)
+                player.LootingInfo.X = playerLootingInfo.X;
+                player.LootingInfo.Y = playerLootingInfo.Y;
+            }
 
             StateHasChanged();
-            // _treasureRoomComponentRef.CallStateHasChanged(Room);
         }
     }
 
