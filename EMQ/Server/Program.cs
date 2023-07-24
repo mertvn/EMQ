@@ -85,6 +85,7 @@ builder.Services.AddHsts(options =>
 });
 
 builder.Services.AddHostedService<CleanupService>();
+builder.Services.AddHostedService<OpportunisticGcService>();
 
 var app = builder.Build();
 app.UseResponseCompression();
