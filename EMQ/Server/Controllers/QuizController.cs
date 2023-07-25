@@ -390,6 +390,11 @@ public class QuizController : ControllerBase
             {
                 if (req.Contents.Length <= Constants.MaxChatMessageLength)
                 {
+                    if (room.Chat.Count > 50)
+                    {
+                        room.Chat.TryDequeue(out _);
+                    }
+
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
                     // todo we should only need 1 method here after a SignalR refactor
