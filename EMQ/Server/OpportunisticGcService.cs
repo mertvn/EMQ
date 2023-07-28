@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
