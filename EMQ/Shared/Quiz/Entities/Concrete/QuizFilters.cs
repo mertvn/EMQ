@@ -14,6 +14,10 @@ public class QuizFilters
 
     public string VndbAdvsearchFilter { get; set; } = "";
 
+    public Dictionary<Language, bool> VNOLangs { get; set; } =
+        Enum.GetValues<Language>()
+            .ToDictionary(x => x, y => y == Language.ja);
+
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
         Enum.GetValues<SongSourceSongType>()
             .Where(x => x is SongSourceSongType.OP or SongSourceSongType.ED or SongSourceSongType.Insert)

@@ -796,6 +796,17 @@ public static class DbManager
                     queryMusicIds.Append($")");
                 }
 
+                if (!filters.VNOLangs.ContainsKey(Language.allLanguages) || !filters.VNOLangs[Language.allLanguages])
+                {
+                    var langs = filters.VNOLangs.Where(x => x.Value)
+                        .Select(x => x.Key.GetDescription() ?? x.Key.ToString()).ToList();
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append(
+                        $"ms.language_original = ANY({langs})");
+                    queryMusicIds.Append($")");
+                }
+
                 if (filters.StartDateFilter != DateTime.Parse(Constants.QFDateMin) ||
                     filters.EndDateFilter != DateTime.Parse(Constants.QFDateMax))
                 {
@@ -1059,8 +1070,8 @@ public static class DbManager
         const string sqlAutocompleteMst =
             @"SELECT DISTINCT music_source_id AS msId, mst.latin_title AS mstLatinTitle, COALESCE(mst.non_latin_title, '') AS mstNonLatinTitle,
                 '' AS mstLatinTitleNormalized, '' AS mstNonLatinTitleNormalized
-            FROM music_source_title mst where language IN ('ja','en','tr')
-            "; // #blamerampaa
+            FROM music_source_title mst
+            ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {

@@ -110,6 +110,17 @@
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
+                            <h5>VN original language</h5>
+
+                            @foreach (var key in ClientQuizSettings.Filters.VNOLangs.Keys.ToList())
+                            {
+                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.VNOLangs[key])" style="margin: 5px"/>
+                                <label for="@key">@key.GetDisplayName()</label>
+                                <br/>
+                            }
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
                             <h5>VN release date range</h5>
 
                             <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">

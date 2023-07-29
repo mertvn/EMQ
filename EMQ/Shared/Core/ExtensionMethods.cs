@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -84,6 +85,31 @@ public static class ExtensionMethods
                         typeof(DescriptionAttribute)) is DescriptionAttribute attr)
                 {
                     return attr.Description;
+                }
+                else
+                {
+                    return name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Falls back to name
+    public static string? GetDisplayName(this Enum value)
+    {
+        Type type = value.GetType();
+        string? name = Enum.GetName(type, value);
+        if (name != null)
+        {
+            FieldInfo? field = type.GetField(name);
+            if (field != null)
+            {
+                if (Attribute.GetCustomAttribute(field,
+                        typeof(DisplayAttribute)) is DisplayAttribute attr)
+                {
+                    return attr.Name;
                 }
                 else
                 {

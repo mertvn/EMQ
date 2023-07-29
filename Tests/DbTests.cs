@@ -338,6 +338,21 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_SongSourceOLangFilter_ko()
+    {
+        Dictionary<Language, bool> validSongSourceOLangs =
+            new() { { Language.ko, true } };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { VNOLangs = validSongSourceOLangs }, printSql: true);
+
+        Assert.That(songs.All(song =>
+            song.Sources.All(x => x.LanguageOriginal == "ko")));
+        Assert.That(songs.Count < 100);
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_DateFilter()
     {
         var startDate = new DateTime(1990, 1, 1);
