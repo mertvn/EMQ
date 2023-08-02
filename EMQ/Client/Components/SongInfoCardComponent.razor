@@ -3,13 +3,13 @@
 
 @if (Song != null)
 {
-    @if (Song.Links.Any())
+    @if (ClientState.Session != null && Song.Links.Any())
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
     }
 
     <div class="songInfoCard card">
-        @if (Song.Links.Any())
+        @if (ClientState.Session != null && Song.Links.Any())
         {
             <span class="link-danger"
                   style="position: absolute; right: 10px; top: 5px; cursor: pointer;"

@@ -26,12 +26,12 @@ public partial class SongReportComponent
 
     public async Task Onclick_Report()
     {
-        if (Song?.Links.Any() ?? false)
+        if (ClientState.Session != null && (Song?.Links.Any() ?? false))
         {
             await _modalRef.Show();
             ClientSongReport = new SongReport
             {
-                music_id = Song.Id, submitted_by = ClientState.Session!.Player.Username, Song = Song,
+                music_id = Song.Id, submitted_by = ClientState.Session.Player.Username, Song = Song,
             };
             SelectedUrls = Song.Links.ToDictionary(x => x.Url, _ => false);
         }
