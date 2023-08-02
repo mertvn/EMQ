@@ -1,5 +1,6 @@
 ﻿@page "/ModPage"
 @using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core
 @inject HttpClient _client
 @inject ILogger<ModPage> _logger
 @inject ClientUtils _clientUtils
@@ -13,3 +14,7 @@
 <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
     Run GC
 </button>
+
+<pre>
+@JsonSerializer.Serialize(SongReports, Utils.JsoIndented)
+</pre>

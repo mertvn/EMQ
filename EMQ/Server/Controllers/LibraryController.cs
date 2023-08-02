@@ -74,11 +74,32 @@ public class LibraryController : ControllerBase
     }
 
     [HttpPost]
+    [Route("SongReport")]
+    public async Task<ActionResult> SongReport([FromBody] ReqSongReport req)
+    {
+        foreach ((string? url, bool _) in req.SelectedUrls.Where(x => x.Value))
+        {
+            req.SongReport.url = url;
+            int _ = await DbManager.InsertSongReport(req.SongReport);
+        }
+
+        return Ok();
+    }
+
+    [HttpPost]
     [Route("FindRQs")]
     public async Task<IEnumerable<RQ>> FindRQs([FromBody] ReqFindRQs req)
     {
         var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate);
         return rqs;
+    }
+
+    [HttpPost]
+    [Route("FindSongReports")]
+    public async Task<IEnumerable<SongReport>> FindRQs([FromBody] ReqFindSongReports req)
+    {
+        var songReports = await DbManager.FindSongReports(req.StartDate, req.EndDate);
+        return songReports;
     }
 
     [HttpPost]

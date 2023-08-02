@@ -186,7 +186,13 @@ public class EntryPoints
     [Test]
     public async Task FindRQs()
     {
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+    }
+
+    [Test]
+    public async Task FindSongReports()
+    {
+        var _ = await DbManager.FindSongReports(DateTime.MinValue, DateTime.MaxValue);
     }
 
     [Test, Explicit]

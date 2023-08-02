@@ -1370,6 +1370,40 @@ WHERE id = {mId};
         }
     }
 
+    public static async Task<int> InsertSongReport(SongReport songReport)
+    {
+        try
+        {
+            int reportId;
+            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+            {
+                var report = new Report
+                {
+                    music_id = songReport.music_id,
+                    url = songReport.url,
+                    report_kind = (int)songReport.report_kind,
+                    submitted_by = songReport.submitted_by,
+                    submitted_on = DateTime.UtcNow,
+                    status = (int)ReviewQueueStatus.Pending,
+                    note_user = songReport.note_user,
+                };
+
+                reportId = await connection.InsertAsync(report);
+                if (reportId > 0)
+                {
+                    Console.WriteLine($"Inserted Report: " + JsonSerializer.Serialize(report, Utils.Jso));
+                }
+            }
+
+            return reportId;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return -1;
+        }
+    }
+
     public static async Task<string> ExportSong()
     {
         var songs = await GetRandomSongs(int.MaxValue, true);
@@ -1541,6 +1575,48 @@ WHERE id = {mId};
         }
 
         return rqs.OrderBy(x => x.id);
+    }
+
+    public static async Task<IEnumerable<SongReport>> FindSongReports(DateTime startDate, DateTime endDate)
+    {
+        var songReports = new List<SongReport>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            // todo date filter
+            var reports = (await connection.GetAllAsync<Report>()).ToList();
+            foreach (Report report in reports)
+            {
+                if (!CachedSongs.TryGetValue(report.music_id, out var song))
+                {
+                    song = (await SelectSongs(new Song { Id = report.music_id })).Single();
+                    CachedSongs[report.music_id] = song;
+                }
+
+                var songReport = new SongReport()
+                {
+                    id = report.id,
+                    music_id = report.music_id,
+                    url = report.url,
+                    report_kind = (SongReportKind)report.report_kind,
+                    submitted_by = report.submitted_by,
+                    submitted_on = report.submitted_on,
+                    status = (ReviewQueueStatus)report.status,
+                    note_mod = report.note_mod,
+                    note_user = report.note_user,
+                    Song = song,
+                };
+
+                // todo
+                foreach (SongSource songSource in songReport.Song.Sources)
+                {
+                    songSource.Categories = new List<SongSourceCategory>();
+                }
+
+                songReports.Add(songReport);
+            }
+        }
+
+        return songReports.OrderBy(x => x.id);
     }
 
     public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus,

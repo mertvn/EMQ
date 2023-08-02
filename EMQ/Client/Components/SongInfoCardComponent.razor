@@ -3,7 +3,21 @@
 
 @if (Song != null)
 {
+    @if (Song.Links.Any())
+    {
+        <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
+    }
+
     <div class="songInfoCard card">
+        @if (Song.Links.Any())
+        {
+            <span class="link-danger"
+                  style="position: absolute; right: 10px; top: 5px; cursor: pointer;"
+                  @onclick="@(async () => await _songReportComponent.Onclick_Report())">
+                Report
+            </span>
+        }
+
         <div class="songInfoCardBody card-body">
             <div class="songInfo">
                 <div>

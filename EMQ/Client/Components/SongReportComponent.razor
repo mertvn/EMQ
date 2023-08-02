@@ -1,0 +1,69 @@
+﻿@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
+@using System.Collections.Generic
+@using EMQ.Shared.Library.Entities.Concrete
+@inject ILogger<SongReportComponent> _logger
+@inject ClientUtils _clientUtils
+@inject HttpClient _client
+
+@* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
+<Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Default">
+        <Blazorise.ModalHeader>
+            <Blazorise.ModalTitle>Report song link</Blazorise.ModalTitle>
+        </Blazorise.ModalHeader>
+        <Blazorise.ModalBody>
+            @if (ClientState.Session != null)
+            {
+                <div id="collapseSongReport">
+                    <EditForm Model="@ClientSongReport" OnValidSubmit="@(() => SendSongReportReq(ClientSongReport, SelectedUrls))">
+                        <DataAnnotationsValidator/>
+                        <ValidationSummary/>
+
+                        @* <p>Do not report for bad audio quality unless you're certain that a better version exists.</p> *@
+                        <InputSelect id="SongSelectionKind" @bind-Value="ClientSongReport.report_kind" style="margin: 5px">
+                            @foreach (SongReportKind songReportKind in Enum.GetValues<SongReportKind>())
+                            {
+                                <option value="@songReportKind">@songReportKind.GetDisplayName()</option>
+                            }
+                        </InputSelect>
+                        <label for="SongSelectionKind">Report kind</label>
+                        <br/>
+
+                        <div style="margin: 5px; padding: 5px;">
+                            <span>Please select the URLs you want to report</span>
+                            <br/>
+                            @foreach (var songLink in ClientSongReport.Song.Links)
+                            {
+                                <input type="checkbox" id="@songLink.Url" class="form-check-input" @bind="@(SelectedUrls[songLink.Url])" style="margin: 5px"/>
+                                <label for="@songLink.Url">
+                                    <a href="@songLink.Url" target="_blank">
+                                        @songLink.Url
+                                    </a>
+                                </label>
+                                <br/>
+                            }
+                        </div>
+
+                        <textarea
+                         id="note_user"
+                         rows="4" cols="55" maxlength="780" placeholder="Enter anything else you want to add here"
+                         @bind="ClientSongReport.note_user"></textarea>
+
+                    </EditForm>
+                </div>
+            }
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                Close
+            </button>
+            <button type="button" class="btn btn-primary"
+                    @onclick="@(async () => { if (ClientState.Session != null) { await SendSongReportReq(ClientSongReport, SelectedUrls); } })">
+                Submit
+            </button>
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>
