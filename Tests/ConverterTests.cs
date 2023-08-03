@@ -1,20 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using EMQ.Client;
-using EMQ.Server;
-using EMQ.Server.Business;
 using EMQ.Server.Db;
-using EMQ.Shared.Core;
-using EMQ.Shared.Quiz.Entities.Concrete;
 using NUnit.Framework;
 
 namespace Tests;
 
-[Explicit]
 public class ConverterTests
 {
     [SetUp]

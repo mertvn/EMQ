@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -141,9 +141,9 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int start = 570;
-        const int end = 57777;
-        for (int i = start; i <= end; i++)
+        const int s = 46;
+        const int e = 48;
+        for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
         }
@@ -152,9 +152,9 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        const int start = 3;
-        const int end = 3;
-        for (int i = start; i <= end; i++)
+        const int s = 21;
+        const int e = 21;
+        for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "Bad audio");
         }
@@ -181,18 +181,6 @@ public class EntryPoints
                 }
             }
         }
-    }
-
-    [Test]
-    public async Task FindRQs()
-    {
-        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
-    }
-
-    [Test]
-    public async Task FindSongReports()
-    {
-        var _ = await DbManager.FindSongReports(DateTime.MinValue, DateTime.MaxValue);
     }
 
     [Test, Explicit]

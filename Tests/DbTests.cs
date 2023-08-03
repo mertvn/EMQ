@@ -620,4 +620,16 @@ public class DbTests
         var filtered = SongLink.FilterSongLinks(song.Links);
         Assert.That(filtered.Count == 1);
     }
+
+    [Test]
+    public async Task FindRQs()
+    {
+        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+    }
+
+    [Test]
+    public async Task FindSongReports()
+    {
+        var _ = await DbManager.FindSongReports(DateTime.MinValue, DateTime.MaxValue);
+    }
 }
