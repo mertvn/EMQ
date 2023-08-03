@@ -33,7 +33,7 @@ public partial class SongReportComponent
             {
                 music_id = Song.Id, submitted_by = ClientState.Session.Player.Username, Song = Song,
             };
-            SelectedUrls = Song.Links.ToDictionary(x => x.Url, _ => false);
+            SelectedUrls = Song.Links.ToDictionary(x => x.Url, _ => Song.Links.Count == 1);
         }
     }
 
