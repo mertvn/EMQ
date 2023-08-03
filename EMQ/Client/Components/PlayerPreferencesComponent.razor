@@ -87,7 +87,8 @@
                                         <h5> Label settings</h5>
                                         @if (ClientState.Session.VndbInfo.Labels is not null)
                                         {
-                                            <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded. </p>
+                                            <p> You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded.
+                                                You might get throttled by the VNDB API if you select a label that contains more than a few thousand VNs. </p>
 
                                             <button type="button" class="btn btn-primary" @onclick="@(() => FetchLabels(ClientState.Session.VndbInfo))">
                                                 Fetch labels
@@ -124,7 +125,7 @@
                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");">
 
                                                                     <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Maybe
+                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Ignore
                                                                 </label>
 
                                                                 <label class="btn btn-outline-primary"

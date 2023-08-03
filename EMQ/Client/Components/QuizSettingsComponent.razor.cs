@@ -49,10 +49,9 @@ public partial class QuizSettingsComponent
     {
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            // todo important room password
             HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
                 new ReqChangeRoomSettings(
-                    ClientState.Session.Token, Room.Id, "", clientQuizSettings));
+                    ClientState.Session.Token, Room.Id, clientQuizSettings));
 
             if (res1.IsSuccessStatusCode)
             {
