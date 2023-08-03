@@ -15,4 +15,13 @@ public enum FieldPOST_vn
 
     [Description("released")]
     Released,
+
+    [Description("developers.id")]
+    DevelopersId,
+
+    [Description("developers.name")]
+    DevelopersName,
+
+    [Description("developers.original")]
+    DevelopersOriginal,
 }

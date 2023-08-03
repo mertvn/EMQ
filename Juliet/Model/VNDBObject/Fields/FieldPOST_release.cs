@@ -25,6 +25,9 @@ public enum FieldPOST_release
     [Description("producers.publisher")]
     ProducersPublisher,
 
+    [Description("producers.id")]
+    ProducersId,
+
     [Description("producers.name")]
     ProducersName,
 

@@ -180,6 +180,20 @@ public class JulietTests
     }
 
     [Test]
+    public async Task Test_POST_vn_Developers()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.DevelopersName },
+            Filters = new Predicate(FilterField.Id, FilterOperator.Equal, "v7")
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Developers.First().Name == "TYPE-MOON");
+    }
+
+    [Test]
     public async Task Test_POST_release_RawFilters()
     {
         var res = await Juliet.Api.POST_release(new ParamPOST_release()

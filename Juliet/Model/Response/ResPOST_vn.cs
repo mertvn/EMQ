@@ -16,4 +16,7 @@ public class ResPOST_vn
 
     [JsonPropertyName("released")]
     public string? Released { get; set; }
+
+    [JsonPropertyName("developers")]
+    public List<Producer> Developers { get; set; } = new();
 }
