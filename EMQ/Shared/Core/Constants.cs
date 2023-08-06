@@ -13,6 +13,8 @@ public static class Constants
 
     public const int MaxChatMessageLength = 300;
 
+    public const int MaxGuessLength = 190;
+
     public const int LinkToleranceSeconds = 17;
 
     public const string QFDateMin = "1990-01-01";

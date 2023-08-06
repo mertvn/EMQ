@@ -654,7 +654,7 @@ public class QuizManager
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
             {
-                player.Guess = guess;
+                player.Guess = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
                 player.PlayerStatus = PlayerStatus.Guessed;
 
                 if (player.FirstGuessMs <= 0)
