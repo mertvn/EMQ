@@ -17,8 +17,8 @@ public static class ServerUtils
 
     public static void RunAggressiveGc()
     {
-        Console.WriteLine("Running GC");
-        long before = GC.GetTotalMemory(false);
+        // Console.WriteLine("Running GC");
+        // long before = GC.GetTotalMemory(false);
 
         // yes, we really need to do this twice
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
@@ -26,7 +26,7 @@ public static class ServerUtils
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
 
-        long after = GC.GetTotalMemory(false);
-        Console.WriteLine($"GC freed {(before - after) / 1000 / 1000} MB");
+        // long after = GC.GetTotalMemory(false);
+        // Console.WriteLine($"GC freed {(before - after) / 1000 / 1000} MB");
     }
 }
