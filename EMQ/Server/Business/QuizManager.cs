@@ -647,13 +647,14 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendGuessChanged(string connectionId, int playerId, string guess)
+    public async Task OnSendGuessChanged(string connectionId, int playerId, string? guess)
     {
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
         {
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
             {
+                guess ??= "";
                 player.Guess = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
                 player.PlayerStatus = PlayerStatus.Guessed;
 
