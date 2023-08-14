@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -95,6 +95,12 @@ public class EntryPoints
     public async Task GenerateReviewQueue()
     {
         await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());
+    }
+
+    [Test, Explicit]
+    public async Task GenerateReport()
+    {
+        await File.WriteAllTextAsync("Report.json", await DbManager.ExportReport());
     }
 
     [Test, Explicit]

@@ -3,7 +3,7 @@
 namespace EMQ.Server.Db.Migrations;
 
 [Migration(20230802_000)]
-public class AddTableReports : Migration
+public class AddTableReport : Migration
 {
     private string tableName = "report";
 

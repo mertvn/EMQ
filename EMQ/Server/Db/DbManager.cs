@@ -1450,6 +1450,15 @@ WHERE id = {mId};
         }
     }
 
+    public static async Task<string> ExportReport()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var reviewQueue = (await connection.GetAllAsync<Report>()).OrderBy(x => x.id).ToList();
+            return JsonSerializer.Serialize(reviewQueue, Utils.JsoIndented);
+        }
+    }
+
     public static async Task ImportSongLite(List<SongLite> songLites)
     {
         const string sqlMIdFromSongLite = @"
