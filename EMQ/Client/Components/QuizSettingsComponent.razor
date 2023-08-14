@@ -109,6 +109,28 @@
                             }
                         </div>
 
+                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 225px;">
+                            <h5>Song difficulty</h5>
+
+                            @foreach (var key in ClientQuizSettings.Filters.SongDifficultyLevelFilters.Keys.ToList())
+                            {
+                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongDifficultyLevelFilters[key])" style="margin: 5px"/>
+                                <label for="@key">
+                                    <span style="float: left"> @key.GetDisplayName()</span>
+                                </label>
+                                @if (key == SongDifficultyLevel.Impossible)
+                                {
+                                    <span style="float: right">0%</span>
+                                }
+                                else
+                                {
+                                    <span style="float: right"> @((int)key.GetRange()!.Minimum)% - @((int)key.GetRange()!.Maximum)%</span>
+                                }
+
+                                <br/>
+                            }
+                        </div>
+
                         <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
                             <h5>VN original language</h5>
 

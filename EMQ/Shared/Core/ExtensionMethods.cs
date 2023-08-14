@@ -121,6 +121,30 @@ public static class ExtensionMethods
         return null;
     }
 
+    public static RangeAttribute? GetRange(this Enum value)
+    {
+        Type type = value.GetType();
+        string? name = Enum.GetName(type, value);
+        if (name != null)
+        {
+            FieldInfo? field = type.GetField(name);
+            if (field != null)
+            {
+                if (Attribute.GetCustomAttribute(field,
+                        typeof(RangeAttribute)) is RangeAttribute attr)
+                {
+                    return attr;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static T GetEnum<T>(this string description) where T : Enum
     {
         foreach (T enumItem in Enum.GetValues(typeof(T)))

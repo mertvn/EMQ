@@ -23,6 +23,9 @@ public class QuizFilters
             .Where(x => x is SongSourceSongType.OP or SongSourceSongType.ED or SongSourceSongType.Insert)
             .ToDictionary(x => x, _ => true);
 
+    public Dictionary<SongDifficultyLevel, bool> SongDifficultyLevelFilters { get; set; } =
+        Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true);
+
     [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
         ErrorMessage =
             $"Start date must be in range of {Constants.QFDateMin} to {Constants.QFDateMax}")]

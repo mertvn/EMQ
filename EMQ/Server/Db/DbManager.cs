@@ -781,6 +781,26 @@ public static class DbManager
             // Apply filters
             if (filters != null)
             {
+                var validSongDifficultyLevels = filters.SongDifficultyLevelFilters.Where(x => x.Value).ToList();
+                if (validSongDifficultyLevels.Any())
+                {
+                    queryMusicIds.Append($"\n");
+                    for (int index = 0; index < validSongDifficultyLevels.Count; index++)
+                    {
+                        (SongDifficultyLevel songDifficultyLevel, _) = validSongDifficultyLevels.ElementAt(index);
+                        var range = songDifficultyLevel.GetRange();
+                        int min = (int)range!.Minimum;
+                        int max = (int)range!.Maximum;
+                        queryMusicIds.Append(index == 0
+                            ? (FormattableString)
+                            $" AND (( m.stat_correctpercentage >= {min} AND m.stat_correctpercentage <= {max} )"
+                            : (FormattableString)
+                            $" OR ( m.stat_correctpercentage >= {min} AND m.stat_correctpercentage <= {max} )");
+                    }
+
+                    queryMusicIds.Append($")");
+                }
+
                 var validSongSourceSongTypes = filters.SongSourceSongTypeFilters.Where(x => x.Value).ToList();
                 if (validSongSourceSongTypes.Any())
                 {

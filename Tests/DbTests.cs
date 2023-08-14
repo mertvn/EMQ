@@ -338,6 +338,40 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_SongDifficultyLevelFilter_VeryEasy()
+    {
+        Dictionary<SongDifficultyLevel, bool> validDifficultyLevels =
+            new() { { SongDifficultyLevel.VeryEasy, true } };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongDifficultyLevelFilters = validDifficultyLevels }, printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.All(song =>
+            song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum &&
+            song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_SongDifficultyLevelFilter_EasyAndHard()
+    {
+        Dictionary<SongDifficultyLevel, bool> validDifficultyLevels =
+            new() { { SongDifficultyLevel.Easy, true }, { SongDifficultyLevel.Hard, true } };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongDifficultyLevelFilters = validDifficultyLevels }, printSql: true);
+
+        Assert.That(songs.Count > 0);
+        Assert.That(songs.All(song =>
+            (song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.Easy.GetRange()!.Minimum &&
+             song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.Easy.GetRange()!.Maximum) ||
+            (song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.Hard.GetRange()!.Minimum &&
+             song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.Hard.GetRange()!.Maximum)));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_SongSourceOLangFilter_ko()
     {
         Dictionary<Language, bool> validSongSourceOLangs =
