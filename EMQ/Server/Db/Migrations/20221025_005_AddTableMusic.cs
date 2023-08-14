@@ -27,6 +27,9 @@ public class AddTableMusic : Migration
 
         Execute.Sql(
             @"ALTER TABLE music ADD stat_averageguessms int GENERATED ALWAYS AS ( stat_totalguessms / COALESCE(NULLIF(stat_guessed, 0), 1)) STORED");
+
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("stat_played");
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("stat_correctpercentage");
     }
 
     public override void Down()
