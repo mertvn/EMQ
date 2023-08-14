@@ -122,6 +122,8 @@
                     bool shouldDisplay = LibrarySongFilter switch
                     {
                         LibrarySongFilterKind.All => true,
+                        LibrarySongFilterKind.MissingOnlyVideo => hasSound && !hasVideo,
+                        LibrarySongFilterKind.MissingOnlySound => hasVideo && !hasSound,
                         LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
                         LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
                         _ => throw new ArgumentOutOfRangeException()
