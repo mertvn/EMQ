@@ -549,6 +549,73 @@ public class QuizManager
 
                 Quiz.ValidSourcesForLooting = validSourcesLooting;
                 break;
+            case SongSelectionKind.LocalMusicLibrary:
+                dbSongs = new List<Song>();
+                string[] filePaths =
+                    Directory.GetFiles(Constants.LocalMusicLibraryPath, "*.mp3", SearchOption.AllDirectories);
+                for (int i = 0; i < Quiz.Room.QuizSettings.NumSongs; i++)
+                {
+                    var song = new Song() { Id = i };
+                    dbSongs.Add(song);
+
+                    string filePath = filePaths[Random.Shared.Next(filePaths.Length - 1)];
+                    try
+                    {
+                        var tFile = TagLib.File.Create(filePath);
+                        string? metadataSources = tFile.Tag.Album;
+                        string? metadataTitle = tFile.Tag.Title;
+                        string[] metadataArtists = tFile.Tag.Performers.Concat(tFile.Tag.AlbumArtists).ToArray();
+                        if (!metadataArtists.Any())
+                        {
+                            metadataArtists = new[] { "" };
+                        }
+
+                        song.Sources.Add(new SongSource()
+                        {
+                            Titles = new List<Title>()
+                            {
+                                new Title() { LatinTitle = metadataSources ?? "", IsMainTitle = true }
+                            }
+                        });
+
+                        song.Titles.Add(new Title() { LatinTitle = metadataTitle ?? "", IsMainTitle = true });
+
+                        song.Artists.Add(new SongArtist()
+                        {
+                            Titles = new List<Title>(metadataArtists.Select(x =>
+                                new Title() { LatinTitle = x, IsMainTitle = true })),
+                        });
+
+                        song.Links.Add(new SongLink()
+                        {
+                            Duration = TimeSpan.FromSeconds(60),
+                            IsVideo = false,
+                            Url = $"emqlocalmusiclibrary{filePath.Replace("G:/Music", "").Replace("G:\\Music", "")}"
+                        });
+
+                        song.StartTime = Random.Shared.Next(0,
+                            Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
+                                int.MaxValue));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"TagLib exception for {filePath}: " + e.Message);
+                    }
+                }
+
+                if (dbSongs.Count == 0)
+                {
+                    return false;
+                }
+
+                foreach (Song dbSong in dbSongs)
+                {
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong);
+                }
+
+                Quiz.Songs = dbSongs;
+                Quiz.QuizState.NumSongs = Quiz.Songs.Count;
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -574,6 +641,7 @@ public class QuizManager
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
+            case SongSelectionKind.LocalMusicLibrary:
                 await EnterQuiz();
                 await EnterGuessingPhase();
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)

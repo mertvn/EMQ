@@ -118,9 +118,10 @@ public class QuizController : ControllerBase
                             url = song.Links.First().Url;
                         }
 
-                        if (Constants.UseLocalSongFilesForDevelopment)
+                        if (Constants.UseLocalSongFilesForDevelopment &&
+                            room.QuizSettings.SongSelectionKind != SongSelectionKind.LocalMusicLibrary)
                         {
-                            url = url.Replace("https://files.catbox.moe/","emqsongsbackup/");
+                            url = url.Replace("https://files.catbox.moe/", "emqsongsbackup/");
                         }
 
                         return new ResNextSong(req.SongIndex, url, song.StartTime);

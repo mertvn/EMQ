@@ -48,6 +48,13 @@
                         <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
                             @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
                             {
+                                @if (songSelectionKind == SongSelectionKind.LocalMusicLibrary)
+                                {
+// yeah this is pretty stupid
+#if !DEBUG
+                                    continue;
+#endif
+                                }
                                 <option value="@songSelectionKind">@songSelectionKind</option>
                             }
                         </InputSelect>

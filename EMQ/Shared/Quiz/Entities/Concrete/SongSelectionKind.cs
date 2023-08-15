@@ -3,5 +3,6 @@
 public enum SongSelectionKind
 {
     Random,
-    Looting
+    Looting,
+    LocalMusicLibrary
 }
