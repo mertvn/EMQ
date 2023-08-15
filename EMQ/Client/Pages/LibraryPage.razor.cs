@@ -253,7 +253,7 @@ public enum LibrarySongFilterKind
     [Description("Missing only sound link")]
     MissingOnlySound,
 
-    [Description("Missing either link")]
+    [Description("Missing video or sound link")]
     MissingVideoOrSound,
 
     [Description("Missing both links")]
