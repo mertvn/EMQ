@@ -1885,6 +1885,21 @@ group by lower(submitted_by)
 order by count(music_id) desc
 ")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
+            var songDifficultyLevels = (await connection.QueryAsync<(int, int)>(@$"
+select case
+	WHEN stat_correctpercentage  = {SongDifficultyLevel.Impossible.GetRange()!.Minimum} 								                                                 THEN 5
+	WHEN stat_correctpercentage >= {SongDifficultyLevel.VeryHard.GetRange()!.Minimum}   and stat_correctpercentage <= {SongDifficultyLevel.VeryHard.GetRange()!.Maximum} THEN 4
+	WHEN stat_correctpercentage >= {SongDifficultyLevel.Hard.GetRange()!.Minimum}       and stat_correctpercentage <= {SongDifficultyLevel.Hard.GetRange()!.Maximum}     THEN 3
+	WHEN stat_correctpercentage >= {SongDifficultyLevel.Medium.GetRange()!.Minimum}     and stat_correctpercentage <= {SongDifficultyLevel.Medium.GetRange()!.Maximum}   THEN 2
+	WHEN stat_correctpercentage >= {SongDifficultyLevel.Easy.GetRange()!.Minimum}       and stat_correctpercentage <= {SongDifficultyLevel.Easy.GetRange()!.Maximum}     THEN 1
+	WHEN stat_correctpercentage >= {SongDifficultyLevel.VeryEasy.GetRange()!.Minimum}   and stat_correctpercentage <= {SongDifficultyLevel.VeryEasy.GetRange()!.Maximum} THEN 0
+	END AS ""diff"",
+count(id)
+from music m
+where stat_played > 0
+group by diff
+order by diff
+")).ToDictionary(x => (SongDifficultyLevel)x.Item1, x => x.Item2);
 
             var libraryStats = new LibraryStats
             {
@@ -1906,6 +1921,7 @@ order by count(music_id) desc
                 msYear = msYear,
                 msYearAvailable = msYearAvailable,
                 UploaderCounts = uploaderCounts,
+                SongDifficultyLevels = songDifficultyLevels,
             };
 
             return libraryStats;

@@ -10,6 +10,7 @@
     <Items>
         <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
         <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
+        <Blazorise.Tab Name="TabSongDifficulty">Song difficulty</Blazorise.Tab>
         <Blazorise.Tab Name="TabVNYear">VN year</Blazorise.Tab>
         <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
@@ -68,6 +69,30 @@
                     <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount (@Utils.PercentageStr(libraryStats.AvailableLibraryStatsMusicType[index].MusicCount, libraryStats.TotalLibraryStatsMusicType[index].MusicCount))</li>
                 }
             </ul>
+        </div>
+    </Blazorise.TabPanel>
+
+
+    <Blazorise.TabPanel Name="TabSongDifficulty">
+        <div class="libraryStatsRow">
+            <div class="libraryStatsColumn">
+                <p>Songs that have been played at least once: </p>
+                <table style="max-width: 400px">
+                    <tr>
+                        <th>Difficulty level</th>
+                        <th>Songs</th>
+                    </tr>
+                    @foreach ((var songDifficultyLevel, int count) in libraryStats.SongDifficultyLevels)
+                    {
+                        <tr>
+                            <td>@songDifficultyLevel.GetDisplayName()</td>
+                            <td>
+                                <b>@count</b>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
         </div>
     </Blazorise.TabPanel>
 
