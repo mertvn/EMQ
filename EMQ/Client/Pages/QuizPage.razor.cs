@@ -77,7 +77,8 @@ public partial class QuizPage
         public float Countdown { get; set; }
         public Timer Timer { get; } = new();
 
-        public int CurrentMasterVolume { get; set; } = -1;
+        public Dictionary<string, int> CurrentMasterVolumes { get; set; } =
+            new Dictionary<string, int>() { { "video1", -1 }, { "video2", -1 }};
     }
 
     public QuizPageState PageState { get; set; } = new() { };
@@ -630,11 +631,13 @@ public partial class QuizPage
             }
 
             if (ClientState.Session != null &&
-                PageState.CurrentMasterVolume != ClientState.Session.Player.Preferences.VolumeMaster)
+                PageState.CurrentMasterVolumes[VisibleVideoElementId] !=
+                ClientState.Session.Player.Preferences.VolumeMaster)
             {
-                PageState.CurrentMasterVolume = ClientState.Session.Player.Preferences.VolumeMaster;
+                PageState.CurrentMasterVolumes[VisibleVideoElementId] =
+                    ClientState.Session.Player.Preferences.VolumeMaster;
                 await _jsRuntime.InvokeVoidAsync("setVideoVolume", VisibleVideoElementId,
-                    PageState.CurrentMasterVolume / 100f);
+                    PageState.CurrentMasterVolumes[VisibleVideoElementId] / 100f);
             }
 
             bool _ = await Preload2(_nextSong);
