@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace EMQ.Shared.Library.Entities.Concrete;
 
@@ -24,4 +24,7 @@ public enum SongReportKind
 
     [Display(Name = "File has unrelated content at the start or end")]
     UnrelatedContent,
+
+    [Display(Name = "Fake video")]
+    FakeVideo,
 }
