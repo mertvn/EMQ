@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -1739,9 +1739,8 @@ WHERE id = {mId};
         return melId;
     }
 
-    public static async Task<LibraryStats> SelectLibraryStats(int limit = 50)
+    public static async Task<LibraryStats> SelectLibraryStats(int limit = 500)
     {
-        // todo external_link vndb type check
         // todo cache results?
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
@@ -1797,6 +1796,7 @@ LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
 group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
             var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
             qMsm.Where($"mst.is_main_title = true");
+            qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
             var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
             qMsm.Where($"mel.url is not null");

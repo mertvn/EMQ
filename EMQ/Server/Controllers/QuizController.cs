@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -155,6 +155,7 @@ public class QuizController : ControllerBase
     [Route("GetRooms")]
     public IEnumerable<Room> GetRooms()
     {
+        // todo hide chat
         return ServerState.Rooms;
     }
 

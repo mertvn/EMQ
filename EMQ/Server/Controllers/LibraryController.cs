@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -30,8 +30,18 @@ public class LibraryController : ControllerBase
     [Route("FindSongsBySongSourceTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
     {
-        var songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
-        return songs;
+        // todo
+        int mId = int.TryParse(req.SongSourceTitle, out mId) ? mId : 0;
+        if (mId > 0)
+        {
+            var songs = await DbManager.SelectSongs(new Song { Id = mId });
+            return songs;
+        }
+        else
+        {
+            var songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
+            return songs;
+        }
     }
 
     [HttpPost]
