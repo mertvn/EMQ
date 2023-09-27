@@ -511,7 +511,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilder();
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-08-14_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-09-27_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()

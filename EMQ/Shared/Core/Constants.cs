@@ -9,9 +9,9 @@ public static class Constants
 
     public const string LocalMusicLibraryPath = @"G:/Music";
 
-    public static string ImportDateVndb { get; set; } = "2023-08-14";
+    public static string ImportDateVndb { get; set; } = "2023-09-27";
 
-    public const string ImportDateEgs = "2023-04-20";
+    public const string ImportDateEgs = "2023-08-20";
 
     public const int MaxChatMessageLength = 300;
 

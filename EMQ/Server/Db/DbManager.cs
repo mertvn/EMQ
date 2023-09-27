@@ -1500,6 +1500,7 @@ WHERE id = {mId};
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
+            bool errored = false;
             foreach (SongLite songLite in songLites)
             {
                 // Console.WriteLine(JsonSerializer.Serialize(songLite, Utils.JsoIndented));
@@ -1519,14 +1520,16 @@ WHERE id = {mId};
 
                 if (!mIds.Any())
                 {
-                    throw new Exception(
-                        $"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    errored = true;
+                    Console.WriteLine($"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    continue;
                 }
 
                 if (mIds.Count > 1)
                 {
-                    throw new Exception(
-                        $"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    errored = true;
+                    Console.WriteLine($"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    continue;
                 }
 
                 foreach (int mId in mIds)
@@ -1543,7 +1546,15 @@ WHERE id = {mId};
                 }
             }
 
-            await transaction.CommitAsync();
+            if (errored)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception();
+            }
+            else
+            {
+                await transaction.CommitAsync();
+            }
         }
     }
 
