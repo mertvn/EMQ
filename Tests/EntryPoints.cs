@@ -176,7 +176,7 @@ public class EntryPoints
             {
                 string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
 
-                bool dlSuccess = await ExtensionMethods.DownloadFile2(filePath, new Uri(rq.url));
+                bool dlSuccess = await ExtensionMethods.DownloadFile(ServerUtils.Client, filePath, new Uri(rq.url));
                 if (dlSuccess)
                 {
                     var analyserResult = await MediaAnalyser.Analyse(filePath);
@@ -255,7 +255,7 @@ public class EntryPoints
             $"StartSection downloading VNDB dump: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
         if (!File.Exists(dbDumpFilePath))
         {
-            bool dlSuccess = await ExtensionMethods.DownloadFile2(dbDumpFilePath,
+            bool dlSuccess = await ServerUtils.Client.DownloadFile(dbDumpFilePath,
                 new Uri("https://dl.vndb.org/dump/vndb-db-latest.tar.zst"));
             if (!dlSuccess)
             {

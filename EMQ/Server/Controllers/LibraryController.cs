@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -60,7 +60,7 @@ public class LibraryController : ControllerBase
         {
             string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
 
-            bool dlSuccess = await ExtensionMethods.DownloadFile2(filePath, new Uri(req.SongLink.Url));
+            bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(req.SongLink.Url));
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
