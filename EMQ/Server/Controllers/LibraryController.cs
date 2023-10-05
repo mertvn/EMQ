@@ -24,6 +24,7 @@ public class LibraryController : ControllerBase
         _logger = logger;
     }
 
+    // ReSharper disable once NotAccessedField.Local
     private readonly ILogger<LibraryController> _logger;
 
     [HttpPost]

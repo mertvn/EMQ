@@ -29,7 +29,7 @@ public partial class RoomPage
                 "ReceiveUpdateRoomForRoom", (new Type[] { typeof(Room) },
                     async param => { await OnReceiveUpdateRoomForRoom((Room)param[0]!); })
             },
-            { "ReceiveKickedFromRoom", (new Type[] { }, async param => { await OnReceiveKickedFromRoom(); }) },
+            { "ReceiveKickedFromRoom", (new Type[] { }, async _ => { await OnReceiveKickedFromRoom(); }) },
         };
     }
 
