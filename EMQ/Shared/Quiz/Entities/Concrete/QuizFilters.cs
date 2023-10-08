@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -29,12 +29,12 @@ public class QuizFilters
     [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
         ErrorMessage =
             $"Start date must be in range of {Constants.QFDateMin} to {Constants.QFDateMax}")]
-    public DateTime StartDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMin);
+    public DateTime StartDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture);
 
     [Range(typeof(DateTime), Constants.QFDateMin, Constants.QFDateMax,
         ErrorMessage =
             $"End date must be in range of {Constants.QFDateMin} to {Constants.QFDateMax}")]
-    public DateTime EndDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMax);
+    public DateTime EndDateFilter { get; set; } = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture);
 
     [Range(Constants.QFRatingAverageMin, Constants.QFRatingAverageMax)]
     public int RatingAverageStart { get; set; } = Constants.QFRatingAverageMin;

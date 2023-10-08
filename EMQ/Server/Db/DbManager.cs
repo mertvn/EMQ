@@ -827,8 +827,8 @@ public static class DbManager
                     queryMusicIds.Append($")");
                 }
 
-                if (filters.StartDateFilter != DateTime.Parse(Constants.QFDateMin) ||
-                    filters.EndDateFilter != DateTime.Parse(Constants.QFDateMax))
+                if (filters.StartDateFilter != DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture) ||
+                    filters.EndDateFilter != DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture))
                 {
                     queryMusicIds.Append($"\n");
                     queryMusicIds.Append($" AND (");
