@@ -20,6 +20,9 @@
 
         <div class="songInfoCardBody card-body">
             <div class="songInfo">
+                <environment include="Development">
+                    <span> @Song.Id </span>
+                </environment>
                 <div>
                     <h5 class="songSourceSongType">
                         @{
@@ -28,6 +31,16 @@
                             foreach (SongSource songSource in Song.Sources)
                             {
                                 songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
+                            }
+
+                            foreach (Guid songMusicBrainzRelease in Song.MusicBrainzReleases)
+                            {
+                                songSourceVNIDSongTypes.Add(
+                                    new List<string>
+                                    {
+                                        $"https://musicbrainz.org/release/{songMusicBrainzRelease}"
+                                    },
+                                    new List<SongSourceSongType> { SongSourceSongType.BGM });
                             }
 
                             // couldn't get distinct to work

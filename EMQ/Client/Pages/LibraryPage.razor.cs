@@ -22,8 +22,6 @@ namespace EMQ.Client.Pages;
 
 public partial class LibraryPage
 {
-    private Dictionary<int, AddSongLinkModel> _addSongLinkModel = new();
-
     private ReviewQueueComponent? _reviewQueueComponent { get; set; }
 
     public string? selectedMusicSourceTitle { get; set; }
@@ -37,6 +35,8 @@ public partial class LibraryPage
     public bool ShowUploadCriteria { get; set; }
 
     private string _selectedTab = "TabAutocompleteMst";
+
+    private string _selectedTab2 = "TabVNDB";
 
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
 
@@ -78,6 +78,12 @@ public partial class LibraryPage
         return Task.CompletedTask;
     }
 
+    private Task OnSelectedTabChanged2(string name)
+    {
+        _selectedTab2 = name;
+        return Task.CompletedTask;
+    }
+
     public async Task SelectedResultChangedMst()
     {
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
@@ -97,12 +103,10 @@ public partial class LibraryPage
                     selectedMusicSourceTitle = null;
                 }
 
-                if (!CurrentSongs.Any())
-                {
-                    NoSongsText = "No results.";
-                }
+                NoSongsText = "No results.";
 
-                StateHasChanged();
+                await StateHasChangedAsync();
+                await TabsComponent!.SelectTab("TabVNDB");
             }
         }
     }
@@ -126,46 +130,10 @@ public partial class LibraryPage
                 }
             }
 
-            if (!CurrentSongs.Any())
-            {
-                NoSongsText = "No results.";
-            }
+            NoSongsText = "No results.";
 
-            StateHasChanged();
-        }
-    }
-
-    private async Task SubmitSongUrl(int mId, string url)
-    {
-        if (ClientState.Session?.Player.Username is null)
-        {
-            return;
-        }
-
-        _addSongLinkModel[mId].Url = "";
-        StateHasChanged();
-
-        url = url.Trim().ToLowerInvariant();
-        bool isVideo = url.IsVideoLink();
-        SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
-
-        string submittedBy = ClientState.Session.Player.Username;
-        var req = new ReqImportSongLink(mId,
-            new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType, SubmittedBy = submittedBy });
-        var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
-        if (res.IsSuccessStatusCode)
-        {
-            var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
-            if (isSuccess)
-            {
-                Console.WriteLine("Imported song link!");
-                await _reviewQueueComponent!.RefreshRQs();
-            }
-            else
-            {
-                // todo show error
-                Console.WriteLine("Error importing song link");
-            }
+            await StateHasChangedAsync();
+            await TabsComponent!.SelectTab("TabVNDB");
         }
     }
 
@@ -189,13 +157,11 @@ public partial class LibraryPage
                 }
             }
 
-            if (!CurrentSongs.Any())
-            {
-                NoSongsText = "No results.";
-            }
+            NoSongsText = "No results.";
         }
 
-        StateHasChanged();
+        await StateHasChangedAsync();
+        await TabsComponent!.SelectTab("TabVNDB");
     }
 
     private async void OnLibrarySongFilterChanged(ChangeEventArgs arg)
@@ -232,12 +198,10 @@ public partial class LibraryPage
                 }
             }
 
-            if (!CurrentSongs.Any())
-            {
-                NoSongsText = "No results.";
-            }
+            NoSongsText = "No results.";
 
-            StateHasChanged();
+            await StateHasChangedAsync();
+            await TabsComponent!.SelectTab("TabVNDB");
         }
     }
 }

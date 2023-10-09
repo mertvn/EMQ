@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EMQ.Server.Db.Entities;
@@ -34,4 +35,6 @@ public class Music
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     [Dapper.Contrib.Extensions.Write(false)]
     public int stat_averageguessms { get; set; }
+
+    public Guid? musicbrainz_recording_gid { get; set; }
 }

@@ -81,4 +81,5 @@ public enum SongLinkType
 {
     Unknown,
     Catbox,
+    Self, // todo
 }

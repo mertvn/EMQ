@@ -106,105 +106,85 @@
             <label for="SongSelectionKind">Link filter</label>
             <br/>
         </div>
-        <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
 
-        <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
-            @{
-                VisibleSongsCount = 0;
-            }
-            @foreach (Song song in CurrentSongs)
+        @{
+            var bgms = CurrentSongs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
+            var tabs = new Dictionary<string, List<Song>>();
+            // var grouped = bgms
+            //     .GroupBy(x => x.Sources.SelectMany(y => y.Links.Where(z => z.Type == SongSourceLinkType.MusicBrainz).Select(z => z.Url)))
+            //     .First();
+
+            // todo groupby
+            // todo releasename
+            var releases = bgms.SelectMany(x => x.MusicBrainzReleases).Distinct();
+
+            // var asdf = bgms
+            //     .SelectMany(x => x.Sources.SelectMany(y => y.Links))
+            //     .Where(z => z.Type == SongSourceLinkType.MusicBrainzRelease)
+            //     .Select(a => a.Url)
+            //     .Distinct();
+
+            foreach (var release in releases)
             {
-                @if (true)
+                var releaseString = release.ToString();
+                if (!tabs.ContainsKey(releaseString))
                 {
-                    bool hasVideo = song.Links.Any(x => x.IsVideo);
-                    bool hasSound = song.Links.Any(x => !x.IsVideo);
+                    tabs[releaseString] = new List<Song>();
+                }
 
-                    bool shouldDisplay = LibrarySongFilter switch
+                foreach (Song bgm in bgms)
+                {
+                    // var asdf1 = bgm.Sources.SelectMany(y => y.Links).Where(z => z.Type == SongSourceLinkType.MusicBrainzRelease).Select(a => a.Url);
+                    // if (asdf1.Contains(release))
+                    // {
+                    //     tabs[releaseString].Add(bgm);
+                    // }
+
+                    if (bgm.MusicBrainzReleases.Contains(release))
                     {
-                        LibrarySongFilterKind.All => true,
-                        LibrarySongFilterKind.MissingOnlyVideo => hasSound && !hasVideo,
-                        LibrarySongFilterKind.MissingOnlySound => hasVideo && !hasSound,
-                        LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
-                        LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
-                        _ => throw new ArgumentOutOfRangeException()
-                        };
-
-                    @if (shouldDisplay)
-                    {
-                        VisibleSongsCount += 1;
-
-                        if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
-                        {
-                            _addSongLinkModel[song.Id] = new AddSongLinkModel();
-                        }
-
-                        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-                        <div class="song card" style="margin: 16px; width: 300px; min-height:200px;">
-                            <SongInfoCardComponent Song="@song"/>
-                            <div style="padding: 16px">
-                                <div>
-                                    Video link:
-                                    @if (hasVideo)
-                                    {
-                                        var videoLink = song.Links.First(x => x.IsVideo);
-                                        <a href="@videoLink.Url" target="_blank">
-                                            <span style="color: green">✓</span>
-                                        </a>
-                                        @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
-                                        {
-                                            <span> by @videoLink.SubmittedBy</span>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <span style="color: red">✘</span>
-                                    }
-                                </div>
-                                <div>
-                                    Sound link:
-                                    @if (hasSound)
-                                    {
-                                        var soundLink = song.Links.First(x => !x.IsVideo);
-                                        <a href="@soundLink.Url" target="_blank">
-                                            <span style="color: green">✓</span>
-                                        </a>
-                                        @if (!string.IsNullOrEmpty(@soundLink.SubmittedBy))
-                                        {
-                                            <span> by @soundLink.SubmittedBy</span>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <span style="color: red">✘</span>
-                                    }
-                                </div>
-
-                                @if (!hasVideo || !hasSound)
-                                {
-                                    <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
-                                        <DataAnnotationsValidator/>
-
-                                        <div style="padding: 5px">
-                                            <label for="songUrl">Add link: </label>
-                                            <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
-                                            <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
-                                        </div>
-                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                                    </EditForm>
-                                }
-                            </div>
-
-                        </div>
+                        tabs[releaseString].Add(bgm);
                     }
                 }
             }
+        }
 
-            @if (!CurrentSongs.Any())
-            {
-                @NoSongsText
-            }
+        @* not sure how, but LazyReload is faster than LazyLoad for this *@
+        <Blazorise.Tabs SelectedTab="@_selectedTab2" SelectedTabChanged="@OnSelectedTabChanged2" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+            <Items>
+                <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>
+                @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
+                @foreach ((string key, _) in tabs)
+                {
+                    <Blazorise.Tab @key="@key" Name="@key">@key</Blazorise.Tab>
+                }
+            </Items>
+            <Content>
+                <Blazorise.TabPanel Name="TabVNDB">
+                    <SongInfoCardWrapperComponent
+                        CurrentSongs="@CurrentSongs.Except(bgms)"
+                        LibrarySongFilter="@LibrarySongFilter"
+                        NoSongsText="@NoSongsText">
+                    </SongInfoCardWrapperComponent>
+                </Blazorise.TabPanel>
+                @foreach ((string key, List<Song> value) in tabs)
+                {
+                    Console.WriteLine("yep");
+                    <Blazorise.TabPanel @key="@key" Name="@key">
+                        <SongInfoCardWrapperComponent
+                            CurrentSongs="value"
+                            LibrarySongFilter="@LibrarySongFilter"
+                            NoSongsText="@NoSongsText">
+                        </SongInfoCardWrapperComponent>
+                    </Blazorise.TabPanel>
+                }
+                @* <Blazorise.TabPanel Name="TabMusicBrainz"> *@
+                @*     @if (true) *@
+                @*     { *@
+                @*     } *@
+                @* </Blazorise.TabPanel> *@
+            </Content>
+        </Blazorise.Tabs>
 
-        </div>
     </div>
 </div>
 

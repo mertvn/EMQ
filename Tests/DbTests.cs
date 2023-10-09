@@ -112,6 +112,32 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_FindSongsBySongSourceTitle_MB()
+    {
+        var songs = (await DbManager.FindSongsBySongSourceTitle("11eyes -Tsumi to Batsu to Aganai no Shoujo-"))
+            .ToList();
+
+        var expected = new List<string>()
+        {
+            "https://vndb.org/v729",
+            "60381854-ee11-41f7-89d8-a610df202fad",
+            "ab6e477c-4d44-43f1-b6f7-7ec87293afa9"
+        };
+
+        var urls = songs.SelectMany(x => x.Sources.SelectMany(y => y.Links.Select(z => z.Url)))
+            .Distinct().ToList();
+
+        foreach (Song song in songs)
+        {
+            urls.AddRange(song.MusicBrainzReleases.Select(x=> x.ToString()));
+        }
+
+        urls = urls.Distinct().ToList();
+        Console.WriteLine(JsonSerializer.Serialize(urls, Utils.JsoIndented));
+        CollectionAssert.AreEquivalent(expected, urls);
+    }
+
+    [Test]
     public async Task Test_FindSongsByLabels()
     {
         PlayerVndbInfo vndbInfo = new PlayerVndbInfo()

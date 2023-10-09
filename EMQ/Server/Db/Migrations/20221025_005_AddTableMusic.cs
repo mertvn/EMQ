@@ -15,7 +15,8 @@ public class AddTableMusic : Migration
             .WithColumn("stat_correct").AsInt64().NotNullable().WithDefaultValue(0)
             .WithColumn("stat_played").AsInt64().NotNullable().WithDefaultValue(0)
             .WithColumn("stat_guessed").AsInt64().NotNullable().WithDefaultValue(0)
-            .WithColumn("stat_totalguessms").AsInt64().NotNullable().WithDefaultValue(0);
+            .WithColumn("stat_totalguessms").AsInt64().NotNullable().WithDefaultValue(0)
+            .WithColumn("musicbrainz_recording_gid").AsGuid().Nullable();
 
         Execute.Sql(
             @"ALTER TABLE music ADD CONSTRAINT check_stats CHECK ( stat_correct <= stat_played AND stat_guessed <= stat_played );");

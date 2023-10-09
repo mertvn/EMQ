@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,6 +11,7 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.EGS;
+using EMQ.Server.Db.Imports.MusicBrainz;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -53,6 +54,12 @@ public class EntryPoints
     public async Task ImportEgsData()
     {
         await EgsImporter.ImportEgsData();
+    }
+
+    [Test, Explicit]
+    public async Task ImportMusicBrainzData()
+    {
+        await MusicBrainzImporter.ImportMusicBrainzData();
     }
 
     [Test, Explicit]
@@ -530,6 +537,26 @@ public class EntryPoints
         while (!proc.StandardOutput.EndOfStream)
         {
             await File.AppendAllTextAsync("output_pg_restore.txt", await proc.StandardOutput.ReadLineAsync() + "\n");
+        }
+    }
+
+    [Test, Explicit]
+    public async Task RecreateSchema()
+    {
+        if (ConnectionHelper.GetConnectionString().Contains("railway"))
+        {
+            throw new Exception("wrong db");
+        }
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = @"
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO public;";
+
+            await connection.ExecuteAsync(sql);
         }
     }
 }

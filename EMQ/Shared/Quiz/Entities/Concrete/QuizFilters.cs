@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -21,7 +21,11 @@ public class QuizFilters
 
     public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
         Enum.GetValues<SongSourceSongType>()
-            .Where(x => x is SongSourceSongType.OP or SongSourceSongType.ED or SongSourceSongType.Insert)
+            .Where(x => x
+                is SongSourceSongType.OP
+                or SongSourceSongType.ED
+                or SongSourceSongType.Insert
+                or SongSourceSongType.BGM)
             .ToDictionary(x => x, _ => true);
 
     public Dictionary<SongDifficultyLevel, bool> SongDifficultyLevelFilters { get; set; } =

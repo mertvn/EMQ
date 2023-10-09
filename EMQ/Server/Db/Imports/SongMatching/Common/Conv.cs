@@ -107,13 +107,16 @@ public static class Conv
 
     public static async Task SplitTracks()
     {
-        var fileRegex = new Regex("FILE \"(.+)\" WAVE", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        var dict = new ConcurrentDictionary<string, string>(); // todo string, info class
+        var fileRegex = new Regex("FILE \"(.+)\" WAVE",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        var discRegex = new Regex(@"(?:.+)??(?:dis[ck])(?:[ _-])?([0-9]+)(?:.+)?",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+        var dict = new ConcurrentDictionary<string, string>(); // todo string, info class
         string inputDir = "L:\\olil355 - Copy";
         var filePaths = Directory.GetFiles(inputDir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
         await Parallel.ForEachAsync(filePaths,
-            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 }, async (cueFilePath, _) =>
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 2 }, async (cueFilePath, _) =>
             {
                 Console.WriteLine("--------------------------------------------------------");
                 Console.WriteLine(cueFilePath);
@@ -142,7 +145,7 @@ public static class Conv
                     return;
                 }
 
-                var cue = (await File.ReadAllLinesAsync(cueFilePath)).ToList();
+                var cue = (await File.ReadAllLinesAsync(cueFilePath, _)).ToList();
                 var fileLine = cue.FindAll(x => x.StartsWith("FILE", StringComparison.OrdinalIgnoreCase));
                 if (!fileLine.Any())
                 {
@@ -189,6 +192,31 @@ public static class Conv
                 Console.WriteLine("<GOOD>");
                 // continue;
 
+                // if (cueFilePath.Contains("この青空に約束を― 初回特典 オリジナルサウンドトラック Disc1"))
+                // {
+                //     Console.WriteLine();
+                // }
+
+                int discNumber = 0;
+                string cueFileName = Path.GetFileNameWithoutExtension(cueFilePath);
+                string parentDirectoryName = new DirectoryInfo(cueFilePath).Parent!.Name;
+                var matchCue = discRegex.Match(cueFileName);
+                if (matchCue.Success)
+                {
+                    discNumber = Convert.ToInt32(matchCue.Groups[1].Value);
+                }
+                else
+                {
+                    var matchParentDirectory = discRegex.Match(parentDirectoryName);
+                    if (matchParentDirectory.Success)
+                    {
+                        discNumber = Convert.ToInt32(matchParentDirectory.Groups[1].Value);
+                    }
+                }
+
+                Console.WriteLine($"discNumber: {discNumber}");
+                // return;
+
                 var tracks = cueSheet.Tracks;
                 for (int index = 0; index < tracks.Length; index++)
                 {
@@ -225,13 +253,12 @@ public static class Conv
                         string.Equals(artist, "不明", StringComparison.OrdinalIgnoreCase))
                     {
                         Console.WriteLine("invalid metadata");
-                        continue;
+                        // continue;
                     }
 
                     // string outputDir = "L:\\!tracks";
                     // var od = cueFilePath.Replace(dir, outputDir).Replace(".cue", "");
-                    var od = dirName;
-
+                    var od = $"{dirName}\\Disuku{discNumber}";
                     Directory.CreateDirectory(od);
                     string outputPath =
                         $"{od}\\{trackNumber:000}. {Utils.FixFileName(title)} - ({Utils.FixFileName(artist)}).mp3";
@@ -249,11 +276,12 @@ public static class Conv
                                     .WithDuration(duration)
                                     .WithAudioCodec(AudioCodec.LibMp3Lame)
                                     .WithAudioBitrate(192)
-                                    .WithTagVersion()
+                                    .WithTagVersion(3)
                                     .WithCustomArgument($"-metadata artist=\"{artist}\"")
                                     .WithCustomArgument($"-metadata title=\"{title}\"")
                                     .WithCustomArgument($"-metadata album=\"{album}\"")
                                     .WithCustomArgument($"-metadata track=\"{trackNumber}\"")
+                                    .WithCustomArgument($"-metadata discnumber=\"{discNumber}\"")
                                     .UsingThreads(1)
                                     .WithCustomArgument("-nostdin")
                                 ).ProcessAsynchronously();

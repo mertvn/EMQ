@@ -32,6 +32,10 @@ public class Song
     public Dictionary<int, List<Label>> PlayerLabels { get; set; } = new();
 
     public SongStats Stats { get; set; } = new();
+
+    public Guid? MusicBrainzRecordingGid { get; set; }
+
+    public List<Guid> MusicBrainzReleases { get; set; } = new();
 }
 
 public enum SongType

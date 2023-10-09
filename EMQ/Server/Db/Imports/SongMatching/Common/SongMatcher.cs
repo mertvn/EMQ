@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Dapper;
 using DapperQueryBuilder;
 using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Npgsql;
 
 namespace EMQ.Server.Db.Imports.SongMatching.Common;
@@ -51,6 +52,7 @@ public static class SongMatcher
                 fileName.ToLowerInvariant().Contains("offvocal") ||
                 fileName.ToLowerInvariant().Contains("no vocal") ||
                 fileName.ToLowerInvariant().Contains("instrumental") ||
+                fileName.ToLowerInvariant().Contains("(インスト)") ||
                 fileName.ToLowerInvariant().Contains("version-") ||
                 (fileName.ToLowerInvariant().Contains("ver.") &&
                  !fileName.ToLowerInvariant().EndsWith($"forever.{extension}")
@@ -338,5 +340,11 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             JsonSerializer.Serialize(
                 songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.NoAids),
                 Utils.JsoIndented));
+    }
+
+    public static async Task MatchMusicBrainzRelease(List<SongMatch> songMatches, string outputDir, string releaseGid,
+        bool useSource = true)
+    {
+        throw new NotImplementedException();
     }
 }

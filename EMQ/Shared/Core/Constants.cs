@@ -13,6 +13,8 @@ public static class Constants
 
     public const string ImportDateEgs = "2023-08-20";
 
+    public const string ImportDateMusicBrainz = "2023-08-19"; // not really accurate as it's rolling
+
     public const int MaxChatMessageLength = 300;
 
     public const int MaxGuessLength = 190;

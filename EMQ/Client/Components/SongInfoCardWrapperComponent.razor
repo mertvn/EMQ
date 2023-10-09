@@ -1,0 +1,106 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
+@using EMQ.Client.Pages
+@inject HttpClient _client
+
+<span style="margin: 5px">Count: @VisibleSongsCount</span><br>
+
+<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
+    @{
+        VisibleSongsCount = 0;
+    }
+    @foreach (Song song in CurrentSongs)
+    {
+        @if (true)
+        {
+            bool hasVideo = song.Links.Any(x => x.IsVideo);
+            bool hasSound = song.Links.Any(x => !x.IsVideo);
+
+            bool shouldDisplay = LibrarySongFilter switch
+            {
+                LibrarySongFilterKind.All => true,
+                LibrarySongFilterKind.MissingOnlyVideo => hasSound && !hasVideo,
+                LibrarySongFilterKind.MissingOnlySound => hasVideo && !hasSound,
+                LibrarySongFilterKind.MissingVideoOrSound => !hasVideo || !hasSound,
+                LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
+                _ => throw new ArgumentOutOfRangeException()
+                };
+
+            @if (shouldDisplay)
+            {
+                VisibleSongsCount += 1;
+
+                if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
+                {
+                    _addSongLinkModel[song.Id] = new AddSongLinkModel();
+                }
+
+                // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+                <div class="song card" style="margin: 16px; width: 300px; min-height:200px;" @key="@song.Id">
+                    <SongInfoCardComponent Song="@song"/>
+                    <div style="padding: 16px">
+                        <div>
+                            Video link:
+                            @if (hasVideo)
+                            {
+                                var videoLink = song.Links.First(x => x.IsVideo);
+                                <a href="@videoLink.Url" target="_blank">
+                                    <span style="color: green">✓</span>
+                                </a>
+                                @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
+                                {
+                                    <span> by @videoLink.SubmittedBy</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: red">✘</span>
+                            }
+                        </div>
+                        <div>
+                            Sound link:
+                            @if (hasSound)
+                            {
+                                var soundLink = song.Links.First(x => !x.IsVideo);
+                                <a href="@soundLink.Url" target="_blank">
+                                    <span style="color: green">✓</span>
+                                </a>
+                                @if (!string.IsNullOrEmpty(@soundLink.SubmittedBy))
+                                {
+                                    <span> by @soundLink.SubmittedBy</span>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: red">✘</span>
+                            }
+                        </div>
+
+                        @if (!hasVideo || !hasSound)
+                        {
+                            // todo
+
+                            <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
+                                <DataAnnotationsValidator/>
+
+                                <div style="padding: 5px">
+                                    <label for="songUrl">Add link: </label>
+                                    <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
+                                    <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
+                                </div>
+                                <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                            </EditForm>
+                        }
+                    </div>
+
+                </div>
+            }
+        }
+    }
+
+    @if (!CurrentSongs.Any())
+    {
+        @NoSongsText
+    }
+
+</div>
