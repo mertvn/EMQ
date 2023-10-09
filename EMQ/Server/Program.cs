@@ -108,6 +108,7 @@ else
 app.UseHttpsRedirection();
 
 // <!--    we have to use unsafe-eval because blazor wasm requires it (check again after .NET 8) -->
+// <!--    https://devblogs.microsoft.com/dotnet/asp-net-core-updates-in-dotnet-8-preview-5/#blazor-content-security-policy-csp-compatibility -->
 // <!--    we have to use unsafe-inline because unsafe-hashes is very new, -->
 // <!--    and we have to use unsafe-hashes because styles don't work otherwise -->
 // <!--    hashes for styles as of 2023-06-24 -->
