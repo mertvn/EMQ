@@ -165,6 +165,7 @@ public static class EgsImporter
                 "https://vndb.org/v7771",
                 "https://vndb.org/v24803",
                 "https://vndb.org/v4506",
+                "https://vndb.org/v5834",
                 "https://vndb.org/v5",
                 "https://vndb.org/v38",
                 "https://vndb.org/v85",
