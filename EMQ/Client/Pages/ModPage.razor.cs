@@ -37,4 +37,12 @@ public partial class ModPage
         {
         }
     }
+
+    private async Task Onclick_RunAnalysis()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunAnalysis", AdminPassword);
+        if (res.IsSuccessStatusCode)
+        {
+        }
+    }
 }
