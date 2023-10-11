@@ -80,35 +80,39 @@ public class VNDBStaffNotesParserTests
             }
         }
 
-        foreach (var processedMusic in processedMusics)
+        bool doNotSameSongCheck = false;
+        if (doNotSameSongCheck)
         {
-            if (Blacklists.VndbImporterExistingSongBlacklist.Any(x =>
-                    x.Item1 == processedMusic.VNID && x.Item2 == processedMusic.ParsedSong.Title))
+            foreach (var processedMusic in processedMusics)
             {
-                // Console.WriteLine($"already blacklisted");
-                continue;
-            }
+                if (Blacklists.VndbImporterExistingSongBlacklist.Any(x =>
+                        x.Item1 == processedMusic.VNID && x.Item2 == processedMusic.ParsedSong.Title))
+                {
+                    // Console.WriteLine($"already blacklisted");
+                    continue;
+                }
 
-            var vnSongs = processedMusics
-                .Where(x => x.VNID == processedMusic.VNID)
-                .Select(x => x.ParsedSong)
-                .ToList();
+                var vnSongs = processedMusics
+                    .Where(x => x.VNID == processedMusic.VNID)
+                    .Select(x => x.ParsedSong)
+                    .ToList();
 
-            // if (processedMusic.VNID == "v515")
-            // {
-            // }
+                // if (processedMusic.VNID == "v515")
+                // {
+                // }
 
-            var parsedSong = processedMusic.ParsedSong;
+                var parsedSong = processedMusic.ParsedSong;
 
-            var sameTitle = vnSongs.Where(x => x.Title == parsedSong.Title);
-            bool allBeforeTitlesAreSame = sameTitle.All(x => x.BeforeType.Trim() == parsedSong.BeforeType.Trim());
+                var sameTitle = vnSongs.Where(x => x.Title == parsedSong.Title);
+                bool allBeforeTitlesAreSame = sameTitle.All(x => x.BeforeType.Trim() == parsedSong.BeforeType.Trim());
 
-            if (processedMusic.ParsedSong.BeforeType != "" &&
-                vnSongs.Any(x => x.Title == parsedSong.Title && !allBeforeTitlesAreSame))
-            {
-                Console.WriteLine(
-                    $"NotSameSongWarning: {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
-                Console.WriteLine($"    (\"{processedMusic.VNID}\", \"{parsedSong.Title}\"),");
+                if (processedMusic.ParsedSong.BeforeType != "" &&
+                    vnSongs.Any(x => x.Title == parsedSong.Title && !allBeforeTitlesAreSame))
+                {
+                    Console.WriteLine(
+                        $"NotSameSongWarning: {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
+                    Console.WriteLine($"    (\"{processedMusic.VNID}\", \"{parsedSong.Title}\"),");
+                }
             }
         }
 
