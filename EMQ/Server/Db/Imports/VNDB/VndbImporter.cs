@@ -98,11 +98,6 @@ public static class VndbImporter
     [SuppressMessage("ReSharper", "StringLiteralTypo")]
     private static List<Song> ImportVndbDataInner(List<ProcessedMusic> dataJson)
     {
-        var existingSongBlacklist = new List<(string, string)>
-        {
-            ("v236", "POWDER SNOW"), ("v12984", "Yuki no Elfin Lied"), ("v21901", "Ohime-sama datte XXX Shitai!!")
-        };
-
         var songs = new List<Song>();
         var musicSourcesDict = musicSourcesJson.ToDictionary(x => (string)x.id);
         var musicSourcesTitlesLookup = musicSourcesTitlesJson.ToLookup(x => (string)x.id);
@@ -238,8 +233,8 @@ public static class VndbImporter
 
             if (existingSong is not null)
             {
-                bool isBlacklisted =
-                    existingSongBlacklist.Any(x => x.Item1 == dynData.VNID && x.Item2 == dynData.ParsedSong.Title);
+                bool isBlacklisted = Blacklists.VndbImporterExistingSongBlacklist.Any(x =>
+                    x.Item1 == dynData.VNID && x.Item2 == dynData.ParsedSong.Title);
 
                 if (isBlacklisted)
                 {

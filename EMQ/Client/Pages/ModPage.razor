@@ -15,6 +15,10 @@
     Run GC
 </button>
 
+<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunAnalysis(); })">
+    Run Analysis
+</button>
+
 <pre>
 @JsonSerializer.Serialize(SongReports, Utils.JsoIndented)
 </pre>

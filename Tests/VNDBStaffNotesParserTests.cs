@@ -80,6 +80,38 @@ public class VNDBStaffNotesParserTests
             }
         }
 
+        foreach (var processedMusic in processedMusics)
+        {
+            if (Blacklists.VndbImporterExistingSongBlacklist.Any(x =>
+                    x.Item1 == processedMusic.VNID && x.Item2 == processedMusic.ParsedSong.Title))
+            {
+                // Console.WriteLine($"already blacklisted");
+                continue;
+            }
+
+            var vnSongs = processedMusics
+                .Where(x => x.VNID == processedMusic.VNID)
+                .Select(x => x.ParsedSong)
+                .ToList();
+
+            // if (processedMusic.VNID == "v515")
+            // {
+            // }
+
+            var parsedSong = processedMusic.ParsedSong;
+
+            var sameTitle = vnSongs.Where(x => x.Title == parsedSong.Title);
+            bool allBeforeTitlesAreSame = sameTitle.All(x => x.BeforeType.Trim() == parsedSong.BeforeType.Trim());
+
+            if (processedMusic.ParsedSong.BeforeType != "" &&
+                vnSongs.Any(x => x.Title == parsedSong.Title && !allBeforeTitlesAreSame))
+            {
+                Console.WriteLine(
+                    $"NotSameSongWarning: {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
+                Console.WriteLine($"    (\"{processedMusic.VNID}\", \"{parsedSong.Title}\"),");
+            }
+        }
+
         await File.WriteAllTextAsync($"{folder}\\processedMusics.json", JsonConvert.SerializeObject(processedMusics));
         Console.WriteLine("finished processing - count: " + parsedSongs.Count);
     }
@@ -867,7 +899,8 @@ public class VNDBStaffNotesParserTests
     [Test]
     public void Test_WA2Merge1()
     {
-        string input = "IC ED \"Twinkle Snow\", CC ED1 \"Aisuru Kokoro\", Kazusa ED2 \"Kokoro wa Itsumo Anata no Soba ni\"";
+        string input =
+            "IC ED \"Twinkle Snow\", CC ED1 \"Aisuru Kokoro\", Kazusa ED2 \"Kokoro wa Itsumo Anata no Soba ni\"";
 
         var expected = new List<ParsedSong>
         {
@@ -901,7 +934,8 @@ public class VNDBStaffNotesParserTests
     [Test]
     public void Test_WA2Merge2()
     {
-        string input = "IC OP & CC OP2 \"Todokanai Koi\", IC Insert Song \"After All ~Tsuzuru Omoi~\", CC First OP \"Shiawase na Kioku\", CC Second OP \"Todokanai Koi\", Kazusa ED1 \"Closing\", 3 Side heroines' ED \"Yasashii Uso\"";
+        string input =
+            "IC OP & CC OP2 \"Todokanai Koi\", IC Insert Song \"After All ~Tsuzuru Omoi~\", CC First OP \"Shiawase na Kioku\", CC Second OP \"Todokanai Koi\", Kazusa ED1 \"Closing\", 3 Side heroines' ED \"Yasashii Uso\"";
 
         var expected = new List<ParsedSong>
         {
@@ -939,7 +973,8 @@ public class VNDBStaffNotesParserTests
                 Type = new List<SongType> { SongType.ED },
                 Title = "Closing",
                 AfterTitle = ""
-            },    new()
+            },
+            new()
             {
                 BeforeType = "3 Side heroines' ",
                 Type = new List<SongType> { SongType.ED },
@@ -955,7 +990,8 @@ public class VNDBStaffNotesParserTests
     [Test]
     public void Test_WA2Merge3()
     {
-        string input = "IC Insert Songs \"Shin'ai\", \"WHITE ALBUM\", \"SOUND OF DESTINY\", \"Todokanai Koi -live at campus Fes-\", CC Insert songs \"Todokanai Koi -Valentine Live-\", \"Routes\", \"Anata wo Omoitai\", \"POWDER SNOW\", Setsuna ED \"Toki no Mahou\"";
+        string input =
+            "IC Insert Songs \"Shin'ai\", \"WHITE ALBUM\", \"SOUND OF DESTINY\", \"Todokanai Koi -live at campus Fes-\", CC Insert songs \"Todokanai Koi -Valentine Live-\", \"Routes\", \"Anata wo Omoitai\", \"POWDER SNOW\", Setsuna ED \"Toki no Mahou\"";
 
         var expected = new List<ParsedSong>
         {
@@ -994,13 +1030,7 @@ public class VNDBStaffNotesParserTests
                 Title = "Todokanai Koi -Valentine Live-",
                 AfterTitle = ""
             },
-            new()
-            {
-                BeforeType = "",
-                Type = new List<SongType> { SongType.Insert },
-                Title = "Routes",
-                AfterTitle = ""
-            },
+            new() { BeforeType = "", Type = new List<SongType> { SongType.Insert }, Title = "Routes", AfterTitle = "" },
             new()
             {
                 BeforeType = "",

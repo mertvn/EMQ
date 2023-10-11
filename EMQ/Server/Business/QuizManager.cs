@@ -1018,7 +1018,8 @@ public class QuizManager
             }
             else
             {
-                Quiz.Room.Log("Could not find the treasure to pickup");
+                Quiz.Room.Log(
+                    $"Could not find the treasure {treasureGuid} to pickup at {treasureRoom.Coords.X},{treasureRoom.Coords.Y}");
             }
         }
         else
@@ -1062,7 +1063,27 @@ public class QuizManager
 
     public async Task OnSendChangeTreasureRoom(Session session, Point treasureRoomCoords, Direction direction)
     {
+        if (!Quiz.Room.TreasureRooms.Any())
+        {
+            // looting phase probably has ended already
+            return;
+        }
+
         var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
+
+        bool alreadyInTheRoom =
+            player.LootingInfo.X == treasureRoomCoords.X && player.LootingInfo.Y == treasureRoomCoords.Y;
+        if (alreadyInTheRoom)
+        {
+            await HubContext.Clients.Clients(session.ConnectionId!)
+                .SendAsync("ReceiveUpdatePlayerLootingInfo",
+                    player.Id,
+                    player.LootingInfo,
+                    true
+                );
+
+            return;
+        }
 
         var currentTreasureRoom =
             Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][

@@ -4,6 +4,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime;
 using System.Threading.Tasks;
+using EMQ.Server.Business;
+using EMQ.Server.Db;
+using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server;
 
@@ -28,5 +32,34 @@ public static class ServerUtils
 
         // long after = GC.GetTotalMemory(false);
         // Console.WriteLine($"GC freed {(before - after) / 1000 / 1000} MB");
+    }
+
+    public static async Task RunAnalysis()
+    {
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        foreach (RQ rq in rqs)
+        {
+            if (rq.analysis == "Pending")
+            {
+                string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
+
+                bool dlSuccess =
+                    await ExtensionMethods.DownloadFile(
+                        new HttpClient
+                        {
+                            DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("g", "4") } },
+                            Timeout = TimeSpan.FromMinutes(30)
+                        },
+                        filePath, new Uri(rq.url));
+                if (dlSuccess)
+                {
+                    var analyserResult = await MediaAnalyser.Analyse(filePath);
+                    System.IO.File.Delete(filePath);
+
+                    await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
+                        analyserResult: analyserResult);
+                }
+            }
+        }
     }
 }

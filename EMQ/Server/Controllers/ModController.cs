@@ -48,4 +48,19 @@ public class ModController : ControllerBase
         ServerUtils.RunAggressiveGc();
         return Ok();
     }
+
+    [HttpPost]
+    [Route("RunAnalysis")]
+    public async Task<ActionResult> RunAnalysis([FromBody] string adminPassword)
+    {
+        string? envVar = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+        if (string.IsNullOrWhiteSpace(envVar) || envVar != adminPassword)
+        {
+            _logger.LogInformation("Rejected RunAnalysis request");
+            return Unauthorized();
+        }
+
+        await ServerUtils.RunAnalysis();
+        return Ok();
+    }
 }
