@@ -162,6 +162,8 @@ public partial class QuizPage
 
     public DateTime LastSetVideoMuted { get; set; }
 
+    public DateTime LastSetVideoPlay { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -640,6 +642,19 @@ public partial class QuizPage
                     PageState.CurrentMasterVolumes[VisibleVideoElementId] / 100f);
             }
 
+            if (DateTime.UtcNow - LastSetVideoPlay > TimeSpan.FromMilliseconds(500))
+            {
+                LastSetVideoPlay = DateTime.UtcNow;
+                if (Room?.Quiz != null && Room.Quiz.QuizState.sp >= 0 &&
+                    Room.Quiz.QuizState.Phase == QuizPhaseKind.Guess)
+                {
+                    if (!await GetVideoPlaying())
+                    {
+                        await PlayVideo();
+                    }
+                }
+            }
+
             bool _ = await Preload2(_nextSong);
             StateHasChanged();
         }
@@ -793,5 +808,42 @@ public partial class QuizPage
                 // todo display error
             }
         }
+    }
+
+    private async Task<bool> GetVideoPlaying()
+    {
+        bool playing = await _jsRuntime.InvokeAsync<bool>("getVideoPlaying", VisibleVideoElementId);
+        return playing;
+    }
+
+    private async Task ResetVideo()
+    {
+        var timeRanges = await _jsRuntime.InvokeAsync<JsTimeRange[]>("getVideoBuffered", HiddenVideoElementId);
+        Console.WriteLine(JsonSerializer.Serialize(timeRanges, Utils.JsoIndented));
+
+        if (VisibleVideoElementId == "video1")
+        {
+            LastSetVideoMuted = DateTime.UtcNow;
+            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+        }
+        else
+        {
+            LastSetVideoMuted = DateTime.UtcNow;
+            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+        }
+
+        if (Room is { Quiz: { } } && _currentSong != null)
+        {
+            await _jsRuntime.InvokeAsync<string>("resetVideo", VisibleVideoElementId,
+                _currentSong.StartTime);
+        }
+    }
+
+    private async Task PlayVideo()
+    {
+        Console.WriteLine("PlayVideo");
+        await _jsRuntime.InvokeAsync<string>("playVideo", VisibleVideoElementId);
     }
 }
