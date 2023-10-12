@@ -558,5 +558,20 @@ GRANT ALL ON SCHEMA public TO public;";
 
             await connection.ExecuteAsync(sql);
         }
+
+        var serviceProvider = new ServiceCollection()
+            .AddFluentMigratorCore()
+            .ConfigureRunner(rb => rb
+                .AddPostgres()
+                .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
+                .ScanIn(Assembly.GetAssembly(typeof(ServerState))).For.Migrations())
+            .AddLogging(lb => lb.AddFluentMigratorConsole())
+            .BuildServiceProvider(false);
+
+        using (var scope = serviceProvider.CreateScope())
+        {
+            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+            runner.MigrateUp();
+        }
     }
 }
