@@ -35,6 +35,7 @@ public static class Blacklists
 
     public static List<string> EgsImporterBlacklist { get; } = new()
     {
+        "https://vndb.org/v12984",
         "https://vndb.org/v1141",
         "https://vndb.org/v2002",
         "https://vndb.org/v18760",
