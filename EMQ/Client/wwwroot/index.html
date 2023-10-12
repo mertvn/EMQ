@@ -197,6 +197,54 @@
         }
     }
 
+    async function getVideoPlaying(id) {
+        try {
+            const video = document.getElementById(id);
+            if (video) {
+                return !!(video.currentTime > 0 && !video.paused && !video.ended && video.readyState > 2);
+            }
+            return false;
+        } catch (err) {
+            console.log(err)
+            return false;
+        }
+    }
+
+    async function playVideo(id) {
+        try {
+            const video = document.getElementById(id);
+            if (video) {
+                video.play();
+            }
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
+    async function resetVideo(id, startTime) {
+        // console.log("here")
+        try {
+            const video = document.getElementById(id);
+            if (video) {
+                console.log(video);
+                // return;
+
+                // idk just do everything and hope it works
+                // console.log("reset " + id)
+                const parent = video.parentNode;
+                parent.removeChild(video);
+                parent.appendChild(video);
+                console.log(video)
+                video.load();
+                video.currentTime = startTime;
+                video.pause();
+                video.play();
+            }
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
     async function getVideoBuffered(id) {
         try {
             const video = document.getElementById(id);
@@ -224,7 +272,7 @@
         try {
             // console.log(`setVideoMuted ${id} ${muted}`)
             const video = document.getElementById(id);
-            if (video != null){
+            if (video != null) {
                 video.muted = muted;
             }
         } catch (err) {

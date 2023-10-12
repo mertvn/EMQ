@@ -75,6 +75,16 @@
         Room Settings
     </button>
 
+    <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(async () => await ResetVideo())"
+            style="display: none; position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 160px; height: 30px; z-index: 10;">
+        Reload video player
+    </button>
+
+    <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(async () => await PlayVideo())"
+            style="display: none; position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 160px; height: 30px; z-index: 10;">
+        Play video
+    </button>
+
     @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
     {
         <button type="button" class="btn btn-warning"
