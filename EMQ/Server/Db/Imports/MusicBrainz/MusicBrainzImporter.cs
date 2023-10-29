@@ -13,9 +13,18 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Imports.MusicBrainz;
 
+public class MusicBrainzVndbArtistJson
+{
+    public Guid mb { get; set; } = Guid.Empty;
+
+    public string[] vndbid { get; set; } = Array.Empty<string>();
+}
+
 public static class MusicBrainzImporter
 {
     public static List<Song> Songs { get; } = new();
+
+    public static Dictionary<Guid, string[]> MusicBrainzVndbArtistDict { get; set; } = new();
 
     public static async Task ImportMusicBrainzData()
     {
@@ -30,7 +39,16 @@ public static class MusicBrainzImporter
         string file = await File.ReadAllTextAsync($"{folder}/musicbrainz.json");
         var json = JsonSerializer.Deserialize<MusicBrainzJson[]>(file);
 
+        string file1 = await File.ReadAllTextAsync($"{folder}/musicbrainz_vndb_artist.json");
+        var json1 = JsonSerializer.Deserialize<MusicBrainzVndbArtistJson[]>(file1);
+        MusicBrainzVndbArtistDict = json1!.ToDictionary(x => x.mb, x => x.vndbid);
+
         Songs.AddRange(await ImportMusicBrainzDataInner(json!));
+
+        if (Songs.DistinctBy(x => x.MusicBrainzRecordingGid).Count() != Songs.Count)
+        {
+            throw new Exception("duplicate recordings detected");
+        }
 
         await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\MusicBrainzImporter.json",
             System.Text.Json.JsonSerializer.Serialize(Songs, Utils.Jso));
@@ -39,7 +57,7 @@ public static class MusicBrainzImporter
         foreach (Song song in Songs)
         {
             int mId = await DbManager.InsertSong(song);
-            Console.WriteLine($"Inserted mId {mId}");
+            // Console.WriteLine($"Inserted mId {mId}");
         }
     }
 
@@ -57,6 +75,15 @@ public static class MusicBrainzImporter
                 .Select(x => x)
                 .OrderBy(y => y.medium.position)
                 .ThenBy(y => y.track.position).ToList();
+
+            string releaseGid = selectedReleaseValues.First().release.gid.ToString();
+            if (Blacklists.MusicBrainzImporterReleaseBlacklist.Contains(releaseGid))
+            {
+                string releaseName = selectedReleaseValues.First().release.name;
+                Console.WriteLine($"skipping blacklisted release {releaseGid} {releaseName}");
+                continue;
+            }
+
             for (int index = 0; index < selectedReleaseValues.Count(); index++)
             {
                 MusicBrainzJson data = selectedReleaseValues.ElementAt(index);
@@ -75,9 +102,26 @@ public static class MusicBrainzImporter
                 var songArtists = new List<SongArtist>();
                 foreach (artist artist in data.artist)
                 {
+                    string vndbid = artist.gid.ToString();
+                    if (MusicBrainzVndbArtistDict.TryGetValue(artist.gid, out var o))
+                    {
+                        vndbid = o.First(); // todo
+
+                        if (o.Length > 1)
+                        {
+                            Console.WriteLine(
+                                $"artist has more than one vndb page linked: https://musicbrainz.org/artist/{artist.gid} {artist.name} {artist.sort_name}");
+                        }
+                    }
+                    else
+                    {
+                        // Console.WriteLine(
+                        //     $"artist not linked: https://musicbrainz.org/artist/{artist.gid} {artist.name} {artist.sort_name}");
+                    }
+
                     SongArtist songArtist = new SongArtist()
                     {
-                        VndbId = artist.gid.ToString(), // todo
+                        VndbId = vndbid,
                         // Role = role, // todo
                         PrimaryLanguage = artist.area.ToString(), // todo str
                         Titles =
@@ -87,8 +131,8 @@ public static class MusicBrainzImporter
                                 {
                                     LatinTitle = artist.sort_name,
                                     NonLatinTitle = artist.name,
-                                    Language = artist.area.ToString() ?? "", // todo str
-                                    IsMainTitle = true // todo?
+                                    Language = artist.area.ToString() ?? "ja", // todo str
+                                    IsMainTitle = false // todo?
                                 },
                             },
                         Sex = (Sex)(artist.gender ?? 0) // todo str
@@ -106,7 +150,7 @@ public static class MusicBrainzImporter
                         // todo vndb vn title
                         LatinTitle = data.release.name,
                         NonLatinTitle = data.release.name,
-                        Language = data.release.language.ToString()!,
+                        Language = "ja", // data.release.language.ToString()!, // todo
                         IsMainTitle = true
                     }
                 };
@@ -160,32 +204,33 @@ public static class MusicBrainzImporter
                     },
                 };
 
-                var sameSong = songs.SingleOrDefault(x => x.MusicBrainzRecordingGid == song.MusicBrainzRecordingGid);
-                if (sameSong is not null)
-                {
-                    Console.WriteLine(
-                        $"Same song! {song.Sources.First().Titles.First().LatinTitle} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
-                }
-
-                // todo
+                Song? sameSong = songs.FirstOrDefault(x =>
+                    x.MusicBrainzRecordingGid!.Value == song.MusicBrainzRecordingGid!.Value);
                 // if (sameSong is not null)
                 // {
                 //     Console.WriteLine(
                 //         $"Same song! {song.Sources.First().Titles.First().LatinTitle} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
-                //     sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
                 // }
-                // else
-                // {
-                //     songs.Add(song);
-                // }
+                // songs.Add(song);
 
-                songs.Add(song);
+                // todo
+                if (sameSong is not null)
+                {
+                    Console.WriteLine(
+                        $"Same song! {song.Sources.First().Titles.First().LatinTitle} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
+                    sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
+                }
+                else
+                {
+                    songs.Add(song);
+                }
 
                 // todo
                 // Guid releaseGid = new(song.Sources.Select(x =>
                 //         x.Links.Single(y => y.Type == SongSourceLinkType.MusicBrainzRelease).Url).Single()
                 //     .Replace("https://musicbrainz.org/release/", ""));
                 // Guid recordingGid = song.MusicBrainzRecordingGid!.Value;
+
                 var musicBrainzReleaseRecording = new MusicBrainzReleaseRecording
                 {
                     release = data.release.gid, recording = data.recording.gid

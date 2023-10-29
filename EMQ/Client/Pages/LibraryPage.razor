@@ -115,7 +115,8 @@
             //     .First();
 
             // todo groupby
-            // todo releasename
+            // todo releasename?
+            // todo don't show releases that are not what's entered in the input box?
             var releases = bgms.SelectMany(x => x.MusicBrainzReleases).Distinct();
 
             // var asdf = bgms
@@ -168,7 +169,6 @@
                 </Blazorise.TabPanel>
                 @foreach ((string key, List<Song> value) in tabs)
                 {
-                    Console.WriteLine("yep");
                     <Blazorise.TabPanel @key="@key" Name="@key">
                         <SongInfoCardWrapperComponent
                             CurrentSongs="value"

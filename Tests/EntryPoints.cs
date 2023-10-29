@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -573,5 +573,73 @@ GRANT ALL ON SCHEMA public TO public;";
             var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
             runner.MigrateUp();
         }
+    }
+
+    [Test, Explicit]
+    public async Task FreshSetupMB()
+    {
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
+        bool recreateEmqDb = true;
+        string emqDbName = "EMQ";
+
+        bool recreateVndbDb = true;
+        string vndbDbName = "vndbforemq";
+
+        string executingDirectory = Directory.GetCurrentDirectory();
+
+        if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Database name in the connstr must be 'EMQ'");
+        }
+
+        // todo
+        string cnnstrMusicbrainz = ConnectionHelper
+            .GetConnectionStringBuilder("postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
+            .ToString();
+
+        string mbDir = $@"C:/emq/musicbrainz/{Constants.ImportDateMusicBrainz:yyyy-MM-dd}";
+        Directory.CreateDirectory(mbDir);
+
+        await using (var connection = new NpgsqlConnection(cnnstrMusicbrainz))
+        {
+            Directory.SetCurrentDirectory(executingDirectory);
+            string mbQueriesDir = @"../../../../Queries/MusicBrainz";
+
+            // order is important
+            var queryNames = new List<string>()
+            {
+                "aaa_rids.sql",
+                "aaa_rec_vocals.sql",
+                "aaa_rec_lyricist.sql",
+                "musicbrainz.sql",
+                "musicbrainz_recording_release.sql",
+                "musicbrainz_vndb_artist.sql",
+            };
+
+            foreach (string filePath in queryNames.Select(x => Path.Combine(mbQueriesDir, x)))
+            {
+                string filename = Path.GetFileNameWithoutExtension(filePath);
+                string sql = await File.ReadAllTextAsync(filePath);
+                Console.WriteLine(
+                    $"StartSection running query: {filename}: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                var queryResult = (await connection.QueryAsync<string>(sql, commandTimeout: 1000)).ToList();
+                foreach (var o in queryResult)
+                {
+                    Console.WriteLine(((string)(o.ToString())).Length);
+                }
+
+                if (queryResult.Any())
+                {
+                    await File.WriteAllTextAsync($"{mbDir}/{filename}.json", queryResult.Single());
+                }
+            }
+        }
+
+        stopWatch.Stop();
+        Console.WriteLine(
+            $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
     }
 }

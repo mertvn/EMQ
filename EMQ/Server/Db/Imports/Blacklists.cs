@@ -160,4 +160,22 @@ public static class Blacklists
         "",
         "",
     };
+
+    public static List<string> MusicBrainzImporterReleaseBlacklist { get; } = new()
+    {
+        "41c0eb47-95f4-409d-8f74-bbb85e376838",
+        "5d51da54-f097-4f94-9271-83fab6cf4ba1",
+        "8ab6e56a-27fc-4b9e-a234-5846e6f9c26d",
+        "55b580db-3b76-447a-8478-7a9aeafd84ba",
+        "21e05ca1-9b77-4c87-9cc9-5f5340152a1b",
+        "d34ee06f-7afd-4578-b7d1-9658de23d0e2",
+        "a80e7b99-e770-4f56-b2e7-1b5d3a4e8b9b",
+        "9652010c-9beb-4fe0-b420-d16a15531952",
+        "4c647eba-f1b8-4a62-8cbd-f46cd38aa0c9",
+        "80bd5b53-b551-4c59-ae77-2246c6dfe23f",
+        "11d06123-b553-4d50-961b-d1e9b93c016e",
+        "1dd04b74-239d-47cc-ae5e-27c50187d2dc",
+        "db38f619-f4d3-4fad-9bde-e16da1e8cf3a",
+        "e812c10f-6d95-4d26-acb2-6c1889af22ef",
+    };
 }

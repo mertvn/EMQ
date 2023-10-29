@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Imports;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -119,9 +120,7 @@ public class DbTests
 
         var expected = new List<string>()
         {
-            "https://vndb.org/v729",
-            "60381854-ee11-41f7-89d8-a610df202fad",
-            "ab6e477c-4d44-43f1-b6f7-7ec87293afa9"
+            "https://vndb.org/v729", "60381854-ee11-41f7-89d8-a610df202fad", "ab6e477c-4d44-43f1-b6f7-7ec87293afa9"
         };
 
         var urls = songs.SelectMany(x => x.Sources.SelectMany(y => y.Links.Select(z => z.Url)))
@@ -129,7 +128,7 @@ public class DbTests
 
         foreach (Song song in songs)
         {
-            urls.AddRange(song.MusicBrainzReleases.Select(x=> x.ToString()));
+            urls.AddRange(song.MusicBrainzReleases.Select(x => x.ToString()));
         }
 
         urls = urls.Distinct().ToList();
@@ -691,5 +690,104 @@ public class DbTests
     public async Task FindSongReports()
     {
         var _ = await DbManager.FindSongReports(DateTime.MinValue, DateTime.MaxValue);
+    }
+
+    [Test, Explicit]
+    public async Task ListMultipleMusicBrainzReleases()
+    {
+        var ret = new List<Song>();
+        const int end = 31805;
+        for (int i = 1; i < end; i++)
+        {
+            var songs = await DbManager.SelectSongs(new Song { Id = i });
+            if (songs.Any())
+            {
+                var song = songs.First();
+                ret.Add(song);
+            }
+        }
+
+        foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
+        var processedVndbUrls = new List<(string, string)>();
+        foreach (Song song in ret.Where(x =>
+                     x.MusicBrainzReleases.Count > 1 &&
+                     x.Sources.Count(y => y.Links.Any(z => z.Type == SongSourceLinkType.VNDB)) == 1))
+        {
+            var songSource = song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB));
+            string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
+
+            // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+            bool printed = false;
+            foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
+            {
+                if (processedVndbUrls.Any(x => x.Item1 == msVndbUrl && x.Item2 == songMusicBrainzRelease.ToString()))
+                {
+                    continue;
+                }
+
+                if (!printed)
+                {
+                    printed = true;
+                    Console.WriteLine($"{songSource.Titles.First(x => x.IsMainTitle).LatinTitle} {msVndbUrl}");
+                }
+
+                processedVndbUrls.Add((msVndbUrl, songMusicBrainzRelease.ToString()));
+                Console.WriteLine($"    https://musicbrainz.org/release/{songMusicBrainzRelease}");
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task ListVNsWithNoMusicBrainzReleases()
+    {
+        var ret = new List<Song>();
+        const int end = 31805;
+        for (int i = 1; i < end; i++)
+        {
+            var songs = await DbManager.SelectSongs(new Song { Id = i });
+            if (songs.Any())
+            {
+                var song = songs.First();
+                ret.Add(song);
+            }
+        }
+
+        foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
+        var hasBgm = new HashSet<string>();
+        foreach (var song in ret)
+        {
+            var songSource = song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB));
+            string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
+
+            if (song.MusicBrainzRecordingGid is not null)
+            {
+                hasBgm.Add(msVndbUrl);
+            }
+        }
+
+        var processedVndbUrls = new List<string>();
+        foreach (var song in ret)
+        {
+            var songSource = song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB));
+            string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
+            if (hasBgm.Any(x => x == msVndbUrl) || processedVndbUrls.Contains(msVndbUrl))
+            {
+                continue;
+            }
+
+            processedVndbUrls.Add(msVndbUrl);
+            Console.WriteLine($"{msVndbUrl} {songSource.Titles.First()}");
+        }
+
+        Console.WriteLine(hasBgm.Count);
+        Console.WriteLine(processedVndbUrls.Count);
     }
 }
