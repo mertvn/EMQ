@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -581,12 +581,6 @@ GRANT ALL ON SCHEMA public TO public;";
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        bool recreateEmqDb = true;
-        string emqDbName = "EMQ";
-
-        bool recreateVndbDb = true;
-        string vndbDbName = "vndbforemq";
-
         string executingDirectory = Directory.GetCurrentDirectory();
 
         if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
@@ -614,7 +608,7 @@ GRANT ALL ON SCHEMA public TO public;";
                 "aaa_rec_vocals.sql",
                 "aaa_rec_lyricist.sql",
                 "musicbrainz.sql",
-                "musicbrainz_recording_release.sql",
+                // "musicbrainz_release_recording.sql",
                 "musicbrainz_vndb_artist.sql",
             };
 
@@ -637,6 +631,20 @@ GRANT ALL ON SCHEMA public TO public;";
                 }
             }
         }
+
+        // doesn't really work unless we delete unimported releases later
+        // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        // {
+        //     Console.WriteLine(
+        //         $"StartSection import musicbrainz_release_recording: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        //
+        //     var json = JsonSerializer.Deserialize<MusicBrainzReleaseRecording[]>(
+        //         await File.ReadAllTextAsync($"{mbDir}/musicbrainz_release_recording.json"))!;
+        //     foreach (MusicBrainzReleaseRecording musicBrainzReleaseRecording in json)
+        //     {
+        //         await DbManager.InsertMusicBrainzReleaseRecording(musicBrainzReleaseRecording);
+        //     }
+        // }
 
         stopWatch.Stop();
         Console.WriteLine(
