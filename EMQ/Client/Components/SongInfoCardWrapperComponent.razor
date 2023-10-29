@@ -76,9 +76,13 @@
                             }
                         </div>
 
-                        @if (!hasVideo || !hasSound)
+                        @if (true)
                         {
-                            // todo
+                            @if (hasVideo && hasSound)
+                            {
+                                <br/>
+                                <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                            }
 
                             <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
                                 <DataAnnotationsValidator/>
