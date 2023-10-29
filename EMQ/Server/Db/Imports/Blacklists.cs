@@ -21,11 +21,11 @@ public static class Blacklists
         ("v418", "ROSE! ROSE! ROSE!"),
         ("v434", "GRIND"),
         ("v1899", "Futari"),
-        ("v1950", "Tomodachi Ijou Koibito Miman"),
+        ("v1950", "Tomodachi Ijou Koibito Miman"), // todo 1x1 + 2x1
         ("v2438", "Blue Twilight ~Taiyou to Tsuki ga Deau Toki~"),
         ("v2501", "Hide and seek"),
         ("v9409", "Key of Destiny"),
-        // ("v10632", "Ageless Love"), // this one is really problematic
+        // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v11000", "Photograph Memory"),
         ("v14005", "Onaji Hohaba de, Zutto"),
         ("v15395", "Chaleur"),
