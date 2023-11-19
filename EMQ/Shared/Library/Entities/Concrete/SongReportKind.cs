@@ -27,4 +27,7 @@ public enum SongReportKind
 
     [Display(Name = "Fake video")]
     FakeVideo,
+
+    [Display(Name = "Vocals under BGM type")]
+    VocalsUnderBgm,
 }

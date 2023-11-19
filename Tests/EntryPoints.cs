@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -576,7 +576,7 @@ GRANT ALL ON SCHEMA public TO public;";
     }
 
     [Test, Explicit]
-    public async Task FreshSetupMB()
+    public async Task FreshSetup_MB()
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();

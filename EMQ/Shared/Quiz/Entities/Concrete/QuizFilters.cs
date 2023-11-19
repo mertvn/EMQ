@@ -13,6 +13,7 @@ public class QuizFilters
 
     public List<ArtistFilter> ArtistFilters { get; set; } = new();
 
+    // todo add basic validation here because people keep submitting their user ids :/
     public string VndbAdvsearchFilter { get; set; } = "";
 
     public Dictionary<Language, bool> VNOLangs { get; set; } =

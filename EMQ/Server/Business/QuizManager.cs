@@ -416,6 +416,7 @@ public class QuizManager
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
+    // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
         CorrectAnswersDict = new Dictionary<int, List<string>>();

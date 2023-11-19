@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -1731,7 +1731,7 @@ WHERE id = {mId};
                 case ReviewQueueStatus.Approved:
                     if (rq.duration == null)
                     {
-                        throw new Exception("Cannot approve item without duration.");
+                        throw new Exception($"Cannot approve item {rq.id} without duration.");
                     }
 
                     var songLink = new SongLink()

@@ -179,5 +179,41 @@ public static class Blacklists
         "db38f619-f4d3-4fad-9bde-e16da1e8cf3a", // 朱-Aka- ORIGINAL SOUND TRACKS
         "e812c10f-6d95-4d26-acb2-6c1889af22ef", // Steins;Gate Symphonic Material
         "644aeaa9-13c3-4b7f-98de-410d614b12a3", // クドわふたー Original SoundTrack
+        "a0041957-5b1d-40a7-a23b-d0acd23eff2d", // グリザイアの果実 オリジナルサウンドトラック
+        "2936a79f-a50b-47ff-a667-3dabb1f4c417", // STEINS;GATE 0 O.S.T 「GATE OF STEINER」
+        "fa184c8b-83e7-4db4-9c35-d21fb68e5ec2", // Fate/stay night EMIYA #0 and Out Tracks
+        "cafc1cff-ce91-4d28-beb1-b59dd20033d9", // Fate/hollow ataraxia THE BROAD BRIDGE RELIVE and OUT TRACKS
+        "5c297b94-1479-424f-be12-e43ca990963f", // Ever17 ~the out of infinity~ Vocal Collection
+        "f64c4a30-ece6-46f7-9acd-4fe6d38ead62", // Phantom -PHANTOM OF INFERNO- ORIGINAL SOUNDTRACK
+        "d158f5d0-80c7-444c-ac44-3b5618606b46", // 家族計画 サウンドコレクション
+        "f990445f-a373-448f-9b46-d3201d7311c0", // Comic Party ORIGINAL SOUND TRACK
+        "7083fc5e-5182-4b76-8ded-a8b94c96d876", // 12Riven-the Ψcliminal of integral- Arrange BGM
+        "8595cf7a-2713-4ccc-8d73-d595dce6f68b", // Destination for Arcie
+        "19e9e324-e700-4c96-9a6c-cf958fb061e2", // Memories Off 2nd ミニアルバムコレクション Vol.1 遠いこの空から
+        "b91d21df-4e03-4e85-8c8d-d4e200b4f772", // Root Double -Before Crime * After Days- Xtend Edition Original Soundtrack
+        "e0d3abed-2bf5-4d45-8442-a45bb9cdcb7f", // はつゆきさくら Special Soundtrack
+        "c7c251bb-fa1e-4f2c-840f-8ae9a93a7501", // フェイト/エクストラ CCC オリジナル・サウンドトラック
+        "7716da14-d544-49e5-b651-35fb3d44bae3", // ココロ@ファンクション! ディレクターチョイス サウンドトラックCD
+        "c957aff5-f1b7-464d-a8e2-1ea36dd94f41", // ヤキモチ☆ストリーム
+        "76a0e96e-1ff4-4a0e-a0a1-6ab147274f22", // 花咲ワークスプリング! SPECIAL SOUND TRACK
+        "3d3e0311-3758-4555-a944-afeb63e8babb", // 恋×シンアイ彼女 Original Sound Tracks
+        "0957674f-3a6d-4e34-a525-ddc3e079d101", // フローラル・フローラブ SPECIAL SOUND TRACK
+        "79e4d22c-1feb-4466-ad64-8574530e4838", // かけぬけ★青春スパーキング! SPECIAL SOUNDTRACK
+        "0c359bd3-7886-4eb8-85a1-13a5b5062dd6", // EVER AFTER ~MUSIC FROM "TSUKIHIME"~
+        "96653862-0000-4e28-b654-487e54cc54d5", // 「逆転検事」 オーケストラミニアルバム ～逆転の旋律～
+        "c1addd9f-6ad4-441f-b487-2e57e865eb74", // 『レイトン教授VS逆転裁判』特製アニメフィルム付き オリジナルサウンドトラック
+        "ef0cb613-9d50-48d3-ad16-e7a96e14226b", // Dreamin'
+        "42bf289a-cf30-4cde-9c5a-014cbabd630e", // AI: THE SOMNIUM FILES - nirvanA Initiative Soundtrack HARMOniOUS DISCORD
+        "4f2a033a-6f05-4804-9c95-fd1a345bd232", // THE HOUSE IN FATA MORGANA ORIGINAL SOUND TRACKS 1&2
+        "ab6e477c-4d44-43f1-b6f7-7ec87293afa9", // 11eyes -罪と罰と贖いの少女- オフィシャル通販用 Sound Track
+        "afe56ae2-f282-4706-b5c3-0bface8892a7", // Fate/stay night イメージアルバム「Wish」
+        "b11fa299-c1cd-4fc4-b71b-f48825daae5f", // Wind -a Breath of Heart- ~Songs~
+        "ddcd8d70-3f93-4759-9169-f98bc76702dc", // 水夏～SUIKA～パーフェクトアレンジアルバム
+        "e79dff21-f427-4769-85dd-72257fb4f16f", // 3days -満ちてゆく刻の彼方で- パーフェクトアレンジアルバム
+        "e03b4e08-fed2-423d-ad14-45d46b868ceb", // 恋がさくころ桜どき キャラクターソングアルバム
+        "5e17fbfe-f797-4f2c-8906-ce5d1c1bc984", // ALIA's CARNIVAL! ORIGINAL SOUNDTRACK COLLECTION
+        "3918ca2b-a2af-47e3-80eb-67cc652ffc57", // 蒼の彼方のフォーリズム 特典CD
+        "5ad91c44-1632-4934-94f9-29dd944d4dd1", // 逆転検事2 オーケストラ・アレンジ楽曲集～奏でられし逆転～
+        "a08f1e34-de74-4f86-9e5d-b65c541fa820", // 北へ。~Diamond Dust~Memorial Songs
     };
 }
