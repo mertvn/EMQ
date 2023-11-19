@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @inject HttpClient _client
@@ -88,8 +88,8 @@
                                 <DataAnnotationsValidator/>
 
                                 <div style="padding: 5px">
-                                    <label for="songUrl">Add link: </label>
-                                    <InputText id="songUrl" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
+                                    <label for="@song.Id">Add link: </label>
+                                    <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
                                     <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
                                 </div>
                                 <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
