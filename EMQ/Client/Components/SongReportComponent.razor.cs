@@ -35,6 +35,7 @@ public partial class SongReportComponent
             };
             SelectedUrls = Song.Links.ToDictionary(x => x.Url, _ => Song.Links.Count == 1);
         }
+        StateHasChanged();
     }
 
     private async Task SendSongReportReq(SongReport clientSongReport, Dictionary<string, bool> selectedUrls)
