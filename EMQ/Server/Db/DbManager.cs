@@ -1780,6 +1780,11 @@ WHERE id = {mId};
 
     public static async Task<LibraryStats> SelectLibraryStats(int limit = 500)
     {
+        // var stopWatch = new Stopwatch();
+        // stopWatch.Start();
+        // Console.WriteLine(
+        //     $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
         // todo cache results?
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
@@ -1811,16 +1816,23 @@ LEFT JOIN music_source_music msm ON msm.music_id = m.id
 group by msm.type
 order by type";
             var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
+            // Console.WriteLine(
+            //     $"StartSection totalMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
             qMusicType.Where($"mel.url is not null");
+            // Console.WriteLine(
+            //     $"StartSection availableMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
 
 
-            var mels = (await connection.QueryAsync<MusicExternalLink>("SELECT * FROM music_external_link")).ToList();
-            int videoLinkCount = mels.Count(x => x.is_video && !mels.Any(y => !y.is_video && y.music_id == x.music_id));
-            int soundLinkCount = mels.Count(x => !x.is_video && !mels.Any(y => y.is_video && y.music_id == x.music_id));
-            int bothLinkCount = mels.Count(x => x.is_video && mels.Any(y => !y.is_video && y.music_id == x.music_id));
-
+            // Console.WriteLine(
+            //     $"StartSection mels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            int videoLinkCount = (await connection.ExecuteScalarAsync<int>(
+                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video)"));
+            int soundLinkCount = (await connection.ExecuteScalarAsync<int>(
+                "SELECT count(distinct music_id) FROM music_external_link where not is_video and music_id not in (select music_id FROM music_external_link where is_video)"));
+            int bothLinkCount = (await connection.ExecuteScalarAsync<int>(
+                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video)"));
 
             string sqlMusicSourceMusic =
                 @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
@@ -1836,10 +1848,14 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
             var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
             qMsm.Where($"mst.is_main_title = true");
             qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
+            // Console.WriteLine(
+            //     $"StartSection msm: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
             qMsm.Where($"mel.url is not null");
             qMsm.Append($"LIMIT {limit:raw}");
+            // Console.WriteLine(
+            //     $"StartSection msmAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
             for (int index = 0; index < msmAvailable.Count; index++)
@@ -1862,10 +1878,14 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/
 group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
+            // Console.WriteLine(
+            //     $"StartSection am: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
             qAm.Where($"mel.url is not null");
             qAm.Append($"LIMIT {limit:raw}");
+            // Console.WriteLine(
+            //     $"StartSection amAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
             var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
@@ -1907,10 +1927,14 @@ LEFT JOIN music_external_link mel ON mel.music_id = m.id
 group by year
 order by year";
             var qMsYear = connection.QueryBuilder($"{sqlMsYear:raw}");
+            // Console.WriteLine(
+            //     $"StartSection msYear: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msYear =
                 (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
 
             qMsYear.Where($"mel.url is not null");
+            // Console.WriteLine(
+            //     $"StartSection msYearAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msYearAvailable =
                 (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
 
@@ -1927,7 +1951,8 @@ order by year";
                 msYearAvailable = msYearAvailable.OrderBy(x => x.Key.Year).ToDictionary(x => x.Key, x => x.Value);
             }
 
-
+            // Console.WriteLine(
+            //     $"StartSection uploaderCounts: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var uploaderCounts = (await connection.QueryAsync<(string, int)>(@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
@@ -1935,6 +1960,8 @@ group by lower(submitted_by)
 order by count(music_id) desc
 ")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
+            // Console.WriteLine(
+            //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var songDifficultyLevels = (await connection.QueryAsync<(int, int)>(@$"
 select case
 	WHEN stat_correctpercentage  = {SongDifficultyLevel.Impossible.GetRange()!.Minimum} 								                                                 THEN 5
