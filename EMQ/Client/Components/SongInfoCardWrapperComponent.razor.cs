@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Client.Pages;
@@ -58,4 +59,11 @@ public partial class SongInfoCardWrapperComponent
             }
         }
     }
+}
+
+public class AddSongLinkModel
+{
+    [Required]
+    [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
+    public string Url { get; set; } = "";
 }

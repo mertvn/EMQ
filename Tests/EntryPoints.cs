@@ -1,5 +1,7 @@
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -99,6 +101,36 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateSongLite_MB()
+    {
+        bool useLocal = true;
+        if (useLocal)
+        {
+            await File.WriteAllTextAsync("SongLite_MB.json", await DbManager.ExportSongLite_MB());
+        }
+        else
+        {
+            string? adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                throw new Exception("EMQ_ADMIN_PASSWORD is null");
+            }
+
+            string serverUrl = "https://emq.up.railway.app";
+            string songLite =
+                await ServerUtils.Client.GetStringAsync(
+                    $"{serverUrl}/Mod/ExportSongLite_MB?adminPassword={adminPassword}");
+
+            if (string.IsNullOrWhiteSpace(songLite))
+            {
+                throw new Exception("songLite is null");
+            }
+
+            await File.WriteAllTextAsync("SongLite_MB.json", songLite);
+        }
+    }
+
+    [Test, Explicit]
     public async Task GenerateReviewQueue()
     {
         await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());
@@ -140,6 +172,15 @@ public class EntryPoints
         await DbManager.ImportSongLite(deserialized!);
     }
 
+    [Test, Explicit]
+    public async Task ImportSongLite_MB()
+    {
+        var deserialized =
+            JsonConvert.DeserializeObject<List<SongLite_MB>>(
+                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite_MB.json"));
+        await DbManager.ImportSongLite_MB(deserialized!);
+    }
+
     // music ids can change between vndb imports, so this doesn't work correctly right now
     // todo add songlite to rq
     // [Test, Explicit]
@@ -154,8 +195,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int s = 46;
-        const int e = 48;
+        const int s = 246;
+        const int e = 262;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -165,11 +206,11 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        const int s = 21;
-        const int e = 21;
+        const int s = 186;
+        const int e = 186;
         for (int i = s; i <= e; i++)
         {
-            await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "Bad audio");
+            await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "");
         }
     }
 
@@ -518,7 +559,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilder();
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-10-29_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-11-20_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
@@ -559,6 +600,7 @@ GRANT ALL ON SCHEMA public TO public;";
             await connection.ExecuteAsync(sql);
         }
 
+        throw new Exception();
         var serviceProvider = new ServiceCollection()
             .AddFluentMigratorCore()
             .ConfigureRunner(rb => rb
@@ -649,5 +691,58 @@ GRANT ALL ON SCHEMA public TO public;";
         stopWatch.Stop();
         Console.WriteLine(
             $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+    }
+
+    [Test, Explicit]
+    public async Task ReplaceMergedRecordingsInSongLite_MB()
+    {
+        const string sqlRedirect = "SELECT new_id FROM recording_gid_redirect WHERE gid = @gid";
+        const string sqlRecordingGid = "SELECT gid FROM recording WHERE id = @id";
+
+        async Task<Guid> GetMergedRecordingGid(IDbConnection connection, Guid gid)
+        {
+            int newId = await connection.QuerySingleOrDefaultAsync<int>(sqlRedirect, new { gid = gid });
+            if (newId > 0)
+            {
+                gid = await connection.QuerySingleAsync<Guid>(sqlRecordingGid, new { id = newId });
+                await GetMergedRecordingGid(connection, gid);
+            }
+
+            return gid;
+        }
+
+        if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Database name in the connstr must be 'EMQ'");
+        }
+
+        const string path = "C:\\emq\\emqsongsmetadata\\SongLite_MB.json";
+        var deserialized = JsonConvert.DeserializeObject<List<SongLite_MB>>(await File.ReadAllTextAsync(path))!;
+        File.Copy(path, $"{path}@{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss_fff}.json");
+
+        // todo
+        string cnnstrMusicbrainz = ConnectionHelper
+            .GetConnectionStringBuilder("postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
+            .ToString();
+
+        await Parallel.ForEachAsync(deserialized,
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 0 },
+            async (songLite, _) =>
+            {
+                await using (var connection = new NpgsqlConnection(cnnstrMusicbrainz))
+                {
+                    var oldGid = songLite.Recording;
+                    var newGid = await GetMergedRecordingGid(connection, oldGid);
+
+                    if (oldGid != newGid)
+                    {
+                        Console.WriteLine($"{oldGid} => {newGid}");
+                        songLite.Recording = newGid;
+                    }
+                }
+            });
+
+        deserialized = deserialized.DistinctBy(x => x.Recording).ToList();
+        await File.WriteAllTextAsync(path, JsonSerializer.Serialize(deserialized, Utils.JsoIndented));
     }
 }

@@ -7,7 +7,9 @@ public static class Constants
     public static bool UseLocalSongFilesForDevelopment { get; set; } =
         true && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
-    public const string LocalMusicLibraryPath = @"G:/Music";
+    public static string? SelfhostAddress { get; set; } = Environment.GetEnvironmentVariable("EMQ_SELFHOST_ADDRESS");
+
+    public const string LocalMusicLibraryPath = @"G:\Music";
 
     public static string ImportDateVndb { get; set; } = "2023-10-29";
 

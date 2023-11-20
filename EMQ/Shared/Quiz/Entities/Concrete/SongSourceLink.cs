@@ -8,10 +8,14 @@ public class SongSourceLink
     public string Url { get; set; } = "";
 
     public SongSourceLinkType Type { get; set; } = SongSourceLinkType.Unknown;
+
+    public string Name { get; set; } = "";
 }
 
 public enum SongSourceLinkType
 {
     Unknown,
     VNDB,
+    MusicBrainzRelease,
+    VGMdbAlbum,
 }

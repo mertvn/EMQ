@@ -16,4 +16,7 @@ public class MusicSourceExternalLink
 
     [Required]
     public int type { get; set; }
+
+    [Required]
+    public string name { get; set; } = "";
 }

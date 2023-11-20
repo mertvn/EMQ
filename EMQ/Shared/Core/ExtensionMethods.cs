@@ -196,6 +196,15 @@ public static class ExtensionMethods
         return songLite;
     }
 
+    public static SongLite_MB ToSongLite_MB(this Song song)
+    {
+        var songLite = new SongLite_MB(
+            song.MusicBrainzRecordingGid!.Value,
+            song.Links,
+            song.Stats);
+        return songLite;
+    }
+
     public static string NormalizeForAutocomplete(this string input)
     {
         return new string(input
@@ -206,5 +215,25 @@ public static class ExtensionMethods
                 .Where(y => (char.IsLetterOrDigit(y) || char.IsWhiteSpace(y)))
                 .ToArray())
             .Normalize(NormalizationForm.FormC);
+    }
+
+    public static string ReplaceSelfhostLink(this string url)
+    {
+        if (Constants.SelfhostAddress is null)
+        {
+            throw new Exception();
+        }
+
+        return url.Replace("https://emqselfhost", Constants.SelfhostAddress);
+    }
+
+    public static string UnReplaceSelfhostLink(this string url)
+    {
+        if (Constants.SelfhostAddress is null)
+        {
+            throw new Exception();
+        }
+
+        return url.Replace(Constants.SelfhostAddress, "https://emqselfhost");
     }
 }

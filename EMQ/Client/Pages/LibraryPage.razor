@@ -114,20 +114,17 @@
             //     .GroupBy(x => x.Sources.SelectMany(y => y.Links.Where(z => z.Type == SongSourceLinkType.MusicBrainz).Select(z => z.Url)))
             //     .First();
 
-            // todo groupby
-            // todo releasename?
             // todo don't show releases that are not what's entered in the input box?
-            var releases = bgms.SelectMany(x => x.MusicBrainzReleases).Distinct();
+            var releases = bgms.SelectMany(x =>
+                x.Sources.SelectMany(y =>
+                    y.Links.Where(z =>
+                        z.Type == SongSourceLinkType.MusicBrainzRelease))).DistinctBy(x => x.Url);
 
-            // var asdf = bgms
-            //     .SelectMany(x => x.Sources.SelectMany(y => y.Links))
-            //     .Where(z => z.Type == SongSourceLinkType.MusicBrainzRelease)
-            //     .Select(a => a.Url)
-            //     .Distinct();
+            // var releases = bgms.SelectMany(x => x.MusicBrainzReleases).Distinct();
 
             foreach (var release in releases)
             {
-                var releaseString = release.ToString();
+                var releaseString = release.Name.ToString();
                 if (!tabs.ContainsKey(releaseString))
                 {
                     tabs[releaseString] = new List<Song>();
@@ -141,7 +138,9 @@
                     //     tabs[releaseString].Add(bgm);
                     // }
 
-                    if (bgm.MusicBrainzReleases.Contains(release))
+                    var songReleases = bgm.Sources.SelectMany(y => y.Links.Where(a => a.Type == SongSourceLinkType.MusicBrainzRelease).Select(z => z.Url)).Distinct();
+                    // var songReleases = bgm.MusicBrainzReleases;
+                    if (songReleases.Contains(release.Url))
                     {
                         tabs[releaseString].Add(bgm);
                     }

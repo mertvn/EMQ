@@ -22,52 +22,90 @@
             <div class="songInfo">
                 <environment include="Development">
                     <span> @Song.Id </span>
+                    @if (Song.MusicBrainzRecordingGid != null)
+                    {
+                        <br/>
+                        <span> @Song.MusicBrainzRecordingGid </span>
+                    }
+
                 </environment>
                 <div>
                     <h5 class="songSourceSongType">
                         @{
-                            Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
+                            // Dictionary<List<string>, List<SongSourceSongType>> songSourceVNIDSongTypes = new();
+                            //
+                            // foreach (SongSource songSource in Song.Sources)
+                            // {
+                            //     songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
+                            // }
 
-                            foreach (SongSource songSource in Song.Sources)
-                            {
-                                songSourceVNIDSongTypes.Add(songSource.Links.Select(x => x.Url).ToList(), songSource.SongTypes);
-                            }
-
-                            foreach (Guid songMusicBrainzRelease in Song.MusicBrainzReleases)
-                            {
-                                songSourceVNIDSongTypes.Add(
-                                    new List<string>
-                                    {
-                                        $"https://musicbrainz.org/release/{songMusicBrainzRelease}"
-                                    },
-                                    new List<SongSourceSongType> { SongSourceSongType.BGM });
-                            }
+                            // foreach (Guid songMusicBrainzRelease in Song.MusicBrainzReleases)
+                            // {
+                            //     songSourceVNIDSongTypes.Add(
+                            //         new List<string>
+                            //         {
+                            //             $"https://musicbrainz.org/release/{songMusicBrainzRelease}"
+                            //         },
+                            //         new List<SongSourceSongType> { SongSourceSongType.BGM });
+                            // }
 
                             // couldn't get distinct to work
                             List<string> displayedIds = new();
 
-                            foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            // foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
+                            foreach (var songSource in Song.Sources)
                             {
-                                foreach (string songSourceVNID in songSourceVNIDs)
+                                var vndbLink = songSource.Links.Single(x => x.Type == SongSourceLinkType.VNDB);
+                                // var otherLinks = songSource.Links.Where(x => x.Type != SongSourceLinkType.VNDB);
+                                var songTypes = songSource.SongTypes;
+                                // foreach (string songSourceVNID in songSourceVNIDs)
+                                // {
+                                if (!displayedIds.Contains(vndbLink.Url))
                                 {
-                                    if (!displayedIds.Contains(songSourceVNID))
-                                    {
-                                        displayedIds.Add(songSourceVNID);
+                                    displayedIds.Add(vndbLink.Url);
 
-                                        string final = "";
-                                        for (int index = 0; index < songTypes.Count; index++)
+                                    string final = "";
+                                    for (int index = 0; index < songTypes.Count; index++)
+                                    {
+                                        SongSourceSongType songType = songTypes[index];
+                                        final += $"{songType}{(index + 1 != songTypes.Count ? ", " : "")}";
+                                    }
+
+                                    <span>@(final)</span>
+
+                                    foreach (var link in songSource.Links.OrderBy(x => x.Type))
+                                    {
+                                        string src;
+                                        if (link.Url.Contains("vndb.org")) // todo
                                         {
-                                            SongSourceSongType songType = songTypes[index];
-                                            final += $"{songType}{(index + 1 != songTypes.Count ? ", " : "")}";
+                                            src = "assets/favicon/vndb.ico";
+                                        }
+                                        else if (link.Url.Contains("musicbrainz.org"))
+                                        {
+                                            src = "assets/favicon/musicbrainz.png";
+                                        }
+                                        else if (link.Url.Contains("vgmdb.net"))
+                                        {
+                                            src = "assets/favicon/vgmdb.ico";
+                                        }
+                                        else
+                                        {
+                                            // todo?
+                                            src = "";
                                         }
 
-                                        <a class="songSourceVNID link-primary" href="@songSourceVNID" target="_blank">
-                                            <span>@(final)</span>
-                                        </a>
-
-                                        <br/>
+                                        <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+                                            <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                                <img width="16px" height="16px"
+                                                     src="@src" alt="link"
+                                                     style="margin-left: 8px; scale: 1.2;">
+                                            </a>
+                                        </Blazorise.Tooltip>
                                     }
+
+                                    <br/>
                                 }
+                                // }
                             }
                         }
 
@@ -78,11 +116,11 @@
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
 
                         // we're not using Title.ToString() here to force a newline between the Latin and NonLatin titles
-                        <h5 class="songLatinTitle card-title">@mainTitle.LatinTitle</h5>
+                        <h4 class="songLatinTitle card-title">@mainTitle.LatinTitle</h4>
                         @if (!string.IsNullOrWhiteSpace(nonLatinTitle) &&
                              !string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            <h5 class="songNonLatinTitle card-title">(@mainTitle.NonLatinTitle)</h5>
+                            <h4 class="songNonLatinTitle card-title">(@mainTitle.NonLatinTitle)</h4>
                         }
                     }
                 </div>
@@ -93,8 +131,11 @@
                         Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
                         <div>
+                            <span>@songArtistTitle.ToString()</span>
                             <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
-                                <span>@songArtistTitle.ToString()</span>
+                                <img width="16px" height="16px"
+                                     src="assets/favicon/vndb.ico" alt="link"
+                                     style="margin-left: 6px; scale: 1.2;">
                             </a>
                         </div>
                     }

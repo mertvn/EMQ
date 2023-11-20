@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Server.Db.Imports.SongMatching.Common;
@@ -25,7 +26,7 @@ public static class GenericImporter
         var regex = new Regex("", RegexOptions.Compiled);
         string extension = "*";
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, false, true);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false, true);
         await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_I_bgm", false);
     }
 
@@ -58,7 +59,7 @@ public static class GenericImporter
         var regex = new Regex("", RegexOptions.Compiled);
         string extension = "*";
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, true);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, true);
         await SongMatcher.Match(songMatches, $"C:\\emq\\matching\\generic\\{artistDirName}_{num}", false);
     }
 }

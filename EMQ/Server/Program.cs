@@ -195,6 +195,12 @@ if (Constants.UseLocalSongFilesForDevelopment)
         FileProvider = new PhysicalFileProvider(Constants.LocalMusicLibraryPath),
         RequestPath = "/emqlocalmusiclibrary"
     });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(@"M:\a\mb\selfhoststorage"),
+        RequestPath = "/selfhoststorage"
+    });
 }
 
 app.UseRouting();

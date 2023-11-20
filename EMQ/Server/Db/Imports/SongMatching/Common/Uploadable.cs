@@ -11,4 +11,6 @@ public struct Uploadable
     public string? ResultUrl { get; set; }
 
     public SongLite SongLite { get; set; }
+
+    public string? MusicBrainzRecording { get; init; }
 }

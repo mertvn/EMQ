@@ -17,7 +17,7 @@ public static class KnownArtistImporter
         string extension = "*";
         var artistName = new List<string>() { "Suzuyu" };
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, false);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false);
         foreach (SongMatch songMatch in songMatches)
         {
             songMatch.Artists.AddRange(artistName);
@@ -34,7 +34,7 @@ public static class KnownArtistImporter
         string extension = "*";
         var artistName = new List<string>() { artistDirName };
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, false);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false);
         foreach (SongMatch songMatch in songMatches)
         {
             songMatch.Artists.Clear();

@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Blazorise;
-using Blazorise.Components;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -39,8 +35,6 @@ public partial class LibraryPage
     private string _selectedTab2 = "TabVNDB";
 
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
-
-    public int VisibleSongsCount { get; set; }
 
     public string VndbAdvsearchStr { get; set; } = "";
 
@@ -222,11 +216,4 @@ public enum LibrarySongFilterKind
 
     [Description("Missing both links")]
     MissingBoth
-}
-
-public class AddSongLinkModel
-{
-    [Required]
-    [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
-    public string Url { get; set; } = "";
 }

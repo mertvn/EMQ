@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Server.Db.Imports.SongMatching.Common;
 
@@ -13,7 +14,7 @@ public static class ACGImporter
         var regex = new Regex("(.+) - (.+)().flac", RegexOptions.Compiled);
         string extension = "flac";
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension, true);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, true);
         await SongMatcher.Match(songMatches, "C:\\emq\\matching\\acg\\acg_2", false);
     }
 }

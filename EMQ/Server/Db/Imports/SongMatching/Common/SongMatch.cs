@@ -11,6 +11,8 @@ public readonly struct SongMatch
     public List<string> Titles { get; init; }
 
     public List<string> Artists { get; init; }
+
+    public string? MusicBrainzRecording { get; init; }
 }
 
 public class SongMatchInnerResult

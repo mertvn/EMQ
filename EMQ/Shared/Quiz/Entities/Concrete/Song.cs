@@ -36,6 +36,8 @@ public class Song
     public Guid? MusicBrainzRecordingGid { get; set; }
 
     public List<Guid> MusicBrainzReleases { get; set; } = new();
+
+    public List<int> VgmdbAlbums { get; set; } = new();
 }
 
 public enum SongType

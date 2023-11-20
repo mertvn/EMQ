@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @inject HttpClient _client
@@ -76,7 +76,13 @@
                             }
                         </div>
 
-                        @if (true)
+                        @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
+                        {
+                            // todo backend validation?
+                            <br/>
+                            <span>BGM submissions are currently disabled.</span>
+                        }
+                        else
                         {
                             @if (hasVideo && hasSound)
                             {

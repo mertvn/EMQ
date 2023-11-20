@@ -44,7 +44,7 @@ public static class GGVCImporter
         var regex = new Regex("【(.+)】(?: )?(.+)(?: )?(?:\\[|【)(.*)(?:]|】)", RegexOptions.Compiled);
         string extension = "mp3";
 
-        var songMatches = SongMatcher.ParseSongFile(dir, regex, extension);
+        var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension });
         await SongMatcher.Match(songMatches, "C:\\emq\\matching\\ggvc\\ggvc_4");
     }
 }

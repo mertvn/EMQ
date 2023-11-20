@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
@@ -26,6 +27,8 @@ public static class DbManager
 
     private static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
 
+    private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
+
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
@@ -42,6 +45,16 @@ public static class DbManager
                 var musicBrainzReleaseRecordings = await connection.GetAllAsync<MusicBrainzReleaseRecording>();
                 MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
                     .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
+            }
+        }
+
+        if (!MusicBrainzReleaseVgmdbAlbums.Any())
+        {
+            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+            {
+                var musicBrainzReleaseVgmdbAlbums = await connection.GetAllAsync<MusicBrainzReleaseVgmdbAlbum>();
+                MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
+                    .ToDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
             }
         }
 
@@ -131,7 +144,7 @@ public static class DbManager
                         {
                             songLinks.Add(new SongLink()
                             {
-                                Url = musicExternalLink.url,
+                                Url = musicExternalLink.url.ReplaceSelfhostLink(),
                                 IsVideo = musicExternalLink.is_video,
                                 Type = (SongLinkType)musicExternalLink.type,
                                 Duration = musicExternalLink.duration,
@@ -163,7 +176,7 @@ public static class DbManager
                             {
                                 existingSong.Links.Add(new SongLink()
                                 {
-                                    Url = musicExternalLink.url,
+                                    Url = musicExternalLink.url.ReplaceSelfhostLink(),
                                     Type = (SongLinkType)musicExternalLink.type,
                                     IsVideo = musicExternalLink.is_video,
                                     Duration = musicExternalLink.duration,
@@ -181,14 +194,18 @@ public static class DbManager
 
             foreach (Song song in songs)
             {
-                song.Sources = await SelectSongSource(connection, song);
-                song.Artists = await SelectArtist(connection, song, false);
-
                 if (song.MusicBrainzRecordingGid is not null)
                 {
                     song.MusicBrainzReleases = MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
                 }
 
+                foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
+                {
+                    song.VgmdbAlbums.AddRange(MusicBrainzReleaseVgmdbAlbums[songMusicBrainzRelease]);
+                }
+
+                song.Sources = await SelectSongSource(connection, song);
+                song.Artists = await SelectArtist(connection, song, false);
                 // CachedSongs[input.Id] = song; // todo
             }
 
@@ -201,6 +218,7 @@ public static class DbManager
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
+    /// Song.Sources.Id <br/>
     /// Song.Sources.Links <br/>
     /// Song.Sources.Titles.LatinTitle <br/>
     /// Song.Sources.Titles.NonLatinTitle <br/>
@@ -227,6 +245,12 @@ public static class DbManager
         if (input.Id > 0)
         {
             queryMusicSource.Where($"msm.music_id = {input.Id}");
+        }
+
+        int? sourceId = input.Sources.FirstOrDefault()?.Id;
+        if (sourceId is > 0)
+        {
+            queryMusicSource.Where($"ms.id = {sourceId}");
         }
 
         var latinTitles = input.Sources.SelectMany(x => x.Titles.Select(y => y.LatinTitle))
@@ -313,11 +337,51 @@ public static class DbManager
 
                     if (musicSourceExternalLink is not null)
                     {
-                        songSources.Last().Links.Add(new SongSourceLink()
+                        switch ((SongSourceLinkType)musicSourceExternalLink.type)
                         {
-                            Url = musicSourceExternalLink.url,
-                            Type = (SongSourceLinkType)musicSourceExternalLink.type
-                        });
+                            case SongSourceLinkType.MusicBrainzRelease:
+                                {
+                                    if (input.MusicBrainzReleases.Contains(
+                                            Guid.Parse(musicSourceExternalLink.url.LastSegment())))
+                                    {
+                                        songSources.Last().Links.Add(new SongSourceLink()
+                                        {
+                                            Url = musicSourceExternalLink.url,
+                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                            Name = musicSourceExternalLink.name,
+                                        });
+                                    }
+
+                                    break;
+                                }
+                            case SongSourceLinkType.VGMdbAlbum:
+                                {
+                                    if (input.VgmdbAlbums.Contains(
+                                            int.Parse(musicSourceExternalLink.url.LastSegment())))
+                                    {
+                                        songSources.Last().Links.Add(new SongSourceLink()
+                                        {
+                                            Url = musicSourceExternalLink.url,
+                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                            Name = musicSourceExternalLink.name,
+                                        });
+                                    }
+
+                                    break;
+                                }
+                            case SongSourceLinkType.Unknown:
+                            case SongSourceLinkType.VNDB:
+                            default:
+                                {
+                                    songSources.Last().Links.Add(new SongSourceLink()
+                                    {
+                                        Url = musicSourceExternalLink.url,
+                                        Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                        Name = musicSourceExternalLink.name,
+                                    });
+                                    break;
+                                }
+                        }
                     }
 
                     if (category is not null)
@@ -356,11 +420,51 @@ public static class DbManager
                     {
                         if (!existingSongSource.Links.Any(x => x.Url == musicSourceExternalLink.url))
                         {
-                            existingSongSource.Links.Add(new SongSourceLink()
+                            switch ((SongSourceLinkType)musicSourceExternalLink.type)
                             {
-                                Url = musicSourceExternalLink.url,
-                                Type = (SongSourceLinkType)musicSourceExternalLink.type
-                            });
+                                case SongSourceLinkType.MusicBrainzRelease:
+                                    {
+                                        if (input.MusicBrainzReleases.Contains(
+                                                Guid.Parse(musicSourceExternalLink.url.LastSegment())))
+                                        {
+                                            songSources.Last().Links.Add(new SongSourceLink()
+                                            {
+                                                Url = musicSourceExternalLink.url,
+                                                Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                                Name = musicSourceExternalLink.name,
+                                            });
+                                        }
+
+                                        break;
+                                    }
+                                case SongSourceLinkType.VGMdbAlbum:
+                                    {
+                                        if (input.VgmdbAlbums.Contains(
+                                                int.Parse(musicSourceExternalLink.url.LastSegment())))
+                                        {
+                                            songSources.Last().Links.Add(new SongSourceLink()
+                                            {
+                                                Url = musicSourceExternalLink.url,
+                                                Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                                Name = musicSourceExternalLink.name,
+                                            });
+                                        }
+
+                                        break;
+                                    }
+                                case SongSourceLinkType.Unknown:
+                                case SongSourceLinkType.VNDB:
+                                default:
+                                    {
+                                        songSources.Last().Links.Add(new SongSourceLink()
+                                        {
+                                            Url = musicSourceExternalLink.url,
+                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                            Name = musicSourceExternalLink.name,
+                                        });
+                                        break;
+                                    }
+                            }
                         }
                     }
 
@@ -540,7 +644,7 @@ public static class DbManager
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
-            var music = new Music() { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid};
+            var music = new Music() { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
             int mId = await connection.InsertAsync(music);
 
             foreach (Title songTitle in song.Titles)
@@ -663,15 +767,18 @@ public static class DbManager
                 foreach (SongSourceLink songSourceLink in songSource.Links)
                 {
                     string? url = (await connection.QueryAsync<string>(
-                        "select msel.url from music_source_external_link msel where msel.url=@mselUrl",
-                        new { mselUrl = songSourceLink.Url })).ToList().FirstOrDefault();
+                        "select msel.url from music_source_external_link msel where msel.url=@mselUrl and msel.music_source_id=@msId",
+                        new { mselUrl = songSourceLink.Url, msId = msId })).ToList().FirstOrDefault();
 
                     if (string.IsNullOrEmpty(url))
                     {
                         // ReSharper disable once UnusedVariable
                         var mselId = await connection.InsertAsync(new MusicSourceExternalLink()
                         {
-                            music_source_id = msId, url = songSourceLink.Url, type = (int)songSourceLink.Type
+                            music_source_id = msId,
+                            url = songSourceLink.Url,
+                            type = (int)songSourceLink.Type,
+                            name = songSourceLink.Name
                         });
                     }
                 }
@@ -799,6 +906,7 @@ public static class DbManager
                                      JOIN artist a ON a.id = am.artist_id
                                      JOIN category c on c.id = msc.category_id
                                      WHERE 1=1
+                                     AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
             }
             else
@@ -812,6 +920,7 @@ public static class DbManager
                                      JOIN artist_music am ON am.music_id = m.id
                                      JOIN artist a ON a.id = am.artist_id
                                      WHERE 1=1
+                                     AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
             }
 
@@ -1500,6 +1609,43 @@ WHERE id = {mId};
         return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
     }
 
+    public static async Task<string> ExportSongLite_MB()
+    {
+        var songs = await GetRandomSongs(int.MaxValue, true);
+        var bgms = songs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
+        var songLite = bgms.Select(song => song.ToSongLite_MB()).ToList();
+
+        HashSet<string> md5Hashes = new();
+        foreach (SongLite_MB sl in songLite)
+        {
+            foreach (SongLink songLink in sl.Links)
+            {
+                songLink.Url = songLink.Url.UnReplaceSelfhostLink();
+            }
+
+            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sl));
+            byte[] hash = MD5.HashData(bytes);
+            string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
+
+            if (!md5Hashes.Add(encoded))
+            {
+                throw new Exception("Duplicate SongLite detected");
+            }
+
+            if (!sl.Links.Any())
+            {
+                throw new Exception("SongLite must have at least one link to export.");
+            }
+
+            if (sl.SongStats?.TimesPlayed <= 0)
+            {
+                sl.SongStats = null;
+            }
+        }
+
+        return JsonSerializer.Serialize(songLite, Utils.JsoIndented);
+    }
+
     public static async Task<string> ExportReviewQueue()
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -1533,7 +1679,9 @@ WHERE id = {mId};
             LEFT JOIN artist a ON a.id = aa.artist_id
             WHERE lower(mt.latin_title) = ANY(lower(@mtLatinTitle::text)::text[])
               AND msel.url = ANY(@mselUrl)
-              AND a.vndb_id = ANY(@aVndbId)";
+              AND a.vndb_id = ANY(@aVndbId)
+              AND msm.type = ANY(@msmType)
+              ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
@@ -1553,7 +1701,11 @@ WHERE id = {mId};
                         {
                             mtLatinTitle = songLite.Titles.Select(x => x.LatinTitle).ToList(),
                             mselUrl = songLite.SourceVndbIds.Select(x => x.ToVndbUrl()).ToList(),
-                            aVndbId = songLite.ArtistVndbIds
+                            aVndbId = songLite.ArtistVndbIds,
+                            msmType = new List<SongSourceSongType>
+                            {
+                                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
+                            }.Cast<int>().ToList()
                         }))
                     .ToList();
 
@@ -1575,6 +1727,66 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
+                        await InsertSongLink(mId, link, transaction);
+                    }
+
+                    if (songLite.SongStats != null)
+                    {
+                        await SetSongStats(mId, songLite.SongStats, transaction);
+                    }
+                }
+            }
+
+            if (errored)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception();
+            }
+            else
+            {
+                await transaction.CommitAsync();
+            }
+        }
+    }
+
+    public static async Task ImportSongLite_MB(List<SongLite_MB> songLites)
+    {
+        const string sqlMIdFromSongLite = @"
+            SELECT m.id
+            FROM music m
+            WHERE musicbrainz_recording_gid = @recording
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
+        {
+            bool errored = false;
+            foreach (SongLite_MB songLite in songLites)
+            {
+                List<int> mIds = (await connection.QueryAsync<int>(sqlMIdFromSongLite,
+                        new { recording = songLite.Recording }))
+                    .ToList();
+
+                if (!mIds.Any())
+                {
+                    errored = true;
+                    Console.WriteLine($"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    continue;
+                }
+
+                if (mIds.Count > 1)
+                {
+                    errored = true;
+                    Console.WriteLine($"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+                    continue;
+                }
+
+                foreach (int mId in mIds)
+                {
+                    foreach (SongLink link in songLite.Links)
+                    {
+                        link.Url = link.Url.ReplaceSelfhostLink();
                         await InsertSongLink(mId, link, transaction);
                     }
 
@@ -1631,7 +1843,7 @@ WHERE id = {mId};
                 {
                     id = reviewQueue.id,
                     music_id = reviewQueue.music_id,
-                    url = reviewQueue.url,
+                    url = reviewQueue.url.ReplaceSelfhostLink(),
                     type = (SongLinkType)reviewQueue.type,
                     is_video = reviewQueue.is_video,
                     submitted_by = reviewQueue.submitted_by,
@@ -1778,7 +1990,7 @@ WHERE id = {mId};
         return melId;
     }
 
-    public static async Task<LibraryStats> SelectLibraryStats(int limit = 500)
+    public static async Task<LibraryStats> SelectLibraryStats(int limit = 250)
     {
         // var stopWatch = new Stopwatch();
         // stopWatch.Start();
@@ -2173,6 +2385,45 @@ order by diff
                 Console.WriteLine(e);
                 throw;
             }
+        }
+    }
+
+    public static async Task InsertMusicBrainzReleaseVgmdbAlbum(
+        MusicBrainzReleaseVgmdbAlbum musicBrainzReleaseVgmdbAlbum)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            try
+            {
+                await connection.InsertAsync(musicBrainzReleaseVgmdbAlbum);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Do not use in user-facing code.
+    /// </summary>
+    public static async Task<int> SelectCountUnsafe(string table, string column = "id")
+    {
+        string sql = $"SELECT COUNT({column}) from {table}";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.ExecuteScalarAsync<int>(sql);
+        }
+    }
+
+    public static async Task<Dictionary<string, int>> GetRecordingMids()
+    {
+        string sql =
+            "SELECT musicbrainz_recording_gid::text, id from music where musicbrainz_recording_gid is not null";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return (await connection.QueryAsync<(string, int)>(sql)).ToDictionary(x => x.Item1, x => x.Item2);
         }
     }
 }

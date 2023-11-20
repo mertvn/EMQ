@@ -343,7 +343,9 @@ public static class VndbImporter
                         {
                             new SongSourceLink()
                             {
-                                Type = SongSourceLinkType.VNDB, Url = ((string)dynMusicSource.id).ToVndbUrl()
+                                Type = SongSourceLinkType.VNDB,
+                                Url = ((string)dynMusicSource.id).ToVndbUrl(),
+                                Name = musicSourceTitles.First(x => x.IsMainTitle).ToString(),
                             }
                         },
                         Titles = musicSourceTitles,
@@ -380,7 +382,7 @@ public static class VndbImporter
         return songs;
     }
 
-    private static (string latinTitle, string? nonLatinTitle) VndbTitleToEmqTitle(string vndbName, string? vndbLatin)
+    public static (string latinTitle, string? nonLatinTitle) VndbTitleToEmqTitle(string vndbName, string? vndbLatin)
     {
         string latinTitle;
         string? nonLatinTitle;

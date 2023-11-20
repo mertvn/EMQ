@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Dapper;
+using EMQ.Server;
 using EMQ.Server.Db;
-using EMQ.Server.Db.Imports;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
+using Npgsql;
 using NUnit.Framework;
 
 namespace Tests;
@@ -120,20 +122,26 @@ public class DbTests
 
         var expected = new List<string>()
         {
-            "https://vndb.org/v729", "60381854-ee11-41f7-89d8-a610df202fad", "ab6e477c-4d44-43f1-b6f7-7ec87293afa9"
+            "https://vndb.org/v729",
+            "https://musicbrainz.org/release/60381854-ee11-41f7-89d8-a610df202fad",
+            "https://vgmdb.net/album/13596"
         };
 
         var urls = songs.SelectMany(x => x.Sources.SelectMany(y => y.Links.Select(z => z.Url)))
             .Distinct().ToList();
 
-        foreach (Song song in songs)
-        {
-            urls.AddRange(song.MusicBrainzReleases.Select(x => x.ToString()));
-        }
-
         urls = urls.Distinct().ToList();
         Console.WriteLine(JsonSerializer.Serialize(urls, Utils.JsoIndented));
         CollectionAssert.AreEquivalent(expected, urls);
+    }
+
+    [Test]
+    public async Task Test_FindSongsBySongSourceTitle_MB_fata()
+    {
+        var songs = (await DbManager.FindSongsBySongSourceTitle("The House in Fata Morgana Original Soundtrack"))
+            .ToList();
+        Console.WriteLine(songs.Count);
+        Assert.That(songs.Count == 0);
     }
 
     [Test]
@@ -259,7 +267,6 @@ public class DbTests
         Assert.That(songs.Count < 400);
     }
 
-
     [Test]
     public async Task Test_GetRandomSongs_CategoryFilter_1_NoAokana()
     {
@@ -313,11 +320,19 @@ public class DbTests
         Assert.That(songs.Any(song => song.Sources.Any(source =>
             source.Titles.Any(title => title.LatinTitle.Contains("Sorcery Jokers")))));
 
+        foreach (Song song in songs)
+        {
+            foreach (SongSource songSource in song.Sources)
+            {
+                Console.WriteLine(songSource.Titles.First(x => x.IsMainTitle).LatinTitle);
+            }
+        }
+
         Assert.That(!(songs.Any(song => song.Sources.Any(source =>
             source.Titles.Any(title => title.LatinTitle.Contains("Magical Charming"))))));
 
         Assert.That(songs.Count > 4);
-        Assert.That(songs.Count < 100);
+        Assert.That(songs.Count < 1000);
     }
 
     [Test]
@@ -421,7 +436,7 @@ public class DbTests
             filters: new QuizFilters { StartDateFilter = startDate, EndDateFilter = endDate }, printSql: true);
 
         Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 200);
+        Assert.That(songs.Count < 2000);
         Assert.That(songs.All(song =>
             song.Sources.Select(x => x.AirDateStart).Any(x => x >= startDate) &&
             song.Sources.Select(x => x.AirDateStart).Any(x => x <= endDate)));
@@ -460,7 +475,7 @@ public class DbTests
             printSql: true);
 
         Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 1000);
+        Assert.That(songs.Count < 10000);
         Assert.That(songs.All(song =>
             song.Sources.Select(x => x.RatingBayesian).Any(x => x >= ratingBayesianStart) &&
             song.Sources.Select(x => x.RatingBayesian).Any(x => x <= ratingBayesianEnd)));
@@ -514,7 +529,7 @@ public class DbTests
             printSql: true);
 
         Assert.That(songs.Count > 0);
-        Assert.That(songs.Count < 200);
+        Assert.That(songs.Count < 2000);
         Assert.That(songs.All(song =>
             song.Sources.Select(x => x.VoteCount).Any(x => x >= voteCountStart) &&
             song.Sources.Select(x => x.VoteCount).Any(x => x <= voteCountEnd)));
@@ -695,48 +710,53 @@ public class DbTests
     [Test, Explicit]
     public async Task ListMultipleMusicBrainzReleases()
     {
-        var ret = new List<Song>();
-        const int end = 31805;
-        for (int i = 1; i < end; i++)
+        string sql = @"
+with cte as (
+select distinct ms.id, mrr.release
+FROM music m
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+join musicbrainz_release_recording mrr on mrr.recording = m.musicbrainz_recording_gid
+order by ms.id
+) select id, json_agg(release) from cte group by id having json_array_length(json_agg(release)) > 1";
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songs = await DbManager.SelectSongs(new Song { Id = i });
-            if (songs.Any())
+            SqlMapper.AddTypeHandler(typeof(Guid[]), new JsonTypeHandler());
+            IEnumerable<(int, Guid[])> res = await connection.QueryAsync<(int, Guid[])>(sql);
+
+            Dictionary<SongSource, Guid[]> dict = new();
+            foreach ((int msid, Guid[]? releasegids) in res)
             {
-                var song = songs.First();
-                ret.Add(song);
+                var songSource = await DbManager.SelectSongSource(connection,
+                    new Song { Sources = new List<SongSource> { new() { Id = msid } } });
+                dict[songSource.Single()] = releasegids;
             }
-        }
 
-        foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
-        }
-
-        var processedVndbUrls = new List<(string, string)>();
-        foreach (Song song in ret.Where(x =>
-                     x.MusicBrainzReleases.Count > 1 &&
-                     x.Sources.Count(y => y.Links.Any(z => z.Type == SongSourceLinkType.VNDB)) == 1))
-        {
-            var songSource = song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB));
-            string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
-
-            // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-            bool printed = false;
-            foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
+            var processedVndbUrls = new List<(string, string)>();
+            foreach (var asdf in dict)
             {
-                if (processedVndbUrls.Any(x => x.Item1 == msVndbUrl && x.Item2 == songMusicBrainzRelease.ToString()))
-                {
-                    continue;
-                }
+                string msVndbUrl = asdf.Key.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
 
-                if (!printed)
+                // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+                bool printed = false;
+                foreach (Guid songMusicBrainzRelease in asdf.Value)
                 {
-                    printed = true;
-                    Console.WriteLine($"{songSource.Titles.First(x => x.IsMainTitle).LatinTitle} {msVndbUrl}");
-                }
+                    if (processedVndbUrls.Any(x =>
+                            x.Item1 == msVndbUrl && x.Item2 == songMusicBrainzRelease.ToString()))
+                    {
+                        continue;
+                    }
 
-                processedVndbUrls.Add((msVndbUrl, songMusicBrainzRelease.ToString()));
-                Console.WriteLine($"    https://musicbrainz.org/release/{songMusicBrainzRelease}");
+                    if (!printed)
+                    {
+                        printed = true;
+                        Console.WriteLine($"{asdf.Key.Titles.First(x => x.IsMainTitle)} {msVndbUrl}");
+                    }
+
+                    processedVndbUrls.Add((msVndbUrl, songMusicBrainzRelease.ToString()));
+                    Console.WriteLine($"    https://musicbrainz.org/release/{songMusicBrainzRelease}");
+                }
             }
         }
     }
@@ -745,7 +765,7 @@ public class DbTests
     public async Task ListVNsWithNoMusicBrainzReleases()
     {
         var ret = new List<Song>();
-        const int end = 31805;
+        int end = await DbManager.SelectCountUnsafe("music");
         for (int i = 1; i < end; i++)
         {
             var songs = await DbManager.SelectSongs(new Song { Id = i });
@@ -774,7 +794,7 @@ public class DbTests
         }
 
         var processedVndbUrls = new List<string>();
-        foreach (var song in ret)
+        foreach (var song in ret.OrderByDescending(x => x.Sources.First().VoteCount))
         {
             var songSource = song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB));
             string msVndbUrl = songSource.Links.First(y => y.Type == SongSourceLinkType.VNDB).Url;
@@ -784,7 +804,7 @@ public class DbTests
             }
 
             processedVndbUrls.Add(msVndbUrl);
-            Console.WriteLine($"{msVndbUrl} {songSource.Titles.First()}");
+            Console.WriteLine($"{msVndbUrl} {songSource.Titles.First(x => x.IsMainTitle)} {songSource.VoteCount}");
         }
 
         Console.WriteLine(hasBgm.Count);

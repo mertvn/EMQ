@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CueSharp;
@@ -43,7 +44,7 @@ public static class Conv
             Console.WriteLine("--------------------------------------------------------");
             Console.WriteLine(filePath);
             var currentDir = Directory.GetFiles(Path.GetDirectoryName(filePath)!);
-            if (!currentDir.Any(x =>
+            if (true || !currentDir.Any(x =>
                     x.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
                     x.EndsWith(".ape", StringComparison.OrdinalIgnoreCase) ||
                     x.EndsWith(".tak", StringComparison.OrdinalIgnoreCase) ||
@@ -52,7 +53,13 @@ public static class Conv
             {
                 bool found = false;
                 var flacPaths = currentDir.ToList()
-                    .FindAll(x => x.EndsWith(".flac", StringComparison.OrdinalIgnoreCase));
+                    .FindAll(x =>
+                        x.EndsWith(".flac", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".ape", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".tak", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".tta", StringComparison.OrdinalIgnoreCase)
+                    );
                 if (flacPaths.Any())
                 {
                     foreach (string flacPath in flacPaths)
@@ -112,6 +119,9 @@ public static class Conv
         var discRegex = new Regex(@"(?:.+)??(?:dis[ck])(?:[ _-])?([0-9]+)(?:.+)?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+        List<string> invalidFormatExceptionPaths = new();
+        List<string> splitFilesPaths = new();
+
         var dict = new ConcurrentDictionary<string, string>(); // todo string, info class
         string inputDir = "L:\\olil355 - Copy";
         var filePaths = Directory.GetFiles(inputDir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
@@ -133,6 +143,42 @@ public static class Conv
                 // {
                 //     Console.WriteLine("Single cue file");
                 // }
+
+                var noSplitFiles = false;
+                var currentDir = Directory.GetFiles(Path.GetDirectoryName(cueFilePath)!);
+                var flacPaths = currentDir.ToList()
+                    .FindAll(x =>
+                        x.EndsWith(".flac", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".ape", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".tak", StringComparison.OrdinalIgnoreCase) ||
+                        x.EndsWith(".tta", StringComparison.OrdinalIgnoreCase)
+                    );
+                if (flacPaths.Any())
+                {
+                    foreach (string flacPath in flacPaths)
+                    {
+                        long length = new FileInfo(flacPath).Length;
+                        long meb = length / (1024 * 1024);
+                        if (meb > 50)
+                        {
+                            noSplitFiles = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    // can't be split files if there aren't any sound files next to the cue file at all
+                    noSplitFiles = true;
+                }
+
+                if (!noSplitFiles)
+                {
+                    splitFilesPaths.Add(cueFilePath);
+                    // Console.WriteLine($"skipping split files dir: {cueFilePath}");
+                    return;
+                }
 
                 CueSheet cueSheet;
                 try
@@ -169,8 +215,81 @@ public static class Conv
                 string containerFilePath = Path.Join(dirName, containerFileName);
                 if (!File.Exists(containerFilePath))
                 {
-                    Console.WriteLine("containerFile not found");
-                    return;
+                    bool replaced = false;
+                    string[] allCuesInPath = Directory.GetFiles(dirName, $"*.cue", SearchOption.AllDirectories);
+                    if (allCuesInPath.Length == 1)
+                    {
+                        string replaceTak =
+                            containerFilePath.Replace(".wav", ".tak", StringComparison.OrdinalIgnoreCase);
+                        string replaceTta =
+                            containerFilePath.Replace(".wav", ".tta", StringComparison.OrdinalIgnoreCase);
+                        string replaceApe =
+                            containerFilePath.Replace(".wav", ".ape", StringComparison.OrdinalIgnoreCase);
+                        string replaceFlac =
+                            containerFilePath.Replace(".wav", ".flac", StringComparison.OrdinalIgnoreCase);
+                        if (File.Exists(replaceTak))
+                        {
+                            Console.WriteLine("foundreplacement .tak");
+                            File.Copy(cueFilePath, cueFilePath + ".bak.wav2tak");
+
+                            string toReplace = containerFilePath.Split("\\").Last();
+                            string replaceWith = replaceTak.Split("\\").Last();
+                            var contents = cue.Select(x => x.Replace(toReplace, replaceWith));
+                            await File.WriteAllLinesAsync(cueFilePath, contents, _);
+
+                            containerFilePath = replaceTak;
+                            replaced = true;
+                        }
+                        else if (File.Exists(replaceTta))
+                        {
+                            Console.WriteLine("foundreplacement .tta");
+                            File.Copy(cueFilePath, cueFilePath + ".bak.wav2tta");
+
+                            string toReplace = containerFilePath.Split("\\").Last();
+                            string replaceWith = replaceTta.Split("\\").Last();
+                            var contents = cue.Select(x => x.Replace(toReplace, replaceWith));
+                            await File.WriteAllLinesAsync(cueFilePath, contents, _);
+
+                            containerFilePath = replaceTta;
+                            replaced = true;
+                        }
+                        else if (File.Exists(replaceApe))
+                        {
+                            Console.WriteLine("foundreplacement .ape");
+                            File.Copy(cueFilePath, cueFilePath + ".bak.wav2ape");
+
+                            string toReplace = containerFilePath.Split("\\").Last();
+                            string replaceWith = replaceApe.Split("\\").Last();
+                            var contents = cue.Select(x => x.Replace(toReplace, replaceWith));
+                            await File.WriteAllLinesAsync(cueFilePath, contents, _);
+
+                            containerFilePath = replaceApe;
+                            replaced = true;
+                        }
+                        else if (File.Exists(replaceFlac))
+                        {
+                            Console.WriteLine("foundreplacement .flac");
+                            File.Copy(cueFilePath, cueFilePath + ".bak.wav2flac");
+
+                            string toReplace = containerFilePath.Split("\\").Last();
+                            string replaceWith = replaceFlac.Split("\\").Last();
+                            var contents = cue.Select(x => x.Replace(toReplace, replaceWith));
+                            await File.WriteAllLinesAsync(cueFilePath, contents, _);
+
+                            containerFilePath = replaceFlac;
+                            replaced = true;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("allCuesInPath.Length: " + allCuesInPath.Length);
+                    }
+
+                    if (!replaced)
+                    {
+                        Console.WriteLine("containerFile not found");
+                        return;
+                    }
                 }
 
                 bool isInvalidFormat = false;
@@ -290,6 +409,7 @@ public static class Conv
                         {
                             if (isInvalidFormat)
                             {
+                                invalidFormatExceptionPaths.Add(containerFilePath);
                                 return;
                             }
                             else
@@ -300,5 +420,21 @@ public static class Conv
                     }
                 }
             });
+
+        await File.WriteAllTextAsync(
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}/isInvalidFormat.json",
+            JsonSerializer.Serialize(invalidFormatExceptionPaths, Utils.JsoIndented));
+        foreach (string invalidFormatExceptionPath in invalidFormatExceptionPaths)
+        {
+            Console.WriteLine($"isInvalidFormat exception for: {invalidFormatExceptionPath}");
+        }
+
+        await File.WriteAllTextAsync(
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}/splitFiles.json",
+            JsonSerializer.Serialize(splitFilesPaths, Utils.JsoIndented));
+        foreach (string splitFilesPath in splitFilesPaths)
+        {
+            Console.WriteLine($"splitFiles exception for: {splitFilesPath}");
+        }
     }
 }
