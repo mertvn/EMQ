@@ -231,9 +231,16 @@
                             <td>@(i + 1)</td>
                             <td>
                                 @* todo nonlatinalias *@
-                                <a class="link-primary" href="@(item.VndbId.ToVndbUrl())" target="_blank">
-                                    <span>@item.AALatinAlias</span>
-                                </a>
+                                @if (true)
+                                {
+                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                                    string href = item.VndbId.StartsWith("s")
+                                        ? item.VndbId.ToVndbUrl()
+                                        : $"https://musicbrainz.org/artist/{item.VndbId}";
+                                    <a class="link-primary" href="@(href)" target="_blank">
+                                        <span>@item.AALatinAlias</span>
+                                    </a>
+                                }
                             </td>
                             <td>
                                 <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>

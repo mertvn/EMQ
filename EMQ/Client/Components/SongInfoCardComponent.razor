@@ -132,11 +132,24 @@
 
                         <div>
                             <span>@songArtistTitle.ToString()</span>
-                            <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
-                                <img width="16px" height="16px"
-                                     src="assets/favicon/vndb.ico" alt="link"
-                                     style="margin-left: 6px; scale: 1.2;">
-                            </a>
+                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                            @if (songArtist.VndbId!.StartsWith("s"))
+                            {
+                                <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/vndb.ico" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/musicbrainz.png" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
+
                         </div>
                     }
                 </div>
