@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-[assembly: BlazorTimer]
+// [assembly: BlazorTimer]
 
 // [assembly: MethodTimer]
 // [assembly: RenderTimer]
