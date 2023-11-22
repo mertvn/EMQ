@@ -117,12 +117,12 @@ app.UseHttpsRedirection();
 // <!--    'sha256-q37xv29FWTxrl539g+ajXTokv196Spat4bpoxeQqDTw='-->
 // <!--    'sha256-eznNOzOF8kRuSmqjmCsetTase4gDYgWA0sSMry6PUKY='-->
 // <!--    'sha256-KbrxNa5b5DaDi2OvquFvHtsYxspVRCBjG7Kek5I4mRI='-->
-const string csp = @"
+string csp = @$"
                base-uri 'self';
                default-src 'self';
                connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com;
                font-src 'self' fonts.gstatic.com;
-               media-src 'self' blob: *.catbox.moe;
+               media-src 'self' blob: *.catbox.moe {Constants.SelfhostAddress};
                img-src data: https:;
                object-src 'none';
                script-src 'self'
