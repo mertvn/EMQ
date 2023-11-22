@@ -731,8 +731,8 @@ GRANT ALL ON SCHEMA public TO public;";
             {
                 await using (var connection = new NpgsqlConnection(cnnstrMusicbrainz))
                 {
-                    var oldGid = songLite.Recording;
-                    var newGid = await GetMergedRecordingGid(connection, oldGid);
+                    Guid oldGid = songLite.Recording;
+                    Guid newGid = await GetMergedRecordingGid(connection, oldGid);
 
                     if (oldGid != newGid)
                     {
