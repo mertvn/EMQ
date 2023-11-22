@@ -40,17 +40,24 @@
                     <SongInfoCardComponent Song="@song"/>
                     <div style="padding: 16px">
                         <div>
-                            Video link:
+                            Video links:
                             @if (hasVideo)
                             {
-                                var videoLink = song.Links.First(x => x.IsVideo);
-                                <a href="@videoLink.Url" target="_blank">
-                                    <span style="color: green">✓</span>
-                                </a>
-                                @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
-                                {
-                                    <span> by @videoLink.SubmittedBy</span>
-                                }
+                                var videoLinks = song.Links.Where(x => x.IsVideo);
+                                <ul>
+                                    @foreach (SongLink videoLink in videoLinks)
+                                    {
+                                        <li>
+                                            <a href="@videoLink.Url" target="_blank">
+                                                <span style="color: green">✓ @videoLink.Duration.ToString("mm\\:ss")</span>
+                                            </a>
+                                            @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
+                                            {
+                                                <span> by @videoLink.SubmittedBy</span>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
                             }
                             else
                             {
@@ -58,17 +65,24 @@
                             }
                         </div>
                         <div>
-                            Sound link:
+                            Sound links:
                             @if (hasSound)
                             {
-                                var soundLink = song.Links.First(x => !x.IsVideo);
-                                <a href="@soundLink.Url" target="_blank">
-                                    <span style="color: green">✓</span>
-                                </a>
-                                @if (!string.IsNullOrEmpty(@soundLink.SubmittedBy))
-                                {
-                                    <span> by @soundLink.SubmittedBy</span>
-                                }
+                                var soundLinks = song.Links.Where(x => !x.IsVideo);
+                                <ul>
+                                    @foreach (SongLink soundLink in soundLinks)
+                                    {
+                                        <li>
+                                            <a href="@soundLink.Url" target="_blank">
+                                                <span style="color: green">✓ @soundLink.Duration.ToString("mm\\:ss")</span>
+                                            </a>
+                                            @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
+                                            {
+                                                <span> by @soundLink.SubmittedBy</span>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
                             }
                             else
                             {
@@ -78,15 +92,12 @@
 
                         @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                         {
-                            // todo backend validation?
-                            <br/>
                             <span>BGM submissions are currently disabled.</span>
                         }
                         else
                         {
                             @if (hasVideo && hasSound)
                             {
-                                <br/>
                                 <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
                             }
 
