@@ -1787,7 +1787,6 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        link.Url = link.Url.ReplaceSelfhostLink();
                         await InsertSongLink(mId, link, transaction);
                     }
 
