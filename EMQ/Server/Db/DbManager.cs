@@ -1438,7 +1438,13 @@ public static class DbManager
         {
             const string sql = "SELECT DISTINCT music_id from music_external_link where submitted_by ILIKE @uploader";
 
-            var mids = await connection.QueryAsync<int>(sql, new { uploader });
+            var mids = (await connection.QueryAsync<int>(sql, new { uploader })).ToList();
+            if (mids.Count > 2000)
+            {
+                // too costly to process + browsers would freeze because there's no pagination right now
+                return songs;
+            }
+
             foreach (int mid in mids)
             {
                 songs.AddRange(await SelectSongs(new Song { Id = mid }));
