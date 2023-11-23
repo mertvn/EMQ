@@ -199,10 +199,13 @@ public static class DbManager
                     song.MusicBrainzReleases = MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
                 }
 
-                // todo this will break on no-vgmdb musicbrainz releases
                 foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
                 {
-                    song.VgmdbAlbums.AddRange(MusicBrainzReleaseVgmdbAlbums[songMusicBrainzRelease]);
+                    // not every musicbrainz release we have is connected to a vgmdb album
+                    if (MusicBrainzReleaseVgmdbAlbums.TryGetValue(songMusicBrainzRelease, out var vgmdb))
+                    {
+                        song.VgmdbAlbums.AddRange(vgmdb);
+                    }
                 }
 
                 song.Sources = await SelectSongSource(connection, song);

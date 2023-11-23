@@ -33,8 +33,12 @@ public class MusicBrainzJson
 public class aaa_rids
 {
     public int? rid { get; set; }
+
     public int? rgid { get; set; }
+
+    /// can be null for no-vgmdb musicbrainz releases
     public string? vgmdburl { get; set; }
+
     public string? vndbid { get; set; }
 }
 
@@ -56,9 +60,13 @@ public class release
     public int release_group { get; set; }
 
     public int? status { get; set; }
+
     public int? packaging { get; set; }
+
     public int? language { get; set; }
+
     public int? script { get; set; }
+
     public string? barcode { get; set; }
 
     [Required]
@@ -172,6 +180,7 @@ public class artist_credit
     public short artist_count { get; set; }
 
     public int? ref_count { get; set; }
+
     public DateTime? created { get; set; }
 
     [Required]
@@ -242,13 +251,21 @@ public class artist
     public string sort_name { get; set; } = "";
 
     public short? begin_date_year { get; set; }
+
     public short? begin_date_month { get; set; }
+
     public short? begin_date_day { get; set; }
+
     public short? end_date_year { get; set; }
+
     public short? end_date_month { get; set; }
+
     public short? end_date_day { get; set; }
+
     public int? type { get; set; }
+
     public int? area { get; set; }
+
     public int? gender { get; set; }
 
     [Required]
@@ -263,5 +280,6 @@ public class artist
     public bool ended { get; set; }
 
     public int? begin_area { get; set; }
+
     public int? end_area { get; set; }
 }

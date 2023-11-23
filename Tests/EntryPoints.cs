@@ -559,7 +559,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilder();
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-11-23_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-11-24_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
@@ -647,6 +647,7 @@ GRANT ALL ON SCHEMA public TO public;";
             var queryNames = new List<string>()
             {
                 "aaa_rids.sql",
+                "aaa_novgmdb.sql",
                 "aaa_rec_vocals.sql",
                 "aaa_rec_lyricist.sql",
                 "musicbrainz.sql",

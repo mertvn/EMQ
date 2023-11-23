@@ -215,5 +215,13 @@ public static class Blacklists
         "3918ca2b-a2af-47e3-80eb-67cc652ffc57", // 蒼の彼方のフォーリズム 特典CD
         "5ad91c44-1632-4934-94f9-29dd944d4dd1", // 逆転検事2 オーケストラ・アレンジ楽曲集～奏でられし逆転～
         "a08f1e34-de74-4f86-9e5d-b65c541fa820", // 北へ。~Diamond Dust~Memorial Songs
+        "82bfdd22-5ef9-4a80-9b5c-eef5c3156082", // Observer ～Witch who lives～ forうみねこのなく頃に
+        "e2c7486a-75ae-4f23-8637-e0fea9673a3f", // うみねこのなく頃に musicbox Red
+        "260b06af-3b7e-45e9-89eb-ded9e1fc249c", // サウンド・オブ・ザ・ゴールデンウィッチ
+        "70ea019c-6b05-453f-b529-1333e38886fb", // ギャザード ウィル ～ うみねこのなく頃に Special Tracks
+        "55ea29c3-52f8-4cde-be66-491c37c115dd", // うみねこのなく頃に xaki 作品集 xwerk
+        "4b3a2869-ed9d-4876-812c-7bada069492b", // Lostwing - うみねこのなく頃に image songs
+        "92d6a2f0-35dc-4a13-9c97-0ccc48579ed7", // うみねこのなく頃に 散 musicbox Red
+        "0d40be62-bcad-41ff-bce0-4143feb50c51", // うみねこのなく頃に散 musicbox -霧のピトス-
     };
 }

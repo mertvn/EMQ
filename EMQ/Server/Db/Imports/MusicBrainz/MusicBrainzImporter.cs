@@ -280,17 +280,25 @@ public static class MusicBrainzImporter
                                     Url = $"https://musicbrainz.org/release/{data.release.gid}",
                                     Name = data.release.name,
                                 },
-                                new SongSourceLink()
-                                {
-                                    Type = SongSourceLinkType.VGMdbAlbum,
-                                    Url = data.aaa_rids.vgmdburl!,
-                                    Name = "VGMdb", // todo?
-                                },
                             },
                             Titles = musicSourceTitles,
                         },
                     },
                 };
+
+                if (!string.IsNullOrEmpty(data.aaa_rids.vgmdburl))
+                {
+                    song.Sources.Single().Links.Add(new SongSourceLink()
+                    {
+                        Type = SongSourceLinkType.VGMdbAlbum, Url = data.aaa_rids.vgmdburl, Name = "VGMdb", // todo?
+                    });
+
+                    var musicBrainzReleaseVgmdbAlbum = new MusicBrainzReleaseVgmdbAlbum()
+                    {
+                        release = data.release.gid, album_id = int.Parse(data.aaa_rids.vgmdburl!.LastSegment())
+                    };
+                    musicBrainzReleaseVgmdbAlbums.Add(musicBrainzReleaseVgmdbAlbum);
+                }
 
                 Song? sameSong = songs.FirstOrDefault(x =>
                     x.MusicBrainzRecordingGid!.Value == song.MusicBrainzRecordingGid!.Value);
@@ -316,12 +324,6 @@ public static class MusicBrainzImporter
                     release = data.release.gid, recording = data.recording.gid
                 };
                 musicBrainzReleaseRecordings.Add(musicBrainzReleaseRecording);
-
-                var musicBrainzReleaseVgmdbAlbum = new MusicBrainzReleaseVgmdbAlbum()
-                {
-                    release = data.release.gid, album_id = int.Parse(data.aaa_rids.vgmdburl!.LastSegment())
-                };
-                musicBrainzReleaseVgmdbAlbums.Add(musicBrainzReleaseVgmdbAlbum);
             }
         }
 
