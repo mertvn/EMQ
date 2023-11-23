@@ -1431,6 +1431,29 @@ public static class DbManager
         return songs;
     }
 
+    public static async Task<IEnumerable<Song>> FindSongsByUploader(string uploader)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = "SELECT DISTINCT music_id from music_external_link where submitted_by ILIKE @uploader";
+
+            var mids = await connection.QueryAsync<int>(sql, new { uploader });
+            foreach (int mid in mids)
+            {
+                songs.AddRange(await SelectSongs(new Song { Id = mid }));
+            }
+        }
+
+        // todo
+        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
+        {
+            songSource.Categories = new List<SongSourceCategory>();
+        }
+
+        return songs;
+    }
+
     public static async Task<int> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
     {
         int melId;

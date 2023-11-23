@@ -131,6 +131,31 @@ public partial class LibraryPage
         }
     }
 
+    public async Task SelectedResultChangedUploader(string uploader)
+    {
+        if (!string.IsNullOrWhiteSpace(uploader))
+        {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
+            var res = await _client.PostAsJsonAsync("Library/FindSongsByUploader", uploader);
+            if (res.IsSuccessStatusCode)
+            {
+                List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                if (songs != null && songs.Any())
+                {
+                    CurrentSongs = songs;
+                }
+            }
+
+            NoSongsText = "No results.";
+
+            await StateHasChangedAsync();
+            await TabsComponent!.SelectTab("TabVNDB");
+        }
+    }
+
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
     {
         var session = ClientState.Session;

@@ -54,4 +54,14 @@ public partial class LibraryStatsComponent
             await LibraryPage.SelectedResultChangedA();
         }
     }
+
+    private async Task Onclick_Uploader(string uploader)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
+            LibraryPage.selectedMusicSourceTitle = null;
+            await LibraryPage.SelectedResultChangedUploader(uploader);
+        }
+    }
 }

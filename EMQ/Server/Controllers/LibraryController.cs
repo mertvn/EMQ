@@ -62,6 +62,14 @@ public class LibraryController : ControllerBase
     }
 
     [HttpPost]
+    [Route("FindSongsByUploader")]
+    public async Task<IEnumerable<Song>> FindSongsByUploader([FromBody] string uploader)
+    {
+        var songs = await DbManager.FindSongsByUploader(uploader);
+        return songs;
+    }
+
+    [HttpPost]
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     {
