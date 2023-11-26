@@ -17,13 +17,21 @@ public static class Constants
 
     public const string ImportDateMusicBrainz = "2023-08-19"; // not really accurate as it's rolling
 
+    public const string ImportDateMusicBrainzActual = "2023-11-26";
+
+    public const string ImportDateVgmdb = "2023-08-13";
+
+    public const string RobotName = "Cookie 4IS";
+
+    public static readonly string RobotNameLower = RobotName.ToLowerInvariant();
+
     public const int MaxChatMessageLength = 300;
 
     public const int MaxGuessLength = 190;
 
     public const int LinkToleranceSeconds = 17;
 
-    public const string QFDateMin = "1990-01-01";
+    public const string QFDateMin = "1988-01-01";
 
     public const string QFDateMax = "2030-01-01";
 

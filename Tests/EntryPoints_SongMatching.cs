@@ -212,7 +212,10 @@ public class EntryPoints_SongMatching
                 // }
 
                 // Console.WriteLine(uploadable.Path);
-                if (!uploadable.Path.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+
+                string extension = Path.GetExtension(uploadable.Path);
+                if (!extension.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) &&
+                    !extension.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                 {
                     // Console.WriteLine("skipping non .mp3: " + uploadable.Path);
                     // continue;
@@ -241,16 +244,16 @@ public class EntryPoints_SongMatching
                     uploadable.Path = newPath;
                 }
 
-                string recordingStoragePath = $"M:/a/mb/recordingstorage/{uploadable.MusicBrainzRecording}.mp3";
+                string recordingStoragePath = $"M:/a/mb/recordingstorage/{uploadable.MusicBrainzRecording}{extension}";
                 if (!File.Exists(recordingStoragePath))
                 {
                     File.Copy(uploadable.Path, recordingStoragePath);
                 }
 
-                string catboxUrl = await SelfUploader.Upload(uploadable);
+                string catboxUrl = await SelfUploader.Upload(uploadable, extension);
                 uploadable.ResultUrl = catboxUrl;
                 Console.WriteLine(catboxUrl);
-                if (!catboxUrl.EndsWith(".mp3"))
+                if (!catboxUrl.EndsWith(extension))
                 {
                     Console.WriteLine("invalid resultUrl: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
                     continue;
@@ -313,7 +316,7 @@ public class EntryPoints_SongMatching
                                 Url = uploadable.ResultUrl,
                                 Type = SongLinkType.Catbox,
                                 IsVideo = false,
-                                SubmittedBy = "SongMatcher"
+                                SubmittedBy = Constants.RobotName
                             };
 
                             int rqId = await DbManager.InsertReviewQueue(uploadable.MId, songLink);
@@ -368,7 +371,8 @@ public class EntryPoints_SongMatching
                 new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 },
                 async (uploadable, _) =>
                 {
-                    if (!string.IsNullOrWhiteSpace(uploadable.ResultUrl) && uploadable.ResultUrl.EndsWith(".mp3"))
+                    if (!string.IsNullOrWhiteSpace(uploadable.ResultUrl) && (uploadable.ResultUrl.EndsWith(".mp3") ||
+                                                                             uploadable.ResultUrl.EndsWith(".ogg")))
                     {
                         if (!dup.Any(x => x.MId == uploadable.MId))
                         {
@@ -381,7 +385,7 @@ public class EntryPoints_SongMatching
                                         Url = uploadable.ResultUrl,
                                         Type = SongLinkType.Self,
                                         IsVideo = false,
-                                        SubmittedBy = "SongMatcher"
+                                        SubmittedBy = Constants.RobotName
                                     };
 
                                     int rqId = await DbManager.InsertReviewQueue(mId, songLink);
@@ -493,6 +497,7 @@ public class EntryPoints_SongMatching
             "wav",
             "tta",
             "m4a",
+            "ogg",
         };
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extensions, false, true, false);
