@@ -5,6 +5,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Dapper;
@@ -86,9 +87,10 @@ public class EntryPoints
                 throw new Exception("EMQ_ADMIN_PASSWORD is null");
             }
 
+            var client = new HttpClient { Timeout = TimeSpan.FromMilliseconds(int.MaxValue) };
             string serverUrl = "https://emq.up.railway.app";
             string songLite =
-                await ServerUtils.Client.GetStringAsync(
+                await client.GetStringAsync(
                     $"{serverUrl}/Mod/ExportSongLite?adminPassword={adminPassword}");
 
             if (string.IsNullOrWhiteSpace(songLite))
@@ -195,8 +197,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int s = 39;
-        const int e = 46;
+        const int s = 140;
+        const int e = 149;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -206,8 +208,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        const int s = 186;
-        const int e = 186;
+        const int s = 83;
+        const int e = 83;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "");
@@ -559,7 +561,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilder();
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-11-24_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-12-06_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
