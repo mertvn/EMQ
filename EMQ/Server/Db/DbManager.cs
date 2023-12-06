@@ -2249,6 +2249,7 @@ order by diff
         }
     }
 
+    /// Limited to vocal songs for now.
     public static async Task<List<Song>> FindSongsByLabels(List<Label> reqLabels)
     {
         var validSources = Label.GetValidSourcesFromLabels(reqLabels);
@@ -2260,7 +2261,9 @@ order by diff
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
-                                     WHERE msel.url = ANY(@validSources)";
+                                     WHERE msel.url = ANY(@validSources)
+                                     AND msm.type = ANY(@msmType)
+                                     ";
 
         var ret = new List<Song>();
         var addedMselUrls = new List<string>();
@@ -2271,7 +2274,15 @@ order by diff
         List<(int, string)> ids;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            ids = (await connection.QueryAsync<(int, string)>(sqlMusicIdsNoMel, new { validSources }))
+            ids = (await connection.QueryAsync<(int, string)>(sqlMusicIdsNoMel,
+                    new
+                    {
+                        validSources,
+                        msmType = new List<SongSourceSongType>
+                        {
+                            SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
+                        }.Cast<int>().ToList()
+                    }))
                 .OrderBy(_ => rng.Next()).ToList();
         }
 
