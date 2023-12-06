@@ -35,6 +35,8 @@
                     _addSongLinkModel[song.Id] = new AddSongLinkModel();
                 }
 
+                var validUrls = SongLink.FilterSongLinks(song.Links).Select(x => x.Url).ToList();
+
                 // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
                 <div class="song card" style="margin: 16px; width: 300px; min-height:200px;" @key="@song.Id">
                     <SongInfoCardComponent Song="@song"/>
@@ -48,9 +50,23 @@
                                     @foreach (SongLink videoLink in videoLinks)
                                     {
                                         <li>
-                                            <a href="@videoLink.Url" target="_blank">
-                                                <span style="color: green">✓ @videoLink.Duration.ToString("mm\\:ss")</span>
-                                            </a>
+                                            @if (validUrls.Contains(videoLink.Url))
+                                            {
+                                                <a href="@videoLink.Url" target="_blank">
+                                                    <span style="color: green">✓ @videoLink.Duration.ToString("mm\\:ss")</span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@videoLink.Url" target="_blank">
+                                                    <Blazorise.Tooltip
+                                                        Inline="true"
+                                                        Text="This link will never be played as there is a shorter video link available.">
+                                                        <span style="color: yellow">✘ @videoLink.Duration.ToString("mm\\:ss")</span>
+                                                    </Blazorise.Tooltip>
+                                                </a>
+                                            }
+
                                             @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
                                             {
                                                 <span> by @videoLink.SubmittedBy</span>
@@ -73,9 +89,23 @@
                                     @foreach (SongLink soundLink in soundLinks)
                                     {
                                         <li>
-                                            <a href="@soundLink.Url" target="_blank">
-                                                <span style="color: green">✓ @soundLink.Duration.ToString("mm\\:ss")</span>
-                                            </a>
+                                            @if (validUrls.Contains(soundLink.Url))
+                                            {
+                                                <a href="@soundLink.Url" target="_blank">
+                                                    <span style="color: green">✓ @soundLink.Duration.ToString("mm\\:ss")</span>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a href="@soundLink.Url" target="_blank">
+                                                    <Blazorise.Tooltip
+                                                        Inline="true"
+                                                        Text="This link will never be played as either there is a shorter sound link available, or the duration difference between it and the valid video link exceeds the maximum duration tolerance limit of 17 seconds.">
+                                                        <span style="color: yellow">✘ @soundLink.Duration.ToString("mm\\:ss")</span>
+                                                    </Blazorise.Tooltip>
+                                                </a>
+                                            }
+
                                             @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
                                             {
                                                 <span> by @soundLink.SubmittedBy</span>
