@@ -466,10 +466,9 @@ public partial class QuizPage
             return;
         }
 
-        await SyncWithServer();
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
         await Task.Delay(TimeSpan.FromSeconds(1));
-        _navigation.NavigateTo("/RoomPage");
+        await ForceReturnToRoomImmediately();
     }
 
     private async Task ForceReturnToRoomImmediately()
@@ -730,7 +729,10 @@ public partial class QuizPage
                 await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
             }
 
-            await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId, _currentSong!.StartTime);
+            if (_currentSong != null)
+            {
+                await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId, _currentSong.StartTime);
+            }
         }
         else
         {
