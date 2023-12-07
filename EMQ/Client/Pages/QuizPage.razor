@@ -257,6 +257,48 @@
         <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
     </div>
 
+@if (Room?.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+{
+    <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+                         pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
+
+        <div id="MultipleChoiceContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(0, min(100%/1, max(320px, 100%/2))));">
+            @if (Room.Quiz?.MultipleChoiceOptions != null && Room.Quiz.QuizState.sp >= 0)
+            {
+                if (Room.Quiz.MultipleChoiceOptions.TryGetValue(Room.Quiz.QuizState.sp, out var current))
+                {
+                    foreach (var title in current)
+                    {
+                        string tooltipText = title.ToString();
+                        bool selected = PageState.Guess == title.LatinTitle;
+                        <Blazorise.Tooltip
+                            Inline="false"
+                            Text="@tooltipText">
+                            <div
+                                class="MultipleChoiceOption"
+                                @onclick="@(async () => { await SetGuess(title.LatinTitle); })"
+                                style="
+cursor: pointer;
+color: @UiHelpers.Bool2Color(selected, "deepskyblue", "");
+width: 320px;
+height: 26px;
+max-width: 100%;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+">
+                                @title.LatinTitle
+                            </div>
+                        </Blazorise.Tooltip>
+                    }
+                }
+            }
+        </div>
+        <br/>
+    </div>
+}
+else
+{
     <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
         <GuessInputComponent @ref="_guessInputComponent"
@@ -268,6 +310,7 @@
         </GuessInputComponent>
         <br/>
     </div>
+}
 
     <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
         @if (Room?.Players.Any() ?? false)
@@ -281,7 +324,7 @@
                 <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(playerGuess));"
-                         @onclick="@(() => SetGuessToTeammateGuess(playerGuess))">
+                         @onclick="@(() => SetGuess(playerGuess))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                             <span style="word-wrap: anywhere; height: 90px; display: block;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">

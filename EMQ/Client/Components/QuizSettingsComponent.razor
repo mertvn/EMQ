@@ -61,6 +61,24 @@
                         <label for="SongSelectionKind">Song selection method</label>
                         <br/>
 
+                        <InputSelect id="AnsweringKind" @bind-Value="ClientQuizSettings.AnsweringKind" style="margin: 5px">
+                            @foreach (AnsweringKind answeringKind in Enum.GetValues<AnsweringKind>())
+                            {
+                                <option value="@answeringKind">
+                                    @if (!string.IsNullOrEmpty(answeringKind.GetDescription()))
+                                    {
+                                        @answeringKind.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @answeringKind
+                                    }
+                                </option>
+                            }
+                        </InputSelect>
+                        <label for="AnsweringKind">Answering method</label>
+                        <br/>
+
                         <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
                         <label for="NumSongs">Maximum number of songs</label>
                         <br/>

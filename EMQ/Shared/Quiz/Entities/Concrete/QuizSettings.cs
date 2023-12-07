@@ -72,6 +72,10 @@ public class QuizSettings
     public SongSelectionKind SongSelectionKind { get; set; } = SongSelectionKind.Random;
 
     [Required]
+    [DefaultValue(AnsweringKind.Typing)]
+    public AnsweringKind AnsweringKind { get; set; } = AnsweringKind.Typing;
+
+    [Required]
     [Range(10000, 250000)]
     [DefaultValue(120000)]
     public int LootingMs { get; set; } = 120000;

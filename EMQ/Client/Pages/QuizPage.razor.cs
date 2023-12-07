@@ -765,11 +765,11 @@ public partial class QuizPage
         await SyncWithServer(room, phaseChanged);
     }
 
-    private async Task SetGuessToTeammateGuess(string? guess)
+    private async Task SetGuess(string? guess)
     {
         if (Room is { Quiz: { } })
         {
-            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing && Room.QuizSettings.TeamSize > 1)
+            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
             {
                 PageState.Guess = guess;
                 await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);

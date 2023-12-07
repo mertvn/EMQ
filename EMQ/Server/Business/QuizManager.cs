@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using EMQ.Client;
 using EMQ.Server.Db;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
@@ -383,6 +385,7 @@ public class QuizManager
             JsonSerializer.Serialize(Quiz.Room.RoomLog, Utils.JsoIndented));
 
         bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
+                                 Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any();
@@ -412,6 +415,57 @@ public class QuizManager
 
     private async Task EnterQuiz()
     {
+        // we have to do this here instead of PrimeQuiz because songs won't be determined until here if it's looting
+        var songs = Quiz.Songs;
+        switch (Quiz.Room.QuizSettings.AnsweringKind)
+        {
+            case AnsweringKind.Typing:
+                break;
+            case AnsweringKind.MultipleChoice:
+                int numChoices = Math.Min(4, songs.Count); // todo?: make this configurable
+
+                Dictionary<int, Title> allTitles = new();
+                HashSet<int> addedSourceIds = new();
+                foreach (Song song in songs)
+                {
+                    foreach (SongSource songSource in song.Sources)
+                    {
+                        if (addedSourceIds.Add(songSource.Id))
+                        {
+                            allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                            break;
+                        }
+                    }
+                }
+
+                // Console.WriteLine(JsonSerializer.Serialize(addedSourceIds, Utils.Jso));
+                // Console.WriteLine(JsonSerializer.Serialize(allTitles, Utils.Jso));
+
+                for (int index = 0; index < songs.Count; index++)
+                {
+                    Song dbSong = songs[index];
+
+                    var correctAnswer = dbSong.Sources.First();
+                    List<int> randomIndexes = allTitles.Keys.Where(x => x != correctAnswer.Id)
+                        .OrderBy(_ => Random.Shared.Next()).Take(numChoices - 1).ToList();
+
+                    // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
+
+                    List<Title> list = new() { Converters.GetSingleTitle(correctAnswer.Titles) };
+                    foreach (int randomIndex in randomIndexes)
+                    {
+                        list.Add(allTitles[randomIndex]);
+                    }
+
+                    list = list.OrderBy(_ => Random.Shared.Next()).ToList();
+                    Quiz.MultipleChoiceOptions[index] = list;
+                }
+
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");
         await Task.Delay(TimeSpan.FromSeconds(1));
     }

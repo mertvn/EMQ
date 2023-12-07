@@ -34,6 +34,8 @@ public sealed class Quiz : IDisposable
     [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();
 
+    public Dictionary<int, List<Title>> MultipleChoiceOptions { get; set; } = new();
+
     public void Dispose()
     {
         IsDisposed = true;
