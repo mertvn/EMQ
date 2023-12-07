@@ -276,9 +276,9 @@
                             Text="@tooltipText">
                             <div
                                 class="MultipleChoiceOption"
-                                @onclick="@(async () => { await SetGuess(title.LatinTitle); })"
+                                @onclick="@(async () => { if (!IsSpectator) await SetGuess(title.LatinTitle); })"
                                 style="
-cursor: pointer;
+cursor: @UiHelpers.Bool2CursorPointer(!IsSpectator);
 color: @UiHelpers.Bool2Color(selected, "deepskyblue", "");
 width: 320px;
 height: 26px;
