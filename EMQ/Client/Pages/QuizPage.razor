@@ -163,8 +163,16 @@
         }
     </ul>
 
-    <div class="videoWrapper" style="position: relative; background: dimgrey; width:720px; height:400px;">
-        <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
+<div class="videoWrapper"
+     style="position: relative; background: dimgrey; width:720px; height:400px; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
+     onclick="@(() => { if (PageState.VideoPlayerVisibility) ClientState.Session!.Player.Preferences.HideVideo = !ClientState.Session!.Player.Preferences.HideVideo; })">
+
+    @if (PageState.VideoPlayerVisibility && ClientState.Session!.Player.Preferences.HideVideo)
+    {
+        <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
+    }
+
+    <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
 
             @{
                 string? video1Src;

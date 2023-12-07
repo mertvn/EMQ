@@ -49,10 +49,6 @@
                                     <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
                                     <br/>
 
-                                    <InputCheckbox id="HideVideo" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.HideVideo" style="margin: 5px"></InputCheckbox>
-                                    <label for="HideVideo">Hide video</label>
-                                    <br/>
-
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
                                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
                                         {
