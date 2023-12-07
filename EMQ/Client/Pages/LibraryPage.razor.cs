@@ -28,8 +28,6 @@ public partial class LibraryPage
 
     public string NoSongsText { get; set; } = "";
 
-    public bool ShowUploadCriteria { get; set; }
-
     private string _selectedTab = "TabAutocompleteMst";
 
     private string _selectedTab2 = "TabVNDB";

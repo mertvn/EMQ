@@ -14,10 +14,8 @@
 
 <p>Welcome to EMQ Library. Here you can contribute new song links to the game. Please read the upload criteria first. You also need to be logged in.</p>
 
-<button type="button" class="btn btn-primary" @onclick="@(() => ShowUploadCriteria = !ShowUploadCriteria)" style="margin: 5px;">
-    @UiHelpers.Bool2Text(ShowUploadCriteria, "Hide upload criteria", "Show upload criteria")
-</button>
-<div style="display: @UiHelpers.Bool2Display(ShowUploadCriteria)" id="collapseUploadCriteria">
+<details>
+    <summary>Upload criteria</summary>
     <p>Please only submit links matching the following criteria:</p>
     <ul>
         <li>Game size/short version if there is one.</li>
@@ -36,7 +34,7 @@
             </ul>
         </li>
     </ul>
-</div>
+</details>
 
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
