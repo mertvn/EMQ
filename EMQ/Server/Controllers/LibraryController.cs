@@ -35,7 +35,7 @@ public class LibraryController : ControllerBase
         int mId = int.TryParse(req.SongSourceTitle, out mId) ? mId : 0;
         if (mId > 0)
         {
-            var songs = await DbManager.SelectSongs(new Song { Id = mId });
+            var songs = await DbManager.SelectSongs(new Song { Id = mId }, false);
             return songs;
         }
         else

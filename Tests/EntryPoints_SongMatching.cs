@@ -129,7 +129,8 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single().ToSongLite();
+                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single()
+                    .ToSongLite();
                 uploadable.SongLite = songLite;
                 uploaded.Add(uploadable);
 
@@ -259,7 +260,8 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId })).Single().ToSongLite();
+                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single()
+                    .ToSongLite();
                 uploadable.SongLite = songLite;
                 uploaded.Add(uploadable);
 

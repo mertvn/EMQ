@@ -35,7 +35,7 @@ public static class DbManager
     /// Song.Titles.LatinTitle <br/>
     /// Song.Links.Url <br/>
     /// </summary>
-    public static async Task<List<Song>> SelectSongs(Song input)
+    public static async Task<List<Song>> SelectSongs(Song input, bool selectCategories)
     {
         // todo move this init step elsewhere
         if (!MusicBrainzRecordingReleases.Any())
@@ -208,7 +208,7 @@ public static class DbManager
                     }
                 }
 
-                song.Sources = await SelectSongSource(connection, song);
+                song.Sources = await SelectSongSource(connection, song, selectCategories);
                 song.Artists = await SelectArtist(connection, song, false);
                 // CachedSongs[input.Id] = song; // todo
             }
@@ -228,15 +228,19 @@ public static class DbManager
     /// Song.Sources.Titles.NonLatinTitle <br/>
     /// Song.Sources.Categories.VndbId <br/>
     /// </summary>
-    public static async Task<List<SongSource>> SelectSongSource(IDbConnection connection, Song input)
+    public static async Task<List<SongSource>> SelectSongSource(IDbConnection connection, Song input,
+        bool selectCategories)
     {
         var songSources = new List<SongSource>();
         // var songSourceTitles = new List<SongSourceTitle>();
         // var songSourceLinks = new List<SongSourceLink>();
         // var songSourceCategories = new List<SongSourceCategory>();
 
-        var queryMusicSource = connection
-            .QueryBuilder($@"SELECT *
+        QueryBuilder queryMusicSource;
+        if (selectCategories)
+        {
+            queryMusicSource = connection
+                .QueryBuilder($@"SELECT *
             FROM music_source_music msm
             LEFT JOIN music_source ms ON ms.id = msm.music_source_id
             LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
@@ -245,6 +249,18 @@ public static class DbManager
             LEFT JOIN category c ON c.id = msc.category_id
             /**where**/
     ");
+        }
+        else
+        {
+            queryMusicSource = connection
+                .QueryBuilder($@"SELECT *
+            FROM music_source_music msm
+            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
+            LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
+            /**where**/
+    ");
+        }
 
         if (input.Id > 0)
         {
@@ -284,6 +300,13 @@ public static class DbManager
         var categories = input.Sources.SelectMany(x => x.Categories.Select(y => y.VndbId)).ToList();
         if (categories.Any())
         {
+            if (!selectCategories)
+            {
+                throw new ArgumentException(
+                    $"Parameter {nameof(selectCategories)} must be set to true in order to filter by categories.",
+                    nameof(selectCategories));
+            }
+
             queryMusicSource.Where($"c.vndb_id = ANY({categories})");
         }
 
@@ -294,20 +317,38 @@ public static class DbManager
 
         // Console.WriteLine(queryMusicSource.Sql);
 
-        await connection.QueryAsync(queryMusicSource.Sql,
-            new[]
+        var types = selectCategories
+            ? new[]
             {
                 typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
                 typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
-            }, (objects) =>
+            }
+            : new[]
+            {
+                typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
+                typeof(MusicSourceExternalLink)
+            };
+
+        string splitOn = selectCategories
+            ? "id,music_source_id,music_source_id,music_source_id,id"
+            : "id,music_source_id,music_source_id";
+
+        await connection.QueryAsync(queryMusicSource.Sql,
+            types, (objects) =>
             {
                 // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
                 var musicSourceMusic = (MusicSourceMusic)objects[0];
                 var musicSource = (MusicSource)objects[1];
                 var musicSourceTitle = (MusicSourceTitle)objects[2];
                 var musicSourceExternalLink = (MusicSourceExternalLink?)objects[3];
-                var musicSourceCategory = (MusicSourceCategory?)objects[4];
-                var category = (Category?)objects[5];
+
+                MusicSourceCategory? musicSourceCategory = null;
+                Category? category = null;
+                if (selectCategories)
+                {
+                    musicSourceCategory = (MusicSourceCategory?)objects[4];
+                    category = (Category?)objects[5];
+                }
 
                 var existingSongSource = songSources.Where(x => x.Id == musicSource.id).ToList().SingleOrDefault();
                 if (existingSongSource is null)
@@ -504,18 +545,8 @@ public static class DbManager
 
                 return 0;
             },
-            splitOn:
-            "id,music_source_id,music_source_id,music_source_id,id",
+            splitOn: splitOn,
             param: queryMusicSource.Parameters);
-
-        // todo do this properly when the size increase gets annoying
-        // if (!categories.Any())
-        // {
-        //     foreach (SongSource songSource in songSources)
-        //     {
-        //         songSource.Categories = new List<SongSourceCategory>();
-        //     }
-        // }
 
         return songSources;
     }
@@ -887,7 +918,7 @@ public static class DbManager
     // todo make Filters required
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
-        bool keepCategories = false)
+        bool selectCategories = false)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1212,7 +1243,7 @@ public static class DbManager
 
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
             {
-                var songs = await SelectSongs(new Song { Id = mId });
+                var songs = await SelectSongs(new Song { Id = mId }, selectCategories);
                 if (songs.Any())
                 {
                     foreach (Song song in songs)
@@ -1232,15 +1263,6 @@ public static class DbManager
                         }
                     }
                 }
-            }
-        }
-
-        if (!keepCategories)
-        {
-            // todo
-            foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
-            {
-                songSource.Categories = new List<SongSourceCategory>();
             }
         }
 
@@ -1329,7 +1351,7 @@ public static class DbManager
                     {
                         new() { Titles = new List<Title> { new() { LatinTitle = songSourceTitle } } }
                     }
-                });
+                }, false);
 
             if (!songSources.Any())
             {
@@ -1340,7 +1362,7 @@ public static class DbManager
                         {
                             new() { Titles = new List<Title> { new() { NonLatinTitle = songSourceTitle } } }
                         }
-                    });
+                    }, false);
             }
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
@@ -1349,15 +1371,9 @@ public static class DbManager
             {
                 foreach (int songSourceMusicId in songSource.MusicIds)
                 {
-                    songs.AddRange(await SelectSongs(new Song { Id = songSourceMusicId }));
+                    songs.AddRange(await SelectSongs(new Song { Id = songSourceMusicId }, false));
                 }
             }
-        }
-
-        // todo
-        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return songs;
@@ -1370,7 +1386,7 @@ public static class DbManager
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var songSources = await SelectSongSource(connection,
-                new Song { Sources = new List<SongSource> { new() { Categories = songSourceCategories } } });
+                new Song { Sources = new List<SongSource> { new() { Categories = songSourceCategories } } }, true);
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
 
@@ -1378,7 +1394,7 @@ public static class DbManager
             {
                 foreach (int songSourceMusicId in songSource.MusicIds)
                 {
-                    songs.AddRange(await SelectSongs(new Song { Id = songSourceMusicId }));
+                    songs.AddRange(await SelectSongs(new Song { Id = songSourceMusicId }, true));
                 }
             }
         }
@@ -1406,15 +1422,9 @@ public static class DbManager
             {
                 foreach (int songArtistMusicId in songArtist.MusicIds)
                 {
-                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }));
+                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }, false));
                 }
             }
-        }
-
-        // todo
-        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return songs;
@@ -1434,15 +1444,9 @@ public static class DbManager
             {
                 foreach (int songArtistMusicId in songArtist.MusicIds)
                 {
-                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }));
+                    songs.AddRange(await SelectSongs(new Song { Id = songArtistMusicId }, false));
                 }
             }
-        }
-
-        // todo
-        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return songs;
@@ -1464,14 +1468,8 @@ public static class DbManager
 
             foreach (int mid in mids)
             {
-                songs.AddRange(await SelectSongs(new Song { Id = mid }));
+                songs.AddRange(await SelectSongs(new Song { Id = mid }, false));
             }
-        }
-
-        // todo
-        foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return songs;
@@ -1881,7 +1879,7 @@ WHERE id = {mId};
             {
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
                 {
-                    song = (await SelectSongs(new Song { Id = reviewQueue.music_id })).Single();
+                    song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
                     CachedSongs[reviewQueue.music_id] = song;
                 }
 
@@ -1901,12 +1899,6 @@ WHERE id = {mId};
                     duration = reviewQueue.duration,
                 };
 
-                // todo
-                foreach (SongSource songSource in rq.Song.Sources)
-                {
-                    songSource.Categories = new List<SongSourceCategory>();
-                }
-
                 rqs.Add(rq);
             }
         }
@@ -1925,7 +1917,7 @@ WHERE id = {mId};
             {
                 if (!CachedSongs.TryGetValue(report.music_id, out var song))
                 {
-                    song = (await SelectSongs(new Song { Id = report.music_id })).Single();
+                    song = (await SelectSongs(new Song { Id = report.music_id }, false)).Single();
                     CachedSongs[report.music_id] = song;
                 }
 
@@ -1942,12 +1934,6 @@ WHERE id = {mId};
                     note_user = report.note_user,
                     Song = song,
                 };
-
-                // todo
-                foreach (SongSource songSource in songReport.Song.Sources)
-                {
-                    songSource.Categories = new List<SongSourceCategory>();
-                }
 
                 songReports.Add(songReport);
             }
@@ -2311,7 +2297,7 @@ order by diff
 
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
             {
-                var songs = await SelectSongs(new Song { Id = mId });
+                var songs = await SelectSongs(new Song { Id = mId }, false);
                 if (songs.Any())
                 {
                     var song = songs.First();
@@ -2322,12 +2308,6 @@ order by diff
                     addedMselUrls.Add(mselUrl);
                 }
             }
-        }
-
-        // todo
-        foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
-        {
-            songSource.Categories = new List<SongSourceCategory>();
         }
 
         return ret.OrderBy(x => x.Id).ToList();
@@ -2406,14 +2386,8 @@ order by diff
             List<Song> songs = new();
             foreach (int mId in mIds)
             {
-                var song = await SelectSongs(new Song() { Id = mId });
+                var song = await SelectSongs(new Song() { Id = mId }, false);
                 songs.AddRange(song);
-            }
-
-            // todo
-            foreach (SongSource songSource in songs.SelectMany(song => song.Sources))
-            {
-                songSource.Categories = new List<SongSourceCategory>();
             }
 
             return songs;

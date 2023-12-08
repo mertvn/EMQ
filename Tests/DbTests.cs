@@ -90,7 +90,7 @@ public class DbTests
             {
                 new() { LatinTitle = "Restoration ~Chinmoku no Sora~" }, new() { LatinTitle = "SHOOTING STAR" }
             }
-        });
+        }, false);
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count == 3);
@@ -99,7 +99,7 @@ public class DbTests
     [Test]
     public async Task Test_SelectSongs_YuminaMainTitleThing()
     {
-        var songs = (await DbManager.SelectSongs(new Song() { Id = 821, })).ToList();
+        var songs = (await DbManager.SelectSongs(new Song() { Id = 821, }, false)).ToList();
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 0);
@@ -737,10 +737,8 @@ public class DbTests
     [Test, Explicit]
     public async Task Test_FilterSongLinks()
     {
-        var song = (await DbManager.SelectSongs(new Song
-        {
-            Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } }
-        })).Single();
+        var song = (await DbManager.SelectSongs(
+            new Song { Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } } }, false)).Single();
 
         var filtered = SongLink.FilterSongLinks(song.Links);
         Assert.That(filtered.Count == 1);
@@ -780,7 +778,7 @@ order by ms.id
             foreach ((int msid, Guid[]? releasegids) in res)
             {
                 var songSource = await DbManager.SelectSongSource(connection,
-                    new Song { Sources = new List<SongSource> { new() { Id = msid } } });
+                    new Song { Sources = new List<SongSource> { new() { Id = msid } } }, false);
                 dict[songSource.Single()] = releasegids;
             }
 
@@ -819,7 +817,7 @@ order by ms.id
         int end = await DbManager.SelectCountUnsafe("music");
         for (int i = 1; i < end; i++)
         {
-            var songs = await DbManager.SelectSongs(new Song { Id = i });
+            var songs = await DbManager.SelectSongs(new Song { Id = i }, false);
             if (songs.Any())
             {
                 var song = songs.First();

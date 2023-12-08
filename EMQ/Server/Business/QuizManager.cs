@@ -438,7 +438,7 @@ public class QuizManager
                                 x => x.VndbInfo.Labels != null && x.VndbInfo.Labels.Any(y => y.VNs.Any())))
                         {
                             // generate wrong multiple choice options from player vndb lists if there are any
-                            // TODO: this is really expensive with big lists
+                            // todo?: this is somewhat expensive with big lists
                             var allPlayerVnTitles = await DbManager.FindSongsByLabels(playerSessions
                                 .Where(x => x.VndbInfo.Labels != null).SelectMany(x => x.VndbInfo.Labels!));
 
