@@ -771,7 +771,8 @@ public partial class QuizPage
     {
         if (Room is { Quiz: { } })
         {
-            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+            if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+                Room.Quiz.QuizState.Phase == QuizPhaseKind.Guess)
             {
                 PageState.Guess = guess;
                 await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
