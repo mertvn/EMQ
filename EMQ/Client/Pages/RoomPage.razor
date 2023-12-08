@@ -103,7 +103,15 @@
             @onclick="StartQuiz"
             disabled="@(Room is {Quiz.QuizState.QuizStatus: QuizStatus.Playing })"
             style="margin: 5px;">
-        Start Quiz
+        @if (IsStartingQuiz)
+        {
+            <span>Starting...</span>
+        }
+        else
+        {
+            <span>Start Quiz</span>
+        }
+
     </button>
 }
 else if (IsSpectator)

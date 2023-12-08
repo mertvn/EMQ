@@ -123,6 +123,7 @@ public partial class RoomPage
             if (!IsStartingQuiz)
             {
                 IsStartingQuiz = true;
+                StateHasChanged();
                 HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/StartQuiz",
                     new ReqStartQuiz(ClientState.Session.Token, Room.Id));
                 if (res1.IsSuccessStatusCode)
