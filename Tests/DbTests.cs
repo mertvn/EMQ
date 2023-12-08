@@ -222,7 +222,7 @@ public class DbTests
         Assert.That(songs.Count > 99);
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_GetRandomSongs_100000()
     {
         var songs = await DbManager.GetRandomSongs(100000, true);
@@ -333,6 +333,57 @@ public class DbTests
 
         Assert.That(songs.Count > 4);
         Assert.That(songs.Count < 1000);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_CategoryFilter_2_NoBGM()
+    {
+        List<CategoryFilter> categories = new()
+        {
+            // - magical charming
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g187", SpoilerLevel = SpoilerLevel.Major },
+                LabelKind.Exclude) { },
+            // ~ da capo 3, duel savior, Justy×Nasty ~Maou Hajimemashita~, magical charming, sorcery jokers, edelweiss
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g685", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe),
+            // ~ aokana,
+            new CategoryFilter(new SongSourceCategory() { VndbId = "g2924", SpoilerLevel = SpoilerLevel.None },
+                LabelKind.Maybe),
+        };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
+            filters: new QuizFilters
+            {
+                CategoryFilters = categories,
+                SongSourceSongTypeFilters = new Dictionary<SongSourceSongType, bool>()
+                {
+                    { SongSourceSongType.OP, true },
+                    { SongSourceSongType.ED, true },
+                    { SongSourceSongType.Insert, true },
+                    { SongSourceSongType.BGM, false },
+                }
+            }, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Sorcery Jokers")))));
+
+        foreach (Song song in songs)
+        {
+            foreach (SongSource songSource in song.Sources)
+            {
+                Console.WriteLine(songSource.Titles.First(x => x.IsMainTitle).LatinTitle);
+            }
+        }
+
+        Assert.That(!(songs.Any(song => song.Sources.Any(source =>
+            source.Titles.Any(title => title.LatinTitle.Contains("Magical Charming"))))));
+
+        Assert.That(songs.Count > 4);
+        Assert.That(songs.Count < 1000);
+
+        Assert.That(songs.Any(song => !song.Sources.Any(source =>
+            source.SongTypes.Any(x => x == SongSourceSongType.BGM))));
     }
 
     [Test]

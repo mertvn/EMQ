@@ -885,55 +885,206 @@ public static class DbManager
     }
 
     // todo make Filters required
-    // todo tags and artists filters are ORed, option to AND or default to AND?
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool keepCategories = false)
     {
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
         // 1. Find all valid music ids
         var ret = new List<Song>();
         var rng = Random.Shared;
 
-        List<(int, string)> ids;
+        List<(int, string)> ids = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            string sqlMusicIds;
-            if (filters != null && filters.CategoryFilters.Any())
-            {
-                sqlMusicIds =
-                    $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+            string sqlMusicIds =
+                $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
-                                     JOIN music_source_category msc on msc.music_source_id = ms.id
-                                     JOIN artist_music am ON am.music_id = m.id
-                                     JOIN artist a ON a.id = am.artist_id
-                                     JOIN category c on c.id = msc.category_id
                                      WHERE 1=1
                                      AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
-            }
-            else
-            {
-                sqlMusicIds =
-                    $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
-                                     JOIN music m on m.id = mel.music_id
-                                     JOIN music_source_music msm on msm.music_id = m.id
-                                     JOIN music_source ms on msm.music_source_id = ms.id
-                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
-                                     JOIN artist_music am ON am.music_id = m.id
-                                     JOIN artist a ON a.id = am.artist_id
-                                     WHERE 1=1
-                                     AND msel.type={(int)SongSourceLinkType.VNDB}
-                                     ";
-            }
 
             var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
 
             // Apply filters
             if (filters != null)
             {
+                if (filters.CategoryFilters.Any())
+                {
+                    Console.WriteLine(
+                        $"StartSection GetRandomSongs_categories: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                    string sqlCategories =
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     JOIN music_source_category msc on msc.music_source_id = ms.id
+                                     JOIN category c on c.id = msc.category_id
+                                     WHERE 1=1
+                                     AND msel.type={(int)SongSourceLinkType.VNDB}
+                                     ";
+
+                    var queryCategories = connection.QueryBuilder($"{sqlCategories:raw}");
+
+                    var validCategories = filters.CategoryFilters;
+                    var trileans = validCategories.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        CategoryFilter categoryFilter = ordered[index];
+                        // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
+
+                        if (index > 0)
+                        {
+                            switch (categoryFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    queryCategories.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    queryCategories.AppendLine($"INTERSECT");
+                                    break;
+                                case LabelKind.Exclude:
+                                    queryCategories.AppendLine($"EXCEPT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryCategories.Append($"{sqlCategories:raw}");
+                        }
+
+                        // todo vndb_id null
+                        queryCategories.Append(
+                            $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
+ AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
+ AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
+                    }
+
+                    if (printSql)
+                    {
+                        Console.WriteLine(queryCategories.Sql);
+                        Console.WriteLine(JsonSerializer.Serialize(queryCategories.Parameters, Utils.JsoIndented));
+                    }
+
+                    var resCategories =
+                        (await connection.QueryAsync<(int, string)>(queryCategories.Sql, queryCategories.Parameters))
+                        .OrderBy(_ => rng.Next()).ToList();
+                    ids = resCategories;
+                }
+
+                if (filters.ArtistFilters.Any())
+                {
+                    Console.WriteLine(
+                        $"StartSection GetRandomSongs_artists: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                    string sqlArtists =
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     JOIN artist_music am ON am.music_id = m.id
+                                     JOIN artist a ON a.id = am.artist_id
+                                     WHERE 1=1
+                                     AND msel.type={(int)SongSourceLinkType.VNDB}
+                                     ";
+
+                    var queryArtists = connection.QueryBuilder($"{sqlArtists:raw}");
+
+                    var validArtists = filters.ArtistFilters;
+                    var trileans = validArtists.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validArtists.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        ArtistFilter artistFilter = ordered[index];
+
+                        if (index > 0)
+                        {
+                            switch (artistFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    queryArtists.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    queryArtists.AppendLine($"INTERSECT");
+                                    break;
+                                case LabelKind.Exclude:
+                                    queryArtists.AppendLine($"EXCEPT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryArtists.Append($"{sqlArtists:raw}");
+                        }
+
+                        queryArtists.Append(
+                            $@" AND a.id = {artistFilter.Artist.AId}");
+                    }
+
+                    if (printSql)
+                    {
+                        Console.WriteLine(queryArtists.Sql);
+                        Console.WriteLine(JsonSerializer.Serialize(queryArtists.Parameters, Utils.JsoIndented));
+                    }
+
+                    var resArtist =
+                        (await connection.QueryAsync<(int, string)>(queryArtists.Sql, queryArtists.Parameters))
+                        .OrderBy(_ => rng.Next()).ToList();
+
+                    if (ids.Any())
+                    {
+                        bool and = true; // todo? option
+                        if (and)
+                        {
+                            ids = ids.Intersect(resArtist).ToList();
+                        }
+                        else
+                        {
+                            ids = ids.Union(resArtist).ToList();
+                        }
+                    }
+                    else
+                    {
+                        ids = resArtist;
+                    }
+                }
+
+                Console.WriteLine(
+                    $"StartSection GetRandomSongs_filters: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                if (ids.Any())
+                {
+                    // apply results of category/artist filters
+                    queryMusicIds.AppendLine($"AND m.id = ANY({ids.Select(x => x.Item1).ToList()})");
+                }
+
                 var validSongDifficultyLevels = filters.SongDifficultyLevelFilters.Where(x => x.Value).ToList();
                 if (validSongDifficultyLevels.Any())
                 {
@@ -1029,96 +1180,6 @@ public static class DbManager
                     queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
                     queryMusicIds.Append($")");
                 }
-
-                var validCategories = filters.CategoryFilters;
-                if (validCategories.Any())
-                {
-                    var trileans = validCategories.Select(x => x.Trilean);
-                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
-
-                    var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
-                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
-                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
-                    for (int index = 0; index < ordered.Count; index++)
-                    {
-                        CategoryFilter categoryFilter = ordered[index];
-                        // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
-
-                        if (index > 0)
-                        {
-                            switch (categoryFilter.Trilean)
-                            {
-                                case LabelKind.Maybe:
-                                    if (hasInclude)
-                                    {
-                                        continue;
-                                    }
-
-                                    queryMusicIds.AppendLine($"UNION");
-                                    break;
-                                case LabelKind.Include:
-                                    queryMusicIds.AppendLine($"INTERSECT");
-                                    break;
-                                case LabelKind.Exclude:
-                                    queryMusicIds.AppendLine($"EXCEPT");
-                                    break;
-                                default:
-                                    throw new ArgumentOutOfRangeException();
-                            }
-
-                            queryMusicIds.Append($"{sqlMusicIds:raw}");
-                        }
-
-                        // todo vndb_id null
-                        queryMusicIds.Append(
-                            $@" AND c.vndb_id = {categoryFilter.SongSourceCategory.VndbId}
- AND msc.spoiler_level <= {(int?)categoryFilter.SongSourceCategory.SpoilerLevel ?? int.MaxValue}
- AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
-                    }
-                }
-
-                var validArtists = filters.ArtistFilters;
-                if (validArtists.Any())
-                {
-                    var trileans = validArtists.Select(x => x.Trilean);
-                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
-
-                    var ordered = validArtists.OrderByDescending(x => x.Trilean == LabelKind.Include)
-                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
-                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
-                    for (int index = 0; index < ordered.Count; index++)
-                    {
-                        ArtistFilter artistFilter = ordered[index];
-
-                        if (index > 0)
-                        {
-                            switch (artistFilter.Trilean)
-                            {
-                                case LabelKind.Maybe:
-                                    if (hasInclude)
-                                    {
-                                        continue;
-                                    }
-
-                                    queryMusicIds.AppendLine($"UNION");
-                                    break;
-                                case LabelKind.Include:
-                                    queryMusicIds.AppendLine($"INTERSECT");
-                                    break;
-                                case LabelKind.Exclude:
-                                    queryMusicIds.AppendLine($"EXCEPT");
-                                    break;
-                                default:
-                                    throw new ArgumentOutOfRangeException();
-                            }
-
-                            queryMusicIds.Append($"{sqlMusicIds:raw}");
-                        }
-
-                        queryMusicIds.Append(
-                            $@" AND a.id = {artistFilter.Artist.AId}");
-                    }
-                }
             }
 
             if (validSources != null && validSources.Any())
@@ -1136,6 +1197,9 @@ public static class DbManager
                 .OrderBy(_ => rng.Next()).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
         }
+
+        Console.WriteLine(
+            $"StartSection GetRandomSongs_SelectSongs: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         // 2. Select Song objects with those music ids until we hit the desired NumSongs, respecting the Duplicates setting
         var addedMselUrls = new List<string>();
@@ -1179,6 +1243,10 @@ public static class DbManager
                 songSource.Categories = new List<SongSourceCategory>();
             }
         }
+
+        stopWatch.Stop();
+        Console.WriteLine(
+            $"StartSection GetRandomSongs_fin: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         return ret;
     }
