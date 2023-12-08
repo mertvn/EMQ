@@ -169,4 +169,22 @@ public class MediaAnalyserTests
             Assert.Fail();
         }
     }
+
+    [Test]
+    public async Task Test_Analyse_webm_1000FPS()
+    {
+        string url = "https://files.catbox.moe/kxh6kx.webm";
+        string filePath = System.IO.Path.GetTempPath() + url.LastSegment();
+
+        bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(url));
+        if (success)
+        {
+            bool isValid = (await MediaAnalyser.Analyse(filePath)).IsValid;
+            Assert.That(isValid);
+        }
+        else
+        {
+            Assert.Fail();
+        }
+    }
 }

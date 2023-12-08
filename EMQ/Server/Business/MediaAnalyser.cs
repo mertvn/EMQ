@@ -76,12 +76,18 @@ public static class MediaAnalyser
             {
                 // Console.WriteLine(new { mediaInfo.PrimaryVideoStream!.AvgFrameRate });
                 result.AvgFramerate = mediaInfo.PrimaryVideoStream!.AvgFrameRate;
-                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate < 23)
+
+                if (result.AvgFramerate is 1000)
+                {
+                    result.AvgFramerate = mediaInfo.PrimaryVideoStream!.FrameRate;
+                }
+
+                if (result.AvgFramerate < 23)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooLow);
                 }
 
-                if (mediaInfo.PrimaryVideoStream!.AvgFrameRate > 61)
+                if (result.AvgFramerate > 61)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooHigh);
                 }
