@@ -422,20 +422,71 @@ public class QuizManager
             case AnsweringKind.Typing:
                 break;
             case AnsweringKind.MultipleChoice:
-                int numChoices = Math.Min(4, songs.Count); // todo?: make this configurable
+                int numChoices = 4; // todo?: make this configurable
 
                 Dictionary<int, Title> allTitles = new();
                 HashSet<int> addedSourceIds = new();
-                foreach (Song song in songs)
+
+                switch (Quiz.Room.QuizSettings.SongSelectionKind)
                 {
-                    foreach (SongSource songSource in song.Sources)
-                    {
-                        if (addedSourceIds.Add(songSource.Id))
+                    case SongSelectionKind.Random:
+                    case SongSelectionKind.LocalMusicLibrary:
+                        var playerSessions =
+                            ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
+
+                        if (playerSessions.Any(
+                                x => x.VndbInfo.Labels != null && x.VndbInfo.Labels.Any(y => y.VNs.Any())))
                         {
-                            allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                            break;
+                            // generate wrong multiple choice options from player vndb lists if there are any
+                            // TODO: this is really expensive with big lists
+                            var allPlayerVnTitles = await DbManager.FindSongsByLabels(playerSessions
+                                .Where(x => x.VndbInfo.Labels != null).SelectMany(x => x.VndbInfo.Labels!));
+
+                            foreach (Song song in allPlayerVnTitles)
+                            {
+                                foreach (SongSource songSource in song.Sources)
+                                {
+                                    if (addedSourceIds.Add(songSource.Id))
+                                    {
+                                        allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                        break;
+                                    }
+                                }
+                            }
                         }
-                    }
+                        else
+                        {
+                            // or from the selected songs if not
+                            foreach (Song song in songs)
+                            {
+                                foreach (SongSource songSource in song.Sources)
+                                {
+                                    if (addedSourceIds.Add(songSource.Id))
+                                    {
+                                        allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        break;
+                    case SongSelectionKind.Looting:
+                        // generate wrong multiple choice options from the VNs on the ground while looting
+                        List<KeyValuePair<string, List<Title>>> validSources = Quiz.Room.TreasureRooms
+                            .SelectMany(x => x.SelectMany(y => y.Treasures.Select(z => z.ValidSource))).ToList();
+
+                        foreach ((string key, List<Title> value) in validSources)
+                        {
+                            if (addedSourceIds.Add(key.GetHashCode()))
+                            {
+                                allTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
+                            }
+                        }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
 
                 // Console.WriteLine(JsonSerializer.Serialize(addedSourceIds, Utils.Jso));
@@ -465,6 +516,9 @@ public class QuizManager
             default:
                 throw new ArgumentOutOfRangeException();
         }
+
+        // reduce serialized Room size
+        Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");
         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -975,9 +1029,6 @@ public class QuizManager
         }
 
         Quiz.Room.Log($"Selected {dbSongs.Count} looted songs");
-
-        // reduce serialized Room size
-        Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
 
         Quiz.Songs = dbSongs;
         Quiz.QuizState.NumSongs = Quiz.Songs.Count;

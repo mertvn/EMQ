@@ -2264,9 +2264,9 @@ order by diff
     }
 
     /// Limited to vocal songs for now.
-    public static async Task<List<Song>> FindSongsByLabels(List<Label> reqLabels)
+    public static async Task<List<Song>> FindSongsByLabels(IEnumerable<Label> reqLabels)
     {
-        var validSources = Label.GetValidSourcesFromLabels(reqLabels);
+        var validSources = Label.GetValidSourcesFromLabels(reqLabels.ToList());
         // return await GetRandomSongs(int.MaxValue, true, validSources); // todo make mel param
 
         string sqlMusicIdsNoMel =
