@@ -217,9 +217,14 @@ app.MapFallbackToFile("index.html");
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();
 
-await Task.Delay(TimeSpan.FromSeconds(1));
+string cnnStr = ConnectionHelper.GetConnectionString();
+if (cnnStr.Contains("railway"))
+{
+    // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
+    await Task.Delay(TimeSpan.FromSeconds(1));
+}
 
-static IServiceProvider CreateServices()
+static IServiceProvider CreateServices(string cnnStr)
 {
 #pragma warning disable ASP0000
     return new ServiceCollection()
@@ -230,7 +235,7 @@ static IServiceProvider CreateServices()
             // Add Postgres support to FluentMigrator
             .AddPostgres()
             // Set the connection string
-            .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
+            .WithGlobalConnectionString(cnnStr)
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
         // Enable logging to console in the FluentMigrator way
@@ -266,7 +271,7 @@ async Task Init()
 
     if (hasDb)
     {
-        var serviceProvider = CreateServices();
+        var serviceProvider = CreateServices(cnnStr);
 
         // Put the database update into a scope to ensure
         // that all resources will be disposed.

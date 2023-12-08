@@ -66,7 +66,7 @@ public static class ConnectionHelper
             IncludeErrorDetail = true
         };
 
-        Console.WriteLine(JsonSerializer.Serialize(builder, Utils.JsoIndented));
+        // Console.WriteLine(JsonSerializer.Serialize(builder, Utils.JsoIndented));
         return builder;
     }
 }
