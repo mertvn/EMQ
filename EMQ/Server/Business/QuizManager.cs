@@ -963,10 +963,11 @@ public class QuizManager
         }
 
         Quiz.Room.Log($"Players looted {validSources.SelectMany(x => x.Value).Distinct().Count()} distinct sources");
-        var dbSongs = await DbManager.GetLootedSongs(
+        var dbSongs = await DbManager.GetRandomSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
-            validSources.SelectMany(x => x.Value).ToList());
+            validSources.SelectMany(x => x.Value).ToList(),
+            Quiz.Room.QuizSettings.Filters);
 
         if (!dbSongs.Any())
         {
