@@ -1,4 +1,6 @@
 using System;
+using System.Text.Json;
+using EMQ.Shared.Core;
 using Npgsql;
 
 namespace EMQ.Server;
@@ -64,6 +66,7 @@ public static class ConnectionHelper
             IncludeErrorDetail = true
         };
 
+        Console.WriteLine(JsonSerializer.Serialize(builder, Utils.JsoIndented));
         return builder;
     }
 }
