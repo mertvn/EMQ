@@ -217,6 +217,8 @@ app.MapFallbackToFile("index.html");
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();
 
+await Task.Delay(TimeSpan.FromSeconds(1));
+
 static IServiceProvider CreateServices()
 {
 #pragma warning disable ASP0000
