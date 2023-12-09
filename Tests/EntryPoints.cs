@@ -219,6 +219,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task AnalyzeReviewQueueItems()
     {
+        bool deleteAfter = false;
+
         var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
         foreach (RQ rq in rqs)
         {
@@ -226,14 +228,46 @@ public class EntryPoints
             {
                 string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
 
-                bool dlSuccess = await ExtensionMethods.DownloadFile(ServerUtils.Client, filePath, new Uri(rq.url));
-                if (dlSuccess)
+                if (!File.Exists(filePath))
                 {
-                    var analyserResult = await MediaAnalyser.Analyse(filePath);
-                    System.IO.File.Delete(filePath);
+                    bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(rq.url));
+                    if (!dlSuccess)
+                    {
+                        if (File.Exists(filePath))
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
 
-                    await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
-                        analyserResult: analyserResult);
+                        throw new Exception();
+                    }
+                }
+
+                var analyserResult = await MediaAnalyser.Analyse(filePath);
+
+                if (deleteAfter)
+                {
+                    System.IO.File.Delete(filePath);
+                }
+
+                await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
+                    analyserResult: analyserResult);
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task DownloadReviewQueueItems()
+    {
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        foreach (RQ rq in rqs)
+        {
+            string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
+            if (!File.Exists(filePath))
+            {
+                bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(rq.url));
+                if (!dlSuccess)
+                {
+                    throw new Exception();
                 }
             }
         }
