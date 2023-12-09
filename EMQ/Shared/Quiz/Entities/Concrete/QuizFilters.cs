@@ -20,14 +20,15 @@ public class QuizFilters
         Enum.GetValues<Language>()
             .ToDictionary(x => x, y => y == Language.ja);
 
-    public Dictionary<SongSourceSongType, bool> SongSourceSongTypeFilters { get; set; } =
-        Enum.GetValues<SongSourceSongType>()
-            .Where(x => x
-                is SongSourceSongType.OP
-                or SongSourceSongType.ED
-                or SongSourceSongType.Insert
-                or SongSourceSongType.BGM)
-            .ToDictionary(x => x, _ => true);
+    public Dictionary<SongSourceSongType, IntWrapper> SongSourceSongTypeFilters { get; set; } =
+        new()
+        {
+            { SongSourceSongType.OP, new IntWrapper(0) },
+            { SongSourceSongType.ED, new IntWrapper(0) },
+            { SongSourceSongType.Insert, new IntWrapper(0) },
+            { SongSourceSongType.BGM, new IntWrapper(0) },
+            { SongSourceSongType.Random, new IntWrapper(40) },
+        };
 
     public Dictionary<SongDifficultyLevel, bool> SongDifficultyLevelFilters { get; set; } =
         Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true);
@@ -67,4 +68,15 @@ public class QuizFilters
     public int VoteCountEnd { get; set; } = Constants.QFVoteCountMax;
 
     // todo move all applicable filters here
+}
+
+// i hate microsoft
+public class IntWrapper
+{
+    public IntWrapper(int value)
+    {
+        Value = value;
+    }
+
+    public int Value { get; set; }
 }

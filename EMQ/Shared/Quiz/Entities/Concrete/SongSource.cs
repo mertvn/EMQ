@@ -52,6 +52,7 @@ public enum SongSourceSongType
     ED,
     Insert,
     BGM,
+    Random = 777, // must be higher than everything else for song selection to work correctly
 }
 
 public enum SongSourceType

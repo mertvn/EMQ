@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Reflection;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -115,6 +117,29 @@ public class QuizSettings
         set { TimeoutMs = value * 1000; }
     }
 
+    [CustomValidation(typeof(QuizSettings), nameof(ValidateSongSourceSongTypeFiltersSum))]
+    public int SongSourceSongTypeFiltersSum => Filters.SongSourceSongTypeFilters.Sum(x => x.Value.Value);
+
     [Required]
     public QuizFilters Filters { get; set; } = new();
+
+    public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
+    {
+        if (sum == 0)
+        {
+            return new ValidationResult("The sum of selected song types must be greater than 0.",
+                new[] { validationContext.MemberName! });
+        }
+
+        PropertyInfo numSongsProperty = validationContext.ObjectType.GetProperty(nameof(NumSongs))!;
+        int numSongsPropertyValue = (int)numSongsProperty.GetValue(validationContext.ObjectInstance, null)!;
+
+        if (sum > numSongsPropertyValue)
+        {
+            return new ValidationResult("The sum of selected song types cannot be greater than the number of songs.",
+                new[] { validationContext.MemberName! });
+        }
+
+        return ValidationResult.Success!;
+    }
 }

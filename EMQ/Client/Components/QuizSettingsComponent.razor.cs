@@ -9,6 +9,7 @@ using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace EMQ.Client.Components;
 
@@ -39,6 +40,8 @@ public partial class QuizSettingsComponent
 
     private string _selectedTab = "TabGeneral";
 
+    private EditForm _editFormRef = null!;
+
     private Task OnSelectedTabChanged(string name)
     {
         _selectedTab = name;
@@ -47,6 +50,12 @@ public partial class QuizSettingsComponent
 
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
     {
+        bool isValid = _editFormRef.EditContext!.Validate();
+        if (!isValid)
+        {
+            return;
+        }
+
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
             HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",

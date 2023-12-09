@@ -1136,7 +1136,8 @@ public static class DbManager
                     queryMusicIds.Append($")");
                 }
 
-                var validSongSourceSongTypes = filters.SongSourceSongTypeFilters.Where(x => x.Value).ToList();
+                var validSongSourceSongTypes = filters.SongSourceSongTypeFilters
+                    .Where(x => x.Key != SongSourceSongType.Random && x.Value.Value > 0).ToList();
                 if (validSongSourceSongTypes.Any())
                 {
                     queryMusicIds.Append($"\n");
@@ -1232,11 +1233,19 @@ public static class DbManager
         Console.WriteLine(
             $"StartSection GetRandomSongs_SelectSongs: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        // 2. Select Song objects with those music ids until we hit the desired NumSongs, respecting the Duplicates setting
+        // 2. Select Song objects with those music ids until we hit the desired NumSongs, respecting the Duplicates and Song Types settings
         var addedMselUrls = new List<string>();
+
+        Dictionary<SongSourceSongType, int>? songTypesLeft =
+            filters?.SongSourceSongTypeFilters.OrderByDescending(x => x.Key) // Random must be selected first
+                .ToDictionary(x => x.Key, x => x.Value.Value);
+        bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
+
+        int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
         {
-            if (ret.Count >= numSongs)
+            if (ret.Count >= numSongs ||
+                songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0))
             {
                 break;
             }
@@ -1244,16 +1253,60 @@ public static class DbManager
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
             {
                 var songs = await SelectSongs(new Song { Id = mId }, selectCategories);
+                totalSelected += songs.Count;
+
                 if (songs.Any())
                 {
                     foreach (Song song in songs)
                     {
-                        if (ret.Count >= numSongs)
+                        if (ret.Count >= numSongs ||
+                            songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0))
                         {
                             break;
                         }
 
-                        if (!addedMselUrls.Contains(mselUrl) || duplicates)
+                        bool canAdd = true;
+                        if (doSongSourceSongTypeFiltersCheck)
+                        {
+                            List<SongSourceSongType> songTypes = song.Sources.SelectMany(x => x.SongTypes).ToList();
+                            foreach ((SongSourceSongType key, int value) in songTypesLeft!)
+                            {
+                                if (key == SongSourceSongType.Random || songTypes.Contains(key))
+                                {
+                                    if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
+                                    {
+                                        // todo? configurable random weights
+                                        const float bgmWeight = 0.2f;
+                                        int mod = Convert.ToInt32(1 / bgmWeight);
+                                        if (Random.Shared.Next(mod) != 0)
+                                        {
+                                            // Console.WriteLine("skip bgm");
+                                            canAdd = false;
+                                            break;
+                                        }
+                                    }
+
+                                    // bool exists =
+                                    //     filters!.SongSourceSongTypeFilters.TryGetValue(key, out IntWrapper? maxAllowed);
+                                    // if (exists)
+                                    // {
+                                    if (value > 0)
+                                    {
+                                        canAdd = true;
+                                        songTypesLeft[key] -= 1;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        canAdd = false;
+                                    }
+                                    //  }
+                                }
+                            }
+                        }
+
+                        canAdd &= !addedMselUrls.Contains(mselUrl) || duplicates;
+                        if (canAdd)
                         {
                             song.StartTime = rng.Next(0,
                                 Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
@@ -1269,6 +1322,31 @@ public static class DbManager
         stopWatch.Stop();
         Console.WriteLine(
             $"StartSection GetRandomSongs_fin: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+        if (filters != null)
+        {
+            Console.WriteLine($"totalSelected: {totalSelected}");
+            if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out IntWrapper? randomCount))
+            {
+                int opCount = ret.Count(song =>
+                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP));
+
+                int edCount = ret.Count(song =>
+                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.ED));
+
+                int insCount = ret.Count(song =>
+                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert));
+
+                int bgmCount = ret.Count(song =>
+                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
+
+                Console.WriteLine($"randomCount: {randomCount.Value}");
+                Console.WriteLine($"\topCount: {opCount}");
+                Console.WriteLine($"\tedCount: {edCount}");
+                Console.WriteLine($"\tinsCount: {insCount}");
+                Console.WriteLine($"\tbgmCount: {bgmCount}");
+            }
+        }
 
         return ret;
     }

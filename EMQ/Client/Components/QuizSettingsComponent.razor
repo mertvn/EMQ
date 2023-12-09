@@ -17,7 +17,7 @@
 @if (ClientState.Session != null)
 {
     <div id="collapseQuizSettings" style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly); cursor: @UiHelpers.Bool2CursorNotAllowed(IsReadOnly);">
-    <EditForm Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
+    <EditForm @ref="_editFormRef" Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
@@ -123,15 +123,22 @@
                 <Blazorise.TabPanel Name="TabFilters">
                     @* https://stackoverflow.com/a/63384981 *@
                     <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
-                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 120px;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
                             <h5>Song types</h5>
 
                             @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
                             {
-                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key])" style="margin: 5px"/>
-                                <label for="@key">@key.ToString()</label>
-                                <br/>
+                                <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+                                    <Blazorise.Slider style="max-width: 100px;" id="@key" @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" Min="0" Max="100"/>
+                                    <div style="display: inline-block">
+                                        <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" style="width: 55px; margin: 5px;"></InputNumber>
+                                    </div>
+                                    <label for="@key" style="margin-left: 5px;">@key.ToString()</label>
+
+                                    <br/>
+                                </div>
                             }
+                            BGMs are ~5x less likely to be selected through Random.
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 225px;">
