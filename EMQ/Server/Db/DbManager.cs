@@ -1273,14 +1273,17 @@ public static class DbManager
                             {
                                 if (key == SongSourceSongType.Random || songTypes.Contains(key))
                                 {
-                                    if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
+                                    if (key == SongSourceSongType.Random)
                                     {
-                                        // todo? configurable random weights
-                                        const float bgmWeight = 0.2f;
-                                        int mod = Convert.ToInt32(1 / bgmWeight);
-                                        if (Random.Shared.Next(mod) != 0)
+                                        int lowestWeightForSongTypes =
+                                            filters!.SongSourceSongTypeRandomWeights
+                                                .Where(x => songTypes.Contains(x.Key))
+                                                .MinBy(x => x.Value.Value).Value.Value;
+
+                                        float weight = lowestWeightForSongTypes;
+                                        if (Random.Shared.NextSingle() >= (weight / 100))
                                         {
-                                            // Console.WriteLine("skip bgm");
+                                            Console.WriteLine($"skip random with weight {weight}");
                                             canAdd = false;
                                             break;
                                         }
