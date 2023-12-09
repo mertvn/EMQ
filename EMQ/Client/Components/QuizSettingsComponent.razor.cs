@@ -50,6 +50,27 @@ public partial class QuizSettingsComponent
 
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
     {
+        if (ClientQuizSettings.SongSourceSongTypeFiltersSum < ClientQuizSettings.NumSongs)
+        {
+            int random = ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random].Value;
+
+            ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random] =
+                new IntWrapper(random +
+                               (ClientQuizSettings.NumSongs - ClientQuizSettings.SongSourceSongTypeFiltersSum));
+        }
+        else if (ClientQuizSettings.SongSourceSongTypeFiltersSum > ClientQuizSettings.NumSongs)
+        {
+            int random = ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random].Value;
+
+            bool canFix = random > (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs);
+            if (canFix)
+            {
+                ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random] =
+                    new IntWrapper(random -
+                                   (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs));
+            }
+        }
+
         bool isValid = _editFormRef.EditContext!.Validate();
         if (!isValid)
         {
