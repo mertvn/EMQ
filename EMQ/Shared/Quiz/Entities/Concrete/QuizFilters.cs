@@ -30,14 +30,14 @@ public class QuizFilters
             { SongSourceSongType.Random, new IntWrapper(40) },
         };
 
-    public Dictionary<SongSourceSongType, IntWrapper> SongSourceSongTypeRandomWeights { get; set; } =
-        new()
-        {
-            { SongSourceSongType.OP, new IntWrapper(100) },
-            { SongSourceSongType.ED, new IntWrapper(100) },
-            { SongSourceSongType.Insert, new IntWrapper(100) },
-            { SongSourceSongType.BGM, new IntWrapper(20) },
-        };
+    // public Dictionary<SongSourceSongType, IntWrapper> SongSourceSongTypeRandomWeights { get; set; } =
+    //     new()
+    //     {
+    //         { SongSourceSongType.OP, new IntWrapper(100) },
+    //         { SongSourceSongType.ED, new IntWrapper(100) },
+    //         { SongSourceSongType.Insert, new IntWrapper(100) },
+    //         { SongSourceSongType.BGM, new IntWrapper(7) },
+    //     };
 
     public Dictionary<SongDifficultyLevel, bool> SongDifficultyLevelFilters { get; set; } =
         Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true);

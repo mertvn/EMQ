@@ -139,46 +139,46 @@
                                 </div>
                             }
 
-                            <h5>Random weights</h5>
-                            @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights.Keys.ToList())
-                            {
-                                <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                                    <Blazorise.Slider style="max-width: 100px;" id="@key" @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[key].Value)" Min="0" Max="100"/>
-                                    <div style="display: inline-block">
-                                        <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[key].Value)" style="width: 55px; margin: 5px;"></InputNumber>
-                                    </div>
-                                    <label for="@key" style="margin-left: 5px;">@key.ToString()</label>
-
-                                    <br/>
-                                </div>
-                            }
-
-                            @if (true)
-                            {
-                                float sum = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights.Sum(x => x.Value.Value);
-
-                                float availableSongsCount = 26857;
-
-                                float availableOpCount = 3107;
-                                float opWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.OP].Value;
-
-                                float availableEdCount = 2130;
-                                float edWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.ED].Value;
-
-                                float availableInsCount = 741;
-                                float insWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.Insert].Value;
-
-                                float availableBgmCount = 20928;
-                                float bgmWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.BGM].Value;
-
-                                <span>Estimated random song counts: </span>
-                                <ul>
-                                    <li>OP: @(((ClientQuizSettings.NumSongs) / ((sum / opWeight))))</li>
-                                    <li>ED: @(((ClientQuizSettings.NumSongs) / ((sum / edWeight))))</li>
-                                    <li>Insert: @(((ClientQuizSettings.NumSongs) / ((sum / insWeight))))</li>
-                                    <li>BGM: @(((ClientQuizSettings.NumSongs) / ((sum / bgmWeight))))</li>
-                                </ul>
-                            }
+                            @* <h5>Random weights</h5> *@
+                            @* @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights.Keys.ToList()) *@
+                            @* { *@
+                            @*     <div style="max-width: 400px; display: flex; align-items: center; align-content: center;"> *@
+                            @*         <Blazorise.Slider style="max-width: 100px;" id="@key" @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[key].Value)" Min="0" Max="100"/> *@
+                            @*         <div style="display: inline-block"> *@
+                            @*             <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[key].Value)" style="width: 55px; margin: 5px;"></InputNumber> *@
+                            @*         </div> *@
+                            @*         <label for="@key" style="margin-left: 5px;">@key.ToString()</label> *@
+                            @* *@
+                            @*         <br/> *@
+                            @*     </div> *@
+                            @* } *@
+                            @* *@
+                            @* @if (true) *@
+                            @* { *@
+                            @*     float sum = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights.Sum(x => x.Value.Value); *@
+                            @* *@
+                            @*     float availableSongsCount = 26857; *@
+                            @* *@
+                            @*     float availableOpCount = 3107; *@
+                            @*     float opWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.OP].Value; *@
+                            @* *@
+                            @*     float availableEdCount = 2130; *@
+                            @*     float edWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.ED].Value; *@
+                            @* *@
+                            @*     float availableInsCount = 741; *@
+                            @*     float insWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.Insert].Value; *@
+                            @* *@
+                            @*     float availableBgmCount = 20928; *@
+                            @*     float bgmWeight = ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights[SongSourceSongType.BGM].Value; *@
+                            @* *@
+                            @*     <span>Estimated random song counts: </span> *@
+                            @*     <ul> *@
+                            @*         <li>OP: @(((ClientQuizSettings.NumSongs) / ((sum / opWeight))))</li> *@
+                            @*         <li>ED: @(((ClientQuizSettings.NumSongs) / ((sum / edWeight))))</li> *@
+                            @*         <li>Insert: @(((ClientQuizSettings.NumSongs) / ((sum / insWeight))))</li> *@
+                            @*         <li>BGM: @(((ClientQuizSettings.NumSongs) / ((sum / bgmWeight))))</li> *@
+                            @*     </ul> *@
+                            @* } *@
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 225px;">
