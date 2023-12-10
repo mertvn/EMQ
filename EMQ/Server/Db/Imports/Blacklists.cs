@@ -12,6 +12,8 @@ public static class Blacklists
         ("v12984", "Yuki no Elfin Lied"),
         ("v21901", "Ohime-sama datte XXX Shitai!!"),
         ("v17823", "Houkago Amazing Kiss"),
+        ("v1115", "days"),
+        ("v1115", "beloved ~Sakura no Kanata e~"),
         ("v3", "Unmei -SADAME-"),
         ("v20", "Heart to Heart"),
         ("v238", "Until"),
