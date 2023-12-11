@@ -57,6 +57,7 @@ public static class Program
                         "OP 1",
                         "OP 2",
                         "ED chorus, PSV OP", // YOLO
+                        "OP (Ballad ver.)", // YOLO
                         "start theme",
                         "Main menu theme:"
                     }.OrderByDescending(x => x).ToList()

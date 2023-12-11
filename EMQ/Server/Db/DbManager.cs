@@ -1329,6 +1329,7 @@ public static class DbManager
 
         if (filters != null)
         {
+            Console.WriteLine($"numSongs: {numSongs}");
             Console.WriteLine($"totalSelected: {totalSelected}");
             if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out IntWrapper? randomCount))
             {
