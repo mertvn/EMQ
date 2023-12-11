@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using System.Collections.Generic
+@using Microsoft.AspNetCore.Components
 @inject ILogger<QuizSettingsComponent> _logger
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
@@ -17,7 +18,7 @@
 @if (ClientState.Session != null)
 {
     <div id="collapseQuizSettings" style="pointer-events: @UiHelpers.Bool2PointerEvents(!IsReadOnly); cursor: @UiHelpers.Bool2CursorNotAllowed(IsReadOnly);">
-    <EditForm @ref="_editFormRef" Model="@ClientQuizSettings" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
+    <EditForm EditContext="EditContext" OnValidSubmit="@(() => SendChangeRoomSettingsReq(ClientQuizSettings))">
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
@@ -79,10 +80,6 @@
                         <label for="AnsweringKind">Answering method</label>
                         <br/>
 
-                        <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" style="margin: 5px"></InputNumber>
-                        <label for="NumSongs">Maximum number of songs</label>
-                        <br/>
-
                         <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
                         <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
                         <br/>
@@ -129,15 +126,23 @@
                             @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
                             {
                                 <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                                    <Blazorise.Slider style="max-width: 100px;" id="@key" @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" Min="0" Max="100"/>
+                                    <SongTypeSliderComponent style="max-width: 100px;" id="@key"
+                                              @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)"
+                                              Model="ClientQuizSettings">
+                                    </SongTypeSliderComponent>
+
                                     <div style="display: inline-block">
-                                        <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" style="width: 55px; margin: 5px;"></InputNumber>
+                                        <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" @bind-Value:after="@RecalculateNumSongsAndSongTypeFilters" style="width: 55px; margin: 5px;"></InputNumber>
                                     </div>
                                     <label for="@key" style="margin-left: 5px;">@key.ToString()</label>
 
                                     <br/>
                                 </div>
                             }
+
+                            <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" @bind-Value:after="@RecalculateNumSongsAndSongTypeFilters" style="margin: 5px"></InputNumber>
+                            <label for="NumSongs">Maximum number of songs</label>
+                            <br/>
 
                             @* <h5>Random weights</h5> *@
                             @* @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeRandomWeights.Keys.ToList()) *@

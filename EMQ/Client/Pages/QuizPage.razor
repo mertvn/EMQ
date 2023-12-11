@@ -13,7 +13,7 @@
 @inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
 
-<QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true"/>
+<QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true" IsQuizPage="true"/>
 
 <GenericModal @ref="@_leaveModalRef"
               Title="Leave?"

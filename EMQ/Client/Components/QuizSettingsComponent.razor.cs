@@ -24,6 +24,9 @@ public partial class QuizSettingsComponent
     [Parameter]
     public bool IsReadOnly { get; set; } = true;
 
+    [Parameter]
+    public bool IsQuizPage { get; set; }
+
     // we keep a separate copy of the quiz settings instead of using the one in Room
     // because we don't want the settings to get reset while someone is editing them
     private QuizSettings ClientQuizSettings { get; set; } = new();
@@ -40,7 +43,39 @@ public partial class QuizSettingsComponent
 
     private string _selectedTab = "TabGeneral";
 
-    private EditForm _editFormRef = null!;
+    private EditContext EditContext = null!;
+
+    protected override void OnInitialized()
+    {
+        SetNewEditContext(ClientQuizSettings);
+    }
+
+    protected override bool ShouldRender()
+    {
+        // no point rendering it on QuizPage where it'll be immutable
+        // not using IsReadOnly here because that would cause non-owner players to miss out on setting changes
+        return !IsQuizPage;
+    }
+
+    private void SetNewEditContext(QuizSettings quizSettings)
+    {
+        if (EditContext != null!)
+        {
+            EditContext.OnFieldChanged -= EditContext_OnFieldChanged;
+        }
+
+        EditContext = new EditContext(quizSettings);
+        EditContext.OnFieldChanged += EditContext_OnFieldChanged;
+    }
+
+    private void EditContext_OnFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        // Console.WriteLine(e.FieldIdentifier.FieldName);
+        // if (e.FieldIdentifier.FieldName is nameof(IntWrapper.Value) or nameof(ClientQuizSettings.NumSongs))
+        // {
+        //     RecalculateNumSongsAndSongTypeFilters();
+        // }
+    }
 
     private Task OnSelectedTabChanged(string name)
     {
@@ -50,28 +85,9 @@ public partial class QuizSettingsComponent
 
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
     {
-        if (ClientQuizSettings.SongSourceSongTypeFiltersSum < ClientQuizSettings.NumSongs)
-        {
-            int random = ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random].Value;
+        RecalculateNumSongsAndSongTypeFilters();
 
-            ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random] =
-                new IntWrapper(random +
-                               (ClientQuizSettings.NumSongs - ClientQuizSettings.SongSourceSongTypeFiltersSum));
-        }
-        else if (ClientQuizSettings.SongSourceSongTypeFiltersSum > ClientQuizSettings.NumSongs)
-        {
-            int random = ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random].Value;
-
-            bool canFix = random > (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs);
-            if (canFix)
-            {
-                ClientQuizSettings.Filters.SongSourceSongTypeFilters[SongSourceSongType.Random] =
-                    new IntWrapper(random -
-                                   (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs));
-            }
-        }
-
-        bool isValid = _editFormRef.EditContext!.Validate();
+        bool isValid = EditContext.Validate();
         if (!isValid)
         {
             return;
@@ -101,6 +117,7 @@ public partial class QuizSettingsComponent
             ClientQuizSettings =
                 JsonSerializer.Deserialize<QuizSettings>(
                     JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
+            SetNewEditContext(ClientQuizSettings);
         }
 
         await _modalRef.Show();
@@ -112,6 +129,7 @@ public partial class QuizSettingsComponent
     {
         Console.WriteLine("ResetQuizSettings");
         ClientQuizSettings = new QuizSettings();
+        SetNewEditContext(ClientQuizSettings);
     }
 
     private async Task RandomizeTags()
@@ -241,5 +259,35 @@ public partial class QuizSettingsComponent
     private async Task RemoveArtist(int artistId)
     {
         ClientQuizSettings.Filters.ArtistFilters.RemoveAll(x => x.Artist.AId == artistId);
+    }
+
+    private void RecalculateNumSongsAndSongTypeFilters()
+    {
+        ClientQuizSettings.NumSongs = Math.Clamp(ClientQuizSettings.NumSongs, 1, 100);
+        foreach ((SongSourceSongType key, IntWrapper? value) in ClientQuizSettings.Filters.SongSourceSongTypeFilters)
+        {
+            ClientQuizSettings.Filters.SongSourceSongTypeFilters[key] = new IntWrapper(Math.Clamp(value.Value, 0, 100));
+        }
+
+        // doing this breaks modifying by the InputNumber
+        // while (ClientQuizSettings.SongSourceSongTypeFiltersSum < ClientQuizSettings.NumSongs)
+        // {
+        //     (SongSourceSongType key, IntWrapper? value) =
+        //         ClientQuizSettings.Filters.SongSourceSongTypeFilters.Last(x => x.Value.Value < 100);
+        //
+        //     ClientQuizSettings.Filters.SongSourceSongTypeFilters[key] = new IntWrapper(Math.Max(0,
+        //         value.Value + (ClientQuizSettings.NumSongs - ClientQuizSettings.SongSourceSongTypeFiltersSum)));
+        // }
+
+        while (ClientQuizSettings.SongSourceSongTypeFiltersSum > ClientQuizSettings.NumSongs)
+        {
+            (SongSourceSongType key, IntWrapper? value) =
+                ClientQuizSettings.Filters.SongSourceSongTypeFilters.Last(x => x.Value.Value > 0);
+
+            ClientQuizSettings.Filters.SongSourceSongTypeFilters[key] = new IntWrapper(Math.Max(0,
+                value.Value - (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs)));
+        }
+
+        // StateHasChanged();
     }
 }

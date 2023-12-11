@@ -26,6 +26,7 @@
 <QuizSettingsComponent @ref="_quizSettingsComponent"
                        Room="@Room"
                        ParentStateHasChangedCallback="@CallStateHasChanged"
+                       IsQuizPage="false"
                        IsReadOnly="@(Room?.Owner.Id != ClientState.Session?.Player.Id || Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"/>
 
 <GenericModal @ref="@_leaveModalRef"

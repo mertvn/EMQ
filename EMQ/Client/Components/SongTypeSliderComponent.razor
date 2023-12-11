@@ -1,0 +1,51 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+
+<input @attributes="UnmatchedAttributes" type="range"
+       @bind:get="Value" @bind:set="SetAsync" @bind:event="oninput"
+       min="@MinValue" max="@MaxValue"/>
+
+@code {
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? UnmatchedAttributes { get; set; }
+
+    [Parameter]
+    public QuizSettings? Model { get; set; }
+
+    [Parameter]
+    public int Value { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<int> ValueChanged { get; set; }
+
+    public int MinValue { get; set; } = 0;
+
+    public int MaxValue
+    {
+        get
+        {
+            if (Model is null)
+            {
+                return 100;
+            }
+
+            int leeway = Math.Max(0, Model.NumSongs - Model.SongSourceSongTypeFiltersSum);
+            int newMax = Math.Clamp(Value + leeway, 0, Math.Max(0, Math.Min(Value + leeway, Model.NumSongs)));
+
+    // Console.WriteLine($"value: {Value}");
+    // Console.WriteLine($"newMax: {newMax}");
+
+            if (newMax < Value)
+            {
+    // Console.WriteLine($"set value to newMax");
+                Value = newMax;
+                ValueChanged.InvokeAsync(Value);
+            }
+
+            return newMax;
+        }
+    }
+
+    async Task SetAsync(int value) => await ValueChanged.InvokeAsync(value);
+
+}
