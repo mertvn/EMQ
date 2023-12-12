@@ -30,6 +30,15 @@ public class QuizFilters
             { SongSourceSongType.Random, new IntWrapper(40) },
         };
 
+    public Dictionary<SongSourceSongType, bool> SongSourceSongTypeRandomEnabledSongTypes { get; set; } =
+        new()
+        {
+            { SongSourceSongType.OP, true },
+            { SongSourceSongType.ED, true },
+            { SongSourceSongType.Insert, true },
+            { SongSourceSongType.BGM, true },
+        };
+
     // public Dictionary<SongSourceSongType, IntWrapper> SongSourceSongTypeRandomWeights { get; set; } =
     //     new()
     //     {

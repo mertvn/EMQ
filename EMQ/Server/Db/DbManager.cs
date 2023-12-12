@@ -1236,10 +1236,20 @@ public static class DbManager
         // 2. Select Song objects with those music ids until we hit the desired NumSongs, respecting the Duplicates and Song Types settings
         var addedMselUrls = new List<string>();
 
-        Dictionary<SongSourceSongType, int>? songTypesLeft =
-            filters?.SongSourceSongTypeFilters.OrderByDescending(x => x.Key) // Random must be selected first
-                .ToDictionary(x => x.Key, x => x.Value.Value);
         bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
+
+        Dictionary<SongSourceSongType, int>? songTypesLeft =
+            filters?.SongSourceSongTypeFilters
+                .OrderByDescending(x => x.Key) // Random must be selected first
+                .Where(x => x.Value.Value > 0)
+                .ToDictionary(x => x.Key, x => x.Value.Value);
+
+        List<SongSourceSongType>? enabledSongTypesForRandom =
+            filters?.SongSourceSongTypeRandomEnabledSongTypes
+                .Where(x => x.Value)
+                .Select(y => y.Key).ToList();
+
+        // Console.WriteLine(JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.JsoIndented));
 
         int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
@@ -1250,74 +1260,90 @@ public static class DbManager
                 break;
             }
 
+            if (songTypesLeft != null && songTypesLeft.TryGetValue(SongSourceSongType.Random, out int _) &&
+                enabledSongTypesForRandom != null && !enabledSongTypesForRandom.Any())
+            {
+                songTypesLeft[SongSourceSongType.Random] = 0;
+            }
+
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
             {
                 var songs = await SelectSongs(new Song { Id = mId }, selectCategories);
-                totalSelected += songs.Count;
-
-                if (songs.Any())
+                if (!songs.Any())
                 {
-                    foreach (Song song in songs)
+                    continue;
+                }
+
+                totalSelected += songs.Count;
+                foreach (Song song in songs)
+                {
+                    if (ret.Count >= numSongs ||
+                        songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0))
                     {
-                        if (ret.Count >= numSongs ||
-                            songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0))
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        bool canAdd = true;
-                        if (doSongSourceSongTypeFiltersCheck)
+                    bool canAdd = true;
+                    if (doSongSourceSongTypeFiltersCheck)
+                    {
+                        List<SongSourceSongType> songTypes = song.Sources.SelectMany(x => x.SongTypes).ToList();
+                        foreach ((SongSourceSongType key, int value) in songTypesLeft!)
                         {
-                            List<SongSourceSongType> songTypes = song.Sources.SelectMany(x => x.SongTypes).ToList();
-                            foreach ((SongSourceSongType key, int value) in songTypesLeft!)
+                            if ((key == SongSourceSongType.Random && songTypesLeft[SongSourceSongType.Random] > 0) ||
+                                songTypes.Contains(key))
                             {
-                                if (key == SongSourceSongType.Random || songTypes.Contains(key))
+                                if (key == SongSourceSongType.Random &&
+                                    (enabledSongTypesForRandom != null &&
+                                     !songTypes.Any(x => enabledSongTypesForRandom.Contains(x))))
                                 {
-                                    if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
-                                    {
-                                        // int lowestWeightForSongTypes =
-                                        //     filters!.SongSourceSongTypeRandomWeights
-                                        //         .Where(x => songTypes.Contains(x.Key))
-                                        //         .MinBy(x => x.Value.Value).Value.Value;
+                                    canAdd = false;
+                                    break;
+                                }
 
-                                        // float weight = lowestWeightForSongTypes;
-                                        const float weight = 7f;
-                                        if (Random.Shared.NextSingle() >= (weight / 100))
-                                        {
-                                            // Console.WriteLine($"skip random with weight {weight}");
-                                            canAdd = false;
-                                            break;
-                                        }
-                                    }
+                                if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
+                                {
+                                    // int lowestWeightForSongTypes =
+                                    //     filters!.SongSourceSongTypeRandomWeights
+                                    //         .Where(x => songTypes.Contains(x.Key))
+                                    //         .MinBy(x => x.Value.Value).Value.Value;
 
-                                    // bool exists =
-                                    //     filters!.SongSourceSongTypeFilters.TryGetValue(key, out IntWrapper? maxAllowed);
-                                    // if (exists)
-                                    // {
-                                    if (value > 0)
+                                    // float weight = lowestWeightForSongTypes;
+                                    const float weight = 7f;
+                                    if (Random.Shared.NextSingle() >= (weight / 100))
                                     {
-                                        canAdd = true;
-                                        songTypesLeft[key] -= 1;
+                                        // Console.WriteLine($"skip random with weight {weight}");
+                                        canAdd = false;
                                         break;
                                     }
-                                    else
-                                    {
-                                        canAdd = false;
-                                    }
-                                    //  }
                                 }
+
+                                // bool exists =
+                                //     filters!.SongSourceSongTypeFilters.TryGetValue(key, out IntWrapper? maxAllowed);
+                                // if (exists)
+                                // {
+                                if (value > 0)
+                                {
+                                    canAdd = true;
+                                    songTypesLeft[key] -= 1;
+                                    break;
+                                }
+                                else
+                                {
+                                    canAdd = false;
+                                }
+                                //  }
                             }
                         }
+                    }
 
-                        canAdd &= !addedMselUrls.Contains(mselUrl) || duplicates;
-                        if (canAdd)
-                        {
-                            song.StartTime = rng.Next(0,
-                                Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
-                                    int.MaxValue));
-                            ret.Add(song);
-                            addedMselUrls.Add(mselUrl);
-                        }
+                    canAdd &= !addedMselUrls.Contains(mselUrl) || duplicates;
+                    if (canAdd)
+                    {
+                        song.StartTime = rng.Next(0,
+                            Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
+                                int.MaxValue));
+                        ret.Add(song);
+                        addedMselUrls.Add(mselUrl);
                     }
                 }
             }

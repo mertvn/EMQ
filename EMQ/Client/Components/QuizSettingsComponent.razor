@@ -125,20 +125,38 @@
 
                             @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
                             {
-                                <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                                    <SongTypeSliderComponent style="max-width: 100px;" id="@key"
-                                              @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)"
-                                              Model="ClientQuizSettings">
-                                    </SongTypeSliderComponent>
+                                if (true)
+                                {
+                                    string id = $"SongSourceSongTypeFilters-{key}";
+                                    <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+                                        <SongTypeSliderComponent style="max-width: 100px;" id="@id"
+                                                                 @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)"
+                                                                 Model="ClientQuizSettings">
+                                        </SongTypeSliderComponent>
 
-                                    <div style="display: inline-block">
-                                        <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" @bind-Value:after="@RecalculateNumSongsAndSongTypeFilters" style="width: 55px; margin: 5px;"></InputNumber>
+                                        <div style="display: inline-block">
+                                            <InputNumber @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)" @bind-Value:after="@RecalculateNumSongsAndSongTypeFilters" style="width: 55px; margin: 5px;"></InputNumber>
+                                        </div>
+                                        <label for="@id" style="margin-left: 5px;">@key.ToString()</label>
+
+                                        <br/>
                                     </div>
-                                    <label for="@key" style="margin-left: 5px;">@key.ToString()</label>
-
-                                    <br/>
-                                </div>
+                                }
                             }
+
+                            <details>
+                                <summary>Configure random</summary>
+                                @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeRandomEnabledSongTypes.Keys.ToList())
+                                {
+                                    if (true)
+                                    {
+                                        string id = $"SongSourceSongTypeRandomEnabledSongTypes-{key}";
+                                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceSongTypeRandomEnabledSongTypes[key])" style="margin: 5px"/>
+                                        <label for="@id">@key.ToString()</label>
+                                        <br/>
+                                    }
+                                }
+                            </details>
 
                             <InputNumber id="NumSongs" @bind-Value="ClientQuizSettings.NumSongs" @bind-Value:after="@RecalculateNumSongsAndSongTypeFilters" style="margin: 5px"></InputNumber>
                             <label for="NumSongs">Maximum number of songs</label>
