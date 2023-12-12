@@ -10,7 +10,7 @@
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
-    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Large">
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
         <Blazorise.ModalHeader>
             <Blazorise.ModalTitle>Report song link</Blazorise.ModalTitle>
         </Blazorise.ModalHeader>
@@ -42,6 +42,7 @@
                                     <a href="@songLink.Url" target="_blank">
                                         @songLink.Url
                                     </a>
+                                    by @songLink.SubmittedBy
                                 </label>
                                 <br/>
                             }
