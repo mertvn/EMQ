@@ -1011,12 +1011,14 @@ public class QuizManager
             player.LootingInfo = new PlayerLootingInfo();
         }
 
-        if (!validSources.Any())
+        int distinctSourcesCount = validSources.SelectMany(x => x.Value).Distinct().Count();
+        if (distinctSourcesCount == 0)
         {
             return false;
         }
 
-        Quiz.Room.Log($"Players looted {validSources.SelectMany(x => x.Value).Distinct().Count()} distinct sources");
+        Quiz.Room.Log($"Players looted {distinctSourcesCount} distinct sources");
+
         var dbSongs = await DbManager.GetRandomSongs(
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
