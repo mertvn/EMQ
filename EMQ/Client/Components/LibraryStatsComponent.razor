@@ -17,289 +17,316 @@
         <Blazorise.Tab Name="TabUploaders">Uploaders</Blazorise.Tab>
     </Items>
     <Content>
-    <Blazorise.TabPanel Name="TabGeneral">
-        <ul style="padding-left: 17px; padding-top: 8px;">
-            <li>VNDB import date: @Constants.ImportDateVndb</li>
-            <li>EGS import date: @Constants.ImportDateEgs</li>
-            <li>MusicBrainz import date: @Constants.ImportDateMusicBrainzActual</li>
-            <li>VGMdb import date: @Constants.ImportDateVgmdb</li>
-        </ul>
+    @if (true)
+    {
+        List<LibraryStatsAm> am;
+        List<LibraryStatsAm> amAvailable;
+        List<LibraryStatsMsm> msm;
+        List<LibraryStatsMsm> msmAvailable;
+        string buttonText;
 
-        <div>
-            <p>Total:</p>
-            <ul>
-                <li>Songs: @libraryStats.TotalMusicCount</li>
-                <li>VNs: @libraryStats.TotalMusicSourceCount</li>
-                <li>Artists: @libraryStats.TotalArtistCount</li>
+        if (IncludeBgm)
+        {
+            am = libraryStats.am;
+            amAvailable = libraryStats.amAvailable;
+            msm = libraryStats.msm;
+            msmAvailable = libraryStats.msmAvailable;
+            buttonText = "Exclude BGM";
+        }
+        else
+        {
+            am = libraryStats.amNoBgm;
+            amAvailable = libraryStats.amAvailableNoBgm;
+            msm = libraryStats.msmNoBgm;
+            msmAvailable = libraryStats.msmAvailableNoBgm;
+            buttonText = "Include BGM";
+        }
+
+        <Blazorise.TabPanel Name="TabGeneral">
+            <ul style="padding-left: 17px; padding-top: 8px;">
+                <li>VNDB import date: @Constants.ImportDateVndb</li>
+                <li>EGS import date: @Constants.ImportDateEgs</li>
+                <li>MusicBrainz import date: @Constants.ImportDateMusicBrainzActual</li>
+                <li>VGMdb import date: @Constants.ImportDateVgmdb</li>
             </ul>
-        </div>
 
-        <div>
-            <p>Available:</p>
-            <ul>
-                <li>Songs: @libraryStats.AvailableMusicCount (@(Utils.PercentageStr(libraryStats.AvailableMusicCount, libraryStats.TotalMusicCount)))</li>
-                <li>VNs: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
-                <li>Artists: @libraryStats.AvailableArtistCount (@(Utils.PercentageStr(libraryStats.AvailableArtistCount, libraryStats.TotalArtistCount)))</li>
-            </ul>
-        </div>
-    </Blazorise.TabPanel>
-
-
-    <Blazorise.TabPanel Name="TabSong">
-        <div>
-            <ul>
-                <li>Songs with only video links: @libraryStats.VideoLinkCount</li>
-                <li>Songs with only sound links: @libraryStats.SoundLinkCount</li>
-                <li>Songs with both links: @libraryStats.BothLinkCount</li>
-            </ul>
-        </div>
-
-        <div>
-            <p>Total:</p>
-            <ul>
-                @for (int index = 0; index < libraryStats.TotalLibraryStatsMusicType.Count; index++)
-                {
-                    var libraryStatsMusicType = libraryStats.TotalLibraryStatsMusicType[index];
-                    <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
-                }
-            </ul>
-        </div>
-
-        <div>
-            <p>Available:</p>
-            <ul>
-                @for (int index = 0; index < libraryStats.AvailableLibraryStatsMusicType.Count; index++)
-                {
-                    var libraryStatsMusicType = libraryStats.AvailableLibraryStatsMusicType[index];
-                    <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount (@Utils.PercentageStr(libraryStats.AvailableLibraryStatsMusicType[index].MusicCount, libraryStats.TotalLibraryStatsMusicType[index].MusicCount))</li>
-                }
-            </ul>
-        </div>
-    </Blazorise.TabPanel>
-
-
-    <Blazorise.TabPanel Name="TabSongDifficulty">
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
-                <p>Songs that have been played at least once: </p>
-                <table style="max-width: 400px">
-                    <tr>
-                        <th>Difficulty level</th>
-                        <th>Songs</th>
-                    </tr>
-                    @foreach ((var songDifficultyLevel, int count) in libraryStats.SongDifficultyLevels)
-                    {
-                        <tr>
-                            <td>@songDifficultyLevel.GetDisplayName()</td>
-                            <td>
-                                <b>@count</b>
-                            </td>
-                        </tr>
-                    }
-                </table>
-            </div>
-        </div>
-    </Blazorise.TabPanel>
-
-
-    <Blazorise.TabPanel Name="TabVNYear">
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
-                <table style="max-width: 400px">
-                    <tr>
-                        <th>Year</th>
-                        <th>Songs</th>
-                        <th>Percentage</th>
-                    </tr>
-                    @foreach ((DateTime year, int count) in libraryStats.msYearAvailable)
-                    {
-                        <tr>
-                            <td>@year.Year.ToString()</td>
-                            <td>
-                                <b>@count/@libraryStats.msYear[year]</b>
-                            </td>
-                            <td>
-                                <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
-                            </td>
-                        </tr>
-                    }
-                </table>
-            </div>
-        </div>
-    </Blazorise.TabPanel>
-
-
-    <Blazorise.TabPanel Name="TabVN">
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
+            <div>
                 <p>Total:</p>
-                <table>
-                    <tr>
-                        <th>#</th>
-                        <th>VN</th>
-                        <th>Songs</th>
-                    </tr>
-                    @for (int i = 0; i < libraryStats.msm.Count; i++)
-                    {
-                        var item = libraryStats.msm[i];
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td>
-                                <a class="link-primary" href="@(item.MselUrl)" target="_blank">
-                                    <span>@item.MstLatinTitle</span>
-                                </a>
-                            </td>
-                            <td>
-                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.MusicCount</b>
-                            </td>
-                        </tr>
-                    }
-                </table>
+                <ul>
+                    <li>Songs: @libraryStats.TotalMusicCount</li>
+                    <li>VNs: @libraryStats.TotalMusicSourceCount</li>
+                    <li>Artists: @libraryStats.TotalArtistCount</li>
+                </ul>
             </div>
 
-            <div class="libraryStatsColumn">
+            <div>
                 <p>Available:</p>
-                <table>
-                    <tr>
-                        <th>#</th>
-                        <th>VN</th>
-                        <th>Songs</th>
-                        <th>Percentage</th>
-                    </tr>
-                    @for (int i = 0; i < libraryStats.msmAvailable.Count; i++)
-                    {
-                        var item = libraryStats.msmAvailable[i];
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td>
-                                <a class="link-primary" href="@(item.MselUrl)" target="_blank">
-                                    <span>@item.MstLatinTitle</span>
-                                </a>
-                            </td>
-
-                            <td>
-                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
-                            </td>
-                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
-                                <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
-                            </td>
-                        </tr>
-                    }
-                </table>
+                <ul>
+                    <li>Songs: @libraryStats.AvailableMusicCount (@(Utils.PercentageStr(libraryStats.AvailableMusicCount, libraryStats.TotalMusicCount)))</li>
+                    <li>VNs: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
+                    <li>Artists: @libraryStats.AvailableArtistCount (@(Utils.PercentageStr(libraryStats.AvailableArtistCount, libraryStats.TotalArtistCount)))</li>
+                </ul>
             </div>
-        </div>
-    </Blazorise.TabPanel>
+        </Blazorise.TabPanel>
 
 
-    <Blazorise.TabPanel Name="TabArtist">
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
+        <Blazorise.TabPanel Name="TabSong">
+            <div>
+                <ul>
+                    <li>Songs with only video links: @libraryStats.VideoLinkCount</li>
+                    <li>Songs with only sound links: @libraryStats.SoundLinkCount</li>
+                    <li>Songs with both links: @libraryStats.BothLinkCount</li>
+                </ul>
+            </div>
+
+            <div>
                 <p>Total:</p>
-                <table>
-                    <tr>
-                        <th>#</th>
-                        <th>Artist</th>
-                        <th>Songs</th>
-                    </tr>
-                    @for (int i = 0; i < libraryStats.am.Count; i++)
+                <ul>
+                    @for (int index = 0; index < libraryStats.TotalLibraryStatsMusicType.Count; index++)
                     {
-                        var item = libraryStats.am[i];
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td>
-                                @* todo nonlatinalias *@
-                                <a class="link-primary" href="@(item.VndbId.ToVndbUrl())" target="_blank">
-                                    <span>@item.AALatinAlias</span>
-                                </a>
-                            </td>
-                            <td>
-                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.MusicCount</b>
-                            </td>
-                        </tr>
+                        var libraryStatsMusicType = libraryStats.TotalLibraryStatsMusicType[index];
+                        <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount</li>
                     }
-                </table>
+                </ul>
             </div>
 
-            <div class="libraryStatsColumn">
+            <div>
                 <p>Available:</p>
-                <table>
-                    <tr>
-                        <th>#</th>
-                        <th>Artist</th>
-                        <th>Songs</th>
-                        <th>Percentage</th>
-                    </tr>
-                    @for (int i = 0; i < libraryStats.amAvailable.Count; i++)
+                <ul>
+                    @for (int index = 0; index < libraryStats.AvailableLibraryStatsMusicType.Count; index++)
                     {
-                        var item = libraryStats.amAvailable[i];
+                        var libraryStatsMusicType = libraryStats.AvailableLibraryStatsMusicType[index];
+                        <li>@libraryStatsMusicType.Type: @libraryStatsMusicType.MusicCount (@Utils.PercentageStr(libraryStats.AvailableLibraryStatsMusicType[index].MusicCount, libraryStats.TotalLibraryStatsMusicType[index].MusicCount))</li>
+                    }
+                </ul>
+            </div>
+        </Blazorise.TabPanel>
+
+
+        <Blazorise.TabPanel Name="TabSongDifficulty">
+            <div class="libraryStatsRow">
+                <div class="libraryStatsColumn">
+                    <p>Songs that have been played at least once: </p>
+                    <table style="max-width: 400px">
                         <tr>
-                            <td>@(i + 1)</td>
-                            <td>
-                                @* todo nonlatinalias *@
-                                @if (true)
-                                {
-                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                                    string href = item.VndbId.StartsWith("s")
-                                        ? item.VndbId.ToVndbUrl()
-                                        : $"https://musicbrainz.org/artist/{item.VndbId}";
-                                    <a class="link-primary" href="@(href)" target="_blank">
+                            <th>Difficulty level</th>
+                            <th>Songs</th>
+                        </tr>
+                        @foreach ((var songDifficultyLevel, int count) in libraryStats.SongDifficultyLevels)
+                        {
+                            <tr>
+                                <td>@songDifficultyLevel.GetDisplayName()</td>
+                                <td>
+                                    <b>@count</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </Blazorise.TabPanel>
+
+
+        <Blazorise.TabPanel Name="TabVNYear">
+            <div class="libraryStatsRow">
+                <div class="libraryStatsColumn">
+                    <table style="max-width: 400px">
+                        <tr>
+                            <th>Year</th>
+                            <th>Songs</th>
+                            <th>Percentage</th>
+                        </tr>
+                        @foreach ((DateTime year, int count) in libraryStats.msYearAvailable)
+                        {
+                            <tr>
+                                <td>@year.Year.ToString()</td>
+                                <td>
+                                    <b>@count/@libraryStats.msYear[year]</b>
+                                </td>
+                                <td>
+                                    <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </Blazorise.TabPanel>
+
+
+        <Blazorise.TabPanel Name="TabVN">
+            <button type="button" class="btn btn-primary" @onclick="@(() => IncludeBgm = !IncludeBgm)" style="margin: 5px;">@buttonText</button>
+            <div class="libraryStatsRow">
+                <div class="libraryStatsColumn">
+                    <p>Total:</p>
+                    <table>
+                        <tr>
+                            <th>#</th>
+                            <th>VN</th>
+                            <th>Songs</th>
+                        </tr>
+                        @for (int i = 0; i < msm.Count; i++)
+                        {
+                            var item = msm[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    <a class="link-primary" href="@(item.MselUrl)" target="_blank">
+                                        <span>@item.MstLatinTitle</span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.MusicCount</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+
+                <div class="libraryStatsColumn">
+                    <p>Available:</p>
+                    <table>
+                        <tr>
+                            <th>#</th>
+                            <th>VN</th>
+                            <th>Songs</th>
+                            <th>Percentage</th>
+                        </tr>
+                        @for (int i = 0; i < msmAvailable.Count; i++)
+                        {
+                            var item = msmAvailable[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    <a class="link-primary" href="@(item.MselUrl)" target="_blank">
+                                        <span>@item.MstLatinTitle</span>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.AvailableMusicCount/@item.MusicCount</b>
+                                </td>
+                                <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
+                                    <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </Blazorise.TabPanel>
+
+
+        <Blazorise.TabPanel Name="TabArtist">
+            <button type="button" class="btn btn-primary" @onclick="@(() => IncludeBgm = !IncludeBgm)" style="margin: 5px;">@buttonText</button>
+            <div class="libraryStatsRow">
+                <div class="libraryStatsColumn">
+                    <p>Total:</p>
+                    <table>
+                        <tr>
+                            <th>#</th>
+                            <th>Artist</th>
+                            <th>Songs</th>
+                        </tr>
+                        @for (int i = 0; i < am.Count; i++)
+                        {
+                            var item = am[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    @* todo nonlatinalias *@
+                                    <a class="link-primary" href="@(item.VndbId.ToVndbUrl())" target="_blank">
                                         <span>@item.AALatinAlias</span>
                                     </a>
-                                }
-                            </td>
-                            <td>
-                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
-                            </td>
-                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
-                                <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
-                            </td>
-                        </tr>
-                    }
-                </table>
-            </div>
-        </div>
-    </Blazorise.TabPanel>
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.MusicCount</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
 
-
-    <Blazorise.TabPanel Name="TabUploaders">
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
-                <table style="max-width: 350px">
-                    <tr>
-                        <th>#</th>
-                        <th>Username</th>
-                        <th>Upload count</th>
-                    </tr>
-                    @{ int i = 1; }
-                    @foreach ((string username, int count) in libraryStats.UploaderCounts)
-                    {
-                        bool isRobot = username == Constants.RobotNameLower;
+                <div class="libraryStatsColumn">
+                    <p>Available:</p>
+                    <table>
                         <tr>
-                            <td>@i</td>
-                            <td>
-                                @if (isRobot)
-                                {
-                                    <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
-                                        <span>@Constants.RobotName</span>
-                                    </a>
-                                }
-                                else
-                                {
-                                    @username
-                                }
-                            </td>
-                            <td>
-                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@count</b>
-                            </td>
+                            <th>#</th>
+                            <th>Artist</th>
+                            <th>Songs</th>
+                            <th>Percentage</th>
                         </tr>
-                        i += 1;
-                    }
-                </table>
+                        @for (int i = 0; i < amAvailable.Count; i++)
+                        {
+                            var item = amAvailable[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    @* todo nonlatinalias *@
+                                    @if (true)
+                                    {
+                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                                        string href = item.VndbId.StartsWith("s")
+                                            ? item.VndbId.ToVndbUrl()
+                                            : $"https://musicbrainz.org/artist/{item.VndbId}";
+                                        <a class="link-primary" href="@(href)" target="_blank">
+                                            <span>@item.AALatinAlias</span>
+                                        </a>
+                                    }
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
+                                </td>
+                                <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
+                                    <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
             </div>
-        </div>
-    </Blazorise.TabPanel>
+
+        </Blazorise.TabPanel>
 
 
+        <Blazorise.TabPanel Name="TabUploaders">
+            <div class="libraryStatsRow">
+                <div class="libraryStatsColumn">
+                    <table style="max-width: 350px">
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th>Upload count</th>
+                        </tr>
+                        @{ int i = 1; }
+                        @foreach ((string username, int count) in libraryStats.UploaderCounts)
+                        {
+                            bool isRobot = username == Constants.RobotNameLower;
+                            <tr>
+                                <td>@i</td>
+                                <td>
+                                    @if (isRobot)
+                                    {
+                                        <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
+                                            <span>@Constants.RobotName</span>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        @username
+                                    }
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@count</b>
+                                </td>
+                            </tr>
+                            i += 1;
+                        }
+                    </table>
+                </div>
+            </div>
+        </Blazorise.TabPanel>
+    }
     </Content>
     </Blazorise.Tabs>
     </div>

@@ -661,22 +661,27 @@ public class DbTests
 
         Assert.That(libraryStats.TotalLibraryStatsMusicType.First().MusicCount > 0);
         Assert.That(libraryStats.AvailableLibraryStatsMusicType.First().MusicCount > 0);
-
         Assert.That(libraryStats.VideoLinkCount > 0);
         Assert.That(libraryStats.SoundLinkCount > 0);
         Assert.That(libraryStats.BothLinkCount > 0);
 
         Assert.That(libraryStats.msm.First().MSId > 0);
         Assert.That(libraryStats.msmAvailable.First().MSId > 0);
+        Assert.That(libraryStats.msmNoBgm.First().MSId > 0);
+        Assert.That(libraryStats.msmAvailableNoBgm.First().MSId > 0);
 
         Assert.That(libraryStats.am.First().AId > 0);
         Assert.That(libraryStats.amAvailable.First().AId > 0);
+        Assert.That(libraryStats.amNoBgm.First().AId > 0);
+        Assert.That(libraryStats.amAvailableNoBgm.First().AId > 0);
 
         Assert.That(libraryStats.msYear.First().Value > 0);
         Assert.That(libraryStats.msYearAvailable.ElementAtOrDefault(10).Value > 0);
         Assert.That(libraryStats.msYear.Keys.Count == libraryStats.msYearAvailable.Keys.Count);
 
         Assert.That(libraryStats.UploaderCounts.First().Value > 0);
+
+        Assert.That(libraryStats.SongDifficultyLevels.First().Value > 0);
     }
 
     [Test]

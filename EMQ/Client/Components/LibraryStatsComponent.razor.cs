@@ -15,6 +15,8 @@ public partial class LibraryStatsComponent
     [CascadingParameter]
     public LibraryPage? LibraryPage { get; set; }
 
+    public bool IncludeBgm { get; set; } = true;
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshStats();

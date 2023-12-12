@@ -2161,87 +2161,19 @@ order by type";
             int bothLinkCount = (await connection.ExecuteScalarAsync<int>(
                 "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video)"));
 
-            string sqlMusicSourceMusic =
-                @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
-FROM music m
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-LEFT JOIN music_title mt ON mt.music_id = m.id
-LEFT JOIN music_source_music msm ON msm.music_id = m.id
-LEFT JOIN music_source ms ON ms.id = msm.music_source_id
-LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
-LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
-/**where**/
-group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
-            var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
-            qMsm.Where($"mst.is_main_title = true");
-            qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
-            // Console.WriteLine(
-            //     $"StartSection msm: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
-            qMsm.Where($"mel.url is not null");
-            qMsm.Append($"LIMIT {limit:raw}");
-            // Console.WriteLine(
-            //     $"StartSection msmAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+            (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
+                await SelectLibraryStats_Msm(connection, limit, true);
 
-            for (int index = 0; index < msmAvailable.Count; index++)
-            {
-                LibraryStatsMsm msmA = msmAvailable[index];
-
-                msmA.AvailableMusicCount = msmA.MusicCount;
-                var match = msm.Where(x => x.MstLatinTitle == msmA.MstLatinTitle);
-                msmA.MusicCount = match.Sum(x => x.MusicCount);
-            }
+            (List<LibraryStatsMsm> msmNoBgm, List<LibraryStatsMsm> msmAvailableNoBgm) =
+                await SelectLibraryStats_Msm(connection, limit, false);
 
 
-            string sqlArtistMusic =
-                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
-FROM music m
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-LEFT JOIN artist_music am ON am.music_id = m.id
-LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
-LEFT JOIN artist a ON a.id = aa.artist_id
-/**where**/
-group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
-            var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
-            // Console.WriteLine(
-            //     $"StartSection am: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+            (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
+                await SelectLibraryStats_Artist(connection, limit, true);
 
-            qAm.Where($"mel.url is not null");
-            qAm.Append($"LIMIT {limit:raw}");
-            // Console.WriteLine(
-            //     $"StartSection amAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
-
-            var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
-                    "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
-                .ToList();
-            foreach (LibraryStatsAm libraryStatsAm in am)
-            {
-                var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
-                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
-                libraryStatsAm.AALatinAlias =
-                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
-            }
-
-            foreach (LibraryStatsAm libraryStatsAm in amAvailable)
-            {
-                var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
-                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
-                libraryStatsAm.AALatinAlias =
-                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
-            }
-
-            for (int index = 0; index < amAvailable.Count; index++)
-            {
-                LibraryStatsAm amA = amAvailable[index];
-
-                amA.AvailableMusicCount = amA.MusicCount;
-                var match = am.Where(x => x.AId == amA.AId);
-                amA.MusicCount = match.Sum(x => x.MusicCount);
-            }
+            (List<LibraryStatsAm> amNoBgm, List<LibraryStatsAm> amAvailableNoBgm) =
+                await SelectLibraryStats_Artist(connection, limit, false);
 
 
             string sqlMsYear =
@@ -2307,29 +2239,170 @@ order by diff
 
             var libraryStats = new LibraryStats
             {
+                // General
                 TotalMusicCount = totalMusicCount,
                 AvailableMusicCount = availableMusicCount,
                 TotalMusicSourceCount = totalMusicSourceCount,
                 AvailableMusicSourceCount = availableMusicSourceCount,
                 TotalArtistCount = totalArtistCount,
                 AvailableArtistCount = availableArtistCount,
+
+                // Song
                 TotalLibraryStatsMusicType = totalMusicTypeCount,
                 AvailableLibraryStatsMusicType = availableMusicTypeCount,
                 VideoLinkCount = videoLinkCount,
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,
+
+                // VN
                 msm = msm.Take(limit).ToList(),
                 msmAvailable = msmAvailable,
+                msmNoBgm = msmNoBgm.Take(limit).ToList(),
+                msmAvailableNoBgm = msmAvailableNoBgm,
+
+                // Artist
                 am = am.Take(limit).ToList(),
                 amAvailable = amAvailable,
+                amNoBgm = amNoBgm.Take(limit).ToList(),
+                amAvailableNoBgm = amAvailableNoBgm,
+
+                // VN year
                 msYear = msYear,
                 msYearAvailable = msYearAvailable,
+
+                // Uploaders
                 UploaderCounts = uploaderCounts,
+
+                // Song difficulty
                 SongDifficultyLevels = songDifficultyLevels,
             };
 
             return libraryStats;
         }
+    }
+
+    public static async Task<(List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable)> SelectLibraryStats_Msm(
+        IDbConnection connection, int limit, bool includeBgm)
+    {
+        string sqlMusicSourceMusic =
+            @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
+FROM music m
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN music_title mt ON mt.music_id = m.id
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
+LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
+/**where**/
+group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
+
+
+        var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
+        qMsm.Where($"mst.is_main_title = true");
+        qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
+
+        if (!includeBgm)
+        {
+            qMsm.Where($"msm.type != {(int)SongSourceSongType.BGM}");
+        }
+
+        // Console.WriteLine(
+        //     $"StartSection msm: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+
+        qMsm.Where($"mel.url is not null");
+        qMsm.Append($"LIMIT {limit:raw}");
+        // Console.WriteLine(
+        //     $"StartSection msmAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        var msmAvailable = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
+
+        for (int index = 0; index < msmAvailable.Count; index++)
+        {
+            LibraryStatsMsm msmA = msmAvailable[index];
+
+            msmA.AvailableMusicCount = msmA.MusicCount;
+            var match = msm.Where(x => x.MstLatinTitle == msmA.MstLatinTitle);
+            msmA.MusicCount = match.Sum(x => x.MusicCount);
+        }
+
+        return (msm, msmAvailable);
+    }
+
+    public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
+        IDbConnection connection, int limit, bool includeBgm)
+    {
+        string sqlArtistMusic;
+        if (includeBgm)
+        {
+            sqlArtistMusic =
+                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
+FROM music m
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN artist_music am ON am.music_id = m.id
+LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+LEFT JOIN artist a ON a.id = aa.artist_id
+/**where**/
+group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
+        }
+        else
+        {
+            sqlArtistMusic =
+                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
+FROM music m
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_external_link mel ON mel.music_id = m.id
+LEFT JOIN artist_music am ON am.music_id = m.id
+LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+LEFT JOIN artist a ON a.id = aa.artist_id
+/**where**/
+group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
+        }
+
+        var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
+        if (!includeBgm)
+        {
+            qAm.Where($"msm.type != {(int)SongSourceSongType.BGM}");
+        }
+
+        // Console.WriteLine(
+        //     $"StartSection am: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+
+        qAm.Where($"mel.url is not null");
+        qAm.Append($"LIMIT {limit:raw}");
+        // Console.WriteLine(
+        //     $"StartSection amAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+
+        var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
+                "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
+            .ToList();
+        foreach (LibraryStatsAm libraryStatsAm in am)
+        {
+            var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+            var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
+            libraryStatsAm.AALatinAlias =
+                mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+        }
+
+        foreach (LibraryStatsAm libraryStatsAm in amAvailable)
+        {
+            var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+            var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
+            libraryStatsAm.AALatinAlias =
+                mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+        }
+
+        for (int index = 0; index < amAvailable.Count; index++)
+        {
+            LibraryStatsAm amA = amAvailable[index];
+
+            amA.AvailableMusicCount = amA.MusicCount;
+            var match = am.Where(x => x.AId == amA.AId);
+            amA.MusicCount = match.Sum(x => x.MusicCount);
+        }
+
+        return (am, amAvailable);
     }
 
     /// Limited to vocal songs for now.
