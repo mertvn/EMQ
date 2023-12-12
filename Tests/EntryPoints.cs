@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -256,10 +256,10 @@ public class EntryPoints
     }
 
     [Test, Explicit]
-    public async Task DownloadReviewQueueItems()
+    public async Task DownloadPendingReviewQueueItems()
     {
         var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
-        foreach (RQ rq in rqs)
+        foreach (RQ rq in rqs.Where(x => x.status == ReviewQueueStatus.Pending))
         {
             string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
             if (!File.Exists(filePath))

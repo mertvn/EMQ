@@ -2163,10 +2163,10 @@ order by type";
 
 
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
-                await SelectLibraryStats_Msm(connection, limit, true);
+                await SelectLibraryStats_VN(connection, limit, true);
 
             (List<LibraryStatsMsm> msmNoBgm, List<LibraryStatsMsm> msmAvailableNoBgm) =
-                await SelectLibraryStats_Msm(connection, limit, false);
+                await SelectLibraryStats_VN(connection, limit, false);
 
 
             (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
@@ -2281,7 +2281,7 @@ order by diff
         }
     }
 
-    public static async Task<(List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable)> SelectLibraryStats_Msm(
+    public static async Task<(List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable)> SelectLibraryStats_VN(
         IDbConnection connection, int limit, bool includeBgm)
     {
         string sqlMusicSourceMusic =
