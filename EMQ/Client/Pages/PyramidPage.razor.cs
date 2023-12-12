@@ -102,7 +102,8 @@ public partial class PyramidPage
     {
         if (Room != null)
         {
-            Player player = Room.Players.Single(x => x.Id == playerId);
+            Player player = Room.Players.SingleOrDefault(x => x.Id == playerId) ??
+                            Room.Spectators.Single(x => x.Id == playerId);
 
             player.LootingInfo.TreasureRoomCoords = playerLootingInfo.TreasureRoomCoords;
             if (playerId == ClientState.Session!.Player.Id)

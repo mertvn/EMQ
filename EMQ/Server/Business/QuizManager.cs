@@ -1178,7 +1178,8 @@ public class QuizManager
             return;
         }
 
-        var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
+        var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == session.Player.Id) ??
+                     Quiz.Room.Spectators.Single(x => x.Id == session.Player.Id);
 
         bool alreadyInTheRoom =
             player.LootingInfo.X == treasureRoomCoords.X && player.LootingInfo.Y == treasureRoomCoords.Y;

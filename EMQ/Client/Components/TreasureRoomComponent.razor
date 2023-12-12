@@ -20,8 +20,10 @@
     @if (Room != null)
     {
         // Console.WriteLine(JsonSerializer.Serialize(Room));
-        var ownPlayer = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
-        var currentTreasureRoomCoords = Room.Players.Single(x => x.Id == ownPlayer.Id).LootingInfo.TreasureRoomCoords;
+        var ownPlayer = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
+
+        var currentTreasureRoomCoords = ownPlayer.LootingInfo.TreasureRoomCoords;
         @foreach (var player in Room.Players)
         {
             @if (player.LootingInfo.TreasureRoomCoords == currentTreasureRoomCoords)
@@ -73,7 +75,7 @@
                 <div class="treasure" @onmouseover="@(() => { })"
                      style="word-wrap: break-word; position: absolute; left: @(treasure.Position.X)px; top: @(treasure.Position.Y)px; cursor: pointer; z-index: 4000;
                      padding: 5px 5px 1px 5px; border-style: solid; border-radius: 50%;
-                     border-width: 2px; border-color: @UiHelpers.Bool2Color(treasure.Position.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");"
+                     border-width: 2px; border-color: @UiHelpers.Bool2Color(!IsSpectator && treasure.Position.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");"
                      @onclick="@(() => PickupTreasure(treasure))">
 
                     @* todo invisible until picked up quiz setting or until in range *@
@@ -116,8 +118,8 @@
             <div class="changeTreasureRoomArrowDiv"
                  style="position: absolute; left: @(arrowPosition.X)px; top:@(arrowPosition.Y)px; z-index: 5000;
                           font-size: xx-large; cursor: pointer;
-                          color: @UiHelpers.Bool2Color(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");
-                          pointer-events: @UiHelpers.Bool2PointerEvents(arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y));"
+                          color: @UiHelpers.Bool2Color(IsSpectator || arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y), "green", "red");
+                          pointer-events: @UiHelpers.Bool2PointerEvents(IsSpectator || arrowPosition.IsReachableFromCoords((int)ownPlayer.LootingInfo.X, (int)ownPlayer.LootingInfo.Y));"
                  @onclick="@(() => OnclickChangeTreasureRoomArrow(arrowPosition, treasureRoomCoords, direction))">
                 <i class="@arrowClass" style="width: 3em"></i>
             </div>

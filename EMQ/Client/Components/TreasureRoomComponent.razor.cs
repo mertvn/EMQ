@@ -23,6 +23,8 @@ public partial class TreasureRoomComponent
 
     private Timer _movementTimer = new() { Interval = 17 };
 
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
+
     private Dictionary<string, bool> Keys { get; set; } = new()
     {
         { "arrowup", false },
@@ -46,7 +48,9 @@ public partial class TreasureRoomComponent
         // todo? fix diagonal movement being faster
         const int speed = 4; // todo make this a quiz setting?
 
-        var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
+
         var newX = player.LootingInfo.X;
         var newY = player.LootingInfo.Y;
 
@@ -113,7 +117,9 @@ public partial class TreasureRoomComponent
 
     private async Task PickupTreasure(Treasure treasure)
     {
-        var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
+
         if (treasure.Position.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPickupTreasure", treasure.Guid);
@@ -146,8 +152,10 @@ public partial class TreasureRoomComponent
     private async Task OnclickChangeTreasureRoomArrow(Point arrowPosition, Point treasureRoomCoords,
         Direction direction)
     {
-        var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
-        if (arrowPosition.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
+
+        if (IsSpectator || arrowPosition.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendChangeTreasureRoom", treasureRoomCoords,
                 direction);
