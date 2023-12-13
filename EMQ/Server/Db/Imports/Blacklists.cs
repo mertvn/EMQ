@@ -226,5 +226,9 @@ public static class Blacklists
         "4b3a2869-ed9d-4876-812c-7bada069492b", // Lostwing - うみねこのなく頃に image songs
         "92d6a2f0-35dc-4a13-9c97-0ccc48579ed7", // うみねこのなく頃に 散 musicbox Red
         "0d40be62-bcad-41ff-bce0-4143feb50c51", // うみねこのなく頃に散 musicbox -霧のピトス-
+        "14d5050c-bb4a-4d71-a5ea-2825abf84d39", // プリズム☆ま～じカル クライマックス オープニング 「幻想の宝石(プリズム)」
+        "283acb6f-7dc3-41bb-8fdd-7a0b969f901a", // Princess Party Camellia PR Song "Camellia! ~Dangerous Camellia Vacation~
+        "103b125e-46f9-4f61-bde1-070a48b7b632", // Princess Party Vocal Album
+        "713a0a34-de09-4d68-8ada-f5a89396a645", // マジスキ～Marginal Skip～ ボーカルアルバム
     };
 }

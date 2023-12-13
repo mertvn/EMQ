@@ -261,7 +261,7 @@ public class EntryPoints
         var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
         foreach (RQ rq in rqs.Where(x => x.status == ReviewQueueStatus.Pending))
         {
-            string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
+            string filePath = $"{System.IO.Path.GetTempPath()}{rq.id}-{rq.url.LastSegment()}";
             if (!File.Exists(filePath))
             {
                 bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(rq.url));
