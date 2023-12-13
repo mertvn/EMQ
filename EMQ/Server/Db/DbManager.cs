@@ -1249,7 +1249,8 @@ public static class DbManager
                 .Where(x => x.Value)
                 .Select(y => y.Key).ToList();
 
-        // Console.WriteLine(JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.JsoIndented));
+        Console.WriteLine(
+            $"enabledSongTypesForRandom: {JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.Jso)}");
 
         int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
@@ -1350,14 +1351,28 @@ public static class DbManager
         }
 
         stopWatch.Stop();
+        double finishedSeconds = Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2);
         Console.WriteLine(
-            $"StartSection GetRandomSongs_fin: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            $"StartSection GetRandomSongs_fin: {finishedSeconds}s");
+
+        if (finishedSeconds > 5)
+        {
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine("GetRandomSongs took over 5 seconds");
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
 
         if (filters != null)
         {
-            Console.WriteLine($"numSongs: {numSongs}");
             Console.WriteLine($"totalSelected: {totalSelected}");
-            if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out IntWrapper? randomCount))
+            Console.WriteLine($"numSongs: {numSongs}");
+
+            foreach ((SongSourceSongType key, IntWrapper? value) in filters.SongSourceSongTypeFilters)
+            {
+                Console.WriteLine($"{key}: {value.Value}");
+            }
+
+            if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out IntWrapper? _))
             {
                 int opCount = ret.Count(song =>
                     song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP));
@@ -1371,11 +1386,10 @@ public static class DbManager
                 int bgmCount = ret.Count(song =>
                     song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
 
-                Console.WriteLine($"randomCount: {randomCount.Value}");
-                Console.WriteLine($"\topCount: {opCount}");
-                Console.WriteLine($"\tedCount: {edCount}");
-                Console.WriteLine($"\tinsCount: {insCount}");
-                Console.WriteLine($"\tbgmCount: {bgmCount}");
+                Console.WriteLine($"    opCount: {opCount}");
+                Console.WriteLine($"    edCount: {edCount}");
+                Console.WriteLine($"    insCount: {insCount}");
+                Console.WriteLine($"    bgmCount: {bgmCount}");
             }
         }
 
