@@ -38,6 +38,18 @@ public class Song
     public List<Guid> MusicBrainzReleases { get; set; } = new();
 
     public List<int> VgmdbAlbums { get; set; } = new();
+
+    public override string ToString()
+    {
+        var first = Titles.First();
+        var firstSource = Sources.First();
+        return
+            $"{firstSource.Titles.First().LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}" +
+            (!string.IsNullOrWhiteSpace(first.NonLatinTitle) && !string.Equals(first.NonLatinTitle, first.LatinTitle,
+                StringComparison.InvariantCultureIgnoreCase)
+                ? $" ({first.NonLatinTitle})"
+                : "");
+    }
 }
 
 public enum SongType

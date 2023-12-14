@@ -1136,14 +1136,33 @@ public static class DbManager
                     queryMusicIds.Append($")");
                 }
 
-                var validSongSourceSongTypes = filters.SongSourceSongTypeFilters
-                    .Where(x => x.Key != SongSourceSongType.Random && x.Value.Value > 0).ToList();
+                var validSongSourceSongTypes = new HashSet<SongSourceSongType>();
+                foreach ((SongSourceSongType key, IntWrapper? value) in filters.SongSourceSongTypeFilters)
+                {
+                    if (value.Value > 0 && key != SongSourceSongType.Random)
+                    {
+                        validSongSourceSongTypes.Add(key);
+                    }
+                }
+
+                if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out var randomCount) &&
+                    randomCount.Value > 0)
+                {
+                    foreach ((SongSourceSongType key, bool value) in filters.SongSourceSongTypeRandomEnabledSongTypes)
+                    {
+                        if (value)
+                        {
+                            validSongSourceSongTypes.Add(key);
+                        }
+                    }
+                }
+
                 if (validSongSourceSongTypes.Any())
                 {
                     queryMusicIds.Append($"\n");
                     for (int index = 0; index < validSongSourceSongTypes.Count; index++)
                     {
-                        (SongSourceSongType songSourceSongType, _) = validSongSourceSongTypes.ElementAt(index);
+                        SongSourceSongType songSourceSongType = validSongSourceSongTypes.ElementAt(index);
                         queryMusicIds.Append(index == 0
                             ? (FormattableString)$" AND ( msm.type = {(int)songSourceSongType}"
                             : (FormattableString)$" OR msm.type = {(int)songSourceSongType}");
@@ -1298,7 +1317,7 @@ public static class DbManager
                                      !songTypes.Any(x => enabledSongTypesForRandom.Contains(x))))
                                 {
                                     canAdd = false;
-                                    break;
+                                    continue;
                                 }
 
                                 if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))

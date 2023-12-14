@@ -474,6 +474,50 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_SongSourceSongTypeFilter_NoSongsBug()
+    {
+        Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes = new()
+        {
+            { SongSourceSongType.OP, new IntWrapper(0) },
+            { SongSourceSongType.ED, new IntWrapper(0) },
+            { SongSourceSongType.Insert, new IntWrapper(0) },
+            { SongSourceSongType.BGM, new IntWrapper(2) },
+            { SongSourceSongType.Random, new IntWrapper(18) },
+        };
+
+        Dictionary<SongSourceSongType, bool> randomEnabledSongTypes = new()
+        {
+            { SongSourceSongType.OP, true },
+            { SongSourceSongType.ED, true },
+            { SongSourceSongType.Insert, true },
+            { SongSourceSongType.BGM, false },
+        };
+
+        var songs = await DbManager.GetRandomSongs(20, false,
+            filters: new QuizFilters
+            {
+                SongSourceSongTypeFilters = validSongSourceSongTypes,
+                SongSourceSongTypeRandomEnabledSongTypes = randomEnabledSongTypes
+            }, printSql: true);
+
+        int opCount = songs.Count(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP));
+
+        int edCount = songs.Count(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.ED));
+
+        int insCount = songs.Count(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert));
+
+        int bgmCount = songs.Count(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
+
+        Assert.GreaterOrEqual(opCount + edCount + insCount, 18);
+        Assert.AreEqual(2, bgmCount, 0);
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_SongDifficultyLevelFilter_VeryEasy()
     {
         Dictionary<SongDifficultyLevel, bool> validDifficultyLevels =
