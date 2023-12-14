@@ -222,9 +222,12 @@ public class QuizManager
             if (IsGuessCorrect(player.Guess))
             {
                 processedTeamIds.Add(player.TeamId);
-                foreach (Player teammate in Quiz.Room.Players.Where(teammate => teammate.TeamId == player.TeamId))
+                foreach (Player possibleTeammate in Quiz.Room.Players)
                 {
-                    teammate.Guess = player.Guess;
+                    if (possibleTeammate.TeamId == player.TeamId)
+                    {
+                        possibleTeammate.Guess = player.Guess;
+                    }
                 }
             }
         }
@@ -254,8 +257,15 @@ public class QuizManager
             Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
         }
 
-        bool correct = correctAnswers.Any(correctAnswer =>
-            string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase));
+        bool correct = false;
+        foreach (string correctAnswer in correctAnswers)
+        {
+            if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+            {
+                correct = true;
+                break;
+            }
+        }
 
         return correct;
     }
@@ -1141,7 +1151,7 @@ public class QuizManager
     {
         var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
         var treasure = player.LootingInfo.Inventory.SingleOrDefault(x => x.Guid == treasureGuid);
-        if (treasure != null)
+        if (treasure is not null)
         {
             var treasureRoom = Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][
                 player.LootingInfo.TreasureRoomCoords.Y];
