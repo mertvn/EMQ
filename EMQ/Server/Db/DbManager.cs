@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -1391,25 +1391,22 @@ public static class DbManager
                 Console.WriteLine($"{key}: {value.Value}");
             }
 
-            if (filters.SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out IntWrapper? _))
-            {
-                int opCount = ret.Count(song =>
-                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP));
+            int opCount = ret.Count(song =>
+                song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.OP));
 
-                int edCount = ret.Count(song =>
-                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.ED));
+            int edCount = ret.Count(song =>
+                song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.ED));
 
-                int insCount = ret.Count(song =>
-                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert));
+            int insCount = ret.Count(song =>
+                song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Insert));
 
-                int bgmCount = ret.Count(song =>
-                    song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
+            int bgmCount = ret.Count(song =>
+                song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
 
-                Console.WriteLine($"    opCount: {opCount}");
-                Console.WriteLine($"    edCount: {edCount}");
-                Console.WriteLine($"    insCount: {insCount}");
-                Console.WriteLine($"    bgmCount: {bgmCount}");
-            }
+            Console.WriteLine($"    opCount: {opCount}");
+            Console.WriteLine($"    edCount: {edCount}");
+            Console.WriteLine($"    insCount: {insCount}");
+            Console.WriteLine($"    bgmCount: {bgmCount}");
         }
 
         return ret;
@@ -1767,7 +1764,32 @@ WHERE id = {mId};
 
     public static async Task<string> ExportSongLite()
     {
-        var songs = await GetRandomSongs(int.MaxValue, true);
+        var filters = new QuizFilters
+        {
+            CategoryFilters = new List<CategoryFilter>(),
+            ArtistFilters = new List<ArtistFilter>(),
+            VndbAdvsearchFilter = "",
+            SongSourceSongTypeFilters =
+                new Dictionary<SongSourceSongType, IntWrapper>
+                {
+                    { SongSourceSongType.OP, new IntWrapper(int.MaxValue) },
+                    { SongSourceSongType.ED, new IntWrapper(int.MaxValue) },
+                    { SongSourceSongType.Insert, new IntWrapper(int.MaxValue) },
+                },
+            SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
+            SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
+            StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
+            EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
+            RatingAverageStart = Constants.QFRatingAverageMin,
+            RatingAverageEnd = Constants.QFRatingAverageMax,
+            RatingBayesianStart = Constants.QFRatingBayesianMin,
+            RatingBayesianEnd = Constants.QFRatingBayesianMax,
+            VoteCountStart = Constants.QFVoteCountMin,
+            VoteCountEnd = Constants.QFVoteCountMax,
+            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
+        };
+
+        var songs = await GetRandomSongs(int.MaxValue, true, filters: filters);
         var songLite = songs.Select(song => song.ToSongLite()).ToList();
 
         HashSet<string> md5Hashes = new();
@@ -1798,9 +1820,31 @@ WHERE id = {mId};
 
     public static async Task<string> ExportSongLite_MB()
     {
-        var songs = await GetRandomSongs(int.MaxValue, true);
-        var bgms = songs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
-        var songLite = bgms.Select(song => song.ToSongLite_MB()).ToList();
+        var filters = new QuizFilters
+        {
+            CategoryFilters = new List<CategoryFilter>(),
+            ArtistFilters = new List<ArtistFilter>(),
+            VndbAdvsearchFilter = "",
+            SongSourceSongTypeFilters =
+                new Dictionary<SongSourceSongType, IntWrapper>
+                {
+                    { SongSourceSongType.BGM, new IntWrapper(int.MaxValue) }
+                },
+            SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
+            SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
+            StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
+            EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
+            RatingAverageStart = Constants.QFRatingAverageMin,
+            RatingAverageEnd = Constants.QFRatingAverageMax,
+            RatingBayesianStart = Constants.QFRatingBayesianMin,
+            RatingBayesianEnd = Constants.QFRatingBayesianMax,
+            VoteCountStart = Constants.QFVoteCountMin,
+            VoteCountEnd = Constants.QFVoteCountMax,
+            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
+        };
+
+        var songs = await GetRandomSongs(int.MaxValue, true, filters: filters);
+        var songLite = songs.Select(song => song.ToSongLite_MB()).ToList();
 
         HashSet<string> md5Hashes = new();
         foreach (SongLite_MB sl in songLite)
