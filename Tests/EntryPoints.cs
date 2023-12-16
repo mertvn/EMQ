@@ -19,6 +19,7 @@ using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FluentMigrator.Runner;
+using FluentMigrator.Runner.Initialization;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Npgsql;
@@ -351,6 +352,7 @@ public class EntryPoints
                         .AddPostgres()
                         .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
                         .ScanIn(Assembly.GetAssembly(typeof(ServerState))).For.Migrations())
+                    .Configure<RunnerOptions>(opt => { opt.Tags = new[] { "SONG" }; })
                     .AddLogging(lb => lb.AddFluentMigratorConsole())
                     .BuildServiceProvider(false);
 
@@ -572,6 +574,11 @@ public class EntryPoints
             throw new Exception("wrong db");
         }
 
+        if (ConnectionHelper.GetConnectionString().Contains("AUTH"))
+        {
+            throw new Exception("wrong db");
+        }
+
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             const string sql = @"
@@ -590,6 +597,7 @@ GRANT ALL ON SCHEMA public TO public;";
                 .AddPostgres()
                 .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
                 .ScanIn(Assembly.GetAssembly(typeof(ServerState))).For.Migrations())
+            .Configure<RunnerOptions>(opt => { opt.Tags = new[] { "SONG" }; })
             .AddLogging(lb => lb.AddFluentMigratorConsole())
             .BuildServiceProvider(false);
 

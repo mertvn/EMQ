@@ -250,7 +250,7 @@ static IServiceProvider CreateServices(string cnnStr, string[] tags)
             .WithGlobalConnectionString(cnnStr)
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
-        .Configure<RunnerOptions>(opt => { opt.Tags = tags; }) // TODO others
+        .Configure<RunnerOptions>(opt => { opt.Tags = tags; })
         // Enable logging to console in the FluentMigrator way
         .AddLogging(lb => lb.AddFluentMigratorConsole())
         // Build the service provider

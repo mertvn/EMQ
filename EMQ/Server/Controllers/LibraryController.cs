@@ -125,7 +125,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindRQ")]
-    public async Task<RQ> FindRQs([FromBody] int rqId)
+    public async Task<RQ> FindRQ([FromBody] int rqId)
     {
         var rq = await DbManager.FindRQ(rqId);
         return rq;

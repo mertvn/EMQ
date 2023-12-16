@@ -36,6 +36,11 @@ public static class MusicBrainzImporter
             throw new Exception("wrong db");
         }
 
+        if (ConnectionHelper.GetConnectionString().Contains("AUTH"))
+        {
+            throw new Exception("wrong db");
+        }
+
         var stopWatch = new Stopwatch();
         stopWatch.Start();
         Console.WriteLine(
