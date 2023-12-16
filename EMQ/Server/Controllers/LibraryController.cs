@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
 
+[CustomAuthorize(PermissionKind.Visitor)]
 [ApiController]
 [Route("[controller]")]
 public class LibraryController : ControllerBase
@@ -27,6 +29,7 @@ public class LibraryController : ControllerBase
     // ReSharper disable once NotAccessedField.Local
     private readonly ILogger<LibraryController> _logger;
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsBySongSourceTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
@@ -45,6 +48,7 @@ public class LibraryController : ControllerBase
         }
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByArtistTitle")]
     public async Task<IEnumerable<Song>> FindSongsByArtistTitle([FromBody] ReqFindSongsByArtistTitle req)
@@ -53,6 +57,7 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByArtistId")]
     public async Task<IEnumerable<Song>> FindSongsByArtistId([FromBody] int artistId)
@@ -61,6 +66,7 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByUploader")]
     public async Task<IEnumerable<Song>> FindSongsByUploader([FromBody] string uploader)
@@ -69,6 +75,7 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
@@ -92,6 +99,7 @@ public class LibraryController : ControllerBase
         return rqId > 0;
     }
 
+    [CustomAuthorize(PermissionKind.ReportSongLink)]
     [HttpPost]
     [Route("SongReport")]
     public async Task<ActionResult> SongReport([FromBody] ReqSongReport req)
@@ -105,6 +113,7 @@ public class LibraryController : ControllerBase
         return Ok();
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindRQs")]
     public async Task<IEnumerable<RQ>> FindRQs([FromBody] ReqFindRQs req)
@@ -113,6 +122,16 @@ public class LibraryController : ControllerBase
         return rqs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindRQ")]
+    public async Task<RQ> FindRQs([FromBody] int rqId)
+    {
+        var rq = await DbManager.FindRQ(rqId);
+        return rq;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongReports")]
     public async Task<IEnumerable<SongReport>> FindRQs([FromBody] ReqFindSongReports req)
@@ -121,6 +140,7 @@ public class LibraryController : ControllerBase
         return songReports;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByLabels")]
     public async Task<IEnumerable<Song>> FindSongsByLabels([FromBody] ReqFindSongsByLabels req)
@@ -129,6 +149,7 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpGet]
     [Route("GetLibraryStats")]
     public async Task<LibraryStats> GetLibraryStats()
@@ -137,6 +158,7 @@ public class LibraryController : ControllerBase
         return libraryStats;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByVndbAdvSearchStr")]
     public async Task<IEnumerable<Song>> FindSongsByVndbAdvSearchStr([FromBody] string[] req)

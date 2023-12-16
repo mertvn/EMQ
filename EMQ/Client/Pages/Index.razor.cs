@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
@@ -176,6 +177,9 @@ public partial class Index
                     ClientState.Session = resCreateSession.Session;
                     ClientState.Session.VndbInfo.VndbApiToken = loginModel.VndbApiToken;
                     await _clientUtils.SaveSessionToLocalStorage();
+
+                    _client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
+                        ClientState.Session.Token);
 
                     LoginProgressDisplay.Add($"Initializing websocket connection...");
                     StateHasChanged();

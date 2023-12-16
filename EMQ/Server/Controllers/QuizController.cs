@@ -9,6 +9,7 @@ using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Server.Business;
 using EMQ.Server.Hubs;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
 
+[CustomAuthorize(PermissionKind.Guest)]
 [ApiController]
 [Route("[controller]")]
 public class QuizController : ControllerBase
@@ -29,6 +31,7 @@ public class QuizController : ControllerBase
         _hubContext = hubContext;
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpGet]
     [Route("SyncRoom")]
     public Room? SyncRoom([FromQuery] string token)
@@ -52,6 +55,7 @@ public class QuizController : ControllerBase
         return room;
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpGet]
     [Route("SyncChat")]
     public ConcurrentQueue<ChatMessage>? SyncChat([FromQuery] string token)
@@ -75,6 +79,7 @@ public class QuizController : ControllerBase
         return room.Chat;
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("NextSong")]
     public ActionResult<ResNextSong> NextSong([FromBody] ReqNextSong req)
@@ -151,14 +156,7 @@ public class QuizController : ControllerBase
         }
     }
 
-    [HttpGet]
-    [Route("GetRooms")]
-    public IEnumerable<Room> GetRooms()
-    {
-        // todo hide chat
-        return ServerState.Rooms;
-    }
-
+    [CustomAuthorize(PermissionKind.CreateRoom)]
     [HttpPost]
     [Route("CreateRoom")]
     public ActionResult<Guid> CreateRoom([FromBody] ReqCreateRoom req)
@@ -180,6 +178,7 @@ public class QuizController : ControllerBase
         return room.Id;
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("JoinRoom")]
     public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
@@ -260,6 +259,7 @@ public class QuizController : ControllerBase
         }
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("StartQuiz")]
     public async Task<ActionResult> StartQuiz([FromBody] ReqStartQuiz req)
@@ -321,6 +321,7 @@ public class QuizController : ControllerBase
         return Ok();
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("ChangeRoomSettings")]
     public async Task<ActionResult> ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
@@ -372,6 +373,7 @@ public class QuizController : ControllerBase
         }
     }
 
+    [CustomAuthorize(PermissionKind.SendChatMessage)]
     [HttpPost]
     [Route("SendChatMessage")]
     public async Task<ActionResult> SendChatMessage([FromBody] ReqSendChatMessage req)
@@ -422,19 +424,7 @@ public class QuizController : ControllerBase
         return Ok();
     }
 
-    [HttpGet]
-    [Route("GetServerStats")]
-    public ServerStats GetServerStats()
-    {
-        return new ServerStats()
-        {
-            RoomsCount = ServerState.Rooms.Count,
-            QuizManagersCount = ServerState.QuizManagers.Count,
-            ActiveSessionsCount = ServerState.Sessions.Count(x => x.Player.HasActiveConnection),
-            SessionsCount = ServerState.Sessions.Count,
-        };
-    }
-
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("ReturnToRoom")]
     public async Task<ActionResult> ReturnToRoom([FromBody] ReqReturnToRoom req)
@@ -493,6 +483,7 @@ public class QuizController : ControllerBase
         return Ok();
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpGet]
     [Route("GetRoomPassword")]
     public async Task<ActionResult<string>> GetRoomPassword(string token, Guid roomId)
@@ -527,6 +518,7 @@ public class QuizController : ControllerBase
         return Ok();
     }
 
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("ChangeRoomNameAndPassword")]
     public async Task<ActionResult> ChangeRoomNameAndPassword([FromBody] ReqChangeRoomNameAndPassword req)
@@ -563,14 +555,6 @@ public class QuizController : ControllerBase
             // todo
         }
 
-        return Ok();
-    }
-
-    [HttpPost]
-    [Route("PostBufferingInfo")]
-    public async Task<ActionResult> PostBufferingInfo([FromBody] BufferingInfo req)
-    {
-        Console.WriteLine($"BufferingInfo: {JsonSerializer.Serialize(req, Utils.JsoIndented)}");
         return Ok();
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -72,67 +72,6 @@ public class EntryPoints
     }
 
     [Test, Explicit]
-    public async Task GenerateSongLite()
-    {
-        bool useLocal = false;
-        if (useLocal)
-        {
-            await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
-        }
-        else
-        {
-            string? adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
-            if (string.IsNullOrWhiteSpace(adminPassword))
-            {
-                throw new Exception("EMQ_ADMIN_PASSWORD is null");
-            }
-
-            var client = new HttpClient { Timeout = TimeSpan.FromMilliseconds(int.MaxValue) };
-            string serverUrl = "https://emq.up.railway.app";
-            string songLite =
-                await client.GetStringAsync(
-                    $"{serverUrl}/Mod/ExportSongLite?adminPassword={adminPassword}");
-
-            if (string.IsNullOrWhiteSpace(songLite))
-            {
-                throw new Exception("songLite is null");
-            }
-
-            await File.WriteAllTextAsync("SongLite.json", songLite);
-        }
-    }
-
-    [Test, Explicit]
-    public async Task GenerateSongLite_MB()
-    {
-        bool useLocal = true;
-        if (useLocal)
-        {
-            await File.WriteAllTextAsync("SongLite_MB.json", await DbManager.ExportSongLite_MB());
-        }
-        else
-        {
-            string? adminPassword = Environment.GetEnvironmentVariable("EMQ_ADMIN_PASSWORD");
-            if (string.IsNullOrWhiteSpace(adminPassword))
-            {
-                throw new Exception("EMQ_ADMIN_PASSWORD is null");
-            }
-
-            string serverUrl = "https://emq.up.railway.app";
-            string songLite =
-                await ServerUtils.Client.GetStringAsync(
-                    $"{serverUrl}/Mod/ExportSongLite_MB?adminPassword={adminPassword}");
-
-            if (string.IsNullOrWhiteSpace(songLite))
-            {
-                throw new Exception("songLite is null");
-            }
-
-            await File.WriteAllTextAsync("SongLite_MB.json", songLite);
-        }
-    }
-
-    [Test, Explicit]
     public async Task GenerateReviewQueue()
     {
         await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());
@@ -197,8 +136,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int s = 140;
-        const int e = 149;
+        const int s = 409;
+        const int e = 450;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -208,8 +147,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RejectReviewQueueItem()
     {
-        const int s = 83;
-        const int e = 83;
+        const int s = 175;
+        const int e = 175;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "");
@@ -254,6 +193,8 @@ public class EntryPoints
             }
         }
     }
+
+    // todo download roomlogs
 
     [Test, Explicit]
     public async Task DownloadPendingReviewQueueItems()
@@ -558,7 +499,10 @@ public class EntryPoints
     public async Task PgDump()
     {
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
-        var builder = ConnectionHelper.GetConnectionStringBuilder();
+        string envVar = "DATABASE_URL";
+        // envVar = "EMQ_AUTH_DATABASE_URL";
+
+        var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
         string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
@@ -592,10 +536,13 @@ public class EntryPoints
     public async Task PgRestore()
     {
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
-        var builder = ConnectionHelper.GetConnectionStringBuilder();
+        string envVar = "DATABASE_URL";
+        envVar = "EMQ_AUTH_DATABASE_URL";
+
+        var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-12-06_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2023-12-16_EMQ_AUTH@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
@@ -668,7 +615,8 @@ GRANT ALL ON SCHEMA public TO public;";
 
         // todo
         string cnnstrMusicbrainz = ConnectionHelper
-            .GetConnectionStringBuilder("postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
+            .GetConnectionStringBuilderWithDatabaseUrl(
+                "postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
             .ToString();
 
         string mbDir = $@"C:/emq/musicbrainz/{Constants.ImportDateMusicBrainz:yyyy-MM-dd}";
@@ -759,7 +707,8 @@ GRANT ALL ON SCHEMA public TO public;";
 
         // todo
         string cnnstrMusicbrainz = ConnectionHelper
-            .GetConnectionStringBuilder("postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
+            .GetConnectionStringBuilderWithDatabaseUrl(
+                "postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
             .ToString();
 
         await Parallel.ForEachAsync(deserialized,

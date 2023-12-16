@@ -2,23 +2,24 @@
 
 namespace EMQ.Server.Db.Migrations;
 
-[Migration(20231119_000)]
-public class AddTableMusicBrainzReleaseVgmdbAlbum : Migration
+[Tags("SONG")]
+[Migration(20231002_000)]
+public class AddTableMusicBrainzReleaseRecording : Migration
 {
-    private string tableName = "musicbrainz_release_vgmdb_album";
+    private string tableName = "musicbrainz_release_recording";
 
     public override void Up()
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("release").AsGuid().NotNullable()
-            .WithColumn("album_id").AsInt32().NotNullable();
+            .WithColumn("recording").AsGuid().NotNullable();
 
         Create.UniqueConstraint()
             .OnTable(tableName)
-            .Columns("release", "album_id");
+            .Columns("release", "recording");
 
-        Create.Index().OnTable(tableName).InSchema("public").OnColumn("album_id");
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("recording");
     }
 
     public override void Down()

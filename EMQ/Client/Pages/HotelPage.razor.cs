@@ -35,7 +35,7 @@ public partial class HotelPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+        IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
         if (res is not null)
         {
             Rooms = res.ToList();
@@ -47,7 +47,7 @@ public partial class HotelPage
         if (DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(1))
         {
             LastSync = DateTime.UtcNow;
-            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
             if (res is not null)
             {
                 Rooms = res.ToList();
@@ -106,7 +106,7 @@ public partial class HotelPage
         }
         else
         {
-            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Quiz/GetRooms");
+            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
             if (res is not null)
             {
                 Rooms = res.ToList();

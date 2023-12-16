@@ -3,6 +3,8 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
 @inject NavigationManager _navigation
 @inject HttpClient _client
 @inject ILogger<Index> _logger
@@ -17,8 +19,16 @@
 <div>
     @if (ClientState.Session != null && !LoginInProgress)
     {
+        bool isModeratorOrGreater = ClientState.Session.UserRoleKind >= AuthStuff.LowestModeratorRole;
+        string roleStr = isModeratorOrGreater ? ClientState.Session.UserRoleKind.ToString() : "";
         <div>
-            Currently logged in as @ClientState.Session.Player.Username<br/>
+            Currently logged in as @ClientState.Session.Player.Username
+            <br/>
+            @if (isModeratorOrGreater)
+            {
+                <span>Role: @roleStr</span>
+                <br/>
+            }
 
             <button type="button" class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>

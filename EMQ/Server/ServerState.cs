@@ -21,6 +21,12 @@ public static class ServerState
     // TODO: would be better if this was a ConcurrentDictionary
     public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
 
+    public static bool AllowGuests { get; set; } = true;
+
+    public static bool RememberGuests { get; set; } = true;
+
+    public static bool Lockdown { get; set; } = false;
+
     public static void RemoveRoom(Room room, string source)
     {
         Console.WriteLine($"Removing r{room.Id} {room.Name}. Source: {source}");

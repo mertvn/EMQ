@@ -4,6 +4,7 @@ using FluentMigrator.Postgres;
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20221025_001)]
 public class AddTableMusic_Source_Title : Migration
 {

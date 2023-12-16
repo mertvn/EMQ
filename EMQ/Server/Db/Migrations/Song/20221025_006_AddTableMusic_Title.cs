@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20221025_006)]
 public class AddTableMusic_Title : Migration
 {

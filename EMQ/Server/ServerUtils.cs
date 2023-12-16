@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime;
@@ -8,6 +10,7 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Http;
 
 namespace EMQ.Server;
 
@@ -61,5 +64,19 @@ public static class ServerUtils
                 }
             }
         }
+    }
+
+    public static string? GetIpAddress(HttpContext context)
+    {
+        string? ip = context.Connection.RemoteIpAddress?.ToString();
+        string? header = context.Request.Headers["CF-Connecting-IP"].FirstOrDefault() ??
+                         context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+        if (IPAddress.TryParse(header, out IPAddress? i))
+        {
+            ip = i.ToString();
+        }
+
+        return ip;
     }
 }

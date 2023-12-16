@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using EMQ.Shared.Core;
 using Npgsql;
@@ -7,14 +8,14 @@ namespace EMQ.Server;
 
 public static class ConnectionHelper
 {
-    private static string s_cachedCnnStr = "";
+    private static readonly Dictionary<string, string> s_cachedCnnStr = new();
 
-    private static string GetDatabaseUrl()
+    private static string GetDatabaseUrl(string envVar)
     {
-        string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        string? databaseUrl = Environment.GetEnvironmentVariable(envVar);
         if (string.IsNullOrWhiteSpace(databaseUrl))
         {
-            throw new Exception("Error getting DATABASE_URL envvar");
+            throw new Exception($"Error getting {envVar} envVar");
         }
 
         return databaseUrl;
@@ -22,29 +23,47 @@ public static class ConnectionHelper
 
     public static string GetConnectionString()
     {
-        if (!string.IsNullOrWhiteSpace(s_cachedCnnStr))
+        const string db = "DATABASE_URL"; // todo rename to EMQ_SONG_DATABASE_URL
+        if (s_cachedCnnStr.TryGetValue(db, out string? cnnStr))
         {
-            return s_cachedCnnStr;
+            return cnnStr;
         }
         else
         {
-            string databaseUrl = GetDatabaseUrl();
-            NpgsqlConnectionStringBuilder builder = GetConnectionStringBuilder(databaseUrl);
+            string databaseUrl = GetDatabaseUrl(db);
+            NpgsqlConnectionStringBuilder builder = GetConnectionStringBuilderWithDatabaseUrl(databaseUrl);
             string str = builder.ToString();
-            s_cachedCnnStr = str;
+            s_cachedCnnStr[db] = str;
             return str;
         }
     }
 
-    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilder(string databaseUrl)
+    public static string GetConnectionString_Auth()
+    {
+        const string db = "EMQ_AUTH_DATABASE_URL";
+        if (s_cachedCnnStr.TryGetValue(db, out string? cnnStr))
+        {
+            return cnnStr;
+        }
+        else
+        {
+            string databaseUrl = GetDatabaseUrl(db);
+            NpgsqlConnectionStringBuilder builder = GetConnectionStringBuilderWithDatabaseUrl(databaseUrl);
+            string str = builder.ToString();
+            s_cachedCnnStr[db] = str;
+            return str;
+        }
+    }
+
+    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilderWithDatabaseUrl(string databaseUrl)
     {
         var builder = GetConnectionStringBuilderInner(databaseUrl);
         return builder;
     }
 
-    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilder()
+    public static NpgsqlConnectionStringBuilder GetConnectionStringBuilderWithEnvVar(string envVar)
     {
-        string databaseUrl = GetDatabaseUrl();
+        string databaseUrl = GetDatabaseUrl(envVar);
         var builder = GetConnectionStringBuilderInner(databaseUrl);
         return builder;
     }
@@ -61,7 +80,7 @@ public static class ConnectionHelper
             Username = userInfo[0],
             Password = userInfo[1],
             Database = databaseUri.LocalPath.TrimStart('/'),
-            SslMode = SslMode.Prefer,
+            SslMode = SslMode.Disable,
             TrustServerCertificate = true,
             IncludeErrorDetail = true
         };

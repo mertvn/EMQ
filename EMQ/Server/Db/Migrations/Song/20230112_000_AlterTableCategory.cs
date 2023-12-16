@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20230112_000)]
 public class AlterTableCategory : Migration
 {

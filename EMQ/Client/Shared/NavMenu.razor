@@ -1,4 +1,5 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -27,6 +28,14 @@
                 <span class="oi oi-list" aria-hidden="true"></span> Library
             </NavLink>
         </div>
+        @if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="ModPage">
+                    <span class="oi oi-bolt" aria-hidden="true"></span> Mod
+                </NavLink>
+            </div>
+        }
     </nav>
 
     <div style="color: white;">
@@ -57,7 +66,7 @@
     {
         if (firstRender)
         {
-            ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Quiz/GetServerStats");
+            ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats");
             if (res is not null)
             {
                 ClientState.ServerStats = res;

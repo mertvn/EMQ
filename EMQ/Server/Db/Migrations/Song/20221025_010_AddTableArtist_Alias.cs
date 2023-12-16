@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20221025_010)]
 public class AddTableArtist_Alias : Migration
 {

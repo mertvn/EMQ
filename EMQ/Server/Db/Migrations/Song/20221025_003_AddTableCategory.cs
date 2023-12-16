@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20221025_003)]
 public class AddTableCategory : Migration
 {

@@ -94,6 +94,10 @@ public class ClientUtils
                     {
                         ClientState.Session = await res.Content.ReadFromJsonAsync<Session>();
                         await SaveSessionToLocalStorage();
+
+                        Client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
+                            ClientState.Session!.Token);
+
                         await ClientConnectionManager.StartManagingConnection();
                     }
                     else

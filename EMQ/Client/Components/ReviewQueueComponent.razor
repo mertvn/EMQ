@@ -5,8 +5,14 @@
 @using EMQ.Shared.Core
 @using Blazorise
 @using Blazorise.DataGrid
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
+
+@if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.ReviewQueueModerator))
+{
+    <ReviewComponent CurrentRQs="CurrentRQs" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
+}
 
 <DataGrid TItem="RQ"
           Data="@CurrentRQs"

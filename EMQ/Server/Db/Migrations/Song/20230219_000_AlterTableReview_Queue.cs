@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20230219_000)]
 public class AlterTableReview_Queue : Migration
 {

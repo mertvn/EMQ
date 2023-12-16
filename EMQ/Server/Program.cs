@@ -14,6 +14,7 @@ using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
 using FFMpegCore;
 using FluentMigrator.Runner;
+using FluentMigrator.Runner.Initialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -127,7 +128,7 @@ string csp = @$"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-q8oSAhvWA13bOzAOC3DTAE/prQEntHSvOD3gOGIuANE='
+                          'sha256-5ikpGmtMaCIs4fLcZvjzP4vbDY1jC3oVLY6J9M10CCU='
                           ;
                style-src 'self'
                          'unsafe-inline'
@@ -186,7 +187,12 @@ if (Constants.UseLocalSongFilesForDevelopment)
 {
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new PhysicalFileProvider(@"K:\emq\emqsongsbackup"),
+        FileProvider = new PhysicalFileProvider(@"K:\emq\emqsongsbackup"), RequestPath = "/emqsongsbackup"
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(@"C:\Users\Mert\AppData\Local\Temp"),
         RequestPath = "/emqsongsbackup"
     });
 
@@ -198,8 +204,7 @@ if (Constants.UseLocalSongFilesForDevelopment)
 
     app.UseStaticFiles(new StaticFileOptions
     {
-        FileProvider = new PhysicalFileProvider(@"M:\a\mb\selfhoststorage"),
-        RequestPath = "/selfhoststorage"
+        FileProvider = new PhysicalFileProvider(@"M:\a\mb\selfhoststorage"), RequestPath = "/selfhoststorage"
     });
 }
 
@@ -217,14 +222,21 @@ app.MapFallbackToFile("index.html");
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();
 
-string cnnStr = ConnectionHelper.GetConnectionString();
-if (cnnStr.Contains("railway"))
+string cnnStrSong = ConnectionHelper.GetConnectionString();
+if (cnnStrSong.Contains("railway"))
 {
     // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
     await Task.Delay(TimeSpan.FromSeconds(1));
 }
 
-static IServiceProvider CreateServices(string cnnStr)
+string cnnStrAuth = ConnectionHelper.GetConnectionString_Auth();
+if (cnnStrAuth.Contains("railway"))
+{
+    // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
+    await Task.Delay(TimeSpan.FromSeconds(1));
+}
+
+static IServiceProvider CreateServices(string cnnStr, string[] tags)
 {
 #pragma warning disable ASP0000
     return new ServiceCollection()
@@ -238,6 +250,7 @@ static IServiceProvider CreateServices(string cnnStr)
             .WithGlobalConnectionString(cnnStr)
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
+        .Configure<RunnerOptions>(opt => { opt.Tags = tags; }) // TODO others
         // Enable logging to console in the FluentMigrator way
         .AddLogging(lb => lb.AddFluentMigratorConsole())
         // Build the service provider
@@ -271,11 +284,23 @@ async Task Init()
 
     if (hasDb)
     {
-        var serviceProvider = CreateServices(cnnStr);
+        var serviceProviderSong = CreateServices(cnnStrSong, new[] { "SONG" });
 
         // Put the database update into a scope to ensure
         // that all resources will be disposed.
-        using (var scope = serviceProvider.CreateScope())
+        using (var scope = serviceProviderSong.CreateScope())
+        {
+            // Instantiate the runner
+            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+            // Execute the migrations
+            runner.MigrateUp();
+        }
+
+        var serviceProviderAuth = CreateServices(cnnStrAuth, new[] { "AUTH" });
+
+        // Put the database update into a scope to ensure
+        // that all resources will be disposed.
+        using (var scope = serviceProviderAuth.CreateScope())
         {
             // Instantiate the runner
             var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();

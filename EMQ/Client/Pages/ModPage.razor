@@ -1,15 +1,19 @@
 ﻿@page "/ModPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<ModPage> _logger
 @inject ClientUtils _clientUtils
+@inject NavigationManager _navigation
+@inject IJSRuntime _jsRuntime
+
+@if (ClientState.Session != null)
+{
+    <span>Logged in as @ClientState.Session.UserRoleKind.ToString() @ClientState.Session.Player.Username</span>
+}
 
 <h3>ModPage</h3>
-
-<p>Enter admin password</p>
-<input type="text" @bind-value="@AdminPassword"/>
-<br/>
 
 <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
     Run GC
@@ -17,6 +21,14 @@
 
 <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunAnalysis(); })">
     Run Analysis
+</button>
+
+<button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadSongLite(); })">
+    Download SongLite.json
+</button>
+
+<button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadSongLite_MB(); })">
+    Download SongLite_MB.json
 </button>
 
 <pre>

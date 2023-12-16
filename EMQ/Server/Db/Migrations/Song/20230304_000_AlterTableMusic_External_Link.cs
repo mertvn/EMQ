@@ -2,6 +2,7 @@
 
 namespace EMQ.Server.Db.Migrations;
 
+[Tags("SONG")]
 [Migration(20230304_000)]
 public class AlterTableMusic_External_Link : Migration
 {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -2060,7 +2060,9 @@ WHERE id = {mId};
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             // todo date filter
-            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList();
+            // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
+            //     .ToList();
+            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList(); // todo revert
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
@@ -2090,6 +2092,37 @@ WHERE id = {mId};
         }
 
         return rqs.OrderBy(x => x.id);
+    }
+
+    public static async Task<RQ> FindRQ(int rqId)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var reviewQueue = await connection.GetAsync<ReviewQueue>(rqId);
+            if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
+            {
+                song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
+                CachedSongs[reviewQueue.music_id] = song;
+            }
+
+            var rq = new RQ
+            {
+                id = reviewQueue.id,
+                music_id = reviewQueue.music_id,
+                url = reviewQueue.url.ReplaceSelfhostLink(),
+                type = (SongLinkType)reviewQueue.type,
+                is_video = reviewQueue.is_video,
+                submitted_by = reviewQueue.submitted_by,
+                submitted_on = reviewQueue.submitted_on,
+                status = (ReviewQueueStatus)reviewQueue.status,
+                reason = reviewQueue.reason,
+                analysis = reviewQueue.analysis,
+                Song = song,
+                duration = reviewQueue.duration,
+            };
+
+            return rq;
+        }
     }
 
     public static async Task<IEnumerable<SongReport>> FindSongReports(DateTime startDate, DateTime endDate)
@@ -2148,7 +2181,13 @@ WHERE id = {mId};
                 case ReviewQueueStatus.Rejected:
                     break;
                 case ReviewQueueStatus.Approved:
-                    throw new NotImplementedException($"Cannot update approved item {rqId}.");
+                    if (requestedStatus is ReviewQueueStatus.Pending or ReviewQueueStatus.Rejected)
+                    {
+                        const string sql = "DELETE FROM music_external_link WHERE music_id = @music_id AND url = @url";
+                        await connection.ExecuteAsync(sql, new { rq.music_id, rq.url });
+                    }
+
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -2714,6 +2753,39 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             return (await connection.QueryAsync<(string, int)>(sql)).ToDictionary(x => x.Item1, x => x.Item2);
+        }
+    }
+
+    public static async Task<User?> GetUser(int id)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.GetAsync<User?>(id);
+        }
+    }
+
+    public static async Task<Secret?> GetSecret(Guid token)
+    {
+        string sql = "SELECT * from secret where token = @token";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.QuerySingleOrDefaultAsync<Secret?>(sql, new { token });
+        }
+    }
+
+    public static async Task<int> InsertSecret(Secret secret)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.InsertAsync(secret);
+        }
+    }
+
+    public static async Task<bool> UpdateSecret(Secret secret)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.UpdateAsync(secret);
         }
     }
 }
