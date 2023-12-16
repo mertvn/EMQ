@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -330,9 +330,11 @@ public class AuthController : ControllerBase
     public IEnumerable<Room> GetRooms()
     {
         var ret = ServerState.Rooms.ToList();
+
+        ret = JsonSerializer.Deserialize<List<Room>>(JsonSerializer.Serialize(ret))!; // need deep-copy
         foreach (Room room in ret)
         {
-            room.Chat = new ConcurrentQueue<ChatMessage>();
+            room.Chat = null!;
         }
 
         return ret;
