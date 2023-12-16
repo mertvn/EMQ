@@ -27,7 +27,7 @@
                 @reviewingItem?.status.ToString()
             </span>
 
-            @if (reviewingItem != null && reviewingItem.analysis != "OK")
+            @if (reviewingItem != null && reviewingItem.analysis != Constants.AnalysisOkStr)
             {
                 <span>Analysis: @reviewingItem.analysis</span>
             }

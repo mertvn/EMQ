@@ -2229,7 +2229,7 @@ WHERE id = {mId};
                 string analyserResultStr;
                 if (analyserResult.IsValid)
                 {
-                    analyserResultStr = "OK";
+                    analyserResultStr = Constants.AnalysisOkStr;
                 }
                 else
                 {

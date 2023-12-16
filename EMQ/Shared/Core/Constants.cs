@@ -21,6 +21,8 @@ public static class Constants
 
     public const string ImportDateVgmdb = "2023-08-13";
 
+    public const string AnalysisOkStr = "OK";
+
     public const string RobotName = "Cookie 4IS";
 
     public static readonly string RobotNameLower = RobotName.ToLowerInvariant();
