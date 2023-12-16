@@ -66,7 +66,6 @@ public class AuthController : ControllerBase
             }
         }
 
-        // todo: invalidate previous session with the same playerId if it exists
         int playerId;
         string token;
         UserRoleKind userRoleKind;
@@ -75,6 +74,13 @@ public class AuthController : ControllerBase
             token = secret.token.ToString();
             userRoleKind = (UserRoleKind)user.roles;
             playerId = user.id;
+
+            var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
+            if (existingSession != null)
+            {
+                // todo db
+                ServerState.RemoveSession(existingSession, "CreateSession");
+            }
         }
         else
         {
