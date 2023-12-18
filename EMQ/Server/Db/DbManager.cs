@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -23,7 +24,7 @@ namespace EMQ.Server.Db;
 
 public static class DbManager
 {
-    private static Dictionary<int, Song> CachedSongs { get; } = new();
+    private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
 
     private static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
 
@@ -2242,6 +2243,11 @@ WHERE id = {mId};
 
             await connection.UpdateAsync(rq);
             Console.WriteLine($"Updated ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
+
+            while (CachedSongs.ContainsKey(rq.music_id))
+            {
+                CachedSongs.TryRemove(rq.music_id, out _);
+            }
         }
 
         return melId;

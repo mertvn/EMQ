@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using System.Collections.Generic
+@using EMQ.Client.Pages
 @using EMQ.Shared.Library.Entities.Concrete
 @inject ILogger<SongReportComponent> _logger
 @inject ClientUtils _clientUtils
@@ -55,7 +56,7 @@
                         }
                     </div>
 
-                    <SongInfoCardComponent Song="@reviewingItem?.Song"/>
+                    <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem!.Song })" LibrarySongFilter="LibrarySongFilterKind.All"/>
                 </div>
 
                 <textarea id="note_mod"
