@@ -615,13 +615,13 @@ public class QuizManager
 
         Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
 
-        var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;
-        Quiz.Room.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
-        Quiz.Room.Log($"validCategoriesCount: {validCategories.Count}");
+        // var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;
+        // Quiz.Room.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
+        // Quiz.Room.Log($"validCategoriesCount: {validCategories.Count}");
 
-        var validArtists = Quiz.Room.QuizSettings.Filters.ArtistFilters;
-        Quiz.Room.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
-        Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
+        // var validArtists = Quiz.Room.QuizSettings.Filters.ArtistFilters;
+        // Quiz.Room.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
+        // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
         List<Song> dbSongs;
         switch (Quiz.Room.QuizSettings.SongSelectionKind)

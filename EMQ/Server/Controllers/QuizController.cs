@@ -288,6 +288,7 @@ public class QuizController : ControllerBase
                 var quizManager = new QuizManager(quiz, _hubContext);
                 ServerState.AddQuizManager(quizManager);
                 room.Log("Created");
+                room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
 
                 if (await quizManager.PrimeQuiz())
                 {
