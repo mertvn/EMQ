@@ -22,6 +22,9 @@ public partial class SongInfoCardWrapperComponent
     [Parameter]
     public string NoSongsText { get; set; } = "";
 
+    [Parameter]
+    public bool IsLibraryPage { get; set; }
+
     private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
 
     private int VisibleSongsCount { get; set; }

@@ -161,7 +161,8 @@
                     <SongInfoCardWrapperComponent
                         CurrentSongs="@CurrentSongs.Except(bgms)"
                         LibrarySongFilter="@LibrarySongFilter"
-                        NoSongsText="@NoSongsText">
+                        NoSongsText="@NoSongsText"
+                        IsLibraryPage="true">
                     </SongInfoCardWrapperComponent>
                 </Blazorise.TabPanel>
                 @foreach ((string key, List<Song> value) in tabs)
@@ -170,7 +171,8 @@
                         <SongInfoCardWrapperComponent
                             CurrentSongs="value"
                             LibrarySongFilter="@LibrarySongFilter"
-                            NoSongsText="@NoSongsText">
+                            NoSongsText="@NoSongsText"
+                            IsLibraryPage="true">
                         </SongInfoCardWrapperComponent>
                     </Blazorise.TabPanel>
                 }
