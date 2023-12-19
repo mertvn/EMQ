@@ -57,6 +57,8 @@ public partial class RoomPage
 
     private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
+    private string InviteLinkButtonText { get; set; } = "Invite link";
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -260,5 +262,28 @@ public partial class RoomPage
         await _jsRuntime.InvokeVoidAsync("alert", "You were kicked from the room.");
         _locationChangingRegistration?.Dispose();
         _navigation.NavigateTo("/HotelPage", true);
+    }
+
+    private async Task Onclick_InviteLink()
+    {
+        if (Room != null)
+        {
+            var res = await _client.GetAsync(
+                $"Quiz/GetRoomPassword?token={ClientState.Session?.Token}&roomId={Room.Id}");
+            if (res.IsSuccessStatusCode)
+            {
+                RoomPassword = await res.Content.ReadAsStringAsync();
+            }
+
+            string inviteLink = $"{_navigation.BaseUri}UseRoomInvitePage?roomId={Room.Id}&password={RoomPassword}";
+            await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", inviteLink);
+
+            // This is kind of hacky. Do I care? Not really.
+            InviteLinkButtonText = "Copied!";
+            StateHasChanged();
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            InviteLinkButtonText = "Invite link";
+            StateHasChanged();
+        }
     }
 }

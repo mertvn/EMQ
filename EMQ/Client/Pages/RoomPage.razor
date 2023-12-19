@@ -151,6 +151,10 @@ else
     <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomNameAndPassword" style="margin:5px; padding: 5px;">
         Change room name and password
     </button>
+
+    <button type="button" class="btn btn-light" @onclick="@(async () => { await Onclick_InviteLink(); })">
+        @InviteLinkButtonText
+    </button>
 }
 
 <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">

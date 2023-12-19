@@ -88,7 +88,7 @@ public partial class HotelPage
             new ReqJoinRoom(roomId, roomPassword, ClientState.Session.Token));
         if (res1.IsSuccessStatusCode)
         {
-            await _clientUtils.SaveSessionToLocalStorage();
+            await _clientUtils.SaveSessionToLocalStorage(); // todo why do we need to do this?
 
             var quizStatus = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).QuizStatus;
             if (quizStatus == QuizStatus.Playing)

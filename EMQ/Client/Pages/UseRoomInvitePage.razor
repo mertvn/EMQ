@@ -1,0 +1,62 @@
+﻿@page "/UseRoomInvitePage"
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+
+@StatusText
+
+@code {
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public Guid RoomId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Password { get; set; }
+
+    private string StatusText { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        StatusText = "Joining room...";
+        await _clientUtils.TryRestoreSession();
+        if (ClientState.Session == null)
+        {
+            _navigation.NavigateTo("/", true);
+        }
+
+        await SendJoinRoomReq();
+    }
+
+    private async Task SendJoinRoomReq()
+    {
+        if (ClientState.Session == null)
+        {
+            _navigation.NavigateTo("/", true);
+        }
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/JoinRoom",
+            new ReqJoinRoom(RoomId, Password ?? "", ClientState.Session!.Token));
+        if (res1.IsSuccessStatusCode)
+        {
+            await _clientUtils.SaveSessionToLocalStorage(); // todo why do we need to do this?
+
+            var quizStatus = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).QuizStatus;
+            if (quizStatus == QuizStatus.Playing)
+            {
+                _navigation.NavigateTo("/QuizPage");
+            }
+            else
+            {
+                _navigation.NavigateTo("/RoomPage");
+            }
+        }
+
+        StateHasChanged();
+    }
+
+}
