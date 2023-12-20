@@ -8,19 +8,19 @@ namespace EMQ.Shared.Core;
 
 public static class Utils
 {
-    public static JsonSerializerOptions Jso => new()
+    public static JsonSerializerOptions Jso { get; } = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, Converters = { new JsonStringEnumConverter() }
     };
 
-    public static JsonSerializerOptions JsoIndented => new()
+    public static JsonSerializerOptions JsoIndented { get; } = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true
     };
 
-    public static JsonSerializerOptions JsoNotNull => new()
+    public static JsonSerializerOptions JsoNotNull { get; } = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new JsonStringEnumConverter() },
