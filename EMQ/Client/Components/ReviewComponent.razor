@@ -59,13 +59,20 @@
                     <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem!.Song })" LibrarySongFilter="LibrarySongFilterKind.All" IsLibraryPage="false"/>
                 </div>
 
-                <textarea id="note_mod"
+                @if (reviewingItem.duration is null)
+                {
+                    <span>Cannot modify item without duration.</span>
+                }
+                else
+                {
+                    <textarea id="note_mod"
                          rows="1" cols="35" maxlength="780" placeholder="Notes"
                          @bind="reviewingItem.reason"></textarea>
 
-                <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="@(() => Onclick_Reject())">Rejected</button>
-                <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="@(() => Onclick_Pending())">Pending</button>
-                <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="@(() => Onclick_Approve())">Approved</button>
+                    <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="@(() => Onclick_Reject())">Rejected</button>
+                    <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="@(() => Onclick_Pending())">Pending</button>
+                    <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="@(() => Onclick_Approve())">Approved</button>
+                }
 
                 <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
             }
