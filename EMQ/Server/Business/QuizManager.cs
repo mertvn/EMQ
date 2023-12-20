@@ -645,10 +645,32 @@ public class QuizManager
                 Quiz.QuizState.NumSongs = Quiz.Songs.Count;
                 break;
             case SongSelectionKind.Looting:
-                dbSongs = await DbManager.GetRandomSongs(
-                    Quiz.Room.QuizSettings.NumSongs * ((Quiz.Room.Players.Count + 4) / 2),
-                    Quiz.Room.QuizSettings.Duplicates, validSources,
-                    filters: Quiz.Room.QuizSettings.Filters);
+                dbSongs = new List<Song>();
+                var cancellationTokenSource = new CancellationTokenSource();
+                cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
+
+                // todo lots of selects are performed when NumSongs is really small
+                int songsLeft =
+                    Math.Max((int)((Quiz.Room.QuizSettings.NumSongs / 2f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
+                        100);
+                while (songsLeft > 0 && !cancellationTokenSource.IsCancellationRequested)
+                {
+                    var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
+                        Quiz.Room.QuizSettings.Duplicates, validSources,
+                        filters: Quiz.Room.QuizSettings.Filters);
+
+                    if (!selectedSongs.Any())
+                    {
+                        break;
+                    }
+
+                    songsLeft -= selectedSongs.Count;
+                    dbSongs.AddRange(selectedSongs);
+                }
+
+                Console.WriteLine($"Looting dbSongs.Count: {dbSongs.Count}");
+                dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
+                Console.WriteLine($"Looting dbSongs.Count distinct: {dbSongs.Count}");
 
                 if (dbSongs.Count == 0)
                 {
