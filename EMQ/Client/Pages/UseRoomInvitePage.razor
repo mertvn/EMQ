@@ -22,11 +22,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        StatusText = "Joining room...";
+        StatusText = "Verifying session...";
+        StateHasChanged();
+
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session == null)
         {
             _navigation.NavigateTo("/", true);
+            return;
         }
 
         await SendJoinRoomReq();
@@ -37,7 +40,11 @@
         if (ClientState.Session == null)
         {
             _navigation.NavigateTo("/", true);
+            return;
         }
+
+        StatusText = "Joining room...";
+        StateHasChanged();
 
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/JoinRoom",
             new ReqJoinRoom(RoomId, Password ?? "", ClientState.Session!.Token));
