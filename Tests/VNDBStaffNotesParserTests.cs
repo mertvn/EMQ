@@ -103,14 +103,23 @@ public class VNDBStaffNotesParserTests
 
                 var parsedSong = processedMusic.ParsedSong;
 
-                var sameTitle = vnSongs.Where(x => x.Title == parsedSong.Title);
+                var sameTitle = vnSongs.Where(x => x.Title == parsedSong.Title).ToList();
                 bool allBeforeTitlesAreSame = sameTitle.All(x => x.BeforeType.Trim() == parsedSong.BeforeType.Trim());
+                bool allAfterTitlesAreSame = sameTitle.All(x => x.AfterTitle.Trim() == parsedSong.AfterTitle.Trim());
 
                 if (processedMusic.ParsedSong.BeforeType != "" &&
                     vnSongs.Any(x => x.Title == parsedSong.Title && !allBeforeTitlesAreSame))
                 {
                     Console.WriteLine(
-                        $"NotSameSongWarning: {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
+                        $"NotSameSongWarning (BeforeType): {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
+                    Console.WriteLine($"    (\"{processedMusic.VNID}\", \"{parsedSong.Title}\"),");
+                }
+
+                if (processedMusic.ParsedSong.AfterTitle != "" &&
+                    vnSongs.Any(x => x.Title == parsedSong.Title && !allAfterTitlesAreSame))
+                {
+                    Console.WriteLine(
+                        $"NotSameSongWarning (AfterTitle): {processedMusic.VNID} {processedMusic.name} {parsedSong.BeforeType}{parsedSong.Type.First()} {parsedSong.Title}");
                     Console.WriteLine($"    (\"{processedMusic.VNID}\", \"{parsedSong.Title}\"),");
                 }
             }

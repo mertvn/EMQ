@@ -16,6 +16,7 @@ public static class Blacklists
         ("v1115", "beloved ~Sakura no Kanata e~"),
         ("v3", "Unmei -SADAME-"),
         ("v20", "Heart to Heart"),
+        ("v32", "Mirai kono hoshi de"),
         ("v238", "Until"),
         ("v273", "Eien no Negai"),
         ("v273", "Futari Dake no Ongakkai"),
