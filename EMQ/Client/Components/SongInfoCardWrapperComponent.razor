@@ -65,7 +65,7 @@
                                                     <Blazorise.Tooltip
                                                         Inline="true"
                                                         Text="This link will never be played as there is a shorter video link available.">
-                                                        <span style="color: yellow">✘ @videoLink.Duration.ToString("mm\\:ss")</span>
+                                                        <span style="color: orange">✘ @videoLink.Duration.ToString("mm\\:ss")</span>
                                                     </Blazorise.Tooltip>
                                                 </a>
                                             }
@@ -104,7 +104,7 @@
                                                     <Blazorise.Tooltip
                                                         Inline="true"
                                                         Text="This link will never be played as either there is a shorter sound link available, or the duration difference between it and the valid video link exceeds the maximum duration tolerance limit of 17 seconds.">
-                                                        <span style="color: yellow">✘ @soundLink.Duration.ToString("mm\\:ss")</span>
+                                                        <span style="color: orange">✘ @soundLink.Duration.ToString("mm\\:ss")</span>
                                                     </Blazorise.Tooltip>
                                                 </a>
                                             }
