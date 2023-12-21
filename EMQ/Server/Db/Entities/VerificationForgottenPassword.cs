@@ -4,28 +4,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EMQ.Server.Db.Entities;
 
-[Table("users")]
-public class User
+[Table("verification_forgottenpassword")]
+public class VerificationForgottenPassword
 {
     [Dapper.Contrib.Extensions.Key]
     [Required]
     public int id { get; set; }
 
     [Required]
-    public string username { get; set; } = "";
+    public int user_id { get; set; }
 
     [Required]
-    public string email { get; set; } = "";
-
-    [Required]
-    public int roles { get; set; }
+    public string token { get; set; } = "";
 
     [Required]
     public DateTime created_at { get; set; }
-
-    [Required]
-    public string salt { get; set; } = "";
-
-    [Required]
-    public string hash { get; set; } = "";
 }

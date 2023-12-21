@@ -1,0 +1,112 @@
+﻿@page "/RegisterPage"
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using System.Net
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+
+<h3>Register new account</h3>
+
+@if (!Done)
+{
+    <p>Usernames must be between 2 and 16 characters long, and must contain only alphanumeric characters, except for "_" and "-", which are allowed.</p>
+    <p>Usernames are considered public information, so don't pick anything sensitive.</p>
+
+    <EditForm Model="@Model" OnValidSubmit="@(() => SendSetPasswordReq(Model))">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+
+        <InputText id="username" type="text" @bind-Value="@Model.Username" style="margin: 5px; width: 200px;"></InputText>
+        <label for="username">Username</label>
+        <br/>
+
+        <InputText id="email" type="email" @bind-Value="@Model.Email" style="margin: 5px; width: 200px;"></InputText>
+        <label for="email">Email</label>
+        <br/>
+
+        @* todo privacy policy etc. checkboxes *@
+
+        <button type="submit" disabled="@(!Ready)" class="btn btn-primary">
+            Submit
+        </button>
+    </EditForm>
+
+    @StatusText
+}
+else
+{
+    <p>
+        An email has been sent to the email address you've provided. Please follow its instructions to continue registering your account.
+    </p>
+    <p>
+        It might take a few minutes for it to show up in your inbox. Make sure to check your spam folder if you can't find it.
+    </p>
+}
+
+@code {
+
+    private ReqStartRegistration Model { get; } = new("", "");
+
+    private string StatusText { get; set; } = "";
+
+    private bool Ready { get; set; } = true;
+
+    private bool Done { get; set; } = false;
+
+    private async Task SendSetPasswordReq(ReqStartRegistration model)
+    {
+        Ready = false;
+        StatusText = "Processing...";
+        StateHasChanged();
+
+        var resIsUsernameAvailable = await _client.PostAsJsonAsync("Auth/IsUsernameAvailable", model.Username);
+        if (!resIsUsernameAvailable.IsSuccessStatusCode)
+        {
+            switch (resIsUsernameAvailable.StatusCode)
+            {
+                case HttpStatusCode.TooManyRequests:
+                    StatusText = "You have been rate-limited. Try again in a minute.";
+                    break;
+                default:
+                    StatusText = "Something went wrong when checking username availability.";
+                    break;
+            }
+        }
+        else
+        {
+            if (!await resIsUsernameAvailable.Content.ReadFromJsonAsync<bool>())
+            {
+                StatusText = "This username is already in use, please choose another.";
+            }
+            else
+            {
+                var req = new ReqStartRegistration(model.Username, model.Email);
+                var res = await _client.PostAsJsonAsync("Auth/StartRegistration", req);
+                if (res.IsSuccessStatusCode)
+                {
+                    StatusText = "";
+                    model.Username = "";
+                    model.Email = "";
+                    Done = true;
+                    StateHasChanged();
+                }
+                else
+                {
+                    switch (res.StatusCode)
+                    {
+                        case HttpStatusCode.TooManyRequests:
+                            StatusText = "You have been rate-limited. Try again in a day.";
+                            break;
+                        default:
+                            StatusText = "Something went wrong when registering your account.";
+                            break;
+                    }
+                }
+            }
+        }
+
+        Ready = true;
+        StateHasChanged();
+    }
+
+}

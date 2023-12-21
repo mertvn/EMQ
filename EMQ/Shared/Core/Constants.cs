@@ -9,6 +9,12 @@ public static class Constants
 
     public static string? SelfhostAddress { get; set; } = Environment.GetEnvironmentVariable("EMQ_SELFHOST_ADDRESS");
 
+    public const string WebsiteName = "Eroge Music Quiz";
+
+    public const string WebsiteDomain = "https://emq.up.railway.app";
+
+    public const string WebsiteDomainNoProtocol = "emq.up.railway.app";
+
     public const string LocalMusicLibraryPath = @"G:\Music";
 
     public static string ImportDateVndb { get; set; } = "2023-11-23";

@@ -7,9 +7,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
 using FFMpegCore;
@@ -30,7 +32,64 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(RateLimitKind.Login, context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: ServerUtils.GetIpAddress(context),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            AutoReplenishment = true,
+            PermitLimit = 4,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    options.AddPolicy(RateLimitKind.Register, context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: ServerUtils.GetIpAddress(context),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            AutoReplenishment = true,
+            PermitLimit = 2,
+            Window = TimeSpan.FromDays(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    options.AddPolicy(RateLimitKind.ForgottenPassword, context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: ServerUtils.GetIpAddress(context),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            AutoReplenishment = true,
+            PermitLimit = 2,
+            Window = TimeSpan.FromDays(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    options.AddPolicy(RateLimitKind.ValidateSession, context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: ServerUtils.GetIpAddress(context),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            AutoReplenishment = true,
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    options.OnRejected = async (context, token) =>
+    {
+        string action = context.HttpContext.Request.Path.ToString();
+        await DbManager.InsertEntity_Auth(new Ratelimited
+        {
+            ip = ServerUtils.GetIpAddress(context.HttpContext) ?? "", action = action, created_at = DateTime.UtcNow,
+        });
+
+        context.HttpContext.Response.StatusCode = 429;
+        await context.HttpContext.Response.WriteAsync("Too many requests.", cancellationToken: token);
+    };
+});
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -87,6 +146,8 @@ builder.Services.AddHsts(options =>
 
 builder.Services.AddHostedService<CleanupService>();
 builder.Services.AddHostedService<OpportunisticGcService>();
+builder.Services.AddHostedService<AuthDatabaseCleanupService>();
+builder.Services.AddHostedService<EmailQueueService>();
 
 var app = builder.Build();
 app.UseResponseCompression();
@@ -209,6 +270,7 @@ if (Constants.UseLocalSongFilesForDevelopment)
 }
 
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

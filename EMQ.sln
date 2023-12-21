@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VNDBStaffNotesParser", "VND
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Juliet", "Juliet\Juliet.csproj", "{E881A12E-7F80-4C78-A844-5585F1884CC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMQBackupScript", "EMQBackupScript\EMQBackupScript.csproj", "{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{E881A12E-7F80-4C78-A844-5585F1884CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E881A12E-7F80-4C78-A844-5585F1884CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E881A12E-7F80-4C78-A844-5585F1884CC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

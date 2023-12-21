@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using EMQ.Shared.Core;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Auth;
 
@@ -13,14 +14,17 @@ public class AddTableUsers : Migration
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
             .WithColumn("username").AsString().NotNullable()
+            .WithColumn("email").AsString().NotNullable()
             .WithColumn("roles").AsInt32().NotNullable()
-            .WithColumn("created_at").AsDateTime().NotNullable();
+            .WithColumn("created_at").AsDateTimeOffset().NotNullable()
+            .WithColumn("salt").AsString().NotNullable()
+            .WithColumn("hash").AsString().NotNullable();
 
-        // todo enable after implementing registration
-        // todo? lower()
-        // Create.UniqueConstraint()
-        //     .OnTable(tableName)
-        //     .Columns("username");
+        Execute.Sql(@"CREATE UNIQUE INDEX UC_users_username_lower ON users(lower(username));");
+        Execute.Sql($@"ALTER TABLE users ADD CHECK (username ~* '{RegexPatterns.UsernameRegex}');");
+
+        Execute.Sql(@"CREATE UNIQUE INDEX UC_users_email_lower ON users(lower(email));");
+        Execute.Sql($@"ALTER TABLE users ADD CHECK (email ~* '{RegexPatterns.EmailRegex}');");
     }
 
     public override void Down()

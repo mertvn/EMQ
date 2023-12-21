@@ -5,6 +5,7 @@ namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 
 public class ReqCreateSession
 {
+    // todo usernameOrEmail etc.
     public ReqCreateSession(string username, string password, PlayerVndbInfo vndbInfo)
     {
         Username = username;
@@ -12,7 +13,7 @@ public class ReqCreateSession
         VndbInfo = vndbInfo;
     }
 
-    [MinLength(1)]
+    [MinLength(2)]
     public string Username { get; }
 
     public string Password { get; }

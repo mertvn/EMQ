@@ -9,10 +9,16 @@ public class Secret
 {
     [Dapper.Contrib.Extensions.Key]
     [Required]
-    public int id { get; set; }
+    public int id { get; set; } // todo long? use user_id as the key?
 
     [Required]
     public int user_id { get; set; }
+
+    [Required]
+    public string ip_created { get; set; } = "";
+
+    [Required]
+    public string ip_last { get; set; } = "";
 
     [Required]
     public Guid token { get; set; }

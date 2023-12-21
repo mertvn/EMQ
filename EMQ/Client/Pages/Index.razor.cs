@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -196,10 +198,29 @@ public partial class Index
             }
             else
             {
-                LoginProgressDisplay.Add("Login failed.");
+                switch (res.StatusCode)
+                {
+                    case HttpStatusCode.TooManyRequests:
+                        LoginProgressDisplay.Add("You have been rate-limited. Try again in a minute.");
+                        break;
+                    default:
+                        LoginProgressDisplay.Add("Login failed.");
+                        break;
+                }
+
                 StateHasChanged();
                 LoginInProgress = false;
             }
         }
+    }
+
+    private void Onclick_Register()
+    {
+        _navigation.NavigateTo("/RegisterPage", forceLoad: false);
+    }
+
+    private void Onclick_ForgottenPassword()
+    {
+        _navigation.NavigateTo("/ForgottenPasswordPage", forceLoad: false);
     }
 }

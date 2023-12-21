@@ -11,6 +11,7 @@ using EMQ.Server.Db;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 namespace EMQ.Server;
 
@@ -21,6 +22,10 @@ public static class ServerUtils
         {
             UseProxy = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development"
         }) { DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("EMQ", "7.8") } } };
+
+    // public static IConfiguration AppSettings { get; } = new ConfigurationBuilder()
+    //     .AddJsonFile(Constants.IsDevelopmentEnvironment ? "appsettings.Development.json" : "appsettings.json",
+    //         false, true).Build();
 
     public static void RunAggressiveGc()
     {

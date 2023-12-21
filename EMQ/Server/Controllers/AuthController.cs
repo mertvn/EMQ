@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -15,6 +16,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
@@ -31,26 +33,26 @@ public class AuthController : ControllerBase
 
     private readonly ILogger<AuthController> _logger;
 
+    [EnableRateLimiting(RateLimitKind.Login)]
     [CustomAuthorize(PermissionKind.Login)]
     [HttpPost]
     [Route("CreateSession")]
     public async Task<ActionResult<ResCreateSession>> CreateSession([FromBody] ReqCreateSession req)
     {
+        string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
         string username = req.Username;
 
         Secret? secret = null;
         User? user = null;
-        if (Guid.TryParse(req.Username, out var usernameGuid)) // todo real password check
+        if (Guid.TryParse(req.Username, out var usernameGuid)) // todo real password field check
         {
             secret = await DbManager.GetSecret(usernameGuid);
             if (secret is not null)
             {
-                secret = await RefreshSessionIfNecessary(secret);
-
-                user = await DbManager.GetUser(secret.user_id);
+                user = await DbManager.GetEntity_Auth<User>(secret.user_id);
                 if (user != null)
                 {
-                    username = user.username;
+                    username = user.username; // todo remove
                 }
                 else
                 {
@@ -60,7 +62,20 @@ public class AuthController : ControllerBase
         }
         else
         {
-            if (!ServerState.AllowGuests)
+            if (!string.IsNullOrWhiteSpace(req.Password))
+            {
+                user = await AuthManager.Login(req.Username, req.Password);
+                if (user != null)
+                {
+                    secret = await AuthManager.CreateSecret(user.id, ip);
+                    username = user.username; // todo remove
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+            }
+            else if (!ServerState.AllowGuests)
             {
                 return Unauthorized();
             }
@@ -78,7 +93,6 @@ public class AuthController : ControllerBase
             var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
             if (existingSession != null)
             {
-                // todo db
                 ServerState.RemoveSession(existingSession, "CreateSession");
             }
         }
@@ -96,26 +110,19 @@ public class AuthController : ControllerBase
                 userRoleKind = UserRoleKind.User;
             }
 
+            // todo force guests to enter here regardless of username availability?
+            if (!await DbManager.IsUsernameAvailable(username))
+            {
+                do
+                {
+                    username = $"Guest-{Guid.NewGuid().ToString()[..7]}";
+                } while (ServerState.Sessions.Any(x => x.Player.Username == username));
+            }
+
             do
             {
                 playerId = Random.Shared.Next();
             } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
-
-            // secret = new Secret
-            // {
-            //     username = username,
-            //     roles = (int)userRoleKind,
-            //     token = new Guid(token),
-            //     created_at = DateTime.UtcNow
-            // };
-            //
-            // var userId = await DbManager.InsertSecret(secret);
-            // if (userId <= 0)
-            // {
-            //     throw new Exception("idk"); // todo?
-            // }
-            //
-            // playerId = userId;
         }
 
         var player = new Player(playerId, username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
@@ -126,48 +133,17 @@ public class AuthController : ControllerBase
 
         ServerState.AddSession(session);
 
-        string? ip = ServerUtils.GetIpAddress(Request.HttpContext);
         _logger.LogInformation(
             $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {ip}");
 
         return new ResCreateSession(session);
     }
 
-    // todo move
-    private static async Task<Secret> RefreshSessionIfNecessary(Secret secret)
-    {
-        return secret;
-
-        // todo do lastUsed instead of this?
-        TimeSpan maxAge = TimeSpan.FromDays(30);
-        Console.WriteLine(
-            $"time diff: {(DateTime.UtcNow - secret.created_at).TotalSeconds.ToString(CultureInfo.InvariantCulture)}");
-        if (DateTime.UtcNow - secret.created_at > maxAge)
-        {
-            Console.WriteLine($"refreshing session for {secret.user_id}");
-            var token = Guid.NewGuid();
-            secret.token = token;
-            secret.created_at = DateTime.UtcNow;
-
-            if (await DbManager.UpdateSecret(secret))
-            {
-                return secret;
-            }
-            else
-            {
-                throw new Exception("idk"); // todo?
-            }
-        }
-        else
-        {
-            return secret;
-        }
-    }
-
+    [EnableRateLimiting(RateLimitKind.Login)]
     [CustomAuthorize(PermissionKind.Login)]
     [HttpPost]
     [Route("RemoveSession")]
-    public void RemoveSession([FromBody] ReqRemoveSession req)
+    public async Task RemoveSession([FromBody] ReqRemoveSession req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
         _logger.LogInformation("Removing session " + session?.Token);
@@ -187,22 +163,37 @@ public class AuthController : ControllerBase
             }
         }
 
-        // todo db stuff
+        var secret = await DbManager.GetSecret(session.Player.Id);
+
+        // enable if guest sessions are ever written to DB
+        // if (secret == null)
+        // {
+        //     throw new Exception("idk"); // todo?
+        // }
+
+        if (secret != null)
+        {
+            await DbManager.DeleteEntity_Auth(secret);
+        }
+
         ServerState.RemoveSession(session, "RemoveSession");
     }
 
+    // todo important require user id match as well
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpPost]
     [Route("ValidateSession")]
     public async Task<ActionResult<Session>> ValidateSession([FromBody] Session req)
     {
+        string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
         if (session == null)
         {
             var secret = await DbManager.GetSecret(new Guid(req.Token));
             if (secret is not null)
             {
-                secret = await RefreshSessionIfNecessary(secret);
+                secret = await AuthManager.RefreshSecretIfNecessary(secret, ip);
 
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous secret");
                 // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
@@ -210,7 +201,7 @@ public class AuthController : ControllerBase
                 session = (await CreateSession(reqCreateSession)).Value!.Session;
                 // Console.WriteLine($"new vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
             }
-            else if (ServerState.RememberGuests)
+            else if (ServerState.RememberGuestsBetweenServerRestarts)
             {
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous session");
                 // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
@@ -338,5 +329,123 @@ public class AuthController : ControllerBase
         }
 
         return ret;
+    }
+
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("IsUsernameAvailable")]
+    public async Task<ActionResult<bool>> IsUsernameAvailable([FromBody] string username)
+    {
+        return await DbManager.IsUsernameAvailable(username);
+    }
+
+    [EnableRateLimiting(RateLimitKind.Register)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("StartRegistration")]
+    public async Task<ActionResult> StartRegistration(ReqStartRegistration req)
+    {
+        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+
+        bool isValid = await AuthManager.RegisterStep1SendEmail(req.Username, req.Email);
+        if (!isValid)
+        {
+            return Unauthorized();
+        }
+
+        return Ok();
+    }
+
+    [EnableRateLimiting(RateLimitKind.Login)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("SetPassword")]
+    public async Task<ActionResult<Session>> SetPassword(ReqSetPassword req)
+    {
+        string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
+        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+
+        int userId = await AuthManager.RegisterStep2SetPassword(req.Username, req.Token, req.NewPassword);
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        Secret secret = await AuthManager.CreateSecret(userId, ip);
+        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var session = (await CreateSession(reqCreateSession)).Value!.Session;
+
+        return session;
+    }
+
+    [EnableRateLimiting(RateLimitKind.Login)]
+    [CustomAuthorize(PermissionKind.User)]
+    [HttpPost]
+    [Route("ChangePassword")]
+    public async Task<ActionResult<Session>> ChangePassword(ReqChangePassword req)
+    {
+        string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
+        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+
+        int userId = await AuthManager.ChangePassword(req.Username, req.CurrentPassword, req.NewPassword);
+        if (userId == -8) // todo hack
+        {
+            return StatusCode(410);
+        }
+
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        Secret secret = await AuthManager.CreateSecret(userId, ip);
+
+        // todo keep PlayerVndbInfo
+        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var session = (await CreateSession(reqCreateSession)).Value!.Session;
+
+        return session;
+    }
+
+    [EnableRateLimiting(RateLimitKind.ForgottenPassword)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("ForgottenPassword")]
+    public async Task<ActionResult> ForgottenPassword(ReqForgottenPassword req)
+    {
+        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+
+        bool isValid = await AuthManager.ForgottenPasswordStep1SendEmail(req.Email);
+        if (!isValid)
+        {
+            return Unauthorized();
+        }
+
+        return Ok();
+    }
+
+    [EnableRateLimiting(RateLimitKind.Login)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("ResetPassword")]
+    public async Task<ActionResult<Session>> ResetPassword(ReqResetPassword req)
+    {
+        string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
+        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+
+        int userId = await AuthManager.ForgottenPasswordStep2ResetPassword(req.UserId, req.Token, req.NewPassword);
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        Secret secret = await AuthManager.CreateSecret(userId, ip);
+
+        // todo keep PlayerVndbInfo
+        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var session = (await CreateSession(reqCreateSession)).Value!.Session;
+
+        return session;
     }
 }

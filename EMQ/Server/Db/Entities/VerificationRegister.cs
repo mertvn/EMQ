@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EMQ.Server.Db.Entities;
 
-[Table("users")]
-public class User
+[Table("verification_register")]
+public class VerificationRegister
 {
     [Dapper.Contrib.Extensions.Key]
     [Required]
@@ -18,14 +18,8 @@ public class User
     public string email { get; set; } = "";
 
     [Required]
-    public int roles { get; set; }
+    public string token { get; set; } = "";
 
     [Required]
     public DateTime created_at { get; set; }
-
-    [Required]
-    public string salt { get; set; } = "";
-
-    [Required]
-    public string hash { get; set; } = "";
 }

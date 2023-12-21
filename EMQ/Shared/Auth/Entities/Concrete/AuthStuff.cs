@@ -5,9 +5,19 @@ using System.Net;
 
 namespace EMQ.Shared.Auth.Entities.Concrete;
 
-public static class AuthStuff // todo? find better name
+public static class AuthStuff // todo? find better name. maybe AuthConstants?
 {
+    public const int MinPasswordLength = 20;
+
+    public const int MaxPasswordLength = 64;
+
+    public const int RegisterTokenValidMinutes = 60;
+
+    public const int ResetPasswordTokenValidMinutes = 60;
+
     public const UserRoleKind LowestModeratorRole = UserRoleKind.ChatModerator; // todo? get rid of this
+
+    public static readonly TimeSpan MaxSessionAge = TimeSpan.FromDays(1);
 
     public static readonly string AuthorizationHeaderName = HttpRequestHeader.Authorization.ToString();
 

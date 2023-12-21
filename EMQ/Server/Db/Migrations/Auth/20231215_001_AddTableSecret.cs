@@ -12,14 +12,12 @@ public class AddTableSecret : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("user_id").AsInt32().NotNullable().ForeignKey("users", "id")
-            .WithColumn("token").AsGuid().NotNullable()
-            .WithColumn("created_at").AsDateTime2().NotNullable()
-            .WithColumn("last_used_at").AsDateTime2().NotNullable();
-
-        Create.UniqueConstraint()
-            .OnTable(tableName)
-            .Columns("token");
+            .WithColumn("user_id").AsInt32().NotNullable().ForeignKey("users", "id").Unique()
+            .WithColumn("ip_created").AsString().NotNullable()
+            .WithColumn("ip_last").AsString().NotNullable()
+            .WithColumn("token").AsGuid().NotNullable().Unique()
+            .WithColumn("created_at").AsDateTimeOffset().NotNullable()
+            .WithColumn("last_used_at").AsDateTimeOffset().NotNullable();
     }
 
     public override void Down()

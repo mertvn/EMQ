@@ -23,9 +23,11 @@ public static class ServerState
 
     public static bool AllowGuests { get; set; } = true;
 
-    public static bool RememberGuests { get; set; } = true;
+    public static bool RememberGuestsBetweenServerRestarts { get; set; } = true;
 
-    public static bool Lockdown { get; set; } = false;
+    public static bool IsReadOnly { get; set; } = false; // todo
+
+    public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
 
     public static void RemoveRoom(Room room, string source)
     {
