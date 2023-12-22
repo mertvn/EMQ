@@ -423,103 +423,74 @@ public class QuizManager
         }
     }
 
-    private async Task EnterQuiz()
+    public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
+        List<Session> sessions, SongSelectionKind songSelectionKind, TreasureRoom[][] treasureRooms, int numChoices)
     {
-        // we have to do this here instead of PrimeQuiz because songs won't be determined until here if it's looting
-        var songs = Quiz.Songs;
-        switch (Quiz.Room.QuizSettings.AnsweringKind)
+        var ret = new Dictionary<int, List<Title>>();
+        Dictionary<int, Title> allTitles = new();
+        HashSet<int> addedSourceIds = new();
+
+        switch (songSelectionKind)
         {
-            case AnsweringKind.Typing:
-                break;
-            case AnsweringKind.MultipleChoice:
-                int numChoices = 4; // todo?: make this configurable
-
-                Dictionary<int, Title> allTitles = new();
-                HashSet<int> addedSourceIds = new();
-
-                switch (Quiz.Room.QuizSettings.SongSelectionKind)
+            case SongSelectionKind.Random:
+            case SongSelectionKind.LocalMusicLibrary:
+                if (sessions.Any(
+                        x => x.VndbInfo.Labels != null && x.VndbInfo.Labels.Any(y => y.VNs.Any())))
                 {
-                    case SongSelectionKind.Random:
-                    case SongSelectionKind.LocalMusicLibrary:
-                        var playerSessions =
-                            ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
+                    // generate wrong multiple choice options from player vndb lists if there are any
+                    // todo?: this is somewhat expensive with big lists
+                    var allPlayerVnTitles = await DbManager.FindSongsByLabels(sessions
+                        .Where(x => x.VndbInfo.Labels != null).SelectMany(x => x.VndbInfo.Labels!));
 
-                        if (playerSessions.Any(
-                                x => x.VndbInfo.Labels != null && x.VndbInfo.Labels.Any(y => y.VNs.Any())))
+                    foreach (Song song in allPlayerVnTitles)
+                    {
+                        foreach (SongSource songSource in song.Sources)
                         {
-                            // generate wrong multiple choice options from player vndb lists if there are any
-                            // todo?: this is somewhat expensive with big lists
-                            var allPlayerVnTitles = await DbManager.FindSongsByLabels(playerSessions
-                                .Where(x => x.VndbInfo.Labels != null).SelectMany(x => x.VndbInfo.Labels!));
-
-                            foreach (Song song in allPlayerVnTitles)
+                            if (addedSourceIds.Add(songSource.Id))
                             {
-                                foreach (SongSource songSource in song.Sources)
-                                {
-                                    if (addedSourceIds.Add(songSource.Id))
-                                    {
-                                        allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                                        break;
-                                    }
-                                }
+                                allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                break;
                             }
                         }
-                        else
+                    }
+                }
+                else
+                {
+                    // or from the selected songs if not
+                    foreach (Song song in songs)
+                    {
+                        foreach (SongSource songSource in song.Sources)
                         {
-                            // or from the selected songs if not
-                            foreach (Song song in songs)
+                            if (addedSourceIds.Add(songSource.Id))
                             {
-                                foreach (SongSource songSource in song.Sources)
-                                {
-                                    if (addedSourceIds.Add(songSource.Id))
-                                    {
-                                        allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                                        break;
-                                    }
-                                }
+                                allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                break;
                             }
                         }
-
-                        break;
-                    case SongSelectionKind.Looting:
-                        // generate wrong multiple choice options from the VNs on the ground while looting
-                        List<KeyValuePair<string, List<Title>>> validSources = Quiz.Room.TreasureRooms
-                            .SelectMany(x => x.SelectMany(y => y.Treasures.Select(z => z.ValidSource))).ToList();
-
-                        foreach ((string key, List<Title> value) in validSources)
-                        {
-                            if (addedSourceIds.Add(key.GetHashCode()))
-                            {
-                                allTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
-                            }
-                        }
-
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    }
                 }
 
-                // Console.WriteLine(JsonSerializer.Serialize(addedSourceIds, Utils.Jso));
-                // Console.WriteLine(JsonSerializer.Serialize(allTitles, Utils.Jso));
+                break;
+            case SongSelectionKind.Looting:
+                // generate wrong multiple choice options from the VNs on the ground while looting
+                List<KeyValuePair<string, List<Title>>> validSources = treasureRooms
+                    .SelectMany(x => x.SelectMany(y => y.Treasures.Select(z => z.ValidSource))).ToList();
 
-                for (int index = 0; index < songs.Count; index++)
+                foreach (Session session in sessions)
                 {
-                    Song dbSong = songs[index];
-
-                    var correctAnswer = dbSong.Sources.First();
-                    List<int> randomIndexes = allTitles.Keys.Where(x => x != correctAnswer.Id)
-                        .OrderBy(_ => Random.Shared.Next()).Take(numChoices - 1).ToList();
-
-                    // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
-
-                    List<Title> list = new() { Converters.GetSingleTitle(correctAnswer.Titles) };
-                    foreach (int randomIndex in randomIndexes)
+                    foreach (var treasure in session.Player.LootingInfo.Inventory)
                     {
-                        list.Add(allTitles[randomIndex]);
+                        validSources.Add(treasure.ValidSource);
                     }
+                }
 
-                    list = list.OrderBy(_ => Random.Shared.Next()).ToList();
-                    Quiz.MultipleChoiceOptions[index] = list;
+                validSources = validSources.DistinctBy(x => x.Key).ToList();
+                foreach ((string key, List<Title> value) in validSources)
+                {
+                    if (addedSourceIds.Add(key.GetHashCode()))
+                    {
+                        allTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
+                    }
                 }
 
                 break;
@@ -527,8 +498,82 @@ public class QuizManager
                 throw new ArgumentOutOfRangeException();
         }
 
+        // Console.WriteLine(JsonSerializer.Serialize(addedSourceIds, Utils.Jso));
+        // Console.WriteLine(JsonSerializer.Serialize(allTitles, Utils.Jso));
+
+        for (int index = 0; index < songs.Count; index++)
+        {
+            Song dbSong = songs[index];
+
+            var correctAnswer = dbSong.Sources.First();
+            var correctAnswerTitle = Converters.GetSingleTitle(correctAnswer.Titles);
+
+            List<int> randomIndexes = new();
+            foreach ((int key, Title? value) in allTitles)
+            {
+                if (value.LatinTitle != correctAnswerTitle.LatinTitle)
+                {
+                    randomIndexes.Add(key);
+                }
+            }
+
+            randomIndexes = randomIndexes.OrderBy(_ => Random.Shared.Next()).Take(numChoices - 1).ToList();
+            // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
+
+            List<Title> list = new() { correctAnswerTitle };
+            foreach (int randomIndex in randomIndexes)
+            {
+                list.Add(allTitles[randomIndex]);
+            }
+
+            list = list.OrderBy(_ => Random.Shared.Next()).ToList();
+            ret[index] = list;
+
+            int count = 0;
+            foreach (Title wrongAnswerTitle in list)
+            {
+                if (wrongAnswerTitle.LatinTitle == correctAnswerTitle.LatinTitle)
+                {
+                    count++;
+                }
+            }
+
+            if (count > 1)
+            {
+                throw new Exception("duplicate title detected when generating multiple choice options");
+            }
+        }
+
+        return ret;
+    }
+
+    private async Task EnterQuiz()
+    {
+        // we have to do this here instead of PrimeQuiz because songs won't be determined until here if it's looting
+        switch (Quiz.Room.QuizSettings.AnsweringKind)
+        {
+            case AnsweringKind.Typing:
+                break;
+            case AnsweringKind.MultipleChoice:
+                var playerSessions =
+                    ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
+                int numChoices = 4; // todo?: make this configurable
+                Quiz.MultipleChoiceOptions =
+                    await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
+                        Quiz.Room.QuizSettings.SongSelectionKind, Quiz.Room.TreasureRooms, numChoices);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
         // reduce serialized Room size
         Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
+
+        foreach (var player in Quiz.Room.Players)
+        {
+            // reduce serialized Room size & prevent Inventory leak
+            player.LootingInfo = new PlayerLootingInfo();
+        }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");
         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -1038,9 +1083,6 @@ public class QuizManager
             {
                 validSources[player.Id].Add(treasure.ValidSource.Key);
             }
-
-            // reduce serialized Room size & prevent Inventory leak
-            player.LootingInfo = new PlayerLootingInfo();
         }
 
         int distinctSourcesCount = validSources.SelectMany(x => x.Value).Distinct().Count();

@@ -5,7 +5,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Server;
+using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -691,6 +693,47 @@ public class DbTests
                 throw new Exception();
             }
         }
+    }
+
+    [Test]
+    public async Task Test_GenerateMultipleChoiceOptions_LootingDuplicateAnswerThingy()
+    {
+        var songs = await DbManager.GetRandomSongs(100, false);
+        GenericSongsAssert(songs);
+
+        var validSourcesLooting = new Dictionary<string, List<Title>>();
+        foreach (Song dbSong in songs)
+        {
+            foreach (var dbSongSource in dbSong.Sources)
+            {
+                // todo songs with multiple vns overriding each other
+                validSourcesLooting[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                    dbSongSource.Titles;
+            }
+        }
+
+        var looted = validSourcesLooting.Take(7).ToList();
+        foreach (KeyValuePair<string, List<Title>> keyValuePair in looted)
+        {
+            validSourcesLooting.Remove(keyValuePair.Key);
+        }
+
+        var sessions = new List<Session>() { new(new Player(7, "t") { }, "", UserRoleKind.User) };
+        var inventory = looted.Select(keyValuePair => new Treasure(Guid.NewGuid(), keyValuePair, new Point())).ToList();
+
+        sessions.Single().Player.LootingInfo.Inventory = inventory;
+
+        var treasures = new List<Treasure>() { };
+        treasures.AddRange(validSourcesLooting.Select(validSource =>
+            new Treasure(Guid.NewGuid(), validSource, new Point())));
+
+        var treasureRooms = new[] { new[] { new TreasureRoom { Treasures = treasures } } };
+
+        var ret =
+            await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
+                SongSelectionKind.Looting, treasureRooms, 4);
+
+        Assert.That(ret.Any());
     }
 
     [Test]
