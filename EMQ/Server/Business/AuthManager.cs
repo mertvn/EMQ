@@ -206,7 +206,6 @@ Please ignore this email if you have not signed up over at {websiteDomainNoProto
 
         string passwordResetLink = $"{Constants.WebsiteDomain}/ForgottenPasswordPage";
 
-        // no username after Hello because it may not match
         string bodyTextEmailAlreadyExists =
             $@"Hello {username},
 
