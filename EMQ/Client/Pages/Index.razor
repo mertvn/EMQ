@@ -61,8 +61,8 @@
                 <DataAnnotationsValidator/>
                 <ValidationSummary/>
 
-                <InputText id="Username" type="text" @bind-Value="_loginModel.Username" style="margin: 5px"/>
-                <label for="Username">Username</label>
+                <InputText id="Username" type="text" @bind-Value="_loginModel.UsernameOrEmail" style="margin: 5px"/>
+                <label for="Username">Username</label> @* todo UsernameOrEmail *@
                 <br/>
 
                 <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId" style="margin: 5px"/>

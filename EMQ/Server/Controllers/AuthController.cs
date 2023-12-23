@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
 
+// todo? require userid + token everywhere instead of just token?
 [CustomAuthorize(PermissionKind.Visitor)]
 [ApiController]
 [Route("[controller]")]
@@ -40,63 +41,66 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResCreateSession>> CreateSession([FromBody] ReqCreateSession req)
     {
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
-        string username = req.Username;
-
-        Secret? secret = null;
-        User? user = null;
-        if (Guid.TryParse(req.Username, out var usernameGuid)) // todo real password field check
-        {
-            secret = await DbManager.GetSecret(usernameGuid);
-            if (secret is not null)
-            {
-                user = await DbManager.GetEntity_Auth<User>(secret.user_id);
-                if (user != null)
-                {
-                    username = user.username; // todo remove
-                }
-                else
-                {
-                    throw new Exception("idk");
-                }
-            }
-        }
-        else
-        {
-            if (!string.IsNullOrWhiteSpace(req.Password))
-            {
-                user = await AuthManager.Login(req.Username, req.Password);
-                if (user != null)
-                {
-                    secret = await AuthManager.CreateSecret(user.id, ip);
-                    username = user.username; // todo remove
-                }
-                else
-                {
-                    return Unauthorized();
-                }
-            }
-            else if (!ServerState.AllowGuests)
-            {
-                return Unauthorized();
-            }
-        }
+        string username = req.UsernameOrEmail;
 
         int playerId;
         string token;
         UserRoleKind userRoleKind;
-        if (secret is not null)
-        {
-            token = secret.token.ToString();
-            userRoleKind = (UserRoleKind)user.roles;
-            playerId = user.id;
 
-            var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
-            if (existingSession != null)
+        if (!string.IsNullOrWhiteSpace(req.Password))
+        {
+            User? user = await AuthManager.Login(req.UsernameOrEmail, req.Password);
+            if (user != null)
             {
-                ServerState.RemoveSession(existingSession, "CreateSession");
+                Secret secret = await AuthManager.CreateSecret(user.id, ip);
+                username = user.username;
+                token = secret.token.ToString();
+                userRoleKind = (UserRoleKind)user.roles;
+                playerId = user.id;
+
+                var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
+                if (existingSession != null)
+                {
+                    // todo db (if necessary in the future)
+                    ServerState.RemoveSession(existingSession, "CreateSession");
+                }
+            }
+            else
+            {
+                return Unauthorized();
             }
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(req.Token))
+        {
+            var secret = await DbManager.GetSecret(req.UserId, new Guid(req.Token));
+            if (secret is not null)
+            {
+                var user = await DbManager.GetEntity_Auth<User>(secret.user_id);
+                if (user != null)
+                {
+                    username = user.username;
+                    token = secret.token.ToString();
+                    userRoleKind = (UserRoleKind)user.roles;
+                    playerId = user.id;
+
+                    var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
+                    if (existingSession != null)
+                    {
+                        // todo db (if necessary in the future)
+                        ServerState.RemoveSession(existingSession, "CreateSession");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Secret without user");
+                }
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+        else if (ServerState.AllowGuests)
         {
             // todo require explicitly clicking on Play as Guest to get here
             token = Guid.NewGuid().ToString();
@@ -123,6 +127,10 @@ public class AuthController : ControllerBase
             {
                 playerId = Random.Shared.Next();
             } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
+        }
+        else
+        {
+            return Unauthorized();
         }
 
         var player = new Player(playerId, username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
@@ -163,7 +171,7 @@ public class AuthController : ControllerBase
             }
         }
 
-        var secret = await DbManager.GetSecret(session.Player.Id);
+        var secret = await DbManager.GetSecret(session.Player.Id, new Guid(session.Token));
 
         // enable if guest sessions are ever written to DB
         // if (secret == null)
@@ -179,7 +187,6 @@ public class AuthController : ControllerBase
         ServerState.RemoveSession(session, "RemoveSession");
     }
 
-    // todo important require user id match as well
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpPost]
@@ -188,16 +195,24 @@ public class AuthController : ControllerBase
     {
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
+
+        var secret = await DbManager.GetSecret(req.Player.Id, new Guid(req.Token));
+        if (secret is not null)
+        {
+            secret = await AuthManager.RefreshSecretIfNecessary(secret, ip);
+            if (session != null)
+            {
+                session.Token = secret.token.ToString();
+            }
+        }
+
         if (session == null)
         {
-            var secret = await DbManager.GetSecret(new Guid(req.Token));
             if (secret is not null)
             {
-                secret = await AuthManager.RefreshSecretIfNecessary(secret, ip);
-
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous secret");
                 // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
-                var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", req.VndbInfo);
+                var reqCreateSession = new ReqCreateSession(secret.user_id, secret.token.ToString(), req.VndbInfo);
                 session = (await CreateSession(reqCreateSession)).Value!.Session;
                 // Console.WriteLine($"new vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
             }
@@ -373,7 +388,7 @@ public class AuthController : ControllerBase
         }
 
         Secret secret = await AuthManager.CreateSecret(userId, ip);
-        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
@@ -402,7 +417,7 @@ public class AuthController : ControllerBase
         Secret secret = await AuthManager.CreateSecret(userId, ip);
 
         // todo keep PlayerVndbInfo
-        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
@@ -443,7 +458,7 @@ public class AuthController : ControllerBase
         Secret secret = await AuthManager.CreateSecret(userId, ip);
 
         // todo keep PlayerVndbInfo
-        var reqCreateSession = new ReqCreateSession(secret.token.ToString(), "", new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;

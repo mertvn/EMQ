@@ -208,7 +208,7 @@ Please ignore this email if you have not signed up over at {websiteDomainNoProto
 
         // no username after Hello because it may not match
         string bodyTextEmailAlreadyExists =
-            $@"Hello,
+            $@"Hello {username},
 
 You just tried to sign up over at {websiteDomainNoProtocol}, but there is already an account registered with this email address.
 
@@ -343,17 +343,10 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
 
     public static async Task<Secret> CreateSecret(int userId, string ip)
     {
-        // todo? do this in one statement
-        var secret = await DbManager.GetSecret(userId);
-        if (secret != null)
-        {
-            if (!await DbManager.DeleteEntity_Auth(secret))
-            {
-                throw new Exception("idk"); // todo?
-            }
-        }
+        // delete previous secret if it exists
+        await DbManager.DeleteSecret(userId);
 
-        secret = new Secret
+        Secret secret = new()
         {
             user_id = userId,
             token = Guid.NewGuid(),

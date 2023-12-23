@@ -2865,19 +2865,18 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         return await FindUserByUsername(username) == null && await GetVerificationRegister(username) == null;
     }
 
-    // todo important this should require userId as well
-    public static async Task<Secret?> GetSecret(Guid token)
+    public static async Task<Secret?> GetSecret(int userId, Guid token)
     {
-        const string sql = "SELECT * from secret where token = @token";
+        const string sql = "SELECT * from secret where user_id = @userId AND token = @token";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
-            return await connection.QuerySingleOrDefaultAsync<Secret?>(sql, new { token });
+            return await connection.QuerySingleOrDefaultAsync<Secret?>(sql, new { userId, token });
         }
     }
 
-    public static async Task<Secret?> GetSecret(int userId)
+    public static async Task<Secret?> DeleteSecret(int userId)
     {
-        const string sql = "SELECT * from secret where user_id = @userId";
+        const string sql = "DELETE from secret where user_id = @userId";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
             return await connection.QuerySingleOrDefaultAsync<Secret?>(sql, new { userId });

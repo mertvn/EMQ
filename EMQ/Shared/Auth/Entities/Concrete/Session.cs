@@ -17,7 +17,7 @@ public class Session
 
     public Player Player { get; }
 
-    public string Token { get; }
+    public string Token { get; set; }
 
     public string? ConnectionId { get; set; }
 

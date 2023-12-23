@@ -23,7 +23,7 @@ public partial class Index
     public class LoginModel
     {
         [Required]
-        public string Username { get; set; } = "Guest";
+        public string UsernameOrEmail { get; set; } = "Guest";
 
         public string Password { get; set; } = "";
 
@@ -164,7 +164,7 @@ public partial class Index
             StateHasChanged();
             HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/CreateSession",
                 new ReqCreateSession(
-                    loginModel.Username,
+                    loginModel.UsernameOrEmail,
                     loginModel.Password,
                     new PlayerVndbInfo() { VndbId = loginModel.VndbId, Labels = vns }));
 
