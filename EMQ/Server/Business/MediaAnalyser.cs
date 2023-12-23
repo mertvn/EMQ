@@ -6,11 +6,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
 
 namespace EMQ.Server.Business;
 
 // todo detect transcodes
+// todo ffmpeg -i bv3wtq.mp3 -map a:0 -af volumedetect -f null -
 public static class MediaAnalyser
 {
     public static async Task<MediaAnalyserResult> Analyse(string filePath)
@@ -20,14 +22,13 @@ public static class MediaAnalyser
 
         var result = new MediaAnalyserResult
         {
-            MediaInfo = null, IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(),
+            IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(),
         };
 
         try
         {
             Console.WriteLine("Analysing " + filePath);
             IMediaAnalysis mediaInfo = await FFProbe.AnalyseAsync(filePath);
-            result.MediaInfo = mediaInfo;
 
             // Console.WriteLine(new { mediaInfo.Duration });
             result.Duration = mediaInfo.Duration;
@@ -76,6 +77,11 @@ public static class MediaAnalyser
             {
                 // Console.WriteLine(new { mediaInfo.PrimaryVideoStream!.AvgFrameRate });
                 result.AvgFramerate = mediaInfo.PrimaryVideoStream!.AvgFrameRate;
+                result.Width = mediaInfo.PrimaryVideoStream.Width;
+                result.Height = mediaInfo.PrimaryVideoStream.Height;
+                result.VideoBitrateKbps = mediaInfo.PrimaryVideoStream.BitRate / 1000;
+                result.OverallBitrateKbps =
+                    ((new FileInfo(filePath).Length * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
                 if (result.AvgFramerate is 1000)
                 {
@@ -137,40 +143,4 @@ public static class MediaAnalyser
             Console.WriteLine(JsonSerializer.Serialize(result, Utils.Jso));
         }
     }
-}
-
-public enum MediaAnalyserWarningKind
-{
-    UnknownError,
-    InvalidFormat,
-    TooShort,
-    TooLong,
-    AudioBitrateTooLow,
-    AudioBitrateTooHigh,
-    FramerateTooLow,
-    FramerateTooHigh,
-    FakeVideo,
-    WrongExtension,
-}
-
-public class MediaAnalyserResult
-{
-    [JsonIgnore]
-    public IMediaAnalysis? MediaInfo { get; set; }
-
-    public bool IsValid { get; set; }
-
-    public List<MediaAnalyserWarningKind> Warnings { get; set; } = new();
-
-    public string? FormatList { get; set; }
-
-    public string? FormatSingle { get; set; }
-
-    public bool IsVideo { get; set; }
-
-    public double? AvgFramerate { get; set; }
-
-    public long? AudioBitrateKbps { get; set; }
-
-    public TimeSpan? Duration { get; set; }
 }

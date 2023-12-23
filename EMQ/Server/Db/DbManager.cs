@@ -25,6 +25,11 @@ namespace EMQ.Server.Db;
 
 public static class DbManager
 {
+    static DbManager()
+    {
+        SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
+    }
+
     private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
 
     private static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
@@ -2064,7 +2069,7 @@ WHERE id = {mId};
             // todo date filter
             // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
             //     .ToList();
-            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList(); // todo revert
+            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList();
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
@@ -2087,6 +2092,7 @@ WHERE id = {mId};
                     analysis = reviewQueue.analysis,
                     Song = song,
                     duration = reviewQueue.duration,
+                    analysis_raw = reviewQueue.analysis_raw,
                 };
 
                 rqs.Add(rq);
@@ -2121,6 +2127,7 @@ WHERE id = {mId};
                 analysis = reviewQueue.analysis,
                 Song = song,
                 duration = reviewQueue.duration,
+                analysis_raw = reviewQueue.analysis_raw,
             };
 
             return rq;
@@ -2239,6 +2246,7 @@ WHERE id = {mId};
                 }
 
                 rq.analysis = analyserResultStr;
+                rq.analysis_raw = analyserResult;
                 rq.duration = analyserResult.Duration;
             }
 

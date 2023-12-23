@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -37,4 +38,6 @@ public class ReviewQueue
     public string? analysis { get; set; }
 
     public TimeSpan? duration { get; set; }
+
+    public MediaAnalyserResult? analysis_raw { get; set; }
 }

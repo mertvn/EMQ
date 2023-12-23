@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -27,4 +29,48 @@ public class RQ
     public Song Song { get; set; } = new();
 
     public TimeSpan? duration { get; set; }
+
+    public MediaAnalyserResult? analysis_raw { get; set; }
+}
+
+// todo move
+public enum MediaAnalyserWarningKind
+{
+    UnknownError,
+    InvalidFormat,
+    TooShort,
+    TooLong,
+    AudioBitrateTooLow,
+    AudioBitrateTooHigh,
+    FramerateTooLow,
+    FramerateTooHigh,
+    FakeVideo,
+    WrongExtension,
+}
+
+public class MediaAnalyserResult
+{
+    public bool IsValid { get; set; }
+
+    public List<MediaAnalyserWarningKind> Warnings { get; set; } = new();
+
+    public string? FormatList { get; set; }
+
+    public string? FormatSingle { get; set; }
+
+    public bool IsVideo { get; set; }
+
+    public double? AvgFramerate { get; set; }
+
+    public long? AudioBitrateKbps { get; set; }
+
+    public TimeSpan? Duration { get; set; }
+
+    public int? Width { get; set; }
+
+    public int? Height { get; set; }
+
+    public long? VideoBitrateKbps { get; set; }
+
+    public double? OverallBitrateKbps { get; set; }
 }
