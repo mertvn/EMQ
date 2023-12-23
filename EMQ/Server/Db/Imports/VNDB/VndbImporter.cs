@@ -143,11 +143,11 @@ public static class VndbImporter
             dynamic dynArtist = artistsJson.Find(x => x.id == dynArtistAlias.id)!;
             try
             {
-                dynamic? _ = dynArtist.aid;
+                dynamic? _ = dynArtist.main;
             }
             catch (Exception)
             {
-                Console.WriteLine($"No matching artist found for aid {dynArtistAlias.aid}");
+                Console.WriteLine($"No matching artist found for main {dynArtistAlias.main}");
                 throw;
             }
 
@@ -180,7 +180,7 @@ public static class VndbImporter
 
             // Console.WriteLine(JsonConvert.SerializeObject(tags, Formatting.Indented));
 
-            bool artistAliasIsMain = (int)dynArtist.aid == (int)dynArtistAlias.aid;
+            bool artistAliasIsMain = (int)dynArtist.main == (int)dynArtistAlias.aid;
 
             // Console.WriteLine((string)dynData.role);
             SongArtistRole role = (string)dynData.role switch
