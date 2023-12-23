@@ -36,6 +36,8 @@ public static class DbManager
 
     private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
 
+    private static ConcurrentDictionary<int, LibraryStats?> CachedLibraryStats { get; } = new();
+
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
@@ -1683,6 +1685,11 @@ WHERE id = {mId};
 WHERE id = {mId};
                  ");
 
+            foreach ((int key, LibraryStats? _) in CachedLibraryStats)
+            {
+                CachedLibraryStats[key] = null;
+            }
+
             Console.WriteLine(
                 $"Attempting to increment SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
             return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
@@ -2253,6 +2260,11 @@ WHERE id = {mId};
             await connection.UpdateAsync(rq);
             Console.WriteLine($"Updated ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
 
+            foreach ((int key, LibraryStats? _) in CachedLibraryStats)
+            {
+                CachedLibraryStats[key] = null;
+            }
+
             while (CachedSongs.ContainsKey(rq.music_id))
             {
                 CachedSongs.TryRemove(rq.music_id, out _);
@@ -2269,7 +2281,14 @@ WHERE id = {mId};
         // Console.WriteLine(
         //     $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        // todo cache results?
+        if (CachedLibraryStats.TryGetValue(limit, out LibraryStats? cached))
+        {
+            if (cached != null)
+            {
+                return cached.Value;
+            }
+        }
+
         const string sqlMusic =
             "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
 
@@ -2434,6 +2453,7 @@ order by diff
                 SongDifficultyLevels = songDifficultyLevels,
             };
 
+            CachedLibraryStats[limit] = libraryStats;
             return libraryStats;
         }
     }
