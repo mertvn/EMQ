@@ -327,6 +327,8 @@ public class AuthController : ControllerBase
             QuizManagersCount = ServerState.QuizManagers.Count,
             ActiveSessionsCount = ServerState.Sessions.Count(x => x.Player.HasActiveConnection),
             SessionsCount = ServerState.Sessions.Count,
+            IsServerReadOnly = ServerState.IsServerReadOnly,
+            IsSubmissionDisabled = ServerState.IsSubmissionDisabled,
         };
     }
 

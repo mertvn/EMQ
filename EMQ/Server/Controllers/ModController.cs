@@ -64,7 +64,32 @@ public class ModController : ControllerBase
     [Route("UpdateReviewQueueItem")]
     public async Task<ActionResult> UpdateReviewQueueItem([FromBody] ReqUpdateReviewQueueItem req)
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         await DbManager.UpdateReviewQueueItem(req.RQId, req.ReviewQueueStatus, reason: req.Notes, analyserResult: null);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("ToggleIsServerReadOnly")]
+    public async Task<ActionResult> ToggleIsServerReadOnly()
+    {
+        ServerState.IsServerReadOnly = !ServerState.IsServerReadOnly;
+        Console.WriteLine($"IsServerReadOnly: {ServerState.IsServerReadOnly}");
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("ToggleIsSubmissionDisabled")]
+    public async Task<ActionResult> ToggleIsSubmissionDisabled()
+    {
+        ServerState.IsSubmissionDisabled = !ServerState.IsSubmissionDisabled;
+        Console.WriteLine($"IsSubmissionDisabled: {ServerState.IsSubmissionDisabled}");
         return Ok();
     }
 }

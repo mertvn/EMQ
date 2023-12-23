@@ -25,7 +25,9 @@ public static class ServerState
 
     public static bool RememberGuestsBetweenServerRestarts { get; set; } = true;
 
-    public static bool IsReadOnly { get; set; } = false; // todo
+    public static bool IsServerReadOnly { get; set; } = false; // todo check this in more places
+
+    public static bool IsSubmissionDisabled { get; set; } = false;
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
 

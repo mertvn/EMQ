@@ -80,6 +80,11 @@ public class LibraryController : ControllerBase
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return false;
+        }
+
         int rqId = await DbManager.InsertReviewQueue(req.MId, req.SongLink, "Pending");
 
         if (rqId > 0)
@@ -104,6 +109,11 @@ public class LibraryController : ControllerBase
     [Route("SongReport")]
     public async Task<ActionResult> SongReport([FromBody] ReqSongReport req)
     {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
         foreach ((string? url, bool _) in req.SelectedUrls.Where(x => x.Value))
         {
             req.SongReport.url = url;

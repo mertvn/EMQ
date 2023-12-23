@@ -17,44 +17,51 @@
         <Blazorise.ModalBody>
             @if (ClientState.Session != null)
             {
-                <div id="collapseSongReport">
-                    <EditForm Model="@ClientSongReport" OnValidSubmit="@(() => SendSongReportReq(ClientSongReport, SelectedUrls))">
-                        <DataAnnotationsValidator/>
-                        <ValidationSummary/>
+                @if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+                {
+                    <span>Server is in read-only mode.</span>
+                }
+                else
+                {
+                    <div id="collapseSongReport">
+                        <EditForm Model="@ClientSongReport" OnValidSubmit="@(() => SendSongReportReq(ClientSongReport, SelectedUrls))">
+                            <DataAnnotationsValidator/>
+                            <ValidationSummary/>
 
-                        @* <p>Do not report for bad audio quality unless you're certain that a better version exists.</p> *@
-                        <InputSelect id="SongSelectionKind" @bind-Value="ClientSongReport.report_kind" style="margin: 5px">
-                            @foreach (SongReportKind songReportKind in Enum.GetValues<SongReportKind>())
-                            {
-                                <option value="@songReportKind">@songReportKind.GetDisplayName()</option>
-                            }
-                        </InputSelect>
-                        <label for="SongSelectionKind">Report kind</label>
-                        <br/>
-
-                        <div style="margin: 5px; padding: 5px;">
-                            <span>Please select the URLs you want to report</span>
+                            @* <p>Do not report for bad audio quality unless you're certain that a better version exists.</p> *@
+                            <InputSelect id="SongSelectionKind" @bind-Value="ClientSongReport.report_kind" style="margin: 5px">
+                                @foreach (SongReportKind songReportKind in Enum.GetValues<SongReportKind>())
+                                {
+                                    <option value="@songReportKind">@songReportKind.GetDisplayName()</option>
+                                }
+                            </InputSelect>
+                            <label for="SongSelectionKind">Report kind</label>
                             <br/>
-                            @foreach (var songLink in ClientSongReport.Song.Links)
-                            {
-                                <input type="checkbox" id="@songLink.Url" class="form-check-input" @bind="@(SelectedUrls[songLink.Url])" style="margin: 5px"/>
-                                <label for="@songLink.Url">
-                                    <a href="@songLink.Url" target="_blank">
-                                        @songLink.Url
-                                    </a>
-                                    by @songLink.SubmittedBy
-                                </label>
-                                <br/>
-                            }
-                        </div>
 
-                        <textarea
+                            <div style="margin: 5px; padding: 5px;">
+                                <span>Please select the URLs you want to report</span>
+                                <br/>
+                                @foreach (var songLink in ClientSongReport.Song.Links)
+                                {
+                                    <input type="checkbox" id="@songLink.Url" class="form-check-input" @bind="@(SelectedUrls[songLink.Url])" style="margin: 5px"/>
+                                    <label for="@songLink.Url">
+                                        <a href="@songLink.Url" target="_blank">
+                                            @songLink.Url
+                                        </a>
+                                        by @songLink.SubmittedBy
+                                    </label>
+                                    <br/>
+                                }
+                            </div>
+
+                            <textarea
                          id="note_user"
                          rows="4" cols="45" maxlength="780" placeholder="Enter anything else you want to add here"
                          @bind="ClientSongReport.note_user"></textarea>
 
-                    </EditForm>
-                </div>
+                        </EditForm>
+                    </div>
+                }
             }
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>

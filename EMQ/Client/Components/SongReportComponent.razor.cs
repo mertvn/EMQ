@@ -40,6 +40,11 @@ public partial class SongReportComponent
 
     private async Task SendSongReportReq(SongReport clientSongReport, Dictionary<string, bool> selectedUrls)
     {
+        if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+        {
+            return;
+        }
+
         if (SelectedUrls.Any(x => x.Value))
         {
             var req = new ReqSongReport(clientSongReport, selectedUrls);

@@ -5,7 +5,8 @@
 
 @if (IsLibraryPage)
 {
-    <span style="margin: 5px">Count: @VisibleSongsCount</span><br>
+    <span style="margin: 5px">Count: @VisibleSongsCount</span>
+    <br>
 }
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
@@ -125,27 +126,34 @@
 
                         @if (IsLibraryPage)
                         {
-                            @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
+                            @if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
                             {
-                                <span>BGM submissions are currently disabled.</span>
+                                <span>Server is in read-only mode.</span>
                             }
                             else
                             {
-                                @if (hasVideo && hasSound)
+                                @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                 {
-                                    <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                    <span>BGM submissions are currently disabled.</span>
                                 }
+                                else
+                                {
+                                    @if (hasVideo && hasSound)
+                                    {
+                                        <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                    }
 
-                                <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
-                                    <DataAnnotationsValidator/>
+                                    <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
+                                        <DataAnnotationsValidator/>
 
-                                    <div style="padding: 5px">
-                                        <label for="@song.Id">Add link: </label>
-                                        <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
-                                        <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
-                                    </div>
-                                    <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
-                                </EditForm>
+                                        <div style="padding: 5px">
+                                            <label for="@song.Id">Add link: </label>
+                                            <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
+                                            <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
+                                        </div>
+                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                                    </EditForm>
+                                }
                             }
                         }
                     </div>

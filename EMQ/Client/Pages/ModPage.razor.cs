@@ -20,7 +20,7 @@ public partial class ModPage
         if (ClientState.Session == null || !ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
         {
             _navigation.NavigateTo("/", true);
-             return;
+            return;
         }
 
         var req = new ReqFindSongReports(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
@@ -65,5 +65,21 @@ public partial class ModPage
         string res = await _client.GetStringAsync("Mod/ExportSongLite_MB");
         byte[] file = System.Text.Encoding.UTF8.GetBytes(res);
         await _jsRuntime.InvokeVoidAsync("downloadFile", "SongLite_MB.json", "application/json", file);
+    }
+
+    private async Task Onclick_ToggleIsServerReadOnly()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ToggleIsServerReadOnly", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
+    }
+
+    private async Task Onclick_ToggleIsSubmissionDisabled()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ToggleIsSubmissionDisabled", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
     }
 }
