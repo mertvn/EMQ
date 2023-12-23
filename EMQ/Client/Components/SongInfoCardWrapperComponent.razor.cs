@@ -61,6 +61,11 @@ public partial class SongInfoCardWrapperComponent
                 Console.WriteLine("Error importing song link");
             }
         }
+        else
+        {
+            _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
+            Console.WriteLine("Error importing song link");
+        }
     }
 }
 
