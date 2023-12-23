@@ -58,13 +58,24 @@
 
                     <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem!.Song })" LibrarySongFilter="LibrarySongFilterKind.All" IsLibraryPage="false"/>
 
-                    <ul>
-                        <li>Resolution: @reviewingItem.analysis_raw?.Width x @reviewingItem.analysis_raw?.Height</li>
-                        <li>Average FPS: @reviewingItem.analysis_raw?.AvgFramerate</li>
-                        <li>Video bitrate (kbps): @reviewingItem.analysis_raw?.VideoBitrateKbps</li>
-                        <li>Audio bitrate (kbps): @reviewingItem.analysis_raw?.AudioBitrateKbps</li>
-                        <li>Overall bitrate (kbps): @reviewingItem.analysis_raw?.OverallBitrateKbps</li>
-                    </ul>
+                    @if (reviewingItem.analysis_raw != null)
+                    {
+                        <ul>
+                            <li>Resolution: @reviewingItem.analysis_raw.Width x @reviewingItem.analysis_raw.Height</li>
+                            <li>Average FPS: @reviewingItem.analysis_raw.AvgFramerate</li>
+                            <li>Video bitrate (kbps): @reviewingItem.analysis_raw.VideoBitrateKbps</li>
+                            <li>Audio bitrate (kbps): @reviewingItem.analysis_raw.AudioBitrateKbps</li>
+                            <li>Overall bitrate (kbps): @reviewingItem.analysis_raw.OverallBitrateKbps</li>
+                            <br/>
+                            @if (reviewingItem.analysis_raw.VolumeDetect != null)
+                            {
+                                @foreach (string line in reviewingItem.analysis_raw.VolumeDetect)
+                                {
+                                    <li>@line</li>
+                                }
+                            }
+                        </ul>
+                    }
                 </div>
 
                 @if (reviewingItem.duration is null)

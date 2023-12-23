@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -12,7 +13,6 @@ using FFMpegCore;
 namespace EMQ.Server.Business;
 
 // todo detect transcodes
-// todo ffmpeg -i bv3wtq.mp3 -map a:0 -af volumedetect -f null -
 public static class MediaAnalyser
 {
     public static async Task<MediaAnalyserResult> Analyse(string filePath)
@@ -20,10 +20,7 @@ public static class MediaAnalyser
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
 
-        var result = new MediaAnalyserResult
-        {
-            IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(),
-        };
+        var result = new MediaAnalyserResult { IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(), };
 
         try
         {
@@ -122,6 +119,35 @@ public static class MediaAnalyser
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooHigh);
                 }
+            }
+
+            try
+            {
+                var process = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "ffmpeg",
+                        Arguments = $"-i {filePath} -map a:0 -af volumedetect -f null -",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    }
+                };
+
+                process.Start();
+                string err = await process.StandardError.ReadToEndAsync();
+                if (err.Any())
+                {
+                    string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+                    string[] volumedetectLines = lines.SkipWhile(x => !x.Contains("volumedetect")).ToArray();
+                    result.VolumeDetect = volumedetectLines;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
 
             if (!result.Warnings.Any())

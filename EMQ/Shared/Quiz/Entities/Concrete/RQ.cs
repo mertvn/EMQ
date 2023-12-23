@@ -73,4 +73,6 @@ public class MediaAnalyserResult
     public long? VideoBitrateKbps { get; set; }
 
     public double? OverallBitrateKbps { get; set; }
+
+    public string[]? VolumeDetect { get; set; }
 }

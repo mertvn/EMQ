@@ -57,17 +57,17 @@ public class MediaAnalyserTests
                         var result = await MediaAnalyser.Analyse(filePath);
                         // if (result.IsValid)
                         // {
-                            Assert.That(result.Duration != null);
-                            Assert.That(result.Duration.HasValue);
-                            Assert.That(result.Duration!.Value.TotalMilliseconds > 0);
+                        Assert.That(result.Duration != null);
+                        Assert.That(result.Duration.HasValue);
+                        Assert.That(result.Duration!.Value.TotalMilliseconds > 0);
 
-                            Console.WriteLine($"Setting {dbSongLink.Url} duration to {result.Duration!.Value}");
-                            await DbManager.UpdateMusicExternalLinkDuration(dbSongLink.Url, result.Duration!.Value);
-                            // }
-                            // else
-                            // {
-                            //     Console.WriteLine($"Skipping invalid analysis result: {dbSongLink.Url}");
-                            // }
+                        Console.WriteLine($"Setting {dbSongLink.Url} duration to {result.Duration!.Value}");
+                        await DbManager.UpdateMusicExternalLinkDuration(dbSongLink.Url, result.Duration!.Value);
+                        // }
+                        // else
+                        // {
+                        //     Console.WriteLine($"Skipping invalid analysis result: {dbSongLink.Url}");
+                        // }
                     }
                     else
                     {
@@ -181,6 +181,26 @@ public class MediaAnalyserTests
         {
             bool isValid = (await MediaAnalyser.Analyse(filePath)).IsValid;
             Assert.That(isValid);
+        }
+        else
+        {
+            Assert.Fail();
+        }
+    }
+
+    [Test]
+    public async Task Test_Analyse_mp3_VolumeDetect()
+    {
+        string url = "https://files.catbox.moe/bv3wtq.mp3";
+        string filePath = System.IO.Path.GetTempPath() + url.LastSegment();
+
+        bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(url));
+        if (success)
+        {
+            var result = await MediaAnalyser.Analyse(filePath);
+            bool isValid = result.IsValid;
+            Assert.That(isValid);
+            Assert.That(result.VolumeDetect != null);
         }
         else
         {
