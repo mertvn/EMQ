@@ -4,12 +4,17 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 
+@{
+    // todo? move
+    bool isAdmin = ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin);
+}
+
 @if (IsLibraryPage)
 {
     <span style="margin: 5px">Count: @VisibleSongsCount</span>
     <br>
 
-    @if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
+    @if (isAdmin)
     {
         <textarea id="textarea_batchSetSubmittedBy"
                          rows="1" cols="20" maxlength="16" placeholder=""
@@ -82,7 +87,14 @@
 
                                             @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
                                             {
-                                                <span> by @videoLink.SubmittedBy</span>
+                                                @if (isAdmin)
+                                                {
+                                                    <SetSubmittedByComponent Url="@videoLink.Url" SubmittedBy="@videoLink.SubmittedBy"></SetSubmittedByComponent>
+                                                }
+                                                else
+                                                {
+                                                    <span> by @videoLink.SubmittedBy</span>
+                                                }
                                             }
                                         </li>
                                     }
@@ -121,7 +133,14 @@
 
                                             @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
                                             {
-                                                <span> by @soundLink.SubmittedBy</span>
+                                                @if (isAdmin)
+                                                {
+                                                    <SetSubmittedByComponent Url="@soundLink.Url" SubmittedBy="@soundLink.SubmittedBy"></SetSubmittedByComponent>
+                                                }
+                                                else
+                                                {
+                                                    <span> by @soundLink.SubmittedBy</span>
+                                                }
                                             }
                                         </li>
                                     }

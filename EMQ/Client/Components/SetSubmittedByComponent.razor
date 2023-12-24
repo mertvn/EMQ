@@ -1,0 +1,29 @@
+﻿@using EMQ.Shared.Mod.Entities.Concrete.Dto.Request
+@inject HttpClient _client
+
+by <input style="width: 150px;"
+    class="textarea_setSubmittedBy"
+    maxlength="16"
+    value="@SubmittedBy"
+    @onchange="Onchange"/>
+
+@code {
+
+    [Parameter]
+    public string Url { get; set; } = "";
+
+    [Parameter]
+    public string SubmittedBy { get; set; } = "";
+
+    private async Task Onchange(ChangeEventArgs args)
+    {
+        SubmittedBy = args.Value!.ToString()!;
+        var req = new ReqSetSubmittedBy(new[] { Url }, SubmittedBy);
+        var res = await _client.PostAsJsonAsync("Mod/SetSubmittedBy", req);
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception();
+        }
+    }
+
+}
