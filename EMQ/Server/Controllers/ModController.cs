@@ -55,6 +55,11 @@ public class ModController : ControllerBase
     [Route("RunAnalysis")]
     public async Task<ActionResult> RunAnalysis()
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         await ServerUtils.RunAnalysis();
         return Ok();
     }
@@ -90,6 +95,24 @@ public class ModController : ControllerBase
     {
         ServerState.IsSubmissionDisabled = !ServerState.IsSubmissionDisabled;
         Console.WriteLine($"IsSubmissionDisabled: {ServerState.IsSubmissionDisabled}");
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("SetSubmittedBy")]
+    public async Task<ActionResult> SetSubmittedBy([FromBody] ReqSetSubmittedBy req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        foreach (string url in req.Urls)
+        {
+           await DbManager.SetSubmittedBy(url, req.SubmittedBy);
+        }
+
         return Ok();
     }
 }

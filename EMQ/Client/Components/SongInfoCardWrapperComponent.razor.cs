@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Client.Pages;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace EMQ.Client.Components;
 
@@ -28,6 +32,8 @@ public partial class SongInfoCardWrapperComponent
     private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
 
     private int VisibleSongsCount { get; set; }
+
+    private string _batchSetSubmittedByText = "";
 
     private async Task SubmitSongUrl(int mId, string url)
     {
@@ -65,6 +71,19 @@ public partial class SongInfoCardWrapperComponent
         {
             _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
             Console.WriteLine("Error importing song link");
+        }
+    }
+
+    private async Task BatchSetSubmittedBy()
+    {
+        var links = CurrentSongs.SelectMany(x => x.Links.Where(y => y.SubmittedBy == "[unknown]"));
+        string[] urls = links.Select(x => x.Url).ToArray();
+
+        var req = new ReqSetSubmittedBy(urls, _batchSetSubmittedByText);
+        var res = await _client.PostAsJsonAsync("Mod/SetSubmittedBy", req);
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception();
         }
     }
 }

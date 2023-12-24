@@ -2913,4 +2913,25 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 new { userId, token });
         }
     }
+
+    public static async Task<int> SetSubmittedBy(string url, string submittedBy)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql =
+                "UPDATE music_external_link SET submitted_by = @submitted_by WHERE url = @url";
+
+            int rows = await connection.ExecuteAsync(sql, new { submitted_by = submittedBy, url = url });
+            if (rows > 0)
+            {
+                Console.WriteLine($"set {url} submitted_by to {submittedBy}");
+            }
+            else
+            {
+                Console.WriteLine($"failed setting {url} submitted_by to {submittedBy}");
+            }
+
+            return rows;
+        }
+    }
 }

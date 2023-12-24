@@ -1,12 +1,21 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 
 @if (IsLibraryPage)
 {
     <span style="margin: 5px">Count: @VisibleSongsCount</span>
     <br>
+}
+
+@if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
+{
+    <textarea id="textarea_batchSetSubmittedBy"
+                         rows="1" cols="20" maxlength="16" placeholder=""
+                         @bind="_batchSetSubmittedByText"></textarea>
+    <button @onclick="BatchSetSubmittedBy">Batch set submitted_by</button>
 }
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">

@@ -151,6 +151,46 @@ public class EntryPoints_SongMatching
     }
 
     [Test, Explicit]
+    public async Task SetSubmittedByToRobotName()
+    {
+        const string submittedBy = Constants.RobotName;
+        int totalRows = 0;
+
+        string root = "C:\\emq\\matching";
+        string[] filePaths = Directory.GetFiles(root, "uploaded.json", SearchOption.AllDirectories);
+        foreach (string filePath in filePaths)
+        {
+            var uploaded =
+                JsonSerializer.Deserialize<List<Uploadable>>(
+                    await File.ReadAllTextAsync(filePath),
+                    Utils.JsoIndented)!;
+
+            foreach (Uploadable uploadable in uploaded)
+            {
+                if (!uploadable.ResultUrl?.Contains("catbox") ?? true)
+                {
+                    continue;
+                }
+
+                int rows = await DbManager.SetSubmittedBy(uploadable.ResultUrl, submittedBy);
+                if (rows > 0)
+                {
+                    totalRows += rows;
+                    Console.WriteLine(
+                        $"set {uploadable.SongLite.SourceVndbIds.First()} {uploadable.ResultUrl} submitted_by to {submittedBy}");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"failed setting {uploadable.SongLite.SourceVndbIds.First()} {uploadable.ResultUrl} submitted_by to {submittedBy}");
+                }
+            }
+        }
+
+        Console.WriteLine($"totalRows: {totalRows}");
+    }
+
+    [Test, Explicit]
     public async Task UploadMatchedSongs_MB()
     {
         string root = "C:\\emq\\matching\\mb";
