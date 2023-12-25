@@ -142,7 +142,15 @@ public static class MediaAnalyser
                 {
                     string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
                     string[] volumedetectLines = lines.SkipWhile(x => !x.Contains("volumedetect")).ToArray();
-                    result.VolumeDetect = volumedetectLines;
+
+                    string[] final = new string[volumedetectLines.Length];
+                    for (int index = 0; index < volumedetectLines.Length; index++)
+                    {
+                        string volumedetectLine = volumedetectLines[index];
+                        final[index] = new string(volumedetectLine.SkipWhile(c => c != ']').ToArray()[1..]);
+                    }
+
+                    result.VolumeDetect = final;
                 }
             }
             catch (Exception e)
