@@ -67,5 +67,6 @@ public class VndbTests
         var comp = new PlayerPreferencesComponent();
         var labels = await comp.FetchLabelsInner(vndbInfo);
         Console.WriteLine(JsonSerializer.Serialize(labels, Utils.JsoIndented));
+        // todo assert something
     }
 }

@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.SongMatching;
 using EMQ.Server.Db.Imports.SongMatching.Common;
 using EMQ.Shared.Core;
@@ -188,6 +189,38 @@ public class EntryPoints_SongMatching
         }
 
         Console.WriteLine($"totalRows: {totalRows}");
+    }
+
+    [Test, Explicit]
+    public async Task SetSubmittedByFromFile()
+    {
+        const string submittedBy = "Burnal";
+
+        string filePath = @"C:\emq\other\Yeni_Metin_Belgesi.txt";
+        string[] contents = await File.ReadAllLinesAsync(filePath);
+        foreach (string content in contents)
+        {
+            var match = Regex.Match(content, @"(https:\/\/files.catbox.moe\/.+\.mp4)");
+            string url = match.Groups[1].Value;
+            int rows = await DbManager.SetSubmittedBy(url, submittedBy);
+        }
+    }
+
+    [Test, Explicit]
+    public async Task SetSubmittedByFromReviewQueueJson()
+    {
+        string filePath = @"C:\emq\emqsongsmetadata\ReviewQueue (2).json";
+        string contents = await File.ReadAllTextAsync(filePath);
+        var rq = JsonSerializer.Deserialize<ReviewQueue[]>(contents)!;
+
+        foreach (var r in rq)
+        {
+            var song = await DbManager.SelectSongs(
+                new Song() { Links = new List<SongLink>() { new SongLink() { Url = r.url } } }, false);
+            Console.WriteLine(song.Single().ToString());
+
+            // int rows = await DbManager.SetSubmittedBy(r.url, r.submitted_by);
+        }
     }
 
     [Test, Explicit]

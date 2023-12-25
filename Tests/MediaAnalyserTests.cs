@@ -49,25 +49,27 @@ public class MediaAnalyserTests
         {
             foreach (SongLink dbSongLink in dbSong.Links)
             {
+                // if (true || dbSongLink.Duration.TotalMilliseconds <= 0)
                 if (dbSongLink.Duration.TotalMilliseconds <= 0)
                 {
                     var filePath = filePaths.FirstOrDefault(x => x.LastSegment() == dbSongLink.Url.LastSegment());
                     if (filePath != null)
                     {
                         var result = await MediaAnalyser.Analyse(filePath);
-                        // if (result.IsValid)
-                        // {
                         Assert.That(result.Duration != null);
                         Assert.That(result.Duration.HasValue);
                         Assert.That(result.Duration!.Value.TotalMilliseconds > 0);
 
-                        Console.WriteLine($"Setting {dbSongLink.Url} duration to {result.Duration!.Value}");
-                        await DbManager.UpdateMusicExternalLinkDuration(dbSongLink.Url, result.Duration!.Value);
+                        // if (dbSongLink.Duration != result.Duration.Value)
+                        // {
                         // }
                         // else
                         // {
-                        //     Console.WriteLine($"Skipping invalid analysis result: {dbSongLink.Url}");
+                        //     continue;
                         // }
+
+                        Console.WriteLine($"Setting {dbSongLink.Url} duration to {result.Duration!.Value}");
+                        await DbManager.UpdateMusicExternalLinkDuration(dbSongLink.Url, result.Duration!.Value);
                     }
                     else
                     {

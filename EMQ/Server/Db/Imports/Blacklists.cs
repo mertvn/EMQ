@@ -34,6 +34,7 @@ public static class Blacklists
         ("v14005", "Onaji Hohaba de, Zutto"),
         ("v15395", "Chaleur"),
         ("v15641", "Want more need less"),
+        ("v29066", "Meguriaetane"),
         ("v31740", "Journey"),
     };
 
