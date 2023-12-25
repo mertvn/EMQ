@@ -36,6 +36,8 @@ public class ClientUtils
     [Inject]
     private ClientConnectionManager ClientConnectionManager { get; }
 
+    private bool IsRestoringSession { get; set; }
+
     public async Task<Room?> SyncRoom()
     {
         Room? room = null;
@@ -79,8 +81,9 @@ public class ClientUtils
 
     public async Task TryRestoreSession()
     {
-        if (ClientState.Session is null)
+        if (ClientState.Session is null && !IsRestoringSession)
         {
+            IsRestoringSession = true;
             string? sessionStr = await LoadFromLocalStorage<string?>("session");
             if (!string.IsNullOrWhiteSpace(sessionStr) && sessionStr != "null")
             {
@@ -107,6 +110,8 @@ public class ClientUtils
                     }
                 }
             }
+
+            IsRestoringSession = false;
         }
     }
 }
