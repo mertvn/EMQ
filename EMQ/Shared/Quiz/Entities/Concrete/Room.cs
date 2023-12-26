@@ -63,7 +63,7 @@ public sealed class Room : IDisposable
     public void Log(string message, int playerId = -1, bool writeToChat = false)
     {
         var roomLog = new RoomLog(Id, Quiz?.Id ?? Guid.Empty, QuizSettings, Quiz?.QuizState ?? null, playerId, message);
-        // RoomLog.Enqueue(roomLog); // todo
+        RoomLog.Enqueue(roomLog);
 
         Console.WriteLine(roomLog.ToString());
 
