@@ -1,8 +1,6 @@
 ﻿using FluentMigrator;
-using FluentMigrator.Model;
-using FluentMigrator.Postgres;
 
-namespace EMQ.Server.Db.Migrations;
+namespace EMQ.Server.Db.Migrations.Song;
 
 [Tags("SONG")]
 [Migration(20221025_001)]

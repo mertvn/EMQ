@@ -1,6 +1,6 @@
 ﻿using FluentMigrator;
 
-namespace EMQ.Server.Db.Migrations;
+namespace EMQ.Server.Db.Migrations.Song;
 
 [Tags("SONG")]
 [Migration(20231002_000)]
