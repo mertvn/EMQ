@@ -22,7 +22,7 @@
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
-        <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+        <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabGeneral">General</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters">Filters</Blazorise.Tab>
