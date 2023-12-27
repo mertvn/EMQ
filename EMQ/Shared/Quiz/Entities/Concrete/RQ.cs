@@ -75,4 +75,6 @@ public class MediaAnalyserResult
     public double? OverallBitrateKbps { get; set; }
 
     public string[]? VolumeDetect { get; set; }
+
+    public float? FilesizeMb { get; set; }
 }

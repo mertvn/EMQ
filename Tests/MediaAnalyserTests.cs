@@ -196,7 +196,12 @@ public class MediaAnalyserTests
         string url = "https://files.catbox.moe/bv3wtq.mp3";
         string filePath = System.IO.Path.GetTempPath() + url.LastSegment();
 
-        bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(url));
+        bool success = true;
+        if (!File.Exists(filePath))
+        {
+            success = await ServerUtils.Client.DownloadFile(filePath, new Uri(url));
+        }
+
         if (success)
         {
             var result = await MediaAnalyser.Analyse(filePath);

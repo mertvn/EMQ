@@ -62,10 +62,11 @@
                     {
                         <ul>
                             <li>Resolution: @reviewingItem.analysis_raw.Width x @reviewingItem.analysis_raw.Height</li>
-                            <li>Average FPS: @reviewingItem.analysis_raw.AvgFramerate</li>
+                            <li>Average FPS: @Math.Round(reviewingItem.analysis_raw.AvgFramerate ?? 0, 2)</li>
                             <li>Video bitrate (kbps): @reviewingItem.analysis_raw.VideoBitrateKbps</li>
                             <li>Audio bitrate (kbps): @reviewingItem.analysis_raw.AudioBitrateKbps</li>
-                            <li>Overall bitrate (kbps): @reviewingItem.analysis_raw.OverallBitrateKbps</li>
+                            <li>Overall bitrate (kbps): @Math.Round(reviewingItem.analysis_raw.OverallBitrateKbps ?? 0, 2)</li>
+                            <li>Filesize: @Math.Round(reviewingItem.analysis_raw.FilesizeMb ?? 0, 2) MB</li>
                             <br/>
                             @if (reviewingItem.analysis_raw.VolumeDetect != null)
                             {
