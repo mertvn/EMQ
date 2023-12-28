@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -278,30 +278,39 @@ public class QuizController : ControllerBase
             // TODO: Check that quiz is not in the process of being started already
             if (room.Owner.Id == player.Id)
             {
-                if (room.Quiz != null)
+                if (!ServerState.IsServerReadOnly)
                 {
-                    ServerState.RemoveQuizManager(room.Quiz);
-                }
+                    if (room.Quiz != null)
+                    {
+                        ServerState.RemoveQuizManager(room.Quiz);
+                    }
 
-                var quiz = new Quiz(room, Guid.NewGuid());
-                room.Quiz = quiz;
-                var quizManager = new QuizManager(quiz, _hubContext);
-                ServerState.AddQuizManager(quizManager);
-                room.Log("Created");
-                room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
+                    var quiz = new Quiz(room, Guid.NewGuid());
+                    room.Quiz = quiz;
+                    var quizManager = new QuizManager(quiz, _hubContext);
+                    ServerState.AddQuizManager(quizManager);
+                    room.Log("Created");
+                    room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
 
-                if (await quizManager.PrimeQuiz())
-                {
-                    room.Log("Primed");
-                    // _ = Task.Run(async () => { await quizManager.StartQuiz(); });
-                    await Task.Run(async () => { await quizManager.StartQuiz(); });
+                    if (await quizManager.PrimeQuiz())
+                    {
+                        room.Log("Primed");
+                        // _ = Task.Run(async () => { await quizManager.StartQuiz(); });
+                        await Task.Run(async () => { await quizManager.StartQuiz(); });
+                    }
+                    else
+                    {
+                        room.Log(
+                            "No songs match the current filters - canceling quiz",
+                            writeToChat: true);
+                        await quizManager.CancelQuiz();
+                        await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                            .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    }
                 }
                 else
                 {
-                    room.Log(
-                        "No songs match the current filters - canceling quiz",
-                        writeToChat: true);
-                    await quizManager.CancelQuiz();
+                    room.Log("Server is in read-only mode.", writeToChat: true);
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                         .SendAsync("ReceiveUpdateRoomForRoom", room);
                 }
