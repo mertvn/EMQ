@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
-using EMQ.Shared.Quiz.Entities.Concrete;
+﻿using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 
@@ -8,19 +6,18 @@ public class ReqCreateSession
 {
     // used when logging in
     [JsonConstructor]
-    public ReqCreateSession(string usernameOrEmail, string password, PlayerVndbInfo vndbInfo)
+    public ReqCreateSession(string usernameOrEmail, string password, bool isGuest)
     {
         UsernameOrEmail = usernameOrEmail;
         Password = password;
-        VndbInfo = vndbInfo;
+        IsGuest = isGuest;
     }
 
-    // used when user is already logged in
-    public ReqCreateSession(int userId, string token, PlayerVndbInfo vndbInfo)
+    // used when user is already logged in and has a Secret, like in internal auth flows such as SetPassword etc.
+    public ReqCreateSession(int userId, string token)
     {
         UserId = userId;
         Token = token;
-        VndbInfo = vndbInfo;
     }
 
     public string UsernameOrEmail { get; } = "";
@@ -31,5 +28,5 @@ public class ReqCreateSession
 
     public string Token { get; } = "";
 
-    public PlayerVndbInfo VndbInfo { get; }
+    public bool IsGuest { get; }
 }

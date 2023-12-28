@@ -75,7 +75,7 @@
                 </button>
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabMyList">
-                @if (ClientState.Session?.VndbInfo.Labels != null)
+                @if (ClientState.VndbInfo.Labels != null)
                 {
                    @* todo stats *@
                     <button type="button" id="ButtonFetchMyList" class="btn btn-primary" style="margin: 5px" @onclick="OnclickButtonFetchMyList">

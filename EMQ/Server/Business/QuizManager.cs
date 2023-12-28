@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -434,13 +435,13 @@ public class QuizManager
         {
             case SongSelectionKind.Random:
             case SongSelectionKind.LocalMusicLibrary:
-                if (sessions.Any(
-                        x => x.VndbInfo.Labels != null && x.VndbInfo.Labels.Any(y => y.VNs.Any())))
+                var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
+                if (allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
                 {
                     // generate wrong multiple choice options from player vndb lists if there are any
                     // todo?: this is somewhat expensive with big lists
-                    var allPlayerVnTitles = await DbManager.FindSongsByLabels(sessions
-                        .Where(x => x.VndbInfo.Labels != null).SelectMany(x => x.VndbInfo.Labels!));
+                    var allPlayerVnTitles = await DbManager.FindSongsByLabels(allVndbInfos
+                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!));
 
                     foreach (Song song in allPlayerVnTitles)
                     {
@@ -599,11 +600,45 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
-                var session = ServerState.Sessions.Single(x => x.Player.Id == player.Id);
-                if (session.VndbInfo.Labels != null)
+                var stopWatch = new Stopwatch();
+                stopWatch.Start();
+
+                var vndbInfo = await ServerUtils.GetVndbInfo_Inner(player.Id);
+                if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
                 {
-                    validSources.AddRange(Label.GetValidSourcesFromLabels(session.VndbInfo.Labels));
+                    continue;
                 }
+
+                if (vndbInfo.Labels != null)
+                {
+                    var userLabels = await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId);
+                    var include = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Include).ToList();
+                    var exclude = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Exclude).ToList();
+
+                    // todo batch
+                    // todo method
+                    foreach (UserLabel userLabel in include)
+                    {
+                        var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                        validSources.AddRange(userLabelVns.Select(x => x.vnid));
+                    }
+
+                    if (exclude.Any())
+                    {
+                        var excluded = new List<string>();
+                        foreach (UserLabel userLabel in exclude)
+                        {
+                            var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                            excluded.AddRange(userLabelVns.Select(x => x.vnid));
+                        }
+
+                        validSources = validSources.Except(excluded).ToList();
+                    }
+                }
+
+                stopWatch.Stop();
+                Console.WriteLine(
+                    $"OnlyFromLists took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             }
         }
 
@@ -683,7 +718,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong);
+                    dbSong.PlayerLabels = await GetPlayerLabelsForSong(dbSong);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -796,7 +831,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong);
+                    dbSong.PlayerLabels = await GetPlayerLabelsForSong(dbSong);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -1397,7 +1432,7 @@ public class QuizManager
         //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
     }
 
-    private Dictionary<int, List<Label>> GetPlayerLabelsForSong(Song song)
+    private async Task<Dictionary<int, List<Label>>> GetPlayerLabelsForSong(Song song)
     {
         // todo handle hotjoining players
         Dictionary<int, List<Label>> playerLabels = new();
@@ -1405,10 +1440,17 @@ public class QuizManager
         var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
         foreach (Session session in playerSessions)
         {
-            if (session.VndbInfo.Labels != null)
+            // todo batch
+            var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+            if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+            {
+                continue;
+            }
+
+            if (vndbInfo.Labels != null)
             {
                 playerLabels[session.Player.Id] = new List<Label>();
-                foreach (Label label in session.VndbInfo.Labels)
+                foreach (Label label in vndbInfo.Labels)
                 {
                     var currentSongSourceVndbUrls = song.Sources
                         .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))

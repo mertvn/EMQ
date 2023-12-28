@@ -10,6 +10,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
+using Juliet.Model.Param;
 using Juliet.Model.VNDBObject;
 
 namespace EMQ.Client.Components;
@@ -20,15 +21,11 @@ public partial class PlayerPreferencesComponent
 
     private string _selectedTab = "TabGeneral";
 
-    private List<Label> Labels { get; set; } = new();
+    public bool LoginInProgress { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        if (ClientState.Session?.VndbInfo.Labels != null)
-        {
-            Labels = ClientState.Session.VndbInfo.Labels.ToList();
-        }
-    }
+    public List<string> LoginProgressDisplay { get; set; } = new();
+
+    private string? ClientVndbApiToken { get; set; }
 
     private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
     {
@@ -62,9 +59,13 @@ public partial class PlayerPreferencesComponent
 
     private async Task FetchLabels(PlayerVndbInfo vndbInfo)
     {
-        Labels.Clear();
+        // LoginInProgress = true;
+        // StateHasChanged();
+
         var final = await FetchLabelsInner(vndbInfo);
-        Labels.AddRange(final);
+        ClientState.VndbInfo.Labels = final;
+
+        // LoginInProgress = false;
         StateHasChanged();
     }
 
@@ -100,11 +101,9 @@ public partial class PlayerPreferencesComponent
             var updatedLabel = await res.Content.ReadFromJsonAsync<Label>();
             if (updatedLabel != null)
             {
-                Label oldLabel = Labels.Single(x => x.Id == updatedLabel.Id);
+                Label oldLabel = ClientState.VndbInfo.Labels!.Single(x => x.Id == updatedLabel.Id);
                 oldLabel.Kind = updatedLabel.Kind;
                 oldLabel.VNs = updatedLabel.VNs;
-
-                await _clientUtils.SaveSessionToLocalStorage();
             }
         }
         else
@@ -115,41 +114,33 @@ public partial class PlayerPreferencesComponent
 
     public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind)
     {
-        if (ClientState.Session != null)
+        if (ClientState.Session != null && ClientState.VndbInfo.Labels != null)
         {
-            if (ClientState.Session.VndbInfo.Labels != null)
-            {
-                Console.WriteLine(
-                    $"{ClientState.Session.VndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
-                label.Kind = newLabelKind;
+            Console.WriteLine(
+                $"{ClientState.VndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
+            label.Kind = newLabelKind;
 
-                var newVns = new Dictionary<string, int>();
-                switch (label.Kind)
-                {
-                    case LabelKind.Maybe:
-                        break;
-                    case LabelKind.Include:
-                    case LabelKind.Exclude:
-                        var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
-                        {
-                            VndbId = ClientState.Session.VndbInfo.VndbId,
-                            VndbApiToken = ClientState.Session.VndbInfo.VndbApiToken,
-                            Labels = new List<Label>() { label },
-                        });
-                        newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-
-                label.VNs = newVns;
-                return label;
-            }
-            else
+            var newVns = new Dictionary<string, int>();
+            switch (label.Kind)
             {
-                // should never be hit under normal circumstances
-                throw new Exception();
+                case LabelKind.Maybe:
+                    break;
+                case LabelKind.Include:
+                case LabelKind.Exclude:
+                    var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
+                    {
+                        VndbId = ClientState.VndbInfo.VndbId,
+                        VndbApiToken = ClientVndbApiToken,
+                        Labels = new List<Label>() { label },
+                    });
+                    newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
+
+            label.VNs = newVns;
+            return label;
         }
         else
         {
@@ -158,18 +149,75 @@ public partial class PlayerPreferencesComponent
         }
     }
 
-    private async Task SetVndbInfo(PlayerVndbInfo vndbInfo)
+    // public async Task GetVndbInfoFromServer(PlayerVndbInfo vndbInfo)
+    // {
+    //     vndbInfo.Labels = new List<Label>();
+    //
+    //     HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/GetVndbInfo",
+    //         new ReqSetVndbInfo(ClientState.Session!.Token, new PlayerVndbInfo()));
+    //
+    //     if (res.IsSuccessStatusCode)
+    //     {
+    //         var content = await res.Content.ReadFromJsonAsync<PlayerVndbInfo>();
+    //         ClientState.VndbInfo = content!;
+    //     }
+    //     else
+    //     {
+    //         // todo warn user
+    //
+    //         // todo?
+    //         // Labels.Clear();
+    //     }
+    //
+    //     StateHasChanged();
+    // }
+
+    public async Task SetVndbInfo(PlayerVndbInfo vndbInfo)
     {
-        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId)
-            // && new Regex(RegexPatterns.VndbIdRegex).IsMatch(vndbInfo.VndbId)
-           )
+        LoginInProgress = true;
+        LoginProgressDisplay.Clear();
+        StateHasChanged();
+
+        if (!string.IsNullOrWhiteSpace(ClientVndbApiToken))
         {
-            Labels.Clear();
+            LoginProgressDisplay.Add("Validating VNDB API Token...");
+            var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = ClientVndbApiToken });
+            if (resAuth != null)
+            {
+                const string vndbPermName = "listread"; // todo
+                if (!resAuth.Permissions.Contains(vndbPermName))
+                {
+                    vndbInfo.VndbId = "";
+                    LoginProgressDisplay.Add(
+                        $"Error: VNDB API Token does not have the necessary permissions: {vndbPermName}");
+                    StateHasChanged();
+                }
+                else
+                {
+                    vndbInfo.VndbId = resAuth.Id;
+                    LoginProgressDisplay.Add("Successfully validated VNDB API Token.");
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                vndbInfo.VndbId = "";
+                LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
+                StateHasChanged();
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+        {
+            vndbInfo.VndbId = "";
+            ClientVndbApiToken = "";
             vndbInfo.Labels = new List<Label>();
+        }
+        else
+        {
+            vndbInfo.Labels = new List<Label>();
+            vndbInfo.VndbApiToken = ClientVndbApiToken;
             await FetchLabels(vndbInfo);
-            vndbInfo.Labels =
-                JsonSerializer.Deserialize<List<Label>>(
-                    JsonSerializer.Serialize(Labels))!; // need a deep copy
 
             // we try processing playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
             foreach (Label label in vndbInfo.Labels)
@@ -190,23 +238,33 @@ public partial class PlayerPreferencesComponent
             }
 
             var vns = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
-            vndbInfo.Labels = vns;
+            var intersect = Label.MergeLabels(vndbInfo.Labels, vns);
 
-            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
-                new ReqSetVndbInfo(ClientState.Session!.Token, vndbInfo));
-
-            if (res.IsSuccessStatusCode)
+            foreach (Label label in vns)
             {
-                ClientState.Session.VndbInfo = vndbInfo;
-                await FetchLabels(vndbInfo);
+                if (!intersect.Contains(label))
+                {
+                    vndbInfo.Labels.Add(label);
+                }
             }
-            else
-            {
-                // todo warn user
-                Labels.Clear();
-            }
-
-            StateHasChanged();
         }
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
+            new ReqSetVndbInfo(ClientState.Session!.Token, vndbInfo));
+
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+        }
+        else
+        {
+            // todo warn user
+
+            //todo?
+            // Labels.Clear();
+        }
+
+        LoginInProgress = false;
+        StateHasChanged();
     }
 }

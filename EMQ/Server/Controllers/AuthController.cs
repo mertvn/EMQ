@@ -41,13 +41,30 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResCreateSession>> CreateSession([FromBody] ReqCreateSession req)
     {
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
-        string username = req.UsernameOrEmail;
 
+        string username;
         int playerId;
         string token;
         UserRoleKind userRoleKind;
 
-        if (!string.IsNullOrWhiteSpace(req.Password))
+        if (req.IsGuest)
+        {
+            if (!ServerState.AllowGuests)
+            {
+                return Unauthorized();
+            }
+
+            token = Guid.NewGuid().ToString();
+            userRoleKind = UserRoleKind.Guest;
+
+            do
+            {
+                playerId = Convert.ToInt32(Random.Shared.Next().ToString()[..7]);
+            } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
+
+            username = $"Guest-{playerId}";
+        }
+        else if (!string.IsNullOrWhiteSpace(req.Password))
         {
             User? user = await AuthManager.Login(req.UsernameOrEmail, req.Password);
             if (user != null)
@@ -100,51 +117,21 @@ public class AuthController : ControllerBase
                 return Unauthorized();
             }
         }
-        else if (ServerState.AllowGuests)
-        {
-            // todo require explicitly clicking on Play as Guest to get here
-            token = Guid.NewGuid().ToString();
-            bool isGuest = false; // todo
-            if (isGuest)
-            {
-                userRoleKind = UserRoleKind.Guest;
-            }
-            else
-            {
-                userRoleKind = UserRoleKind.User;
-            }
-
-            // todo force guests to enter here regardless of username availability?
-            if (!await DbManager.IsUsernameAvailable(username))
-            {
-                do
-                {
-                    username = $"Guest-{Guid.NewGuid().ToString()[..7]}";
-                } while (ServerState.Sessions.Any(x => x.Player.Username == username));
-            }
-
-            do
-            {
-                playerId = Random.Shared.Next();
-            } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
-        }
         else
         {
             return Unauthorized();
         }
 
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId);
         var player = new Player(playerId, username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
-        var session = new Session(player, token, userRoleKind)
-        {
-            VndbInfo = new PlayerVndbInfo() { VndbId = req.VndbInfo.VndbId, Labels = req.VndbInfo.Labels }
-        };
+        var session = new Session(player, token, userRoleKind);
 
         ServerState.AddSession(session);
 
         _logger.LogInformation(
-            $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} ({session.VndbInfo.VndbId}) @ {ip}");
+            $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} ({vndbInfo.VndbId}) @ {ip}");
 
-        return new ResCreateSession(session);
+        return new ResCreateSession(session, vndbInfo);
     }
 
     [EnableRateLimiting(RateLimitKind.Login)]
@@ -191,7 +178,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpPost]
     [Route("ValidateSession")]
-    public async Task<ActionResult<Session>> ValidateSession([FromBody] Session req)
+    public async Task<ActionResult<ResValidateSession>> ValidateSession([FromBody] Session req)
     {
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
@@ -206,27 +193,36 @@ public class AuthController : ControllerBase
             }
         }
 
+        PlayerVndbInfo? vndbInfo = null;
         if (session == null)
         {
             if (secret is not null)
             {
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous secret");
-                // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
-                var reqCreateSession = new ReqCreateSession(secret.user_id, secret.token.ToString(), req.VndbInfo);
-                session = (await CreateSession(reqCreateSession)).Value!.Session;
-                // Console.WriteLine($"new vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
+                var reqCreateSession = new ReqCreateSession(secret.user_id, secret.token.ToString());
+                var res = (await CreateSession(reqCreateSession)).Value!;
+                session = res.Session;
+                vndbInfo = res.VndbInfo;
             }
             else if (ServerState.RememberGuestsBetweenServerRestarts)
             {
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous session");
-                // Console.WriteLine($"prev vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
-                var reqCreateSession = new ReqCreateSession(req.Player.Username, "", req.VndbInfo);
-                session = (await CreateSession(reqCreateSession)).Value!.Session;
-                // Console.WriteLine($"new vndbinfo: {JsonSerializer.Serialize(req.VndbInfo)}");
+                var reqCreateSession = new ReqCreateSession(req.Player.Username, "", true);
+                var res = (await CreateSession(reqCreateSession)).Value!;
+                session = res.Session;
+                vndbInfo = res.VndbInfo;
             }
         }
 
-        return session == null ? Unauthorized() : session;
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+        else
+        {
+            vndbInfo ??= await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+            return new ResValidateSession(session, vndbInfo);
+        }
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
@@ -240,24 +236,29 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        if (session.VndbInfo.Labels != null)
+        PlayerVndbInfo vndbInfo = await DbManager.GetUserVndbInfo(session.Player.Id);
+        if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
-            var existingLabel = session.VndbInfo.Labels.FirstOrDefault(x => x.Id == req.Label.Id);
-            Console.WriteLine(
-                $"{session.VndbInfo.VndbId}: {existingLabel?.Id ?? req.Label.Id} ({existingLabel?.Name ?? req.Label.Name}), {existingLabel?.Kind ?? 0} => {req.Label.Kind}");
-
-            if (existingLabel != null)
-            {
-                session.VndbInfo.Labels.RemoveAll(x => x.Id == req.Label.Id);
-            }
-
-            session.VndbInfo.Labels.Add(req.Label);
-            return req.Label;
+            throw new Exception("Couldn't GetUserVndbInfo");
         }
-        else
+
+        // todo
+        var userLabel = new UserLabel
         {
-            throw new Exception("Could not find the label to update");
-        }
+            user_id = session.Player.Id,
+            vndb_uid = vndbInfo.VndbId,
+            vndb_label_id = req.Label.Id,
+            vndb_label_name = req.Label.Name,
+            vndb_label_is_private = req.Label.IsPrivate,
+            kind = (int)req.Label.Kind,
+        };
+        int userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
+
+        var userLabelVns = await DbManager.GetUserLabelVns(userLabelId);
+        var label = ServerUtils.FromUserLabel(userLabel);
+        label.VNs = userLabelVns.ToDictionary(x => x.vnid, x => x.vote);
+
+        return label;
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
@@ -276,10 +277,25 @@ public class AuthController : ControllerBase
         return session.Player.Preferences;
     }
 
+    // [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    // [HttpPost]
+    // [Route("GetVndbInfo")]
+    // public async Task<ActionResult<PlayerVndbInfo>> GetVndbInfo([FromBody] ReqSetVndbInfo req)
+    // {
+    //     var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+    //     if (session == null)
+    //     {
+    //         return Unauthorized();
+    //     }
+    //
+    //     var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+    //     return vndbInfo;
+    // }
+
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
     [HttpPost]
     [Route("SetVndbInfo")]
-    public async Task<ActionResult> SetVndbInfo([FromBody] ReqSetVndbInfo req)
+    public async Task<ActionResult<PlayerVndbInfo>> SetVndbInfo([FromBody] ReqSetVndbInfo req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session == null)
@@ -287,16 +303,32 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId))
+        _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
+
+        // Constraint: A user can only have a single vndb account connected at any given time
+        await DbManager.DeleteUserLabels(session.Player.Id);
+
+        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId) && req.VndbInfo.Labels is not null)
         {
-            _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
-            session.VndbInfo = req.VndbInfo;
-            return Ok();
+            // todo? batch
+            foreach (Label label in req.VndbInfo.Labels)
+            {
+                var userLabel = new UserLabel
+                {
+                    user_id = session.Player.Id,
+                    vndb_uid = req.VndbInfo.VndbId,
+                    vndb_label_id = label.Id,
+                    vndb_label_name = label.Name,
+                    vndb_label_is_private = label.IsPrivate,
+                    kind = (int)label.Kind,
+                };
+                int _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);
+            }
         }
-        else
-        {
-            return BadRequest();
-        }
+
+        // todo this is inefficient
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+        return vndbInfo;
     }
 
     [CustomAuthorize(PermissionKind.Visitor)]
@@ -390,7 +422,7 @@ public class AuthController : ControllerBase
         }
 
         Secret secret = await AuthManager.CreateSecret(userId, ip);
-        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
@@ -418,8 +450,7 @@ public class AuthController : ControllerBase
 
         Secret secret = await AuthManager.CreateSecret(userId, ip);
 
-        // todo keep PlayerVndbInfo
-        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
@@ -459,8 +490,7 @@ public class AuthController : ControllerBase
 
         Secret secret = await AuthManager.CreateSecret(userId, ip);
 
-        // todo keep PlayerVndbInfo
-        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString(), new PlayerVndbInfo());
+        var reqCreateSession = new ReqCreateSession(userId, secret.token.ToString());
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;

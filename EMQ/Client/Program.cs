@@ -6,6 +6,7 @@ using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using BlazorWasmProfiler;
 using EMQ.Client;
+using EMQ.Client.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddSingleton(_ => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddSingleton<ClientUtils>();
 builder.Services.AddSingleton<ClientConnectionManager>();
+// builder.Services.AddSingleton<PlayerPreferencesComponent>();
 
 builder.Services.AddBlazorise(options => { options.Immediate = true; }).AddBootstrap5Providers().AddFontAwesomeIcons();
 

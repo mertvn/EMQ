@@ -23,7 +23,7 @@ public static class ServerState
 
     public static bool AllowGuests { get; set; } = true;
 
-    public static bool RememberGuestsBetweenServerRestarts { get; set; } = true;
+    public static bool RememberGuestsBetweenServerRestarts { get; set; } = false;
 
     public static bool IsServerReadOnly { get; set; } = false; // todo check this in more places
 

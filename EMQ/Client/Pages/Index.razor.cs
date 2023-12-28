@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Client.Components;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -23,16 +24,14 @@ public partial class Index
     public class LoginModel
     {
         [Required]
-        public string UsernameOrEmail { get; set; } = "Guest";
+        public string UsernameOrEmail { get; set; } = "";
 
+        [Required]
+        [StringLength(AuthStuff.MaxPasswordLength, MinimumLength = AuthStuff.MinPasswordLength)]
         public string Password { get; set; } = "";
 
-        [RegularExpression(RegexPatterns.VndbIdRegex,
-            ErrorMessage = "Invalid VNDB Id: make sure it looks like u1234567")]
-        public string? VndbId { get; set; }
-
-        // [MinLength(32, ErrorMessage = "Invalid VNDB API Token")] // prevents login if users enter something random, and then deletes it
-        public string? VndbApiToken { get; set; }
+        [Required]
+        public bool IsGuest { get; set; } = false;
     }
 
     private LoginModel _loginModel = new();
@@ -81,92 +80,10 @@ public partial class Index
             LoginInProgress = true;
             StateHasChanged();
 
-            if (!string.IsNullOrWhiteSpace(loginModel.VndbApiToken))
-            {
-                LoginProgressDisplay.Add("Validating VNDB API Token...");
-                var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = loginModel.VndbApiToken });
-                if (resAuth != null)
-                {
-                    const string vndbPermName = "listread"; // todo
-                    if (!resAuth.Permissions.Contains(vndbPermName))
-                    {
-                        LoginProgressDisplay.Add(
-                            $"Error: VNDB API Token does not have the necessary permissions: {vndbPermName}");
-                        LoginInProgress = false;
-                        LoginProgressDisplay.Add("Login cancelled.");
-                        StateHasChanged();
-                        return;
-                    }
-                    else
-                    {
-                        LoginProgressDisplay.Add("Successfully validated VNDB API Token.");
-                        StateHasChanged();
-                    }
-                }
-                else
-                {
-                    LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
-                    LoginInProgress = false;
-                    LoginProgressDisplay.Add("Login cancelled.");
-                    StateHasChanged();
-                    return;
-                }
-            }
-
-            List<Label>? vns = null;
-            var playerVndbInfo = new PlayerVndbInfo()
-            {
-                VndbId = loginModel.VndbId, VndbApiToken = loginModel.VndbApiToken, Labels = vns,
-            };
-
-            if (!string.IsNullOrWhiteSpace(playerVndbInfo.VndbId))
-            {
-                LoginProgressDisplay.Add("Grabbing VNs from VNDB...");
-                StateHasChanged();
-
-                var labels = new List<Label>();
-                VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(playerVndbInfo);
-
-                foreach (VNDBLabel vndbLabel in vndbLabels)
-                {
-                    labels.Add(Label.FromVndbLabel(vndbLabel));
-                }
-
-                // we try including playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
-                foreach (Label label in labels)
-                {
-                    switch (label.Name.ToLowerInvariant())
-                    {
-                        case "playing":
-                        case "finished":
-                        case "stalled":
-                        case "voted":
-                        case "emq-wl":
-                            label.Kind = LabelKind.Include;
-                            break;
-                        case "emq-bl":
-                            label.Kind = LabelKind.Exclude;
-                            break;
-                    }
-                }
-
-                playerVndbInfo.Labels = labels;
-                vns = await VndbMethods.GrabPlayerVNsFromVndb(playerVndbInfo);
-            }
-
-            if (vns is not null)
-            {
-                LoginProgressDisplay.Add("Grabbed VNs from VNDB.");
-                StateHasChanged();
-            }
-
             LoginProgressDisplay.Add($"Creating session...");
             StateHasChanged();
             HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/CreateSession",
-                new ReqCreateSession(
-                    loginModel.UsernameOrEmail,
-                    loginModel.Password,
-                    new PlayerVndbInfo() { VndbId = loginModel.VndbId, Labels = vns }));
+                new ReqCreateSession(loginModel.UsernameOrEmail, loginModel.Password, loginModel.IsGuest));
 
             if (res.IsSuccessStatusCode)
             {
@@ -177,7 +94,7 @@ public partial class Index
                     StateHasChanged();
 
                     ClientState.Session = resCreateSession.Session;
-                    ClientState.Session.VndbInfo.VndbApiToken = loginModel.VndbApiToken;
+                    ClientState.VndbInfo = resCreateSession.VndbInfo;
                     await _clientUtils.SaveSessionToLocalStorage();
 
                     _client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
@@ -188,6 +105,10 @@ public partial class Index
                     await _clientConnectionManager.StartManagingConnection();
                     LoginProgressDisplay.Add($"Initialized websocket connection.");
                     StateHasChanged();
+
+                    // LoginProgressDisplay.Add($"Synchronizing VNDB list...");
+                    // StateHasChanged();
+                    // await _playerPreferencesComponent.GetVndbInfoFromServer(resCreateSession.VndbInfo);
 
                     LoginProgressDisplay.Add($"Successfully logged in.");
                     LoginInProgress = false;
@@ -222,5 +143,13 @@ public partial class Index
     private void Onclick_ForgottenPassword()
     {
         _navigation.NavigateTo("/ForgottenPasswordPage", forceLoad: false);
+    }
+
+    private async Task Onclick_PlayAsGuest()
+    {
+        _loginModel.UsernameOrEmail = "Guest";
+        _loginModel.Password = "GuestGuestGuestGuest";
+        _loginModel.IsGuest = true;
+        await Login(_loginModel);
     }
 }

@@ -156,14 +156,13 @@ public partial class LibraryPage
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
     {
-        var session = ClientState.Session;
-        if (session?.VndbInfo.Labels != null)
+        if (ClientState.VndbInfo.Labels != null)
         {
             CurrentSongs = new List<Song>();
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            var req = new ReqFindSongsByLabels(session.VndbInfo.Labels);
+            var req = new ReqFindSongsByLabels(ClientState.VndbInfo.Labels);
             var res = await _client.PostAsJsonAsync("Library/FindSongsByLabels", req);
             if (res.IsSuccessStatusCode)
             {
@@ -200,7 +199,7 @@ public partial class LibraryPage
             StateHasChanged();
 
             string[]? vndbUrls =
-                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(ClientState.Session?.VndbInfo, VndbAdvsearchStr);
+                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(ClientState.VndbInfo, VndbAdvsearchStr);
             if (vndbUrls != null && vndbUrls.Any())
             {
                 var req = vndbUrls;

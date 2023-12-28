@@ -25,8 +25,6 @@ public class Session
     // Only available client-side.
     public HubConnection? hubConnection { get; set; }
 
-    public PlayerVndbInfo VndbInfo { get; set; } = new();
-
     public DateTime CreatedAt { get; }
 
     public UserRoleKind UserRoleKind { get; }

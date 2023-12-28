@@ -32,6 +32,7 @@ public sealed class AuthDatabaseCleanupService : BackgroundService
 
     private static async Task<int> DoWork()
     {
+        // todo delete users_label rows belonging to inexisting guests
         return await DbManager.DeleteExpiredVerificationRows();
     }
 }

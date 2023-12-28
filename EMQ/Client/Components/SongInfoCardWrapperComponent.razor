@@ -7,6 +7,9 @@
 @{
     // todo? move
     bool isAdmin = ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin);
+
+    // todo check the actual permission instead of just role
+    bool hasImportSongLinkPerms = ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.User);
 }
 
 @if (IsLibraryPage)
@@ -179,7 +182,7 @@
                                             <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
                                             <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
                                         </div>
-                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null)"/>
+                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
                                     </EditForm>
                                 }
                             }

@@ -2,9 +2,9 @@
 
 namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 
-public class ResCreateSession
+public class ResValidateSession
 {
-    public ResCreateSession(Session session, PlayerVndbInfo vndbInfo)
+    public ResValidateSession(Session session, PlayerVndbInfo vndbInfo)
     {
         Session = session;
         VndbInfo = vndbInfo;

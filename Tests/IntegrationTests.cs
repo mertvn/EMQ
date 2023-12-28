@@ -29,7 +29,7 @@ public class IntegrationTests
                 new ReqCreateSession(
                     "p0",
                     "",
-                    new PlayerVndbInfo() { VndbId = "", VndbApiToken = "" }));
+                    true));
 
             ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
             var session = resCreateSession!.Session;
@@ -75,7 +75,7 @@ public class IntegrationTests
                     new ReqCreateSession(
                         $"p{currentPlayer}",
                         "",
-                        new PlayerVndbInfo() { VndbId = "", VndbApiToken = "" }));
+                        true));
 
                 ResCreateSession? resCreateSession = await res.Content.ReadFromJsonAsync<ResCreateSession>();
                 var session = resCreateSession!.Session;

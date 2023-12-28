@@ -15,7 +15,7 @@ public class PlayerVndbInfo
     public string? VndbId { get; set; }
 
     [JsonIgnore]
-    public string? VndbApiToken { get; set; }
+    public string? VndbApiToken { get; set; } // do not use from the Client!
 
     public List<Label>? Labels { get; set; }
 }

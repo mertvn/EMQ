@@ -2934,4 +2934,83 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             return rows;
         }
     }
+
+    // todo return null if not found
+    public static async Task<PlayerVndbInfo> GetUserVndbInfo(int userId)
+    {
+        // todo? store actual vndb info and return that instead of this
+        const string sql = "SELECT * from users_label where user_id = @user_id";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            var userLabel = (await connection.QueryAsync<UserLabel>(sql, new { user_id = userId, })).ToList();
+            return new PlayerVndbInfo
+            {
+                VndbId = userLabel.FirstOrDefault()?.vndb_uid, VndbApiToken = null, Labels = null
+            };
+        }
+    }
+
+    public static async Task<List<UserLabel>> GetUserLabels(int userId, string vndbUid)
+    {
+        const string sql = "SELECT * from users_label where user_id = @user_id AND vndb_uid = @vndb_uid";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return (await connection.QueryAsync<UserLabel>(sql,
+                new { user_id = userId, vndb_uid = vndbUid })).ToList();
+        }
+    }
+
+    public static async Task<List<UserLabelVn>> GetUserLabelVns(long usersLabelId)
+    {
+        const string sql = "SELECT * from users_label_vn where users_label_id = @users_label_id";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return (await connection.QueryAsync<UserLabelVn>(sql, new { users_label_id = usersLabelId, })).ToList();
+        }
+    }
+
+    // we delete and recreate the label and the vns it contains every time because it's mendokusai to diff,
+    // and it's probably faster this way anyways
+    public static async Task<int> RecreateUserLabel(UserLabel userLabel, Dictionary<string, int> vns)
+    {
+        // todo transaction
+        const string sqlDelete =
+            "DELETE from users_label where user_id = @user_id AND vndb_uid = @vndb_uid AND vndb_label_id = @vndb_label_id";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            await connection.ExecuteAsync(sqlDelete,
+                new { userLabel.user_id, userLabel.vndb_uid, userLabel.vndb_label_id });
+
+            int userLabelId = await connection.InsertAsync(userLabel);
+            if (userLabelId <= 0)
+            {
+                throw new Exception("Failed to insert UserLabel");
+            }
+
+            var userLabelVns = new List<UserLabelVn>();
+            foreach ((string vnurl, int vote) in vns)
+            {
+                // todo? convert vnurl to vnid
+                var userLabelVn = new UserLabelVn { users_label_id = userLabelId, vnid = vnurl, vote = vote };
+                userLabelVns.Add(userLabelVn);
+            }
+
+            long userLabelVnRows = connection.Insert(userLabelVns);
+            if (userLabelVnRows != vns.Count)
+            {
+                throw new Exception("Failed to insert userLabelVnRows");
+            }
+
+            return userLabelId;
+        }
+    }
+
+    public static async Task DeleteUserLabels(int userId)
+    {
+        const string sqlDelete = "DELETE from users_label where user_id = @user_id";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            await connection.ExecuteAsync(sqlDelete, new { user_id = userId });
+        }
+    }
 }

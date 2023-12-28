@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -8,6 +10,8 @@ using System.Runtime;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
@@ -83,5 +87,71 @@ public static class ServerUtils
         }
 
         return ip;
+    }
+
+    // todo move all of these
+    public static async Task<List<PlayerVndbInfo>> GetAllVndbInfos(List<Session> sessions)
+    {
+        var ret = new List<PlayerVndbInfo>();
+        foreach (Session session in sessions)
+        {
+            var vndbInfo = await GetVndbInfo_Inner(session.Player.Id);
+            ret.Add(vndbInfo ?? throw new InvalidOperationException());
+        }
+
+        return ret;
+    }
+
+    public static Label FromUserLabel(UserLabel userLabel)
+    {
+        var label = new Label()
+        {
+            Id = userLabel.vndb_label_id,
+            IsPrivate = userLabel.vndb_label_is_private,
+            Name = userLabel.vndb_label_name,
+            Kind = (LabelKind)userLabel.kind,
+        };
+        return label;
+    }
+
+    // todo return null if not found
+    public static async Task<PlayerVndbInfo> GetVndbInfo_Inner(int userId)
+    {
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
+        var vndbInfo = await DbManager.GetUserVndbInfo(userId);
+        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+        {
+            var userLabels = await DbManager.GetUserLabels(userId, vndbInfo.VndbId);
+            vndbInfo.Labels = new List<Label>();
+
+            // todo batch
+            // todo? method
+            foreach (UserLabel userLabel in userLabels)
+            {
+                var label = FromUserLabel(userLabel);
+                var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                foreach (UserLabelVn userLabelVn in userLabelVns)
+                {
+                    label.VNs[userLabelVn.vnid] = userLabelVn.vote;
+                }
+
+                vndbInfo.Labels.Add(label);
+            }
+        }
+
+        if (vndbInfo.Labels != null)
+        {
+            // default labels (Id <= 7) are always first, and then the custom labels appear in an alphabetically-sorted order
+            // this implementation doesn't work correctly if the user has labels named 0-9, but meh
+            vndbInfo.Labels = vndbInfo.Labels.OrderBy(x => x.Id <= 7 ? x.Id.ToString() : x.Name).ToList();
+        }
+
+        stopWatch.Stop();
+        Console.WriteLine(
+            $"GetVndbInfo_Inner took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+        return vndbInfo;
     }
 }

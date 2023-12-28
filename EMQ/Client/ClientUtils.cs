@@ -5,7 +5,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
+using EMQ.Client.Components;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -16,12 +18,15 @@ namespace EMQ.Client;
 public class ClientUtils
 {
     public ClientUtils(ILogger<ClientUtils> logger, HttpClient client, ILocalStorageService localStorage,
-        ClientConnectionManager clientConnectionManager)
+        ClientConnectionManager clientConnectionManager
+        // ,PlayerPreferencesComponent playerPreferencesComponent
+        )
     {
         Logger = logger;
         Client = client;
         LocalStorage = localStorage;
         ClientConnectionManager = clientConnectionManager;
+        // PlayerPreferencesComponent = playerPreferencesComponent;
     }
 
     [Inject]
@@ -35,6 +40,9 @@ public class ClientUtils
 
     [Inject]
     private ClientConnectionManager ClientConnectionManager { get; }
+
+    // [Inject]
+    // private PlayerPreferencesComponent PlayerPreferencesComponent { get; }
 
     private bool IsRestoringSession { get; set; }
 
@@ -66,6 +74,7 @@ public class ClientUtils
 
     public async Task SaveSessionToLocalStorage()
     {
+        Console.WriteLine("saving session to local storage");
         await SaveToLocalStorage("session", ClientState.Session!);
     }
 
@@ -95,11 +104,14 @@ public class ClientUtils
                     HttpResponseMessage res = await Client.PostAsJsonAsync("Auth/ValidateSession", session);
                     if (res.IsSuccessStatusCode)
                     {
-                        ClientState.Session = await res.Content.ReadFromJsonAsync<Session>();
-                        await SaveSessionToLocalStorage();
+                        var content = (await res.Content.ReadFromJsonAsync<ResValidateSession>())!;
+                        ClientState.Session = content.Session;
+                        ClientState.VndbInfo = content.VndbInfo;
 
                         Client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
                             ClientState.Session!.Token);
+                        //await PlayerPreferencesComponent.GetVndbInfoFromServer(ClientState.VndbInfo);
+                        await SaveSessionToLocalStorage();
 
                         await ClientConnectionManager.StartManagingConnection();
                     }

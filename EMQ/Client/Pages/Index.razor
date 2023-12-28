@@ -10,6 +10,7 @@
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
 @inject ClientConnectionManager _clientConnectionManager
+@* @inject PlayerPreferencesComponent _playerPreferencesComponent *@
 
 @* <a href="MethodCallStatistics">Method Call Statistics</a> *@
 @* <a href="RenderTimeStatistics">Render Time Statistics</a> *@
@@ -49,35 +50,27 @@
                     <br/>
                 </details>
             }
-
         </div>
     }
     else if (LoginInProgress || ClientState.Session == null)
     {
-        <p>Welcome to EMQ, please login.</p>
+        <p>Welcome to EMQ, please login in order to play.</p>
         <div>
-
             <EditForm Model="@_loginModel" OnValidSubmit="@(() => Login(_loginModel))">
                 <DataAnnotationsValidator/>
                 <ValidationSummary/>
 
-                <InputText id="Username" type="text" @bind-Value="_loginModel.UsernameOrEmail" style="margin: 5px"/>
-                <label for="Username">Username</label> @* todo UsernameOrEmail *@
+                <InputText id="UsernameOrEmail" type="text" @bind-Value="_loginModel.UsernameOrEmail" style="margin: 5px"/>
+                <label for="UsernameOrEmail">Username or email</label>
                 <br/>
 
-                <InputText id="VndbId" type="text" @bind-Value="_loginModel.VndbId" style="margin: 5px"/>
-                <label for="VndbId">VNDB Id (Optional)</label>
-                <br/>
-
-                <InputText id="VndbApiToken" type="text" @bind-Value="_loginModel.VndbApiToken" style="margin: 5px"/>
-                <label for="VndbApiToken">
-                    <a href="https://vndb.org/u/tokens" target="_blank">VNDB API Token</a> (Optional, only required if your list is private, not sent to server)
-                </label>
+                <InputText id="Password" type="password" @bind-Value="_loginModel.Password" style="margin: 5px"/>
+                <label for="Password">Password</label>
                 <br/>
 
                 <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Login" disabled="@(ClientState.Session != null || LoginInProgress)"/>
+                <input style="margin-top: 5px; margin-left: 5px;" type="button" class="btn btn-primary" value="Play as Guest" @onclick="@(Onclick_PlayAsGuest)" disabled="@(ClientState.Session != null || LoginInProgress)"/>
             </EditForm>
-
         </div>
 
         <div>
@@ -89,17 +82,8 @@
             </ul>
         </div>
 
-        <details style="display: inline">
-            <summary></summary>
-            <p>Account system beta</p>
-            <p>You can test it out if you want, but the accounts you register may be deleted in the future.</p>
-            <InputText id="Password" type="password" @bind-Value="_loginModel.Password" style="margin: 5px"/>
-            <label for="Password">Password</label>
-            <br/>
-
-            <a id="register" class="link-primary" style="cursor: pointer" @onclick="@(Onclick_Register)">Register new account</a>
-            <br/>
-            <a id="forgottenPassword" class="link-primary" style="cursor: pointer" @onclick="@(Onclick_ForgottenPassword)">Reset forgotten password</a>
-        </details>
+        <a id="register" class="link-primary" style="cursor: pointer" @onclick="@(Onclick_Register)">Register new account</a>
+        <br/>
+        <a id="forgottenPassword" class="link-primary" style="cursor: pointer" @onclick="@(Onclick_ForgottenPassword)">Reset forgotten password</a>
     }
 </div>
