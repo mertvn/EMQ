@@ -21,16 +21,12 @@
     @if (ClientState.Session != null && !LoginInProgress)
     {
         bool isUserOrGreater = ClientState.Session.UserRoleKind >= UserRoleKind.User;
-        bool isModeratorOrGreater = ClientState.Session.UserRoleKind >= AuthStuff.LowestModeratorRole;
         string roleStr = ClientState.Session.UserRoleKind.ToString();
         <div>
             Currently logged in as @ClientState.Session.Player.Username
             <br/>
-            @if (true || isModeratorOrGreater)
-            {
-                <span>Role: @roleStr</span>
-                <br/>
-            }
+            <span>Role: @roleStr</span>
+            <br/>
 
             <button type="button" class="btn btn-primary" @onclick="Logout">Logout</button>
             <br/>
