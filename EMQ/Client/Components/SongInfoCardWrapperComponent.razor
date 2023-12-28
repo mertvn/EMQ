@@ -7,9 +7,7 @@
 @{
     // todo? move
     bool isAdmin = ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin);
-
-    // todo check the actual permission instead of just role
-    bool hasImportSongLinkPerms = ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.User);
+    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
 }
 
 @if (IsLibraryPage)

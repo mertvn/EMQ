@@ -65,6 +65,41 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
             { UserRoleKind.DatabaseModerator, DefaultDatabaseModeratorPermissions },
             { UserRoleKind.Admin, DefaultAdminPermissions },
         };
+
+    // probably should cache the result of this or something,
+    // unless we want to somehow make this user-based instead of role-based in the future
+    public static bool HasPermission(UserRoleKind role, PermissionKind permission)
+    {
+        var allRoles = Enum.GetValues<UserRoleKind>();
+
+        // List<UserRoleKind> userRoles =
+        //     allRoles.Where(userRoleKind => session.UserRoleKind.HasFlag(userRoleKind)).ToList();
+
+        List<UserRoleKind> userRoles = new();
+        foreach (UserRoleKind userRoleKind in allRoles)
+        {
+            if (role.HasFlag(userRoleKind))
+            {
+                userRoles.Add(userRoleKind);
+            }
+        }
+
+        // var userPermissions = Session.DefaultRolePermissionsDict
+        //     .Where(x => userRoles.Contains(x.Key))
+        //     .SelectMany(y => y.Value).ToList();
+
+        List<PermissionKind> userPermissions = new();
+        foreach ((UserRoleKind key, PermissionKind[]? value) in AuthStuff.DefaultRolePermissionsDict)
+        {
+            if (userRoles.Contains(key))
+            {
+                userPermissions.AddRange(value);
+            }
+        }
+
+        // Console.WriteLine($"userPermissions: {JsonSerializer.Serialize(userPermissions, Utils.JsoIndented)}");
+        return userPermissions.Contains(permission);
+    }
 }
 
 [Flags]
