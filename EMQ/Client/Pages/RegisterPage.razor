@@ -11,6 +11,7 @@
 {
     <p>Usernames must be between 2 and 16 characters long, and must contain only alphanumeric characters, except for "_" and "-", which are allowed.</p>
     <p>Usernames are considered public information, so don't pick anything sensitive.</p>
+    <p>Also please don't use an email containing your legal name, or an email you might lose access to in the future, like a school or work email.</p>
 
     <EditForm Model="@Model" OnValidSubmit="@(() => SendSetPasswordReq(Model))">
         <DataAnnotationsValidator/>

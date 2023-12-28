@@ -363,7 +363,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             throw new Exception("idk"); // todo?
         }
 
-        Console.WriteLine($"Created new secret for user {userId}");
+        Console.WriteLine($"Created new secret for {userId}");
         secret.id = secretId;
         return secret;
     }
