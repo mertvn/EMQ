@@ -306,8 +306,6 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
         var user = await DbManager.FindUserByUsername(username);
         if (user is null)
         {
-            return userId;
-            // todo enable this after guest revamp
             throw new Exception("User doesn't exist."); // todo?
         }
         else

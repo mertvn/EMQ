@@ -173,7 +173,7 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                int rows = await DbManager.SetSubmittedBy(uploadable.ResultUrl, submittedBy);
+                int rows = await DbManager.SetSubmittedBy(uploadable.ResultUrl!, submittedBy);
                 if (rows > 0)
                 {
                     totalRows += rows;
