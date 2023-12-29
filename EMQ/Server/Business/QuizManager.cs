@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -703,6 +703,14 @@ public class QuizManager
         // Quiz.Room.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
         // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
+        // todo handle hotjoining players
+        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
+        var vndbInfos = new Dictionary<int, PlayerVndbInfo>();
+        foreach (Session session in playerSessions)
+        {
+            vndbInfos[session.Player.Id] = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+        }
+
         List<Song> dbSongs;
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
@@ -718,7 +726,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = await GetPlayerLabelsForSong(dbSong);
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfos);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -831,7 +839,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = await GetPlayerLabelsForSong(dbSong);
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfos);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -1432,24 +1440,16 @@ public class QuizManager
         //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
     }
 
-    private async Task<Dictionary<int, List<Label>>> GetPlayerLabelsForSong(Song song)
+    private static Dictionary<int, List<Label>> GetPlayerLabelsForSong(Song song,
+        Dictionary<int, PlayerVndbInfo> vndbInfos)
     {
-        // todo handle hotjoining players
+        // todo? this could be written in a more efficient (batched) manner
         Dictionary<int, List<Label>> playerLabels = new();
-
-        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
-        foreach (Session session in playerSessions)
+        foreach ((int playerId, PlayerVndbInfo? vndbInfo) in vndbInfos)
         {
-            // todo batch
-            var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
-            if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
-            {
-                continue;
-            }
-
             if (vndbInfo.Labels != null)
             {
-                playerLabels[session.Player.Id] = new List<Label>();
+                playerLabels[playerId] = new List<Label>();
                 foreach (Label label in vndbInfo.Labels)
                 {
                     var currentSongSourceVndbUrls = song.Sources
@@ -1470,7 +1470,7 @@ public class QuizManager
                                 VNs = label.VNs,
                                 Kind = label.Kind
                             };
-                            playerLabels[session.Player.Id].Add(newLabel);
+                            playerLabels[playerId].Add(newLabel);
                         }
                         else
                         {
@@ -1483,7 +1483,7 @@ public class QuizManager
                                     .ToDictionary(x => x.Key, x => x.Value),
                                 Kind = label.Kind
                             };
-                            playerLabels[session.Player.Id].Add(newLabel);
+                            playerLabels[playerId].Add(newLabel);
                         }
                     }
                 }
