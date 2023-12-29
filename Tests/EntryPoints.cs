@@ -164,7 +164,9 @@ public class EntryPoints
         var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
         foreach (RQ rq in rqs)
         {
-            if (rq.analysis == "Pending")
+            if (rq.analysis == "Pending"
+                // || rq.analysis == "UnknownError"
+               )
             {
                 string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
 
