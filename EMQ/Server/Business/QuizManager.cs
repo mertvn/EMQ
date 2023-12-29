@@ -990,7 +990,7 @@ public class QuizManager
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
-                await TriggerSkipIfNecessary();
+                await TriggerSkipIfNecessary(false);
             }
             else
             {
@@ -1399,11 +1399,11 @@ public class QuizManager
             }
 
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
-            await TriggerSkipIfNecessary();
+            await TriggerSkipIfNecessary(true);
         }
     }
 
-    private async Task TriggerSkipIfNecessary()
+    private async Task TriggerSkipIfNecessary(bool printSkippingCount)
     {
         int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
         int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
@@ -1411,7 +1411,12 @@ public class QuizManager
 
         const float skipConst = 0.8f;
         int skipNumber = (int)Math.Round(activePlayersCount * skipConst, MidpointRounding.AwayFromZero);
-        Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
+
+        if (printSkippingCount)
+        {
+            Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
+        }
+
         if (isSkippingCount >= skipNumber)
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
