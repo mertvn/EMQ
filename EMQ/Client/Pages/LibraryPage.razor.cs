@@ -190,10 +190,9 @@ public partial class LibraryPage
 
     private async Task OnclickButtonFetchByVndbAdvsearchStr(MouseEventArgs arg)
     {
+        VndbAdvsearchStr = VndbAdvsearchStr.SanitizeVndbAdvsearchStr();
         if (!string.IsNullOrWhiteSpace(VndbAdvsearchStr))
         {
-            VndbAdvsearchStr = VndbAdvsearchStr.SanitizeVndbAdvsearchStr();
-
             CurrentSongs = new List<Song>();
             NoSongsText = "Loading...";
             StateHasChanged();

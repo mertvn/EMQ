@@ -642,6 +642,8 @@ public class QuizManager
             }
         }
 
+        Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
+            Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
         if (!string.IsNullOrWhiteSpace(Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter))
         {
             Quiz.Room.Log($"VNDB search filter is being processed.", -1, true);
@@ -651,9 +653,6 @@ public class QuizManager
 
             var task = Task.Run(async () =>
             {
-                Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
-                    Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
-
                 string[]? vndbUrls =
                     await VndbMethods.GetVnUrlsMatchingAdvsearchStr(null,
                         Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter, cancellationTokenSource.Token);
