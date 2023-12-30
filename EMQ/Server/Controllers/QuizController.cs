@@ -290,7 +290,7 @@ public class QuizController : ControllerBase
                     var quizManager = new QuizManager(quiz, _hubContext);
                     ServerState.AddQuizManager(quizManager);
                     room.Log("Created");
-                    room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
+                    // room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
 
                     if (await quizManager.PrimeQuiz())
                     {
@@ -351,12 +351,15 @@ public class QuizController : ControllerBase
             {
                 if (room.Quiz is null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing)
                 {
-                    // room.Password = req.RoomPassword; // todo
-                    room.QuizSettings = req.QuizSettings;
+                    var diff = QuizSettings.Diff(room.QuizSettings, req.QuizSettings);
+                    // Console.WriteLine(JsonSerializer.Serialize(diff, Utils.Jso));
 
-                    _logger.LogInformation("Changed room settings in r{room.Id}", room.Id);
+                    room.QuizSettings = req.QuizSettings;
                     room.Log("Room settings changed.", writeToChat: true);
-                    // todo write to chat (pretty)
+                    foreach (string d in diff)
+                    {
+                        room.Log(d, writeToChat: true);
+                    }
 
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                         .SendAsync("ReceiveUpdateRoomForRoom", room);
