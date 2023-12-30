@@ -248,7 +248,7 @@ public class QuizSettings
                 .Where(x => x.Value)
                 .Select(y => y.Key.GetDisplayName());
 
-            diff.Add($"Random song types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+            diff.Add($"VN original languages: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         if (JsonSerializer.Serialize(o.Filters.SongSourceSongTypeFilters) !=
