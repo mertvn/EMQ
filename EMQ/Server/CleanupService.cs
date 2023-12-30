@@ -29,6 +29,7 @@ public sealed class CleanupService : BackgroundService
         }
     }
 
+    // todo check room wasn't created in the last minute
     private static void DoWork()
     {
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
@@ -80,6 +81,18 @@ public sealed class CleanupService : BackgroundService
                     }
                 }
                 // todo make players spectators if they are connected but AFK
+            }
+        }
+
+        foreach (Session session in ServerState.Sessions)
+        {
+            bool isInARoom =
+                ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id)) != null;
+            if ((DateTime.UtcNow - session.Player.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(30) && !isInARoom)
+            {
+                Console.WriteLine(
+                    $"Evicting inactive session from memory p{session.Player.Id} {session.Player.Username}");
+                ServerState.RemoveSession(session, "CleanupService4");
             }
         }
     }
