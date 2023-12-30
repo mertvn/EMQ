@@ -649,7 +649,7 @@ public class QuizManager
             Quiz.Room.Log($"VNDB search filter is being processed.", -1, true);
             bool success = false;
             var cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
             var task = Task.Run(async () =>
             {
@@ -678,7 +678,7 @@ public class QuizManager
             }
             catch (Exception)
             {
-                Quiz.Room.Log($"VNDB search took longer than 15 seconds - canceling.", -1, true);
+                Quiz.Room.Log($"VNDB search took longer than 5 seconds - canceling.", -1, true);
             }
 
             if (!success)
