@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -151,7 +152,7 @@ public class QuizSettings
         var diff = new List<string>();
         if (o.NumSongs != n.NumSongs)
         {
-            diff.Add($"Maximum number of songs: {o.NumSongs} → {n.NumSongs}");
+            diff.Add($"Maximum songs: {o.NumSongs} → {n.NumSongs}");
         }
 
         if (o.UI_GuessMs != n.UI_GuessMs)
@@ -196,7 +197,7 @@ public class QuizSettings
 
         if (o.AnsweringKind != n.AnsweringKind)
         {
-            diff.Add($"Answering method: {o.AnsweringKind} → {n.AnsweringKind}");
+            diff.Add($"Answering method: {o.AnsweringKind.GetDescription()} → {n.AnsweringKind.GetDescription()}");
         }
 
         if (o.UI_LootingMs != n.UI_LootingMs)
@@ -237,31 +238,60 @@ public class QuizSettings
             diff.Add($"VNDB search filter: {o.Filters.VndbAdvsearchFilter} → {n.Filters.VndbAdvsearchFilter}");
         }
 
-        // todo
         if (JsonSerializer.Serialize(o.Filters.VNOLangs) != JsonSerializer.Serialize(n.Filters.VNOLangs))
         {
-            diff.Add($"VN original languages were modified.");
+            var ol = o.Filters.VNOLangs
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDisplayName());
+
+            var ne = n.Filters.VNOLangs
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDisplayName());
+
+            diff.Add($"Random song types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
-        // todo
         if (JsonSerializer.Serialize(o.Filters.SongSourceSongTypeFilters) !=
             JsonSerializer.Serialize(n.Filters.SongSourceSongTypeFilters))
         {
-            diff.Add($"Song types were modified.");
+            // string d = "";
+            foreach ((SongSourceSongType key, IntWrapper? oldValue) in o.Filters.SongSourceSongTypeFilters)
+            {
+                var newValue = n.Filters.SongSourceSongTypeFilters[key];
+                if (oldValue.Value != newValue.Value)
+                {
+                    diff.Add($"{key}: {oldValue.Value} → {newValue.Value}");
+                    // d += $"{key}: {oldValue.Value} → {newValue.Value}";
+                }
+            }
         }
 
-        // todo
         if (JsonSerializer.Serialize(o.Filters.SongSourceSongTypeRandomEnabledSongTypes) !=
             JsonSerializer.Serialize(n.Filters.SongSourceSongTypeRandomEnabledSongTypes))
         {
-            diff.Add($"Random song types were modified.");
+            var ol = o.Filters.SongSourceSongTypeRandomEnabledSongTypes
+                .Where(x => x.Value)
+                .Select(y => y.Key);
+
+            var ne = n.Filters.SongSourceSongTypeRandomEnabledSongTypes
+                .Where(x => x.Value)
+                .Select(y => y.Key);
+
+            diff.Add($"Random song types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
-        // todo
         if (JsonSerializer.Serialize(o.Filters.SongDifficultyLevelFilters) !=
             JsonSerializer.Serialize(n.Filters.SongDifficultyLevelFilters))
         {
-            diff.Add($"Song difficulties were modified.");
+            var ol = o.Filters.SongDifficultyLevelFilters
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDisplayName());
+
+            var ne = n.Filters.SongDifficultyLevelFilters
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDisplayName());
+
+            diff.Add($"Song difficulties: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         if (o.Filters.StartDateFilter != n.Filters.StartDateFilter ||
