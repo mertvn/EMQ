@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using ProtoBuf;
 
 namespace EMQ.Shared.Core;
 
@@ -235,5 +236,25 @@ public static class ExtensionMethods
         }
 
         return url.Replace(Constants.SelfhostAddress, "https://emqselfhost");
+    }
+
+    public static string SerializeToBase64String_PB<T>(this T obj)
+    {
+        // Tested out compressing with gzip (brotli is unavailable on browser) before encoding as base64,
+        // but it resulted in only 4-8% smaller size; decided it's not worth the added complexity/processing time.
+        using (MemoryStream ms = new())
+        {
+            Serializer.Serialize(ms, obj);
+            return Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Length);
+        }
+    }
+
+    public static T DeserializeFromBase64String_PB<T>(this string str)
+    {
+        byte[] arr = Convert.FromBase64String(str);
+        using (MemoryStream ms = new(arr))
+        {
+            return Serializer.Deserialize<T>(ms);
+        }
     }
 }

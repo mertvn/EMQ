@@ -1,20 +1,24 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using EMQ.Shared.Core;
+using ProtoBuf;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
+[ProtoContract]
 public class QuizSettings
 {
+    [ProtoMember(1)]
     [Required]
     [Range(1, 100)]
     [DefaultValue(40)]
     public int NumSongs { get; set; } = 40;
 
+    [ProtoMember(2)]
     [Required]
     [Range(5000, 60000)]
     [DefaultValue(25000)]
@@ -30,6 +34,7 @@ public class QuizSettings
         set { GuessMs = value * 1000; }
     }
 
+    [ProtoMember(3)]
     [Required]
     [Range(5000, 60000)]
     [DefaultValue(25000)]
@@ -45,41 +50,50 @@ public class QuizSettings
         set { ResultsMs = value * 1000; }
     }
 
+    [ProtoMember(4)]
     [Required]
     [Range(1, 1)]
     [DefaultValue(1)]
     public int PreloadAmount { get; set; } = 1;
 
+    [ProtoMember(5)]
     [Required]
     [DefaultValue(true)]
     public bool IsHotjoinEnabled { get; set; } = true;
 
+    [ProtoMember(6)]
     [Required]
     [Range(1, 777)]
     [DefaultValue(1)]
     public int TeamSize { get; set; } = 1;
 
+    [ProtoMember(7)]
     [Required]
     [DefaultValue(false)]
     public bool Duplicates { get; set; } = false;
 
+    [ProtoMember(8)]
     [Required]
     [Range(0, 9)]
     [DefaultValue(0)]
     public int MaxLives { get; set; } = 0;
 
+    [ProtoMember(9)]
     [Required]
     [DefaultValue(true)]
     public bool OnlyFromLists { get; set; } = true;
 
+    [ProtoMember(10)]
     [Required]
     [DefaultValue(SongSelectionKind.Random)]
     public SongSelectionKind SongSelectionKind { get; set; } = SongSelectionKind.Random;
 
+    [ProtoMember(11)]
     [Required]
     [DefaultValue(AnsweringKind.Typing)]
     public AnsweringKind AnsweringKind { get; set; } = AnsweringKind.Typing;
 
+    [ProtoMember(12)]
     [Required]
     [Range(10000, 250000)]
     [DefaultValue(120000)]
@@ -95,16 +109,19 @@ public class QuizSettings
         set { LootingMs = value * 1000; }
     }
 
+    [ProtoMember(13)]
     [Required]
     [Range(1, 25)]
     [DefaultValue(7)]
     public int InventorySize { get; set; } = 7;
 
+    [ProtoMember(14)]
     [Required]
     [Range(51, 100)]
     [DefaultValue(90)]
     public int WaitPercentage { get; set; } = 90;
 
+    [ProtoMember(15)]
     [Required]
     [Range(5000, 250000)]
     [DefaultValue(30000)]
@@ -123,6 +140,7 @@ public class QuizSettings
     [CustomValidation(typeof(QuizSettings), nameof(ValidateSongSourceSongTypeFiltersSum))]
     public int SongSourceSongTypeFiltersSum => Filters.SongSourceSongTypeFilters.Sum(x => x.Value.Value);
 
+    [ProtoMember(16)]
     [Required]
     public QuizFilters Filters { get; set; } = new();
 

@@ -3,10 +3,59 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using System.Collections.Generic
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using Microsoft.AspNetCore.Components
 @inject ILogger<QuizSettingsComponent> _logger
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+
+<GenericModal @ref="@_loadPresetModalRef"
+              Title="Load preset"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await ApplyUserQuizSettings(SelectedPresetName); })">
+    <input type="text" @bind="LoadFromCodeB64" @bind:event="oninput"/>
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await ApplyUserQuizSettingsFromB64(LoadFromCodeB64); })">
+        Load from code
+    </button>
+    <br/>
+    <br/>
+
+    @if (Presets.Any())
+    {
+        <select @bind="SelectedPresetName" @bind:event="oninput" style="margin: 5px">
+            @foreach (var preset in Presets)
+            {
+                <option value="@preset.Name">@preset.Name</option>
+            }
+        </select>
+        <br/>
+
+        <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_SharePreset(SelectedPresetName); })">
+            @SharePresetButtonText
+        </button>
+
+        <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })">
+            Delete preset
+        </button>
+    }
+    else
+    {
+        <span>You don't have any saved presets.</span>
+    }
+
+</GenericModal>
+
+<GenericModal @ref="@_savePresetModalRef"
+              Title="Save preset"
+              Size="@Blazorise.ModalSize.Default"
+              OkAction="@(async () => { await SendStoreUserQuizSettingsReq(NewPresetName); })">
+    Enter a name for your new preset in order to save it.
+    Preset names must be between 1 and 64 characters long.
+    If you have a preset with the same name, it will be overwritten.
+    <input type="text" @bind="NewPresetName"/>
+</GenericModal>
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
@@ -457,6 +506,19 @@
     </button>
     @if (!IsReadOnly)
     {
+        <button type="button" style="margin: 5px" class="btn btn-primary"
+                @onclick="@(() => { _loadPresetModalRef.Show(); })">
+            Load preset
+        </button>
+
+        @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
+        {
+            <button type="button" style="margin: 5px" class="btn btn-primary"
+                    @onclick="@(() => { _savePresetModalRef.Show(); })">
+                Save preset
+            </button>
+        }
+
         <button type="button" style="margin: 5px" class="btn btn-warning"
                 @onclick="ResetQuizSettings">
             Reset to default

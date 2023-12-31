@@ -14,8 +14,10 @@ using Dapper;
 using Dapper.Contrib.Extensions;
 using DapperQueryBuilder;
 using EMQ.Server.Business;
+using EMQ.Server.Controllers;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz;
@@ -3011,6 +3013,41 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
             await connection.ExecuteAsync(sqlDelete, new { user_id = userId });
+        }
+    }
+
+    public static async Task<List<ResGetUserQuizSettings>> SelectUserQuizSettings(int userId)
+    {
+        const string sql = "SELECT name, b64 from users_quiz_settings where user_id = @user_id ORDER BY name";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            var usersQuizSettings = await connection.QueryAsync<ResGetUserQuizSettings>(sql, new { user_id = userId });
+            return usersQuizSettings.ToList();
+        }
+    }
+
+    public static async Task InsertUserQuizSettings(int userId, string name, string b64)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
+        {
+            const string sqlDelete = "DELETE from users_quiz_settings where user_id = @user_id AND name = @name";
+            await connection.ExecuteAsync(sqlDelete, new { user_id = userId, name = name }, transaction);
+
+            var usersQuizSettings =
+                new UserQuizSettings { user_id = userId, name = name, b64 = b64, created_at = DateTime.UtcNow };
+            await connection.InsertAsync(usersQuizSettings, transaction);
+            await transaction.CommitAsync();
+        }
+    }
+
+    public static async Task DeleteUserQuizSettings(int userId, string name)
+    {
+        const string sqlDelete = "DELETE from users_quiz_settings where user_id = @user_id AND name = @name";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            await connection.ExecuteAsync(sqlDelete, new { user_id = userId, name = name });
         }
     }
 }

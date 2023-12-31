@@ -5,11 +5,16 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Components;
 
@@ -45,9 +50,38 @@ public partial class QuizSettingsComponent
 
     private EditContext EditContext = null!;
 
-    protected override void OnInitialized()
+    private GenericModal _loadPresetModalRef = null!;
+
+    private GenericModal _savePresetModalRef = null!;
+
+    public string NewPresetName { get; set; } = "";
+
+    public List<ResGetUserQuizSettings> Presets { get; set; } = new();
+
+    public string SelectedPresetName { get; set; } = "";
+
+    public string SharePresetButtonText { get; set; } = "Share";
+
+    public string LoadFromCodeB64 { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
     {
         SetNewEditContext(ClientQuizSettings);
+
+        // todo? move to load preset opening
+        while (ClientState.Session is null)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(500));
+        }
+
+        if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
+        {
+            var res = await SendGetUserQuizSettingsReq(ClientState.Session.Token);
+            if (res != null)
+            {
+                Presets = res;
+            }
+        }
     }
 
     protected override bool ShouldRender()
@@ -289,5 +323,157 @@ public partial class QuizSettingsComponent
         }
 
         // StateHasChanged();
+    }
+
+    private async Task SendStoreUserQuizSettingsReq(string name)
+    {
+        if (ClientState.Session == null)
+        {
+            return;
+        }
+
+        string b64 = ClientQuizSettings.SerializeToBase64String_PB();
+        Console.WriteLine(b64);
+        Console.WriteLine(b64.Length);
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Auth/StoreUserQuizSettings",
+            new ReqStoreUserQuizSettings(ClientState.Session.Token, name, b64));
+
+        if (res1.IsSuccessStatusCode)
+        {
+            var resGetUserQuizSettings = await SendGetUserQuizSettingsReq(ClientState.Session.Token);
+            if (resGetUserQuizSettings != null)
+            {
+                Presets = resGetUserQuizSettings;
+                NewPresetName = "";
+                _savePresetModalRef.Hide();
+            }
+            else
+            {
+                // todo warn error
+            }
+        }
+        else
+        {
+            // todo warn error
+        }
+
+        StateHasChanged();
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+    private async Task<List<ResGetUserQuizSettings>?> SendGetUserQuizSettingsReq(string token)
+    {
+        var resGet = await _client.GetAsync($"Auth/GetUserQuizSettings?token={token}");
+        if (resGet.IsSuccessStatusCode)
+        {
+            List<ResGetUserQuizSettings> resGetUserQuizSettings =
+                (await resGet.Content.ReadFromJsonAsync<List<ResGetUserQuizSettings>>())!;
+            return resGetUserQuizSettings;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private async Task ApplyUserQuizSettings(string name)
+    {
+        try
+        {
+            var preset = Presets.SingleOrDefault(x => x.Name == name);
+            if (preset == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(preset.B64))
+            {
+                ClientQuizSettings = preset.B64.DeserializeFromBase64String_PB<QuizSettings>();
+                LoadFromCodeB64 = "";
+                _loadPresetModalRef.Hide();
+                StateHasChanged();
+                ParentStateHasChangedCallback?.Invoke();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            // todo warn user
+        }
+    }
+
+    private async Task ApplyUserQuizSettingsFromB64(string b64)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(b64))
+            {
+                ClientQuizSettings = b64.DeserializeFromBase64String_PB<QuizSettings>();
+                LoadFromCodeB64 = "";
+                _loadPresetModalRef.Hide();
+                StateHasChanged();
+                ParentStateHasChangedCallback?.Invoke();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            // todo warn user
+        }
+    }
+
+    private async Task Onclick_SharePreset(string name)
+    {
+        var preset = Presets.SingleOrDefault(x => x.Name == name);
+        if (preset == null)
+        {
+            return;
+        }
+
+        await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", preset.B64);
+
+        SharePresetButtonText = $"Copied {preset.Name}!";
+        StateHasChanged();
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        SharePresetButtonText = "Share";
+        StateHasChanged();
+    }
+
+    private async Task Onclick_DeletePreset(string name)
+    {
+        if (ClientState.Session == null)
+        {
+            return;
+        }
+
+        var preset = Presets.SingleOrDefault(x => x.Name == name);
+        if (preset == null)
+        {
+            return;
+        }
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Auth/DeleteUserQuizSettings",
+            new ReqDeleteUserQuizSettings(ClientState.Session.Token, preset.Name));
+
+        if (res1.IsSuccessStatusCode)
+        {
+            var resGetUserQuizSettings = await SendGetUserQuizSettingsReq(ClientState.Session.Token);
+            if (resGetUserQuizSettings != null)
+            {
+                Presets = resGetUserQuizSettings;
+            }
+            else
+            {
+                // todo warn error
+            }
+        }
+        else
+        {
+            // todo warn user
+        }
+
+        StateHasChanged();
+        ParentStateHasChangedCallback?.Invoke();
     }
 }

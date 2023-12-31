@@ -15,6 +15,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
@@ -495,5 +496,49 @@ public class AuthController : ControllerBase
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
+    }
+
+    [CustomAuthorize(PermissionKind.StoreQuizSettings)]
+    [HttpGet]
+    [Route("GetUserQuizSettings")]
+    public async Task<ActionResult<List<ResGetUserQuizSettings>>> GetUserQuizSettings(string token)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        return await DbManager.SelectUserQuizSettings(session.Player.Id);
+    }
+
+    [CustomAuthorize(PermissionKind.StoreQuizSettings)]
+    [HttpPost]
+    [Route("StoreUserQuizSettings")]
+    public async Task<ActionResult> StoreUserQuizSettings([FromBody] ReqStoreUserQuizSettings req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await DbManager.InsertUserQuizSettings(session.Player.Id, req.Name, req.B64);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.StoreQuizSettings)]
+    [HttpPost]
+    [Route("DeleteUserQuizSettings")]
+    public async Task<ActionResult> DeleteUserQuizSettings([FromBody] ReqDeleteUserQuizSettings req)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await DbManager.DeleteUserQuizSettings(session.Player.Id, req.Name);
+        return Ok();
     }
 }
