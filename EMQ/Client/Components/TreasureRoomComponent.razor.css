@@ -1,6 +1,6 @@
 ﻿@media only screen and (max-width: 5000px) {
     #treasureRoomMainDiv {
-        transform: scale(2) translate(-50%, 0);
+        transform: scale(1.5) translate(-50%, 0);
     }
 }
 

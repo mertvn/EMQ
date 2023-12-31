@@ -273,6 +273,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        // todo? db
         session.Player.Preferences = req.PlayerPreferences;
         return session.Player.Preferences;
     }

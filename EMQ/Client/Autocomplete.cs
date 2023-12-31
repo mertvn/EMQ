@@ -11,6 +11,7 @@ namespace EMQ.Client;
 
 public static class Autocomplete
 {
+    // todo build a (trigram) index and search that
     public static IEnumerable<string> SearchAutocompleteMst(AutocompleteMst[] data, string arg)
     {
         // todo prefer Japanese latin titles

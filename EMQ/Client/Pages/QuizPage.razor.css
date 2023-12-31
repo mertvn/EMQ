@@ -1,6 +1,6 @@
 ﻿@media only screen and (max-width: 5000px) {
     #quizGrid {
-        transform: scale(2);
+        transform: scale(1.5);
     }
 }
 

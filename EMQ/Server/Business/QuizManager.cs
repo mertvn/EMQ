@@ -1421,6 +1421,7 @@ public class QuizManager
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
             {
+                // todo only check for active sessions
                 bool everyoneAnsweredOrIsSkipping =
                     Quiz.Room.Players.All(x => !string.IsNullOrWhiteSpace(x.Guess) || x.IsSkipping);
                 if (!everyoneAnsweredOrIsSkipping)

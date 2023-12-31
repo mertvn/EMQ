@@ -182,7 +182,7 @@ public class QuizSettings
 
         if (o.MaxLives != n.MaxLives)
         {
-            diff.Add($"Max lives: {o.MaxLives} → {n.MaxLives}");
+            diff.Add($"Lives: {o.MaxLives} → {n.MaxLives}");
         }
 
         if (o.OnlyFromLists != n.OnlyFromLists)

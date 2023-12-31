@@ -92,7 +92,7 @@ public sealed class CleanupService : BackgroundService
             {
                 Console.WriteLine(
                     $"Evicting inactive session from memory p{session.Player.Id} {session.Player.Username}");
-                ServerState.RemoveSession(session, "CleanupService4");
+                ServerState.RemoveSession(session, "CleanupService3");
             }
         }
     }
