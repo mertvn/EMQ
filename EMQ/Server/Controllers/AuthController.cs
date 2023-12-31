@@ -524,6 +524,7 @@ public class AuthController : ControllerBase
         }
 
         await DbManager.InsertUserQuizSettings(session.Player.Id, req.Name, req.B64);
+        Console.WriteLine($"p{session.Player.Id} {session.Player.Username} saved preset {req.Name} {req.B64.Length}");
         return Ok();
     }
 
@@ -539,6 +540,7 @@ public class AuthController : ControllerBase
         }
 
         await DbManager.DeleteUserQuizSettings(session.Player.Id, req.Name);
+        Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted preset {req.Name}");
         return Ok();
     }
 }

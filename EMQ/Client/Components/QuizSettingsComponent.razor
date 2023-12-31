@@ -511,7 +511,7 @@
             Load preset
         </button>
 
-        @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
+        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
         {
             <button type="button" style="margin: 5px" class="btn btn-primary"
                     @onclick="@(() => { _savePresetModalRef.Show(); })">
