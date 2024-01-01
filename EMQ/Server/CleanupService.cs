@@ -87,7 +87,9 @@ public sealed class CleanupService : BackgroundService
         foreach (Session session in ServerState.Sessions)
         {
             bool isInARoom =
-                ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id)) != null;
+                ServerState.Rooms.FirstOrDefault(x =>
+                    x.Players.Any(y => y.Id == session.Player.Id) ||
+                    x.Spectators.Any(y => y.Id == session.Player.Id)) != null;
             if ((DateTime.UtcNow - session.Player.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(30) && !isInARoom)
             {
                 Console.WriteLine(
