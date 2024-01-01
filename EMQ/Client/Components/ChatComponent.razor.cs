@@ -84,10 +84,24 @@ public partial class ChatComponent
         var res = await _client.GetAsync(
             $"Quiz/SyncChat?token={ClientState.Session?.Token}");
 
-        if (res.StatusCode == HttpStatusCode.NoContent)
-            chat = null;
-        else if (res.IsSuccessStatusCode)
-            chat = await res.Content.ReadFromJsonAsync<ConcurrentQueue<ChatMessage>>();
+        if (res.IsSuccessStatusCode)
+        {
+            if (res.StatusCode == HttpStatusCode.NoContent)
+            {
+                chat = null;
+            }
+            else
+            {
+                chat = await res.Content.ReadFromJsonAsync<ConcurrentQueue<ChatMessage>>();
+            }
+        }
+        else
+        {
+            if (res.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                Timer.Stop();
+            }
+        }
 
         if (chat is not null)
         {

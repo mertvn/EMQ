@@ -54,8 +54,13 @@ public class CustomAuthorizeAttribute : Attribute, IAsyncActionFilter
             }
             else
             {
-                Console.WriteLine(
-                    $"{ServerUtils.GetIpAddress(context.HttpContext)} failed {_requiredPermission} check for {context.ActionDescriptor.DisplayName}");
+                // todo remove
+                if (context.ActionDescriptor.DisplayName != null &&
+                    !context.ActionDescriptor.DisplayName.Contains("SyncChat"))
+                {
+                    Console.WriteLine(
+                        $"{ServerUtils.GetIpAddress(context.HttpContext)} failed {_requiredPermission} check for {context.ActionDescriptor.DisplayName}");
+                }
             }
 
             context.Result = new UnauthorizedResult();
