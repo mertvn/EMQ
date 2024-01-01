@@ -272,7 +272,7 @@
         try {
             // console.log(`setVideoMuted ${id} ${muted}`)
             const video = document.getElementById(id);
-            if (video != null) {
+            if (video !== null) {
                 video.muted = muted;
             }
         } catch (err) {
@@ -293,6 +293,19 @@
 
         URL.revokeObjectURL(exportUrl);
     }
+
+    function getActiveElementName() {
+        let ret = "";
+        if (document !== null && document.activeElement !== null) {
+            if (document.activeElement.id !== null) {
+                ret = document.activeElement.id;
+            } else if (document.activeElement.className !== null) {
+                ret = document.activeElement.className;
+            }
+        }
+        return ret;
+    }
+
 </script>
 
 </body>

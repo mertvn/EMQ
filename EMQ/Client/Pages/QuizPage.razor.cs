@@ -524,6 +524,13 @@ public partial class QuizPage
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
 
+                string? focusedElementName = await _jsRuntime.InvokeAsync<string?>("getActiveElementName");
+                if (focusedElementName != null &&
+                    !focusedElementName.Contains("chat", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _guessInputComponent.CallFocusAsync();
+                }
+
                 // need to clear it again here or it doesn't work(???)
                 PageState.Guess = "";
                 await _guessInputComponent.ClearInputField();

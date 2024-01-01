@@ -149,4 +149,9 @@ public partial class GuessInputComponent
     {
         AutocompleteComponent.Close();
     }
+
+    public async Task CallFocusAsync()
+    {
+        await AutocompleteComponent.Focus();
+    }
 }
