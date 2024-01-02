@@ -766,7 +766,7 @@ public class DbTests
         Assert.That(libraryStats.msYearAvailable.ElementAtOrDefault(10).Value > 0);
         Assert.That(libraryStats.msYear.Keys.Count == libraryStats.msYearAvailable.Keys.Count);
 
-        Assert.That(libraryStats.UploaderCounts.First().Value > 0);
+        Assert.That(libraryStats.UploaderCounts.First().Value.TotalCount > 0);
 
         Assert.That(libraryStats.SongDifficultyLevels.First().Value > 0);
     }

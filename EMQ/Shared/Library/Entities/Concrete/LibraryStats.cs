@@ -48,7 +48,7 @@ public struct LibraryStats
 
     public Dictionary<DateTime, int> msYearAvailable { get; set; }
 
-    public Dictionary<string, int> UploaderCounts { get; set; }
+    public Dictionary<string, UploaderStats> UploaderCounts { get; set; }
 
     public Dictionary<SongDifficultyLevel, int> SongDifficultyLevels { get; set; }
 }
@@ -84,4 +84,13 @@ public class LibraryStatsMusicType
     public SongSourceSongType Type { get; set; }
 
     public int MusicCount { get; set; }
+}
+
+public class UploaderStats
+{
+    public int TotalCount { get; set; }
+
+    public int VideoCount { get; set; }
+
+    public int SoundCount { get; set; }
 }

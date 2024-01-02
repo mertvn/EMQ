@@ -2388,14 +2388,49 @@ order by year";
                 msYearAvailable = msYearAvailable.OrderBy(x => x.Key.Year).ToDictionary(x => x.Key, x => x.Value);
             }
 
+
             // Console.WriteLine(
             //     $"StartSection uploaderCounts: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var uploaderCounts = (await connection.QueryAsync<(string, int)>(@"
+            var uploaderCountsTotal = (await connection.QueryAsync<(string, int)>(@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 group by lower(submitted_by)
 order by count(music_id) desc
 ")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+
+            var uploaderCountsVideo = (await connection.QueryAsync<(string, int)>(@"
+select lower(submitted_by), count(music_id) from music_external_link mel
+where submitted_by is not null
+and mel.is_video
+group by lower(submitted_by)
+order by count(music_id) desc
+")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+
+            var uploaderCountsSound = (await connection.QueryAsync<(string, int)>(@"
+select lower(submitted_by), count(music_id) from music_external_link mel
+where submitted_by is not null
+and not mel.is_video
+group by lower(submitted_by)
+order by count(music_id) desc
+")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+
+            Dictionary<string, UploaderStats> uploaderCounts = new();
+            foreach ((string key, int totalCount) in uploaderCountsTotal)
+            {
+                UploaderStats uploaderStats = new() { TotalCount = totalCount };
+                if (uploaderCountsVideo.TryGetValue(key, out int videoCount))
+                {
+                    uploaderStats.VideoCount = videoCount;
+                }
+
+                if (uploaderCountsSound.TryGetValue(key, out int soundCount))
+                {
+                    uploaderStats.SoundCount = soundCount;
+                }
+
+                uploaderCounts[key] = uploaderStats;
+            }
+
 
             // Console.WriteLine(
             //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -2455,6 +2490,7 @@ order by diff
                 SongDifficultyLevels = songDifficultyLevels,
             };
 
+            // stopWatch.Stop();
             CachedLibraryStats[limit] = libraryStats;
             return libraryStats;
         }

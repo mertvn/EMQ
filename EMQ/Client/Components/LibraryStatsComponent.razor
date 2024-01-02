@@ -296,10 +296,12 @@
                         <tr>
                             <th>#</th>
                             <th>Username</th>
-                            <th>Upload count</th>
+                            <th>Total</th>
+                            <th>Video</th>
+                            <th>Sound</th>
                         </tr>
                         @{ int i = 1; }
-                        @foreach ((string username, int count) in libraryStats.UploaderCounts)
+                        @foreach ((string username, var uploaderStats) in libraryStats.UploaderCounts)
                         {
                             bool isRobot = username == Constants.RobotNameLower;
                             <tr>
@@ -317,7 +319,13 @@
                                     }
                                 </td>
                                 <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@count</b>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.TotalCount</b>
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.VideoCount</b>
+                                </td>
+                                <td>
+                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.SoundCount</b>
                                 </td>
                             </tr>
                             i += 1;
