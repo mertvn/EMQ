@@ -72,7 +72,6 @@ public static class MediaAnalyser
 
             long filesizeBytes = new FileInfo(filePath).Length;
             result.FilesizeMb = (float)filesizeBytes / 1024 / 1024;
-            result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
             if (isVideo)
             {
@@ -81,6 +80,7 @@ public static class MediaAnalyser
                 result.Width = mediaInfo.PrimaryVideoStream.Width;
                 result.Height = mediaInfo.PrimaryVideoStream.Height;
                 result.VideoBitrateKbps = mediaInfo.PrimaryVideoStream.BitRate / 1000;
+                result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
                 if (result.AvgFramerate is 1000)
                 {
