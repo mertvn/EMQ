@@ -77,4 +77,6 @@ public class MediaAnalyserResult
     public string[]? VolumeDetect { get; set; }
 
     public float? FilesizeMb { get; set; }
+
+    public string? PrimaryAudioStreamCodecName { get; set; }
 }

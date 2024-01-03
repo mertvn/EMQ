@@ -15,7 +15,7 @@ namespace EMQ.Server.Business;
 // todo detect transcodes
 public static class MediaAnalyser
 {
-    public static async Task<MediaAnalyserResult> Analyse(string filePath)
+    public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false)
     {
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
@@ -39,9 +39,11 @@ public static class MediaAnalyser
                 result.Warnings.Add(MediaAnalyserWarningKind.TooLong);
             }
 
+            result.PrimaryAudioStreamCodecName =
+                mediaInfo.PrimaryAudioStream?.CodecName ?? mediaInfo.AudioStreams.First().CodecName;
             // Console.WriteLine(new { mediaInfo.Format.FormatName });
             result.FormatList = mediaInfo.Format.FormatName;
-            bool isVideo;
+            bool isVideo = true; // todo?
             string? format = validAudioFormats.FirstOrDefault(x => mediaInfo.Format.FormatName.Contains(x));
             if (format != null)
             {
@@ -57,7 +59,10 @@ public static class MediaAnalyser
                 else
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.InvalidFormat);
-                    return result;
+                    if (returnEarlyIfInvalidFormat)
+                    {
+                        return result;
+                    }
                 }
             }
 
@@ -130,7 +135,7 @@ public static class MediaAnalyser
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = "ffmpeg",
-                        Arguments = $"-i {filePath} -map a:0 -af volumedetect -f null -",
+                        Arguments = $"-i \"{filePath}\" -map a:0 -af volumedetect -f null -",
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
