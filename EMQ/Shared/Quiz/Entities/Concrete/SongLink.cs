@@ -91,7 +91,8 @@ public class SongLink
             }
         }
 
-        res = res.OrderBy(x => Random.Shared.Next()).ToList(); // to allow different video links to play
+        // we randomize links here to allow different video links to play, because NextSong just takes the first link it finds
+        res = res.OrderBy(x => Random.Shared.Next()).ToList();
         return res;
     }
 }

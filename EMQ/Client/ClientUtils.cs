@@ -32,6 +32,7 @@ public class ClientUtils
     [Inject]
     private ILogger<ClientUtils> Logger { get; }
 
+    // do NOT use this for communicating with external websites because it contains user's token by default
     [Inject]
     private HttpClient Client { get; }
 
