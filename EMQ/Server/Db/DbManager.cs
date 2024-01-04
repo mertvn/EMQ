@@ -2341,17 +2341,19 @@ order by type";
 
 
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
-                await SelectLibraryStats_VN(connection, limit, true);
+                await SelectLibraryStats_VN(connection, limit, Enum.GetValues<SongSourceSongType>());
 
             (List<LibraryStatsMsm> msmNoBgm, List<LibraryStatsMsm> msmAvailableNoBgm) =
-                await SelectLibraryStats_VN(connection, limit, false);
+                await SelectLibraryStats_VN(connection, limit, Enum.GetValues<SongSourceSongType>()
+                    .Except(new List<SongSourceSongType> { SongSourceSongType.BGM }));
 
 
             (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, true);
+                await SelectLibraryStats_Artist(connection, limit, Enum.GetValues<SongSourceSongType>());
 
             (List<LibraryStatsAm> amNoBgm, List<LibraryStatsAm> amAvailableNoBgm) =
-                await SelectLibraryStats_Artist(connection, limit, false);
+                await SelectLibraryStats_Artist(connection, limit, Enum.GetValues<SongSourceSongType>()
+                    .Except(new List<SongSourceSongType> { SongSourceSongType.BGM }));
 
 
             string sqlMsYear =
@@ -2497,7 +2499,7 @@ order by diff
     }
 
     public static async Task<(List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable)> SelectLibraryStats_VN(
-        IDbConnection connection, int limit, bool includeBgm)
+        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes)
     {
         string sqlMusicSourceMusic =
             @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
@@ -2511,15 +2513,10 @@ LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
 /**where**/
 group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
 
-
         var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
         qMsm.Where($"mst.is_main_title = true");
         qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
-
-        if (!includeBgm)
-        {
-            qMsm.Where($"msm.type != {(int)SongSourceSongType.BGM}");
-        }
+        qMsm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
         // Console.WriteLine(
         //     $"StartSection msm: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -2544,25 +2541,10 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
-        IDbConnection connection, int limit, bool includeBgm)
+        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes)
     {
-        string sqlArtistMusic;
-        if (includeBgm)
-        {
-            sqlArtistMusic =
-                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
-FROM music m
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-LEFT JOIN artist_music am ON am.music_id = m.id
-LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
-LEFT JOIN artist a ON a.id = aa.artist_id
-/**where**/
-group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
-        }
-        else
-        {
-            sqlArtistMusic =
-                @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
+        string sqlArtistMusic =
+            @"SELECT a.id AS AId, a.vndb_id AS VndbId, COUNT(DISTINCT m.id) AS MusicCount
 FROM music m
 LEFT JOIN music_source_music msm ON msm.music_id = m.id
 LEFT JOIN music_external_link mel ON mel.music_id = m.id
@@ -2571,13 +2553,9 @@ LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
 LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/
 group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
-        }
 
         var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
-        if (!includeBgm)
-        {
-            qAm.Where($"msm.type != {(int)SongSourceSongType.BGM}");
-        }
+        qAm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
         // Console.WriteLine(
         //     $"StartSection am: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");

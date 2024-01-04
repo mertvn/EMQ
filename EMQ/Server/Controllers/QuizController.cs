@@ -173,7 +173,7 @@ public class QuizController : ControllerBase
             Password = req.Password, QuizSettings = req.QuizSettings
         };
         ServerState.AddRoom(room);
-        _logger.LogInformation("Created room {room.Id} {room.Name}", room.Id, room.Name);
+        _logger.LogInformation("Created room {room.Id} {room.Name} {room.Password}", room.Id, room.Name, room.Password);
 
         return room.Id;
     }
@@ -551,6 +551,9 @@ public class QuizController : ControllerBase
             {
                 room.Name = req.NewName;
                 room.Password = req.NewPassword;
+
+                _logger.LogInformation("Changed room name and password {room.Id} {room.Name} {room.Password}", room.Id,
+                    room.Name, room.Password);
                 room.Log("Room name and password changed.", -1, true);
                 await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoomForRoom", room);

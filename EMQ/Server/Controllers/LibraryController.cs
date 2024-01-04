@@ -95,6 +95,7 @@ public class LibraryController : ControllerBase
             if (dlSuccess)
             {
                 var analyserResult = await MediaAnalyser.Analyse(filePath);
+                // todo extract audio and upload it if necessary
                 System.IO.File.Delete(filePath);
 
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending, analyserResult: analyserResult);
