@@ -33,9 +33,6 @@ public class SongLink
     // todo: write tests for this
     public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks)
     {
-        // Priorities:
-        // #1 Duration (Short > Long)
-        // ~~#2 Video (Video > Sound)~~ not implemented
         var res = new List<SongLink>();
 
         // todo don't let people insert links from another host that are not similar in length to the existing hosts
@@ -43,36 +40,58 @@ public class SongLink
 
         foreach (IGrouping<SongLinkType, SongLink> group in groups)
         {
-            var videoLink = group.OrderBy(x=> x.Duration).FirstOrDefault(x => x.IsVideo);
-            var soundLink = group.OrderBy(x=> x.Duration).FirstOrDefault(x => !x.IsVideo);
+            var shortestVideoLink = group.OrderBy(x => x.Duration).FirstOrDefault(x => x.IsVideo);
+            var shortestSoundLink = group.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
 
-            if (videoLink != null && soundLink != null)
+            var allValidVideoLinks = new List<SongLink>();
+            foreach (SongLink songLink in group.Where(x => x.IsVideo))
             {
                 bool sameDuration =
                     Math.Abs(
-                        videoLink.Duration.TotalSeconds - soundLink.Duration.TotalSeconds) <
+                        shortestVideoLink!.Duration.TotalSeconds - songLink.Duration.TotalSeconds) <
+                    2;
+
+                if (sameDuration)
+                {
+                    allValidVideoLinks.Add(songLink);
+                }
+            }
+
+            if (shortestVideoLink != null && shortestSoundLink != null)
+            {
+                bool sameDuration =
+                    Math.Abs(
+                        shortestVideoLink.Duration.TotalSeconds - shortestSoundLink.Duration.TotalSeconds) <
                     Constants.LinkToleranceSeconds;
 
                 if (sameDuration)
                 {
-                    res.Add(videoLink);
-                    res.Add(soundLink);
+                    res.AddRange(allValidVideoLinks);
+                    res.Add(shortestSoundLink);
                 }
                 else
                 {
-                    // Priority #1
-                    SongLink shortest = videoLink.Duration.TotalSeconds < soundLink.Duration.TotalSeconds
-                        ? videoLink
-                        : soundLink;
-                    res.Add(shortest);
+                    List<SongLink> shortest =
+                        shortestVideoLink.Duration.TotalSeconds < shortestSoundLink.Duration.TotalSeconds
+                            ? allValidVideoLinks
+                            : new List<SongLink> { shortestSoundLink };
+                    res.AddRange(shortest);
                 }
             }
             else
             {
-                res.Add((videoLink ?? soundLink)!);
+                if (allValidVideoLinks.Any())
+                {
+                    res.AddRange(allValidVideoLinks);
+                }
+                else
+                {
+                    res.Add(shortestSoundLink!);
+                }
             }
         }
 
+        res = res.OrderBy(x => Random.Shared.Next()).ToList(); // to allow different video links to play
         return res;
     }
 }
