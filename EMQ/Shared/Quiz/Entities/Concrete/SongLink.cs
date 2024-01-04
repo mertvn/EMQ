@@ -47,9 +47,7 @@ public class SongLink
             foreach (SongLink songLink in group.Where(x => x.IsVideo))
             {
                 bool sameDuration =
-                    Math.Abs(
-                        shortestVideoLink!.Duration.TotalSeconds - songLink.Duration.TotalSeconds) <
-                    2;
+                    Math.Abs(shortestVideoLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
 
                 if (sameDuration)
                 {
