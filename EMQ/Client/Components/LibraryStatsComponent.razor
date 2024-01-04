@@ -19,28 +19,10 @@
     <Content>
     @if (true)
     {
-        List<LibraryStatsAm> am;
-        List<LibraryStatsAm> amAvailable;
-        List<LibraryStatsMsm> msm;
-        List<LibraryStatsMsm> msmAvailable;
-        string buttonText;
-
-        if (IncludeBgm)
-        {
-            am = libraryStats.am;
-            amAvailable = libraryStats.amAvailable;
-            msm = libraryStats.msm;
-            msmAvailable = libraryStats.msmAvailable;
-            buttonText = "Exclude BGM";
-        }
-        else
-        {
-            am = libraryStats.amNoBgm;
-            amAvailable = libraryStats.amAvailableNoBgm;
-            msm = libraryStats.msmNoBgm;
-            msmAvailable = libraryStats.msmAvailableNoBgm;
-            buttonText = "Include BGM";
-        }
+        List<LibraryStatsAm> am = libraryStats.am;
+        List<LibraryStatsAm> amAvailable = libraryStats.amAvailable;
+        List<LibraryStatsMsm> msm = libraryStats.msm;
+        List<LibraryStatsMsm> msmAvailable = libraryStats.msmAvailable;
 
         <Blazorise.TabPanel Name="TabGeneral">
             <ul style="padding-left: 17px; padding-top: 8px;">
@@ -155,7 +137,6 @@
 
 
         <Blazorise.TabPanel Name="TabVN">
-            <button type="button" class="btn btn-primary" @onclick="@(() => IncludeBgm = !IncludeBgm)" style="margin: 5px;">@buttonText</button>
             <div class="libraryStatsRow">
                 <div class="libraryStatsColumn">
                     <p>Total:</p>
@@ -218,7 +199,6 @@
 
 
         <Blazorise.TabPanel Name="TabArtist">
-            <button type="button" class="btn btn-primary" @onclick="@(() => IncludeBgm = !IncludeBgm)" style="margin: 5px;">@buttonText</button>
             <div class="libraryStatsRow">
                 <div class="libraryStatsColumn">
                     <p>Total:</p>

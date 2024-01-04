@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using EMQ.Client.Pages;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 
 namespace EMQ.Client.Components;
@@ -15,7 +16,8 @@ public partial class LibraryStatsComponent
     [CascadingParameter]
     public LibraryPage? LibraryPage { get; set; }
 
-    public bool IncludeBgm { get; set; } = true;
+    [Parameter]
+    public int Mode { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -24,7 +26,7 @@ public partial class LibraryStatsComponent
 
     public async Task RefreshStats()
     {
-        LibraryStats? res = await _client.GetFromJsonAsync<LibraryStats?>("Library/GetLibraryStats");
+        LibraryStats? res = await _client.GetFromJsonAsync<LibraryStats?>($"Library/GetLibraryStats?mode={Mode}");
         if (res is not null)
         {
             LibraryStats = res;

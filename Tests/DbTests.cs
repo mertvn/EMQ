@@ -739,7 +739,7 @@ public class DbTests
     [Test]
     public async Task Test_SelectLibraryStats()
     {
-        var libraryStats = await DbManager.SelectLibraryStats();
+        var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
         Console.WriteLine(JsonSerializer.Serialize(libraryStats, Utils.Jso));
 
         Assert.That(libraryStats.TotalMusicCount > 0);
@@ -754,13 +754,9 @@ public class DbTests
 
         Assert.That(libraryStats.msm.First().MSId > 0);
         Assert.That(libraryStats.msmAvailable.First().MSId > 0);
-        Assert.That(libraryStats.msmNoBgm.First().MSId > 0);
-        Assert.That(libraryStats.msmAvailableNoBgm.First().MSId > 0);
 
         Assert.That(libraryStats.am.First().AId > 0);
         Assert.That(libraryStats.amAvailable.First().AId > 0);
-        Assert.That(libraryStats.amNoBgm.First().AId > 0);
-        Assert.That(libraryStats.amAvailableNoBgm.First().AId > 0);
 
         Assert.That(libraryStats.msYear.First().Value > 0);
         Assert.That(libraryStats.msYearAvailable.ElementAtOrDefault(10).Value > 0);
@@ -774,7 +770,7 @@ public class DbTests
     [Test]
     public async Task Test_SelectLibraryStatsYoneMado()
     {
-        var libraryStats = await DbManager.SelectLibraryStats(int.MaxValue);
+        var libraryStats = await DbManager.SelectLibraryStats(int.MaxValue, Enum.GetValues<SongSourceSongType>());
         var yoneMado = libraryStats.am.Single(x => x.AALatinAlias == "Yonezawa Madoka");
         Console.WriteLine(yoneMado.MusicCount);
         Assert.That(yoneMado.MusicCount > 14);

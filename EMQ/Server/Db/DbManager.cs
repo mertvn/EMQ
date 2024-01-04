@@ -38,7 +38,7 @@ public static class DbManager
 
     private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
 
-    private static ConcurrentDictionary<int, LibraryStats?> CachedLibraryStats { get; } = new();
+    private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 
     /// <summary>
     /// Available filters: <br/>
@@ -1687,7 +1687,7 @@ WHERE id = {mId};
 WHERE id = {mId};
                  ");
 
-            foreach ((int key, LibraryStats? _) in CachedLibraryStats)
+            foreach ((string key, LibraryStats? _) in CachedLibraryStats)
             {
                 CachedLibraryStats[key] = null;
             }
@@ -2262,7 +2262,7 @@ WHERE id = {mId};
             await connection.UpdateAsync(rq);
             Console.WriteLine($"Updated ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
 
-            foreach ((int key, LibraryStats? _) in CachedLibraryStats)
+            foreach ((string key, LibraryStats? _) in CachedLibraryStats)
             {
                 CachedLibraryStats[key] = null;
             }
@@ -2276,14 +2276,15 @@ WHERE id = {mId};
         return melId;
     }
 
-    public static async Task<LibraryStats> SelectLibraryStats(int limit = 250)
+    public static async Task<LibraryStats> SelectLibraryStats(int limit, SongSourceSongType[] songSourceSongTypes)
     {
         // var stopWatch = new Stopwatch();
         // stopWatch.Start();
         // Console.WriteLine(
         //     $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        if (CachedLibraryStats.TryGetValue(limit, out LibraryStats? cached))
+        string cacheKey = $"{limit}-{string.Join(",", songSourceSongTypes.OrderBy(x => x).Select(y => y))}";
+        if (CachedLibraryStats.TryGetValue(cacheKey, out LibraryStats? cached))
         {
             if (cached != null)
             {
@@ -2291,25 +2292,47 @@ WHERE id = {mId};
             }
         }
 
-        const string sqlMusic =
-            "SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id";
-
-        const string sqlMusicSource =
-            "SELECT COUNT(DISTINCT ms.id) FROM music_source_music msm LEFT JOIN music_source ms ON ms.id = msm.music_source_id LEFT JOIN music_external_link mel ON mel.music_id = msm.music_id";
-
-        const string sqlArtist =
-            "SELECT COUNT(DISTINCT a.id) FROM artist_music am LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id LEFT JOIN artist a ON a.id = aa.artist_id LEFT JOIN music_external_link mel ON mel.music_id = am.music_id";
-
-        const string sqlWhereClause = " WHERE mel.url is not null";
-
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            int totalMusicCount = await connection.QuerySingleAsync<int>(sqlMusic);
-            int availableMusicCount = await connection.QuerySingleAsync<int>(sqlMusic + sqlWhereClause);
-            int totalMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource);
-            int availableMusicSourceCount = await connection.QuerySingleAsync<int>(sqlMusicSource + sqlWhereClause);
-            int totalArtistCount = await connection.QuerySingleAsync<int>(sqlArtist);
-            int availableArtistCount = await connection.QuerySingleAsync<int>(sqlArtist + sqlWhereClause);
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => songSourceSongTypes.Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            // Console.WriteLine(
+            //     $"StartSection Song: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+            string sqlMusic =
+                $"SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id WHERE m.id = ANY(@validMids)";
+
+            string sqlMusicSource =
+                $"SELECT COUNT(DISTINCT ms.id) FROM music_source_music msm LEFT JOIN music_source ms ON ms.id = msm.music_source_id LEFT JOIN music_external_link mel ON mel.music_id = msm.music_id WHERE msm.music_id = ANY(@validMids)";
+
+            string sqlArtist =
+                $"SELECT COUNT(DISTINCT a.id) FROM artist_music am LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id LEFT JOIN artist a ON a.id = aa.artist_id LEFT JOIN music_external_link mel ON mel.music_id = am.music_id WHERE am.music_id = ANY(@validMids)";
+
+            const string sqlAndClause = $" AND mel.url is not null";
+
+
+            int totalMusicCount =
+                await connection.QuerySingleAsync<int>(sqlMusic, new { validMids });
+            int availableMusicCount =
+                await connection.QuerySingleAsync<int>(sqlMusic + sqlAndClause, new { validMids });
+
+            int totalMusicSourceCount =
+                await connection.QuerySingleAsync<int>(sqlMusicSource, new { validMids });
+            int availableMusicSourceCount =
+                await connection.QuerySingleAsync<int>(sqlMusicSource + sqlAndClause, new { validMids });
+
+            int totalArtistCount =
+                await connection.QuerySingleAsync<int>(sqlArtist, new { validMids });
+            int availableArtistCount =
+                await connection.QuerySingleAsync<int>(sqlArtist + sqlAndClause, new { validMids });
 
 
             string sqlMusicType =
@@ -2321,6 +2344,7 @@ LEFT JOIN music_source_music msm ON msm.music_id = m.id
 group by msm.type
 order by type";
             var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
+            qMusicType.Where($"msm.music_id = ANY({validMids})");
             // Console.WriteLine(
             //     $"StartSection totalMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
@@ -2333,27 +2357,21 @@ order by type";
             // Console.WriteLine(
             //     $"StartSection mels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             int videoLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video)"));
+                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video) and music_id = ANY(@validMids)",
+                new { validMids }));
             int soundLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where not is_video and music_id not in (select music_id FROM music_external_link where is_video)"));
+                "SELECT count(distinct music_id) FROM music_external_link where not is_video and music_id not in (select music_id FROM music_external_link where is_video) and music_id = ANY(@validMids)",
+                new { validMids }));
             int bothLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video)"));
+                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video) and music_id = ANY(@validMids)",
+                new { validMids }));
 
 
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
-                await SelectLibraryStats_VN(connection, limit, Enum.GetValues<SongSourceSongType>());
-
-            (List<LibraryStatsMsm> msmNoBgm, List<LibraryStatsMsm> msmAvailableNoBgm) =
-                await SelectLibraryStats_VN(connection, limit, Enum.GetValues<SongSourceSongType>()
-                    .Except(new List<SongSourceSongType> { SongSourceSongType.BGM }));
-
+                await SelectLibraryStats_VN(connection, limit, songSourceSongTypes);
 
             (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, Enum.GetValues<SongSourceSongType>());
-
-            (List<LibraryStatsAm> amNoBgm, List<LibraryStatsAm> amAvailableNoBgm) =
-                await SelectLibraryStats_Artist(connection, limit, Enum.GetValues<SongSourceSongType>()
-                    .Except(new List<SongSourceSongType> { SongSourceSongType.BGM }));
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes);
 
 
             string sqlMsYear =
@@ -2366,6 +2384,7 @@ LEFT JOIN music_external_link mel ON mel.music_id = m.id
 group by year
 order by year";
             var qMsYear = connection.QueryBuilder($"{sqlMsYear:raw}");
+            qMsYear.Where($"msm.music_id = ANY({validMids})");
             // Console.WriteLine(
             //     $"StartSection msYear: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msYear =
@@ -2396,25 +2415,28 @@ order by year";
             var uploaderCountsTotal = (await connection.QueryAsync<(string, int)>(@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
+and mel.music_id = ANY(@validMids)
 group by lower(submitted_by)
 order by count(music_id) desc
-")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
             var uploaderCountsVideo = (await connection.QueryAsync<(string, int)>(@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and mel.is_video
+and mel.music_id = ANY(@validMids)
 group by lower(submitted_by)
 order by count(music_id) desc
-")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
             var uploaderCountsSound = (await connection.QueryAsync<(string, int)>(@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and not mel.is_video
+and mel.music_id = ANY(@validMids)
 group by lower(submitted_by)
 order by count(music_id) desc
-")).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
             Dictionary<string, UploaderStats> uploaderCounts = new();
             foreach ((string key, int totalCount) in uploaderCountsTotal)
@@ -2448,9 +2470,10 @@ select case
 count(id)
 from music m
 where stat_played > 0
+and m.id = ANY(@validMids)
 group by diff
 order by diff
-")).ToDictionary(x => (SongDifficultyLevel)x.Item1, x => x.Item2);
+", new { validMids })).ToDictionary(x => (SongDifficultyLevel)x.Item1, x => x.Item2);
 
             var libraryStats = new LibraryStats
             {
@@ -2472,14 +2495,10 @@ order by diff
                 // VN
                 msm = msm.Take(limit).ToList(),
                 msmAvailable = msmAvailable,
-                msmNoBgm = msmNoBgm.Take(limit).ToList(),
-                msmAvailableNoBgm = msmAvailableNoBgm,
 
                 // Artist
                 am = am.Take(limit).ToList(),
                 amAvailable = amAvailable,
-                amNoBgm = amNoBgm.Take(limit).ToList(),
-                amAvailableNoBgm = amAvailableNoBgm,
 
                 // VN year
                 msYear = msYear,
@@ -2493,7 +2512,7 @@ order by diff
             };
 
             // stopWatch.Stop();
-            CachedLibraryStats[limit] = libraryStats;
+            CachedLibraryStats[cacheKey] = libraryStats;
             return libraryStats;
         }
     }

@@ -88,7 +88,24 @@
                 }
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabStats">
-                <LibraryStatsComponent></LibraryStatsComponent>
+                <Blazorise.Tabs SelectedTab="TabAll">
+                    <Items>
+                        <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
+                        <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>
+                        <Blazorise.Tab Name="TabBGM">BGM</Blazorise.Tab>
+                    </Items>
+                    <Content>
+                        <Blazorise.TabPanel Name="TabAll">
+                            <LibraryStatsComponent Mode="0"></LibraryStatsComponent>
+                        </Blazorise.TabPanel>
+                        <Blazorise.TabPanel Name="TabVocals">
+                            <LibraryStatsComponent Mode="1"></LibraryStatsComponent>
+                        </Blazorise.TabPanel>
+                        <Blazorise.TabPanel Name="TabBGM">
+                            <LibraryStatsComponent Mode="2"></LibraryStatsComponent>
+                        </Blazorise.TabPanel>
+                    </Content>
+                </Blazorise.Tabs>
             </Blazorise.TabPanel>
         </Content>
     </Blazorise.Tabs>

@@ -163,9 +163,22 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpGet]
     [Route("GetLibraryStats")]
-    public async Task<LibraryStats> GetLibraryStats()
+    public async Task<LibraryStats> GetLibraryStats([FromQuery] int mode)
     {
-        var libraryStats = await DbManager.SelectLibraryStats();
+        const int limit = 250;
+
+        SongSourceSongType[] songSourceSongTypes = mode switch
+        {
+            0 => new[]
+            {
+                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.BGM
+            },
+            1 => new[] { SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert },
+            2 => new[] { SongSourceSongType.BGM },
+            _ => throw new InvalidOperationException()
+        };
+
+        var libraryStats = await DbManager.SelectLibraryStats(limit, songSourceSongTypes);
         return libraryStats;
     }
 
