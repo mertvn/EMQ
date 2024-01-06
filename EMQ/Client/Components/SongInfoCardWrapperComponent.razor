@@ -2,6 +2,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
 @inject HttpClient _client
 
 @{
@@ -22,6 +23,67 @@
                          @bind="_batchSetSubmittedByText"></textarea>
         <button @onclick="BatchSetSubmittedBy">Batch set submitted_by</button>
     }
+}
+
+@if (IsLibraryPage && VisibleSongsCount > 0)
+{
+    <details style="margin: 5px;">
+        <summary>Uploaders</summary>
+        <div class="libraryStatsRow">
+            <div class="libraryStatsColumn">
+                <table style="max-width: 350px">
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Upload count</th>
+                    </tr>
+                    @{
+                        int i = 1;
+
+                        Dictionary<string, int> uploaders = new();
+                        foreach (Song currentSong in CurrentSongs)
+                        {
+                            foreach (SongLink currentSongLink in currentSong.Links)
+                            {
+                                string key = currentSongLink.SubmittedBy!.ToLowerInvariant();
+                                if (!uploaders.TryGetValue(key, out _))
+                                {
+                                    uploaders[key] = 0;
+                                }
+
+                                uploaders[key] += 1;
+                            }
+                        }
+
+                        uploaders = uploaders.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+                    }
+                    @foreach ((string username, int count) in uploaders)
+                    {
+                        bool isRobot = username == Constants.RobotNameLower;
+                        <tr>
+                            <td>@i</td>
+                            <td>
+                                @if (isRobot)
+                                {
+                                    <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
+                                        <span>@Constants.RobotName</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    @username
+                                }
+                            </td>
+                            <td>
+                                <b>@count</b>
+                            </td>
+                        </tr>
+                        i += 1;
+                    }
+                </table>
+            </div>
+        </div>
+    </details>
 }
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
