@@ -3083,4 +3083,13 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             await connection.ExecuteAsync(sqlDelete, new { user_id = userId, name = name });
         }
     }
+
+    public static async Task DeleteMusicExternalLink(int mId, string url)
+    {
+        const string sqlDelete = "DELETE from music_external_link where music_id = @music_id AND url = @url";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
+        }
+    }
 }

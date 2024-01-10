@@ -12,6 +12,7 @@ using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Components;
 
@@ -85,6 +86,26 @@ public partial class SongInfoCardWrapperComponent
         {
             throw new Exception();
         }
+    }
+
+    private async Task DeleteSongLink(int mId, string url)
+    {
+        // todo? generic confirm modal
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete {url}?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var req = new ReqDeleteSongLink(mId, url);
+        var res = await _client.PostAsJsonAsync("Mod/DeleteSongLink", req);
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception();
+        }
+
+        var song = CurrentSongs.Single(x => x.Id == mId);
+        song.Links.RemoveAll(x => x.Url == url);
     }
 }
 

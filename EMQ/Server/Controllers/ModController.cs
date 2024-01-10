@@ -110,9 +110,23 @@ public class ModController : ControllerBase
 
         foreach (string url in req.Urls)
         {
-           await DbManager.SetSubmittedBy(url, req.SubmittedBy);
+            await DbManager.SetSubmittedBy(url, req.SubmittedBy);
         }
 
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("DeleteSongLink")]
+    public async Task<ActionResult> DeleteSongLink([FromBody] ReqDeleteSongLink req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        await DbManager.DeleteMusicExternalLink(req.MId, req.Url);
         return Ok();
     }
 }

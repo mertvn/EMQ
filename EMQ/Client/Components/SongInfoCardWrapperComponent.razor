@@ -4,6 +4,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Library.Entities.Concrete
 @inject HttpClient _client
+@inject IJSRuntime _jsRuntime
 
 @{
     // todo? move
@@ -131,6 +132,10 @@
                                     @foreach (SongLink videoLink in videoLinks)
                                     {
                                         <li>
+                                            @if (isAdmin)
+                                            {
+                                                <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))"></i>
+                                            }
                                             @if (validUrls.Contains(videoLink.Url))
                                             {
                                                 <a href="@videoLink.Url" target="_blank">
@@ -177,6 +182,11 @@
                                     @foreach (SongLink soundLink in soundLinks)
                                     {
                                         <li>
+                                            @if (isAdmin)
+                                            {
+                                                <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))"></i>
+                                            }
+
                                             @if (validUrls.Contains(soundLink.Url))
                                             {
                                                 <a href="@soundLink.Url" target="_blank">
