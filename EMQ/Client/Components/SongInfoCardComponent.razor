@@ -11,7 +11,7 @@
     <div class="songInfoCard card">
         @if (ClientState.Session != null && Song.Links.Any())
         {
-            <span class="link-danger"
+            <span class="songInfoCardReportButton link-danger"
                   style="position: absolute; right: 10px; top: 5px; cursor: pointer;"
                   @onclick="@(async () => await _songReportComponent.Onclick_Report())">
                 Report

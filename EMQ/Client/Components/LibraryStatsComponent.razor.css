@@ -2,15 +2,6 @@
     box-sizing: border-box;
 }
 
-.libraryStatsRow {
-    display: flex;
-}
-
-.libraryStatsColumn {
-    flex: 50%;
-    padding: 5px;
-}
-
 table {
     border-collapse: collapse;
     border-spacing: 0;
@@ -25,4 +16,13 @@ th, td {
 
 tr:nth-child(even) {
     background-color: rgba(0, 0, 0, 0.10);
+}
+
+.libraryStatsDoubleTableOuter {
+    display: flex;
+}
+
+.libraryStatsDoubleTableInner {
+    flex: 50%;
+    padding: 5px;
 }

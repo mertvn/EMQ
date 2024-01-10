@@ -30,60 +30,56 @@
 {
     <details style="margin: 5px;">
         <summary>Uploaders</summary>
-        <div class="libraryStatsRow">
-            <div class="libraryStatsColumn">
-                <table style="max-width: 350px">
-                    <tr>
-                        <th>#</th>
-                        <th>Username</th>
-                        <th>Upload count</th>
-                    </tr>
-                    @{
-                        int i = 1;
+        <table style="max-width: 350px">
+            <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Upload count</th>
+            </tr>
+            @{
+                int i = 1;
 
-                        Dictionary<string, int> uploaders = new();
-                        foreach (Song currentSong in CurrentSongs)
+                Dictionary<string, int> uploaders = new();
+                foreach (Song currentSong in CurrentSongs)
+                {
+                    foreach (SongLink currentSongLink in currentSong.Links)
+                    {
+                        string key = currentSongLink.SubmittedBy!.ToLowerInvariant();
+                        if (!uploaders.TryGetValue(key, out _))
                         {
-                            foreach (SongLink currentSongLink in currentSong.Links)
-                            {
-                                string key = currentSongLink.SubmittedBy!.ToLowerInvariant();
-                                if (!uploaders.TryGetValue(key, out _))
-                                {
-                                    uploaders[key] = 0;
-                                }
-
-                                uploaders[key] += 1;
-                            }
+                            uploaders[key] = 0;
                         }
 
-                        uploaders = uploaders.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+                        uploaders[key] += 1;
                     }
-                    @foreach ((string username, int count) in uploaders)
-                    {
-                        bool isRobot = username == Constants.RobotNameLower;
-                        <tr>
-                            <td>@i</td>
-                            <td>
-                                @if (isRobot)
-                                {
-                                    <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
-                                        <span>@Constants.RobotName</span>
-                                    </a>
-                                }
-                                else
-                                {
-                                    @username
-                                }
-                            </td>
-                            <td>
-                                <b>@count</b>
-                            </td>
-                        </tr>
-                        i += 1;
-                    }
-                </table>
-            </div>
-        </div>
+                }
+
+                uploaders = uploaders.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+            }
+            @foreach ((string username, int count) in uploaders)
+            {
+                bool isRobot = username == Constants.RobotNameLower;
+                <tr>
+                    <td>@i</td>
+                    <td>
+                        @if (isRobot)
+                        {
+                            <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
+                                <span>@Constants.RobotName</span>
+                            </a>
+                        }
+                        else
+                        {
+                            @username
+                        }
+                    </td>
+                    <td>
+                        <b>@count</b>
+                    </td>
+                </tr>
+                i += 1;
+            }
+        </table>
     </details>
 }
 
@@ -122,16 +118,16 @@
                 // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
                 <div class="song card" style="margin: 16px; width: 330px; min-height:200px;" @key="@song.Id">
                     <SongInfoCardComponent Song="@song"/>
-                    <div style="padding: 16px">
+                    <div class="songInfoCardSongLinks" style="padding: 16px">
                         <div>
                             Video links:
                             @if (hasVideo)
                             {
                                 var videoLinks = song.Links.Where(x => x.IsVideo);
-                                <ul>
+                                <ul class="songInfoCardSongLinksVideoLinks">
                                     @foreach (SongLink videoLink in videoLinks)
                                     {
-                                        <li>
+                                        <li class="songInfoCardSongLinksVideoLink">
                                             @if (isAdmin)
                                             {
                                                 <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))"></i>
@@ -178,10 +174,10 @@
                             @if (hasSound)
                             {
                                 var soundLinks = song.Links.Where(x => !x.IsVideo);
-                                <ul>
+                                <ul class="songInfoCardSongLinksSoundLinks">
                                     @foreach (SongLink soundLink in soundLinks)
                                     {
-                                        <li>
+                                        <li class="songInfoCardSongLinksSoundLink">
                                             @if (isAdmin)
                                             {
                                                 <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))"></i>
@@ -252,7 +248,7 @@
                                             <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
                                             <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
                                         </div>
-                                        <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
+                                        <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
                                     </EditForm>
                                 }
                             }

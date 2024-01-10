@@ -86,70 +86,62 @@
 
 
         <Blazorise.TabPanel Name="TabSongDifficulty">
-            <div class="libraryStatsRow">
-                <div class="libraryStatsColumn">
-                    <p>Songs that have been played at least once: </p>
-                    <table style="max-width: 400px">
-                        <tr>
-                            <th>Difficulty level</th>
-                            <th>Songs</th>
-                        </tr>
-                        @foreach ((var songDifficultyLevel, int count) in libraryStats.SongDifficultyLevels)
-                        {
-                            <tr>
-                                <td>@songDifficultyLevel.GetDisplayName()</td>
-                                <td>
-                                    <b>@count</b>
-                                </td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-            </div>
+            <p>Songs that have been played at least once: </p>
+            <table style="max-width: 400px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">Difficulty level</th>
+                    <th class="libraryStatsHeader">Songs</th>
+                </tr>
+                @foreach ((var songDifficultyLevel, int count) in libraryStats.SongDifficultyLevels)
+                {
+                    <tr class="libraryStatsRow">
+                        <td>@songDifficultyLevel.GetDisplayName()</td>
+                        <td>
+                            <b>@count</b>
+                        </td>
+                    </tr>
+                }
+            </table>
         </Blazorise.TabPanel>
 
 
         <Blazorise.TabPanel Name="TabVNYear">
-            <div class="libraryStatsRow">
-                <div class="libraryStatsColumn">
-                    <table style="max-width: 400px">
-                        <tr>
-                            <th>Year</th>
-                            <th>Songs</th>
-                            <th>Percentage</th>
-                        </tr>
-                        @foreach ((DateTime year, int count) in libraryStats.msYearAvailable)
-                        {
-                            <tr>
-                                <td>@year.Year.ToString()</td>
-                                <td>
-                                    <b>@count/@libraryStats.msYear[year]</b>
-                                </td>
-                                <td>
-                                    <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
-                                </td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-            </div>
+            <table style="max-width: 400px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">Year</th>
+                    <th class="libraryStatsHeader">Songs</th>
+                    <th class="libraryStatsHeader">Percentage</th>
+                </tr>
+                @foreach ((DateTime year, int count) in libraryStats.msYearAvailable)
+                {
+                    <tr class="libraryStatsRow">
+                        <td>@year.Year.ToString()</td>
+                        <td>
+                            <b>@count/@libraryStats.msYear[year]</b>
+                        </td>
+                        <td>
+                            <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
+                        </td>
+                    </tr>
+                }
+            </table>
         </Blazorise.TabPanel>
 
 
         <Blazorise.TabPanel Name="TabVN">
-            <div class="libraryStatsRow">
-                <div class="libraryStatsColumn">
+            <div class="libraryStatsDoubleTableOuter">
+                <div class="libraryStatsDoubleTableInner">
                     <p>Total:</p>
                     <table>
-                        <tr>
-                            <th>#</th>
-                            <th>VN</th>
-                            <th>Songs</th>
+                        <tr class="libraryStatsHeaders">
+                            <th class="libraryStatsHeader">#</th>
+                            <th class="libraryStatsHeader">VN</th>
+                            <th class="libraryStatsHeader">Songs</th>
                         </tr>
                         @for (int i = 0; i < msm.Count; i++)
                         {
                             var item = msm[i];
-                            <tr>
+                            <tr class="libraryStatsRow">
                                 <td>@(i + 1)</td>
                                 <td>
                                     <a class="link-primary" href="@(item.MselUrl)" target="_blank">
@@ -164,19 +156,19 @@
                     </table>
                 </div>
 
-                <div class="libraryStatsColumn">
+                <div class="libraryStatsDoubleTableInner">
                     <p>Available:</p>
                     <table>
-                        <tr>
-                            <th>#</th>
-                            <th>VN</th>
-                            <th>Songs</th>
-                            <th>Percentage</th>
+                        <tr class="libraryStatsHeaders">
+                            <th class="libraryStatsHeader">#</th>
+                            <th class="libraryStatsHeader">VN</th>
+                            <th class="libraryStatsHeader">Songs</th>
+                            <th class="libraryStatsHeader">Percentage</th>
                         </tr>
                         @for (int i = 0; i < msmAvailable.Count; i++)
                         {
                             var item = msmAvailable[i];
-                            <tr>
+                            <tr class="libraryStatsRow">
                                 <td>@(i + 1)</td>
                                 <td>
                                     <a class="link-primary" href="@(item.MselUrl)" target="_blank">
@@ -199,19 +191,19 @@
 
 
         <Blazorise.TabPanel Name="TabArtist">
-            <div class="libraryStatsRow">
-                <div class="libraryStatsColumn">
+            <div class="libraryStatsDoubleTableOuter">
+                <div class="libraryStatsDoubleTableInner">
                     <p>Total:</p>
                     <table>
-                        <tr>
-                            <th>#</th>
-                            <th>Artist</th>
-                            <th>Songs</th>
+                        <tr class="libraryStatsHeaders">
+                            <th class="libraryStatsHeader">#</th>
+                            <th class="libraryStatsHeader">Artist</th>
+                            <th class="libraryStatsHeader">Songs</th>
                         </tr>
                         @for (int i = 0; i < am.Count; i++)
                         {
                             var item = am[i];
-                            <tr>
+                            <tr class="libraryStatsRow">
                                 <td>@(i + 1)</td>
                                 <td>
                                     @* todo nonlatinalias *@
@@ -227,19 +219,19 @@
                     </table>
                 </div>
 
-                <div class="libraryStatsColumn">
+                <div class="libraryStatsDoubleTableInner">
                     <p>Available:</p>
                     <table>
-                        <tr>
-                            <th>#</th>
-                            <th>Artist</th>
-                            <th>Songs</th>
-                            <th>Percentage</th>
+                        <tr class="libraryStatsHeaders">
+                            <th class="libraryStatsHeader">#</th>
+                            <th class="libraryStatsHeader">Artist</th>
+                            <th class="libraryStatsHeader">Songs</th>
+                            <th class="libraryStatsHeader">Percentage</th>
                         </tr>
                         @for (int i = 0; i < amAvailable.Count; i++)
                         {
                             var item = amAvailable[i];
-                            <tr>
+                            <tr class="libraryStatsRow">
                                 <td>@(i + 1)</td>
                                 <td>
                                     @* todo nonlatinalias *@
@@ -270,49 +262,45 @@
 
 
         <Blazorise.TabPanel Name="TabUploaders">
-            <div class="libraryStatsRow">
-                <div class="libraryStatsColumn">
-                    <table style="max-width: 350px">
-                        <tr>
-                            <th>#</th>
-                            <th>Username</th>
-                            <th>Total</th>
-                            <th>Video</th>
-                            <th>Sound</th>
-                        </tr>
-                        @{ int i = 1; }
-                        @foreach ((string username, var uploaderStats) in libraryStats.UploaderCounts)
-                        {
-                            bool isRobot = username == Constants.RobotNameLower;
-                            <tr>
-                                <td>@i</td>
-                                <td>
-                                    @if (isRobot)
-                                    {
-                                        <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
-                                            <span>@Constants.RobotName</span>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        @username
-                                    }
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.TotalCount</b>
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.VideoCount</b>
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.SoundCount</b>
-                                </td>
-                            </tr>
-                            i += 1;
-                        }
-                    </table>
-                </div>
-            </div>
+            <table style="max-width: 350px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">#</th>
+                    <th class="libraryStatsHeader">Username</th>
+                    <th class="libraryStatsHeader">Total</th>
+                    <th class="libraryStatsHeader">Video</th>
+                    <th class="libraryStatsHeader">Sound</th>
+                </tr>
+                @{ int i = 1; }
+                @foreach ((string username, var uploaderStats) in libraryStats.UploaderCounts)
+                {
+                    bool isRobot = username == Constants.RobotNameLower;
+                    <tr class="libraryStatsRow">
+                        <td>@i</td>
+                        <td>
+                            @if (isRobot)
+                            {
+                                <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
+                                    <span>@Constants.RobotName</span>
+                                </a>
+                            }
+                            else
+                            {
+                                @username
+                            }
+                        </td>
+                        <td>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.TotalCount</b>
+                        </td>
+                        <td>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.VideoCount</b>
+                        </td>
+                        <td>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Uploader(username); })">@uploaderStats.SoundCount</b>
+                        </td>
+                    </tr>
+                    i += 1;
+                }
+            </table>
         </Blazorise.TabPanel>
     }
     </Content>

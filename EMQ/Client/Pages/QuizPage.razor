@@ -115,7 +115,7 @@
     }
 }
 
-<div style="display:flex; justify-content:center; align-items:center;">
+<div id="numSongs" style="display:flex; justify-content:center; align-items:center;">
     @(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs
 </div>
 
@@ -334,7 +334,7 @@ else
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(playerGuess));"
                          @onclick="@(() => SetGuess(playerGuess))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                            <span style="word-wrap: anywhere; height: 90px; display: block;
+                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @* todo make text smaller as it gets longer *@
                                 @playerGuess
@@ -344,7 +344,7 @@ else
 
                     @if (Room?.QuizSettings.MaxLives > 0)
                     {
-                        <span> Lives: @player.Lives</span>
+                        <span class="playerLives"> Lives: @player.Lives</span>
                     }
 
                     <div style="position: relative">
