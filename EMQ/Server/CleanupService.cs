@@ -29,12 +29,16 @@ public sealed class CleanupService : BackgroundService
         }
     }
 
-    // todo check room wasn't created in the last minute
     private static void DoWork()
     {
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
         foreach (Room room in ServerState.Rooms)
         {
+            if ((DateTime.UtcNow - room.CreatedAt) < TimeSpan.FromMinutes(1))
+            {
+                continue;
+            }
+
             var roomSessions = ServerState.Sessions.Where(x => room.Players.Any(y => y.Id == x.Player.Id)).ToList();
             var activeSessions = roomSessions
                 .Where(x => (DateTime.UtcNow - x.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5)).ToList();
@@ -86,6 +90,11 @@ public sealed class CleanupService : BackgroundService
 
         foreach (Session session in ServerState.Sessions)
         {
+            if ((DateTime.UtcNow - session.CreatedAt) < TimeSpan.FromMinutes(1))
+            {
+                continue;
+            }
+
             bool isInARoom =
                 ServerState.Rooms.FirstOrDefault(x =>
                     x.Players.Any(y => y.Id == session.Player.Id) ||

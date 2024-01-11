@@ -15,6 +15,7 @@ public sealed class Room : IDisposable
         Id = id;
         Name = name;
         Owner = owner;
+        CreatedAt = DateTime.UtcNow;
     }
 
     private readonly object _lock = new();
@@ -39,6 +40,8 @@ public sealed class Room : IDisposable
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
 
     public Player Owner { get; set; }
+
+    public DateTime CreatedAt { get; }
 
     [JsonIgnore]
     public ConcurrentDictionary<int, string> AllConnectionIds { get; set; } = new();
