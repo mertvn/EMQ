@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
@@ -244,7 +245,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-if (Constants.UseLocalSongFilesForDevelopment)
+if (Constants.UseLocalSongFilesForDevelopment && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
     app.UseStaticFiles(new StaticFileOptions
     {
@@ -281,21 +282,24 @@ app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
+// Console.WriteLine(Directory.GetCurrentDirectory());
+DotEnv.Load("../../.env");
+
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();
 
-string cnnStrSong = ConnectionHelper.GetConnectionString();
-if (cnnStrSong.Contains("railway"))
+string cnnStrSong;
+string cnnStrAuth;
+if (hasDb)
 {
-    // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
-    await Task.Delay(TimeSpan.FromSeconds(1));
-}
+    cnnStrSong = ConnectionHelper.GetConnectionString();
+    if (cnnStrSong.Contains("railway"))
+    {
+        // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
+        await Task.Delay(TimeSpan.FromSeconds(1));
+    }
 
-string cnnStrAuth = ConnectionHelper.GetConnectionString_Auth();
-if (cnnStrAuth.Contains("railway"))
-{
-    // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
-    await Task.Delay(TimeSpan.FromSeconds(1));
+    cnnStrAuth = ConnectionHelper.GetConnectionString_Auth();
 }
 
 static IServiceProvider CreateServices(string cnnStr, string[] tags)
