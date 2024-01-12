@@ -55,6 +55,13 @@ public enum SongSourceSongType
     Random = 777, // must be higher than everything else for song selection to work correctly
 }
 
+public enum SongSourceSongTypeMode
+{
+    All,
+    Vocals,
+    BGM,
+}
+
 public enum SongSourceType
 {
     Unknown,

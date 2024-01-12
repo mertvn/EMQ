@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -152,6 +152,28 @@ public partial class LibraryPage
             await StateHasChangedAsync();
             await TabsComponent!.SelectTab("TabVNDB");
         }
+    }
+
+    public async Task SelectedResultChangedYear(DateTime year, SongSourceSongTypeMode mode)
+    {
+        CurrentSongs = new List<Song>();
+        NoSongsText = "Loading...";
+        StateHasChanged();
+
+        var res = await _client.PostAsJsonAsync("Library/FindSongsByYear", new ReqFindSongsByYear(year.Year, mode));
+        if (res.IsSuccessStatusCode)
+        {
+            List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+            if (songs != null && songs.Any())
+            {
+                CurrentSongs = songs;
+            }
+        }
+
+        NoSongsText = "No results.";
+
+        await StateHasChangedAsync();
+        await TabsComponent!.SelectTab("TabVNDB");
     }
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)

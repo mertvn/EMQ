@@ -75,6 +75,15 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByYear")]
+    public async Task<IEnumerable<Song>> FindSongsByYear([FromBody] ReqFindSongsByYear req)
+    {
+        var songs = await DbManager.FindSongsByYear(req.Year, req.Mode.ToSongSourceSongTypes());
+        return songs;
+    }
+
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("ImportSongLink")]
@@ -163,22 +172,10 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpGet]
     [Route("GetLibraryStats")]
-    public async Task<LibraryStats> GetLibraryStats([FromQuery] int mode)
+    public async Task<LibraryStats> GetLibraryStats([FromQuery] SongSourceSongTypeMode mode)
     {
         const int limit = 250;
-
-        SongSourceSongType[] songSourceSongTypes = mode switch
-        {
-            0 => new[]
-            {
-                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.BGM
-            },
-            1 => new[] { SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert },
-            2 => new[] { SongSourceSongType.BGM },
-            _ => throw new InvalidOperationException()
-        };
-
-        var libraryStats = await DbManager.SelectLibraryStats(limit, songSourceSongTypes);
+        var libraryStats = await DbManager.SelectLibraryStats(limit, mode.ToSongSourceSongTypes());
         return libraryStats;
     }
 

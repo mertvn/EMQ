@@ -257,4 +257,23 @@ public static class ExtensionMethods
             return Serializer.Deserialize<T>(ms);
         }
     }
+
+    public static SongSourceSongType[] ToSongSourceSongTypes(this SongSourceSongTypeMode mode)
+    {
+        SongSourceSongType[] songSourceSongTypes = mode switch
+        {
+            SongSourceSongTypeMode.All => new[]
+            {
+                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.BGM
+            },
+            SongSourceSongTypeMode.Vocals => new[]
+            {
+                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
+            },
+            SongSourceSongTypeMode.BGM => new[] { SongSourceSongType.BGM },
+            _ => throw new InvalidOperationException()
+        };
+
+        return songSourceSongTypes;
+    }
 }

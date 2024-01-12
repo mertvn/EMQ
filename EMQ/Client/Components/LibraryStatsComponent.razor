@@ -117,9 +117,9 @@
                     <tr class="libraryStatsRow">
                         <td>@year.Year.ToString()</td>
                         <td>
-                            <b>@count/@libraryStats.msYear[year]</b>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Year(year); })">@count/@libraryStats.msYear[year]</b>
                         </td>
-                        <td>
+                        <td style="color: @UiHelpers.Bool2Color(count == libraryStats.msYear[year], "green", "inherit")">
                             <b>@Utils.PercentageStr(count, libraryStats.msYear[year])</b>
                         </td>
                     </tr>

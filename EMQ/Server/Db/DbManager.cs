@@ -1552,6 +1552,7 @@ public static class DbManager
         return songs;
     }
 
+    // todo songSourceSongTypes?
     public static async Task<IEnumerable<Song>> FindSongsByArtistTitle(string artistTitle)
     {
         List<Song> songs = new();
@@ -1580,6 +1581,7 @@ public static class DbManager
         return songs;
     }
 
+    // todo songSourceSongTypes?
     public static async Task<IEnumerable<Song>> FindSongsByArtistId(int artistId)
     {
         List<Song> songs = new();
@@ -1602,6 +1604,7 @@ public static class DbManager
         return songs;
     }
 
+    // todo songSourceSongTypes
     public static async Task<IEnumerable<Song>> FindSongsByUploader(string uploader)
     {
         List<Song> songs = new();
@@ -1610,6 +1613,34 @@ public static class DbManager
             const string sql = "SELECT DISTINCT music_id from music_external_link where submitted_by ILIKE @uploader";
 
             var mids = (await connection.QueryAsync<int>(sql, new { uploader })).ToList();
+            if (mids.Count > 2000)
+            {
+                // too costly to process + browsers would freeze because there's no pagination right now
+                return songs;
+            }
+
+            foreach (int mid in mids)
+            {
+                songs.AddRange(await SelectSongs(new Song { Id = mid }, false));
+            }
+        }
+
+        return songs;
+    }
+
+    public static async Task<IEnumerable<Song>> FindSongsByYear(int year, SongSourceSongType[] songSourceSongTypes)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = @"SELECT DISTINCT music_id
+FROM music_source_music msm
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+WHERE substring(date_trunc('year', ms.air_date_start)::text, 1, 4)::int = @year
+AND msm.type = ANY(@msmType)";
+
+            var mids = (await connection.QueryAsync<int>(sql,
+                new { year = year, msmType = songSourceSongTypes.Cast<int>().ToArray() })).ToList();
             if (mids.Count > 2000)
             {
                 // too costly to process + browsers would freeze because there's no pagination right now
@@ -2375,7 +2406,7 @@ order by type";
 
 
             string sqlMsYear =
-                @"SELECT date_trunc('year', ms.air_date_start) AS year, Count(m.id)
+                @"SELECT date_trunc('year', ms.air_date_start) AS year, Count(DISTINCT m.id)
 FROM music m
 LEFT JOIN music_source_music msm ON msm.music_id = m.id
 LEFT JOIN music_source ms ON ms.id = msm.music_source_id

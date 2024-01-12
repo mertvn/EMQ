@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Client.Pages;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -17,7 +18,7 @@ public partial class LibraryStatsComponent
     public LibraryPage? LibraryPage { get; set; }
 
     [Parameter]
-    public int Mode { get; set; }
+    public SongSourceSongTypeMode Mode { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,6 +71,16 @@ public partial class LibraryStatsComponent
             //     Value = LibrarySongFilterKind.All.ToString()
             // });
             await LibraryPage.SelectedResultChangedUploader(uploader);
+        }
+    }
+
+    private async Task Onclick_Year(DateTime year)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
+            LibraryPage.selectedMusicSourceTitle = null;
+            await LibraryPage.SelectedResultChangedYear(year, Mode);
         }
     }
 }
