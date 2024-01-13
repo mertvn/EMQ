@@ -5,7 +5,7 @@ namespace EMQ.Shared.Core;
 
 public static class RegexPatterns
 {
-    public const string SongLinkUrlRegex = @"^https:\/\/.+\..+\/.+\.(ogg|mp3|mp4|webm)$";
+    public const string CatboxRegex = @"^https:\/\/files\.catbox\.moe\/[a-zA-Z0-9]+\.(ogg|mp3|mp4|webm)$";
 
     public const string VndbIdRegex = @"^u[0-9]{1,99}$";
 

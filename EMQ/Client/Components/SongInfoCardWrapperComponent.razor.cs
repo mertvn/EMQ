@@ -112,6 +112,6 @@ public partial class SongInfoCardWrapperComponent
 public class AddSongLinkModel
 {
     [Required]
-    [RegularExpression(RegexPatterns.SongLinkUrlRegex, ErrorMessage = "Invalid Url")]
+    [RegularExpression(RegexPatterns.CatboxRegex, ErrorMessage = "Invalid Url")]
     public string Url { get; set; } = "";
 }
