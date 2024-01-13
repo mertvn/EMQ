@@ -307,6 +307,7 @@ white-space: nowrap;
 }
 else
 {
+@* do not modify Placeholder text without changing the javascript file as well *@
     <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
         <GuessInputComponent @ref="_guessInputComponent"

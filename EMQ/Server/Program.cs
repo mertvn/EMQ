@@ -193,7 +193,7 @@ string csp = @$"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-QhHh+9aAlmRf8xfQ6PS0jHIMBqVU1yJh8eX/meMG5sk='
+                          'sha256-4HOrPPP9YNU+ceztdigFDw6EHVYWkQs+6hPo8Ii78NQ='
                           ;
                style-src 'self'
                          'unsafe-inline'
