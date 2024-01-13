@@ -31,6 +31,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 
+// Console.WriteLine(Directory.GetCurrentDirectory());
+DotEnv.Load("../../.env");
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRateLimiter(options =>
@@ -281,9 +284,6 @@ app.MapControllers();
 app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
-
-// Console.WriteLine(Directory.GetCurrentDirectory());
-DotEnv.Load("../../.env");
 
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();

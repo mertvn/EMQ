@@ -34,6 +34,7 @@ public static class DotEnv
 
                 string key = parts[0];
                 string value = parts[1];
+                // Console.WriteLine($"set {key} to {value}");
                 Environment.SetEnvironmentVariable(key, value);
             }
             catch (Exception e)
@@ -44,6 +45,6 @@ public static class DotEnv
         }
 
         Console.WriteLine(
-            $"loaded {lines.Count(line => !string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))} variables from .env file");
+            $"loaded {lines.Count(line => !string.IsNullOrWhiteSpace(line) && !line.StartsWith('#'))} variables from .env file");
     }
 }

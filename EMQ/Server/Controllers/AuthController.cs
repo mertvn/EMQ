@@ -135,7 +135,7 @@ public class AuthController : ControllerBase
         return new ResCreateSession(session, vndbInfo);
     }
 
-    [EnableRateLimiting(RateLimitKind.Login)]
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [CustomAuthorize(PermissionKind.Login)]
     [HttpPost]
     [Route("RemoveSession")]
