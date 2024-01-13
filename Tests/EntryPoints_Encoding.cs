@@ -100,6 +100,11 @@ public class EntryPoints_Encoding
                 if (meanVolume > targetVolumeMean)
                 {
                     volumeAdjust = targetVolumeMean - meanVolume;
+
+                    if (maxVolume > targetVolumeMax && volumeAdjust < targetVolumeMax)
+                    {
+                        volumeAdjust += targetVolumeMax;
+                    }
                 }
                 else if (maxVolume > targetVolumeMax)
                 {

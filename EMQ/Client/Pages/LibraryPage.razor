@@ -88,7 +88,7 @@
                 }
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabStats">
-                <Blazorise.Tabs SelectedTab="TabAll">
+                <Blazorise.Tabs SelectedTab="@_selectedTabStats" SelectedTabChanged="@OnSelectedTabChangedStats">
                     <Items>
                         <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
                         <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>
@@ -164,7 +164,7 @@
         }
 
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
-        <Blazorise.Tabs SelectedTab="@_selectedTab2" SelectedTabChanged="@OnSelectedTabChanged2" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+        <Blazorise.Tabs @ref="TabsComponentVndb" SelectedTab="@_selectedTabVndb" SelectedTabChanged="@OnSelectedTabChangedVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
                 <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>
                 @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@

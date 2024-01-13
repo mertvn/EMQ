@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -30,13 +30,17 @@ public partial class LibraryPage
 
     private string _selectedTab = "TabAutocompleteMst";
 
-    private string _selectedTab2 = "TabVNDB";
+    private string _selectedTabVndb = "TabVNDB";
+
+    private string _selectedTabStats = "TabAll";
 
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
 
     public string VndbAdvsearchStr { get; set; } = "";
 
     public Tabs? TabsComponent { get; set; }
+
+    public Tabs? TabsComponentVndb { get; set; }
 
     // https://github.com/dotnet/aspnetcore/issues/22159#issuecomment-635427175
     private TaskCompletionSource<bool>? _scheduledRenderTcs;
@@ -70,9 +74,15 @@ public partial class LibraryPage
         return Task.CompletedTask;
     }
 
-    private Task OnSelectedTabChanged2(string name)
+    private Task OnSelectedTabChangedVndb(string name)
     {
-        _selectedTab2 = name;
+        _selectedTabVndb = name;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSelectedTabChangedStats(string name)
+    {
+        _selectedTabStats = name;
         return Task.CompletedTask;
     }
 
@@ -98,7 +108,7 @@ public partial class LibraryPage
                 NoSongsText = "No results.";
 
                 await StateHasChangedAsync();
-                await TabsComponent!.SelectTab("TabVNDB");
+                await TabsComponentVndb!.SelectTab("TabVNDB");
             }
         }
     }
@@ -125,7 +135,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponent!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab("TabVNDB");
         }
     }
 
@@ -150,7 +160,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponent!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab("TabVNDB");
         }
     }
 
@@ -173,7 +183,7 @@ public partial class LibraryPage
         NoSongsText = "No results.";
 
         await StateHasChangedAsync();
-        await TabsComponent!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab("TabVNDB");
     }
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
@@ -199,7 +209,7 @@ public partial class LibraryPage
         }
 
         await StateHasChangedAsync();
-        await TabsComponent!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab("TabVNDB");
     }
 
     private async void OnLibrarySongFilterChanged(ChangeEventArgs arg)
@@ -238,7 +248,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponent!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab("TabVNDB");
         }
     }
 }

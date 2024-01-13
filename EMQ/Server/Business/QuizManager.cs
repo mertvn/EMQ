@@ -1405,12 +1405,12 @@ public class QuizManager
 
     private async Task TriggerSkipIfNecessary(bool printSkippingCount)
     {
-        int isSkippingCount = Quiz.Room.Players.Count(x => x.IsSkipping);
-        int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
-            .Count(x => x.Player.HasActiveConnection);
+        var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .Where(x => x.Player.HasActiveConnection).ToList();
+        int isSkippingCount = activeSessions.Count(x => x.Player.IsSkipping);
 
         const float skipConst = 0.8f;
-        int skipNumber = (int)Math.Round(activePlayersCount * skipConst, MidpointRounding.AwayFromZero);
+        int skipNumber = (int)Math.Round(activeSessions.Count * skipConst, MidpointRounding.AwayFromZero);
 
         if (printSkippingCount)
         {
@@ -1421,9 +1421,8 @@ public class QuizManager
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
             {
-                // todo only check for active sessions
                 bool everyoneAnsweredOrIsSkipping =
-                    Quiz.Room.Players.All(x => !string.IsNullOrWhiteSpace(x.Guess) || x.IsSkipping);
+                    activeSessions.All(x => !string.IsNullOrWhiteSpace(x.Player.Guess) || x.Player.IsSkipping);
                 if (!everyoneAnsweredOrIsSkipping)
                 {
                     Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)");
