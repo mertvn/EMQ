@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
@@ -101,6 +102,11 @@ public class QuizFilters
     [ProtoMember(15)]
     [Range(Constants.QFVoteCountMin, Constants.QFVoteCountMax)]
     public int VoteCountEnd { get; set; } = Constants.QFVoteCountMax;
+
+    [ProtoMember(16)]
+    [Required]
+    [DefaultValue(false)]
+    public bool OnlyOwnUploads { get; set; } = false;
 
     // todo move all applicable filters here
 }

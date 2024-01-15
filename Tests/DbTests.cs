@@ -679,6 +679,53 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_OnlyOwnUploads_Mert()
+    {
+        Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes = new()
+        {
+            { SongSourceSongType.Random, new IntWrapper(int.MaxValue) },
+        };
+
+        const string uploader = "Mert";
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes, OnlyOwnUploads = true },
+            printSql: true, players: new List<Player> { new(2, uploader) });
+
+        // foreach (Song song in songs)
+        // {
+        //     if (song.Links.Count(x =>
+        //             string.Equals(x.SubmittedBy, uploader, StringComparison.InvariantCultureIgnoreCase)) > 1)
+        //     {
+        //     }
+        // }
+
+        Assert.That(songs.Count > 100);
+        Assert.That(songs.Count < 10000);
+        Assert.That(songs.All(song =>
+            song.Links.Any(x => string.Equals(x.SubmittedBy, uploader, StringComparison.InvariantCultureIgnoreCase))));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_OnlyOwnUploads_Mert_hslead()
+    {
+        Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes = new()
+        {
+            { SongSourceSongType.Random, new IntWrapper(int.MaxValue) },
+        };
+
+        List<string> uploaders = new() { "mert", "hslead" };
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes, OnlyOwnUploads = true },
+            printSql: true, players: uploaders.Select(x => new Player(Random.Shared.Next(), x)).ToList());
+
+        Assert.That(songs.Count > 200);
+        Assert.That(songs.Count < 10000);
+        Assert.That(songs.All(song => song.Links.Any(x => uploaders.Contains(x.SubmittedBy!.ToLowerInvariant()))));
+        GenericSongsAssert(songs);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_IsDistinct()
     {
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);

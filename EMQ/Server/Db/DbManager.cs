@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -929,7 +929,7 @@ public static class DbManager
     // todo make Filters required
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
-        bool selectCategories = false)
+        bool selectCategories = false, List<Player>? players = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1240,6 +1240,15 @@ public static class DbManager
                     queryMusicIds.Append($" AND (");
                     queryMusicIds.Append($"ms.votecount >= {filters.VoteCountStart}");
                     queryMusicIds.Append($" AND ms.votecount <= {filters.VoteCountEnd}");
+                    queryMusicIds.Append($")");
+                }
+
+                if (filters.OnlyOwnUploads && players != null)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append(
+                        $"lower(mel.submitted_by) = ANY({players.Select(x => x.Username.ToLowerInvariant()).ToList()})");
                     queryMusicIds.Append($")");
                 }
             }
@@ -1833,6 +1842,7 @@ WHERE id = {mId};
             RatingBayesianEnd = Constants.QFRatingBayesianMax,
             VoteCountStart = Constants.QFVoteCountMin,
             VoteCountEnd = Constants.QFVoteCountMax,
+            OnlyOwnUploads = false,
             VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
         };
 
@@ -1887,6 +1897,7 @@ WHERE id = {mId};
             RatingBayesianEnd = Constants.QFRatingBayesianMax,
             VoteCountStart = Constants.QFVoteCountMin,
             VoteCountEnd = Constants.QFVoteCountMax,
+            OnlyOwnUploads = false,
             VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
         };
 

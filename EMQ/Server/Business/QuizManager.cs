@@ -716,7 +716,7 @@ public class QuizManager
             case SongSelectionKind.Random:
                 dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                     Quiz.Room.QuizSettings.Duplicates, validSources,
-                    filters: Quiz.Room.QuizSettings.Filters);
+                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
 
                 if (dbSongs.Count == 0)
                 {
@@ -744,7 +744,7 @@ public class QuizManager
                 {
                     var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
                         Quiz.Room.QuizSettings.Duplicates, validSources,
-                        filters: Quiz.Room.QuizSettings.Filters);
+                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
 
                     if (!selectedSongs.Any())
                     {
@@ -1140,7 +1140,8 @@ public class QuizManager
             Quiz.Room.QuizSettings.NumSongs,
             Quiz.Room.QuizSettings.Duplicates,
             validSources.SelectMany(x => x.Value).ToList(),
-            Quiz.Room.QuizSettings.Filters);
+            Quiz.Room.QuizSettings.Filters,
+            players: Quiz.Room.Players.ToList());
 
         if (!dbSongs.Any())
         {

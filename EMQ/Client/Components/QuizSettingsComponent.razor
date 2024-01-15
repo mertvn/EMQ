@@ -83,14 +83,6 @@
                 <Blazorise.TabPanel Name="TabGeneral">
                     <div>
                         @* todo allow changing room name *@
-                        <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
-                        <label for="OnlyFromLists">Only from VNDB lists</label>
-                        <br/>
-
-                        <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
-                        <label for="Duplicates">Allow more than one song from the same VN</label>
-                        <br/>
-
                         <InputCheckbox id="IsHotjoinEnabled" class="form-check-input" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
                         <label for="IsHotjoinEnabled">Enable hotjoin</label>
                         <br/>
@@ -169,6 +161,23 @@
                 <Blazorise.TabPanel Name="TabFilters">
                     @* https://stackoverflow.com/a/63384981 *@
                     <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                            <h5>Filters</h5>
+                            <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
+                            <label for="OnlyFromLists">Only from VNDB lists</label>
+                            <br/>
+
+                            <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
+                            <Blazorise.Tooltip Text="Allow multiple songs from one VN" Inline="true">
+                                <label for="Duplicates">Duplicate VNs</label>
+                            </Blazorise.Tooltip>
+                            <br/>
+
+                            <InputCheckbox id="OnlyOwnUploads" class="form-check-input" @bind-Value="ClientQuizSettings.Filters.OnlyOwnUploads" style="margin: 5px"></InputCheckbox>
+                            <label for="OnlyOwnUploads">Only own uploads</label>
+                            <br/>
+                        </div>
+
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
                             <h5>Song types</h5>
 

@@ -115,8 +115,8 @@
     }
 }
 
-<div id="numSongs" style="display:flex; justify-content:center; align-items:center;">
-    @(Room?.Quiz?.QuizState.sp + 1)/@Room?.Quiz?.QuizState.NumSongs
+<div id="numSongsContainer" style="display:flex; justify-content:center; align-items:center;">
+    <span id="sp">@(Room?.Quiz?.QuizState.sp + 1)</span>/<span id="numSongs"> @Room?.Quiz?.QuizState.NumSongs</span>
 </div>
 
 @if (PageState.IsDebug)

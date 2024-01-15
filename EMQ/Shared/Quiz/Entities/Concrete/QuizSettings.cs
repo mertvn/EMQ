@@ -340,6 +340,11 @@ public class QuizSettings
                 $"VN vote count: {o.Filters.VoteCountStart} - {o.Filters.VoteCountEnd} → {n.Filters.VoteCountStart} - {n.Filters.VoteCountEnd}");
         }
 
+        if (o.Filters.OnlyOwnUploads != n.Filters.OnlyOwnUploads)
+        {
+            diff.Add($"Only own uploads: {o.Filters.OnlyOwnUploads} → {n.Filters.OnlyOwnUploads}");
+        }
+
         return diff;
     }
 }
