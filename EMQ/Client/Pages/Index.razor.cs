@@ -51,7 +51,8 @@ public partial class Index
 
     private async Task Logout()
     {
-        if (ClientState.Session is not null)
+        LoginInProgress = true;
+        if (ClientState.Session is not null && !LoginInProgress)
         {
             HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/RemoveSession",
                 new ReqRemoveSession(ClientState.Session.Token));
@@ -70,6 +71,8 @@ public partial class Index
                 // todo display error
             }
         }
+
+        LoginInProgress = false;
     }
 
     private async Task Login(LoginModel loginModel)
