@@ -90,6 +90,13 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
+                var song = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single();
+                if (song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
+                {
+                    Console.WriteLine("skipping bgm: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
+                    continue;
+                }
+
                 // if (uploaded.Count - oldCount >= 100)
                 // {
                 //     break;
@@ -130,8 +137,7 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single()
-                    .ToSongLite();
+                var songLite = song.ToSongLite();
                 uploadable.SongLite = songLite;
                 uploaded.Add(uploadable);
 

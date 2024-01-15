@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 using EMQ.Shared.Core;
@@ -8,7 +9,7 @@ namespace EMQ.Server;
 
 public static class ConnectionHelper
 {
-    private static readonly Dictionary<string, string> s_cachedCnnStr = new();
+    private static readonly ConcurrentDictionary<string, string> s_cachedCnnStr = new();
 
     private static string GetDatabaseUrl(string envVar)
     {

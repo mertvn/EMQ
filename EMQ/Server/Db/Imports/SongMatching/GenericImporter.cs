@@ -19,15 +19,49 @@ public static class GenericImporter
     //     await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_all_1", false);
     // }
 
+    // public static async Task ImportGeneric()
+    // {
+    //     string dir = "L:\\olil355 - Copy/FolderI";
+    //     // dir = "M:\\a";
+    //     var regex = new Regex("", RegexOptions.Compiled);
+    //     string extension = "*";
+    //
+    //     var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false, true);
+    //     await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_I_bgm", false);
+    // }
+    //
+
+    // public static async Task ImportGeneric()
+    // {
+    //     string dir = "L:\\TOSORT\\ギャルゲーボーカルコレクション 「1989-2006」 - Galge Vocal Collection 「1989-2006」";
+    //     // dir = "M:\\a";
+    //     var regex = new Regex("", RegexOptions.Compiled);
+    //     string extension = "*";
+    //
+    //     var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false, true);
+    //     await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\8906", false);
+    // }
+
+    // public static async Task ImportGeneric()
+    // {
+    //     string dir = @"L:\TOSORT\audio sort";
+    //     // dir = "M:\\a";
+    //     var regex = new Regex("", RegexOptions.Compiled);
+    //     string extension = "*";
+    //
+    //     var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false, true);
+    //     await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\audiosort", false);
+    // }
+
     public static async Task ImportGeneric()
     {
-        string dir = "L:\\olil355 - Copy/FolderI";
+        string dir = @"L:\olil355 - Copy";
         // dir = "M:\\a";
         var regex = new Regex("", RegexOptions.Compiled);
         string extension = "*";
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, new List<string> { extension }, false, true);
-        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355_I_bgm", false);
+        await SongMatcher.Match(songMatches, "C:\\emq\\matching\\generic\\olil355vocalsafterinitialbgmimport", false);
     }
 
     // public static async Task ImportGeneric()

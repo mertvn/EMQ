@@ -152,6 +152,9 @@ public static class SongMatcher
 
     public static async Task Match(List<SongMatch> songMatches, string outputDir, bool useSource = true)
     {
+        // todo? param
+        var songSourceSongTypes = new[] { SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert };
+
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
@@ -223,6 +226,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     $"(mt.latin_title % ANY({songMatch.Titles}) OR mt.non_latin_title % ANY({songMatch.Titles}))");
                 queryMusic.Where(
                     $"a.id = ANY({aIds})");
+                queryMusic.Where(
+                    $"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
                 // Console.WriteLine(queryMusic.Sql);
                 //Console.WriteLine(JsonSerializer.Serialize(queryMusic.Parameters, Utils.JsoIndented));
@@ -233,6 +238,12 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     innerResult.mIds.AddRange(mids);
                     if (mids.Count > 1)
                     {
+                        if (mids.All(x => midsWithSoundLinks.Contains(x)))
+                        {
+                            innerResult.ResultKind = SongMatchInnerResultKind.AlreadyHave;
+                            return;
+                        }
+
                         innerResult.ResultKind = SongMatchInnerResultKind.MultipleMids;
                         return;
                     }

@@ -2767,13 +2767,13 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         }
     }
 
-    public static async Task<List<int>> FindMidsWithSoundLinks()
+    public static async Task<HashSet<int>> FindMidsWithSoundLinks()
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var mids = (await connection.QueryAsync<int>(
                     "SELECT music_id FROM music_external_link where is_video = false"))
-                .ToList();
+                .ToHashSet();
             return mids;
         }
     }
