@@ -399,7 +399,8 @@ public class QuizManager
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
-                                 !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any();
+                                 !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&
+                                 !Quiz.Room.QuizSettings.Filters.OnlyOwnUploads;
         if (shouldUpdateStats)
         {
             // If we don't create a new dictionary,
