@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
@@ -11,9 +11,14 @@
 @inject ClientUtils _clientUtils
 
 <p>
-    Upload up to @UploadConstants.MaxFilesSpecificSongUpload files:
-    <InputFile OnChange="@OnInputFileChange" multiple disabled="@(_uploadResults.Count >= UploadConstants.MaxFilesSpecificSongUpload)" style="width:100vw; max-width:100%; white-space: normal; word-break: break-all; overflow: hidden;"/>
     Allowed formats: @UploadConstants.ValidMediaTypesStr
+    <br/>
+    Upload up to @UploadConstants.MaxFilesSpecificSongUpload files:
+    <InputFile
+        OnChange="@OnInputFileChange"
+        multiple
+        disabled="@(_uploadResults.Count >= UploadConstants.MaxFilesSpecificSongUpload)"
+        style="width:100vw; max-width:100%; white-space: normal; word-break: break-all; overflow: hidden;"/>
     @StatusText
 </p>
 

@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @using EMQ.Shared.Auth.Entities.Concrete
@@ -252,7 +252,7 @@
                                         <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
                                     </EditForm>
 
-                                    @if (isAdmin)
+                                    @if (isModerator)
                                     {
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
