@@ -1,0 +1,51 @@
+﻿@using Microsoft.AspNetCore.Components
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core.UI
+@using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
+@using System.Net.Http.Headers
+@using EMQ.Shared
+@inject HttpClient _client
+@inject ILogger<Index> _logger
+@inject ClientUtils _clientUtils
+
+<p>
+    <label>
+        Upload up to @UploadConstants.MaxFilesSpecificSongUpload files:
+        <InputFile OnChange="@OnInputFileChange" multiple disabled="@(_uploadResults.Count >= UploadConstants.MaxFilesSpecificSongUpload)"/>
+        @StatusText
+    </label>
+</p>
+
+@if (_uploadResults.Count > 0)
+{
+    <ul>
+        @foreach (var file in _uploadResults)
+        {
+            <li>
+                @file.FileName
+                <br>
+                @if (file.Uploaded)
+                {
+                    <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
+                        <span>@file.ResultUrl</span>
+                    </a>
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(file.ErrorStr))
+                    {
+                        <span>Uploading...</span>
+                    }
+                    else
+                    {
+                        <span>@file.ErrorStr</span>
+                    }
+                }
+                <br>
+                <br>
+            </li>
+        }
+    </ul>
+}

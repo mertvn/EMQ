@@ -25,6 +25,7 @@ public class CustomAuthorizeAttribute : Attribute, IAsyncActionFilter
         if (context.HttpContext.Request.Headers.TryGetValue(AuthStuff.AuthorizationHeaderName, out var token))
         {
             session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+            context.HttpContext.Items["EMQ_SESSION"] = session;
         }
 
         UserRoleKind currentRole = session?.UserRoleKind ?? UserRoleKind.Visitor;

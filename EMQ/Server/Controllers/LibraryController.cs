@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -94,24 +95,7 @@ public class LibraryController : ControllerBase
             return false;
         }
 
-        int rqId = await DbManager.InsertReviewQueue(req.MId, req.SongLink, "Pending");
-
-        if (rqId > 0)
-        {
-            string filePath = System.IO.Path.GetTempPath() + req.SongLink.Url.LastSegment();
-
-            bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(req.SongLink.Url));
-            if (dlSuccess)
-            {
-                var analyserResult = await MediaAnalyser.Analyse(filePath);
-                // todo extract audio and upload it if necessary
-                System.IO.File.Delete(filePath);
-
-                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending, analyserResult: analyserResult);
-            }
-        }
-
-        return rqId > 0;
+        return await ServerUtils.ImportSongLinkInner(req.MId, req.SongLink, null);
     }
 
     [CustomAuthorize(PermissionKind.ReportSongLink)]

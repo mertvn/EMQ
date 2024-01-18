@@ -98,6 +98,13 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
         // Console.WriteLine($"userPermissions: {JsonSerializer.Serialize(userPermissions, Utils.JsoIndented)}");
         return userPermissions.Contains(permission);
     }
+
+    // todo use everywhere relevant
+    public static Session? GetSession(IDictionary<object, object?> httpContextItems)
+    {
+        httpContextItems.TryGetValue("EMQ_SESSION", out object? session);
+        return session as Session;
+    }
 }
 
 [Flags]

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace EMQ.Server;
 
@@ -41,5 +43,12 @@ public static class CryptoUtils
         byte[] newHash = HashPassword(password, Convert.FromHexString(salt));
         string newHashStr = Convert.ToHexString(newHash);
         return hash == newHashStr;
+    }
+
+    public static string Sha256Hash(Stream stream)
+    {
+        string hash = Convert.ToHexString(SHA256.HashData(stream));
+        stream.Position = 0;
+        return hash;
     }
 }

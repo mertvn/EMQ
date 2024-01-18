@@ -11,11 +11,12 @@ using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
-using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Renci.SshNet;
+using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
 namespace EMQ.Server;
 
@@ -153,5 +154,54 @@ public static class ServerUtils
             $"GetVndbInfo_Inner took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         return vndbInfo;
+    }
+
+    public static void SftpFileUpload(string ftpUrl, string username, string password, Stream stream, string remotePath)
+    {
+        if (stream.Length == 0)
+        {
+            throw new Exception("stream length is 0");
+        }
+
+        var connectionInfo =
+            new Renci.SshNet.ConnectionInfo(ftpUrl, username, new PasswordAuthenticationMethod(username, password));
+        using (var client = new SftpClient(connectionInfo))
+        {
+            client.Connect();
+            Console.WriteLine(client.ConnectionInfo.CurrentClientEncryption);
+            Console.WriteLine(client.ConnectionInfo.CurrentServerEncryption);
+            client.UploadFile(stream, remotePath);
+            client.Disconnect();
+        }
+    }
+
+    public static async Task<bool> ImportSongLinkInner(int mId, SongLink songLink, string existingPath)
+    {
+        int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
+
+        // todo extract audio and upload it if necessary
+        if (rqId > 0)
+        {
+            if (!string.IsNullOrEmpty(existingPath))
+            {
+                var analyserResult = await MediaAnalyser.Analyse(existingPath);
+                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                    analyserResult: analyserResult);
+            }
+            else
+            {
+                string filePath = System.IO.Path.GetTempPath() + songLink.Url.LastSegment();
+                bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(songLink.Url));
+                if (dlSuccess)
+                {
+                    var analyserResult = await MediaAnalyser.Analyse(filePath);
+                    System.IO.File.Delete(filePath);
+                    await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                        analyserResult: analyserResult);
+                }
+            }
+        }
+
+        return rqId > 0;
     }
 }

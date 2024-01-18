@@ -107,6 +107,11 @@ public partial class SongInfoCardWrapperComponent
         var song = CurrentSongs.Single(x => x.Id == mId);
         song.Links.RemoveAll(x => x.Url == url);
     }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    }
 }
 
 public class AddSongLinkModel
