@@ -72,10 +72,28 @@ public partial class UploadComponent
                 continue;
             }
 
-            // todo check if file can be uploaded: other things
             if (file.Size > UploadConstants.MaxFilesizeBytes)
             {
                 uploadResult.ErrorStr = "File is too large";
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(file.ContentType))
+            {
+                uploadResult.ErrorStr = "Unknown file format";
+                continue;
+            }
+
+            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
+            if (mediaTypeInfo is null)
+            {
+                uploadResult.ErrorStr = $"Invalid file format: {file.ContentType}";
+                continue;
+            }
+
+            if (mediaTypeInfo.RequiresEncode)
+            {
+                uploadResult.ErrorStr = "This file format requires encoding, which is not yet implemented";
                 continue;
             }
 

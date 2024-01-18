@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -12,9 +13,9 @@ using FFMpegCore;
 
 namespace EMQ.Server.Business;
 
-// todo detect transcodes
 public static class MediaAnalyser
 {
+// todo detect bad transcodes
     public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false)
     {
         string[] validAudioFormats = { "ogg", "mp3" };
@@ -183,5 +184,43 @@ public static class MediaAnalyser
         {
             Console.WriteLine(JsonSerializer.Serialize(result, Utils.Jso));
         }
+    }
+
+    public static async Task<string> TranscodeInto192KMp3(string filePath)
+    {
+        Console.WriteLine("transcoding into .mp3");
+        var file = Path.GetFileNameWithoutExtension(filePath);
+        string outputFinal = $"{Path.GetTempFileName()}.mp3";
+        string audioEncoderName = "libmp3lame";
+
+        // todo volumedetect
+        // todo silencedetect
+        var process = new Process()
+        {
+            StartInfo = new ProcessStartInfo()
+            {
+                FileName = "ffmpeg",
+                Arguments =
+                    $"-i \"{filePath}\" " +
+                    $"-c:a {audioEncoderName} -b:a 192k -ac 2 " +
+                    $"-nostdin " +
+                    $"\"{outputFinal}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            }
+        };
+
+        process.Start();
+        process.BeginOutputReadLine();
+
+        string err = await process.StandardError.ReadToEndAsync();
+        if (err.Any())
+        {
+            Console.WriteLine(err);
+        }
+
+        return outputFinal;
     }
 }

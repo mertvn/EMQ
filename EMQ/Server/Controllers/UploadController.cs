@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
+using EMQ.Server.Business;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
@@ -28,6 +29,7 @@ public class UploadController : ControllerBase
         _logger = logger;
     }
 
+    // ReSharper disable once NotAccessedField.Local
     private readonly ILogger<UploadController> _logger;
 
     [RequestSizeLimit(UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
@@ -52,8 +54,6 @@ public class UploadController : ControllerBase
         const int maxAllowedFiles = UploadConstants.MaxFilesPerRequest;
         const long maxFileSize = UploadConstants.MaxFilesizeBytes;
 
-        string[] validExtensions = { "mp4", "webm", "mp3", "ogg" };
-
         var resourcePath = new Uri($"{Request.Scheme}://{Request.Host}/"); // todo?
         int filesProcessed = 0;
         List<UploadResult> uploadResults = new();
@@ -62,11 +62,23 @@ public class UploadController : ControllerBase
             var uploadResult = new UploadResult();
 
             // todo check file signatures instead
-            // todo handle errors when splitting etc
-            // todo validate file etc.
-            string extension = file.FileName.Split(".").Last();
+            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
+            if (mediaTypeInfo is null)
+            {
+                uploadResult.ErrorStr = "Invalid file format";
+                continue;
+            }
+            else if (mediaTypeInfo.RequiresEncode)
+            {
+                uploadResult.ErrorStr = "This file format requires encoding, which is not yet implemented";
+                continue;
+            }
+
+            string extension = mediaTypeInfo.Extension;
+
+            // this may fail but we don't really care
             string[] split = file.FileName.Split(";");
-            int mId = Convert.ToInt32(split[0]); // todo
+            int mId = Convert.ToInt32(split[0]);
 
             string untrustedFileName = split[1];
             uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
@@ -88,7 +100,8 @@ public class UploadController : ControllerBase
                     string? tempPath = null;
                     try
                     {
-                        string trustedFileNameForFileStorage = $"{Guid.NewGuid()}.{extension}";
+                        string guid = Guid.NewGuid().ToString();
+                        string trustedFileNameForFileStorage = $"{guid}.{extension}";
                         tempPath = $"{Path.GetTempPath()}{trustedFileNameForFileStorage}";
                         fs = new FileStream(tempPath, FileMode.Create);
                         await file.CopyToAsync(fs);
@@ -97,6 +110,25 @@ public class UploadController : ControllerBase
                         string hash = CryptoUtils.Sha256Hash(fs);
                         Console.WriteLine($"sha256:{hash}");
                         // todo prevent dupes (prob have to store hash in mel)
+
+                        if (mediaTypeInfo.RequiresEncode)
+                        {
+                            throw new NotImplementedException();
+                        }
+                        else if (mediaTypeInfo.RequiresTranscode)
+                        {
+                            string transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
+
+                            await fs.DisposeAsync();
+                            if (System.IO.File.Exists(tempPath))
+                            {
+                                System.IO.File.Delete(tempPath);
+                            }
+
+                            trustedFileNameForFileStorage = $"{guid}.mp3";
+                            tempPath = transcodedPath;
+                            fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read);
+                        }
 
                         // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                         if (storageMode == 0)
@@ -127,7 +159,7 @@ public class UploadController : ControllerBase
                         }
 
                         uploadResult.Uploaded = true;
-                        var songLink = new SongLink()
+                        var songLink = new SongLink
                         {
                             Url = uploadResult.ResultUrl,
                             Type = SongLinkType.Self,
