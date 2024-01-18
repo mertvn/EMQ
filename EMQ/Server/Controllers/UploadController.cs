@@ -117,12 +117,24 @@ public class UploadController : ControllerBase
                         }
                         else if (mediaTypeInfo.RequiresTranscode)
                         {
-                            string transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
-
-                            await fs.DisposeAsync();
-                            if (System.IO.File.Exists(tempPath))
+                            string transcodedPath;
+                            try
                             {
-                                System.IO.File.Delete(tempPath);
+                                transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                uploadResult.ErrorStr = $"Error transcoding: {e.Message}";
+                                continue;
+                            }
+                            finally
+                            {
+                                await fs.DisposeAsync();
+                                if (System.IO.File.Exists(tempPath))
+                                {
+                                    System.IO.File.Delete(tempPath);
+                                }
                             }
 
                             trustedFileNameForFileStorage = $"{guid}.mp3";

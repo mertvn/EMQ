@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -16,7 +17,8 @@ namespace EMQ.Server.Business;
 public static class MediaAnalyser
 {
 // todo detect bad transcodes
-    public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false)
+    public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false,
+        bool? isVideoOverride = null)
     {
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
@@ -44,7 +46,7 @@ public static class MediaAnalyser
                 mediaInfo.PrimaryAudioStream?.CodecName ?? mediaInfo.AudioStreams.First().CodecName;
             // Console.WriteLine(new { mediaInfo.Format.FormatName });
             result.FormatList = mediaInfo.Format.FormatName;
-            bool isVideo = true; // todo?
+            bool isVideo = true;
             string? format = validAudioFormats.FirstOrDefault(x => mediaInfo.Format.FormatName.Contains(x));
             if (format != null)
             {
@@ -65,6 +67,11 @@ public static class MediaAnalyser
                         return result;
                     }
                 }
+            }
+
+            if (isVideoOverride != null)
+            {
+                isVideo = isVideoOverride.Value;
             }
 
             result.IsVideo = isVideo;
@@ -189,12 +196,13 @@ public static class MediaAnalyser
     public static async Task<string> TranscodeInto192KMp3(string filePath)
     {
         Console.WriteLine("transcoding into .mp3");
-        var file = Path.GetFileNameWithoutExtension(filePath);
         string outputFinal = $"{Path.GetTempFileName()}.mp3";
-        string audioEncoderName = "libmp3lame";
+        const string audioEncoderName = "libmp3lame";
 
-        // todo volumedetect
-        // todo silencedetect
+        var result = await Analyse(filePath, false, false);
+        float volumeAdjust = GetVolumeAdjust(result);
+        (string ss, string to) = await GetSsAndTo(filePath, new CancellationTokenSource().Token);
+
         var process = new Process()
         {
             StartInfo = new ProcessStartInfo()
@@ -202,7 +210,9 @@ public static class MediaAnalyser
                 FileName = "ffmpeg",
                 Arguments =
                     $"-i \"{filePath}\" " +
-                    $"-c:a {audioEncoderName} -b:a 192k -ac 2 " +
+                    $"-ss {ss} " +
+                    (to.Any() ? $"-to {to} " : "") +
+                    $"-c:a {audioEncoderName} -b:a 192k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
                     $"-nostdin " +
                     $"\"{outputFinal}\"",
                 CreateNoWindow = true,
@@ -222,5 +232,157 @@ public static class MediaAnalyser
         }
 
         return outputFinal;
+    }
+
+    public static float GetVolumeAdjust(MediaAnalyserResult result)
+    {
+        float targetVolumeMean = -15.6f;
+        float targetVolumeMax = -0.6f;
+
+        float meanVolume = Convert.ToSingle(result.VolumeDetect?.Single(x => x.Contains("mean_volume"))
+            .Replace("mean_volume:", "")
+            .Replace("dB", "")
+            .Trim(), CultureInfo.InvariantCulture);
+
+        float maxVolume = Convert.ToSingle(result.VolumeDetect?.Single(x => x.Contains("max_volume"))
+            .Replace("max_volume:", "")
+            .Replace("dB", "")
+            .Trim(), CultureInfo.InvariantCulture);
+
+        if (meanVolume == 0)
+        {
+            throw new Exception("meanVolume is 0");
+        }
+
+        float volumeAdjust = 0;
+        if (meanVolume > targetVolumeMean)
+        {
+            volumeAdjust = targetVolumeMean - meanVolume;
+        }
+
+        if (maxVolume > targetVolumeMax && volumeAdjust > targetVolumeMax)
+        {
+            volumeAdjust += targetVolumeMax - maxVolume;
+        }
+
+        Console.WriteLine($"volumeAdjust: {volumeAdjust}");
+        return volumeAdjust;
+    }
+
+    public static async Task<(string ss, string to)> GetSsAndTo(string filePath, CancellationToken cancellationToken)
+    {
+        float silenceLeewaySeconds = 0.2f;
+
+        string ss = TimeSpan.FromSeconds(0).ToString("c");
+        string to = "";
+        {
+            var process = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-i \"{filePath}\" -map a:0 -af silencedetect=n=-55dB:d=0.5 -f null -",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process.Start();
+            string err = await process.StandardError.ReadToEndAsync(cancellationToken);
+            if (err.Any())
+            {
+                string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+                string[] silencedetectLines = lines.Where(x => x.Contains("silence_")).ToArray();
+
+                string[] final = new string[silencedetectLines.Length];
+                for (int index = 0; index < silencedetectLines.Length; index++)
+                {
+                    string volumedetectLine = silencedetectLines[index].Trim();
+                    final[index] = new string(volumedetectLine.SkipWhile(c => c != ']').ToArray()[1..]);
+                }
+
+                Console.WriteLine(JsonSerializer.Serialize(final, Utils.Jso));
+                switch (final.Length)
+                {
+                    case 0: // no silence
+                        break;
+                    case 2: // start or end silence
+                        {
+                            float silenceStart = Convert.ToSingle(
+                                final[0].Replace("silence_start: ", "").Trim(),
+                                CultureInfo.InvariantCulture);
+
+                            string[] split = final[1].Split('|');
+                            float silenceEnd = Convert.ToSingle(
+                                split[0].Replace("silence_end: ", "").Trim(),
+                                CultureInfo.InvariantCulture);
+
+                            if (silenceStart <= 0)
+                            {
+                                // start silence
+                                ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
+                            }
+                            else
+                            {
+                                // end silence
+                                to = TimeSpan.FromSeconds(silenceStart + silenceLeewaySeconds).ToString("c");
+                            }
+
+                            break;
+                        }
+                    case 4: // start and end silence
+                        {
+                            {
+                                float silenceStart = Convert.ToSingle(
+                                    final[0].Replace("silence_start: ", "").Trim(),
+                                    CultureInfo.InvariantCulture);
+
+                                string[] split = final[1].Split('|');
+                                float silenceEnd = Convert.ToSingle(
+                                    split[0].Replace("silence_end: ", "").Trim(),
+                                    CultureInfo.InvariantCulture);
+
+                                // need a little bit of tolerance here
+                                if (silenceStart > 0.2f)
+                                {
+                                    throw new Exception("case 4 silence_start not 0");
+                                }
+
+                                ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
+                            }
+
+                            {
+                                float silenceStart = Convert.ToSingle(
+                                    final[2].Replace("silence_start: ", "").Trim(),
+                                    CultureInfo.InvariantCulture);
+
+                                if (silenceStart <= 0)
+                                {
+                                    throw new Exception("case 4 silence_start 0");
+                                }
+
+                                // end silence
+                                to = TimeSpan.FromSeconds(silenceStart + silenceLeewaySeconds).ToString("c");
+                            }
+
+                            break;
+                        }
+                    case 1:
+                    case 3:
+                        {
+                            throw new Exception("found unmatched silence");
+                        }
+                    default:
+                        {
+                            // we only allow start and end silence for automatic processing
+                            throw new Exception("found more than two instances of silence");
+                        }
+                }
+            }
+        }
+
+        return (ss, to);
     }
 }
