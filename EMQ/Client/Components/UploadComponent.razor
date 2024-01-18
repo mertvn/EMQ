@@ -11,11 +11,9 @@
 @inject ClientUtils _clientUtils
 
 <p>
-    <label>
-        Upload up to @UploadConstants.MaxFilesSpecificSongUpload files:
-        <InputFile OnChange="@OnInputFileChange" multiple disabled="@(_uploadResults.Count >= UploadConstants.MaxFilesSpecificSongUpload)"/>
-        @StatusText
-    </label>
+    Upload up to @UploadConstants.MaxFilesSpecificSongUpload files:
+    <InputFile OnChange="@OnInputFileChange" multiple disabled="@(_uploadResults.Count >= UploadConstants.MaxFilesSpecificSongUpload)" style="width:100vw; max-width:100%; white-space: normal; word-break: break-all; overflow: hidden;"/>
+    @StatusText
 </p>
 
 @if (_uploadResults.Count > 0)
