@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -1039,4 +1040,25 @@ order by ms.id
         Console.WriteLine(hasBgm.Count);
         Console.WriteLine(processedVndbUrls.Count);
     }
+
+    // [Test, Explicit]
+    // public async Task Test_FilterSongLinksOldVsNewImplementationDiff()
+    // {
+    //     var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
+    //     GenericSongsAssert(songs);
+    //
+    //     var allValidLinksOld = new List<SongLink>();
+    //     var allValidLinksNew = new List<SongLink>();
+    //     foreach (Song song in songs.OrderBy(x => x.Id))
+    //     {
+    //         var o = SongLink.FilterSongLinksold(song.Links).OrderBy(x => x.Url).ToList();
+    //         var n = SongLink.FilterSongLinks(song.Links).OrderBy(x => x.Url).ToList();
+    //
+    //         allValidLinksOld.AddRange(o);
+    //         allValidLinksNew.AddRange(n);
+    //     }
+    //
+    //     await File.WriteAllTextAsync("old", JsonSerializer.Serialize(allValidLinksOld, Utils.JsoIndented));
+    //     await File.WriteAllTextAsync("new", JsonSerializer.Serialize(allValidLinksNew, Utils.JsoIndented));
+    // }
 }

@@ -35,57 +35,51 @@ public class SongLink
     {
         var res = new List<SongLink>();
 
-        // todo don't let people insert links from another host that are not similar in length to the existing hosts
-        var groups = dbSongLinks.GroupBy(x => x.Type).ToList();
+        var shortestVideoLink = dbSongLinks.OrderBy(x => x.Duration).FirstOrDefault(x => x.IsVideo);
+        var shortestSoundLink = dbSongLinks.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
 
-        foreach (IGrouping<SongLinkType, SongLink> group in groups)
+        var allValidVideoLinks = new List<SongLink>();
+        foreach (SongLink songLink in dbSongLinks.Where(x => x.IsVideo))
         {
-            var shortestVideoLink = group.OrderBy(x => x.Duration).FirstOrDefault(x => x.IsVideo);
-            var shortestSoundLink = group.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
+            bool sameDuration =
+                Math.Abs(shortestVideoLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
 
-            var allValidVideoLinks = new List<SongLink>();
-            foreach (SongLink songLink in group.Where(x => x.IsVideo))
+            if (sameDuration)
             {
-                bool sameDuration =
-                    Math.Abs(shortestVideoLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
-
-                if (sameDuration)
-                {
-                    allValidVideoLinks.Add(songLink);
-                }
+                allValidVideoLinks.Add(songLink);
             }
+        }
 
-            if (shortestVideoLink != null && shortestSoundLink != null)
+        if (shortestVideoLink != null && shortestSoundLink != null)
+        {
+            bool sameDuration =
+                Math.Abs(
+                    shortestVideoLink.Duration.TotalSeconds - shortestSoundLink.Duration.TotalSeconds) <
+                Constants.LinkToleranceSeconds;
+
+            if (sameDuration)
             {
-                bool sameDuration =
-                    Math.Abs(
-                        shortestVideoLink.Duration.TotalSeconds - shortestSoundLink.Duration.TotalSeconds) <
-                    Constants.LinkToleranceSeconds;
-
-                if (sameDuration)
-                {
-                    res.AddRange(allValidVideoLinks);
-                    res.Add(shortestSoundLink);
-                }
-                else
-                {
-                    List<SongLink> shortest =
-                        shortestVideoLink.Duration.TotalSeconds < shortestSoundLink.Duration.TotalSeconds
-                            ? allValidVideoLinks
-                            : new List<SongLink> { shortestSoundLink };
-                    res.AddRange(shortest);
-                }
+                res.AddRange(allValidVideoLinks);
+                res.Add(shortestSoundLink);
             }
             else
             {
-                if (allValidVideoLinks.Any())
-                {
-                    res.AddRange(allValidVideoLinks);
-                }
-                else
-                {
-                    res.Add(shortestSoundLink!);
-                }
+                List<SongLink> shortest =
+                    shortestVideoLink.Duration.TotalSeconds < shortestSoundLink.Duration.TotalSeconds
+                        ? allValidVideoLinks
+                        : new List<SongLink> { shortestSoundLink };
+                res.AddRange(shortest);
+            }
+        }
+        else
+        {
+            if (allValidVideoLinks.Any())
+            {
+                res.AddRange(allValidVideoLinks);
+            }
+            else
+            {
+                res.Add(shortestSoundLink!);
             }
         }
 
