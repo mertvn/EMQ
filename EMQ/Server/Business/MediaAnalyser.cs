@@ -30,6 +30,11 @@ public static class MediaAnalyser
         try
         {
             Console.WriteLine("Analysing " + filePath);
+
+            await using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read);
+            result.Sha256 = CryptoUtils.Sha256Hash(fs);
+            await fs.DisposeAsync();
+
             IMediaAnalysis mediaInfo = await FFProbe.AnalyseAsync(filePath);
 
             // Console.WriteLine(new { mediaInfo.Duration });

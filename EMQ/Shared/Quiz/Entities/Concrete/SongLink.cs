@@ -17,6 +17,8 @@ public class SongLink
 
     public string? SubmittedBy { get; set; }
 
+    public string Sha256 { get; set; } = "";
+
     // todo add total_bytes
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
@@ -96,5 +98,5 @@ public enum SongLinkType
 {
     Unknown,
     Catbox,
-    Self, // todo
+    Self,
 }

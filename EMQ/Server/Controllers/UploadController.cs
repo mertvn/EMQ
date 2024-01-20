@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Client;
 using EMQ.Server.Business;
+using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
@@ -111,10 +112,6 @@ public class UploadController : ControllerBase
                         await file.CopyToAsync(fs);
                         fs.Position = 0;
 
-                        string hash = CryptoUtils.Sha256Hash(fs);
-                        Console.WriteLine($"sha256:{hash}");
-                        // todo prevent dupes (prob have to store hash in mel)
-
                         if (mediaTypeInfo.RequiresEncode)
                         {
                             throw new NotImplementedException();
@@ -157,32 +154,47 @@ public class UploadController : ControllerBase
                             fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read);
                         }
 
-                        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                        if (storageMode == 0)
-                        {
-                            // have not tested if this storageMode works properly
-                            Directory.CreateDirectory(outDir);
-                            string newPath = Path.Combine(outDir, trustedFileNameForFileStorage);
-                            System.IO.File.Copy(tempPath, newPath);
+                        string sha256 = CryptoUtils.Sha256Hash(fs);
+                        Console.WriteLine($"sha256:{sha256}");
 
-                            uploadResult.ResultUrl =
-                                $"{resourcePath}selfhoststorage/userup/{trustedFileNameForFileStorage}";
-                        }
-                        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                        else if (storageMode == 1)
+                        var dupesMel = await DbManager.FindMusicExternalLinkBySha256(sha256);
+                        var dupesRq = await DbManager.FindReviewQueueBySha256(sha256);
+                        if (dupesMel.Any() || dupesRq.Any())
                         {
-                            // we need to use a FileStream here because it seems like FFProbe doesn't work when using a MemoryStream
-                            ServerUtils.SftpFileUpload(
-                                UploadConstants.SftpHost, UploadConstants.SftpUsername, UploadConstants.SftpPassword,
-                                fs, Path.Combine(UploadConstants.SftpUserUploadDir, trustedFileNameForFileStorage));
-
-                            uploadResult.ResultUrl =
-                                $"https://emqselfhost/selfhoststorage/userup/{trustedFileNameForFileStorage}"
-                                    .ReplaceSelfhostLink();
+                            string dupeUrl = dupesMel.FirstOrDefault()?.url ?? dupesRq.First().url;
+                            Console.WriteLine($"dupe of {dupeUrl}");
+                            uploadResult.ResultUrl = dupeUrl;
                         }
                         else
                         {
-                            throw new Exception("invalid storageMode");
+                            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                            if (storageMode == 0)
+                            {
+                                // have not tested if this storageMode works properly
+                                Directory.CreateDirectory(outDir);
+                                string newPath = Path.Combine(outDir, trustedFileNameForFileStorage);
+                                System.IO.File.Copy(tempPath, newPath);
+
+                                uploadResult.ResultUrl =
+                                    $"{resourcePath}selfhoststorage/userup/{trustedFileNameForFileStorage}";
+                            }
+                            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                            else if (storageMode == 1)
+                            {
+                                // we need to use a FileStream here because it seems like FFProbe doesn't work when using a MemoryStream
+                                ServerUtils.SftpFileUpload(
+                                    UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                    UploadConstants.SftpPassword,
+                                    fs, Path.Combine(UploadConstants.SftpUserUploadDir, trustedFileNameForFileStorage));
+
+                                uploadResult.ResultUrl =
+                                    $"https://emqselfhost/selfhoststorage/userup/{trustedFileNameForFileStorage}"
+                                        .ReplaceSelfhostLink();
+                            }
+                            else
+                            {
+                                throw new Exception("invalid storageMode");
+                            }
                         }
 
                         uploadResult.Uploaded = true;
@@ -192,8 +204,10 @@ public class UploadController : ControllerBase
                             Type = SongLinkType.Self,
                             IsVideo = uploadResult.ResultUrl.IsVideoLink(),
                             SubmittedBy = session.Player.Username,
+                            Sha256 = sha256,
                         };
 
+                        await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
                         await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath);
                     }
                     catch (Exception ex)

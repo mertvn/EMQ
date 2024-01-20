@@ -25,4 +25,7 @@ public class MusicExternalLink
     public TimeSpan duration { get; set; }
 
     public string? submitted_by { get; set; }
+
+    // [Required] // todo
+    public string sha256 { get; set; }  = "";
 }

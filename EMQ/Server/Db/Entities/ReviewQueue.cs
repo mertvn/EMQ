@@ -40,4 +40,6 @@ public class ReviewQueue
     public TimeSpan? duration { get; set; }
 
     public MediaAnalyserResult? analysis_raw { get; set; }
+
+    public string? sha256 { get; set; }
 }

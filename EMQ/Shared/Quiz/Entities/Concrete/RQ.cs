@@ -31,6 +31,8 @@ public class RQ
     public TimeSpan? duration { get; set; }
 
     public MediaAnalyserResult? analysis_raw { get; set; }
+
+    public string? sha256 { get; set; }
 }
 
 // todo move
@@ -79,4 +81,6 @@ public class MediaAnalyserResult
     public float? FilesizeMb { get; set; }
 
     public string? PrimaryAudioStreamCodecName { get; set; }
+
+    public string? Sha256 { get; set; }
 }

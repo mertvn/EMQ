@@ -160,6 +160,7 @@ public static class DbManager
                                 Type = (SongLinkType)musicExternalLink.type,
                                 Duration = musicExternalLink.duration,
                                 SubmittedBy = musicExternalLink.submitted_by,
+                                Sha256 = musicExternalLink.sha256,
                             });
                         }
 
@@ -192,6 +193,7 @@ public static class DbManager
                                     IsVideo = musicExternalLink.is_video,
                                     Duration = musicExternalLink.duration,
                                     SubmittedBy = musicExternalLink.submitted_by,
+                                    Sha256 = musicExternalLink.sha256,
                                 });
                             }
                         }
@@ -717,6 +719,7 @@ public static class DbManager
                     is_video = songLink.IsVideo,
                     duration = songLink.Duration,
                     submitted_by = songLink.SubmittedBy,
+                    sha256 = songLink.Sha256,
                 });
             }
 
@@ -1678,6 +1681,7 @@ AND msm.type = ANY(@msmType)";
                 is_video = songLink.IsVideo,
                 duration = songLink.Duration,
                 submitted_by = songLink.SubmittedBy,
+                sha256 = songLink.Sha256,
             };
 
             if (mel.duration == default)
@@ -1755,6 +1759,7 @@ WHERE id = {mId};
                     submitted_on = DateTime.UtcNow,
                     status = (int)ReviewQueueStatus.Pending,
                     reason = null,
+                    sha256 = songLink.Sha256,
                 };
 
                 if (!string.IsNullOrWhiteSpace(analysis))
@@ -2144,6 +2149,7 @@ WHERE id = {mId};
                     Song = song,
                     duration = reviewQueue.duration,
                     analysis_raw = reviewQueue.analysis_raw,
+                    sha256 = reviewQueue.sha256,
                 };
 
                 rqs.Add(rq);
@@ -2179,6 +2185,7 @@ WHERE id = {mId};
                 Song = song,
                 duration = reviewQueue.duration,
                 analysis_raw = reviewQueue.analysis_raw,
+                sha256 = reviewQueue.sha256,
             };
 
             return rq;
@@ -2263,6 +2270,11 @@ WHERE id = {mId};
                         throw new Exception($"Cannot approve item {rq.id} without duration.");
                     }
 
+                    if (string.IsNullOrWhiteSpace(rq.sha256))
+                    {
+                        throw new Exception($"Cannot approve item {rq.id} without sha256.");
+                    }
+
                     var songLink = new SongLink()
                     {
                         Url = rq.url,
@@ -2270,6 +2282,7 @@ WHERE id = {mId};
                         IsVideo = rq.is_video,
                         Duration = rq.duration.Value,
                         SubmittedBy = rq.submitted_by,
+                        Sha256 = rq.sha256,
                     };
                     melId = await InsertSongLink(rq.music_id, songLink, null);
                     break;
@@ -2299,6 +2312,7 @@ WHERE id = {mId};
                 rq.analysis = analyserResultStr;
                 rq.analysis_raw = analyserResult;
                 rq.duration = analyserResult.Duration;
+                rq.sha256 = analyserResult.Sha256;
             }
 
             await connection.UpdateAsync(rq);
@@ -3172,5 +3186,23 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         return ret;
+    }
+
+    public static async Task<List<MusicExternalLink>> FindMusicExternalLinkBySha256(string sha256)
+    {
+        const string sql = "SELECT * from music_external_link where sha256 = @sha256";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return (await connection.QueryAsync<MusicExternalLink>(sql, new { sha256 = sha256 })).ToList();
+        }
+    }
+
+    public static async Task<List<ReviewQueue>> FindReviewQueueBySha256(string sha256)
+    {
+        const string sql = "SELECT * from review_queue where sha256 = @sha256";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return (await connection.QueryAsync<ReviewQueue>(sql, new { sha256 = sha256 })).ToList();
+        }
     }
 }

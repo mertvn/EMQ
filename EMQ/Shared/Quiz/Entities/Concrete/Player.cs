@@ -69,7 +69,7 @@ public class PlayerPreferences
     public bool WantsVideo { get; set; } = true;
 
     [Required]
-    public SongLinkType LinkHost { get; set; } = SongLinkType.Catbox;
+    public SongLinkType LinkHost { get; set; } = SongLinkType.Self;
 
     [Required]
     public int VolumeMaster { get; set; } = 70;
