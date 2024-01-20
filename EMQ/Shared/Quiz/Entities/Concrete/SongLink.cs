@@ -41,6 +41,7 @@ public class SongLink
         var shortestSoundLink = dbSongLinks.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
 
         var allValidVideoLinks = new List<SongLink>();
+        var allValidSoundLinks = new List<SongLink>();
         foreach (SongLink songLink in dbSongLinks.Where(x => x.IsVideo))
         {
             bool sameDuration =
@@ -49,6 +50,17 @@ public class SongLink
             if (sameDuration)
             {
                 allValidVideoLinks.Add(songLink);
+            }
+        }
+
+        foreach (SongLink songLink in dbSongLinks.Where(x => !x.IsVideo))
+        {
+            bool sameDuration =
+                Math.Abs(shortestSoundLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
+
+            if (sameDuration)
+            {
+                allValidSoundLinks.Add(songLink);
             }
         }
 
@@ -62,30 +74,20 @@ public class SongLink
             if (sameDuration)
             {
                 res.AddRange(allValidVideoLinks);
-                res.Add(shortestSoundLink);
+                res.AddRange(allValidSoundLinks);
             }
             else
             {
                 List<SongLink> shortest =
                     shortestVideoLink.Duration.TotalSeconds < shortestSoundLink.Duration.TotalSeconds
                         ? allValidVideoLinks
-                        : new List<SongLink> { shortestSoundLink };
+                        : allValidSoundLinks;
                 res.AddRange(shortest);
             }
         }
         else
         {
-            if (allValidVideoLinks.Any())
-            {
-                res.AddRange(allValidVideoLinks);
-            }
-            else
-            {
-                if (shortestSoundLink != null)
-                {
-                    res.Add(shortestSoundLink);
-                }
-            }
+            res.AddRange(allValidVideoLinks.Any() ? allValidVideoLinks : allValidSoundLinks);
         }
 
         // we randomize links here to allow different video links to play, because NextSong just takes the first link it finds
