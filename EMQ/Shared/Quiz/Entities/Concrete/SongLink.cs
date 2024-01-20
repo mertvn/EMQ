@@ -79,7 +79,10 @@ public class SongLink
             }
             else
             {
-                res.Add(shortestSoundLink!);
+                if (shortestSoundLink != null)
+                {
+                    res.Add(shortestSoundLink);
+                }
             }
         }
 
