@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
@@ -43,6 +44,19 @@
         <li>If a song contains dialogue in the middle of it, you MUST keep the dialogue. If a song contains dialogue before the music starts or after the music ends, you MUST crop the dialogue away. </li>
     </ol>
 </details>
+
+@{
+    // todo? move
+    bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
+}
+
+@if (isModerator)
+{
+    <details>
+        <summary>Batch uploader</summary>
+        <UploadBatchComponent></UploadBatchComponent>
+    </details>
+}
 
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">

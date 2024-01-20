@@ -16,7 +16,9 @@ namespace EMQ.Server.Business;
 
 public static class MediaAnalyser
 {
-// todo detect bad transcodes
+    public static readonly SemaphoreSlim SemaphoreTranscode = new(UploadConstants.MaxConcurrentTranscodes);
+
+    // todo detect bad transcodes
     public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false,
         bool? isVideoOverride = null)
     {

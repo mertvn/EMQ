@@ -2,14 +2,17 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using EMQ.Client.Components;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Logging;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -20,7 +23,7 @@ public class ClientUtils
     public ClientUtils(ILogger<ClientUtils> logger, HttpClient client, ILocalStorageService localStorage,
         ClientConnectionManager clientConnectionManager
         // ,PlayerPreferencesComponent playerPreferencesComponent
-        )
+    )
     {
         Logger = logger;
         Client = client;
@@ -125,6 +128,52 @@ public class ClientUtils
             }
 
             IsRestoringSession = false;
+        }
+    }
+
+    public static async Task SendPostFileReq(HttpClient client, UploadResult uploadResult, IBrowserFile file, int mId)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(file.OpenReadStream(UploadConstants.MaxFilesizeBytes));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            content.Add(fileContent, "\"files\"", $"{mId};{file.Name}");
+
+            // await Task.Delay(TimeSpan.FromSeconds(1));
+            var response = await client.PostAsync("Upload/PostFile", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var res = await response.Content.ReadFromJsonAsync<UploadResult>();
+                if (res is not null)
+                {
+                    uploadResult.Uploaded = res.Uploaded;
+                    uploadResult.FileName = res.FileName;
+                    uploadResult.ResultUrl = res.ResultUrl;
+                    uploadResult.ErrorStr = res.ErrorStr;
+                }
+                else
+                {
+                    uploadResult.ErrorStr = "UploadResult was null";
+                }
+            }
+            else
+            {
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.TooManyRequests:
+                        uploadResult.ErrorStr =
+                            $"You have been rate-limited. Try again in {response.Headers.RetryAfter} seconds.";
+                        break;
+                    default:
+                        uploadResult.ErrorStr = "Something went wrong when uploading.";
+                        break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadResult.ErrorStr = $"Client-side exception while uploading: {ex}";
         }
     }
 }

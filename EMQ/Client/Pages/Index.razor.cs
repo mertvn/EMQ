@@ -125,7 +125,8 @@ public partial class Index
                 switch (res.StatusCode)
                 {
                     case HttpStatusCode.TooManyRequests:
-                        LoginProgressDisplay.Add("You have been rate-limited. Try again in a minute.");
+                        LoginProgressDisplay.Add(
+                            $"You have been rate-limited. Try again in {res.Headers.RetryAfter} seconds.");
                         break;
                     default:
                         LoginProgressDisplay.Add("Login failed.");

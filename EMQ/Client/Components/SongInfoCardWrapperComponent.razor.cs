@@ -30,6 +30,9 @@ public partial class SongInfoCardWrapperComponent
     [Parameter]
     public bool IsLibraryPage { get; set; }
 
+    [Parameter]
+    public Dictionary<int, Func<Task>>? BatchUploaderCallbacks { get; set; }
+
     private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
 
     private int VisibleSongsCount { get; set; }

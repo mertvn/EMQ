@@ -97,42 +97,8 @@ public partial class UploadComponent
                 continue;
             }
 
-            try
-            {
-                using var content = new MultipartFormDataContent();
-                var fileContent = new StreamContent(file.OpenReadStream(UploadConstants.MaxFilesizeBytes));
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-                content.Add(fileContent, "\"files\"", $"{mId};{file.Name}");
-
-                // await Task.Delay(TimeSpan.FromSeconds(1));
-                var response = await _client.PostAsync("Upload/PostFile", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var res = await response.Content.ReadFromJsonAsync<UploadResult>();
-                    if (res is not null)
-                    {
-                        uploadResult.Uploaded = res.Uploaded;
-                        uploadResult.FileName = res.FileName;
-                        uploadResult.ResultUrl = res.ResultUrl;
-                        uploadResult.ErrorStr = res.ErrorStr;
-
-                        // Console.WriteLine($"set mdl.url to {uploadResult.ResultUrl}");
-                        // Mdl[mId].Url = uploadResult.ResultUrl!;
-                        // await MdlChanged.InvokeAsync();
-                        await ParentStateHasChangedCallback!.Invoke();
-                    }
-                    else
-                    {
-                        uploadResult.ErrorStr = "UploadResult was null";
-                    }
-                }
-
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                uploadResult.ErrorStr = $"Client-side exception: {ex}";
-            }
+            await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
+            StateHasChanged();
         }
     }
 }

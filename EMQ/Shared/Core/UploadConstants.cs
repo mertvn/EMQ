@@ -11,10 +11,14 @@ public static class UploadConstants
 
     public const int MaxFilesSpecificSongUpload = 2;
 
-    public const int MaxFilesBatchUpload = 50; // todo
+    public const int MaxFilesBatchUpload = 50;
 
     // todo? might need to apply this on the server as well
     public const int TimeoutSeconds = 30 * 60; // 30 minutes
+
+    public const int MaxConcurrentTranscodes = 3;
+
+    public const int MaxConcurrentEncodes = 1;
 
     public static string SftpHost { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_HOST")!;
 

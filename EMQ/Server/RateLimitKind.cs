@@ -10,4 +10,6 @@ public static class RateLimitKind
     public const string ForgottenPassword = "ratelimit-ForgottenPassword";
 
     public const string ValidateSession = "ratelimit-ValidateSession";
+
+    public const string UploadFile = "ratelimit-UploadFile";
 }

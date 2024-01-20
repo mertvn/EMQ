@@ -259,6 +259,21 @@
                                 }
                             }
                         }
+
+                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any())
+                        {
+                            <br/>
+                            @if (hasVideo && hasSound)
+                            {
+                                <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                            }
+
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    @onclick="@(async () => await BatchUploaderCallbacks?[song.Id].Invoke()!)">
+                                Choose and upload
+                            </button>
+                        }
                     </div>
 
                 </div>

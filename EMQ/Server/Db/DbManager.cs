@@ -3134,4 +3134,43 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
         }
     }
+
+    public static async Task<List<Song>> GetSongsByTitleAndArtistFuzzy(List<string> titles, List<string> artists,
+        SongSourceSongType[] songSourceSongTypes)
+    {
+        var ret = new List<Song>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
+            var aIds = await FindArtistIdsByArtistNames(artists);
+
+            var queryMusic = connection
+                .QueryBuilder($@"SELECT DISTINCT m.id
+FROM music m
+LEFT JOIN music_title mt ON mt.music_id = m.id
+LEFT JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+LEFT JOIN music_source_title mst on ms.id = mst.music_source_id
+LEFT JOIN artist_music am ON am.music_id = m.id
+LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+LEFT JOIN artist a ON a.id = aa.artist_id
+/**where**/");
+
+            queryMusic.Where($"mst.is_main_title = true");
+            queryMusic.Where($"(mt.latin_title % ANY({titles}) OR mt.non_latin_title % ANY({titles}))");
+            queryMusic.Where($"a.id = ANY({aIds})");
+            queryMusic.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
+
+            // Console.WriteLine(queryMusic.Sql);
+            // Console.WriteLine(JsonSerializer.Serialize(queryMusic.Parameters, Utils.JsoIndented));
+
+            var mids = (await queryMusic.QueryAsync<int>()).ToList();
+            foreach (int mid in mids)
+            {
+                ret.AddRange(await SelectSongs(new Song { Id = mid }, false));
+            }
+        }
+
+        return ret;
+    }
 }

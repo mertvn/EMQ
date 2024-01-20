@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -38,13 +39,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddPolicy(RateLimitKind.Login, context => RateLimitPartition.GetFixedWindowLimiter(
+    options.AddPolicy(RateLimitKind.Login, context => RateLimitPartition.GetTokenBucketLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions
+        factory: _ => new TokenBucketRateLimiterOptions()
         {
             AutoReplenishment = true,
-            PermitLimit = 4,
-            Window = TimeSpan.FromMinutes(1),
+            TokenLimit = 4,
+            ReplenishmentPeriod = TimeSpan.FromSeconds(15),
+            TokensPerPeriod = 1,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
         }));
@@ -76,8 +78,20 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             AutoReplenishment = true,
-            PermitLimit = 20,
+            PermitLimit = 30,
             Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    options.AddPolicy(RateLimitKind.UploadFile, context => RateLimitPartition.GetTokenBucketLimiter(
+        partitionKey: ServerUtils.GetIpAddress(context),
+        factory: _ => new TokenBucketRateLimiterOptions()
+        {
+            AutoReplenishment = true,
+            TokenLimit = 100,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(30),
+            TokensPerPeriod = 5,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
         }));
@@ -90,8 +104,25 @@ builder.Services.AddRateLimiter(options =>
             ip = ServerUtils.GetIpAddress(context.HttpContext) ?? "", action = action, created_at = DateTime.UtcNow,
         });
 
+        string responseText = "Too many requests.";
+
+        // var leaseMetadata = context.Lease.GetAllMetadata().ToDictionary(x => x.Key, x => x.Value);
+        // // Console.WriteLine(JsonSerializer.Serialize(leaseMetadata, Utils.JsoIndented));
+        // if (leaseMetadata.TryGetValue("RETRY_AFTER", out object? value))
+        // {
+        //     TimeSpan? retryAfter = value as TimeSpan?;
+        //     responseText += $" You can retry in {retryAfter.ToString()}.";
+        // }
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            int totalSeconds = (int)retryAfter.TotalSeconds;
+            context.HttpContext.Response.Headers.RetryAfter = totalSeconds.ToString(NumberFormatInfo.InvariantInfo);
+            responseText += $" You can retry in {totalSeconds.ToString(NumberFormatInfo.InvariantInfo)} seconds.";
+        }
+
         context.HttpContext.Response.StatusCode = 429;
-        await context.HttpContext.Response.WriteAsync("Too many requests.", cancellationToken: token);
+        await context.HttpContext.Response.WriteAsync(responseText, token);
     };
 });
 
@@ -236,6 +267,7 @@ app.UseStaticFiles(new StaticFileOptions
             maxAge = TimeSpan.FromHours(1);
         }
 
+        // todo investigate if we need /QuizPage etc. here
         if (ctx.File.Name is "index.html" or "/")
         {
             maxAge = TimeSpan.FromMinutes(1);
@@ -297,7 +329,7 @@ if (hasDb)
     if (cnnStrSong.Contains("railway"))
     {
         // railway private networking requires at least 100ms to be initialized ¯\_(ツ)_/¯
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(2));
     }
 
     cnnStrAuth = ConnectionHelper.GetConnectionString_Auth();

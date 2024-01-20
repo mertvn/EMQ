@@ -179,4 +179,15 @@ public class LibraryController : ControllerBase
 
         return songs.DistinctBy(x => x.Id);
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByTitleAndArtistFuzzy")]
+    public async Task<IEnumerable<Song>> FindSongsByTitleAndArtistFuzzy([FromBody] ReqFindSongsByTitleAndArtistFuzzy req)
+    {
+        var songs = await DbManager.GetSongsByTitleAndArtistFuzzy(req.Titles, req.Artists,
+            req.SongSourceSongTypeMode.ToSongSourceSongTypes());
+
+        return songs;
+    }
 }

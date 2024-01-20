@@ -5,7 +5,9 @@ using System.Linq;
 using System.Net;
 using System.Security.Authentication;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using EMQ.Client;
 using EMQ.Server.Business;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
@@ -13,6 +15,7 @@ using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using Renci.SshNet;
 using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
@@ -32,6 +35,7 @@ public class UploadController : ControllerBase
     // ReSharper disable once NotAccessedField.Local
     private readonly ILogger<UploadController> _logger;
 
+    [EnableRateLimiting(RateLimitKind.UploadFile)]
     [RequestSizeLimit(UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
     [CustomAuthorize(PermissionKind.Moderator)]
     [HttpPost]
@@ -120,7 +124,18 @@ public class UploadController : ControllerBase
                             string transcodedPath;
                             try
                             {
-                                transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
+                                var cancellationTokenSource = new CancellationTokenSource();
+                                cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(25));
+
+                                await MediaAnalyser.SemaphoreTranscode.WaitAsync(cancellationTokenSource.Token);
+                                try
+                                {
+                                    transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
+                                }
+                                finally
+                                {
+                                    MediaAnalyser.SemaphoreTranscode.Release();
+                                }
                             }
                             catch (Exception e)
                             {
