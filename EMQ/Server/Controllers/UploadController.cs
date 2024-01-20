@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,14 +11,11 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
-using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
-using Renci.SshNet;
-using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
 namespace EMQ.Server.Controllers;
 
@@ -59,7 +55,6 @@ public class UploadController : ControllerBase
         const int maxAllowedFiles = UploadConstants.MaxFilesPerRequest;
         const long maxFileSize = UploadConstants.MaxFilesizeBytes;
 
-        var resourcePath = new Uri($"{Request.Scheme}://{Request.Host}/"); // todo?
         int filesProcessed = 0;
         List<UploadResult> uploadResults = new();
         foreach (var file in files)
@@ -175,6 +170,7 @@ public class UploadController : ControllerBase
                                 string newPath = Path.Combine(outDir, trustedFileNameForFileStorage);
                                 System.IO.File.Copy(tempPath, newPath);
 
+                                var resourcePath = new Uri($"{Request.Scheme}://{Request.Host}/");
                                 uploadResult.ResultUrl =
                                     $"{resourcePath}selfhoststorage/userup/{trustedFileNameForFileStorage}";
                             }

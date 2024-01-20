@@ -3157,6 +3157,10 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         {
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
             var aIds = await FindArtistIdsByArtistNames(artists);
+            if (!aIds.Any())
+            {
+                return ret;
+            }
 
             var queryMusic = connection
                 .QueryBuilder($@"SELECT DISTINCT m.id
