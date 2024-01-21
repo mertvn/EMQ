@@ -47,12 +47,16 @@
 @{
     // todo? move
     bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
+    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
 }
 
-<details>
-    <summary>Batch uploader</summary>
-    <UploadBatchComponent></UploadBatchComponent>
-</details>
+@if (hasImportSongLinkPerms)
+{
+    <details>
+        <summary>Batch uploader</summary>
+        <UploadBatchComponent></UploadBatchComponent>
+    </details>
+}
 
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">

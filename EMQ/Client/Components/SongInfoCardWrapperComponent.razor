@@ -252,12 +252,15 @@
                                         <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
                                     </EditForm> *@
 
-                                    <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
+                                    @if (hasImportSongLinkPerms)
+                                    {
+                                        <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
+                                    }
                                 }
                             }
                         }
 
-                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any())
+                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && hasImportSongLinkPerms)
                         {
                             <br/>
                             @if (hasVideo && hasSound)
