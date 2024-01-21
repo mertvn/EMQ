@@ -23,7 +23,6 @@
     <h5>General</h5>
     <ol>
         <li>Uploads SHOULD be the game size/short version if there is one. If different length versions exists throughout the game, you SHOULD use the one most commonly used. If both are equally used, you SHOULD use the shorter one.</li>
-        <li>MUST be uploaded to <a href="https://catbox.moe/">Catbox.</a></li>
         <li>MUST be from an official, untranslated release.</li>
         <li>SHOULD NOT have any unrelated content or excess silence at the start or end (MUST NOT have more than 2 seconds of silence at the start).</li>
     </ol>
@@ -50,13 +49,10 @@
     bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
 }
 
-@if (isModerator)
-{
-    <details>
-        <summary>Batch uploader</summary>
-        <UploadBatchComponent></UploadBatchComponent>
-    </details>
-}
+<details>
+    <summary>Batch uploader</summary>
+    <UploadBatchComponent></UploadBatchComponent>
+</details>
 
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">

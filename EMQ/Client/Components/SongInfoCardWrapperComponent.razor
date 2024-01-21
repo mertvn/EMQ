@@ -241,7 +241,7 @@
                                         <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
                                     }
 
-                                    <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
+                                  @*  <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
                                         <DataAnnotationsValidator/>
 
                                         <div style="padding: 5px">
@@ -250,12 +250,9 @@
                                             <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
                                         </div>
                                         <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
-                                    </EditForm>
+                                    </EditForm> *@
 
-                                    @if (isModerator)
-                                    {
-                                        <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
-                                    }
+                                    <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                 }
                             }
                         }

@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
 
-[CustomAuthorize(PermissionKind.Moderator)]
+[CustomAuthorize(PermissionKind.UploadSongLink)]
 [ApiController]
 [Route("[controller]")]
 public class UploadController : ControllerBase
@@ -34,7 +34,7 @@ public class UploadController : ControllerBase
 
     [EnableRateLimiting(RateLimitKind.UploadFile)]
     [RequestSizeLimit(UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
-    [CustomAuthorize(PermissionKind.Moderator)]
+    [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("PostFile")]
     public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files)

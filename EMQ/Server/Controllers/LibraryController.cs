@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -85,7 +85,8 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
-    [CustomAuthorize(PermissionKind.UploadSongLink)]
+    [Obsolete("deprecated in favor of Upload/PostFile")]
+    [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]
     [Route("ImportSongLink")]
     public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
@@ -183,7 +184,8 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByTitleAndArtistFuzzy")]
-    public async Task<IEnumerable<Song>> FindSongsByTitleAndArtistFuzzy([FromBody] ReqFindSongsByTitleAndArtistFuzzy req)
+    public async Task<IEnumerable<Song>> FindSongsByTitleAndArtistFuzzy(
+        [FromBody] ReqFindSongsByTitleAndArtistFuzzy req)
     {
         var songs = await DbManager.GetSongsByTitleAndArtistFuzzy(req.Titles, req.Artists,
             req.SongSourceSongTypeMode.ToSongSourceSongTypes());
