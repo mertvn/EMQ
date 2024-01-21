@@ -8,6 +8,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<GuessInputComponent> _logger
+@inject IJSRuntime _jsRuntime
 
 @if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.ReviewQueueModerator))
 {
@@ -29,7 +30,26 @@
           PagerOptions="new DataGridPagerOptions { ButtonSize = Size.Small }">
     <DataGridColumns>
         <DataGridCommandColumn/>
-        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="ID"/>
+        <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="ID">
+            <DisplayTemplate>
+                @{
+                    var rq = (context as RQ)!;
+                    @if (ClientState.Session != null)
+                    {
+                        bool canDelete =
+                            AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+                            string.Equals(rq.submitted_by, ClientState.Session.Player.Username, StringComparison.InvariantCultureIgnoreCase);
+
+                        @if (canDelete && rq.status == ReviewQueueStatus.Pending)
+                        {
+                            <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteReviewQueueItem(rq.id))"></i>
+                        }
+                    }
+
+                    <span>@rq.id</span>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
         <DataGridColumn CellStyle="@(_ => { return CellStyle; })" Field="@nameof(RQ.id)" Caption="Source Title" Sortable="false">
             <DisplayTemplate>
                 @{

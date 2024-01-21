@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -191,5 +192,41 @@ public class LibraryController : ControllerBase
             req.SongSourceSongTypeMode.ToSongSourceSongTypes());
 
         return songs;
+    }
+
+    [CustomAuthorize(PermissionKind.UploadSongLink)]
+    [HttpPost]
+    [Route("DeleteReviewQueueItem")]
+    public async Task<ActionResult<bool>> DeleteReviewQueueItem([FromBody] int id)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        var rq = await DbManager.FindRQ(id);
+        if (AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+            string.Equals(rq.submitted_by, session.Player.Username, StringComparison.InvariantCultureIgnoreCase))
+        {
+            if (rq.status == ReviewQueueStatus.Pending)
+            {
+                Console.WriteLine($"{session.Player.Username} is deleting RQ {id} {rq.url} by {rq.submitted_by}");
+                return await DbManager.DeleteEntity(new ReviewQueue { id = rq.id });
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+        else
+        {
+            return Unauthorized();
+        }
     }
 }

@@ -7,6 +7,7 @@ using Blazorise.DataGrid;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Components;
 
@@ -49,5 +50,29 @@ public partial class ReviewQueueComponent
     private async Task CallStateHasChanged()
     {
         StateHasChanged();
+    }
+
+    private async Task DeleteReviewQueueItem(int rqId)
+    {
+        // todo? generic confirm modal
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete {rqId}?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var res = await _client.PostAsJsonAsync("Library/DeleteReviewQueueItem", rqId);
+        if (res.IsSuccessStatusCode)
+        {
+            bool success = await res.Content.ReadFromJsonAsync<bool>();
+            if (!success)
+            {
+                // todo warn error
+            }
+            else
+            {
+                await RefreshRQs();
+            }
+        }
     }
 }

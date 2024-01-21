@@ -3209,4 +3209,12 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             return (await connection.QueryAsync<ReviewQueue>(sql, new { sha256 = sha256 })).ToList();
         }
     }
+
+    public static async Task<bool> DeleteEntity<T>(T entity) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.DeleteAsync(entity);
+        }
+    }
 }
