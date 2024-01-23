@@ -94,13 +94,16 @@
                                             src = "";
                                         }
 
-                                        <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                            <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
-                                                <img width="16px" height="16px"
-                                                     src="@src" alt="link"
-                                                     style="margin-left: 8px; scale: 1.2;">
-                                            </a>
-                                        </Blazorise.Tooltip>
+                                        @if (!string.IsNullOrEmpty(src))
+                                        {
+                                            <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+                                                <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                                    <img width="16px" height="16px"
+                                                         src="@src" alt="link"
+                                                         style="margin-left: 8px; scale: 1.2;">
+                                                </a>
+                                            </Blazorise.Tooltip>
+                                        }
                                     }
 
                                     <br/>
@@ -125,32 +128,35 @@
                     }
                 </div>
                 <div>
-                    by
-                    @foreach (SongArtist songArtist in Song.Artists)
+                    @if (Song.Artists.Any())
                     {
-                        Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
+                        <span>by</span>
+                        @foreach (SongArtist songArtist in Song.Artists)
+                        {
+                            Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
-                        <div>
-                            <span>@songArtistTitle.ToString()</span>
-                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                            @if (songArtist.VndbId!.StartsWith("s"))
-                            {
-                                <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="assets/favicon/vndb.ico" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
-                            else
-                            {
-                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="assets/favicon/musicbrainz.png" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
+                            <div>
+                                <span>@songArtistTitle.ToString()</span>
+                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                                @if (songArtist.VndbId!.StartsWith("s"))
+                                {
+                                    <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
+                                        <img width="16px" height="16px"
+                                             src="assets/favicon/vndb.ico" alt="link"
+                                             style="margin-left: 6px; scale: 1.2;">
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
+                                        <img width="16px" height="16px"
+                                             src="assets/favicon/musicbrainz.png" alt="link"
+                                             style="margin-left: 6px; scale: 1.2;">
+                                    </a>
+                                }
 
-                        </div>
+                            </div>
+                        }
                     }
                 </div>
                 @if (Song.Stats.TimesPlayed > 0)

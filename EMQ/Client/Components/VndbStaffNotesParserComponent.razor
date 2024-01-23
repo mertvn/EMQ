@@ -1,0 +1,92 @@
+﻿@using Microsoft.AspNetCore.Components
+@using VNDBStaffNotesParser
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using SongType = EMQ.Shared.Quiz.Entities.Concrete.SongType
+@using EMQ.Shared.Core
+
+<input @bind="@Text" style="width: 100%"/>
+
+@{
+    if (string.IsNullOrWhiteSpace(Text))
+    {
+        // return;
+    }
+
+    string? err = null;
+    List<ParsedSong>? parsed = null;
+    try
+    {
+        parsed = Parse(Text.Trim());
+        if (!parsed.Any())
+        {
+            err = "Invalid string. Example: Insert song \"Milk tea Hallelujah\"";
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e);
+        err = e.Message;
+    }
+
+    if (err != null)
+    {
+        <span>@err</span>
+    }
+    else
+    {
+        <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
+            @for (int i = 0; i < parsed!.Count; i++)
+            {
+                ParsedSong parsedSong = parsed[i];
+                var song = new Song
+                {
+                    Id = i,
+                    Titles = new List<Title> { new() { LatinTitle = parsedSong.Title, Language = "ja", IsMainTitle = true } },
+                    Artists = new List<SongArtist>(),
+                    Links = new List<SongLink>(),
+                    Type = SongType.Unknown,
+                    Sources = new List<SongSource>
+                    {
+                        new()
+                        {
+                            SongTypes = parsedSong.Type.Cast<SongSourceSongType>().ToList(),
+                            Links = new List<SongSourceLink> { new() { Type = SongSourceLinkType.VNDB, Url = "" } }
+                        }
+                    },
+                };
+
+                <div class="song card" style="margin: 16px; width: 330px;">
+                    <SongInfoCardComponent Song="song"></SongInfoCardComponent>
+                </div>
+            }
+        </div>
+    }
+}
+
+<details>
+    <summary>JSON</summary>
+    <pre>
+    @try
+    {
+        @JsonSerializer.Serialize(Parse(Text.Trim()), Utils.JsoIndented)
+    }
+    catch
+    {
+        // ignored
+    }
+ </pre>
+</details>
+
+@code {
+
+    public string Text { get; set; } = "";
+
+    private List<ParsedSong> Parse(string s)
+    {
+        var actual = VNDBStaffNotesParser.Program.Parse(s);
+    // JsonSerializer.Serialize(actual, Utils.JsoIndented);
+    // StateHasChanged();
+        return actual;
+    }
+
+}
