@@ -59,7 +59,7 @@ public static class Program
                         "ED chorus, PSV OP", // YOLO
                         "OP (Ballad ver.)", // YOLO
                         "start theme",
-                        "Main menu theme:"
+                        "Main menu theme:",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -100,11 +100,10 @@ public static class Program
                         "ED A",
                         "ED B",
                         "EDs 1",
-                        "BGM, ED", // YOLO
                         "Sub-Ending",
                         "Cast roll theme",
                         "Happy end song",
-                        "credits theme"
+                        "credits theme",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -114,8 +113,10 @@ public static class Program
                     SongType.Insert, new List<string>
                     {
                         "BGM",
+                        "BGM,",
                         "BGMs",
                         "INS",
+                        "INS,",
                         "Insert",
                         "Inserts",
                         "Insert Song",
@@ -147,6 +148,7 @@ public static class Program
                         "extra song",
                         "PV Song",
                         "PV",
+                        "PV OP",
                         "Ep. 6 song",
                         "Ep. 8 song",
                         "Fu-Rin-Ka-Zan theme",
@@ -166,7 +168,7 @@ public static class Program
                         "Rhythm segments song",
                         "Uguisu route song",
                         "anniversary songs",
-                        "Event song"
+                        "Event song",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -307,6 +309,7 @@ public static class Program
                         // multiple types for the same song
                         case '&':
                         case '/':
+                        case ',':
                             cursor += 1;
                             if (input[cursor] == ' ')
                             {
@@ -318,6 +321,14 @@ public static class Program
                         default:
                             if (input[cursor - 1] == '/')
                             {
+                                mode = Mode.SongType;
+                                goto nextMode;
+                            }
+
+                            // this is pretty bad, but we're kind of way past the point of caring about code quality
+                            if (input[cursor - 1] == ' ' && input[cursor - 2] == ',')
+                            {
+                                cursor -= 2;
                                 mode = Mode.SongType;
                                 goto nextMode;
                             }

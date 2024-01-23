@@ -642,9 +642,29 @@ public class VNDBStaffNotesParserTests
         {
             new()
             {
-                BeforeType = "",
-                Type = new List<SongType> { SongType.ED }, // YOLO
+                BeforeType = ", ", // meh, because of BGM, in the dict
+                Type = new List<SongType> { SongType.Insert, SongType.ED },
                 Title = "Kono Michi de...",
+                AfterTitle = ""
+            },
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_SingleWithMultipleSongTypesCommaDelimiter2()
+    {
+        string input = "2005 version OP, ED \"sensitive2001\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = ", ", // meh, because of OP, in the dict
+                Type = new List<SongType> { SongType.OP, SongType.ED },
+                Title = "sensitive2001",
                 AfterTitle = ""
             },
         };

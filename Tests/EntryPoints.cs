@@ -648,12 +648,12 @@ public class EntryPoints
     {
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
         string envVar = "DATABASE_URL";
-        envVar = "EMQ_AUTH_DATABASE_URL";
+        envVar = "EMQ_DATABASE_URL";
 
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2023-12-16_EMQ_AUTH@localhost.tar";
+        string dumpFileName = "pgdump_2024-01-23_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
