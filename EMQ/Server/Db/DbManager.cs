@@ -2472,6 +2472,7 @@ order by year";
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and mel.music_id = ANY(@validMids)
+and mel.type = 2 -- self
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
@@ -2481,6 +2482,7 @@ select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and mel.is_video
 and mel.music_id = ANY(@validMids)
+and mel.type = 2 -- self
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
@@ -2490,6 +2492,7 @@ select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and not mel.is_video
 and mel.music_id = ANY(@validMids)
+and mel.type = 2 -- self
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
