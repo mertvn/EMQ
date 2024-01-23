@@ -54,7 +54,14 @@
 {
     <details>
         <summary>Batch uploader</summary>
-        <UploadBatchComponent></UploadBatchComponent>
+        @if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+        {
+            <span>Server is in read-only mode.</span>
+        }
+        else
+        {
+            <UploadBatchComponent></UploadBatchComponent>
+        }
     </details>
 }
 

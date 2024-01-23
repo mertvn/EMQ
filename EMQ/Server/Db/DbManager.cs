@@ -2469,31 +2469,31 @@ order by year";
 
             // Console.WriteLine(
             //     $"StartSection uploaderCounts: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var uploaderCountsTotal = (await connection.QueryAsync<(string, int)>(@"
+            var uploaderCountsTotal = (await connection.QueryAsync<(string, int)>($@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and mel.music_id = ANY(@validMids)
-and mel.type = 2 -- self
+and mel.type = {(int)SongLinkType.Self}
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
-            var uploaderCountsVideo = (await connection.QueryAsync<(string, int)>(@"
+            var uploaderCountsVideo = (await connection.QueryAsync<(string, int)>($@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and mel.is_video
 and mel.music_id = ANY(@validMids)
-and mel.type = 2 -- self
+and mel.type = {(int)SongLinkType.Self}
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
 
-            var uploaderCountsSound = (await connection.QueryAsync<(string, int)>(@"
+            var uploaderCountsSound = (await connection.QueryAsync<(string, int)>($@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
 and not mel.is_video
 and mel.music_id = ANY(@validMids)
-and mel.type = 2 -- self
+and mel.type = {(int)SongLinkType.Self}
 group by lower(submitted_by)
 order by count(music_id) desc
 ", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);

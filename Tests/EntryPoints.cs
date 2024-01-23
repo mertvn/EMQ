@@ -137,8 +137,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int s = 409;
-        const int e = 450;
+        const int s = 1988;
+        const int e = 2019;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -217,40 +217,147 @@ public class EntryPoints
         }
     }
 
+    // todo change all other code that expects emqsongsbackup or partial revert
     [Test, Explicit]
-    public async Task BackupSongFilesUsingSongLite()
+    public async Task BackupSongFilesUsingBothSongLites()
     {
         const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
         Directory.CreateDirectory(baseDownloadDir);
 
         const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
         var songLites =
-            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath), Utils.JsoIndented)!;
+            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath),
+                Utils.JsoIndented)!;
+
+        const string songLiteMbPath = "C:\\emq\\emqsongsmetadata\\SongLite_MB.json";
+        var songLiteMbs =
+            JsonSerializer.Deserialize<List<SongLite_MB>>(await File.ReadAllTextAsync(songLiteMbPath),
+                Utils.JsoIndented)!;
 
         int dlCount = 0;
-        foreach (var songLite in songLites)
+        var allLinks = songLites.SelectMany(x => x.Links).Concat(songLiteMbs.SelectMany(y => y.Links));
+        foreach (var link in allLinks)
         {
-            foreach (var link in songLite.Links)
+            string filePath;
+            switch (link.Type)
             {
-                string filePath = $"{baseDownloadDir}\\{link.Url.LastSegment()}";
-
-                if (!File.Exists(filePath))
-                {
-                    bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(link.Url));
-                    if (success)
+                case SongLinkType.Catbox:
+                    filePath = $"{baseDownloadDir}\\catbox\\{link.Url.LastSegment()}";
+                    break;
+                case SongLinkType.Self:
+                    if (link.Url.Contains("catbox"))
                     {
-                        dlCount += 1;
+                        // skip mirror links
+                        continue;
+                    }
+
+                    filePath = $"{baseDownloadDir}\\selfhoststorage\\{link.Url.LastSegment()}";
+                    break;
+                case SongLinkType.Unknown:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (!File.Exists(filePath))
+            {
+                bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(link.Url));
+                if (success)
+                {
+                    dlCount += 1;
+                    if (link.Type is SongLinkType.Catbox)
+                    {
                         await Task.Delay(10000);
                     }
-                    else
-                    {
-                        return;
-                    }
+                }
+                else
+                {
+                    return;
                 }
             }
         }
 
         Console.WriteLine($"Downloaded {dlCount} files.");
+    }
+
+    [Test, Explicit]
+    public async Task InsertCatboxToSelfMirrorLinks()
+    {
+        const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
+        var songLites =
+            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath),
+                Utils.JsoIndented)!;
+        foreach (SongLite songLite in songLites)
+        {
+            foreach (SongLink catboxLink in songLite.Links.Where(x => x.Type is SongLinkType.Catbox))
+            {
+                string mirrorUrl = catboxLink.Url.Replace("https://files.catbox.moe/",
+                    $"{Constants.SelfhostAddress}/selfhoststorage/catbox/");
+                // Console.WriteLine(mirrorUrl);
+
+                await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+                {
+                    var mids = (await connection.QueryAsync<int>(
+                        "select music_id from music_external_link where url = @url",
+                        new { url = catboxLink.Url })).ToList();
+                    foreach (int mid in mids)
+                    {
+                        var selfLink = new SongLink
+                        {
+                            Url = mirrorUrl,
+                            Type = SongLinkType.Self,
+                            IsVideo = catboxLink.IsVideo,
+                            Duration = catboxLink.Duration,
+                            SubmittedBy = catboxLink.SubmittedBy,
+                            Sha256 = catboxLink.Sha256
+                        };
+                        await DbManager.InsertSongLink(mid, selfLink, null);
+                    }
+                }
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task UpdateMusicExternalLinkSha256Hashes()
+    {
+        const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
+        string[] filePaths =
+            Directory.GetFiles(baseDownloadDir, "*.*", new EnumerationOptions() { RecurseSubdirectories = true });
+
+        var dbSongs = await DbManager.GetRandomSongs(int.MaxValue, true);
+        foreach (Song dbSong in dbSongs)
+        {
+            foreach (SongLink dbSongLink in dbSong.Links)
+            {
+                if (string.IsNullOrWhiteSpace(dbSongLink.Sha256))
+                {
+                    string? filePath = filePaths.FirstOrDefault(x => x.LastSegment() == dbSongLink.Url.LastSegment());
+                    if (filePath != null)
+                    {
+                        await using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                        string? sha256 = CryptoUtils.Sha256Hash(fs);
+                        Assert.That(sha256 != null);
+                        Assert.That(sha256!.Any());
+
+                        Console.WriteLine($"Setting {dbSongLink.Url} sha256 to {sha256}");
+                        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+                        {
+                            const string sql = @"UPDATE music_external_link SET sha256 = @sha256 WHERE url = @url";
+                            await connection.ExecuteAsync(sql, new { sha256, url = dbSongLink.Url });
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Song backup not found: {dbSongLink.Url}");
+                    }
+                }
+                else if (dbSongLink.Type == SongLinkType.Catbox &&
+                         !dbSong.Links.Any(x => x.Type == SongLinkType.Self && x.Sha256 == dbSongLink.Sha256))
+                {
+                    Console.WriteLine($"Mirror is not found or corrupt: {dbSongLink.Url}");
+                }
+            }
+        }
     }
 
     [Test, Explicit]
