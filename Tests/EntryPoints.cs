@@ -648,7 +648,7 @@ public class EntryPoints
     {
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
         string envVar = "DATABASE_URL";
-        envVar = "EMQ_DATABASE_URL";
+        // envVar = "EMQ_AUTH_DATABASE_URL";
 
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
