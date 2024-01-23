@@ -1432,7 +1432,8 @@ public static class DbManager
             Console.WriteLine($"    bgmCount: {bgmCount}");
         }
 
-        return ret;
+        // randomize again just in case
+        return ret.OrderBy(_ => rng.Next()).ToList();
     }
 
     public static async Task<string> SelectAutocompleteMst()

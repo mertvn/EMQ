@@ -235,7 +235,7 @@ public static class MediaAnalyser
         string err = await process.StandardError.ReadToEndAsync();
         if (err.Any())
         {
-            Console.WriteLine(err);
+            Console.WriteLine(err.Last());
         }
 
         return outputFinal;
