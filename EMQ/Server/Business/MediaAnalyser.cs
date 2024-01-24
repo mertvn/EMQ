@@ -258,7 +258,7 @@ public static class MediaAnalyser
 
         if (meanVolume == 0)
         {
-            throw new Exception("meanVolume is 0");
+            throw new Exception("meanVolume is 0; this usually means the input file was inaccessible");
         }
 
         float volumeAdjust = 0;

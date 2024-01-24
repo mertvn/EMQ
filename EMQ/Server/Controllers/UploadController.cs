@@ -60,6 +60,7 @@ public class UploadController : ControllerBase
         foreach (var file in files)
         {
             var uploadResult = new UploadResult();
+            uploadResults.Add(uploadResult);
 
             // todo check file signatures instead
             var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
@@ -231,11 +232,9 @@ public class UploadController : ControllerBase
             {
                 uploadResult.ErrorStr = $"Only {maxAllowedFiles} files is allowed per request";
             }
-
-            uploadResults.Add(uploadResult);
         }
 
         UploadResult single = uploadResults.Single();
-        return new CreatedResult(single.ResultUrl!, single);
+        return new CreatedResult(single.ResultUrl ?? "", single);
     }
 }
