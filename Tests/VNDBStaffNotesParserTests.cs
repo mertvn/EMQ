@@ -29,7 +29,7 @@ public class VNDBStaffNotesParserTests
         // @formatter:off
         List<string> blacklist = new()
         {
-          "v24208", "v19843", "v8664", // possible room for improvement
+          "v24208", "v8664", // possible room for improvement
           "v15495", "v20070", "v20071", "v28714", // too irregular
         };
 
@@ -182,6 +182,33 @@ public class VNDBStaffNotesParserTests
                 Type = new List<SongType> { SongType.ED },
                 Title = "DON'T LET GO",
                 AfterTitle = " [Remake]"
+            }
+        };
+
+        var actual = VNDBStaffNotesParser.Program.Parse(input);
+        Assert.AreEqual(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+    }
+
+    [Test]
+    public void Test_WeirdShitThatIDontKnowIfWeShouldAccept2()
+    {
+        string input = "OP, Miharu and Unhappy ED \"Unveil\", True ED \"Garasu no Ito\"";
+
+        var expected = new List<ParsedSong>
+        {
+            new()
+            {
+                BeforeType = ", Miharu and Unhappy ",
+                Type = new List<SongType> { SongType.OP, SongType.ED }, // meh, very ambiguous syntax
+                Title = "Unveil",
+                AfterTitle = ""
+            },
+            new()
+            {
+                BeforeType = "True ",
+                Type = new List<SongType> { SongType.ED },
+                Title = "Garasu no Ito",
+                AfterTitle = ""
             }
         };
 
