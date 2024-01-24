@@ -17,7 +17,8 @@ public partial class ModPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        if (ClientState.Session == null || !ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
+        if (ClientState.Session == null ||
+            !AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))
         {
             _navigation.NavigateTo("/", true);
             return;

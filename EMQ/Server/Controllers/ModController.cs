@@ -23,7 +23,7 @@ public class ModController : ControllerBase
 
     private readonly ILogger<ModController> _logger;
 
-    [CustomAuthorize(PermissionKind.Admin)]
+    [CustomAuthorize(PermissionKind.Moderator)]
     [HttpGet]
     [Route("ExportSongLite")]
     public async Task<ActionResult<string>> ExportSongLite()
@@ -32,7 +32,7 @@ public class ModController : ControllerBase
         return songLite;
     }
 
-    [CustomAuthorize(PermissionKind.Admin)]
+    [CustomAuthorize(PermissionKind.Moderator)]
     [HttpGet]
     [Route("ExportSongLite_MB")]
     public async Task<ActionResult<string>> ExportSongLite_MB()

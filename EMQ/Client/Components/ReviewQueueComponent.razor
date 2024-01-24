@@ -10,7 +10,7 @@
 @inject ILogger<GuessInputComponent> _logger
 @inject IJSRuntime _jsRuntime
 
-@if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.ReviewQueueModerator))
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink))
 {
     <ReviewComponent CurrentRQs="CurrentRQs" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
 }

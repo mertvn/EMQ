@@ -16,35 +16,38 @@
 }
 <br/>
 
-<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
-    Run GC
-</button>
-<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunAnalysis(); })">
-    Run Analysis
-</button>
-
-<br/>
-
+<p>May take over a minute before these are downloaded.</p>
 <button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadSongLite(); })">
     Download SongLite.json
 </button>
 <button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadSongLite_MB(); })">
     Download SongLite_MB.json
 </button>
-
 <br/>
 
-@ClientState.ServerStats.IsServerReadOnly
-<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsServerReadOnly(); })">
-    Toggle IsServerReadOnly
-</button>
-<br/>
-@ClientState.ServerStats.IsSubmissionDisabled
-<button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsSubmissionDisabled(); })">
-    Toggle IsSubmissionDisabled
-</button>
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+{
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
+        Run GC
+    </button>
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunAnalysis(); })">
+        Run Analysis
+    </button>
 
-<br/>
+    <br/>
+
+    @ClientState.ServerStats.IsServerReadOnly
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsServerReadOnly(); })">
+        Toggle IsServerReadOnly
+    </button>
+    <br/>
+    @ClientState.ServerStats.IsSubmissionDisabled
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsSubmissionDisabled(); })">
+        Toggle IsSubmissionDisabled
+    </button>
+
+    <br/>
+}
 
 <pre>
 @JsonSerializer.Serialize(SongReports, Utils.JsoIndented)

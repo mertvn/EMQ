@@ -28,7 +28,7 @@
                 <span class="oi oi-list" aria-hidden="true"></span> Library
             </NavLink>
         </div>
-        @if (ClientState.Session != null && ClientState.Session.UserRoleKind.HasFlag(UserRoleKind.Admin))
+        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="ModPage">
