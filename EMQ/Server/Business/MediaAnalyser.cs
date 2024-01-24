@@ -352,7 +352,7 @@ public static class MediaAnalyser
                                     CultureInfo.InvariantCulture);
 
                                 // need a little bit of tolerance here
-                                if (silenceStart > 0.2f)
+                                if (silenceStart > 0.4f)
                                 {
                                     throw new Exception("case 4 silence_start not 0");
                                 }
