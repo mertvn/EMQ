@@ -151,6 +151,7 @@ public class ClientUtils
                     uploadResult.FileName = res.FileName;
                     uploadResult.ResultUrl = res.ResultUrl;
                     uploadResult.ErrorStr = res.ErrorStr;
+                    uploadResult.ExtractedResultUrl = res.ExtractedResultUrl;
                 }
                 else
                 {

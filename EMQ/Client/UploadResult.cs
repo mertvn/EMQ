@@ -12,6 +12,8 @@ public class UploadResult
 
     public string? ResultUrl { get; set; }
 
+    public string? ExtractedResultUrl { get; set; }
+
     public string ErrorStr { get; set; } = "";
 
     public List<Song> PossibleMatches { get; set; } = new();

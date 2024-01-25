@@ -55,6 +55,12 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                     <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
                         <span>@file.ResultUrl</span>
                     </a>
+                    @if (!string.IsNullOrEmpty(file.ExtractedResultUrl))
+                    {
+                        <a class="link-primary" href="@(file.ExtractedResultUrl)" target="_blank" style="display: inline-block;">
+                            <span>@file.ExtractedResultUrl</span>
+                        </a>
+                    }
                 }
                 else
                 {

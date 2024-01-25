@@ -13,6 +13,7 @@ using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using FFMpegCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Renci.SshNet;
@@ -175,17 +176,18 @@ public static class ServerUtils
         }
     }
 
-    public static async Task<bool> ImportSongLinkInner(int mId, SongLink songLink, string existingPath,
+    public static async Task<MediaAnalyserResult?> ImportSongLinkInner(int mId, SongLink songLink, string existingPath,
         bool? isVideoOverride)
     {
         int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
+        MediaAnalyserResult? analyserResult = null;
 
         // todo extract audio and upload it if necessary
         if (rqId > 0)
         {
             if (!string.IsNullOrEmpty(existingPath))
             {
-                var analyserResult = await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride);
+                analyserResult = await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride);
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                     analyserResult: analyserResult);
             }
@@ -195,7 +197,7 @@ public static class ServerUtils
                 bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(songLink.Url));
                 if (dlSuccess)
                 {
-                    var analyserResult = await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
+                    analyserResult = await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
                     System.IO.File.Delete(filePath);
                     await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                         analyserResult: analyserResult);
@@ -203,6 +205,6 @@ public static class ServerUtils
             }
         }
 
-        return rqId > 0;
+        return analyserResult;
     }
 }

@@ -97,7 +97,7 @@ public class LibraryController : ControllerBase
             return false;
         }
 
-        return await ServerUtils.ImportSongLinkInner(req.MId, req.SongLink, "", null);
+        return await ServerUtils.ImportSongLinkInner(req.MId, req.SongLink, "", null) != null;
     }
 
     [CustomAuthorize(PermissionKind.ReportSongLink)]

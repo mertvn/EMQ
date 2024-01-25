@@ -207,70 +207,213 @@ public class UploadController : ControllerBase
                         };
 
                         await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
-                        await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null);
+                        var extractedAnalysis = await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null);
 
-
-
-
-
-
-
-                        if (songLink.IsVideo && session.UserRoleKind.HasFlag(UserRoleKind.Admin)) // todo
+                        // todo cleanup
+                        if (songLink.IsVideo && extractedAnalysis != null)
                         {
-                            string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.weba";
-                            Console.WriteLine($"extracting audio from video to {extractedOutputFinal}");
-
-                            var process = new Process()
+                            switch (extractedAnalysis.PrimaryAudioStreamCodecName)
                             {
-                                StartInfo = new ProcessStartInfo()
-                                {
-                                    FileName = "ffmpeg",
-                                    Arguments =
-                                        $"-i \"{tempPath}\" " +
-                                        $"-map 0:a " +
-                                        $"-c copy " +
-                                        $"-f webm " +
-                                        $"-nostdin " +
-                                        $"\"{extractedOutputFinal}\"",
-                                    CreateNoWindow = true,
-                                    UseShellExecute = false,
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                }
-                            };
+                                case "opus":
+                                    {
+                                        string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.weba";
+                                        Console.WriteLine(
+                                            $"extracting audio from video to {extractedOutputFinal}");
 
-                            process.Start();
-                            process.BeginOutputReadLine();
-                            string err = await process.StandardError.ReadToEndAsync();
-                            if (err.Any())
-                            {
-                                Console.WriteLine(err);
+                                        var process = new Process()
+                                        {
+                                            StartInfo = new ProcessStartInfo()
+                                            {
+                                                FileName = "ffmpeg",
+                                                Arguments =
+                                                    $"-i \"{tempPath}\" " +
+                                                    $"-map 0:a " +
+                                                    $"-c copy " +
+                                                    $"-f webm " +
+                                                    $"-nostdin " +
+                                                    $"\"{extractedOutputFinal}\"",
+                                                CreateNoWindow = true,
+                                                UseShellExecute = false,
+                                                RedirectStandardOutput = true,
+                                                RedirectStandardError = true,
+                                            }
+                                        };
+
+                                        process.Start();
+                                        process.BeginOutputReadLine();
+                                        string err = await process.StandardError.ReadToEndAsync();
+                                        if (err.Any())
+                                        {
+                                            Console.WriteLine(err);
+                                        }
+
+                                        string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
+                                        Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                            "weba/",
+                                            extractedTrustedFileNameForFileStorage));
+
+                                        fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                            FileAccess.Read);
+                                        ServerUtils.SftpFileUpload(
+                                            UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                            UploadConstants.SftpPassword,
+                                            fs, Path.Combine(UploadConstants.SftpUserUploadDir, "weba/",
+                                                extractedTrustedFileNameForFileStorage));
+
+                                        string extractedResultUrl =
+                                            $"https://emqselfhost/selfhoststorage/userup/weba/{extractedTrustedFileNameForFileStorage}"
+                                                .ReplaceSelfhostLink();
+
+                                        uploadResult.ExtractedResultUrl = extractedResultUrl;
+                                        var songLinkExtracted = new SongLink
+                                        {
+                                            Url = extractedResultUrl,
+                                            Type = SongLinkType.Self,
+                                            IsVideo = false,
+                                            SubmittedBy = session.Player.Username,
+                                            Sha256 = CryptoUtils.Sha256Hash(fs),
+                                        };
+
+                                        await fs.DisposeAsync();
+                                        await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
+                                            extractedOutputFinal,
+                                            false);
+                                        break;
+                                    }
+                                case "vorbis":
+                                    {
+                                        string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.ogg";
+                                        Console.WriteLine(
+                                            $"extracting audio from video to {extractedOutputFinal}");
+
+                                        var process = new Process()
+                                        {
+                                            StartInfo = new ProcessStartInfo()
+                                            {
+                                                FileName = "ffmpeg",
+                                                Arguments =
+                                                    $"-i \"{tempPath}\" " +
+                                                    $"-map 0:a " +
+                                                    $"-c copy " +
+                                                    $"-nostdin " +
+                                                    $"\"{extractedOutputFinal}\"",
+                                                CreateNoWindow = true,
+                                                UseShellExecute = false,
+                                                RedirectStandardOutput = true,
+                                                RedirectStandardError = true,
+                                            }
+                                        };
+
+                                        process.Start();
+                                        process.BeginOutputReadLine();
+                                        string err = await process.StandardError.ReadToEndAsync();
+                                        if (err.Any())
+                                        {
+                                            Console.WriteLine(err);
+                                        }
+
+                                        string extractedTrustedFileNameForFileStorage = $"{guid}.ogg";
+                                        Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                            extractedTrustedFileNameForFileStorage));
+
+                                        fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                            FileAccess.Read);
+                                        ServerUtils.SftpFileUpload(
+                                            UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                            UploadConstants.SftpPassword,
+                                            fs, Path.Combine(UploadConstants.SftpUserUploadDir,
+                                                extractedTrustedFileNameForFileStorage));
+
+                                        string extractedResultUrl =
+                                            $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
+                                                .ReplaceSelfhostLink();
+
+                                        uploadResult.ExtractedResultUrl = extractedResultUrl;
+                                        var songLinkExtracted = new SongLink
+                                        {
+                                            Url = extractedResultUrl,
+                                            Type = SongLinkType.Self,
+                                            IsVideo = false,
+                                            SubmittedBy = session.Player.Username,
+                                            Sha256 = CryptoUtils.Sha256Hash(fs),
+                                        };
+
+                                        await fs.DisposeAsync();
+                                        await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
+                                            extractedOutputFinal,
+                                            false);
+                                        break;
+                                    }
+                                case "mp3":
+                                    {
+                                        string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.mp3";
+                                        Console.WriteLine(
+                                            $"extracting audio from video to {extractedOutputFinal}");
+
+                                        var process = new Process()
+                                        {
+                                            StartInfo = new ProcessStartInfo()
+                                            {
+                                                FileName = "ffmpeg",
+                                                Arguments =
+                                                    $"-i \"{tempPath}\" " +
+                                                    $"-map 0:a " +
+                                                    $"-c copy " +
+                                                    $"-nostdin " +
+                                                    $"\"{extractedOutputFinal}\"",
+                                                CreateNoWindow = true,
+                                                UseShellExecute = false,
+                                                RedirectStandardOutput = true,
+                                                RedirectStandardError = true,
+                                            }
+                                        };
+
+                                        process.Start();
+                                        process.BeginOutputReadLine();
+                                        string err = await process.StandardError.ReadToEndAsync();
+                                        if (err.Any())
+                                        {
+                                            Console.WriteLine(err);
+                                        }
+
+                                        string extractedTrustedFileNameForFileStorage = $"{guid}.mp3";
+                                        Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                            "weba/",
+                                            extractedTrustedFileNameForFileStorage));
+
+                                        fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                            FileAccess.Read);
+                                        ServerUtils.SftpFileUpload(
+                                            UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                            UploadConstants.SftpPassword,
+                                            fs, Path.Combine(UploadConstants.SftpUserUploadDir,
+                                                extractedTrustedFileNameForFileStorage));
+
+                                        string extractedResultUrl =
+                                            $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
+                                                .ReplaceSelfhostLink();
+
+                                        uploadResult.ExtractedResultUrl = extractedResultUrl;
+                                        var songLinkExtracted = new SongLink
+                                        {
+                                            Url = extractedResultUrl,
+                                            Type = SongLinkType.Self,
+                                            IsVideo = false,
+                                            SubmittedBy = session.Player.Username,
+                                            Sha256 = CryptoUtils.Sha256Hash(fs),
+                                        };
+
+                                        await fs.DisposeAsync();
+                                        await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
+                                            extractedOutputFinal,
+                                            false);
+                                        break;
+                                    }
+                                default:
+                                    Console.WriteLine(
+                                        $"unsupported codec when extracting audio: {extractedAnalysis.PrimaryAudioStreamCodecName}");
+                                    break;
                             }
-
-                            string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
-                            fs = new FileStream(extractedOutputFinal, FileMode.Open, FileAccess.Read);
-                            ServerUtils.SftpFileUpload(
-                                UploadConstants.SftpHost, UploadConstants.SftpUsername,
-                                UploadConstants.SftpPassword,
-                                fs,
-                                Path.Combine(UploadConstants.SftpUserUploadDir.Replace("userup", "weba"), // todo
-                                    extractedTrustedFileNameForFileStorage));
-
-                            var extractedResultUrl =
-                                $"https://emqselfhost/selfhoststorage/weba/{extractedTrustedFileNameForFileStorage}"
-                                    .ReplaceSelfhostLink();
-
-                            var songLinkExtracted = new SongLink
-                            {
-                                Url = extractedResultUrl,
-                                Type = SongLinkType.Self,
-                                IsVideo = false,
-                                SubmittedBy = session.Player.Username,
-                                Sha256 = CryptoUtils.Sha256Hash(fs),
-                            };
-
-                            await fs.DisposeAsync();
-                            await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted, extractedOutputFinal, false);
                         }
                     }
                     catch (Exception ex)
