@@ -214,7 +214,7 @@
                    style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video2")">
             </video>
 
-            @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
+            @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().IsVideo)
             {
                 <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000">Sound only</p>
             }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -205,7 +207,71 @@ public class UploadController : ControllerBase
                         };
 
                         await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
-                        await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath);
+                        await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null);
+
+
+
+
+
+
+
+                        if (songLink.IsVideo && session.UserRoleKind.HasFlag(UserRoleKind.Admin)) // todo
+                        {
+                            string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.weba";
+                            Console.WriteLine($"extracting audio from video to {extractedOutputFinal}");
+
+                            var process = new Process()
+                            {
+                                StartInfo = new ProcessStartInfo()
+                                {
+                                    FileName = "ffmpeg",
+                                    Arguments =
+                                        $"-i \"{tempPath}\" " +
+                                        $"-map 0:a " +
+                                        $"-c copy " +
+                                        $"-f webm " +
+                                        $"-nostdin " +
+                                        $"\"{extractedOutputFinal}\"",
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                }
+                            };
+
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            string err = await process.StandardError.ReadToEndAsync();
+                            if (err.Any())
+                            {
+                                Console.WriteLine(err);
+                            }
+
+                            string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
+                            fs = new FileStream(extractedOutputFinal, FileMode.Open, FileAccess.Read);
+                            ServerUtils.SftpFileUpload(
+                                UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                UploadConstants.SftpPassword,
+                                fs,
+                                Path.Combine(UploadConstants.SftpUserUploadDir.Replace("userup", "weba"), // todo
+                                    extractedTrustedFileNameForFileStorage));
+
+                            var extractedResultUrl =
+                                $"https://emqselfhost/selfhoststorage/weba/{extractedTrustedFileNameForFileStorage}"
+                                    .ReplaceSelfhostLink();
+
+                            var songLinkExtracted = new SongLink
+                            {
+                                Url = extractedResultUrl,
+                                Type = SongLinkType.Self,
+                                IsVideo = false,
+                                SubmittedBy = session.Player.Username,
+                                Sha256 = CryptoUtils.Sha256Hash(fs),
+                            };
+
+                            await fs.DisposeAsync();
+                            await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted, extractedOutputFinal, false);
+                        }
                     }
                     catch (Exception ex)
                     {

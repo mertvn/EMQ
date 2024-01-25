@@ -76,9 +76,17 @@ public static class MediaAnalyser
                 }
             }
 
+            long filesizeBytes = new FileInfo(filePath).Length;
+            result.FilesizeMb = (float)filesizeBytes / 1024 / 1024;
+
             if (isVideoOverride != null)
             {
                 isVideo = isVideoOverride.Value;
+                if (string.Equals($".weba", Path.GetExtension(filePath), StringComparison.OrdinalIgnoreCase))
+                {
+                    format = "weba";
+                    result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
+                }
             }
 
             result.IsVideo = isVideo;
@@ -89,9 +97,6 @@ public static class MediaAnalyser
             {
                 result.Warnings.Add(MediaAnalyserWarningKind.WrongExtension);
             }
-
-            long filesizeBytes = new FileInfo(filePath).Length;
-            result.FilesizeMb = (float)filesizeBytes / 1024 / 1024;
 
             if (isVideo)
             {
@@ -128,7 +133,7 @@ public static class MediaAnalyser
 
             // Console.WriteLine(new { mediaInfo.PrimaryAudioStream!.BitRate });
             // webm returns 0
-            if (format != "webm")
+            if (format != "webm" && format != "weba")
             {
                 long kbps = mediaInfo.PrimaryAudioStream!.BitRate / 1000;
                 result.AudioBitrateKbps = kbps;

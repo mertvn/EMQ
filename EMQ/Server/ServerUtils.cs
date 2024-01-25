@@ -175,7 +175,8 @@ public static class ServerUtils
         }
     }
 
-    public static async Task<bool> ImportSongLinkInner(int mId, SongLink songLink, string existingPath)
+    public static async Task<bool> ImportSongLinkInner(int mId, SongLink songLink, string existingPath,
+        bool? isVideoOverride)
     {
         int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
 
@@ -184,7 +185,7 @@ public static class ServerUtils
         {
             if (!string.IsNullOrEmpty(existingPath))
             {
-                var analyserResult = await MediaAnalyser.Analyse(existingPath);
+                var analyserResult = await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride);
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                     analyserResult: analyserResult);
             }
@@ -194,7 +195,7 @@ public static class ServerUtils
                 bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(songLink.Url));
                 if (dlSuccess)
                 {
-                    var analyserResult = await MediaAnalyser.Analyse(filePath);
+                    var analyserResult = await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
                     System.IO.File.Delete(filePath);
                     await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                         analyserResult: analyserResult);
