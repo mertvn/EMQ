@@ -244,7 +244,7 @@ public class UploadController : ControllerBase
                                         string err = await process.StandardError.ReadToEndAsync();
                                         if (err.Any())
                                         {
-                                            Console.WriteLine(err);
+                                            Console.WriteLine(err.Last());
                                         }
 
                                         string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
@@ -309,7 +309,7 @@ public class UploadController : ControllerBase
                                         string err = await process.StandardError.ReadToEndAsync();
                                         if (err.Any())
                                         {
-                                            Console.WriteLine(err);
+                                            Console.WriteLine(err.Last());
                                         }
 
                                         string extractedTrustedFileNameForFileStorage = $"{guid}.ogg";
@@ -373,7 +373,7 @@ public class UploadController : ControllerBase
                                         string err = await process.StandardError.ReadToEndAsync();
                                         if (err.Any())
                                         {
-                                            Console.WriteLine(err);
+                                            Console.WriteLine(err.Last());
                                         }
 
                                         string extractedTrustedFileNameForFileStorage = $"{guid}.mp3";
