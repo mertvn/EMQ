@@ -208,6 +208,8 @@ public static class ExtensionMethods
 
     public static string NormalizeForAutocomplete(this string input)
     {
+        // todo Coμ, √ after and another
+        // todo ☆, ♪ etc.
         return new string(input
                 .Trim()
                 .ToLowerInvariant()
