@@ -29,6 +29,42 @@
     <span>Are you sure you want to return to room? This will end the quiz for all players.</span>
 </GenericModal>
 
+<GenericModal @ref="@_songHistoryModalRef"
+              Title="Song History"
+              Size="@Blazorise.ModalSize.ExtraLarge">
+    @if (Room?.Quiz?.SongsHistory != null)
+    {
+        <div id="songHistoryContainer">
+            <ol>
+                @for (int index = 0; index < Room.Quiz.SongsHistory.Count; index++)
+                {
+                    var song = Room.Quiz.SongsHistory[index];
+                    <li class="songHistoryRow">
+                        @if (song.Sources.Count == 1)
+                        {
+                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles)</span>
+                        }
+                        else
+                        {
+                            var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
+                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y}</li>"));
+                            string tooltipText = $"<ul>{joined}</ul>";
+
+                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles)</span>
+                            <Blazorise.Tooltip
+                                Inline="true"
+                                Text="@tooltipText">
+                                <span> and @(song.Sources.Count - 1) more...</span>
+                            </Blazorise.Tooltip>
+                        }
+
+                    </li>
+                }
+            </ol>
+        </div>
+    }
+</GenericModal>
+
 @if (!_clientConnectionManager.IsConnected)
 {
     <p style="color: @UiHelpers.Bool2Color(_clientConnectionManager.IsConnected, "green", "red")">
@@ -69,6 +105,11 @@
             @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
         </button>
     }
+
+    <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
+            @onclick="@(() => _songHistoryModalRef?.Show())">
+        Song History
+    </button>
 
     <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
             @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">

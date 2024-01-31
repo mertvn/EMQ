@@ -36,6 +36,8 @@ public sealed class Quiz : IDisposable
 
     public Dictionary<int, List<Title>> MultipleChoiceOptions { get; set; } = new(); // todo move into QuizState
 
+    public List<Song> SongsHistory { get; set; } = new();
+
     public void Dispose()
     {
         IsDisposed = true;

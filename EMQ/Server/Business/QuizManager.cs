@@ -281,6 +281,8 @@ public class QuizManager
             player.IsBuffered = false;
         }
 
+        Quiz.SongsHistory.Add(Quiz.Songs[Quiz.QuizState.sp]);
+
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
                 Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,

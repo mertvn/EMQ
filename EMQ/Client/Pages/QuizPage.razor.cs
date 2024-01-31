@@ -54,7 +54,6 @@ public partial class QuizPage
         PageState = new QuizPageState();
         Room = null;
         _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 1000]) { };
-        _correctAnswer = null;
     }
 
     private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
@@ -113,7 +112,7 @@ public partial class QuizPage
         }
     }
 
-    private Song? _correctAnswer { get; set; }
+    private Song? _correctAnswer => Room?.Quiz?.SongsHistory.ElementAtOrDefault(Room.Quiz.QuizState.sp);
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
 
@@ -128,6 +127,8 @@ public partial class QuizPage
     private GenericModal? _leaveModalRef;
 
     private GenericModal? _returnToRoomModalRef;
+
+    private GenericModal? _songHistoryModalRef;
 
     private DateTime LastSync { get; set; }
 
@@ -267,7 +268,6 @@ public partial class QuizPage
             return;
         }
 
-        _correctAnswer = correctAnswer;
         _correctAnswerPlayerLabels = playerLabels;
         _playerGuesses = playerGuesses;
     }
@@ -517,7 +517,6 @@ public partial class QuizPage
                         false; // todo: should be able to toggle players' guesses separately (for multi-team games)
                 }
 
-                _correctAnswer = null;
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
                 StateHasChanged();
 
