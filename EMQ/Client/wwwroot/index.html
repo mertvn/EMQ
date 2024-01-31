@@ -95,6 +95,21 @@
                 }
             }
 
+            // const isCustomTheme = theme === 'wuffles'; // convert to array includes check when necessary
+            // if (isCustomTheme){
+            //     const link = document.createElement('link');
+            //     link.id = 'customTheme';
+            //     link.rel = 'stylesheet';
+            //     link.href = `css/${theme}.css`;
+            //     document.head.appendChild(link);
+            // }
+            // else {
+            //     const customTheme = document.head.querySelector('link#customTheme');
+            //     if (customTheme){
+            //         document.head.removeChild(customTheme)
+            //     }
+            // }
+
             const themeSwitcherText = document.querySelector('#bd-theme-text')
             // const activeThemeIcon = document.querySelector('.theme-icon-active use')
             const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
