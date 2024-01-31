@@ -460,7 +460,7 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
-                        if (room.Quiz.QuizState.sp >= 0)
+                        if (room.Quiz.QuizState.sp >= 0 && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
                             await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
