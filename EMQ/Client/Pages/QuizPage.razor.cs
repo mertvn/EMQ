@@ -235,6 +235,17 @@ public partial class QuizPage
             }
         }
 
+        if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp >= 0 &&
+            _clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp) is null)
+        {
+            Console.WriteLine($"LoadMissingSong1 @{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase}");
+            var song = await NextSong(Room.Quiz!.QuizState.sp);
+            if (song is not null)
+            {
+                _clientSongs[Room.Quiz!.QuizState.sp] = song;
+            }
+        }
+
         // we want to send this message regardless of whether the preloading was successful or not
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
             $"OnInitializedAsync");
@@ -519,6 +530,16 @@ public partial class QuizPage
 
                 PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
                 StateHasChanged();
+
+                if (_clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp) is null)
+                {
+                    Console.WriteLine($"LoadMissingSong2 @{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase}");
+                    var song = await NextSong(Room.Quiz!.QuizState.sp);
+                    if (song is not null)
+                    {
+                        _clientSongs[Room.Quiz!.QuizState.sp] = song;
+                    }
+                }
 
                 await SwapSongs(Room.Quiz.QuizState.sp);
                 StateHasChanged();
