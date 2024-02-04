@@ -51,9 +51,9 @@ public partial class Index
 
     private async Task Logout()
     {
-        LoginInProgress = true;
         if (ClientState.Session is not null && !LoginInProgress)
         {
+            LoginInProgress = true;
             HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/RemoveSession",
                 new ReqRemoveSession(ClientState.Session.Token));
             if (res.IsSuccessStatusCode)
