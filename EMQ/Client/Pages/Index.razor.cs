@@ -70,9 +70,9 @@ public partial class Index
             {
                 // todo display error
             }
-        }
 
-        LoginInProgress = false;
+            LoginInProgress = false;
+        }
     }
 
     private async Task Login(LoginModel loginModel)

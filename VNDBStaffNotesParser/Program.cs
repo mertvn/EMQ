@@ -152,6 +152,7 @@ public static class Program
                         "Ep. 6 song",
                         "Ep. 8 song",
                         "Fu-Rin-Ka-Zan theme",
+                        "Yui's songs",
                         "Iwasawa's songs",
                         "µ-12's Theme",
                         "Tristar Theme",
