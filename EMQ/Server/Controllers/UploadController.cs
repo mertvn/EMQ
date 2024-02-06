@@ -199,7 +199,7 @@ public class UploadController : ControllerBase
                         uploadResult.Uploaded = true;
                         var songLink = new SongLink
                         {
-                            Url = uploadResult.ResultUrl,
+                            Url = uploadResult.ResultUrl.UnReplaceSelfhostLink(),
                             Type = SongLinkType.Self,
                             IsVideo = uploadResult.ResultUrl.IsVideoLink(),
                             SubmittedBy = session.Player.Username,
@@ -267,7 +267,7 @@ public class UploadController : ControllerBase
                                         uploadResult.ExtractedResultUrl = extractedResultUrl;
                                         var songLinkExtracted = new SongLink
                                         {
-                                            Url = extractedResultUrl,
+                                            Url = extractedResultUrl.UnReplaceSelfhostLink(),
                                             Type = SongLinkType.Self,
                                             IsVideo = false,
                                             SubmittedBy = session.Player.Username,
@@ -331,7 +331,7 @@ public class UploadController : ControllerBase
                                         uploadResult.ExtractedResultUrl = extractedResultUrl;
                                         var songLinkExtracted = new SongLink
                                         {
-                                            Url = extractedResultUrl,
+                                            Url = extractedResultUrl.UnReplaceSelfhostLink(),
                                             Type = SongLinkType.Self,
                                             IsVideo = false,
                                             SubmittedBy = session.Player.Username,
@@ -396,7 +396,7 @@ public class UploadController : ControllerBase
                                         uploadResult.ExtractedResultUrl = extractedResultUrl;
                                         var songLinkExtracted = new SongLink
                                         {
-                                            Url = extractedResultUrl,
+                                            Url = extractedResultUrl.UnReplaceSelfhostLink(),
                                             Type = SongLinkType.Self,
                                             IsVideo = false,
                                             SubmittedBy = session.Player.Username,
