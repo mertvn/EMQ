@@ -179,11 +179,6 @@ builder.Services.AddHsts(options =>
     options.MaxAge = TimeSpan.FromDays(365);
 });
 
-builder.Services.AddHostedService<CleanupService>();
-builder.Services.AddHostedService<OpportunisticGcService>();
-builder.Services.AddHostedService<AuthDatabaseCleanupService>();
-builder.Services.AddHostedService<EmailQueueService>();
-
 var app = builder.Build();
 app.UseResponseCompression();
 
