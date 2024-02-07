@@ -48,7 +48,9 @@
     <div style="position: absolute; bottom: 5px; left: 5px;">
         @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))
         {
-            <p> #@ClientState.ServerStats.GitHash</p>
+            string href = $"https://github.com/mertvn/EMQ/commit/#{ClientState.ServerStats.GitHash}";
+            <a href=@href target="_blank">#@ClientState.ServerStats.GitHash</a>
+            <br/>
         }
 
         <a href="https://discord.com/invite/jKFGavUdff">Discord</a>
