@@ -11,9 +11,9 @@ public static class Constants
 
     public const string WebsiteName = "Eroge Music Quiz";
 
-    public const string WebsiteDomain = "https://emq.up.railway.app";
+    public const string WebsiteDomain = "https://erogemusicquiz.com";
 
-    public const string WebsiteDomainNoProtocol = "emq.up.railway.app";
+    public const string WebsiteDomainNoProtocol = "erogemusicquiz.com";
 
     public const string LocalMusicLibraryPath = @"G:\Music";
 
