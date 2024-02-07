@@ -318,7 +318,7 @@ app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
-const bool hasDb = true;
+const bool hasDb = false;
 bool precacheSongs = false && !app.Environment.IsDevelopment();
 
 string cnnStrSong;
