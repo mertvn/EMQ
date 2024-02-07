@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Business;
@@ -30,6 +31,31 @@ public static class ServerState
     public static bool IsSubmissionDisabled { get; set; } = false;
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
+
+    private static string? s_gitHash;
+
+    public static string GitHash
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(s_gitHash))
+            {
+                string version = "1.0.0+LOCALBUILD"; // Dummy version for local dev
+                var appAssembly = typeof(ServerState).Assembly;
+                var infoVerAttr = (AssemblyInformationalVersionAttribute?)appAssembly
+                    .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute)).FirstOrDefault();
+
+                if (infoVerAttr != null && infoVerAttr.InformationalVersion.Length > 6)
+                {
+                    version = infoVerAttr.InformationalVersion;
+                }
+
+                s_gitHash = version[(version.IndexOf('+') + 1)..];
+            }
+
+            return s_gitHash;
+        }
+    }
 
     public static void RemoveRoom(Room room, string source)
     {

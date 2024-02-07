@@ -46,6 +46,11 @@
         </ul>
     </div>
     <div style="position: absolute; bottom: 5px; left: 5px;">
+        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))
+        {
+            <p> #@ClientState.ServerStats.GitHash</p>
+        }
+
         <a href="https://discord.com/invite/jKFGavUdff">Discord</a>
         <br/>
         <a href="https://github.com/mertvn/EMQ">Source code</a>

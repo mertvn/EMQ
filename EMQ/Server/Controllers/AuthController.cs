@@ -363,6 +363,7 @@ public class AuthController : ControllerBase
             SessionsCount = ServerState.Sessions.Count,
             IsServerReadOnly = ServerState.IsServerReadOnly,
             IsSubmissionDisabled = ServerState.IsSubmissionDisabled,
+            GitHash = ServerState.GitHash,
         };
     }
 
