@@ -2,7 +2,7 @@
 
 EMQ is an [AMQ](https://animemusicquiz.com/)-like quiz game for eroge/visual novel songs.
 
-Currently running at https://emq.up.railway.app.
+Currently running at https://erogemusicquiz.com.
 ## Steps to import data
 ### Vocals
 1. Create a new postgres database, set the DATABASE_URL environment variable to
