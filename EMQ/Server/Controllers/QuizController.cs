@@ -295,8 +295,8 @@ public class QuizController : ControllerBase
                     if (await quizManager.PrimeQuiz())
                     {
                         room.Log("Primed");
-                        // _ = Task.Run(async () => { await quizManager.StartQuiz(); });
-                        await Task.Run(async () => { await quizManager.StartQuiz(); });
+                        ServerUtils.RunAggressiveGc();
+                        await quizManager.StartQuiz();
                     }
                     else
                     {
