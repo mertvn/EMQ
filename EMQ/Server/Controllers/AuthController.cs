@@ -148,14 +148,29 @@ public class AuthController : ControllerBase
             return;
         }
 
-        var room = ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-        if (room != null)
+        var player = session.Player;
+        var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == player.Id));
+        if (oldRoomPlayer is not null)
         {
-            room.RemovePlayer(session.Player);
-            room.AllConnectionIds.Remove(session.Player.Id, out _);
-            if (!room.Players.Any())
+            oldRoomPlayer.RemovePlayer(player);
+            oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
+            oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
+
+            if (!oldRoomPlayer.Players.Any())
             {
-                ServerState.RemoveRoom(room, "RemoveSession");
+                ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
+            }
+        }
+        else if (oldRoomSpec is not null)
+        {
+            oldRoomSpec.RemoveSpectator(player);
+            oldRoomSpec.AllConnectionIds.Remove(player.Id, out _);
+            oldRoomSpec.Log($"{player.Username} left the room.", -1, true);
+
+            if (!oldRoomSpec.Players.Any())
+            {
+                ServerState.RemoveRoom(oldRoomSpec, "RemoveSession");
             }
         }
 
