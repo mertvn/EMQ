@@ -112,7 +112,9 @@ public partial class QuizPage
         }
     }
 
-    private Song? _correctAnswer => Room?.Quiz?.SongsHistory.ElementAtOrDefault(Room.Quiz.QuizState.sp);
+    private Song? _correctAnswer => Room?.Quiz?.SongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var sh) ?? false
+        ? sh.Song
+        : null;
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
 

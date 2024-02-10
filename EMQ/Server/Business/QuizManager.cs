@@ -34,8 +34,6 @@ public class QuizManager
 
     private Dictionary<int, List<string>> CorrectAnswersDict { get; set; } = new();
 
-    private Dictionary<int, SongStats> SongStatsDict { get; set; } = new();
-
     public DateTime LastUpdate { get; set; }
 
     private void SetTimer()
@@ -281,8 +279,6 @@ public class QuizManager
             player.IsBuffered = false;
         }
 
-        Quiz.SongsHistory.Add(Quiz.Songs[Quiz.QuizState.sp]);
-
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
                 Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
@@ -317,13 +313,14 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
+        // todo make this delay configurable
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
-        var songStats = new SongStats();
-        int numCorrect = 0;
-        int numActivePlayers = 0;
-        int numGuesses = 0;
-        int totalGuessMs = 0;
+        var songHistory = new SongHistory { Song = Quiz.Songs[Quiz.QuizState.sp] };
+        // int numCorrect = 0;
+        // int numActivePlayers = 0;
+        // int numGuesses = 0;
+        // int totalGuessMs = 0;
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -356,26 +353,33 @@ public class QuizManager
 
             if (player.HasActiveConnection)
             {
-                numActivePlayers += 1;
+                // numActivePlayers += 1;
+                //
+                // if (!string.IsNullOrWhiteSpace(player.Guess))
+                // {
+                //     numGuesses += 1;
+                //     totalGuessMs += player.FirstGuessMs;
+                // }
+                //
+                // if (correct)
+                // {
+                //     numCorrect += 1;
+                // }
 
-                if (!string.IsNullOrWhiteSpace(player.Guess))
+                var guessInfo = new GuessInfo
                 {
-                    numGuesses += 1;
-                    totalGuessMs += player.FirstGuessMs;
-                }
-
-                if (correct)
-                {
-                    numCorrect += 1;
-                }
+                    Guess = player.Guess, FirstGuessMs = player.FirstGuessMs, IsGuessCorrect = correct
+                };
+                songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
         }
 
-        songStats.TimesCorrect = numCorrect;
-        songStats.TimesPlayed = numActivePlayers;
-        songStats.TimesGuessed = numGuesses;
-        songStats.TotalGuessMs = totalGuessMs;
-        SongStatsDict.Add(Quiz.Songs[Quiz.QuizState.sp].Id, songStats);
+        // songStats.TimesCorrect = numCorrect;
+        // songStats.TimesPlayed = numActivePlayers;
+        // songStats.TimesGuessed = numGuesses;
+        // songStats.TotalGuessMs = totalGuessMs;
+
+        Quiz.SongsHistory[Quiz.QuizState.sp] = songHistory;
     }
 
     public async Task EndQuiz()
@@ -408,7 +412,7 @@ public class QuizManager
             // If we don't create a new dictionary,
             // when a player uses 'Return to room' right before the correct answer is revealed, we can get a Collection was modified exception
             // might be better to just disallow returning to room except on results phase
-            await UpdateStats(SongStatsDict.ToDictionary(x => x.Key, x => x.Value));
+            await UpdateStats(Quiz.SongsHistory.ToDictionary(x => x.Key, x => SongHistory.ToSongStats(x.Value)));
         }
         else
         {
