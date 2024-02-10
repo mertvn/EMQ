@@ -47,11 +47,13 @@
                 var songHistory = Room.Quiz.SongsHistory[index];
                 var song = songHistory.Song;
 
+                string rowBackgroundColor = "initial";
                 if (songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo))
                 {
+                    rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
                 }
 
-                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick", "initial")">
+                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor">
                     <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(index + 1)</td>
                     <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @if (song.Sources.Count == 1)
