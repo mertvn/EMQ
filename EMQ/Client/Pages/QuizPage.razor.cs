@@ -130,7 +130,7 @@ public partial class QuizPage
 
     private GenericModal? _returnToRoomModalRef;
 
-    private GenericModal? _songHistoryModalRef;
+    private SongHistoryComponent? _songHistoryComponent;
 
     private DateTime LastSync { get; set; }
 

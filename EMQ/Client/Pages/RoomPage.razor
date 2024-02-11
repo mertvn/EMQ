@@ -67,6 +67,8 @@
     <br/>
 </GenericModal>
 
+<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@Room?.Quiz?.SongsHistory"></SongHistoryComponent>
+
 <button type="button" class="btn btn-warning" @onclick="@(() => _leaveModalRef?.Show())"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
     Leave
@@ -141,9 +143,14 @@ else
     </button>
 }
 
-<button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 5px; margin: 5px; width: 120px; height: 35px"
+<button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 5px; margin: 2px; width: 120px; height: 35px"
         @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
     Room Settings
+</button>
+
+<button type="button" id="buttonSongHistory" class="btn btn-secondary" style="padding: 5px; margin: 2px; width: 120px; height: 35px;"
+        @onclick="@(() => _songHistoryComponent!.Show())">
+    Song History
 </button>
 
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)

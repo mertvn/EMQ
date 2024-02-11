@@ -29,82 +29,7 @@
     <span>Are you sure you want to return to room? This will end the quiz for all players.</span>
 </GenericModal>
 
-<GenericModal @ref="@_songHistoryModalRef"
-              Title="Song History"
-              Size="@Blazorise.ModalSize.ExtraLarge">
-    @if (Room?.Quiz?.SongsHistory != null)
-    {
-        <table id="songHistoryTable" style="width: 100%;">
-            <tr class="songHistoryHeaders">
-                <th class="songHistoryHeader">#</th>
-                <th class="songHistoryHeader">Sources</th>
-                <th class="songHistoryHeader">Types</th>
-                <th class="songHistoryHeader">Title</th>
-                <th class="songHistoryHeader">Artists</th>
-            </tr>
-            @for (int index = 0; index < Room.Quiz.SongsHistory.Count; index++)
-            {
-                var songHistory = Room.Quiz.SongsHistory[index];
-                var song = songHistory.Song;
-
-                string rowBackgroundColor = "initial";
-                if (songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo))
-                {
-                    rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
-                }
-
-                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor">
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(index + 1)</td>
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @if (song.Sources.Count == 1)
-                        {
-                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                        }
-                        else
-                        {
-                            var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
-                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                            string tooltipText = $"<ul>{joined}</ul>";
-
-                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                            <Blazorise.Tooltip
-                                Inline="true"
-                                Text="@tooltipText">
-                                <span> and @(song.Sources.Count - 1) more...</span>
-                            </Blazorise.Tooltip>
-                        }
-                    </td>
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @* todo? *@
-                        @string.Join(", ", song.Sources.SelectMany(x => x.SongTypes).Distinct())
-                    </td>
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @Converters.GetSingleTitle(song.Titles).LatinTitle
-                    </td>
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @if (song.Artists.Count == 1)
-                        {
-                            <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                        }
-                        else
-                        {
-                            var otherSources = song.Artists.Where(x => x.Id != song.Artists.First().Id);
-                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                            string tooltipText = $"<ul>{joined}</ul>";
-
-                            <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                            <Blazorise.Tooltip
-                                Inline="true"
-                                Text="@tooltipText">
-                                <span> and @(song.Artists.Count - 1) more...</span>
-                            </Blazorise.Tooltip>
-                        }
-                    </td>
-                </tr>
-            }
-        </table>
-    }
-</GenericModal>
+<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@Room?.Quiz?.SongsHistory"></SongHistoryComponent>
 
 @if (!_clientConnectionManager.IsConnected)
 {
@@ -147,14 +72,14 @@
         </button>
     }
 
-    <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
-            @onclick="@(() => _songHistoryModalRef?.Show())">
-        Song History
-    </button>
-
     <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
             @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
         Room Settings
+    </button>
+
+    <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
+            @onclick="@(() => _songHistoryComponent!.Show())">
+        Song History
     </button>
 
     <button type="button" class="btn btn-warning" disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing)" @onclick="@(async () => await ResetVideo())"

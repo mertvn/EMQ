@@ -49,6 +49,8 @@ public partial class RoomPage
 
     private GenericModal? _changeRoomNameAndPasswordModalRef;
 
+    private SongHistoryComponent? _songHistoryComponent;
+
     private string? RoomName { get; set; }
 
     private string? RoomPassword { get; set; }
