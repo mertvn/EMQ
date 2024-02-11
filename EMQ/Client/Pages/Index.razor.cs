@@ -103,6 +103,10 @@ public partial class Index
                     _client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
                         ClientState.Session.Token);
 
+                    LoginProgressDisplay.Add($"Loading preferences...");
+                    await _clientUtils.TryRestorePreferences();
+                    StateHasChanged();
+
                     LoginProgressDisplay.Add($"Initializing websocket connection...");
                     StateHasChanged();
                     await _clientConnectionManager.StartManagingConnection();

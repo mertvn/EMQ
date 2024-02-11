@@ -29,18 +29,22 @@ public partial class PlayerPreferencesComponent
 
     private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdatePlayerPreferences",
-            new ReqUpdatePlayerPreferences(ClientState.Session!.Token, playerPreferencesModel));
+        // HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdatePlayerPreferences",
+        //     new ReqUpdatePlayerPreferences(ClientState.Session!.Token, playerPreferencesModel));
+        //
+        // if (res.IsSuccessStatusCode)
+        // {
+        //     ClientState.Session.Player.Preferences = (await res.Content.ReadFromJsonAsync<PlayerPreferences>())!;
+        //     await _clientUtils.SaveSessionToLocalStorage();
+        //     await _modalRef.Hide();
+        // }
+        // else
+        // {
+        // }
 
-        if (res.IsSuccessStatusCode)
-        {
-            ClientState.Session.Player.Preferences = (await res.Content.ReadFromJsonAsync<PlayerPreferences>())!;
-            await _clientUtils.SaveSessionToLocalStorage();
-            await _modalRef.Hide();
-        }
-        else
-        {
-        }
+        ClientState.Session!.Player.Preferences = playerPreferencesModel;
+        await _clientUtils.SavePreferencesToLocalStorage();
+        await _modalRef.Hide();
 
         StateHasChanged();
     }

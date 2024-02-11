@@ -50,6 +50,8 @@ public class ClientUtils
 
     private bool IsRestoringSession { get; set; }
 
+    private bool IsRestoringPreferences { get; set; }
+
     public async Task<Room?> SyncRoom()
     {
         Room? room = null;
@@ -80,6 +82,13 @@ public class ClientUtils
     {
         Console.WriteLine("saving session to local storage");
         await SaveToLocalStorage("session", ClientState.Session!);
+    }
+
+    public async Task SavePreferencesToLocalStorage()
+    {
+        Console.WriteLine("saving preferences to local storage");
+        var preferences = ClientState.Session?.Player.Preferences ?? new PlayerPreferences();
+        await SaveToLocalStorage("preferences", preferences);
     }
 
     public async Task SaveToLocalStorage<T>(string key, T value)
@@ -117,6 +126,7 @@ public class ClientUtils
                         //await PlayerPreferencesComponent.GetVndbInfoFromServer(ClientState.VndbInfo);
                         await SaveSessionToLocalStorage();
 
+                        await TryRestorePreferences();
                         await ClientConnectionManager.StartManagingConnection();
                     }
                     else
@@ -128,6 +138,36 @@ public class ClientUtils
             }
 
             IsRestoringSession = false;
+        }
+    }
+
+    public async Task TryRestorePreferences()
+    {
+        if (!IsRestoringPreferences)
+        {
+            try
+            {
+                IsRestoringPreferences = true;
+                string? preferencesStr = await LoadFromLocalStorage<string?>("preferences");
+                if (!string.IsNullOrWhiteSpace(preferencesStr) && preferencesStr != "null")
+                {
+                    PlayerPreferences? preferences = JsonSerializer.Deserialize<PlayerPreferences>(preferencesStr);
+                    if (preferences != null && ClientState.Session != null)
+                    {
+                        ClientState.Session.Player.Preferences = preferences;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                await SavePreferencesToLocalStorage();
+            }
+
+            IsRestoringPreferences = false;
         }
     }
 
