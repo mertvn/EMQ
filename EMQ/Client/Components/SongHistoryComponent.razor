@@ -125,4 +125,10 @@
         StateHasChanged();
     }
 
+    public async Task CallStateHasChanged()
+    {
+        _shouldRender = true;
+        StateHasChanged();
+    }
+
 }

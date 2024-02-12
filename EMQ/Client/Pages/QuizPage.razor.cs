@@ -900,6 +900,7 @@ public partial class QuizPage
                 if (serverSongHistory is not null)
                 {
                     ClientSongsHistory = serverSongHistory;
+                    await _songHistoryComponent!.CallStateHasChanged();
                 }
             }
         }
