@@ -61,9 +61,11 @@ public partial class QuizPage
     public class QuizPageState
     {
         public bool IsDebug { get; } = false;
+
         public readonly List<string> DebugOut = new() { "" };
 
         public float ProgressValue { get; set; } = 0;
+
         public float ProgressDivisor { get; set; } = 1;
 
         public bool VideoPlayerVisibility { get; set; }
@@ -74,10 +76,11 @@ public partial class QuizPage
         public string? Guess { get; set; }
 
         public float Countdown { get; set; }
+
         public Timer Timer { get; } = new();
 
         public Dictionary<string, int> CurrentMasterVolumes { get; set; } =
-            new Dictionary<string, int>() { { "video1", -1 }, { "video2", -1 }};
+            new Dictionary<string, int>() { { "video1", -1 }, { "video2", -1 } };
     }
 
     public QuizPageState PageState { get; set; } = new() { };
@@ -706,32 +709,35 @@ public partial class QuizPage
         {
             LastBufferCheck = DateTime.UtcNow;
 
-            var timeRanges = await _jsRuntime.InvokeAsync<JsTimeRange[]>("getVideoBuffered", HiddenVideoElementId);
+            var timeRanges = await _jsRuntime.InvokeAsync<JsTimeRange[]?>("getVideoBuffered", HiddenVideoElementId);
             // Console.WriteLine(JsonSerializer.Serialize(timeRanges, Utils.JsoIndented));
 
-            foreach (JsTimeRange timeRange in timeRanges)
+            if (timeRanges != null)
             {
-                bool foundStart = false;
-                bool foundEnd = false;
-                for (int i = timeRange.start; i <= timeRange.end; i++)
+                foreach (JsTimeRange timeRange in timeRanges)
                 {
-                    if (i == song.StartTime)
+                    bool foundStart = false;
+                    bool foundEnd = false;
+                    for (int i = timeRange.start; i <= timeRange.end; i++)
                     {
-                        foundStart = true;
+                        if (i == song.StartTime)
+                        {
+                            foundStart = true;
+                        }
+
+                        if (i == song.StartTime + Room.QuizSettings.UI_GuessMs)
+                        {
+                            foundEnd = true;
+                        }
                     }
 
-                    if (i == song.StartTime + Room.QuizSettings.UI_GuessMs)
+                    if (foundStart && foundEnd)
                     {
-                        foundEnd = true;
+                        song.DoneBuffering = true;
+                        await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
+                            ClientState.Session.Player.Id, $"Preload2|true");
+                        return true;
                     }
-                }
-
-                if (foundStart && foundEnd)
-                {
-                    song.DoneBuffering = true;
-                    await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
-                        ClientState.Session.Player.Id, $"Preload2|true");
-                    return true;
                 }
             }
         }
