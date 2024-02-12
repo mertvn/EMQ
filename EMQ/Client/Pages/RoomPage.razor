@@ -67,7 +67,7 @@
     <br/>
 </GenericModal>
 
-<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@Room?.Quiz?.SongsHistory"></SongHistoryComponent>
+<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@ClientSongsHistory"></SongHistoryComponent>
 
 <button type="button" class="btn btn-warning" @onclick="@(() => _leaveModalRef?.Show())"
         style="position: relative; top: 2px; left: 2px; margin: 10px 2px; padding: 2px; width: 60px; height: 30px;">
@@ -149,7 +149,7 @@ else
 </button>
 
 <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="padding: 5px; margin: 2px; width: 120px; height: 35px;"
-        @onclick="@(() => _songHistoryComponent!.Show())">
+        @onclick="@OnClickButtonSongHistory">
     Song History
 </button>
 

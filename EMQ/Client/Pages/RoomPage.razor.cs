@@ -61,6 +61,8 @@ public partial class RoomPage
 
     private string InviteLinkButtonText { get; set; } = "Invite link";
 
+    private Dictionary<int, SongHistory> ClientSongsHistory { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -287,5 +289,23 @@ public partial class RoomPage
             InviteLinkButtonText = "Invite link";
             StateHasChanged();
         }
+    }
+
+    private async Task OnClickButtonSongHistory()
+    {
+        if (Room?.Quiz != null && !ClientSongsHistory.Any())
+        {
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/GetRoomSongHistory", Room.Id);
+            if (res.IsSuccessStatusCode)
+            {
+                var serverSongHistory = await res.Content.ReadFromJsonAsync<Dictionary<int, SongHistory>>();
+                if (serverSongHistory is not null)
+                {
+                    ClientSongsHistory = serverSongHistory;
+                }
+            }
+        }
+
+        await _songHistoryComponent!.Show();
     }
 }

@@ -115,7 +115,7 @@ public partial class QuizPage
         }
     }
 
-    private Song? _correctAnswer => Room?.Quiz?.SongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var sh) ?? false
+    private Song? _correctAnswer => ClientSongsHistory.TryGetValue(Room?.Quiz?.QuizState.sp ?? -1, out var sh)
         ? sh.Song
         : null;
 
@@ -169,6 +169,8 @@ public partial class QuizPage
     public DateTime LastSetVideoMuted { get; set; }
 
     public DateTime LastSetVideoPlay { get; set; }
+
+    private Dictionary<int, SongHistory> ClientSongsHistory { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -284,6 +286,7 @@ public partial class QuizPage
             return;
         }
 
+        ClientSongsHistory.Add(Room!.Quiz!.QuizState.sp, new SongHistory { Song = correctAnswer }); // hack
         _correctAnswerPlayerLabels = playerLabels;
         _playerGuesses = playerGuesses;
     }
@@ -883,5 +886,24 @@ public partial class QuizPage
     {
         Console.WriteLine("PlayVideo");
         await _jsRuntime.InvokeAsync<string>("playVideo", VisibleVideoElementId);
+    }
+
+    private async Task OnClickButtonSongHistory()
+    {
+        if (Room?.Quiz != null && (!ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var sh) ||
+                                   !sh.PlayerGuessInfos.Any()))
+        {
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/GetRoomSongHistory", Room.Id);
+            if (res.IsSuccessStatusCode)
+            {
+                var serverSongHistory = await res.Content.ReadFromJsonAsync<Dictionary<int, SongHistory>>();
+                if (serverSongHistory is not null)
+                {
+                    ClientSongsHistory = serverSongHistory;
+                }
+            }
+        }
+
+        await _songHistoryComponent!.Show();
     }
 }

@@ -29,7 +29,7 @@
     <span>Are you sure you want to return to room? This will end the quiz for all players.</span>
 </GenericModal>
 
-<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@Room?.Quiz?.SongsHistory"></SongHistoryComponent>
+<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@ClientSongsHistory"></SongHistoryComponent>
 
 @if (!_clientConnectionManager.IsConnected)
 {
@@ -78,7 +78,7 @@
     </button>
 
     <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
-            @onclick="@(() => _songHistoryComponent!.Show())">
+            @onclick="@OnClickButtonSongHistory">
         Song History
     </button>
 

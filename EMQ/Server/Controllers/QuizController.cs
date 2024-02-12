@@ -573,4 +573,38 @@ public class QuizController : ControllerBase
 
         return Ok();
     }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("GetRoomSongHistory")]
+    public async Task<ActionResult<Dictionary<int, SongHistory>>?> GetRoomSongHistory([FromBody] Guid roomId)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
+        if (room?.Quiz is not null)
+        {
+            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
+            {
+                return room.Quiz.SongsHistory;
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to GetRoomSongHistory in r{room.Id} by non-participant p{req.playerId}",
+                    room.Id, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to GetRoomSongHistory in r{req.RoomId} that is null", roomId);
+        }
+
+        return null;
+    }
 }
