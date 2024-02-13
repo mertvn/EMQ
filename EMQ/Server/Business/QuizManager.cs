@@ -368,7 +368,10 @@ public class QuizManager
 
                 var guessInfo = new GuessInfo
                 {
-                    Guess = player.Guess, FirstGuessMs = player.FirstGuessMs, IsGuessCorrect = correct
+                    Username = player.Username,
+                    Guess = player.Guess,
+                    FirstGuessMs = player.FirstGuessMs,
+                    IsGuessCorrect = correct
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }

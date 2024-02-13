@@ -9,6 +9,7 @@
         <Blazorise.ModalBody>
             <table id="songHistoryTable" style="width: 100%;">
                 <tr class="songHistoryHeaders">
+                    <th class="songHistoryHeader"></th>
                     <th class="songHistoryHeader">#</th>
                     <th class="songHistoryHeader">Sources</th>
                     <th class="songHistoryHeader">Types</th>
@@ -19,63 +20,100 @@
                 {
                     @for (int index = 0; index < SongsHistory.Count; index++)
                     {
-                        var songHistory = SongsHistory[index];
-                        var song = songHistory.Song;
-
-                        string rowBackgroundColor = "initial";
-                        if (songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo))
+                        if (SongsHistory.TryGetValue(index, out var songHistory))
                         {
-                            rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
+                            var song = songHistory.Song;
+                            bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
+
+                            string rowBackgroundColor = "initial";
+                            if (songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo))
+                            {
+                                rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
+                            }
+
+                            <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor;">
+
+                                <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                                    @onclick="@(() => Onclick_SongHistoryRow(songHistory))">
+                                    @if (showRowDetail)
+                                    {
+                                        <span>▼</span>
+                                    }
+                                    else
+                                    {
+                                        <span>▶</span>
+                                    }
+                                </td>
+
+                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @(index + 1)
+                                </td>
+                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @if (song.Sources.Count == 1)
+                                    {
+                                        <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+                                    }
+                                    else
+                                    {
+                                        var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
+                                        string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
+                                        string tooltipText = $"<ul>{joined}</ul>";
+
+                                        <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+                                        <Blazorise.Tooltip
+                                            Inline="true"
+                                            Text="@tooltipText">
+                                            <span> and @(song.Sources.Count - 1) more...</span>
+                                        </Blazorise.Tooltip>
+                                    }
+                                </td>
+                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @* todo? *@
+                                    @string.Join(", ", song.Sources.SelectMany(x => x.SongTypes).Distinct())
+                                </td>
+                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @Converters.GetSingleTitle(song.Titles).LatinTitle
+                                </td>
+                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    @if (song.Artists.Count == 1)
+                                    {
+                                        <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                                    }
+                                    else
+                                    {
+                                        var otherSources = song.Artists.Where(x => x.Id != song.Artists.First().Id);
+                                        string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
+                                        string tooltipText = $"<ul>{joined}</ul>";
+
+                                        <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                                        <Blazorise.Tooltip
+                                            Inline="true"
+                                            Text="@tooltipText">
+                                            <span> and @(song.Artists.Count - 1) more...</span>
+                                        </Blazorise.Tooltip>
+                                    }
+                                </td>
+                            </tr>
+
+                            @if (showRowDetail)
+                            {
+                                <tr class="songHistoryRowDetail">
+                                    <td colspan="6">
+                                        @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
+                                        <ul>
+                                            @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
+                                            {
+                                                <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick")">
+                                                    @value.Username:
+                                                    <span> @value.Guess </span>
+                                                    (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
+                                                </li>
+                                            }
+                                        </ul>
+                                    </td>
+                                </tr>
+                            }
                         }
-
-                        <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor">
-                            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@(index + 1)</td>
-                            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @if (song.Sources.Count == 1)
-                                {
-                                    <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                                }
-                                else
-                                {
-                                    var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
-                                    string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                                    string tooltipText = $"<ul>{joined}</ul>";
-
-                                    <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                                    <Blazorise.Tooltip
-                                        Inline="true"
-                                        Text="@tooltipText">
-                                        <span> and @(song.Sources.Count - 1) more...</span>
-                                    </Blazorise.Tooltip>
-                                }
-                            </td>
-                            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @* todo? *@
-                                @string.Join(", ", song.Sources.SelectMany(x => x.SongTypes).Distinct())
-                            </td>
-                            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @Converters.GetSingleTitle(song.Titles).LatinTitle
-                            </td>
-                            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @if (song.Artists.Count == 1)
-                                {
-                                    <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                                }
-                                else
-                                {
-                                    var otherSources = song.Artists.Where(x => x.Id != song.Artists.First().Id);
-                                    string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                                    string tooltipText = $"<ul>{joined}</ul>";
-
-                                    <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                                    <Blazorise.Tooltip
-                                        Inline="true"
-                                        Text="@tooltipText">
-                                        <span> and @(song.Artists.Count - 1) more...</span>
-                                    </Blazorise.Tooltip>
-                                }
-                            </td>
-                        </tr>
                     }
                 }
             </table>
@@ -101,6 +139,8 @@
     protected override bool ShouldRender() => _shouldRender;
 
     private Blazorise.Modal _modalRef = null!;
+
+    public Dictionary<int, bool> RowDetailsDict { get; set; } = new();
 
     protected override void OnParametersSet()
     {
@@ -129,6 +169,20 @@
     {
         _shouldRender = true;
         StateHasChanged();
+    }
+
+    private async Task Onclick_SongHistoryRow(SongHistory songHistory)
+    {
+        if (RowDetailsDict.TryGetValue(songHistory.Song.Id, out bool showRowDetail))
+        {
+            RowDetailsDict[songHistory.Song.Id] = !showRowDetail;
+        }
+        else
+        {
+            RowDetailsDict[songHistory.Song.Id] = true;
+        }
+
+        await CallStateHasChanged();
     }
 
 }

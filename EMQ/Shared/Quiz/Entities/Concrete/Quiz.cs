@@ -80,6 +80,8 @@ public class SongHistory
 
 public struct GuessInfo
 {
+    public string Username { get; set; }
+
     public string Guess { get; set; }
 
     public int FirstGuessMs { get; set; }
