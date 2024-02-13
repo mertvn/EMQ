@@ -103,7 +103,7 @@
                                         <ul>
                                             @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
                                             {
-                                                <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick")">
+                                                <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick"); padding-left: 4px;">
                                                     @value.Username:
                                                     <span> @value.Guess </span>
                                                     (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)

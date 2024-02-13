@@ -137,8 +137,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ApproveReviewQueueItem()
     {
-        const int s = 1988;
-        const int e = 2019;
+        const int s = 1;
+        const int e = 1;
         for (int i = s; i <= e; i++)
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Approved, "");
@@ -653,7 +653,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2024-01-23_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2024-02-13_EMQ@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()
