@@ -17,7 +17,7 @@ public static class Constants
 
     public const string LocalMusicLibraryPath = @"G:\Music";
 
-    public static string ImportDateVndb { get; set; } = "2024-01-23";
+    public static string ImportDateVndb { get; set; } = "2024-02-13";
 
     public const string ImportDateEgs = "2024-01-23";
 
