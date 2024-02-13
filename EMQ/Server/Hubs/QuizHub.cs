@@ -255,7 +255,7 @@ public class QuizHub : Hub
                 }
 
                 await Clients.Clients(Context.ConnectionId)
-                    .SendAsync("ReceiveUpdateRoom", room, false);
+                    .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
                 await Clients.Clients(room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoomForRoom", room);
             }
@@ -443,7 +443,7 @@ public class QuizHub : Hub
                     {
                         room.HotjoinQueue.Enqueue(session.Player);
                         await Clients.Clients(Context.ConnectionId)
-                            .SendAsync("ReceiveUpdateRoom", room, false);
+                            .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
                     }
                 }
                 else

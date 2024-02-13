@@ -59,7 +59,7 @@ public class QuizManager
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
                 LastUpdate = DateTime.UtcNow;
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             }
 
             if (Quiz.QuizState.RemainingMs >= 0)
@@ -162,7 +162,7 @@ public class QuizManager
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
 
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
@@ -185,7 +185,7 @@ public class QuizManager
             .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
     }
 
     private async Task EnterJudgementPhase()
@@ -194,7 +194,7 @@ public class QuizManager
         Quiz.QuizState.ExtraInfo = "";
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
         if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
@@ -232,7 +232,7 @@ public class QuizManager
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-            .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
     }
 
     private bool IsGuessCorrect(string guess)
@@ -285,7 +285,7 @@ public class QuizManager
                 Quiz.Room.PlayerGuesses);
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true);
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
             (Quiz.Room.QuizSettings.MaxLives > 0 && !Quiz.Room.Players.Any(x => x.Lives > 0)))
@@ -307,7 +307,7 @@ public class QuizManager
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 
@@ -950,7 +950,7 @@ public class QuizManager
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 
@@ -1000,7 +1000,7 @@ public class QuizManager
                 }
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
                 await TriggerSkipIfNecessary(false);
             }
             else
@@ -1028,7 +1028,7 @@ public class QuizManager
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 
@@ -1410,7 +1410,8 @@ public class QuizManager
                 player.IsSkipping = true;
             }
 
-            await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+            await HubContext.Clients.Clients(connectionId)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             await TriggerSkipIfNecessary(true);
         }
     }
@@ -1452,7 +1453,7 @@ public class QuizManager
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false);
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 

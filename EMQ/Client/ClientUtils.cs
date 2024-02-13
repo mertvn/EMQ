@@ -11,6 +11,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Logging;
@@ -76,6 +77,33 @@ public class ClientUtils
         }
 
         return null;
+    }
+
+    public async Task<ResSyncRoomWithTime?> SyncRoomWithTime()
+    {
+        ResSyncRoomWithTime? ret = null;
+
+        var res = await Client.GetAsync($"Quiz/SyncRoomWithTime");
+        if (res.StatusCode == HttpStatusCode.NoContent)
+        {
+            ret = null;
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            ret = await res.Content.ReadFromJsonAsync<ResSyncRoomWithTime>();
+        }
+
+        // Console.WriteLine(JsonSerializer.Serialize(room));
+        if (ret is not null)
+        {
+            return ret;
+        }
+        else
+        {
+            // todo warn user and require reload
+            Logger.LogError("Failed to SyncRoom");
+            return null;
+        }
     }
 
     public async Task SaveSessionToLocalStorage()

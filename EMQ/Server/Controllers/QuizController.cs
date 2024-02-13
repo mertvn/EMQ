@@ -57,6 +57,30 @@ public class QuizController : ControllerBase
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpGet]
+    [Route("SyncRoomWithTime")]
+    public ResSyncRoomWithTime? SyncRoomWithTime()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            // _logger.LogError("Session not found for playerToken: " + token);
+            return null;
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            // _logger.LogError("Room not found with playerToken: " + token);
+            return null;
+        }
+
+        // _logger.LogError(JsonSerializer.Serialize(room));
+        return new ResSyncRoomWithTime { Room = room, Time = DateTime.UtcNow };
+    }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpGet]
     [Route("SyncChat")]
     public ConcurrentQueue<ChatMessage>? SyncChat([FromQuery] string token)
     {
@@ -418,7 +442,7 @@ public class QuizController : ControllerBase
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
                         .SendAsync("ReceiveUpdateRoomForRoom", room);
                     await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoom", room, false);
+                        .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
                     _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
                 }
             }
@@ -464,7 +488,7 @@ public class QuizController : ControllerBase
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
                             await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                                .SendAsync("ReceiveUpdateRoom", room, false);
+                                .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
                             await qm.EndQuiz();
                         }
                     }

@@ -40,8 +40,11 @@ public partial class QuizPage
                     })
             },
             {
-                "ReceiveUpdateRoom", (new Type[] { typeof(Room), typeof(bool) },
-                    async param => { await OnReceiveUpdateRoom((Room)param[0]!, (bool)param[1]!); })
+                "ReceiveUpdateRoom", (new Type[] { typeof(Room), typeof(bool), typeof(DateTime) },
+                    async param =>
+                    {
+                        await OnReceiveUpdateRoom((Room)param[0]!, (bool)param[1]!, (DateTime)param[2]!);
+                    })
             },
             {
                 "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, string>) },
@@ -362,7 +365,7 @@ public partial class QuizPage
         PageState.Timer.Start();
     }
 
-    private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false)
+    private async Task SyncWithServer(Room? room = null, bool forcePhaseChange = false, DateTime? syncTime = null)
     {
         if (_isDisposed)
         {
@@ -383,7 +386,7 @@ public partial class QuizPage
         if (room != null)
         {
             Room = room;
-            LastSync = DateTime.UtcNow;
+            LastSync = syncTime ?? DateTime.UtcNow;
             if (_chatComponent != null)
             {
                 _chatComponent.Chat = room.Chat;
@@ -394,9 +397,23 @@ public partial class QuizPage
         {
             // Console.WriteLine($"start slow sync {DateTime.UtcNow:O}");
             SyncInProgress = true;
-            Room = await _clientUtils.SyncRoom();
+
+            var res = await _clientUtils.SyncRoomWithTime();
+            if (res != null && res.Time!.Value >= LastSync)
+            {
+                LastSync = res.Time!.Value;
+                Console.WriteLine($"applied slow sync @ {LastSync:O}");
+                Room = res.Room;
+            }
+            else
+            {
+                if (res?.Time != null)
+                {
+                    Console.WriteLine($"not applying stale slow sync; time: {res.Time.Value:O} LastSync: {LastSync:O}");
+                }
+            }
+
             SyncInProgress = false;
-            LastSync = DateTime.UtcNow;
             // Console.WriteLine($"end slow sync {DateTime.UtcNow:O}");
         }
 
@@ -795,14 +812,21 @@ public partial class QuizPage
         }
     }
 
-    private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged)
+    private async Task OnReceiveUpdateRoom(Room room, bool phaseChanged, DateTime time)
     {
         if (_isDisposed)
         {
             return;
         }
 
-        await SyncWithServer(room, phaseChanged);
+        if (time >= LastSync)
+        {
+            await SyncWithServer(room, phaseChanged, time);
+        }
+        else
+        {
+            Console.WriteLine($"rejecting stale message; time: {time:O} LastSync: {LastSync:O}");
+        }
     }
 
     private async Task SetGuess(string? guess)
