@@ -1,5 +1,7 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
+@inject IJSRuntime _jsRuntime
 
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
     <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
@@ -119,6 +121,9 @@
             </table>
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@DownloadSongHistoryJson">
+                Download JSON
+            </button>
             <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
                 Close
             </button>
@@ -183,6 +188,13 @@
         }
 
         await CallStateHasChanged();
+    }
+
+    private async Task DownloadSongHistoryJson()
+    {
+        string json = JsonSerializer.Serialize(SongsHistory, Utils.JsoIndented);
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
+        await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_SongHistory_{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
     }
 
 }
