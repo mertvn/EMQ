@@ -1858,6 +1858,11 @@ WHERE id = {mId};
         HashSet<string> md5Hashes = new();
         foreach (SongLite sl in songLite)
         {
+            foreach (SongLink songLink in sl.Links.Where(x => x.Type == SongLinkType.Self))
+            {
+                songLink.Url = songLink.Url.UnReplaceSelfhostLink();
+            }
+
             byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sl));
             byte[] hash = MD5.HashData(bytes);
             string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
