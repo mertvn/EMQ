@@ -115,7 +115,7 @@ public partial class SongInfoCardWrapperComponent
         }
         else
         {
-            await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {url}?");
+            await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {url}");
         }
     }
 
