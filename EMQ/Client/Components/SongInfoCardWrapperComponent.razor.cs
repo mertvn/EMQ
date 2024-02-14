@@ -107,8 +107,16 @@ public partial class SongInfoCardWrapperComponent
             throw new Exception();
         }
 
-        var song = CurrentSongs.Single(x => x.Id == mId);
-        song.Links.RemoveAll(x => x.Url == url);
+        int rowsDeleted = await res.Content.ReadFromJsonAsync<int>();
+        if (rowsDeleted > 0)
+        {
+            var song = CurrentSongs.Single(x => x.Id == mId);
+            song.Links.RemoveAll(x => x.Url == url);
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {url}?");
+        }
     }
 
     private async Task CallStateHasChanged()

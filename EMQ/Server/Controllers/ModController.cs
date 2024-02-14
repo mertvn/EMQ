@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Core;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -119,14 +120,13 @@ public class ModController : ControllerBase
     [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]
     [Route("DeleteSongLink")]
-    public async Task<ActionResult> DeleteSongLink([FromBody] ReqDeleteSongLink req)
+    public async Task<ActionResult<int>> DeleteSongLink([FromBody] ReqDeleteSongLink req)
     {
         if (ServerState.IsServerReadOnly)
         {
             return Unauthorized();
         }
 
-        await DbManager.DeleteMusicExternalLink(req.MId, req.Url);
-        return Ok();
+        return await DbManager.DeleteMusicExternalLink(req.MId, req.Url.UnReplaceSelfhostLink());
     }
 }
