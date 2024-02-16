@@ -1484,7 +1484,8 @@ public class QuizManager
                                 Id = -1,
                                 IsPrivate = true,
                                 Name = "Private Label",
-                                VNs = label.VNs,
+                                VNs = label.VNs.Where(x => currentSongSourceVndbUrls.Contains(x.Key))
+                                    .ToDictionary(x => x.Key, x => x.Value),
                                 Kind = label.Kind
                             };
                             playerLabels[playerId].Add(newLabel);
