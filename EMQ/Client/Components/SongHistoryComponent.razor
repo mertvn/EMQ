@@ -119,7 +119,7 @@
                                                     @value.Username:
                                                     <span> @value.Guess </span>
                                                     (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
-                                                    @if (value.Labels.Any())
+                                                    @if (value.Labels?.Any() ?? false)
                                                     {
                                                         <span>(On List)</span>
                                                     }
