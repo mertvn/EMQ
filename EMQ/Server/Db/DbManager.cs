@@ -1090,7 +1090,7 @@ public static class DbManager
                         }
 
                         queryArtists.Append(
-                            $@" AND a.id = {artistFilter.Artist.AId}");
+                            $@" AND a.vndb_id = {artistFilter.Artist.VndbId}");
                     }
 
                     if (printSql)
