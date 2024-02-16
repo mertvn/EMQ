@@ -88,5 +88,5 @@ public readonly struct GuessInfo
 
     public bool IsGuessCorrect { get; init; }
 
-    public List<Label> Labels { get; init; } = new();
+    public List<Label>? Labels { get; init; }
 }
