@@ -361,7 +361,7 @@ public class QuizManager
                     Guess = player.Guess,
                     FirstGuessMs = player.FirstGuessMs,
                     IsGuessCorrect = correct,
-                    Labels = labels,
+                    Labels = labels ?? new List<Label>(),
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
