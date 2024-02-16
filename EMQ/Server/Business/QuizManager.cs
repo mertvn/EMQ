@@ -316,7 +316,8 @@ public class QuizManager
         // todo make this delay configurable
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
-        var songHistory = new SongHistory { Song = Quiz.Songs[Quiz.QuizState.sp] };
+        var song = Quiz.Songs[Quiz.QuizState.sp];
+        var songHistory = new SongHistory { Song =  song };
         // int numCorrect = 0;
         // int numActivePlayers = 0;
         // int numGuesses = 0;
@@ -353,34 +354,18 @@ public class QuizManager
 
             if (player.HasActiveConnection)
             {
-                // numActivePlayers += 1;
-                //
-                // if (!string.IsNullOrWhiteSpace(player.Guess))
-                // {
-                //     numGuesses += 1;
-                //     totalGuessMs += player.FirstGuessMs;
-                // }
-                //
-                // if (correct)
-                // {
-                //     numCorrect += 1;
-                // }
-
+                _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
                 var guessInfo = new GuessInfo
                 {
                     Username = player.Username,
                     Guess = player.Guess,
                     FirstGuessMs = player.FirstGuessMs,
-                    IsGuessCorrect = correct
+                    IsGuessCorrect = correct,
+                    Labels = labels,
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
         }
-
-        // songStats.TimesCorrect = numCorrect;
-        // songStats.TimesPlayed = numActivePlayers;
-        // songStats.TimesGuessed = numGuesses;
-        // songStats.TotalGuessMs = totalGuessMs;
 
         Quiz.SongsHistory[Quiz.QuizState.sp] = songHistory;
     }

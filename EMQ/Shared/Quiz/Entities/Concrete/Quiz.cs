@@ -78,13 +78,15 @@ public class SongHistory
     }
 }
 
-public struct GuessInfo
+public readonly struct GuessInfo
 {
-    public string Username { get; set; }
+    public string Username { get; init; }
 
-    public string Guess { get; set; }
+    public string Guess { get; init; }
 
-    public int FirstGuessMs { get; set; }
+    public int FirstGuessMs { get; init; }
 
-    public bool IsGuessCorrect { get; set; }
+    public bool IsGuessCorrect { get; init; }
+
+    public List<Label>? Labels { get; init; }
 }
