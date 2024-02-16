@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
@@ -102,6 +102,16 @@
                                 <tr class="songHistoryRowDetail">
                                     <td colspan="6">
                                         @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
+
+                                        <ul>
+                                            @foreach (var link in song.Links)
+                                            {
+                                                <li>
+                                                    <a href="@link.Url" target="_blank">@link.Url</a>
+                                                </li>
+                                            }
+                                        </ul>
+
                                         <ul>
                                             @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
                                             {
@@ -109,6 +119,10 @@
                                                     @value.Username:
                                                     <span> @value.Guess </span>
                                                     (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
+                                                    @if (value.Labels.Any())
+                                                    {
+                                                        <span>(On List)</span>
+                                                    }
                                                 </li>
                                             }
                                         </ul>

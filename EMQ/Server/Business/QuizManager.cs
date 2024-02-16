@@ -317,7 +317,7 @@ public class QuizManager
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
-        var songHistory = new SongHistory { Song =  song };
+        var songHistory = new SongHistory { Song = song };
         // int numCorrect = 0;
         // int numActivePlayers = 0;
         // int numGuesses = 0;
