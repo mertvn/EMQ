@@ -1482,7 +1482,7 @@ public class QuizManager
             if (vndbInfo.Labels != null)
             {
                 playerLabels[playerId] = new List<Label>();
-                foreach (Label label in vndbInfo.Labels)
+                foreach (Label label in vndbInfo.Labels.Where(x => x.Kind == LabelKind.Include))
                 {
                     var currentSongSourceVndbUrls = song.Sources
                         .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
