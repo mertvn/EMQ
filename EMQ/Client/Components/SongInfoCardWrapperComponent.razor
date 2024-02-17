@@ -43,7 +43,7 @@
                 Dictionary<string, int> uploaders = new();
                 foreach (Song currentSong in CurrentSongs)
                 {
-                    foreach (SongLink currentSongLink in currentSong.Links)
+                    foreach (SongLink currentSongLink in currentSong.Links.Where(x => x.Type == SongLinkType.Self))
                     {
                         string key = currentSongLink.SubmittedBy!.ToLowerInvariant();
                         if (!uploaders.TryGetValue(key, out _))
