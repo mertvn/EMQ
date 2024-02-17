@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 
@@ -183,6 +184,9 @@ builder.Services.AddHostedService<CleanupService>();
 builder.Services.AddHostedService<OpportunisticGcService>();
 builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
+
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
+    .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
 
 var app = builder.Build();
 app.UseResponseCompression();
