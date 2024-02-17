@@ -689,7 +689,7 @@ public class QuizManager
         else
         {
             validSources = validSources.Distinct().ToList();
-            Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso));
+            Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso), writeToConsole: false);
         }
 
         Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
@@ -990,7 +990,7 @@ public class QuizManager
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
-                await TriggerSkipIfNecessary(false);
+                await TriggerSkipIfNecessary();
             }
             else
             {
@@ -1401,11 +1401,11 @@ public class QuizManager
 
             await HubContext.Clients.Clients(connectionId)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
-            await TriggerSkipIfNecessary(true);
+            await TriggerSkipIfNecessary();
         }
     }
 
-    private async Task TriggerSkipIfNecessary(bool printSkippingCount)
+    private async Task TriggerSkipIfNecessary()
     {
         var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
             .Where(x => x.Player.HasActiveConnection).ToList();
@@ -1414,11 +1414,7 @@ public class QuizManager
         const float skipConst = 0.8f;
         int skipNumber = (int)Math.Round(activeSessions.Count * skipConst, MidpointRounding.AwayFromZero);
 
-        if (printSkippingCount)
-        {
-            Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}");
-        }
-
+        Quiz.Room.Log($"isSkippingCount: {isSkippingCount}/{skipNumber}", writeToConsole: false);
         if (isSkippingCount >= skipNumber)
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
@@ -1427,7 +1423,8 @@ public class QuizManager
                     activeSessions.All(x => !string.IsNullOrWhiteSpace(x.Player.Guess) || x.Player.IsSkipping);
                 if (!everyoneAnsweredOrIsSkipping)
                 {
-                    Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)");
+                    Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)",
+                        writeToConsole: false);
                     return;
                 }
             }

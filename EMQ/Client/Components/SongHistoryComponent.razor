@@ -189,6 +189,7 @@
     public async Task CallStateHasChanged()
     {
         _shouldRender = true;
+        await Task.Yield();
         StateHasChanged();
     }
 
