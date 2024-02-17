@@ -54,6 +54,9 @@ public class ClientConnectionManager
             })
             .Build();
 
+        ClientState.Session.hubConnection.ServerTimeout = TimeSpan.FromSeconds(10);
+        ClientState.Session.hubConnection.KeepAliveInterval = TimeSpan.FromSeconds(5);
+
         await ClientState.Session.hubConnection.StartAsync();
     }
 
