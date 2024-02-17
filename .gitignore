@@ -365,5 +365,6 @@ FodyWeavers.xsd
 .idea
 .vscode
 RoomLog
+SongHistory
 **/wwwroot/autocomplete
 .env
