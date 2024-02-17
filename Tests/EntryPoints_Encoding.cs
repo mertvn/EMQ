@@ -35,7 +35,7 @@ public class EntryPoints_Encoding
 
         // wmapro sources have clicks when converted to ogg or opus for some reason
         string[] blacklistedAudioFormats = { "wmapro" };
-        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4" };
+        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv" };
 
         var filePaths = new List<string>();
         foreach (string extension in searchForVideoExtensions)
@@ -102,7 +102,7 @@ public class EntryPoints_Encoding
                                 $"-shortest " +
                                 $"-c:v libvpx-vp9 -b:v 2500k -crf 28 -pix_fmt yuv420p " +
                                 $"-deadline good -cpu-used 3 -tile-columns 2 -threads 4 -row-mt 1 " +
-                                $"-g 150 " +
+                                $"-g 100 " +
                                 (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
                                 $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
                                 $"-nostdin " +

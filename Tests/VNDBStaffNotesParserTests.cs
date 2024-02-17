@@ -30,7 +30,7 @@ public class VNDBStaffNotesParserTests
         List<string> blacklist = new()
         {
           "v24208", "v8664", // possible room for improvement
-          "v15495", "v20070", "v20071", "v28714", // too irregular
+          "v28714", // too irregular
         };
 
         List<string> graylist = new()

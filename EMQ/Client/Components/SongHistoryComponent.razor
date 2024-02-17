@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
@@ -154,6 +154,8 @@
     private bool _shouldRender;
 
     private int _previousCount;
+
+    // todo FullyRenderedDict
 
     protected override bool ShouldRender() => _shouldRender;
 
