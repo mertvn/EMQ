@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Client.Components;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -30,27 +31,24 @@ public partial class HotelPage
 
     public string SelectedRoomPassword { get; set; } = "";
 
-    private DateTime LastSync { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-        IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
-        if (res is not null)
+        IEnumerable<Room>? resInitial = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
+        if (resInitial is not null)
         {
-            Rooms = res.ToList();
+            Rooms = resInitial.ToList();
+            StateHasChanged();
         }
-    }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(1))
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        while (await timer.WaitForNextTickAsync())
         {
-            LastSync = DateTime.UtcNow;
             IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
             if (res is not null)
             {
                 Rooms = res.ToList();
+                StateHasChanged();
             }
         }
     }
