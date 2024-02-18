@@ -185,8 +185,8 @@ builder.Services.AddHostedService<OpportunisticGcService>();
 builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
 
-builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
-    .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug)
+    .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Debug);
 
 var app = builder.Build();
 app.UseResponseCompression();
@@ -225,7 +225,7 @@ string csp = @$"
                connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com;
                font-src 'self' fonts.gstatic.com;
                media-src 'self' blob: *.catbox.moe {Constants.SelfhostAddress};
-               img-src data: https:;
+               img-src data: https: blob:;
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
