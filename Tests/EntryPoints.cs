@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -612,6 +612,7 @@ public class EntryPoints
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
         string envVar = "DATABASE_URL";
         // envVar = "EMQ_AUTH_DATABASE_URL";
+        // envVar = "EMQ_VNDB_DATABASE_URL";
 
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
@@ -654,6 +655,7 @@ public class EntryPoints
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
         string dumpFileName = "pgdump_2024-02-13_EMQ@localhost.tar";
+        // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {
             StartInfo = new ProcessStartInfo()

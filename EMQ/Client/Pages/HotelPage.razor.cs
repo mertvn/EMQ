@@ -41,6 +41,7 @@ public partial class HotelPage
             StateHasChanged();
         }
 
+        // todo important stop this if user navigates away
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
         while (await timer.WaitForNextTickAsync())
         {
