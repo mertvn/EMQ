@@ -426,20 +426,22 @@ public class QuizManager
     }
 
     public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
-        List<Session> sessions, SongSelectionKind songSelectionKind, TreasureRoom[][] treasureRooms, int numChoices)
+        List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms, int numChoices)
     {
         var ret = new Dictionary<int, List<Title>>();
         Dictionary<int, Title> allTitles = new();
         HashSet<int> addedSourceIds = new();
 
-        switch (songSelectionKind)
+        switch (quizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
             case SongSelectionKind.LocalMusicLibrary:
                 var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-                if (allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
+                if (quizSettings.OnlyFromLists &&
+                    allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
                 {
-                    // generate wrong multiple choice options from player vndb lists if there are any
+                    // generate wrong multiple choice options from player vndb lists if there are any,
+                    // and OnlyFromLists is enabled
                     // todo?: this is somewhat expensive with big lists
                     var allPlayerVnTitles = await DbManager.FindSongsByLabels(allVndbInfos
                         .Where(x => x.Labels != null).SelectMany(x => x.Labels!));
@@ -562,7 +564,7 @@ public class QuizManager
                 int numChoices = 4; // todo?: make this configurable
                 Quiz.MultipleChoiceOptions =
                     await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
-                        Quiz.Room.QuizSettings.SongSelectionKind, Quiz.Room.TreasureRooms, numChoices);
+                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms, numChoices);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
