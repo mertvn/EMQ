@@ -395,6 +395,7 @@ public class QuizManager
 
         bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
+                                 Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&
