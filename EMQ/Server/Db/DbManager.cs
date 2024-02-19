@@ -3291,7 +3291,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             case ScreenshotKind.Character:
                 {
                     const string sql =
-                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where v.id = @id";
+                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
