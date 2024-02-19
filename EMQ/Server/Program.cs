@@ -185,8 +185,8 @@ builder.Services.AddHostedService<OpportunisticGcService>();
 builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
 
-builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Debug)
-    .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Debug);
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
+    .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
 
 var app = builder.Build();
 app.UseResponseCompression();
