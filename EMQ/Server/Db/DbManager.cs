@@ -1382,6 +1382,17 @@ public static class DbManager
                     canAdd &= !addedMselUrls.Contains(mselUrl) || duplicates;
                     if (canAdd)
                     {
+                        if (filters != null)
+                        {
+                            var songSource = song.Sources.First();
+                            if (filters.ScreenshotKind != ScreenshotKind.None)
+                            {
+                                song.ScreenshotUrl = await GetRandomScreenshotUrl(songSource, filters.ScreenshotKind);
+                            }
+
+                            song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
+                        }
+
                         song.StartTime = rng.Next(0,
                             Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
                                 int.MaxValue));
@@ -3225,5 +3236,84 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         {
             return await connection.DeleteAsync(entity);
         }
+    }
+
+    public static async Task<string> GetRandomScreenshotUrl(SongSource songSource, ScreenshotKind screenshotKind)
+    {
+        string ret = "";
+        string sourceVndbId = songSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url.ToVndbId();
+        switch (screenshotKind)
+        {
+            case ScreenshotKind.None:
+                break;
+            case ScreenshotKind.VN:
+                {
+                    const string sql = "SELECT scr from vn_screenshots where id = @id";
+                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    {
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(screenshot))
+                        {
+                            // Console.WriteLine(screenshot);
+                            // this substring may break in the future
+                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
+                            int mod = number % 100;
+                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
+                                .ReplaceSelfhostLink();
+                        }
+                    }
+
+                    break;
+                }
+            case ScreenshotKind.VNCover:
+                {
+                    const string sql = "SELECT image from vn where id = @id";
+                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    {
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(screenshot))
+                        {
+                            // Console.WriteLine(screenshot);
+                            // this substring may break in the future
+                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
+                            int mod = number % 100;
+                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv/{modStr}/{number}.jpg"
+                                .ReplaceSelfhostLink();
+                        }
+                    }
+
+                    break;
+                }
+            case ScreenshotKind.Character:
+                {
+                    const string sql =
+                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where v.id = @id";
+                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    {
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(screenshot))
+                        {
+                            // Console.WriteLine(screenshot);
+                            // this substring may break in the future
+                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
+                            int mod = number % 100;
+                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg"
+                                .ReplaceSelfhostLink();
+                        }
+                    }
+
+                    break;
+                }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(screenshotKind), screenshotKind, null);
+        }
+
+        return ret;
     }
 }

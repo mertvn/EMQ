@@ -153,7 +153,7 @@ public class QuizController : ControllerBase
                             url = url.Replace("https://files.catbox.moe/", "emqsongsbackup/");
                         }
 
-                        return new ResNextSong(req.SongIndex, url, song.StartTime);
+                        return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl);
                     }
                     else
                     {

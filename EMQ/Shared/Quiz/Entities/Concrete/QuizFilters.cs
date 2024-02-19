@@ -108,6 +108,11 @@ public class QuizFilters
     [DefaultValue(false)]
     public bool OnlyOwnUploads { get; set; } = false;
 
+    [ProtoMember(17)]
+    [Required]
+    [DefaultValue(ScreenshotKind.None)]
+    public ScreenshotKind ScreenshotKind { get; set; } = ScreenshotKind.None;
+
     // todo move all applicable filters here
 }
 

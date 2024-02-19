@@ -56,6 +56,23 @@ public static class ConnectionHelper
         }
     }
 
+    public static string GetConnectionString_Vndb()
+    {
+        const string db = "EMQ_VNDB_DATABASE_URL";
+        if (s_cachedCnnStr.TryGetValue(db, out string? cnnStr))
+        {
+            return cnnStr;
+        }
+        else
+        {
+            string databaseUrl = GetDatabaseUrl(db);
+            NpgsqlConnectionStringBuilder builder = GetConnectionStringBuilderWithDatabaseUrl(databaseUrl);
+            string str = builder.ToString();
+            s_cachedCnnStr[db] = str;
+            return str;
+        }
+    }
+
     public static NpgsqlConnectionStringBuilder GetConnectionStringBuilderWithDatabaseUrl(string databaseUrl)
     {
         var builder = GetConnectionStringBuilderInner(databaseUrl);

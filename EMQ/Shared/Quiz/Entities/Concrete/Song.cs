@@ -15,6 +15,10 @@ public class Song
 
     public int StartTime { get; set; }
 
+    public string ScreenshotUrl { get; set; } = "";
+
+    public string CoverUrl { get; set; } = "";
+
     public List<Title> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();

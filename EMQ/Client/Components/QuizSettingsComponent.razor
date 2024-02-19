@@ -121,6 +121,24 @@
                         <label for="AnsweringKind">Answering method</label>
                         <br/>
 
+                        <InputSelect id="ScreenshotKind" @bind-Value="ClientQuizSettings.Filters.ScreenshotKind" style="margin: 5px">
+                            @foreach (ScreenshotKind screenshotKind in Enum.GetValues<ScreenshotKind>())
+                            {
+                                <option value="@screenshotKind">
+                                    @if (!string.IsNullOrEmpty(screenshotKind.GetDescription()))
+                                    {
+                                        @screenshotKind.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @screenshotKind
+                                    }
+                                </option>
+                            }
+                        </InputSelect>
+                        <label for="ScreenshotKind">Random screenshots</label>
+                        <br/>
+
                         <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
                         <label for="TeamSize">Team size (only 1 and Max are supported currently)</label>
                         <br/>

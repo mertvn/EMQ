@@ -345,6 +345,12 @@ public class QuizSettings
             diff.Add($"Only own uploads: {o.Filters.OnlyOwnUploads} → {n.Filters.OnlyOwnUploads}");
         }
 
+        if (o.Filters.ScreenshotKind != n.Filters.ScreenshotKind)
+        {
+            diff.Add(
+                $"Screenshots: {o.Filters.ScreenshotKind.GetDescription()} → {n.Filters.ScreenshotKind.GetDescription()}");
+        }
+
         return diff;
     }
 }

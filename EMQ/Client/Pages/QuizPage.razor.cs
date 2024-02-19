@@ -345,7 +345,10 @@ public partial class QuizPage
             {
                 Song song = new Song
                 {
-                    StartTime = nextSong.StartTime, Links = new List<SongLink> { new() { Url = nextSong.Url } }
+                    StartTime = nextSong.StartTime,
+                    Links = new List<SongLink> { new() { Url = nextSong.Url } },
+                    ScreenshotUrl = nextSong.ScreenshotUrl,
+                    CoverUrl = nextSong.CoverUrl,
                 };
                 return song;
             }

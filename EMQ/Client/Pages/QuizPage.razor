@@ -172,9 +172,9 @@
 
 <div class="videoWrapper"
      style="position: relative; background: dimgrey; width:720px; height:400px; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
-     onclick="@(() => { if (PageState.VideoPlayerVisibility) ClientState.Session!.Player.Preferences.HideVideo = !ClientState.Session!.Player.Preferences.HideVideo; })">
+     onclick="@(() => { if (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None) ClientState.Session!.Player.Preferences.HideVideo = !ClientState.Session!.Player.Preferences.HideVideo; })">
 
-    @if (PageState.VideoPlayerVisibility && ClientState.Session!.Player.Preferences.HideVideo)
+    @if (ClientState.Session!.Player.Preferences.HideVideo && (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
     {
         <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
     }
@@ -223,9 +223,18 @@
 
             @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
             {
-                <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000">Sound only</p>
+                @if (!string.IsNullOrEmpty(_currentSong.CoverUrl))
+                {
+                    <div id="vnCoverDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Session!.Player.Preferences.HideVideo);">
+                        <img width="720px" height="400px" src="@_currentSong.CoverUrl" alt="" style="object-fit: contain;">
+                    </div>
+                }
+                else
+                {
+                    <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000">Sound only</p>
+                }
             }
-        </div>
+    </div>
 
         <div id="quizInfoDiv" style="position: absolute; top: 3%; left: 3%; font-size: xx-large; color: white; z-index: 3000;">
             @if (Room?.Quiz?.QuizState.IsPaused ?? false)
@@ -259,12 +268,21 @@
             }
         </div>
 
-        @if (!PageState.VideoPlayerVisibility)
+    @if (!PageState.VideoPlayerVisibility)
+    {
+        @if (!string.IsNullOrEmpty(_currentSong?.ScreenshotUrl))
         {
-            @* TODO: properly center this *@
-            <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                @((int)Math.Round(PageState.Countdown / 1000))
+            <div id="screenshotDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Session!.Player.Preferences.HideVideo);">
+                <img width="720px" height="400px" src="@_currentSong.ScreenshotUrl" alt="" style="object-fit: contain;">
             </div>
+        }
+        else
+        {
+                 @* TODO: properly center this *@
+                <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
+                    @((int)Math.Round(PageState.Countdown / 1000))
+                </div>
+            }
         }
     </div>
 
