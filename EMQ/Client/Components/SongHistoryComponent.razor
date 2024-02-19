@@ -103,6 +103,15 @@
                                     <td colspan="6">
                                         @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
 
+                                        @if (!string.IsNullOrEmpty(song.ScreenshotUrl))
+                                        {
+                                            <ul>
+                                                <li>
+                                                    <a href="@song.ScreenshotUrl" target="_blank">@song.ScreenshotUrl</a>
+                                                </li>
+                                            </ul>
+                                        }
+
                                         <ul>
                                             @foreach (var link in song.Links)
                                             {
