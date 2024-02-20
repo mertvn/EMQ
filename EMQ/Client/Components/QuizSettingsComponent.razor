@@ -1,4 +1,4 @@
-@using Microsoft.Extensions.Logging
+﻿@using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
@@ -324,6 +324,11 @@
 
                             @foreach (var key in ClientQuizSettings.Filters.VNOLangs.Keys.ToList())
                             {
+                                @if (key != Language.allLanguages && ClientQuizSettings.Filters.VNOLangs[Language.allLanguages])
+                                {
+                                    continue;
+                                }
+
                                 <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.VNOLangs[key])" style="margin: 5px"/>
                                 <label for="@key">@key.GetDisplayName()</label>
                                 <br/>

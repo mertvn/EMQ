@@ -245,6 +245,7 @@ public class EntryPoints
                     filePath = $"{baseDownloadDir}\\catbox\\{link.Url.LastSegment()}";
                     break;
                 case SongLinkType.Self:
+                    link.Url = link.Url.ReplaceSelfhostLink();
                     if (link.Url.Contains("catbox"))
                     {
                         // skip mirror links

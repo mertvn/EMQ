@@ -248,7 +248,7 @@ public static class MediaAnalyser
 
     public static float GetVolumeAdjust(MediaAnalyserResult result)
     {
-        float targetVolumeMean = -15.6f;
+        float targetVolumeMean = -15.1f;
         float targetVolumeMax = -0.6f;
 
         float meanVolume = Convert.ToSingle(result.VolumeDetect?.Single(x => x.Contains("mean_volume"))
