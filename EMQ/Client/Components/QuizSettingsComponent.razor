@@ -1,4 +1,4 @@
-﻿@using Microsoft.Extensions.Logging
+@using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
@@ -183,6 +183,23 @@
                             <h5>Filters</h5>
                             <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
                             <label for="OnlyFromLists">Only from VNDB lists</label>
+                            <br/>
+
+                            <InputSelect id="ListDistributionKind" @bind-Value="ClientQuizSettings.ListDistributionKind" style="margin: 5px" disabled="@(!ClientQuizSettings.OnlyFromLists)">
+                                @foreach (ListDistributionKind listDistributionKind in Enum.GetValues<ListDistributionKind>())
+                                {
+                                    <option value="@listDistributionKind">
+                                        @if (!string.IsNullOrEmpty(listDistributionKind.GetDescription()))
+                                        {
+                                            @listDistributionKind.GetDescription()
+                                        }
+                                        else
+                                        {
+                                            @listDistributionKind
+                                        }
+                                    </option>
+                                }
+                            </InputSelect>
                             <br/>
 
                             <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>

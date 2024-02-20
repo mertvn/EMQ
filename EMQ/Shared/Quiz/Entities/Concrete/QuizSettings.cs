@@ -144,6 +144,11 @@ public class QuizSettings
     [Required]
     public QuizFilters Filters { get; set; } = new();
 
+    [ProtoMember(17)]
+    [Required]
+    [DefaultValue(Concrete.ListDistributionKind.Random)]
+    public ListDistributionKind ListDistributionKind { get; set; } = ListDistributionKind.Random;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -349,6 +354,12 @@ public class QuizSettings
         {
             diff.Add(
                 $"Screenshots: {o.Filters.ScreenshotKind.GetDescription()} → {n.Filters.ScreenshotKind.GetDescription()}");
+        }
+
+        if (o.ListDistributionKind != n.ListDistributionKind)
+        {
+            diff.Add(
+                $"List distribution: {o.ListDistributionKind.GetDescription()} → {n.ListDistributionKind.GetDescription()}");
         }
 
         return diff;

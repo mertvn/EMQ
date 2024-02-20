@@ -593,7 +593,7 @@ public class QuizManager
     public async Task<bool> PrimeQuiz()
     {
         CorrectAnswersDict = new Dictionary<int, List<string>>();
-        List<string> validSources = new();
+        Dictionary<int, List<string>> validSourcesDict = new();
 
         foreach (Player player in Quiz.Room.Players)
         {
@@ -620,6 +620,7 @@ public class QuizManager
 
                 if (vndbInfo.Labels != null)
                 {
+                    validSourcesDict[player.Id] = new List<string>();
                     var userLabels = await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId);
                     var include = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Include).ToList();
                     var exclude = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Exclude).ToList();
@@ -629,7 +630,7 @@ public class QuizManager
                     foreach (UserLabel userLabel in include)
                     {
                         var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
-                        validSources.AddRange(userLabelVns.Select(x => x.vnid));
+                        validSourcesDict[player.Id].AddRange(userLabelVns.Select(x => x.vnid));
                     }
 
                     if (exclude.Any())
@@ -641,7 +642,7 @@ public class QuizManager
                             excluded.AddRange(userLabelVns.Select(x => x.vnid));
                         }
 
-                        validSources = validSources.Except(excluded).ToList();
+                        validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
                     }
                 }
 
@@ -650,6 +651,8 @@ public class QuizManager
                     $"OnlyFromLists took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             }
         }
+
+        List<string> validSources = validSourcesDict.SelectMany(x => x.Value).ToList();
 
         Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
             Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
@@ -723,9 +726,73 @@ public class QuizManager
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
-                dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
-                    Quiz.Room.QuizSettings.Duplicates, validSources,
-                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                switch (Quiz.Room.QuizSettings.ListDistributionKind)
+                {
+                    case ListDistributionKind.Random:
+                        {
+                            dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
+                                Quiz.Room.QuizSettings.Duplicates, validSources,
+                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                            break;
+                        }
+                    case ListDistributionKind.Balanced:
+                    case ListDistributionKind.BalancedStrict:
+                        {
+                            if (!validSourcesDict.Any())
+                            {
+                                goto case ListDistributionKind.Random;
+                            }
+
+                            dbSongs = new List<Song>();
+                            int targetNumSongsPerPlayer = Quiz.Room.QuizSettings.NumSongs / validSourcesDict.Count;
+
+                            foreach ((int pId, _) in validSourcesDict)
+                            {
+                                Console.WriteLine(
+                                    $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
+                                dbSongs.AddRange(await DbManager.GetRandomSongs(targetNumSongsPerPlayer,
+                                    Quiz.Room.QuizSettings.Duplicates, validSourcesDict[pId],
+                                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
+                            }
+
+                            dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
+                            if (!Quiz.Room.QuizSettings.Duplicates)
+                            {
+                                dbSongs = dbSongs.DistinctBy(x => x.Sources.Select(y => y.Id)).ToList();
+                            }
+
+                            int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
+                            Console.WriteLine($"NumSongs to actual diff: {diff}");
+
+                            if (Quiz.Room.QuizSettings.ListDistributionKind != ListDistributionKind.BalancedStrict)
+                            {
+                                int triesLeft = 5;
+                                while (dbSongs.Count < Quiz.Room.QuizSettings.NumSongs && triesLeft > 0)
+                                {
+                                    triesLeft -= 1;
+                                    dbSongs.AddRange(await DbManager.GetRandomSongs(diff,
+                                        Quiz.Room.QuizSettings.Duplicates, validSources,
+                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
+
+                                    dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
+                                    if (!Quiz.Room.QuizSettings.Duplicates)
+                                    {
+                                        dbSongs = dbSongs.DistinctBy(x => x.Sources.Select(y => y.Id)).ToList();
+                                    }
+                                }
+
+                                while (dbSongs.Count > Quiz.Room.QuizSettings.NumSongs)
+                                {
+                                    dbSongs.RemoveAt(Random.Shared.Next(dbSongs.Count - 1));
+                                }
+                            }
+
+                            dbSongs = dbSongs.OrderBy(_ => Random.Shared.Next()).ToList();
+                            break;
+                        }
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
 
                 if (dbSongs.Count == 0)
                 {
