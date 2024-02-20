@@ -739,6 +739,7 @@ public class QuizManager
                     case ListDistributionKind.Balanced:
                     case ListDistributionKind.BalancedStrict:
                         {
+                            // todo tests
                             if (validSourcesDict.Count <= 1)
                             {
                                 goto case ListDistributionKind.Random;
@@ -794,6 +795,28 @@ public class QuizManager
                                 {
                                     dbSongs.RemoveAt(Random.Shared.Next(dbSongs.Count - 1));
                                 }
+                            }
+
+                            switch (Quiz.Room.QuizSettings.ListDistributionKind)
+                            {
+                                case ListDistributionKind.Balanced:
+                                    Quiz.Room.Log(
+                                        diff > 0
+                                            ? $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player, tried to top up the rest."
+                                            : $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
+                                        writeToChat: true);
+
+                                    break;
+                                case ListDistributionKind.BalancedStrict:
+                                    Quiz.Room.Log(
+                                        diff > 0
+                                            ? $"Balanced (strict) mode tried to select {targetNumSongsPerPlayer} songs per player, did not try to top up the rest."
+                                            : $"Balanced (strict) mode tried to select {targetNumSongsPerPlayer} songs per player.",
+                                        writeToChat: true);
+                                    break;
+                                case ListDistributionKind.Random:
+                                default:
+                                    throw new ArgumentOutOfRangeException();
                             }
 
                             dbSongs = dbSongs.OrderBy(_ => Random.Shared.Next()).ToList();
