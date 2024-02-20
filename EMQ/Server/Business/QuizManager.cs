@@ -460,8 +460,14 @@ public class QuizManager
                 }
                 else
                 {
-                    // or from the selected songs if not
-                    foreach (Song song in songs)
+                    // or from a combination of the selected songs and completely random songs if not
+                    var selectedMids = songs.Select(x => x.Id).ToHashSet();
+
+                    var randomSongs =
+                        await DbManager.GetRandomSongs(songs.Count * 2, false, null, quizSettings.Filters);
+                    var randomSongsFiltered = randomSongs.Where(x => !selectedMids.Contains(x.Id)).ToList();
+
+                    foreach (Song song in songs.Concat(randomSongsFiltered))
                     {
                         foreach (SongSource songSource in song.Sources)
                         {
