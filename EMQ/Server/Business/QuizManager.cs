@@ -738,7 +738,7 @@ public class QuizManager
                     case ListDistributionKind.Balanced:
                     case ListDistributionKind.BalancedStrict:
                         {
-                            if (!validSourcesDict.Any())
+                            if (validSourcesDict.Count <= 1)
                             {
                                 goto case ListDistributionKind.Random;
                             }

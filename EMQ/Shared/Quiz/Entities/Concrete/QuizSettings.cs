@@ -146,7 +146,7 @@ public class QuizSettings
 
     [ProtoMember(17)]
     [Required]
-    [DefaultValue(Concrete.ListDistributionKind.Random)]
+    [DefaultValue(ListDistributionKind.Random)]
     public ListDistributionKind ListDistributionKind { get; set; } = ListDistributionKind.Random;
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
