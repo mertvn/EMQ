@@ -644,6 +644,8 @@ public class QuizManager
 
                         validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
                     }
+
+                    validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
                 }
 
                 stopWatch.Stop();
@@ -652,7 +654,7 @@ public class QuizManager
             }
         }
 
-        List<string> validSources = validSourcesDict.SelectMany(x => x.Value).ToList();
+        List<string> validSources = validSourcesDict.SelectMany(x => x.Value).Distinct().ToList();
 
         Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
             Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
@@ -700,7 +702,6 @@ public class QuizManager
         }
         else
         {
-            validSources = validSources.Distinct().ToList();
             Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso), writeToConsole: false);
         }
 
@@ -745,6 +746,14 @@ public class QuizManager
 
                             dbSongs = new List<Song>();
                             int targetNumSongsPerPlayer = Quiz.Room.QuizSettings.NumSongs / validSourcesDict.Count;
+                            Console.WriteLine($"targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
+
+                            if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.BalancedStrict)
+                            {
+                                targetNumSongsPerPlayer = Math.Min(targetNumSongsPerPlayer,
+                                    validSourcesDict.MinBy(x => x.Value.Count).Value.Count);
+                                Console.WriteLine($"strict targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
+                            }
 
                             foreach ((int pId, _) in validSourcesDict)
                             {
