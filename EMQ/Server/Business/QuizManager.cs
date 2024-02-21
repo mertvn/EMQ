@@ -305,10 +305,14 @@ public class QuizManager
             else
             {
                 var teamsWithLives = teams.Where(x => x.Any(y => y.Lives > 0)).ToArray();
-                bool onlyOneTeamWithLivesLeft = teamsWithLives.Length <= 1;
+                bool onlyOneTeamWithLivesLeft = teamsWithLives.Length == 1;
                 if (onlyOneTeamWithLivesLeft)
                 {
                     Quiz.Room.Log($"Team {teamsWithLives.Single().First().TeamId} won!", writeToChat: true);
+                    await EndQuiz();
+                }
+                else if (teamsWithLives.Length == 0)
+                {
                     await EndQuiz();
                 }
             }
