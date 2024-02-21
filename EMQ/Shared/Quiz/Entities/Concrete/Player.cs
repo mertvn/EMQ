@@ -54,6 +54,8 @@ public class Player
     public int NGMCGuessesInitial { get; set; }
 
     public float NGMCGuessesCurrent { get; set; }
+
+    public bool NGMCCanBurn { get; set; }
 }
 
 public record PlayerLootingInfo

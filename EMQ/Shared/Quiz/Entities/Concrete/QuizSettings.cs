@@ -154,6 +154,11 @@ public class QuizSettings
     [DefaultValue(GamemodeKind.Default)]
     public GamemodeKind GamemodeKind { get; set; } = GamemodeKind.Default;
 
+    [ProtoMember(19)]
+    [Required]
+    [DefaultValue(true)]
+    public bool NGMCAllowBurning { get; set; } = true;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -370,6 +375,11 @@ public class QuizSettings
         if (o.GamemodeKind != n.GamemodeKind)
         {
             diff.Add($"Game mode: {o.GamemodeKind.GetDescription()} → {n.GamemodeKind.GetDescription()}");
+        }
+
+        if (o.NGMCAllowBurning != n.NGMCAllowBurning)
+        {
+            diff.Add($"NGMC burning: {o.NGMCAllowBurning} → {n.NGMCAllowBurning}");
         }
 
         return diff;

@@ -419,7 +419,6 @@ public class QuizManager
                     player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
                 }
 
-                // todo also need this after burn
                 Quiz.Room.Log($"Resetting guesses for team 1.", writeToChat: true);
             }
 
@@ -430,7 +429,6 @@ public class QuizManager
                     player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
                 }
 
-                // todo also need this after burn
                 Quiz.Room.Log($"Resetting guesses for team 2.", writeToChat: true);
             }
 
@@ -449,10 +447,75 @@ public class QuizManager
                 }
             }
 
+            team1.First().NGMCCanBurn = !team1CorrectPlayers.Any();
+            team2.First().NGMCCanBurn = !team2CorrectPlayers.Any();
+
             string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
             string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
             Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
                 writeToChat: true);
+        }
+    }
+
+    public async Task NGMCBurnPlayer(int burnedPlayerId, Player requestingPlayer)
+    {
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
+        {
+            return;
+        }
+
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
+        {
+            bool first3Secs = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 3000;
+            if (!first3Secs)
+            {
+                foreach (Player roomPlayer in Quiz.Room.Players)
+                {
+                    roomPlayer.NGMCCanBurn = false;
+                }
+
+                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+
+                return;
+            }
+        }
+
+        var burnedPlayer = Quiz.Room.Players.Single(x => x.Id == burnedPlayerId);
+        if (burnedPlayer.TeamId != requestingPlayer.TeamId)
+        {
+            return;
+        }
+
+        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var team1 = teams.ElementAt(0);
+        var team2 = teams.ElementAt(1);
+
+        var burnedPlayerTeam = burnedPlayer.TeamId == 1 ? team1 : team2;
+        var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
+        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn && burnedPlayer.NGMCGuessesCurrent > 0)
+        {
+            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
+            burnedPlayer.NGMCGuessesCurrent -= 0.5f;
+            Quiz.Room.Log($"{requestingPlayer.Username} burned {burnedPlayer.Username}.", writeToChat: true);
+
+            if (burnedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
+            {
+                foreach (Player player in burnedPlayerTeam)
+                {
+                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+                }
+
+                Quiz.Room.Log($"Resetting guesses for team {burnedPlayer.TeamId}.", writeToChat: true);
+            }
+
+            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
+            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
+            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+                writeToChat: true);
+
+            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 

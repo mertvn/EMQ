@@ -353,6 +353,18 @@ else
     <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
         @if (Room?.Players.Any() ?? false)
         {
+            var ownPlayer = Room.Players.SingleOrDefault(x => x.Id == ClientState.Session.Player.Id) ??
+                            Room.Spectators.Single(x => x.Id == ClientState.Session.Player.Id);
+
+            IGrouping<int, Player>? team1 = null;
+            IGrouping<int, Player>? team2 = null;
+            @if (Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+            {
+                var teams = Room.Players.GroupBy(x => x.TeamId).ToArray();
+                team1 = teams.ElementAt(0);
+                team2 = teams.ElementAt(1);
+            }
+
             @foreach (var player in Room.Players)
             {
                 if (_playerGuesses.TryGetValue(player.Id, out string? playerGuess))
@@ -384,6 +396,20 @@ else
 
                     <div style="position: relative">
                         <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
+
+                        @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && Room.QuizSettings.NGMCAllowBurning)
+                        {
+                            @if (!IsSpectator && player.TeamId == ownPlayer.TeamId)
+                            {
+                                var ownTeam = ownPlayer.TeamId == 1 ? team1 : team2;
+                                bool canBurn = ownTeam!.First().NGMCCanBurn && player.NGMCGuessesCurrent > 0;
+
+                                <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => BurnPlayer(player.Id))"
+                                        style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
+                                    Burn
+                                </button>
+                            }
+                        }
 
                         <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
 

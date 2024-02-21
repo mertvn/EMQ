@@ -934,4 +934,13 @@ public partial class QuizPage
 
         await _songHistoryComponent!.Show();
     }
+
+    private async Task BurnPlayer(int playerId)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NGMCBurnPlayer", playerId);
+        if (res.IsSuccessStatusCode)
+        {
+            StateHasChanged();
+        }
+    }
 }
