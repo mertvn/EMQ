@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -287,10 +287,31 @@ public class QuizManager
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
-        if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count ||
-            (Quiz.Room.QuizSettings.MaxLives > 0 && !Quiz.Room.Players.Any(x => x.Lives > 0)))
+        if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
         {
             await EndQuiz();
+        }
+        else if (Quiz.Room.QuizSettings.MaxLives > 0)
+        {
+            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+            bool isOneTeamGame = teams.Length == 1;
+            if (isOneTeamGame)
+            {
+                if (teams.Single().First().Lives <= 0)
+                {
+                    await EndQuiz();
+                }
+            }
+            else
+            {
+                var teamsWithLives = teams.Where(x => x.Any(y => y.Lives > 0)).ToArray();
+                bool onlyOneTeamWithLivesLeft = teamsWithLives.Length <= 1;
+                if (onlyOneTeamWithLivesLeft)
+                {
+                    Quiz.Room.Log($"Team {teamsWithLives.Single().First().TeamId} won!", writeToChat: true);
+                    await EndQuiz();
+                }
+            }
         }
 
         if (Quiz.Room.HotjoinQueue.Any())
