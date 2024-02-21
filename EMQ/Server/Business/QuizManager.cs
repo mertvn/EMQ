@@ -210,7 +210,7 @@ public class QuizManager
 
     private async Task DetermineTeamGuesses()
     {
-        List<int> processedTeamIds = new();
+        HashSet<int> processedTeamIds = new();
         foreach (Player player in Quiz.Room.Players)
         {
             if (processedTeamIds.Contains(player.TeamId))
@@ -592,6 +592,23 @@ public class QuizManager
     // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
+        if (Quiz.Room.QuizSettings.TeamSize > 1)
+        {
+            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToList();
+            var fullTeam = teams.FirstOrDefault(x => x.Count() > Quiz.Room.QuizSettings.TeamSize);
+            if (fullTeam != null)
+            {
+                Quiz.Room.Log($"Team {fullTeam.Key} has too many players.", writeToChat: true);
+                return false;
+            }
+
+            // todo? figure out how to handle hotjoining players for non-one-team teamed games
+            if (teams.Count > 1 || teams.Single().First().TeamId != 1)
+            {
+                Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
+            }
+        }
+
         CorrectAnswersDict = new Dictionary<int, List<string>>();
         Dictionary<int, List<string>> validSourcesDict = new();
 
@@ -1041,9 +1058,12 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
-                var teammate = Quiz.Room.Players.First(x => x.TeamId == player.TeamId);
-                player.Lives = teammate.Lives;
-                player.Score = teammate.Score;
+                var teammate = Quiz.Room.Players.FirstOrDefault(x => x.TeamId == player.TeamId);
+                if (teammate != null)
+                {
+                    player.Lives = teammate.Lives;
+                    player.Score = teammate.Score;
+                }
             }
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -1082,13 +1102,16 @@ public class QuizManager
                 if (Quiz.Room.QuizSettings.TeamSize > 1)
                 {
                     // also includes the player themselves
-                    var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId);
+                    var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();
                     IEnumerable<string> teammateConnectionIds = ServerState.Sessions
                         .Where(x => teammates.Select(y => y.Id).Contains(x.Player.Id))
                         .Select(z => z.ConnectionId)!;
 
+                    var teammateIds = teammates.Select(x => x.Id);
+                    var teammateGuesses = Quiz.Room.PlayerGuesses.Where(x => teammateIds.Contains(x.Key));
+                    var dict = teammateGuesses.ToDictionary(x => x.Key, x => x.Value);
                     await HubContext.Clients.Clients(teammateConnectionIds)
-                        .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
+                        .SendAsync("ReceivePlayerGuesses", dict);
                 }
                 else
                 {
@@ -1102,7 +1125,7 @@ public class QuizManager
             }
             else
             {
-                // todo log invalid guess submitted
+                Quiz.Room.Log("invalid guess submitted", playerId);
             }
         }
     }

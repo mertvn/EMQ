@@ -169,8 +169,28 @@ else
     {
         @foreach (var player in Room.Players)
         {
-            <div class="playerDiv" style="margin: 10px; width: 160px; height: 310px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
+            <div class="playerDiv" style="margin: 10px; width: 160px; height: 330px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                 <p style="text-align: center;">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
+
+                @if (Room?.QuizSettings.TeamSize > 1)
+                {
+                    @if (player.Id == ClientState.Session?.Player.Id)
+                    {
+                        <span>Team: </span>
+                        <select @bind:get="@SelectedTeamId" @bind:set="@SetSelectedTeamIdAsync" @bind:event="oninput">
+                            @foreach (int num in Enumerable.Range(1, 8))
+                            {
+                                <option value="@num">@num</option>
+                            }
+                        </select>
+                        <br/>
+                    }
+                    else
+                    {
+                        <span>Team: @player.TeamId</span>
+                        <br/>
+                    }
+                }
 
                 <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, PlayerStatus.Default)" alt="Avatar">
 

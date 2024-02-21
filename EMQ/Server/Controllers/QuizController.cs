@@ -631,4 +631,45 @@ public class QuizController : ControllerBase
 
         return null;
     }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("SetTeamId")]
+    public async Task<ActionResult> SetTeamId([FromBody] int requestedTeamId)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        if (room is not null)
+        {
+            if (room.QuizSettings.TeamSize > 1)
+            {
+                int currentTeamSize = room.Players.Count(x => x.TeamId == requestedTeamId);
+                if ((currentTeamSize + 1) <= room.QuizSettings.TeamSize)
+                {
+                    player.TeamId = requestedTeamId;
+                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    return Ok();
+                }
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to set team id in r{room.Id} that is not set to teams mode by p{req.playerId}",
+                    room.Id, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to set team id in r{req.RoomId} that is null", "");
+        }
+
+        return Unauthorized();
+    }
 }

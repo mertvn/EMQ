@@ -32,7 +32,7 @@ public class Player
 
     public PlayerStatus PlayerStatus { get; set; }
 
-    public int TeamId { get; set; }
+    public int TeamId { get; set; } = 1;
 
     public int Lives { get; set; }
 

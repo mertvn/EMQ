@@ -63,7 +63,7 @@ public class QuizSettings
 
     [ProtoMember(6)]
     [Required]
-    [Range(1, 777)]
+    [Range(1, 8)]
     [DefaultValue(1)]
     public int TeamSize { get; set; } = 1;
 
@@ -195,7 +195,7 @@ public class QuizSettings
 
         if (o.TeamSize != n.TeamSize)
         {
-            diff.Add($"Team size: {o.TeamSize} → {n.TeamSize}");
+            diff.Add($"Maximum team size: {o.TeamSize} → {n.TeamSize}");
         }
 
         if (o.Duplicates != n.Duplicates)
