@@ -119,7 +119,7 @@ public partial class HotelPage
     public class CreateNewRoomModel
     {
         [Required]
-        [MaxLength(100)]
+        [MaxLength(78)]
         public string RoomName { get; set; } = "Room";
 
         [MaxLength(16)]
