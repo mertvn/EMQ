@@ -149,6 +149,11 @@ public class QuizSettings
     [DefaultValue(ListDistributionKind.Random)]
     public ListDistributionKind ListDistributionKind { get; set; } = ListDistributionKind.Random;
 
+    [ProtoMember(18)]
+    [Required]
+    [DefaultValue(GamemodeKind.Default)]
+    public GamemodeKind GamemodeKind { get; set; } = GamemodeKind.Default;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -360,6 +365,11 @@ public class QuizSettings
         {
             diff.Add(
                 $"List distribution: {o.ListDistributionKind.GetDescription()} → {n.ListDistributionKind.GetDescription()}");
+        }
+
+        if (o.GamemodeKind != n.GamemodeKind)
+        {
+            diff.Add($"Game mode: {o.GamemodeKind.GetDescription()} → {n.GamemodeKind.GetDescription()}");
         }
 
         return diff;

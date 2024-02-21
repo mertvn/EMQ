@@ -169,7 +169,7 @@ else
     {
         @foreach (var player in Room.Players)
         {
-            <div class="playerDiv" style="margin: 10px; width: 160px; height: 330px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
+            <div class="playerDiv" style="margin: 10px; width: 160px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                 <p style="text-align: center;">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
 
                 @if (Room?.QuizSettings.TeamSize > 1)
@@ -188,6 +188,26 @@ else
                     else
                     {
                         <span>Team: @player.TeamId</span>
+                        <br/>
+                    }
+                }
+
+                @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+                {
+                    @if (player.Id == ClientState.Session?.Player.Id)
+                    {
+                        <span>Guesses: </span>
+                        <select @bind:get="@SelectedNGMCGuessesInitial" @bind:set="@SetSelectedNGMCGuessesInitialAsync" @bind:event="oninput">
+                            @foreach (int num in Enumerable.Range(0, 10))
+                            {
+                                <option value="@num">@num</option>
+                            }
+                        </select>
+                        <br/>
+                    }
+                    else
+                    {
+                        <span>Guesses: @player.NGMCGuessesInitial</span>
                         <br/>
                     }
                 }

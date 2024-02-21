@@ -672,4 +672,41 @@ public class QuizController : ControllerBase
 
         return Unauthorized();
     }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("SetNGMCGuessesInitial")]
+    public async Task<ActionResult> SetNGMCGuessesInitial([FromBody] int requestedGuesses)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        if (room is not null)
+        {
+            if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+            {
+                player.NGMCGuessesInitial = requestedGuesses;
+                await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+                return Ok();
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to set ngmc guesses in r{room.Id} that is not set to ngmc mode by p{req.playerId}",
+                    room.Id, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to set ngmc guesses in r{req.RoomId} that is null", "");
+        }
+
+        return Unauthorized();
+    }
 }

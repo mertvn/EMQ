@@ -139,6 +139,24 @@
                         <label for="ScreenshotKind">Random screenshots</label>
                         <br/>
 
+                        <InputSelect id="GamemodeKind" @bind-Value="ClientQuizSettings.GamemodeKind" style="margin: 5px">
+                            @foreach (GamemodeKind gamemodeKind in Enum.GetValues<GamemodeKind>())
+                            {
+                                <option value="@gamemodeKind">
+                                    @if (!string.IsNullOrEmpty(gamemodeKind.GetDescription()))
+                                    {
+                                        @gamemodeKind.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @gamemodeKind
+                                    }
+                                </option>
+                            }
+                        </InputSelect>
+                        <label for="GamemodeKind">Game mode</label>
+                        <br/>
+
                         <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
                         <label for="TeamSize">Maximum team size</label>
                         <br/>

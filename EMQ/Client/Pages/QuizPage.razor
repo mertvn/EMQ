@@ -372,6 +372,11 @@ else
                         </div>
                     </div>
 
+                    @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+                    {
+                        <span class="playerNGMCGuessesCurrent"> Guesses: @player.NGMCGuessesCurrent</span>
+                    }
+
                     @if (Room?.QuizSettings.MaxLives > 0)
                     {
                         <span class="playerLives"> Lives: @player.Lives</span>

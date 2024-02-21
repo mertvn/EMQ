@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -196,7 +196,7 @@ public class QuizManager
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
-        if (Quiz.Room.QuizSettings.TeamSize > 1)
+        if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
         {
             await DetermineTeamGuesses();
         }
@@ -365,7 +365,11 @@ public class QuizManager
 
                 if (Quiz.Room.QuizSettings.MaxLives > 0 && player.Lives >= 0)
                 {
-                    player.Lives -= 1;
+                    if (Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
+                    {
+                        player.Lives -= 1;
+                    }
+
                     if (player.Lives <= 0)
                     {
                         player.PlayerStatus = PlayerStatus.Dead;
@@ -389,6 +393,67 @@ public class QuizManager
         }
 
         Quiz.SongsHistory[Quiz.QuizState.sp] = songHistory;
+
+        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+        {
+            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+            var team1 = teams.ElementAt(0);
+            var team2 = teams.ElementAt(1);
+
+            var team1CorrectPlayers = team1
+                .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
+                .ToArray();
+            var team2CorrectPlayers = team2
+                .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
+                .ToArray();
+
+            foreach (Player correctPlayer in team1CorrectPlayers.Concat(team2CorrectPlayers))
+            {
+                correctPlayer.NGMCGuessesCurrent -= 1;
+            }
+
+            if (team1.All(x => x.NGMCGuessesCurrent == 0))
+            {
+                foreach (Player player in team1)
+                {
+                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+                }
+
+                // todo also need this after burn
+                Quiz.Room.Log($"Resetting guesses for team 1.", writeToChat: true);
+            }
+
+            if (team2.All(x => x.NGMCGuessesCurrent == 0))
+            {
+                foreach (Player player in team2)
+                {
+                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+                }
+
+                // todo also need this after burn
+                Quiz.Room.Log($"Resetting guesses for team 2.", writeToChat: true);
+            }
+
+            if (team1CorrectPlayers.Any() && !team2CorrectPlayers.Any())
+            {
+                foreach (Player player in team2)
+                {
+                    player.Lives -= 1;
+                }
+            }
+            else if (!team1CorrectPlayers.Any() && team2CorrectPlayers.Any())
+            {
+                foreach (Player player in team1)
+                {
+                    player.Lives -= 1;
+                }
+            }
+
+            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
+            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
+            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+                writeToChat: true);
+        }
     }
 
     public async Task EndQuiz()
@@ -613,9 +678,9 @@ public class QuizManager
     // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
+        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToList();
         if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
-            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToList();
             var fullTeam = teams.FirstOrDefault(x => x.Count() > Quiz.Room.QuizSettings.TeamSize);
             if (fullTeam != null)
             {
@@ -627,6 +692,48 @@ public class QuizManager
             if (teams.Count > 1 || teams.Single().First().TeamId != 1)
             {
                 Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
+            }
+        }
+
+        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+        {
+            if (teams.Count < 2)
+            {
+                Quiz.Room.Log($"NGMC: There must be at least two teams.", writeToChat: true);
+                return false;
+            }
+
+            if (Quiz.Room.Players.Any(x => x.TeamId is < 1 or > 2))
+            {
+                Quiz.Room.Log($"NGMC: The teams must use the team ids 1 and 2.", writeToChat: true);
+                return false;
+            }
+
+            bool saw2 = false;
+            foreach (Player player in Quiz.Room.Players)
+            {
+                if (player.TeamId == 2)
+                {
+                    saw2 = true;
+                }
+
+                if (player.TeamId == 1 && saw2)
+                {
+                    Quiz.Room.Log($"NGMC: The teams must be in sequential order.", writeToChat: true);
+                    return false;
+                }
+            }
+
+            if (Quiz.Room.QuizSettings.MaxLives < 1)
+            {
+                Quiz.Room.Log($"NGMC: The Lives setting must be greater than 0.", writeToChat: true);
+                return false;
+            }
+
+            if (Quiz.Room.Players.Any(x => x.NGMCGuessesInitial < 1))
+            {
+                Quiz.Room.Log($"NGMC: Every player must have at least 1 guess.", writeToChat: true);
+                return false;
             }
         }
 
@@ -644,6 +751,7 @@ public class QuizManager
             // do not set player.IsReadiedUp to false here, because it would be annoying to ready up again if we return false
             player.PlayerStatus = PlayerStatus.Default;
             player.LootingInfo = new PlayerLootingInfo();
+            player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
@@ -1076,6 +1184,7 @@ public class QuizManager
             player.IsSkipping = false;
             player.IsReadiedUp = false;
             player.PlayerStatus = PlayerStatus.Default;
+            player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
@@ -1083,7 +1192,11 @@ public class QuizManager
                 if (teammate != null)
                 {
                     player.Lives = teammate.Lives;
-                    player.Score = teammate.Score;
+
+                    if (Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
+                    {
+                        player.Score = teammate.Score;
+                    }
                 }
             }
 
@@ -1120,7 +1233,7 @@ public class QuizManager
                     }
                 }
 
-                if (Quiz.Room.QuizSettings.TeamSize > 1)
+                if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
                 {
                     // also includes the player themselves
                     var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();

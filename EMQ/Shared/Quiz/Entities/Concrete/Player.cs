@@ -50,6 +50,10 @@ public class Player
     public DateTime LastHeartbeatTimestamp { get; set; }
 
     public bool HasActiveConnection => (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
+
+    public int NGMCGuessesInitial { get; set; }
+
+    public float NGMCGuessesCurrent { get; set; }
 }
 
 public record PlayerLootingInfo
