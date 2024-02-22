@@ -776,7 +776,8 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
-                        await qm.NGMCPickPlayer(pickedPlayerId, player);
+                        var pickedPlayer = room.Players.Single(x => x.Id == pickedPlayerId);
+                        await qm.NGMCPickPlayer(pickedPlayer, player, false);
                         return Ok();
                     }
                 }

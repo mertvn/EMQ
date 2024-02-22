@@ -131,10 +131,10 @@ public class QuizManager
 
         while (Quiz.Room.Players.Any(x => x.NGMCMustPick))
         {
-            Quiz.Room.Log($"Waiting for NGMC decisions...", writeToChat: true);
+            Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
@@ -424,9 +424,11 @@ public class QuizManager
                 correctPlayer.NGMCCanBePicked = true;
             }
 
-            if (team1CorrectPlayers.Any())
+            int team1CorrectPlayersCount = team1CorrectPlayers.Length;
+            int team2CorrectPlayersCount = team2CorrectPlayers.Length;
+
+            if (team1CorrectPlayersCount > 0)
             {
-                team1.First().NGMCMustPick = true;
                 if (!team2CorrectPlayers.Any())
                 {
                     foreach (Player player in team2)
@@ -434,16 +436,35 @@ public class QuizManager
                         player.Lives -= 1;
                     }
                 }
+
+                var team1Captain = team1.First();
+                if (team1CorrectPlayersCount == 1)
+                {
+                    await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
+                }
+                else
+                {
+                    team1Captain.NGMCMustPick = true;
+                }
             }
-            else if (team2CorrectPlayers.Any())
+            else if (team2CorrectPlayersCount > 0)
             {
-                team2.First().NGMCMustPick = true;
                 if (!team1CorrectPlayers.Any())
                 {
                     foreach (Player player in team1)
                     {
                         player.Lives -= 1;
                     }
+                }
+
+                var team2Captain = team2.First();
+                if (team2CorrectPlayersCount == 1)
+                {
+                    await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
+                }
+                else
+                {
+                    team2Captain.NGMCMustPick = true;
                 }
             }
 
@@ -519,9 +540,9 @@ public class QuizManager
         }
     }
 
-    public async Task NGMCPickPlayer(int pickedPlayerId, Player requestingPlayer)
+    public async Task NGMCPickPlayer(Player pickedPlayer, Player requestingPlayer, bool isAutoPick)
     {
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
+        if (!isAutoPick && Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
         {
             return;
         }
@@ -543,7 +564,6 @@ public class QuizManager
             }
         }
 
-        var pickedPlayer = Quiz.Room.Players.Single(x => x.Id == pickedPlayerId);
         if (pickedPlayer.TeamId != requestingPlayer.TeamId)
         {
             return;
@@ -576,13 +596,16 @@ public class QuizManager
                 Quiz.Room.Log($"Resetting guesses for team {pickedPlayer.TeamId}.", writeToChat: true);
             }
 
-            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
-                writeToChat: true);
+            if (!isAutoPick)
+            {
+                string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
+                string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
+                Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+                    writeToChat: true);
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+            }
         }
     }
 
