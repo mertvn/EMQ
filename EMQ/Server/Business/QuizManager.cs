@@ -346,15 +346,11 @@ public class QuizManager
 
     private async Task JudgeGuesses()
     {
-        // todo make this delay configurable
+        // don't make this delay configurable (at least not for regular users)
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
-        // int numCorrect = 0;
-        // int numActivePlayers = 0;
-        // int numGuesses = 0;
-        // int totalGuessMs = 0;
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -478,7 +474,7 @@ public class QuizManager
         }
     }
 
-    public async Task NGMCBurnPlayer(int burnedPlayerId, Player requestingPlayer)
+    public async Task NGMCBurnPlayer(Player burnedPlayer, Player requestingPlayer)
     {
         if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
         {
@@ -502,7 +498,6 @@ public class QuizManager
             }
         }
 
-        var burnedPlayer = Quiz.Room.Players.Single(x => x.Id == burnedPlayerId);
         if (burnedPlayer.TeamId != requestingPlayer.TeamId)
         {
             return;

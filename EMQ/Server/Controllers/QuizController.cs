@@ -734,7 +734,8 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
-                        await qm.NGMCBurnPlayer(burnedPlayerId, player);
+                        var burnedPlayer = room.Players.Single(x => x.Id == burnedPlayerId);
+                        await qm.NGMCBurnPlayer(burnedPlayer, player);
                         return Ok();
                     }
                 }
