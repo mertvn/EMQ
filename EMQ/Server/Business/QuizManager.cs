@@ -129,6 +129,14 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
+        while (Quiz.Room.Players.Any(x => x.NGMCMustPick))
+        {
+            Quiz.Room.Log($"Waiting for NGMC decisions...", writeToChat: true);
+            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
+
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
         int timeoutMs = Quiz.Room.QuizSettings.TimeoutMs;
         // Console.WriteLine("ibc " + isBufferedCount);
@@ -416,18 +424,26 @@ public class QuizManager
                 correctPlayer.NGMCCanBePicked = true;
             }
 
-            if (team1CorrectPlayers.Any() && !team2CorrectPlayers.Any())
+            if (team1CorrectPlayers.Any())
             {
-                foreach (Player player in team2)
+                team1.First().NGMCMustPick = true;
+                if (!team2CorrectPlayers.Any())
                 {
-                    player.Lives -= 1;
+                    foreach (Player player in team2)
+                    {
+                        player.Lives -= 1;
+                    }
                 }
             }
-            else if (!team1CorrectPlayers.Any() && team2CorrectPlayers.Any())
+            else if (team2CorrectPlayers.Any())
             {
-                foreach (Player player in team1)
+                team2.First().NGMCMustPick = true;
+                if (!team1CorrectPlayers.Any())
                 {
-                    player.Lives -= 1;
+                    foreach (Player player in team1)
+                    {
+                        player.Lives -= 1;
+                    }
                 }
             }
 
@@ -538,6 +554,7 @@ public class QuizManager
         var team2 = teams.ElementAt(1);
 
         var pickedPlayerTeam = pickedPlayer.TeamId == 1 ? team1 : team2;
+        var pickedPlayerTeamFirstPlayer = pickedPlayerTeam.First();
         if (pickedPlayer.NGMCCanBePicked)
         {
             foreach (Player player in pickedPlayerTeam)
@@ -545,6 +562,7 @@ public class QuizManager
                 player.NGMCCanBePicked = false;
             }
 
+            pickedPlayerTeamFirstPlayer.NGMCMustPick = false;
             pickedPlayer.NGMCGuessesCurrent -= 1;
             Quiz.Room.Log($"{requestingPlayer.Username} picked {pickedPlayer.Username}.", writeToChat: true);
 
