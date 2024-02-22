@@ -231,8 +231,31 @@ public class QuizHub : Hub
                     room.AllConnectionIds.Remove(player.Id, out _);
                     room.Log($"{player.Username} left the room.", player.Id, true);
 
+                    if (room.Quiz != null &&
+                        room.Quiz.QuizState.QuizStatus is not QuizStatus.Ended or QuizStatus.Canceled)
+                    {
+                        if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+                        {
+                            var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                            if (quizManager != null)
+                            {
+                                room.Log("NGMC mode cannot continue if a player leaves.", -1, true);
+                                await quizManager.EndQuiz();
+                            }
+                        }
+                    }
+
                     if (!room.Players.Any())
                     {
+                        if (room.Quiz != null)
+                        {
+                            var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                            if (quizManager != null)
+                            {
+                                await quizManager.EndQuiz();
+                            }
+                        }
+
                         ServerState.RemoveRoom(room, "SendPlayerLeaving");
                         return;
                     }

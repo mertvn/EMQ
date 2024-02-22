@@ -361,8 +361,8 @@ else
             @if (Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
             {
                 var teams = Room.Players.GroupBy(x => x.TeamId).ToArray();
-                team1 = teams.ElementAt(0);
-                team2 = teams.ElementAt(1);
+                team1 = teams.ElementAtOrDefault(0);
+                team2 = teams.ElementAtOrDefault(1);
             }
 
             @foreach (var player in Room.Players)
@@ -402,8 +402,8 @@ else
                             @if (ownPlayer != null && !IsSpectator && player.TeamId == ownPlayer.TeamId)
                             {
                                 var ownTeam = ownPlayer.TeamId == 1 ? team1 : team2;
-                                var ownTeamCaptain = ownTeam!.First();
-                                @if (ownTeamCaptain.Id == ownPlayer.Id)
+                                var ownTeamCaptain = ownTeam?.First();
+                                @if (ownTeamCaptain?.Id == ownPlayer.Id)
                                 {
                                     bool canBurn = ownTeamCaptain.NGMCCanBurn && player.NGMCGuessesCurrent > 0 && Room.QuizSettings.NGMCAllowBurning;
                                     bool canBePicked = player.NGMCCanBePicked;
