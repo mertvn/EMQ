@@ -138,6 +138,8 @@ public partial class QuizPage
 
     private SongHistoryComponent? _songHistoryComponent;
 
+    private GenericModal? _inventoryModalRef;
+
     private DateTime LastSync { get; set; }
 
     private bool SyncInProgress { get; set; }

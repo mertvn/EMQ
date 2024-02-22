@@ -813,10 +813,13 @@ public class QuizManager
         // reduce serialized Room size
         Quiz.Room.TreasureRooms = Array.Empty<TreasureRoom[]>();
 
-        foreach (var player in Quiz.Room.Players)
+        if (!Quiz.Room.QuizSettings.AllowViewingInventoryDuringQuiz)
         {
-            // reduce serialized Room size & prevent Inventory leak
-            player.LootingInfo = new PlayerLootingInfo();
+            foreach (var player in Quiz.Room.Players)
+            {
+                // reduce serialized Room size & prevent Inventory leak
+                player.LootingInfo = new PlayerLootingInfo();
+            }
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");

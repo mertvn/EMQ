@@ -189,6 +189,10 @@
                             <InputNumber id="InventorySize" @bind-Value="ClientQuizSettings.InventorySize" style="margin: 5px"></InputNumber>
                             <label for="InventorySize">Looting inventory size</label>
                             <br/>
+
+                            <InputCheckbox id="AllowViewingInventoryDuringQuiz" class="form-check-input" @bind-Value="ClientQuizSettings.AllowViewingInventoryDuringQuiz" style="margin: 5px"></InputCheckbox>
+                            <label for="AllowViewingInventoryDuringQuiz">Allow viewing inventory during quiz</label>
+                            <br/>
                         }
 
                         <InputNumber id="TimeoutMs" @bind-Value="ClientQuizSettings.UI_TimeoutMs" style="margin: 5px"></InputNumber>

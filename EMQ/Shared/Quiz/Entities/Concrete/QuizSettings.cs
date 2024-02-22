@@ -159,6 +159,11 @@ public class QuizSettings
     [DefaultValue(true)]
     public bool NGMCAllowBurning { get; set; } = true;
 
+    [ProtoMember(20)]
+    [Required]
+    [DefaultValue(false)]
+    public bool AllowViewingInventoryDuringQuiz { get; set; } = false;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
