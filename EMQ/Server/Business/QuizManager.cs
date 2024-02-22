@@ -1401,7 +1401,9 @@ public class QuizManager
                 else
                 {
                     await HubContext.Clients.Clients(connectionId)
-                        .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses[playerId]);
+                        .SendAsync("ReceivePlayerGuesses",
+                            Quiz.Room.PlayerGuesses.Where(x => x.Key == playerId)
+                                .ToDictionary(x => x.Key, x => x.Value));
                 }
 
                 await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
