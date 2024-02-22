@@ -174,7 +174,7 @@
      style="position: relative; background: dimgrey; width:720px; height:400px; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
      onclick="@(() => { if (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None) ClientState.Session!.Player.Preferences.HideVideo = !ClientState.Session!.Player.Preferences.HideVideo; })">
 
-    @if (ClientState.Session!.Player.Preferences.HideVideo && (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
+    @if (ClientState.Session != null && ClientState.Session.Player.Preferences.HideVideo && (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
     {
         <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
     }
@@ -353,8 +353,8 @@ else
     <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
         @if (Room?.Players.Any() ?? false)
         {
-            var ownPlayer = Room.Players.SingleOrDefault(x => x.Id == ClientState.Session.Player.Id) ??
-                            Room.Spectators.SingleOrDefault(x => x.Id == ClientState.Session.Player.Id);
+            var ownPlayer = Room.Players.SingleOrDefault(x => ClientState.Session != null && x.Id == ClientState.Session.Player.Id) ??
+                            Room.Spectators.SingleOrDefault(x => ClientState.Session != null && x.Id == ClientState.Session.Player.Id);
 
             IGrouping<int, Player>? team1 = null;
             IGrouping<int, Player>? team2 = null;
