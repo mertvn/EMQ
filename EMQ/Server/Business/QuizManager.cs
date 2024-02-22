@@ -413,27 +413,7 @@ public class QuizManager
 
             foreach (Player correctPlayer in team1CorrectPlayers.Concat(team2CorrectPlayers))
             {
-                correctPlayer.NGMCGuessesCurrent -= 1;
-            }
-
-            if (team1.All(x => x.NGMCGuessesCurrent == 0))
-            {
-                foreach (Player player in team1)
-                {
-                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-                }
-
-                Quiz.Room.Log($"Resetting guesses for team 1.", writeToChat: true);
-            }
-
-            if (team2.All(x => x.NGMCGuessesCurrent == 0))
-            {
-                foreach (Player player in team2)
-                {
-                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-                }
-
-                Quiz.Room.Log($"Resetting guesses for team 2.", writeToChat: true);
+                correctPlayer.NGMCCanBePicked = true;
             }
 
             if (team1CorrectPlayers.Any() && !team2CorrectPlayers.Any())
@@ -511,6 +491,71 @@ public class QuizManager
                 }
 
                 Quiz.Room.Log($"Resetting guesses for team {burnedPlayer.TeamId}.", writeToChat: true);
+            }
+
+            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
+            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
+            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+                writeToChat: true);
+
+            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+        }
+    }
+
+    public async Task NGMCPickPlayer(int pickedPlayerId, Player requestingPlayer)
+    {
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
+        {
+            return;
+        }
+
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
+        {
+            bool first3Secs = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 3000;
+            if (!first3Secs)
+            {
+                foreach (Player roomPlayer in Quiz.Room.Players)
+                {
+                    roomPlayer.NGMCCanBePicked = false;
+                }
+
+                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+
+                return;
+            }
+        }
+
+        var pickedPlayer = Quiz.Room.Players.Single(x => x.Id == pickedPlayerId);
+        if (pickedPlayer.TeamId != requestingPlayer.TeamId)
+        {
+            return;
+        }
+
+        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var team1 = teams.ElementAt(0);
+        var team2 = teams.ElementAt(1);
+
+        var pickedPlayerTeam = pickedPlayer.TeamId == 1 ? team1 : team2;
+        if (pickedPlayer.NGMCCanBePicked)
+        {
+            foreach (Player player in pickedPlayerTeam)
+            {
+                player.NGMCCanBePicked = false;
+            }
+
+            pickedPlayer.NGMCGuessesCurrent -= 1;
+            Quiz.Room.Log($"{requestingPlayer.Username} picked {pickedPlayer.Username}.", writeToChat: true);
+
+            if (pickedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
+            {
+                foreach (Player player in pickedPlayerTeam)
+                {
+                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+                }
+
+                Quiz.Room.Log($"Resetting guesses for team {pickedPlayer.TeamId}.", writeToChat: true);
             }
 
             string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));

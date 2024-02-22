@@ -354,7 +354,7 @@ else
         @if (Room?.Players.Any() ?? false)
         {
             var ownPlayer = Room.Players.SingleOrDefault(x => x.Id == ClientState.Session.Player.Id) ??
-                            Room.Spectators.Single(x => x.Id == ClientState.Session.Player.Id);
+                            Room.Spectators.SingleOrDefault(x => x.Id == ClientState.Session.Player.Id);
 
             IGrouping<int, Player>? team1 = null;
             IGrouping<int, Player>? team2 = null;
@@ -397,17 +397,32 @@ else
                     <div style="position: relative">
                         <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(player.Avatar, player.PlayerStatus)" alt="Avatar">
 
-                        @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && Room.QuizSettings.NGMCAllowBurning)
+                        @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
                         {
-                            @if (!IsSpectator && player.TeamId == ownPlayer.TeamId)
+                            @if (ownPlayer != null && !IsSpectator && player.TeamId == ownPlayer.TeamId)
                             {
                                 var ownTeam = ownPlayer.TeamId == 1 ? team1 : team2;
-                                bool canBurn = ownTeam!.First().NGMCCanBurn && player.NGMCGuessesCurrent > 0;
+                                var ownTeamCaptain = ownTeam!.First();
+                                @if (ownTeamCaptain.Id == ClientState.Session.Player.Id)
+                                {
+                                    bool canBurn = ownTeamCaptain.NGMCCanBurn && player.NGMCGuessesCurrent > 0 && Room.QuizSettings.NGMCAllowBurning;
+                                    bool canBePicked = player.NGMCCanBePicked;
 
-                                <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => BurnPlayer(player.Id))"
-                                        style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
-                                    Burn
-                                </button>
+                                    @if (canBurn)
+                                    {
+                                        <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => NGMCBurnPlayer(player.Id))"
+                                                style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
+                                            Burn
+                                        </button>
+                                    }
+                                    else if (canBePicked)
+                                    {
+                                        <button type="button" class="btn btn-success" disabled="@(!canBePicked)" @onclick="@(() => NGMCPickPlayer(player.Id))"
+                                                style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
+                                            Pick
+                                        </button>
+                                    }
+                                }
                             }
                         }
 
