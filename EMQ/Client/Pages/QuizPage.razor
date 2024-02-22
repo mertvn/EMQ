@@ -403,7 +403,7 @@ else
                             {
                                 var ownTeam = ownPlayer.TeamId == 1 ? team1 : team2;
                                 var ownTeamCaptain = ownTeam!.First();
-                                @if (ownTeamCaptain.Id == ClientState.Session.Player.Id)
+                                @if (ownTeamCaptain.Id == ownPlayer.Id)
                                 {
                                     bool canBurn = ownTeamCaptain.NGMCCanBurn && player.NGMCGuessesCurrent > 0 && Room.QuizSettings.NGMCAllowBurning;
                                     bool canBePicked = player.NGMCCanBePicked;
