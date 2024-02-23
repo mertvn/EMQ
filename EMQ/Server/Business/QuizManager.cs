@@ -444,7 +444,8 @@ public class QuizManager
                 team1Captain.NGMCMustPick = true;
                 // }
             }
-            else if (team2CorrectPlayersCount > 0)
+
+            if (team2CorrectPlayersCount > 0)
             {
                 if (!team1CorrectPlayers.Any())
                 {
