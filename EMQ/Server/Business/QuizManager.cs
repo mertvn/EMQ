@@ -903,6 +903,9 @@ public class QuizManager
             player.PlayerStatus = PlayerStatus.Default;
             player.LootingInfo = new PlayerLootingInfo();
             player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+            player.NGMCCanBurn = false;
+            player.NGMCMustPick = false;
+            player.NGMCCanBePicked = false;
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
