@@ -99,4 +99,7 @@ public class PlayerPreferences
 
     [Required]
     public bool WantsEnglish { get; set; } = false;
+
+    [Required]
+    public bool ShowVndbCovers { get; set; } = true;
 }

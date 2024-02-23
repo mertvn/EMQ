@@ -255,7 +255,7 @@
 
             @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
             {
-                @if (!string.IsNullOrEmpty(_currentSong.CoverUrl))
+                @if (ClientState.Session != null && ClientState.Session.Player.Preferences.ShowVndbCovers && !string.IsNullOrEmpty(_currentSong.CoverUrl))
                 {
                     <div id="vnCoverDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Session!.Player.Preferences.HideVideo);">
                         <img width="720px" height="400px" src="@_currentSong.CoverUrl" alt="" style="object-fit: contain;">
