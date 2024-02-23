@@ -60,6 +60,8 @@ public class Player
     public bool NGMCCanBePicked { get; set; }
 
     public bool NGMCMustPick { get; set; }
+
+    public bool NGMCMustBurn { get; set; }
 }
 
 public record PlayerLootingInfo

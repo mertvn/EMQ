@@ -797,4 +797,46 @@ public class QuizController : ControllerBase
 
         return Unauthorized();
     }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("NGMCDontBurn")]
+    public async Task<ActionResult> NGMCDontBurn()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        if (room is not null)
+        {
+            if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && room.QuizSettings.NGMCAllowBurning)
+            {
+                if (room.Quiz != null)
+                {
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                    if (qm != null)
+                    {
+                        await qm.NGMCDontBurn(player);
+                        return Ok();
+                    }
+                }
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to burn player in r{room.Id} that does not allow burning by p{req.playerId}",
+                    room.Id, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to burn player in r{req.RoomId} that is null", "");
+        }
+
+        return Unauthorized();
+    }
 }

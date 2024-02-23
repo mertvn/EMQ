@@ -129,7 +129,7 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        while (Quiz.Room.Players.Any(x => x.NGMCMustPick))
+        while (Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
         {
             Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -422,6 +422,8 @@ public class QuizManager
 
             int team1CorrectPlayersCount = team1CorrectPlayers.Length;
             int team2CorrectPlayersCount = team2CorrectPlayers.Length;
+            var team1Captain = team1.First();
+            var team2Captain = team2.First();
 
             if (team1CorrectPlayersCount > 0)
             {
@@ -433,7 +435,6 @@ public class QuizManager
                     }
                 }
 
-                var team1Captain = team1.First();
                 if (team1CorrectPlayersCount == 1)
                 {
                     await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
@@ -453,7 +454,6 @@ public class QuizManager
                     }
                 }
 
-                var team2Captain = team2.First();
                 if (team2CorrectPlayersCount == 1)
                 {
                     await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
@@ -464,8 +464,10 @@ public class QuizManager
                 }
             }
 
-            team1.First().NGMCCanBurn = !team1CorrectPlayers.Any();
-            team2.First().NGMCCanBurn = !team2CorrectPlayers.Any();
+            team1Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team1CorrectPlayers.Any();
+            team2Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team2CorrectPlayers.Any();
+            team1Captain.NGMCMustBurn = team1Captain.NGMCCanBurn;
+            team2Captain.NGMCMustBurn = team2Captain.NGMCCanBurn;
 
             string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
             string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
@@ -483,17 +485,9 @@ public class QuizManager
 
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
         {
-            bool first3Secs = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 3000;
-            if (!first3Secs)
+            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
+            if (!firstSec)
             {
-                foreach (Player roomPlayer in Quiz.Room.Players)
-                {
-                    roomPlayer.NGMCCanBurn = false;
-                }
-
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
-
                 return;
             }
         }
@@ -512,6 +506,7 @@ public class QuizManager
         if (burnedPlayerTeamFirstPlayer.NGMCCanBurn && burnedPlayer.NGMCGuessesCurrent > 0)
         {
             burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
+            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
             burnedPlayer.NGMCGuessesCurrent -= 0.5f;
             Quiz.Room.Log($"{requestingPlayer.Username} burned {burnedPlayer.Username}.", writeToChat: true);
 
@@ -535,6 +530,33 @@ public class QuizManager
         }
     }
 
+    public async Task NGMCDontBurn(Player requestingPlayer)
+    {
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
+        {
+            return;
+        }
+
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
+        {
+            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
+            if (!firstSec)
+            {
+                return;
+            }
+        }
+
+        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var burnedPlayerTeam = teams.ElementAt(requestingPlayer.TeamId - 1);
+        var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
+        burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
+        burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
+
+        Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
+        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+    }
+
     public async Task NGMCPickPlayer(Player pickedPlayer, Player requestingPlayer, bool isAutoPick)
     {
         if (!isAutoPick && Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
@@ -544,17 +566,9 @@ public class QuizManager
 
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
         {
-            bool first3Secs = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 3000;
-            if (!first3Secs)
+            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
+            if (!firstSec)
             {
-                foreach (Player roomPlayer in Quiz.Room.Players)
-                {
-                    roomPlayer.NGMCCanBePicked = false;
-                }
-
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
-
                 return;
             }
         }
@@ -906,6 +920,7 @@ public class QuizManager
             player.NGMCCanBurn = false;
             player.NGMCMustPick = false;
             player.NGMCCanBePicked = false;
+            player.NGMCMustBurn = false;
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {

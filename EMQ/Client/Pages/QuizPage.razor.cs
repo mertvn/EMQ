@@ -954,4 +954,13 @@ public partial class QuizPage
             StateHasChanged();
         }
     }
+
+    private async Task NGMCDontBurn()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NGMCDontBurn", "");
+        if (res.IsSuccessStatusCode)
+        {
+            StateHasChanged();
+        }
+    }
 }

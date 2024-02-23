@@ -442,6 +442,14 @@ else
 
                                     @if (canBurn)
                                     {
+                                        @if (player.Id == ownTeamCaptain.Id)
+                                        {
+                                            <button type="button" class="btn btn-secondary" disabled="@(!canBurn)" @onclick="@(() => NGMCDontBurn())"
+                                                    style="position: absolute; top: 39%; left: 33%; margin: 2px; padding: 2px; width: 60px; z-index: 10;">
+                                                Skip burning
+                                            </button>
+                                        }
+
                                         <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => NGMCBurnPlayer(player.Id))"
                                                 style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
                                             Burn
