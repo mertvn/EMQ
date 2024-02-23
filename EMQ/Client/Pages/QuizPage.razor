@@ -437,7 +437,7 @@ else
                                 var ownTeamCaptain = ownTeam?.First();
                                 @if (ownTeamCaptain?.Id == ownPlayer.Id)
                                 {
-                                    bool canBurn = ownTeamCaptain.NGMCCanBurn && player.NGMCGuessesCurrent > 0 && Room.QuizSettings.NGMCAllowBurning;
+                                    bool canBurn = ownTeamCaptain.NGMCCanBurn && Room.QuizSettings.NGMCAllowBurning;
                                     bool canBePicked = player.NGMCCanBePicked;
 
                                     @if (canBurn)
@@ -450,10 +450,13 @@ else
                                             </button>
                                         }
 
-                                        <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => NGMCBurnPlayer(player.Id))"
-                                                style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
-                                            Burn
-                                        </button>
+                                        @if (player.NGMCGuessesCurrent > 0)
+                                        {
+                                            <button type="button" class="btn btn-danger" disabled="@(!canBurn)" @onclick="@(() => NGMCBurnPlayer(player.Id))"
+                                                    style="position: absolute; top: 69%; left: 33%; margin: 2px; padding: 2px; width: 60px; height: 30px; z-index: 10;">
+                                                Burn
+                                            </button>
+                                        }
                                     }
                                     else if (canBePicked)
                                     {

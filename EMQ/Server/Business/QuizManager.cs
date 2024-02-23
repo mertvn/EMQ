@@ -435,14 +435,14 @@ public class QuizManager
                     }
                 }
 
-                if (team1CorrectPlayersCount == 1)
-                {
-                    await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
-                }
-                else
-                {
-                    team1Captain.NGMCMustPick = true;
-                }
+                // if (team1CorrectPlayersCount == 1)
+                // {
+                //     await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
+                // }
+                // else
+                // {
+                team1Captain.NGMCMustPick = true;
+                // }
             }
             else if (team2CorrectPlayersCount > 0)
             {
@@ -454,14 +454,14 @@ public class QuizManager
                     }
                 }
 
-                if (team2CorrectPlayersCount == 1)
-                {
-                    await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
-                }
-                else
-                {
-                    team2Captain.NGMCMustPick = true;
-                }
+                // if (team2CorrectPlayersCount == 1)
+                // {
+                //     await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
+                // }
+                // else
+                // {
+                team2Captain.NGMCMustPick = true;
+                // }
             }
 
             team1Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team1CorrectPlayers.Any();
@@ -611,10 +611,10 @@ public class QuizManager
                 string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
                 Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
                     writeToChat: true);
-
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             }
+
+            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
 
