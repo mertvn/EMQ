@@ -1,6 +1,8 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+@inject NavigationManager _navigation
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -71,13 +73,23 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
+    private DateTime LastSync { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(15))
         {
+            LastSync = DateTime.UtcNow;
             ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats");
             if (res is not null)
             {
+                if (!string.IsNullOrWhiteSpace(ClientState.ServerStats.GitHash) && res.GitHash != ClientState.ServerStats.GitHash)
+                {
+                    await _jsRuntime.InvokeVoidAsync("alert", "EMQ has been updated. Press OK to refresh.");
+                    await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}");
+                    return;
+                }
+
                 ClientState.ServerStats = res;
             }
             StateHasChanged();
