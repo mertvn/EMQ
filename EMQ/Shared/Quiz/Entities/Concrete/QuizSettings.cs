@@ -164,6 +164,11 @@ public class QuizSettings
     [DefaultValue(false)]
     public bool AllowViewingInventoryDuringQuiz { get; set; } = false;
 
+    [ProtoMember(21)]
+    [Required]
+    [DefaultValue(true)]
+    public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)

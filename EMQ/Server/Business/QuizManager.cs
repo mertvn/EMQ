@@ -444,14 +444,14 @@ public class QuizManager
                     }
                 }
 
-                // if (team1CorrectPlayersCount == 1)
-                // {
-                //     await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
-                // }
-                // else
-                // {
-                team1Captain.NGMCMustPick = true;
-                // }
+                if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team1CorrectPlayersCount == 1)
+                {
+                    await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
+                }
+                else
+                {
+                    team1Captain.NGMCMustPick = true;
+                }
             }
 
             if (team2CorrectPlayersCount > 0)
@@ -464,14 +464,14 @@ public class QuizManager
                     }
                 }
 
-                // if (team2CorrectPlayersCount == 1)
-                // {
-                //     await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
-                // }
-                // else
-                // {
-                team2Captain.NGMCMustPick = true;
-                // }
+                if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team2CorrectPlayersCount == 1)
+                {
+                    await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
+                }
+                else
+                {
+                    team2Captain.NGMCMustPick = true;
+                }
             }
 
             team1Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team1CorrectPlayers.Any();

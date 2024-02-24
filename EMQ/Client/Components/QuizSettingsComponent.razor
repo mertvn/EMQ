@@ -162,6 +162,10 @@
                             <InputCheckbox id="NGMCAllowBurning" class="form-check-input" @bind-Value="ClientQuizSettings.NGMCAllowBurning" style="margin: 5px"></InputCheckbox>
                             <label for="NGMCAllowBurning">NGMC burning</label>
                             <br/>
+
+                            <InputCheckbox id="NGMCAutoPickOnlyCorrectPlayerInTeam" class="form-check-input" @bind-Value="ClientQuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam" style="margin: 5px"></InputCheckbox>
+                            <label for="NGMCAutoPickOnlyCorrectPlayerInTeam">NGMC auto-pick only correct player in team</label>
+                            <br/>
                         }
 
                         <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
