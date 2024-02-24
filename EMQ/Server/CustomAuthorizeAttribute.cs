@@ -57,7 +57,8 @@ public class CustomAuthorizeAttribute : Attribute, IAsyncActionFilter
             {
                 // todo remove
                 if (context.ActionDescriptor.DisplayName != null &&
-                    !context.ActionDescriptor.DisplayName.Contains("SyncChat"))
+                    !context.ActionDescriptor.DisplayName.Contains("SyncChat") &&
+                    !context.ActionDescriptor.DisplayName.Contains("SyncRoom"))
                 {
                     Console.WriteLine(
                         $"{ServerUtils.GetIpAddress(context.HttpContext)} failed {_requiredPermission} check for {context.ActionDescriptor.DisplayName}");
