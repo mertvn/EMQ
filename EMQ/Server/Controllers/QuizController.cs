@@ -320,7 +320,7 @@ public class QuizController : ControllerBase
                     {
                         room.Log("Primed");
                         // ServerUtils.RunAggressiveGc();
-                        await quizManager.StartQuiz();
+                        await Task.Run(async () => await quizManager.StartQuiz());
                     }
                     else
                     {

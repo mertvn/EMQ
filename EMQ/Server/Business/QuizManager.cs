@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -349,7 +349,16 @@ public class QuizManager
         // don't make this delay configurable (at least not for regular users)
         await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
 
-        var song = Quiz.Songs[Quiz.QuizState.sp];
+        var song = Quiz.Songs.ElementAtOrDefault(Quiz.QuizState.sp);
+        if (song == null)
+        {
+            Quiz.Room.Log("Corruption was detected in quiz state. This incident will be investigated. Code: 2",
+                writeToChat: true);
+            Quiz.Room.Log(JsonSerializer.Serialize(Quiz.Room, Utils.JsoIndented));
+            await EndQuiz();
+            return;
+        }
+
         var songHistory = new SongHistory { Song = song };
 
         foreach (var player in Quiz.Room.Players)
