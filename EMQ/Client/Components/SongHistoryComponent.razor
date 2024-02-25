@@ -9,6 +9,17 @@
             <Blazorise.ModalTitle>Song History</Blazorise.ModalTitle>
         </Blazorise.ModalHeader>
         <Blazorise.ModalBody>
+            <div>
+                <select id="SongSelectionKind" style="margin: 5px" @oninput="OnSongHistoryFilterChanged">
+                    @foreach (SongHistoryFilterKind librarySongFilter in Enum.GetValues<SongHistoryFilterKind>())
+                    {
+                        <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
+                    }
+                </select>
+                <label for="SongSelectionKind">Filter</label>
+                <br/>
+            </div>
+
             <table id="songHistoryTable" style="width: 100%;">
                 <tr class="songHistoryHeaders">
                     <th class="songHistoryHeader"></th>
@@ -25,14 +36,29 @@
                         if (SongsHistory.TryGetValue(index, out var songHistory))
                         {
                             var song = songHistory.Song;
-                            bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
-
                             string rowBackgroundColor = "initial";
-                            if (songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo))
+                            bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo);
+                            if (ownPgiExists)
                             {
                                 rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
                             }
 
+                            bool shouldDisplay = SongHistoryFilter switch
+                            {
+                                SongHistoryFilterKind.All => true,
+                                SongHistoryFilterKind.Correct => ownPgiExists && ownPlayerGuessInfo.IsGuessCorrect,
+                                SongHistoryFilterKind.Wrong => ownPgiExists && !ownPlayerGuessInfo.IsGuessCorrect,
+                                SongHistoryFilterKind.Rig => ownPgiExists && ownPlayerGuessInfo.Labels.Any(),
+                                SongHistoryFilterKind.Erig => ownPgiExists && ownPlayerGuessInfo.Labels.Any() && ownPlayerGuessInfo.IsGuessCorrect && songHistory.TimesCorrect == 1,
+                                _ => throw new ArgumentOutOfRangeException()
+                                };
+
+                            @if (!shouldDisplay)
+                            {
+                                continue;
+                            }
+
+                            bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
                             <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor;">
 
                                 <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
@@ -172,6 +198,8 @@
 
     public Dictionary<int, bool> RowDetailsDict { get; set; } = new();
 
+    private SongHistoryFilterKind SongHistoryFilter { get; set; }
+
     protected override void OnParametersSet()
     {
     // Console.WriteLine("paramset songhistory");
@@ -221,6 +249,21 @@
         string json = JsonSerializer.Serialize(SongsHistory, Utils.JsoIndented);
         byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
         await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_SongHistory_{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
+    }
+
+    public enum SongHistoryFilterKind
+    {
+        All,
+        Correct,
+        Wrong,
+        Rig,
+        Erig,
+    }
+
+    private async void OnSongHistoryFilterChanged(ChangeEventArgs arg)
+    {
+        SongHistoryFilter = Enum.Parse<SongHistoryFilterKind>((string)arg.Value!);
+        await CallStateHasChanged();
     }
 
 }
