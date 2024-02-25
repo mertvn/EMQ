@@ -260,7 +260,7 @@
         Erig,
     }
 
-    private async void OnSongHistoryFilterChanged(ChangeEventArgs arg)
+    private async Task OnSongHistoryFilterChanged(ChangeEventArgs arg)
     {
         SongHistoryFilter = Enum.Parse<SongHistoryFilterKind>((string)arg.Value!);
         await CallStateHasChanged();

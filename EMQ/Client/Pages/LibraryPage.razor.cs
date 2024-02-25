@@ -212,7 +212,7 @@ public partial class LibraryPage
         await TabsComponentVndb!.SelectTab("TabVNDB");
     }
 
-    private async void OnLibrarySongFilterChanged(ChangeEventArgs arg)
+    private async Task OnLibrarySongFilterChanged(ChangeEventArgs arg)
     {
         LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
 

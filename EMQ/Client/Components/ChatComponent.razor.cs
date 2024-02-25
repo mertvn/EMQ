@@ -51,7 +51,7 @@ public partial class ChatComponent
         }
     }
 
-    private async void OnKeyDown(KeyboardEventArgs arg)
+    private async Task OnKeyDown(KeyboardEventArgs arg)
     {
         if (arg.Key is "Enter" or "NumpadEnter")
         {
