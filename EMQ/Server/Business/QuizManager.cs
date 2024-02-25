@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -36,22 +36,28 @@ public class QuizManager
 
     public DateTime LastUpdate { get; set; }
 
-    private void SetTimer()
+    private async Task SetTimer()
     {
-        if (!Quiz.IsDisposed)
+        if (!Quiz.IsDisposed && !Quiz.IsTimerRunning)
         {
-            Quiz.Timer.Stop();
-            Quiz.Timer.Elapsed -= OnTimedEvent;
-
-            Quiz.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
-            Quiz.Timer.Elapsed += OnTimedEvent;
-            Quiz.Timer.AutoReset = true;
-            Quiz.Timer.Start();
+            Quiz.Timer?.Dispose();
+            Quiz.Timer = new PeriodicTimer(TimeSpan.FromMilliseconds(Quiz.TickRate));
+            Quiz.IsTimerRunning = true;
+            while (await Quiz.Timer.WaitForNextTickAsync())
+            {
+                await OnTimedEvent();
+            }
         }
     }
 
-    private async void OnTimedEvent(object? sender, ElapsedEventArgs e)
+    private async Task OnTimedEvent()
     {
+        if (!Quiz.IsTimerRunning)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            return;
+        }
+
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
@@ -71,7 +77,7 @@ public class QuizManager
             {
                 if (!Quiz.IsDisposed)
                 {
-                    Quiz.Timer.Stop();
+                    Quiz.IsTimerRunning = false;
                 }
 
                 switch (Quiz.QuizState.Phase)
@@ -103,7 +109,7 @@ public class QuizManager
 
                 if (!Quiz.IsDisposed)
                 {
-                    Quiz.Timer.Start();
+                    Quiz.IsTimerRunning = true;
                 }
             }
         }
@@ -115,8 +121,8 @@ public class QuizManager
 
         if (!Quiz.IsDisposed)
         {
-            Quiz.Timer.Stop();
-            Quiz.Timer.Elapsed -= OnTimedEvent;
+            Quiz.IsTimerRunning = false;
+            Quiz.Timer?.Dispose();
         }
 
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizCanceled");
@@ -635,8 +641,8 @@ public class QuizManager
 
         if (!Quiz.IsDisposed)
         {
-            Quiz.Timer.Stop();
-            Quiz.Timer.Elapsed -= OnTimedEvent;
+            Quiz.IsTimerRunning = false;
+            Quiz.Timer?.Dispose();
         }
 
         Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
@@ -1318,7 +1324,7 @@ public class QuizManager
                 throw new ArgumentOutOfRangeException();
         }
 
-        SetTimer();
+        await SetTimer();
     }
 
     public async Task OnSendPlayerIsBuffered(int playerId, string source)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Timers;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -27,7 +28,9 @@ public sealed class Quiz : IDisposable
     public Room Room { get; }
 
     [JsonIgnore]
-    public Timer Timer { get; set; } = new();
+    public PeriodicTimer? Timer { get; set; }
+
+    public bool IsTimerRunning { get; set; }
 
     [JsonIgnore]
     public List<Song> Songs { get; set; } = new();
@@ -43,8 +46,8 @@ public sealed class Quiz : IDisposable
     public void Dispose()
     {
         IsDisposed = true;
-        Timer.Stop();
-        Timer.Dispose();
+        IsTimerRunning = false;
+        Timer?.Dispose();
     }
 }
 
