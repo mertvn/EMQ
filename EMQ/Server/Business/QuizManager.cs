@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -508,6 +508,11 @@ public class QuizManager
             }
         }
 
+        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
+        {
+            return;
+        }
+
         if (burnedPlayer.TeamId != requestingPlayer.TeamId)
         {
             return;
@@ -562,15 +567,23 @@ public class QuizManager
             }
         }
 
+        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
+        {
+            return;
+        }
+
         var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
         var burnedPlayerTeam = teams.ElementAt(requestingPlayer.TeamId - 1);
         var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
-        burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
-        burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
+        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn)
+        {
+            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
+            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
 
-        Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
-            .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+            Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
+            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
+        }
     }
 
     public async Task NGMCPickPlayer(Player pickedPlayer, Player requestingPlayer, bool isAutoPick)
@@ -587,6 +600,11 @@ public class QuizManager
             {
                 return;
             }
+        }
+
+        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
+        {
+            return;
         }
 
         if (pickedPlayer.TeamId != requestingPlayer.TeamId)
