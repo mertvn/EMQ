@@ -7,10 +7,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
+using EMQ.Server;
 using EMQ.Server.Business;
+using EMQ.Server.Db;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
+using Npgsql;
 using NUnit.Framework;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
@@ -313,6 +318,264 @@ public class EntryPoints_Encoding
                         Directory.Delete(finalDir, true);
                     }
                 }
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task ExtractAudioFromVideoForMissingSoundLinks()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            int[] videoMids = (await connection.QueryAsync<int>(
+                    "SELECT distinct music_id FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video)"))
+                .ToArray();
+
+            var songs = new List<Song>();
+            foreach (int videoMid in videoMids)
+            {
+                songs.AddRange(await DbManager.SelectSongs(new Song { Id = videoMid }, false));
+            }
+
+            var links = songs.Select(x => x.Links.First(y => y.Type == SongLinkType.Self && y.IsVideo)).ToList();
+            // var filteredLinks = SongLink.FilterSongLinks(links);
+
+            Dictionary<string, int> dict = new();
+            foreach (Song song in songs)
+            {
+                foreach (SongLink songLink in song.Links)
+                {
+                    dict[songLink.Url] = song.Id;
+                }
+            }
+
+            List<string> unsupported = new();
+            foreach (SongLink songLink in links)
+            {
+                int mId = dict[songLink.Url];
+
+                string tempPath = "M:/!!!temp/" + $"{songLink.Url.LastSegment()}";
+                if (!File.Exists(tempPath))
+                {
+                    await ServerUtils.Client.DownloadFile(tempPath, new Uri(songLink.Url));
+                }
+
+                var extractedAnalysis = await MediaAnalyser.Analyse(tempPath, isVideoOverride: true);
+                var session = new Session(new Player(-1, songLink.SubmittedBy!), "", UserRoleKind.User);
+                const string notes = "extracted from video";
+
+                string guid = Guid.NewGuid().ToString();
+                FileStream? fs;
+
+                switch (extractedAnalysis.PrimaryAudioStreamCodecName)
+                {
+                    case "opus":
+                        {
+                            string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.weba";
+                            Console.WriteLine(
+                                $"extracting audio from video to {extractedOutputFinal}");
+
+                            var process = new Process()
+                            {
+                                StartInfo = new ProcessStartInfo()
+                                {
+                                    FileName = "ffmpeg",
+                                    Arguments =
+                                        $"-i \"{tempPath}\" " +
+                                        $"-map 0:a " +
+                                        $"-c copy " +
+                                        $"-f webm " +
+                                        $"-nostdin " +
+                                        $"\"{extractedOutputFinal}\"",
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                }
+                            };
+
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            string err = await process.StandardError.ReadToEndAsync();
+                            if (err.Any())
+                            {
+                                Console.WriteLine(err.Last());
+                            }
+
+                            string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
+                            Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                "weba/",
+                                extractedTrustedFileNameForFileStorage));
+
+                            fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                FileAccess.Read);
+                            ServerUtils.SftpFileUpload(
+                                UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                UploadConstants.SftpPassword,
+                                fs, Path.Combine(UploadConstants.SftpUserUploadDir, "weba/",
+                                    extractedTrustedFileNameForFileStorage));
+
+                            string extractedResultUrl =
+                                $"https://emqselfhost/selfhoststorage/userup/weba/{extractedTrustedFileNameForFileStorage}"
+                                    .ReplaceSelfhostLink();
+
+                            var songLinkExtracted = new SongLink
+                            {
+                                Url = extractedResultUrl.UnReplaceSelfhostLink(),
+                                Type = SongLinkType.Self,
+                                IsVideo = false,
+                                SubmittedBy = session.Player.Username,
+                                Sha256 = CryptoUtils.Sha256Hash(fs),
+                            };
+
+                            await fs.DisposeAsync();
+                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal,
+                                false);
+                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            break;
+                        }
+                    case "vorbis":
+                        {
+                            string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.ogg";
+                            Console.WriteLine(
+                                $"extracting audio from video to {extractedOutputFinal}");
+
+                            var process = new Process()
+                            {
+                                StartInfo = new ProcessStartInfo()
+                                {
+                                    FileName = "ffmpeg",
+                                    Arguments =
+                                        $"-i \"{tempPath}\" " +
+                                        $"-map 0:a " +
+                                        $"-c copy " +
+                                        $"-nostdin " +
+                                        $"\"{extractedOutputFinal}\"",
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                }
+                            };
+
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            string err = await process.StandardError.ReadToEndAsync();
+                            if (err.Any())
+                            {
+                                Console.WriteLine(err.Last());
+                            }
+
+                            string extractedTrustedFileNameForFileStorage = $"{guid}.ogg";
+                            Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                extractedTrustedFileNameForFileStorage));
+
+                            fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                FileAccess.Read);
+                            ServerUtils.SftpFileUpload(
+                                UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                UploadConstants.SftpPassword,
+                                fs, Path.Combine(UploadConstants.SftpUserUploadDir,
+                                    extractedTrustedFileNameForFileStorage));
+
+                            string extractedResultUrl =
+                                $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
+                                    .ReplaceSelfhostLink();
+
+                            var songLinkExtracted = new SongLink
+                            {
+                                Url = extractedResultUrl.UnReplaceSelfhostLink(),
+                                Type = SongLinkType.Self,
+                                IsVideo = false,
+                                SubmittedBy = session.Player.Username,
+                                Sha256 = CryptoUtils.Sha256Hash(fs),
+                            };
+
+                            await fs.DisposeAsync();
+                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal,
+                                false);
+                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            break;
+                        }
+                    case "mp3":
+                        {
+                            string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.mp3";
+                            Console.WriteLine(
+                                $"extracting audio from video to {extractedOutputFinal}");
+
+                            var process = new Process()
+                            {
+                                StartInfo = new ProcessStartInfo()
+                                {
+                                    FileName = "ffmpeg",
+                                    Arguments =
+                                        $"-i \"{tempPath}\" " +
+                                        $"-map 0:a " +
+                                        $"-c copy " +
+                                        $"-nostdin " +
+                                        $"\"{extractedOutputFinal}\"",
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                }
+                            };
+
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            string err = await process.StandardError.ReadToEndAsync();
+                            if (err.Any())
+                            {
+                                Console.WriteLine(err.Last());
+                            }
+
+                            string extractedTrustedFileNameForFileStorage = $"{guid}.mp3";
+                            Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
+                                "weba/",
+                                extractedTrustedFileNameForFileStorage));
+
+                            fs = new FileStream(extractedOutputFinal, FileMode.Open,
+                                FileAccess.Read);
+                            ServerUtils.SftpFileUpload(
+                                UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                                UploadConstants.SftpPassword,
+                                fs, Path.Combine(UploadConstants.SftpUserUploadDir,
+                                    extractedTrustedFileNameForFileStorage));
+
+                            string extractedResultUrl =
+                                $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
+                                    .ReplaceSelfhostLink();
+
+                            var songLinkExtracted = new SongLink
+                            {
+                                Url = extractedResultUrl.UnReplaceSelfhostLink(),
+                                Type = SongLinkType.Self,
+                                IsVideo = false,
+                                SubmittedBy = session.Player.Username,
+                                Sha256 = CryptoUtils.Sha256Hash(fs),
+                            };
+
+                            await fs.DisposeAsync();
+                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal,
+                                false);
+                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            break;
+                        }
+                    default:
+                        string str =
+                            $"unsupported codec when extracting audio: {extractedAnalysis.PrimaryAudioStreamCodecName} {songLink.Url} {songs.First(x => x.Id == mId).ToString()}";
+                        Console.WriteLine(str);
+                        unsupported.Add(str);
+                        break;
+                }
+            }
+
+            foreach (string s in unsupported)
+            {
+                Console.WriteLine(s);
             }
         }
     }
