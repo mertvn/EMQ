@@ -49,8 +49,8 @@
                                 SongHistoryFilterKind.All => true,
                                 SongHistoryFilterKind.Correct => ownPgiExists && ownPlayerGuessInfo.IsGuessCorrect,
                                 SongHistoryFilterKind.Wrong => ownPgiExists && !ownPlayerGuessInfo.IsGuessCorrect,
-                                SongHistoryFilterKind.Rig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo.Labels.Any(),
-                                SongHistoryFilterKind.Erig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo.Labels.Any() && ownPlayerGuessInfo.IsGuessCorrect && songHistory.TimesCorrect == 1,
+                                SongHistoryFilterKind.Rig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo!.Labels.Any(),
+                                SongHistoryFilterKind.Erig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo!.Labels.Any() && ownPlayerGuessInfo.IsGuessCorrect && songHistory.TimesCorrect == 1,
                                 _ => throw new ArgumentOutOfRangeException()
                                 };
 
