@@ -73,6 +73,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateSongLite()
+    {
+        await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
+    }
+
+    [Test, Explicit]
     public async Task GenerateReviewQueue()
     {
         await File.WriteAllTextAsync("ReviewQueue.json", await DbManager.ExportReviewQueue());

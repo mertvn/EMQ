@@ -28,6 +28,7 @@ public static class Blacklists
         ("v1950", "Tomodachi Ijou Koibito Miman"), // todo 1x1 + 2x1
         ("v2438", "Blue Twilight ~Taiyou to Tsuki ga Deau Toki~"),
         ("v2501", "Hide and seek"),
+        ("v3679", "Sotto Kiss Shite"),
         ("v9409", "Key of Destiny"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v11000", "Photograph Memory"),

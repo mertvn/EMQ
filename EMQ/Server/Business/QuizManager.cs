@@ -672,7 +672,8 @@ public class QuizManager
             JsonSerializer.Serialize(Quiz.Room.RoomLog, Utils.JsoIndented));
 
         Directory.CreateDirectory("SongHistory");
-        await File.WriteAllTextAsync($"SongHistory/SongHistory_{Quiz.Room.Name}_r{Quiz.Room.Id}q{Quiz.Id}.json",
+        await File.WriteAllTextAsync(
+            $"SongHistory/SongHistory_{Utils.FixFileName(Quiz.Room.Name)}_r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.SongsHistory, Utils.JsoIndented));
 
         bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&

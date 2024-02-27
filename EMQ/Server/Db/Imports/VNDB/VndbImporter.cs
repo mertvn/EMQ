@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -173,9 +173,9 @@ public static class VndbImporter
             }
             else
             {
-                Console.WriteLine(
-                    JsonConvert.SerializeObject(dynData.VNID +
-                                                $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
+                // Console.WriteLine(
+                //     JsonConvert.SerializeObject(dynData.VNID +
+                //                                 $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
             }
 
             // Console.WriteLine(JsonConvert.SerializeObject(tags, Formatting.Indented));

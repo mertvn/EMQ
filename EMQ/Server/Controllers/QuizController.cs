@@ -573,6 +573,12 @@ public class QuizController : ControllerBase
         {
             if (room.Owner.Id == player.Id)
             {
+                // See ReqCreateRoom
+                if (req.NewName.Length > 78 || req.NewPassword.Length > 16)
+                {
+                    return Unauthorized();
+                }
+
                 room.Name = req.NewName;
                 room.Password = req.NewPassword;
 

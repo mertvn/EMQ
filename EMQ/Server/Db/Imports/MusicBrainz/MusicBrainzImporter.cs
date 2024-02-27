@@ -482,9 +482,9 @@ public static class MusicBrainzImporter
                     }
                     else
                     {
-                        Console.WriteLine(
-                            JsonConvert.SerializeObject(dynData.VNID +
-                                                        $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
+                        // Console.WriteLine(
+                        //     JsonConvert.SerializeObject(dynData.VNID +
+                        //                                 $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
                     }
 
                     int date = (int)dynMusicSource.air_date_start;
