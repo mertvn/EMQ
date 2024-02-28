@@ -708,21 +708,24 @@ GRANT ALL ON SCHEMA public TO public;";
             await connection.ExecuteAsync(sql);
         }
 
-        throw new Exception();
-        var serviceProvider = new ServiceCollection()
-            .AddFluentMigratorCore()
-            .ConfigureRunner(rb => rb
-                .AddPostgres()
-                .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
-                .ScanIn(Assembly.GetAssembly(typeof(ServerState))).For.Migrations())
-            .Configure<RunnerOptions>(opt => { opt.Tags = new[] { "SONG" }; })
-            .AddLogging(lb => lb.AddFluentMigratorConsole())
-            .BuildServiceProvider(false);
-
-        using (var scope = serviceProvider.CreateScope())
+        bool runMigrations = false;
+        if (runMigrations)
         {
-            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
-            runner.MigrateUp();
+            var serviceProvider = new ServiceCollection()
+                .AddFluentMigratorCore()
+                .ConfigureRunner(rb => rb
+                    .AddPostgres()
+                    .WithGlobalConnectionString(ConnectionHelper.GetConnectionString())
+                    .ScanIn(Assembly.GetAssembly(typeof(ServerState))).For.Migrations())
+                .Configure<RunnerOptions>(opt => { opt.Tags = new[] { "SONG" }; })
+                .AddLogging(lb => lb.AddFluentMigratorConsole())
+                .BuildServiceProvider(false);
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+                runner.MigrateUp();
+            }
         }
     }
 
