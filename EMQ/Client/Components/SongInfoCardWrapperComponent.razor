@@ -224,9 +224,13 @@
 
                         @if (IsLibraryPage)
                         {
-                            @if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+                            @if (ClientState.ServerStats.IsServerReadOnly)
                             {
                                 <span>Server is in read-only mode.</span>
+                            }
+                            else if (ClientState.ServerStats.IsSubmissionDisabled)
+                            {
+                                <span>Submissions are currently disabled.</span>
                             }
                             else
                             {

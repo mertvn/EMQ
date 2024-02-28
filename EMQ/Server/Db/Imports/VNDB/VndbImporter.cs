@@ -225,9 +225,9 @@ public static class VndbImporter
 
             var existingSong = songs.LastOrDefault(x =>
                 x.Sources.Any(y =>
-                    y.Links.Single(z => z.Type == SongSourceLinkType.VNDB).Url.Contains((string)dynData.VNID)) &&
-                x.Titles.Any(y => string.Equals(y.LatinTitle.ToLowerInvariant(),
-                    (string)dynData.ParsedSong.Title.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)) &&
+                    y.Links.Single(z => z.Type == SongSourceLinkType.VNDB).Url.Contains(dynData.VNID)) &&
+                x.Titles.Any(y => string.Equals(y.LatinTitle,
+                    dynData.ParsedSong.Title, StringComparison.OrdinalIgnoreCase)) &&
                 x.Sources.SelectMany(y => y.SongTypes).Any(z =>
                     dynData.ParsedSong.Type.Select(st => (int)st).Cast<SongSourceSongType>().Contains(z)));
 
