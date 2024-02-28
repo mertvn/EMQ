@@ -20,7 +20,7 @@
         </Blazorise.ModalHeader>
         <Blazorise.ModalBody>
 
-            <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentRQs.LastOrDefault(x => x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
+            <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentRQs.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
             ID: <input type="number" id="input_reviewingId" @bind="reviewingId"/>
             URL: <a class="link-primary" href="@videoSrc" target="_blank"> @videoSrc</a>
             Status:
