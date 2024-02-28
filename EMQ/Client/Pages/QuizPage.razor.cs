@@ -409,13 +409,10 @@ public partial class QuizPage
                 LastSync = res.Time!.Value;
                 Console.WriteLine($"applied slow sync @ {LastSync:O}");
                 Room = res.Room;
-                if (_chatComponent != null)
+                if (_chatComponent != null && room != null)
                 {
-                    if (room != null)
-                    {
-                        _chatComponent.Chat = room.Chat;
-                        await _chatComponent.CallStateHasChanged();
-                    }
+                    _chatComponent.Chat = room.Chat;
+                    await _chatComponent.CallStateHasChanged();
                 }
             }
             else

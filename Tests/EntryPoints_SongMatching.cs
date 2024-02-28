@@ -658,4 +658,24 @@ public class EntryPoints_SongMatching
             }
         }
     }
+
+    [Test, Explicit]
+    public async Task CopyFixedCues()
+    {
+        string outDir = @"M:\!!!!temp";
+        string dir = @"L:\olil355 - Copy";
+        var filePaths = Directory.GetFiles(dir, $"*.cue", SearchOption.AllDirectories).OrderBy(x => x);
+        foreach (string filePath in filePaths)
+        {
+            if (filePath.Contains(".cue.bak"))
+            {
+                continue;
+            }
+
+            string newPath = $"{outDir}{filePath.Replace(dir, "")}";
+            var parentFolder = new DirectoryInfo(newPath).Parent!;
+            Directory.CreateDirectory(parentFolder.FullName);
+            File.Copy(filePath, newPath);
+        }
+    }
 }
