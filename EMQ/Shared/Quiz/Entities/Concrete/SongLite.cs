@@ -59,8 +59,7 @@ public class SongLite
 
             string titles = Titles.Single().LatinTitle.ToLowerInvariant();
             string sources =
-                JsonSerializer.Serialize(SourceVndbIds.OrderBy(x =>
-                    Convert.ToInt32(x.Key.Replace("v", "")))); // might need to convert to int
+                JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => Convert.ToInt32(x.Key.Replace("v", ""))));
             string artists = JsonSerializer.Serialize(ArtistVndbIds.OrderBy(x => x));
 
             string str = $"{titles};|;{sources};|;{artists}";
