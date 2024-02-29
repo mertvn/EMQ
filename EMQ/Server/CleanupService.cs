@@ -39,7 +39,8 @@ public sealed class CleanupService : BackgroundService
                 continue;
             }
 
-            var roomSessions = ServerState.Sessions.Where(x => room.Players.Any(y => y.Id == x.Player.Id)).ToList();
+            var roomSessions = ServerState.Sessions.Where(x =>
+                room.Players.Any(y => y.Id == x.Player.Id) || room.Spectators.Any(y => y.Id == x.Player.Id)).ToList();
             var activeSessions = roomSessions
                 .Where(x => (DateTime.UtcNow - x.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5)).ToList();
             if (!activeSessions.Any()
