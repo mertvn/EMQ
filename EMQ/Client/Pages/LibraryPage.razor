@@ -54,13 +54,16 @@
 {
     <details>
         <summary>Batch uploader</summary>
-        @if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+        @if (ClientState.ServerStats.IsServerReadOnly)
         {
             <span>Server is in read-only mode.</span>
         }
-        else
+        else if (ClientState.ServerStats.IsSubmissionDisabled)
         {
-            <UploadBatchComponent></UploadBatchComponent>
+            <span>Submissions are currently disabled.</span>
+        }
+        {
+        <UploadBatchComponent></UploadBatchComponent>
         }
     </details>
 }
