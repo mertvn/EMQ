@@ -911,8 +911,7 @@ public class DbTests
             }
         };
 
-        int mId = await DbManager.InsertSong(song);
-        Console.WriteLine($"Inserted mId {mId}");
+        int _ = await DbManager.InsertSong(song);
     }
 
     [Test, Explicit]

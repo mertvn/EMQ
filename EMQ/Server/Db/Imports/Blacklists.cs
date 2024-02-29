@@ -234,5 +234,6 @@ public static class Blacklists
         "283acb6f-7dc3-41bb-8fdd-7a0b969f901a", // Princess Party Camellia PR Song "Camellia! ~Dangerous Camellia Vacation~
         "103b125e-46f9-4f61-bde1-070a48b7b632", // Princess Party Vocal Album
         "713a0a34-de09-4d68-8ada-f5a89396a645", // マジスキ～Marginal Skip～ ボーカルアルバム
+        "de8ce1aa-ec11-447e-9347-12fbe8787c8d", // 恋する彼女の不器用な舞台「恋する彼女たちの器用なキャラソンCD」
     };
 }

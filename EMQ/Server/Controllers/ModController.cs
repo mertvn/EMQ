@@ -1,14 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper.Contrib.Extensions;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Imports.MusicBrainz;
+using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace EMQ.Server.Controllers;
 
@@ -128,5 +136,110 @@ public class ModController : ControllerBase
         }
 
         return await DbManager.DeleteMusicExternalLink(req.MId, req.Url.UnReplaceSelfhostLink());
+    }
+
+    [CustomAuthorize(PermissionKind.Moderator)]
+    [HttpGet]
+    [Route("GetImporterPendingSongs")]
+    public async Task<ActionResult<List<Song>>> GetImporterPendingSongs()
+    {
+        foreach (Song song in MusicBrainzImporter.PendingSongs)
+        {
+            // todo move this init step elsewhere
+            if (!DbManager.MusicBrainzRecordingReleases.Any())
+            {
+                await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+                {
+                    var musicBrainzReleaseRecordings = await connection.GetAllAsync<MusicBrainzReleaseRecording>();
+                    DbManager.MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
+                        .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
+                }
+            }
+
+            if (song.MusicBrainzRecordingGid is not null)
+            {
+                song.MusicBrainzReleases = DbManager.MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
+            }
+        }
+
+        return VndbImporter.PendingSongs.Concat(MusicBrainzImporter.PendingSongs).ToList();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("RunVndbImporter")]
+    public async Task<ActionResult> RunVndbImporter()
+    {
+        var date = DateTime.UtcNow;
+        date = DateTime.UtcNow - TimeSpan.FromDays(2); // todo
+        await VndbImporter.ImportVndbData(date, true);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("RunMusicBrainzImporter")]
+    public async Task<ActionResult> RunMusicBrainzImporter()
+    {
+        var date = DateTime.UtcNow;
+        date = DateTime.UtcNow - TimeSpan.FromDays(2); // todo
+        await MusicBrainzImporter.ImportMusicBrainzData(true, true);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("InsertSong")]
+    public async Task<ActionResult> InsertSong([FromBody] Song song)
+    {
+        int mId = await DbManager.InsertSong(song);
+        if (mId > 0)
+        {
+            if (song.MusicBrainzRecordingGid != null)
+            {
+                MusicBrainzImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite_MB().Recording == song.ToSongLite_MB().Recording);
+            }
+            else
+            {
+                VndbImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite().EMQSongHash == song.ToSongLite().EMQSongHash);
+            }
+        }
+
+        return mId > 0 ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("OverwriteMusic")]
+    public async Task<ActionResult> OverwriteMusic([FromBody] ReqOverwriteMusic req)
+    {
+        bool success = await DbManager.OverwriteMusic(req.OldMid, req.NewSong);
+        if (success)
+        {
+            if (req.NewSong.MusicBrainzRecordingGid != null)
+            {
+                MusicBrainzImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite_MB().Recording == req.NewSong.ToSongLite_MB().Recording);
+            }
+            else
+            {
+                VndbImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite().EMQSongHash == req.NewSong.ToSongLite().EMQSongHash);
+            }
+        }
+
+        return success ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("DeleteSong")]
+    public async Task<ActionResult> DeleteSong([FromBody] int mId)
+    {
+        var music = await DbManager.GetEntity<Music>(mId);
+        bool success = await DbManager.DeleteEntity(music!);
+        return success ? Ok() : StatusCode(500);
     }
 }

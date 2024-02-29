@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -12,7 +13,7 @@ public class AddTableArtist_Music : Migration
     {
         Create.Table(tableName)
             .WithColumn("artist_id").AsInt32().PrimaryKey().ForeignKey("artist", "id")
-            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
+            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("role").AsInt32().PrimaryKey()
             .WithColumn("artist_alias_id").AsInt32().NotNullable().ForeignKey("artist_alias", "id");
 

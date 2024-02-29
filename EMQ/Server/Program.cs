@@ -16,6 +16,7 @@ using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;

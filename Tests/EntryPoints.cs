@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -51,7 +51,52 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ImportVndbData()
     {
-        await VndbImporter.ImportVndbData();
+        const bool isIncremental = true;
+        await VndbImporter.ImportVndbData(DateTime.Parse(Constants.ImportDateVndb), isIncremental);
+    }
+
+    [Test, Explicit]
+    public async Task ImportVndbData_InsertPendingSongsWithSongLiteMusicIds()
+    {
+        const bool isIncremental = true;
+        await VndbImporter.ImportVndbData(DateTime.Parse(Constants.ImportDateVndb), isIncremental);
+
+        // todo path
+        var deserialized =
+            JsonConvert.DeserializeObject<List<SongLite>>(
+                await File.ReadAllTextAsync("SongLite.json"));
+
+        Dictionary<string, SongLite> songLiteHashes = deserialized!.ToDictionary(y => y.EMQSongHash, y => y);
+
+        foreach (Song song in VndbImporter.PendingSongs)
+        {
+            if (songLiteHashes.TryGetValue(song.ToSongLite().EMQSongHash, out var songLite))
+            {
+                song.Id = songLite.MusicId;
+                song.Links = songLite.Links;
+                await DbManager.InsertSong(song);
+
+                if (songLite.SongStats != null)
+                {
+                    await DbManager.SetSongStats(song.Id, songLite.SongStats, null);
+                    song.Stats = songLite.SongStats;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"incoming not found in SongLite: {song}");
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task SetMusicIdSeq()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            int lastId = await connection.QuerySingleAsync<int>("select id from music order by id desc limit 1");
+            await connection.ExecuteAsync($"select pg_catalog.setval('music_id_seq', {lastId}, true);");
+        }
     }
 
     [Test, Explicit]
@@ -63,7 +108,41 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ImportMusicBrainzData()
     {
-        await MusicBrainzImporter.ImportMusicBrainzData();
+        await MusicBrainzImporter.ImportMusicBrainzData(true, false);
+    }
+
+    [Test, Explicit]
+    public async Task ImportMusicBrainzData_InsertPendingSongsWithSongLiteMusicIds()
+    {
+        const bool isIncremental = true;
+        await MusicBrainzImporter.ImportMusicBrainzData(isIncremental, false);
+
+        // todo path
+        var deserialized =
+            JsonConvert.DeserializeObject<List<SongLite_MB>>(
+                await File.ReadAllTextAsync("SongLite_MB.json"));
+
+        Dictionary<Guid, SongLite_MB> songLiteHashes = deserialized!.ToDictionary(y => y.Recording, y => y);
+
+        foreach (Song song in MusicBrainzImporter.PendingSongs)
+        {
+            if (songLiteHashes.TryGetValue(song.ToSongLite_MB().Recording, out var songLite))
+            {
+                song.Id = songLite.MusicId;
+                song.Links = songLite.Links;
+                await DbManager.InsertSong(song);
+
+                if (songLite.SongStats != null)
+                {
+                    await DbManager.SetSongStats(song.Id, songLite.SongStats, null);
+                    song.Stats = songLite.SongStats;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"incoming not found in SongLite: {song}");
+            }
+        }
     }
 
     [Test, Explicit]
@@ -76,6 +155,14 @@ public class EntryPoints
     public async Task GenerateSongLite()
     {
         await File.WriteAllTextAsync("SongLite.json", await DbManager.ExportSongLite());
+        await TestSongLiteHealth();
+    }
+
+    [Test, Explicit]
+    public async Task GenerateSongLite_MB()
+    {
+        await File.WriteAllTextAsync("SongLite_MB.json", await DbManager.ExportSongLite_MB());
+        await TestSongLite_MBHealth();
     }
 
     [Test, Explicit]
@@ -118,6 +205,45 @@ public class EntryPoints
             JsonConvert.DeserializeObject<List<SongLite>>(
                 await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
         await DbManager.ImportSongLite(deserialized!);
+    }
+
+    [Test]
+    public async Task TestSongLiteHealth()
+    {
+        // todo path
+        var deserialized = JsonConvert.DeserializeObject<List<SongLite>>(await File.ReadAllTextAsync("SongLite.json"))!;
+
+        var hashSet = new HashSet<string>();
+        foreach (SongLite songLite in deserialized)
+        {
+            Assert.That(songLite.Titles.Any());
+            // Assert.That(songLite.Links.Any());
+            Assert.That(songLite.SourceVndbIds.Any());
+            Assert.That(songLite.ArtistVndbIds.Any());
+            Assert.That(songLite.EMQSongHash.Any());
+            Assert.That(songLite.MusicId > 0);
+
+            Console.WriteLine(songLite.EMQSongHash);
+            if (!hashSet.Add(songLite.EMQSongHash))
+            {
+                throw new Exception();
+            }
+        }
+    }
+
+    [Test]
+    public async Task TestSongLite_MBHealth()
+    {
+        // todo path
+        var deserialized =
+            JsonConvert.DeserializeObject<List<SongLite_MB>>(await File.ReadAllTextAsync("SongLite_MB.json"))!;
+
+        foreach (SongLite_MB songLite in deserialized)
+        {
+            Assert.That(songLite.Recording != default);
+            // Assert.That(songLite.Links.Any());
+            Assert.That(songLite.MusicId > 0);
+        }
     }
 
     [Test, Explicit]
@@ -373,9 +499,14 @@ public class EntryPoints
         // Requirements: DATABASE_URL env var set, with the database name as 'EMQ'; tar, zstd, postgres(psql) all installed/in PATH
         var stopWatch = new Stopwatch();
         stopWatch.Start();
-        Constants.ImportDateVndb = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
-        bool recreateEmqDb = true;
+        if (Constants.ImportDateVndb != DateTime.UtcNow.ToString("yyyy-MM-dd"))
+        {
+            throw new Exception("VNDB import date is not set to today");
+        }
+
+        bool recreateEmqDb = false;
+        recreateEmqDb = false;
         string emqDbName = "EMQ";
 
         bool recreateVndbDb = true;
@@ -585,13 +716,18 @@ public class EntryPoints
             var vndbStaffNotesParserTests = new VNDBStaffNotesParserTests();
             await vndbStaffNotesParserTests.Test_Batch();
 
-            Console.WriteLine(
-                $"StartSection ImportVndbData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var entryPoints = new EntryPoints();
-            await entryPoints.ImportVndbData();
-            Console.WriteLine(
-                $"StartSection ImportSongLite: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            await entryPoints.ImportSongLite();
+            bool b = false;
+            if (b)
+            {
+                Console.WriteLine(
+                    $"StartSection ImportVndbData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+                await VndbImporter.ImportVndbData(DateTime.Parse(Constants.ImportDateVndb), false);
+                Console.WriteLine(
+                    $"StartSection ImportSongLite: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+                await entryPoints.ImportSongLite();
+            }
+
             Console.WriteLine(
                 $"StartSection ImportEgsData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             await entryPoints.ImportEgsData();
@@ -807,6 +943,7 @@ GRANT ALL ON SCHEMA public TO public;";
             $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
     }
 
+    // todo automatically do this after import and overwrite
     [Test, Explicit]
     public async Task ReplaceMergedRecordingsInSongLite_MB()
     {

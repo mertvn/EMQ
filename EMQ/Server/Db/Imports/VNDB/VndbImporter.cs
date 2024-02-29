@@ -1,19 +1,21 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Newtonsoft.Json;
+using Npgsql;
 
 namespace EMQ.Server.Db.Imports.VNDB;
 
 public static class VndbImporter
 {
-    public static List<Song> Songs { get; } = new();
+    public static List<Song> PendingSongs { get; } = new();
 
     public static List<dynamic> musicSourcesJson { get; set; } = null!;
 
@@ -29,11 +31,21 @@ public static class VndbImporter
 
     public static List<Tag> tagsJson { get; set; } = null!;
 
-    public static async Task ImportVndbData()
+    public static async Task ImportVndbData(DateTime dateTime, bool isIncremental)
     {
-        Songs.Clear();
-        string date = Constants.ImportDateVndb;
-        string folder = $"C:\\emq\\vndb\\{date}";
+        if (!isIncremental && ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
+        {
+            throw new Exception("wrong db");
+        }
+
+        if (ConnectionHelper.GetConnectionString().Contains("AUTH"))
+        {
+            throw new Exception("wrong db");
+        }
+
+        PendingSongs.Clear();
+        string date = dateTime.ToString("yyyy-MM-dd");
+        string folder = $"C:\\emq\\vndb\\{date}"; // todo paths
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music_source.json"))!;
@@ -75,24 +87,82 @@ public static class VndbImporter
             }
         }
 
-        Songs.AddRange(ImportVndbDataInner(processedMusicsJson));
+        var incomingSongs = ImportVndbDataInner(processedMusicsJson);
+        await File.WriteAllTextAsync($"{folder}\\VndbImporter.json",
+            System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
-        await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\VndbImporter.json",
-            System.Text.Json.JsonSerializer.Serialize(Songs, Utils.Jso));
-
-        foreach (Song song in Songs)
+        var dbSongs = new List<Song>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            int mId = await DbManager.InsertSong(song);
-            Console.WriteLine($"Inserted mId {mId}");
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            foreach (int i in validMids)
+            {
+                dbSongs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
+            }
         }
 
-        foreach (SongSource songSource in Songs.SelectMany(song => song.Sources))
+        HashSet<string> dbHashes = dbSongs
+            .Select(x => x.ToSongLite())
+            .Select(y => y.EMQSongHash).ToHashSet();
+
+        HashSet<string> incomingHashes = incomingSongs
+            .Select(x => x.ToSongLite())
+            .Select(y => y.EMQSongHash).ToHashSet();
+
+        foreach (Song song in dbSongs)
+        {
+            var songLite = song.ToSongLite();
+            string hash = songLite.EMQSongHash;
+
+            bool isInIncoming = incomingHashes.Contains(hash);
+            if (!isInIncoming)
+            {
+                Console.WriteLine($"dbSong was not found in incoming: {song}");
+            }
+        }
+
+        foreach (Song song in incomingSongs)
+        {
+            var songLite = song.ToSongLite();
+            string hash = songLite.EMQSongHash;
+
+            bool isInDb = dbHashes.Contains(hash);
+            if (!isInDb)
+            {
+                Console.WriteLine($"new/modified song: {song}");
+                if (!isIncremental)
+                {
+                    int _ = await DbManager.InsertSong(song);
+                }
+                else
+                {
+                    PendingSongs.Add(song);
+                }
+            }
+            else
+            {
+                // Console.WriteLine($"skipping existing song: {song}");
+            }
+        }
+
+        foreach (SongSource songSource in incomingSongs.SelectMany(song => song.Sources))
         {
             songSource.Categories = new List<SongSourceCategory>();
         }
 
-        await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\VndbImporter_no_categories.json",
-            System.Text.Json.JsonSerializer.Serialize(Songs, Utils.Jso));
+        await File.WriteAllTextAsync($"{folder}\\VndbImporter_no_categories.json",
+            System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
+
+        Console.WriteLine("VndbImporter is done.");
     }
 
     [SuppressMessage("ReSharper", "StringLiteralTypo")]

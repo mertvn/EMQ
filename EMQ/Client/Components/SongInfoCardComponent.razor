@@ -1,8 +1,12 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Shared.Auth.Entities.Concrete
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
 
 @if (Song != null)
 {
+    bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
     @if (ClientState.Session != null && Song.Links.Any())
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
@@ -20,15 +24,21 @@
 
         <div class="songInfoCardBody card-body">
             <div class="songInfo">
-                @* <environment include="Development"> *@
-                @*     <span> @Song.Id </span> *@
-                @*     @if (Song.MusicBrainzRecordingGid != null) *@
-                @*     { *@
-                @*         <br/> *@
-                @*         <span> @Song.MusicBrainzRecordingGid </span> *@
-                @*     } *@
-                @* *@
-                @* </environment> *@
+                @if (isAdmin)
+                {
+                    @if (Song.Id > 0)
+                    {
+                        <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSong(Song))"></i>
+                        <span> @Song.Id </span>
+                    }
+
+                    @if (Song.MusicBrainzRecordingGid != null)
+                    {
+                        <br/>
+                        <span> @Song.MusicBrainzRecordingGid </span>
+                    }
+                }
+
                 <div>
                     <h5 class="songSourceSongType">
                         @{

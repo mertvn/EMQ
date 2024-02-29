@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -186,13 +187,18 @@ public static class ExtensionMethods
 
     public static SongLite ToSongLite(this Song song)
     {
+        var sourcesDict = new Dictionary<string, List<SongSourceSongType>>();
+        foreach (SongSource source in song.Sources)
+        {
+            sourcesDict[source.Links.Single(x => x.Type == SongSourceLinkType.VNDB).Url.ToVndbId()] = source.SongTypes;
+        }
+
         var songLite = new SongLite(
             song.Titles,
             song.Links,
-            song.Sources.SelectMany(songSource =>
-                songSource.Links.Where(songSourceLink => songSourceLink.Type == SongSourceLinkType.VNDB)
-                    .Select(songSourceLink => songSourceLink.Url.ToVndbId())).ToList(),
+            sourcesDict,
             song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
+            song.Id,
             song.Stats);
         return songLite;
     }
@@ -202,6 +208,7 @@ public static class ExtensionMethods
         var songLite = new SongLite_MB(
             song.MusicBrainzRecordingGid!.Value,
             song.Links,
+            song.Id,
             song.Stats);
         return songLite;
     }

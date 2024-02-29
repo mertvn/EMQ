@@ -27,11 +27,13 @@ public class MusicBrainzVndbArtistJson
 
 public static class MusicBrainzImporter
 {
+    public static List<Song> PendingSongs { get; } = new();
+
     public static Dictionary<Guid, string[]> MusicBrainzVndbArtistDict { get; set; } = new();
 
-    public static async Task ImportMusicBrainzData()
+    public static async Task ImportMusicBrainzData(bool isIncremental, bool calledFromApi)
     {
-        if (ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
+        if (!isIncremental && ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
         {
             throw new Exception("wrong db");
         }
@@ -41,12 +43,13 @@ public static class MusicBrainzImporter
             throw new Exception("wrong db");
         }
 
+        PendingSongs.Clear();
         var stopWatch = new Stopwatch();
         stopWatch.Start();
         Console.WriteLine(
             $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        string date = Constants.ImportDateMusicBrainz;
+        string date = Constants.ImportDateMusicBrainz; // todo param
         string folder = $"C:\\emq\\musicbrainz\\{date}";
         string file = await File.ReadAllTextAsync($"{folder}/musicbrainz.json");
         var json = JsonSerializer.Deserialize<MusicBrainzJson[]>(file);
@@ -58,22 +61,22 @@ public static class MusicBrainzImporter
         Console.WriteLine(
             $"StartSection ImportMusicBrainzDataInner: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        (List<Song>? songs, List<MusicBrainzReleaseRecording>? musicBrainzReleaseRecordings,
+        (List<Song>? incomingSongs, List<MusicBrainzReleaseRecording>? musicBrainzReleaseRecordings,
                 List<MusicBrainzReleaseVgmdbAlbum>? musicBrainzReleaseVgmdbAlbums) =
             await ImportMusicBrainzDataInner(json!);
 
-        if (songs.DistinctBy(x => x.MusicBrainzRecordingGid).Count() != songs.Count)
+        if (incomingSongs.DistinctBy(x => x.MusicBrainzRecordingGid).Count() != incomingSongs.Count)
         {
             throw new Exception("duplicate recordings detected");
         }
 
         await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\MusicBrainzImporter.json",
-            System.Text.Json.JsonSerializer.Serialize(songs, Utils.Jso));
+            System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
         Console.WriteLine(
             $"StartSection InsertMissingMusicSources: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        songs = await InsertMissingMusicSources(songs);
+        incomingSongs = await InsertMissingMusicSources(incomingSongs, calledFromApi);
 
         Console.WriteLine(
             $"StartSection InsertMusicBrainzReleaseRecording: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -84,12 +87,20 @@ public static class MusicBrainzImporter
         {
             try
             {
+                // todo check existence before trying to insert
                 await DbManager.InsertMusicBrainzReleaseRecording(musicBrainzReleaseRecording);
             }
             catch (Exception)
             {
-                Console.WriteLine(JsonSerializer.Serialize(musicBrainzReleaseRecording, Utils.JsoIndented));
-                throw;
+                if (isIncremental)
+                {
+                    Console.WriteLine("ignoring InsertMusicBrainzReleaseRecording error");
+                }
+                else
+                {
+                    Console.WriteLine(JsonSerializer.Serialize(musicBrainzReleaseRecording, Utils.JsoIndented));
+                    throw;
+                }
             }
         }
 
@@ -102,12 +113,20 @@ public static class MusicBrainzImporter
         {
             try
             {
+                // todo check existence before trying to insert
                 await DbManager.InsertMusicBrainzReleaseVgmdbAlbum(musicBrainzReleaseVgmdbAlbum);
             }
             catch (Exception)
             {
-                Console.WriteLine(JsonSerializer.Serialize(musicBrainzReleaseVgmdbAlbum, Utils.JsoIndented));
-                throw;
+                if (isIncremental)
+                {
+                    Console.WriteLine("ignoring InsertMusicBrainzReleaseVgmdbAlbum error");
+                }
+                else
+                {
+                    Console.WriteLine(JsonSerializer.Serialize(musicBrainzReleaseVgmdbAlbum, Utils.JsoIndented));
+                    throw;
+                }
             }
         }
 
@@ -115,16 +134,75 @@ public static class MusicBrainzImporter
             $"StartSection InsertSong: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         // return;
-        foreach (Song song in songs)
+
+        var dbSongs = new List<Song>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            try
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.BGM.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            foreach (int i in validMids)
             {
-                int _ = await DbManager.InsertSong(song);
+                dbSongs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
             }
-            catch (Exception)
+        }
+
+        HashSet<Guid> dbHashes = dbSongs
+            .Select(x => x.ToSongLite_MB())
+            .Select(y => y.Recording).ToHashSet();
+
+        HashSet<Guid> incomingHashes = incomingSongs
+            .Select(x => x.ToSongLite_MB())
+            .Select(y => y.Recording).ToHashSet();
+
+        foreach (Song song in dbSongs)
+        {
+            var songLite = song.ToSongLite_MB();
+            var hash = songLite.Recording;
+
+            bool isInIncoming = incomingHashes.Contains(hash);
+            if (!isInIncoming)
             {
-                Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-                throw;
+                Console.WriteLine($"dbSong was not found in incoming: {song}");
+            }
+        }
+
+        foreach (Song song in incomingSongs)
+        {
+            var songLite = song.ToSongLite_MB();
+            var hash = songLite.Recording;
+
+            bool isInDb = dbHashes.Contains(hash);
+            if (!isInDb)
+            {
+                Console.WriteLine($"new/modified song: {song}");
+                if (!isIncremental)
+                {
+                    try
+                    {
+                        int _ = await DbManager.InsertSong(song);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+                        throw;
+                    }
+                }
+                else
+                {
+                    PendingSongs.Add(song);
+                }
+            }
+            else
+            {
+                // Console.WriteLine($"skipping existing song: {song}");
             }
         }
 
@@ -334,7 +412,7 @@ public static class MusicBrainzImporter
         return (songs, musicBrainzReleaseRecordings, musicBrainzReleaseVgmdbAlbums);
     }
 
-    private static async Task<List<Song>> InsertMissingMusicSources(List<Song> songs)
+    private static async Task<List<Song>> InsertMissingMusicSources(List<Song> songs, bool calledFromApi)
     {
         var ret = songs;
 
@@ -378,6 +456,10 @@ public static class MusicBrainzImporter
         {
             Directory.SetCurrentDirectory(executingDirectory);
             string mbQueriesDir = @"../../../../Queries/MusicBrainz";
+            if (calledFromApi)
+            {
+                mbQueriesDir = @"../../Queries/MusicBrainz";
+            }
 
             var queryNames = new List<string>()
             {

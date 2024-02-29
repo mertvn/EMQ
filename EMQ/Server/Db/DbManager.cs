@@ -34,7 +34,7 @@ public static class DbManager
 
     private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
 
-    private static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
+    public static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
 
     private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
 
@@ -685,248 +685,289 @@ public static class DbManager
         return songArtists;
     }
 
-    public static async Task<int> InsertSong(Song song)
+    public static async Task<int> InsertSong(Song song, NpgsqlConnection? connection = null,
+        NpgsqlTransaction? transaction = null)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.OpenAsync();
-        await using (var transaction = await connection.BeginTransactionAsync())
-        {
-            var music = new Music() { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
-            int mId = await connection.InsertAsync(music);
 
-            foreach (Title songTitle in song.Titles)
+        bool ownConnection = false;
+        if (connection is null)
+        {
+            ownConnection = true;
+            connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            await connection.OpenAsync();
+            transaction = await connection.BeginTransactionAsync();
+        }
+
+        int mId;
+        if (song.Id > 0)
+        {
+            if (connection.ExecuteScalar<bool>("select 1 from music where id = @id", new { id = song.Id }))
             {
-                // ReSharper disable once UnusedVariable
-                int mtId = await connection.InsertAsync(new MusicTitle()
+                mId = song.Id;
+            }
+            else
+            {
+                mId = await connection.ExecuteScalarAsync<int>(
+                    "INSERT INTO music (id, type, musicbrainz_recording_gid) VALUES (@id, @type, @recgid) RETURNING id;",
+                    new { id = song.Id, type = (int)song.Type, recgid = song.MusicBrainzRecordingGid }, transaction);
+                if (mId != song.Id)
+                {
+                    throw new Exception($"mId mismatch: expected {song.Id}, got {mId}");
+                }
+            }
+        }
+        else
+        {
+            var music = new Music { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
+            mId = await connection.InsertAsync(music, transaction);
+        }
+
+        foreach (Title songTitle in song.Titles)
+        {
+            // ReSharper disable once UnusedVariable
+            int mtId = await connection.InsertAsync(
+                new MusicTitle()
                 {
                     music_id = mId,
                     latin_title = songTitle.LatinTitle,
                     non_latin_title = songTitle.NonLatinTitle,
                     language = songTitle.Language,
                     is_main_title = songTitle.IsMainTitle
-                });
+                }, transaction);
+        }
+
+        foreach (SongLink songLink in song.Links)
+        {
+            // ReSharper disable once UnusedVariable
+            int melId = await connection.InsertAsync(new MusicExternalLink()
+            {
+                music_id = mId,
+                url = songLink.Url,
+                type = (int)songLink.Type,
+                is_video = songLink.IsVideo,
+                duration = songLink.Duration,
+                submitted_by = songLink.SubmittedBy,
+                sha256 = songLink.Sha256,
+            }, transaction);
+        }
+
+
+        int msId = 0;
+        foreach (SongSource songSource in song.Sources)
+        {
+            string msVndbUrl = songSource.Links.Single(y => y.Type == SongSourceLinkType.VNDB).Url;
+
+            if (!string.IsNullOrEmpty(msVndbUrl))
+            {
+                msId = (await connection.QueryAsync<int>(
+                    "select ms.id from music_source_external_link msel join music_source ms on ms.id = msel.music_source_id where msel.url=@mselUrl",
+                    new { mselUrl = msVndbUrl }, transaction)).ToList().FirstOrDefault();
             }
 
-            foreach (SongLink songLink in song.Links)
+            if (msId > 0)
             {
-                // ReSharper disable once UnusedVariable
-                int melId = await connection.InsertAsync(new MusicExternalLink()
-                {
-                    music_id = mId,
-                    url = songLink.Url,
-                    type = (int)songLink.Type,
-                    is_video = songLink.IsVideo,
-                    duration = songLink.Duration,
-                    submitted_by = songLink.SubmittedBy,
-                    sha256 = songLink.Sha256,
-                });
             }
-
-
-            int msId = 0;
-            foreach (SongSource songSource in song.Sources)
+            else
             {
-                string msVndbUrl = songSource.Links.Single(y => y.Type == SongSourceLinkType.VNDB).Url;
-
-                if (!string.IsNullOrEmpty(msVndbUrl))
+                msId = await connection.InsertAsync(new MusicSource()
                 {
-                    msId = (await connection.QueryAsync<int>(
-                        "select ms.id from music_source_external_link msel join music_source ms on ms.id = msel.music_source_id where msel.url=@mselUrl",
-                        new { mselUrl = msVndbUrl })).ToList().FirstOrDefault();
-                }
+                    air_date_start = songSource.AirDateStart,
+                    air_date_end = songSource.AirDateEnd,
+                    language_original = songSource.LanguageOriginal,
+                    rating_average = songSource.RatingAverage,
+                    rating_bayesian = songSource.RatingBayesian,
+                    // popularity = songSource.Popularity,
+                    votecount = songSource.VoteCount,
+                    type = (int)songSource.Type
+                }, transaction);
 
-                if (msId > 0)
+                foreach (Title songSourceAlias in songSource.Titles)
                 {
-                }
-                else
-                {
-                    msId = await connection.InsertAsync(new MusicSource()
-                    {
-                        air_date_start = songSource.AirDateStart,
-                        air_date_end = songSource.AirDateEnd,
-                        language_original = songSource.LanguageOriginal,
-                        rating_average = songSource.RatingAverage,
-                        rating_bayesian = songSource.RatingBayesian,
-                        // popularity = songSource.Popularity,
-                        votecount = songSource.VoteCount,
-                        type = (int)songSource.Type
-                    });
-
-                    foreach (Title songSourceAlias in songSource.Titles)
-                    {
-                        // ReSharper disable once UnusedVariable
-                        int mstId = await connection.InsertAsync(new MusicSourceTitle()
+                    // ReSharper disable once UnusedVariable
+                    int mstId = await connection.InsertAsync(
+                        new MusicSourceTitle()
                         {
                             music_source_id = msId,
                             latin_title = songSourceAlias.LatinTitle,
                             non_latin_title = songSourceAlias.NonLatinTitle,
                             language = songSourceAlias.Language,
                             is_main_title = songSourceAlias.IsMainTitle
-                        });
-                    }
-
-                    foreach (SongSourceCategory songSourceCategory in songSource.Categories)
-                    {
-                        int cId = (await connection.QueryAsync<int>(
-                            "select id from category c where c.vndb_id=@songSourceCategoryVndbId AND c.type=@songSourceCategoryType",
-                            new
-                            {
-                                songSourceCategoryVndbId = songSourceCategory.VndbId,
-                                songSourceCategoryType = songSourceCategory.Type
-                            })).ToList().SingleOrDefault();
-
-                        if (cId > 0)
-                        {
-                        }
-                        else
-                        {
-                            var newCategory = new Category()
-                            {
-                                name = songSourceCategory.Name,
-                                type = (int)songSourceCategory.Type,
-                                vndb_id = songSourceCategory.VndbId,
-                            };
-
-                            cId = await connection.InsertAsync(newCategory);
-                        }
-
-                        int mscId = (await connection.QueryAsync<int>(
-                            "select music_source_id from music_source_category msc where msc.music_source_id=@msId AND msc.category_id =@cId",
-                            new { msId, cId })).ToList().SingleOrDefault();
-
-                        if (mscId > 0)
-                        {
-                        }
-                        else
-                        {
-                            // ReSharper disable once RedundantAssignment
-                            mscId = await connection.InsertAsync(
-                                new MusicSourceCategory()
-                                {
-                                    category_id = cId,
-                                    music_source_id = msId,
-                                    rating = songSourceCategory.Rating,
-                                    spoiler_level = (int?)songSourceCategory.SpoilerLevel,
-                                });
-                        }
-                    }
+                        }, transaction);
                 }
 
-                foreach (SongSourceLink songSourceLink in songSource.Links)
+                foreach (SongSourceCategory songSourceCategory in songSource.Categories)
                 {
-                    string? url = (await connection.QueryAsync<string>(
-                        "select msel.url from music_source_external_link msel where msel.url=@mselUrl and msel.music_source_id=@msId",
-                        new { mselUrl = songSourceLink.Url, msId = msId })).ToList().FirstOrDefault();
-
-                    if (string.IsNullOrEmpty(url))
-                    {
-                        // ReSharper disable once UnusedVariable
-                        var mselId = await connection.InsertAsync(new MusicSourceExternalLink()
+                    int cId = (await connection.QueryAsync<int>(
+                        "select id from category c where c.vndb_id=@songSourceCategoryVndbId AND c.type=@songSourceCategoryType",
+                        new
                         {
-                            music_source_id = msId,
-                            url = songSourceLink.Url,
-                            type = (int)songSourceLink.Type,
-                            name = songSourceLink.Name
-                        });
+                            songSourceCategoryVndbId = songSourceCategory.VndbId,
+                            songSourceCategoryType = songSourceCategory.Type
+                        }, transaction)).ToList().SingleOrDefault();
+
+                    if (cId > 0)
+                    {
                     }
-                }
+                    else
+                    {
+                        var newCategory = new Category()
+                        {
+                            name = songSourceCategory.Name,
+                            type = (int)songSourceCategory.Type,
+                            vndb_id = songSourceCategory.VndbId,
+                        };
 
-                foreach (var songSourceSongType in songSource.SongTypes)
-                {
-                    int msmId = (await connection.QueryAsync<int>(
-                        "select music_id from music_source_music msm where msm.music_id=@mId AND msm.music_source_id =@msId AND msm.type=@songSourceSongType",
-                        new { mId, msId, songSourceSongType })).ToList().SingleOrDefault();
+                        cId = await connection.InsertAsync(newCategory);
+                    }
 
-                    if (msmId > 0)
+                    int mscId = (await connection.QueryAsync<int>(
+                        "select music_source_id from music_source_category msc where msc.music_source_id=@msId AND msc.category_id =@cId",
+                        new { msId, cId }, transaction)).ToList().SingleOrDefault();
+
+                    if (mscId > 0)
                     {
                     }
                     else
                     {
                         // ReSharper disable once RedundantAssignment
-                        msmId = await connection.InsertAsync(new MusicSourceMusic()
-                        {
-                            music_id = mId, music_source_id = msId, type = (int)songSourceSongType
-                        });
+                        mscId = await connection.InsertAsync(
+                            new MusicSourceCategory()
+                            {
+                                category_id = cId,
+                                music_source_id = msId,
+                                rating = songSourceCategory.Rating,
+                                spoiler_level = (int?)songSourceCategory.SpoilerLevel,
+                            }, transaction);
                     }
                 }
             }
 
-
-            foreach (SongArtist songArtist in song.Artists)
+            foreach (SongSourceLink songSourceLink in songSource.Links)
             {
-                if (songArtist.Titles.Count > 1)
+                string? url = (await connection.QueryAsync<string>(
+                    "select msel.url from music_source_external_link msel where msel.url=@mselUrl and msel.music_source_id=@msId",
+                    new { mselUrl = songSourceLink.Url, msId = msId }, transaction)).ToList().FirstOrDefault();
+
+                if (string.IsNullOrEmpty(url))
                 {
-                    throw new Exception("Artists can only have one artist_alias per song");
+                    // ReSharper disable once UnusedVariable
+                    var mselId = await connection.InsertAsync(
+                        new MusicSourceExternalLink()
+                        {
+                            music_source_id = msId,
+                            url = songSourceLink.Url,
+                            type = (int)songSourceLink.Type,
+                            name = songSourceLink.Name
+                        }, transaction);
                 }
+            }
 
-                int aId = 0;
-                int aaId = 0;
+            foreach (var songSourceSongType in songSource.SongTypes)
+            {
+                int msmId = (await connection.QueryAsync<int>(
+                    "select music_id from music_source_music msm where msm.music_id=@mId AND msm.music_source_id =@msId AND msm.type=@songSourceSongType",
+                    new { mId, msId, songSourceSongType }, transaction)).ToList().SingleOrDefault();
 
-                if (!string.IsNullOrEmpty(songArtist.VndbId))
+                if (msmId > 0)
                 {
-                    aId = (await connection.QueryAsync<int>(
-                        "select a.id from artist a where a.vndb_id=@aVndbId",
-                        new { aVndbId = songArtist.VndbId })).ToList().SingleOrDefault();
-                }
-
-                if (aId > 0)
-                {
-                    aaId = (await connection.QueryAsync<int>(
-                            "select aa.id,aa.latin_alias from artist_alias aa join artist a on a.id = aa.artist_id where a.vndb_id=@aVndbId AND aa.latin_alias=@latinAlias",
-                            new { aVndbId = songArtist.VndbId, latinAlias = songArtist.Titles.First().LatinTitle }))
-                        .ToList().SingleOrDefault();
                 }
                 else
                 {
-                    aId = await connection.InsertAsync(new Artist()
+                    // ReSharper disable once RedundantAssignment
+                    msmId = await connection.InsertAsync(
+                        new MusicSourceMusic()
+                        {
+                            music_id = mId, music_source_id = msId, type = (int)songSourceSongType
+                        }, transaction);
+                }
+            }
+        }
+
+
+        foreach (SongArtist songArtist in song.Artists)
+        {
+            if (songArtist.Titles.Count > 1)
+            {
+                throw new Exception("Artists can only have one artist_alias per song");
+            }
+
+            int aId = 0;
+            int aaId = 0;
+
+            if (!string.IsNullOrEmpty(songArtist.VndbId))
+            {
+                aId = (await connection.QueryAsync<int>(
+                    "select a.id from artist a where a.vndb_id=@aVndbId",
+                    new { aVndbId = songArtist.VndbId }, transaction)).ToList().SingleOrDefault();
+            }
+
+            if (aId > 0)
+            {
+                aaId = (await connection.QueryAsync<int>(
+                        "select aa.id,aa.latin_alias from artist_alias aa join artist a on a.id = aa.artist_id where a.vndb_id=@aVndbId AND aa.latin_alias=@latinAlias",
+                        new { aVndbId = songArtist.VndbId, latinAlias = songArtist.Titles.First().LatinTitle },
+                        transaction))
+                    .ToList().SingleOrDefault();
+            }
+            else
+            {
+                aId = await connection.InsertAsync(
+                    new Artist()
                     {
                         primary_language = songArtist.PrimaryLanguage,
                         sex = (int)songArtist.Sex,
                         vndb_id = songArtist.VndbId
-                    });
-                }
+                    }, transaction);
+            }
 
-                if (aaId < 1)
+            if (aaId < 1)
+            {
+                foreach (Title songArtistAlias in songArtist.Titles)
                 {
-                    foreach (Title songArtistAlias in songArtist.Titles)
-                    {
-                        aaId = await connection.InsertAsync(new ArtistAlias()
+                    aaId = await connection.InsertAsync(
+                        new ArtistAlias()
                         {
                             artist_id = aId,
                             latin_alias = songArtistAlias.LatinTitle,
                             non_latin_alias = songArtistAlias.NonLatinTitle,
                             is_main_name = songArtistAlias.IsMainTitle
-                        });
-                    }
+                        }, transaction);
                 }
-
-                if (mId < 1)
-                {
-                    throw new Exception("mId is invalid");
-                }
-
-                if (msId < 1)
-                {
-                    throw new Exception("msId is invalid");
-                }
-
-                if (aaId < 1)
-                {
-                    throw new Exception("aaId is invalid");
-                }
-
-                // ReSharper disable once UnusedVariable
-                int amId = await connection.InsertAsync(
-                    new ArtistMusic()
-                    {
-                        music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
-                    });
             }
 
-            await transaction.CommitAsync();
-            return mId;
+            if (mId < 1)
+            {
+                throw new Exception("mId is invalid");
+            }
+
+            if (msId < 1)
+            {
+                throw new Exception("msId is invalid");
+            }
+
+            if (aaId < 1)
+            {
+                throw new Exception("aaId is invalid");
+            }
+
+            // ReSharper disable once UnusedVariable
+            int amId = await connection.InsertAsync(
+                new ArtistMusic()
+                {
+                    music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
+                }, transaction);
         }
+
+        if (ownConnection)
+        {
+            await transaction!.CommitAsync();
+            await connection.DisposeAsync();
+            await transaction.DisposeAsync();
+        }
+
+        Console.WriteLine($"Inserted mId {mId}");
+        return mId;
     }
 
     // todo make Filters required
@@ -1034,6 +1075,7 @@ public static class DbManager
                     ids = resCategories;
                 }
 
+                // todo exclude doesnt work
                 if (filters.ArtistFilters.Any())
                 {
                     Console.WriteLine(
@@ -1837,33 +1879,25 @@ WHERE id = {mId};
 
     public static async Task<string> ExportSongLite()
     {
-        var filters = new QuizFilters
+        var songs = new List<Song>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            CategoryFilters = new List<CategoryFilter>(),
-            ArtistFilters = new List<ArtistFilter>(),
-            VndbAdvsearchFilter = "",
-            SongSourceSongTypeFilters =
-                new Dictionary<SongSourceSongType, IntWrapper>
-                {
-                    { SongSourceSongType.OP, new IntWrapper(int.MaxValue) },
-                    { SongSourceSongType.ED, new IntWrapper(int.MaxValue) },
-                    { SongSourceSongType.Insert, new IntWrapper(int.MaxValue) },
-                },
-            SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
-            SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
-            StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
-            EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
-            RatingAverageStart = Constants.QFRatingAverageMin,
-            RatingAverageEnd = Constants.QFRatingAverageMax,
-            RatingBayesianStart = Constants.QFRatingBayesianMin,
-            RatingBayesianEnd = Constants.QFRatingBayesianMax,
-            VoteCountStart = Constants.QFVoteCountMin,
-            VoteCountEnd = Constants.QFVoteCountMax,
-            OnlyOwnUploads = false,
-            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
-        };
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
 
-        var songs = await GetRandomSongs(int.MaxValue, true, filters: filters);
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            foreach (int i in validMids)
+            {
+                songs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
+            }
+        }
+
         var songLite = songs.Select(song => song.ToSongLite()).ToList();
 
         HashSet<string> md5Hashes = new();
@@ -1883,10 +1917,10 @@ WHERE id = {mId};
                 throw new Exception("Duplicate SongLite detected");
             }
 
-            if (!sl.Links.Any())
-            {
-                throw new Exception("SongLite must have at least one link to export.");
-            }
+            // if (!sl.Links.Any())
+            // {
+            //     throw new Exception("SongLite must have at least one link to export.");
+            // }
 
             if (sl.SongStats?.TimesPlayed <= 0)
             {
@@ -1899,31 +1933,25 @@ WHERE id = {mId};
 
     public static async Task<string> ExportSongLite_MB()
     {
-        var filters = new QuizFilters
+        var songs = new List<Song>();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            CategoryFilters = new List<CategoryFilter>(),
-            ArtistFilters = new List<ArtistFilter>(),
-            VndbAdvsearchFilter = "",
-            SongSourceSongTypeFilters =
-                new Dictionary<SongSourceSongType, IntWrapper>
-                {
-                    { SongSourceSongType.BGM, new IntWrapper(int.MaxValue) }
-                },
-            SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
-            SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
-            StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
-            EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
-            RatingAverageStart = Constants.QFRatingAverageMin,
-            RatingAverageEnd = Constants.QFRatingAverageMax,
-            RatingBayesianStart = Constants.QFRatingBayesianMin,
-            RatingBayesianEnd = Constants.QFRatingBayesianMax,
-            VoteCountStart = Constants.QFVoteCountMin,
-            VoteCountEnd = Constants.QFVoteCountMax,
-            OnlyOwnUploads = false,
-            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
-        };
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
 
-        var songs = await GetRandomSongs(int.MaxValue, true, filters: filters);
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.BGM.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            foreach (int i in validMids)
+            {
+                songs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
+            }
+        }
+
         var songLite = songs.Select(song => song.ToSongLite_MB()).ToList();
 
         HashSet<string> md5Hashes = new();
@@ -1943,10 +1971,10 @@ WHERE id = {mId};
                 throw new Exception("Duplicate SongLite detected");
             }
 
-            if (!sl.Links.Any())
-            {
-                throw new Exception("SongLite must have at least one link to export.");
-            }
+            // if (!sl.Links.Any())
+            // {
+            //     throw new Exception("SongLite must have at least one link to export.");
+            // }
 
             if (sl.SongStats?.TimesPlayed <= 0)
             {
@@ -1977,6 +2005,12 @@ WHERE id = {mId};
 
     public static async Task ImportSongLite(List<SongLite> songLites)
     {
+        bool b = false;
+        if (!b)
+        {
+            throw new Exception("use ImportVndbData_InsertPendingSongsWithSongLiteMusicIds instead");
+        }
+
         const string sqlMIdFromSongLite = @"
             SELECT DISTINCT m.id
             FROM music m
@@ -2011,12 +2045,9 @@ WHERE id = {mId};
                         new
                         {
                             mtLatinTitle = songLite.Titles.Select(x => x.LatinTitle).ToList(),
-                            mselUrl = songLite.SourceVndbIds.Select(x => x.ToVndbUrl()).ToList(),
+                            mselUrl = songLite.SourceVndbIds.Select(x => x.Key.ToVndbUrl()).ToList(),
                             aVndbId = songLite.ArtistVndbIds,
-                            msmType = new List<SongSourceSongType>
-                            {
-                                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
-                            }.Cast<int>().ToList()
+                            msmType = songLite.SourceVndbIds.Select(x => x.Value.Select(y => (int)y)).ToList()
                         }))
                     .ToList();
 
@@ -2062,6 +2093,12 @@ WHERE id = {mId};
 
     public static async Task ImportSongLite_MB(List<SongLite_MB> songLites)
     {
+        bool b = false;
+        if (!b)
+        {
+            throw new Exception("use ImportMusicBrainzData_InsertPendingSongsWithSongLiteMusicIds instead");
+        }
+
         const string sqlMIdFromSongLite = @"
             SELECT m.id
             FROM music m
@@ -2857,7 +2894,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                // Console.WriteLine(e);
                 throw;
             }
         }
@@ -2874,7 +2911,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                // Console.WriteLine(e);
                 throw;
             }
         }
@@ -3323,5 +3360,54 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         return ret;
+    }
+
+    public static async Task<bool> OverwriteMusic(int oldMid, Song newSong)
+    {
+        if (newSong.MusicBrainzRecordingGid != null)
+        {
+            // need to update musicbrainz_recording_gid in music and maybe the musicbrainz_release_recording table at least
+            throw new NotImplementedException();
+        }
+
+        // todo cleanup of music_source and artist?
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
+        {
+            int rowsDeletedMt = await connection.ExecuteAsync("DELETE FROM music_title where music_id = @mId",
+                new { mId = oldMid }, transaction);
+
+            if (rowsDeletedMt <= 0)
+            {
+                throw new Exception("Failed to delete mt");
+            }
+
+            int rowsDeletedMsm = await connection.ExecuteAsync("DELETE FROM music_source_music where music_id = @mId",
+                new { mId = oldMid }, transaction);
+
+            if (rowsDeletedMsm <= 0)
+            {
+                throw new Exception("Failed to delete msm");
+            }
+
+            int rowsDeletedA = await connection.ExecuteAsync("DELETE FROM artist_music where music_id = @mId",
+                new { mId = oldMid }, transaction);
+
+            if (rowsDeletedA <= 0)
+            {
+                throw new Exception("Failed to delete a");
+            }
+
+            newSong.Id = oldMid;
+            int mId = await InsertSong(newSong, connection, transaction);
+            if (mId <= 0)
+            {
+                throw new Exception($"Failed to insert song: {newSong}");
+            }
+
+            await transaction.CommitAsync();
+            return true;
+        }
     }
 }
