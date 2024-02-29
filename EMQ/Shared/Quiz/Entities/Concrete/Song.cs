@@ -45,10 +45,11 @@ public class Song
 
     public override string ToString()
     {
-        var first = Titles.First();
-        var firstSource = Sources.First();
+        var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();
+        var firstSource = Sources.FirstOrDefault(x => x.Titles.Any(y => y.Language == "ja" && y.IsMainTitle)) ??
+                          Sources.First();
         return
-            $"{firstSource.Titles.First().LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}" +
+            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}" +
             (!string.IsNullOrWhiteSpace(first.NonLatinTitle) && !string.Equals(first.NonLatinTitle, first.LatinTitle,
                 StringComparison.InvariantCultureIgnoreCase)
                 ? $" ({first.NonLatinTitle})"

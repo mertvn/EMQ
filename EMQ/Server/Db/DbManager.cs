@@ -1592,7 +1592,11 @@ public static class DbManager
             }
         }
 
-        return songs;
+        // we can get duplicate songs here if two vns are searchable by the same string and they both share a song
+        // example: searching for Persona 4: The Ultimax Ultra Suplex Hold returns both
+        // Persona 4: The Ultimax Ultra Suplex Hold and Persona 4: The Ultimate in Mayonaka Arena
+        // and they share at least one song together
+        return songs.DistinctBy(x => x.Id);
     }
 
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceCategories(

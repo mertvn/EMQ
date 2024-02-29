@@ -118,6 +118,18 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_FindSongsBySongSourceTitle_MusicIdDuplicationThing()
+    {
+        var songs = (await DbManager.FindSongsBySongSourceTitle("Persona 4: The Ultimax Ultra Suplex Hold"))
+            .ToList();
+        GenericSongsAssert(songs);
+
+        int count = songs.Count;
+        int distinctCount = songs.DistinctBy(x => x.Id).Count();
+        Assert.That(count == distinctCount);
+    }
+
+    [Test]
     public async Task Test_FindSongsBySongSourceTitle_MB()
     {
         var songs = (await DbManager.FindSongsBySongSourceTitle("11eyes -Tsumi to Batsu to Aganai no Shoujo-"))
