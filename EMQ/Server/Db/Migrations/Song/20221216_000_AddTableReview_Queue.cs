@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -12,7 +13,7 @@ public class AddTableReview_Queue : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("music_id").AsInt32().NotNullable().ForeignKey("music", "id")
+            .WithColumn("music_id").AsInt32().NotNullable().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("url").AsString().NotNullable()
             .WithColumn("type").AsInt32().NotNullable()
             .WithColumn("is_video").AsBoolean().NotNullable()
