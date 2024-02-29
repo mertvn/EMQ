@@ -687,7 +687,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task RecreateSchema()
     {
-        if (ConnectionHelper.GetConnectionString().Contains("railway"))
+        if (ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
         {
             throw new Exception("wrong db");
         }

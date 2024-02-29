@@ -426,7 +426,31 @@ async Task Init()
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            await DbManager.GetRandomSongs(int.MaxValue, true, new List<string>());
+            await DbManager.GetRandomSongs(int.MaxValue, true, null, new QuizFilters()
+            {
+                CategoryFilters = new List<CategoryFilter>(),
+                ArtistFilters = new List<ArtistFilter>(),
+                VndbAdvsearchFilter = "",
+                SongSourceSongTypeFilters =
+                    new Dictionary<SongSourceSongType, IntWrapper>
+                    {
+                        { SongSourceSongType.OP, new IntWrapper(int.MaxValue) },
+                        { SongSourceSongType.ED, new IntWrapper(int.MaxValue) },
+                        { SongSourceSongType.Insert, new IntWrapper(int.MaxValue) },
+                    },
+                SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
+                SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
+                StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
+                EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
+                RatingAverageStart = Constants.QFRatingAverageMin,
+                RatingAverageEnd = Constants.QFRatingAverageMax,
+                RatingBayesianStart = Constants.QFRatingBayesianMin,
+                RatingBayesianEnd = Constants.QFRatingBayesianMax,
+                VoteCountStart = Constants.QFVoteCountMin,
+                VoteCountEnd = Constants.QFVoteCountMax,
+                OnlyOwnUploads = false,
+                VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
+            });
 
             stopWatch.Stop();
             double ms = (stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency;

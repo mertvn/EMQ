@@ -31,7 +31,7 @@ public static class MusicBrainzImporter
 
     public static async Task ImportMusicBrainzData()
     {
-        if (ConnectionHelper.GetConnectionString().Contains("railway"))
+        if (ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
         {
             throw new Exception("wrong db");
         }
@@ -119,8 +119,7 @@ public static class MusicBrainzImporter
         {
             try
             {
-                int mId = await DbManager.InsertSong(song);
-                // Console.WriteLine($"Inserted mId {mId}");
+                int _ = await DbManager.InsertSong(song);
             }
             catch (Exception)
             {

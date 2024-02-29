@@ -3165,7 +3165,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         const string sqlDelete = "DELETE from music_external_link where music_id = @music_id AND url = @url";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-           return await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
+            return await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
         }
     }
 
@@ -3227,6 +3227,14 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             return (await connection.QueryAsync<ReviewQueue>(sql, new { sha256 = sha256 })).ToList();
+        }
+    }
+
+    public static async Task<T?> GetEntity<T>(int id) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.GetAsync<T?>(id);
         }
     }
 

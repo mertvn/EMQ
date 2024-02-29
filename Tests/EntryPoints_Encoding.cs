@@ -327,18 +327,29 @@ public class EntryPoints_Encoding
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            int[] videoMids = (await connection.QueryAsync<int>(
-                    "SELECT distinct music_id FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video)"))
-                .ToArray();
-
             var songs = new List<Song>();
-            foreach (int videoMid in videoMids)
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            foreach (int i in validMids)
             {
-                songs.AddRange(await DbManager.SelectSongs(new Song { Id = videoMid }, false));
+                songs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
             }
 
-            var links = songs.Select(x => x.Links.First(y => y.Type == SongLinkType.Self && y.IsVideo)).ToList();
-            // var filteredLinks = SongLink.FilterSongLinks(links);
+            foreach (Song song in songs)
+            {
+                song.Links = SongLink.FilterSongLinks(song.Links);
+            }
+
+            var links = songs.Where(z => z.Links.Any() && !z.Links.Any(v => !v.IsVideo))
+                .Select(x => x.Links.First(y => y.Type == SongLinkType.Self && y.IsVideo)).ToList();
 
             Dictionary<string, int> dict = new();
             foreach (Song song in songs)
