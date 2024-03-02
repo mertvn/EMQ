@@ -60,7 +60,13 @@ public class AuthController : ControllerBase
 
             do
             {
-                playerId = Convert.ToInt32(Random.Shared.Next().ToString()[..7]);
+                int random;
+                do
+                {
+                    random = Random.Shared.Next();
+                } while (random < 1_000_000);
+
+                playerId = Convert.ToInt32(random.ToString()[..7]);
             } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 
             username = $"Guest-{playerId}";
@@ -157,6 +163,7 @@ public class AuthController : ControllerBase
             oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
             oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
 
+            // this doesnt work correctly sometimes idk
             if (!oldRoomPlayer.Players.Any())
             {
                 ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
@@ -268,7 +275,7 @@ public class AuthController : ControllerBase
             vndb_label_is_private = req.Label.IsPrivate,
             kind = (int)req.Label.Kind,
         };
-        int userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
+        long userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
 
         var userLabelVns = await DbManager.GetUserLabelVns(userLabelId);
         var label = ServerUtils.FromUserLabel(userLabel);
@@ -339,7 +346,7 @@ public class AuthController : ControllerBase
                     vndb_label_is_private = label.IsPrivate,
                     kind = (int)label.Kind,
                 };
-                int _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);
+                long _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);
             }
         }
 

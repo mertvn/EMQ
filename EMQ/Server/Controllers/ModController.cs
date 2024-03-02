@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
-using Dapper.Contrib.Extensions;
+using Dapper.Database.Extensions;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.MusicBrainz;
@@ -150,7 +150,7 @@ public class ModController : ControllerBase
             {
                 await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
                 {
-                    var musicBrainzReleaseRecordings = await connection.GetAllAsync<MusicBrainzReleaseRecording>();
+                    var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
                     DbManager.MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
                         .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
                 }

@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("musicbrainz_release_recording")]
 public class MusicBrainzReleaseRecording
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int id { get; set; }
 
     [Required]

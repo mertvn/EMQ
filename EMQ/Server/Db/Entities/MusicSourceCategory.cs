@@ -6,11 +6,11 @@ namespace EMQ.Server.Db.Entities;
 [Table("music_source_category")]
 public class MusicSourceCategory
 {
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int music_source_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int category_id { get; set; }
 

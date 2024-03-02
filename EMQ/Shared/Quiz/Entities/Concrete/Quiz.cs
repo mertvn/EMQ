@@ -14,6 +14,7 @@ public sealed class Quiz : IDisposable
     {
         Room = room;
         Id = id;
+        CreatedAt = DateTime.UtcNow;
     }
 
     public const float TickRate = 17;
@@ -21,6 +22,8 @@ public sealed class Quiz : IDisposable
     public bool IsDisposed;
 
     public Guid Id { get; }
+
+    public DateTime CreatedAt { get; }
 
     public QuizState QuizState { get; set; } = new();
 
@@ -91,5 +94,8 @@ public readonly struct GuessInfo
 
     public bool IsGuessCorrect { get; init; }
 
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public List<Label>? Labels { get; init; }
+
+    public bool IsOnList { get; init; }
 }

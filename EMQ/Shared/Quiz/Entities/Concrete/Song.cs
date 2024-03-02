@@ -19,6 +19,8 @@ public class Song
 
     public string CoverUrl { get; set; } = "";
 
+    public DateTime PlayedAt { get; set; }
+
     public List<Title> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();

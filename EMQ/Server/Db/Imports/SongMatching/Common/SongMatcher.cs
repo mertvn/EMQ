@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
-using Dapper.Contrib.Extensions;
+using Dapper.Database.Extensions;
 using DapperQueryBuilder;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
@@ -387,7 +387,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         Dictionary<Guid, List<Guid>> musicBrainzRecordingReleases;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var musicBrainzReleaseRecordings = await connection.GetAllAsync<MusicBrainzReleaseRecording>();
+            var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
             musicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
                 .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
         }

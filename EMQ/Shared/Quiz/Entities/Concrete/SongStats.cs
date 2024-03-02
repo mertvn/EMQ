@@ -13,4 +13,6 @@ public class SongStats
     public long TotalGuessMs { get; set; }
 
     public int AverageGuessMs { get; set; }
+
+    public int UniqueUsers { get; set; }
 }

@@ -165,7 +165,7 @@ public static class AuthManager
         const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
 
         var registrationToken = Guid.NewGuid();
-        int verificationRegisterId = await DbManager.InsertEntity_Auth(new VerificationRegister
+        int verificationRegisterId = (int)await DbManager.InsertEntity_Auth(new VerificationRegister
         {
             username = username, email = email, token = registrationToken.ToString(), created_at = DateTime.UtcNow
         });
@@ -279,7 +279,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             throw new Exception("User already exists."); // todo?
         }
 
-        userId = await DbManager.InsertEntity_Auth(user);
+        userId = (int)await DbManager.InsertEntity_Auth(user);
         if (userId <= 0)
         {
             throw new Exception("Failed to insert User."); // todo?
@@ -355,7 +355,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             last_used_at = DateTime.UtcNow,
         };
 
-        int secretId = await DbManager.InsertEntity_Auth(secret);
+        int secretId = (int)await DbManager.InsertEntity_Auth(secret);
         if (secretId <= 0)
         {
             throw new Exception("idk"); // todo?
@@ -400,7 +400,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
 
         // todo? check with user_id before inserting
         var resetToken = Guid.NewGuid();
-        int verificationForgottenPasswordId = await DbManager.InsertEntity_Auth(new VerificationForgottenPassword
+        int verificationForgottenPasswordId = (int)await DbManager.InsertEntity_Auth(new VerificationForgottenPassword
         {
             user_id = user.id, token = resetToken.ToString(), created_at = DateTime.UtcNow
         });

@@ -6,11 +6,11 @@ namespace EMQ.Server.Db.Entities;
 [Table("music_source_external_link")]
 public class MusicSourceExternalLink
 {
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int music_source_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public string url { get; set; } = "";
 

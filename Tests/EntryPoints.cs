@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Server;
@@ -797,7 +798,7 @@ public class EntryPoints
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2024-02-13_EMQ@localhost.tar";
+        string dumpFileName = "pgdump_2024-02-29_EMQ@erogemusicquiz.com.tar";
         // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {
@@ -996,5 +997,107 @@ GRANT ALL ON SCHEMA public TO public;";
 
         deserialized = deserialized.DistinctBy(x => x.Recording).ToList();
         await File.WriteAllTextAsync(path, JsonSerializer.Serialize(deserialized, Utils.JsoIndented));
+    }
+
+    [Test, Explicit]
+    public async Task ScaffoldQuizSongHistory()
+    {
+        var regex = new Regex(@"SongHistory_(.+)_r(.+)q(.+)\.json",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        string dir = @"C:\Users\Mert\Desktop\SongHistory";
+        var jsons = Directory.EnumerateFiles(dir, "*.json");
+        foreach (string json in jsons)
+        {
+            var match = regex.Match(json);
+            string roomName = match.Groups[1].Value;
+            Guid roomId = Guid.Parse(match.Groups[2].Value);
+            Guid quizId = Guid.Parse(match.Groups[3].Value);
+            var date = File.GetLastWriteTime(json);
+
+            string contents = await File.ReadAllTextAsync(json);
+            var songHistories = JsonSerializer.Deserialize<Dictionary<int, SongHistory>>(contents, Utils.JsoIndented)!;
+
+            try
+            {
+                var entityRoom = new EntityRoom
+                {
+                    id = roomId, initial_name = roomName, created_by = 1, created_at = date
+                };
+                await DbManager.InsertEntity(entityRoom);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            try
+            {
+                var entityQuiz = new EntityQuiz
+                {
+                    id = quizId,
+                    room_id = roomId,
+                    settings_b64 = "",
+                    should_update_stats = true, // todo?
+                    created_at = date,
+                };
+                long _ = await DbManager.InsertEntity(entityQuiz);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            var quizSongHistories = new List<QuizSongHistory>();
+            foreach ((int sp, SongHistory? songHistory) in songHistories)
+            {
+                foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
+                {
+                    // todo?
+                    // bool isGuest = userId >= 1_000_000;
+                    // if (isGuest)
+                    // {
+                    //     continue;
+                    // }
+
+                    var quizSongHistory = new QuizSongHistory
+                    {
+                        quiz_id = quizId,
+                        sp = sp,
+                        music_id = songHistory.Song.Id,
+                        user_id = userId,
+                        guess = guessInfo.Guess,
+                        first_guess_ms = guessInfo.FirstGuessMs,
+                        is_correct = guessInfo.IsGuessCorrect,
+                        is_on_list = guessInfo.IsOnList,
+                        played_at = date,
+                    };
+
+                    quizSongHistories.Add(quizSongHistory);
+                }
+            }
+
+            // Console.WriteLine(JsonSerializer.Serialize(quizSongHistories, Utils.JsoIndented));
+
+            if (!quizSongHistories.Any())
+            {
+                continue;
+            }
+
+            try
+            {
+                bool success = await DbManager.InsertEntityBulk(quizSongHistories);
+                if (!success)
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to insert QuizSongHistory");
+                Console.WriteLine(e);
+            }
+
+            await DbManager.RecalculateSongStats(songHistories.Select(x => x.Value.Song.Id).ToHashSet());
+        }
     }
 }

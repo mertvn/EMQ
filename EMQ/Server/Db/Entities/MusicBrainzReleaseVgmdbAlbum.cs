@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("musicbrainz_release_vgmdb_album")]
 public class MusicBrainzReleaseVgmdbAlbum
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int id { get; set; }
 
     [Required]

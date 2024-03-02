@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("ratelimited")]
 public class Ratelimited
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

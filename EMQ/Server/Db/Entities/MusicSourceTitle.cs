@@ -6,17 +6,17 @@ namespace EMQ.Server.Db.Entities;
 [Table("music_source_title")]
 public class MusicSourceTitle
 {
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int music_source_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public string latin_title { get; set; } = "";
 
     public string? non_latin_title { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public string language { get; set; } = "";
 

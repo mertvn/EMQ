@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("secret")]
 public class Secret
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; } // todo long? use user_id as the key?
 

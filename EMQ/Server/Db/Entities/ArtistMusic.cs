@@ -6,15 +6,15 @@ namespace EMQ.Server.Db.Entities;
 [Table("artist_music")]
 public class ArtistMusic
 {
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int artist_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int music_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     public int role { get; set; }
 
     [Required]

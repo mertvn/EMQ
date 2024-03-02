@@ -6,7 +6,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("artist_alias")]
 public class ArtistAlias
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

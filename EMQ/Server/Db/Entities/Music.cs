@@ -1,13 +1,14 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Dapper.Database.Attributes;
 
 namespace EMQ.Server.Db.Entities;
 
 [Table("music")]
 public class Music
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 
@@ -22,7 +23,7 @@ public class Music
 
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    [Dapper.Contrib.Extensions.Write(false)]
+    [IgnoreInsert, IgnoreUpdate]
     public float stat_correctpercentage { get; set; }
 
     [Required]
@@ -33,8 +34,11 @@ public class Music
 
     [Required]
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    [Dapper.Contrib.Extensions.Write(false)]
+    [IgnoreInsert, IgnoreUpdate]
     public int stat_averageguessms { get; set; }
 
     public Guid? musicbrainz_recording_gid { get; set; }
+
+    [Required]
+    public int stat_uniqueusers { get; set; }
 }

@@ -11,7 +11,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Dapper;
-using Dapper.Contrib.Extensions;
+using Dapper.Database;
+using Dapper.Database.Extensions;
 using DapperQueryBuilder;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
@@ -53,7 +54,7 @@ public static class DbManager
         {
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
-                var musicBrainzReleaseRecordings = await connection.GetAllAsync<MusicBrainzReleaseRecording>();
+                var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
                 MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
                     .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
             }
@@ -63,7 +64,7 @@ public static class DbManager
         {
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
-                var musicBrainzReleaseVgmdbAlbums = await connection.GetAllAsync<MusicBrainzReleaseVgmdbAlbum>();
+                var musicBrainzReleaseVgmdbAlbums = await connection.GetListAsync<MusicBrainzReleaseVgmdbAlbum>();
                 MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
                     .ToDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
             }
@@ -141,6 +142,7 @@ public static class DbManager
                             TimesGuessed = music.stat_guessed,
                             TotalGuessMs = music.stat_totalguessms,
                             AverageGuessMs = music.stat_averageguessms,
+                            UniqueUsers = music.stat_uniqueusers,
                         };
 
                         songTitles.Add(new Title()
@@ -720,36 +722,46 @@ public static class DbManager
         else
         {
             var music = new Music { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
-            mId = await connection.InsertAsync(music, transaction);
+            if (!await connection.InsertAsync(music, transaction))
+            {
+                throw new Exception();
+            }
+
+            mId = music.id;
         }
 
         foreach (Title songTitle in song.Titles)
         {
-            // ReSharper disable once UnusedVariable
-            int mtId = await connection.InsertAsync(
-                new MusicTitle()
-                {
-                    music_id = mId,
-                    latin_title = songTitle.LatinTitle,
-                    non_latin_title = songTitle.NonLatinTitle,
-                    language = songTitle.Language,
-                    is_main_title = songTitle.IsMainTitle
-                }, transaction);
+            var mt = new MusicTitle()
+            {
+                music_id = mId,
+                latin_title = songTitle.LatinTitle,
+                non_latin_title = songTitle.NonLatinTitle,
+                language = songTitle.Language,
+                is_main_title = songTitle.IsMainTitle
+            };
+
+            if (!await connection.InsertAsync(mt, transaction))
+            {
+                throw new Exception();
+            }
         }
 
         foreach (SongLink songLink in song.Links)
         {
-            // ReSharper disable once UnusedVariable
-            int melId = await connection.InsertAsync(new MusicExternalLink()
+            if (!await connection.InsertAsync(new MusicExternalLink()
+                {
+                    music_id = mId,
+                    url = songLink.Url,
+                    type = (int)songLink.Type,
+                    is_video = songLink.IsVideo,
+                    duration = songLink.Duration,
+                    submitted_by = songLink.SubmittedBy,
+                    sha256 = songLink.Sha256,
+                }, transaction))
             {
-                music_id = mId,
-                url = songLink.Url,
-                type = (int)songLink.Type,
-                is_video = songLink.IsVideo,
-                duration = songLink.Duration,
-                submitted_by = songLink.SubmittedBy,
-                sha256 = songLink.Sha256,
-            }, transaction);
+                throw new Exception();
+            }
         }
 
 
@@ -770,7 +782,7 @@ public static class DbManager
             }
             else
             {
-                msId = await connection.InsertAsync(new MusicSource()
+                var ms = new MusicSource()
                 {
                     air_date_start = songSource.AirDateStart,
                     air_date_end = songSource.AirDateEnd,
@@ -780,20 +792,29 @@ public static class DbManager
                     // popularity = songSource.Popularity,
                     votecount = songSource.VoteCount,
                     type = (int)songSource.Type
-                }, transaction);
+                };
+
+                if (!await connection.InsertAsync(ms, transaction))
+                {
+                    throw new Exception();
+                }
+
+                msId = ms.id;
 
                 foreach (Title songSourceAlias in songSource.Titles)
                 {
-                    // ReSharper disable once UnusedVariable
-                    int mstId = await connection.InsertAsync(
-                        new MusicSourceTitle()
-                        {
-                            music_source_id = msId,
-                            latin_title = songSourceAlias.LatinTitle,
-                            non_latin_title = songSourceAlias.NonLatinTitle,
-                            language = songSourceAlias.Language,
-                            is_main_title = songSourceAlias.IsMainTitle
-                        }, transaction);
+                    if (await connection.InsertAsync(
+                            new MusicSourceTitle()
+                            {
+                                music_source_id = msId,
+                                latin_title = songSourceAlias.LatinTitle,
+                                non_latin_title = songSourceAlias.NonLatinTitle,
+                                language = songSourceAlias.Language,
+                                is_main_title = songSourceAlias.IsMainTitle
+                            }, transaction))
+                    {
+                        throw new Exception();
+                    }
                 }
 
                 foreach (SongSourceCategory songSourceCategory in songSource.Categories)
@@ -818,7 +839,12 @@ public static class DbManager
                             vndb_id = songSourceCategory.VndbId,
                         };
 
-                        cId = await connection.InsertAsync(newCategory);
+                        if (!await connection.InsertAsync(newCategory))
+                        {
+                            throw new Exception();
+                        }
+
+                        cId = newCategory.id;
                     }
 
                     int mscId = (await connection.QueryAsync<int>(
@@ -830,8 +856,7 @@ public static class DbManager
                     }
                     else
                     {
-                        // ReSharper disable once RedundantAssignment
-                        mscId = await connection.InsertAsync(
+                        await connection.InsertAsync(
                             new MusicSourceCategory()
                             {
                                 category_id = cId,
@@ -851,15 +876,17 @@ public static class DbManager
 
                 if (string.IsNullOrEmpty(url))
                 {
-                    // ReSharper disable once UnusedVariable
-                    var mselId = await connection.InsertAsync(
-                        new MusicSourceExternalLink()
-                        {
-                            music_source_id = msId,
-                            url = songSourceLink.Url,
-                            type = (int)songSourceLink.Type,
-                            name = songSourceLink.Name
-                        }, transaction);
+                    if (!await connection.InsertAsync(
+                            new MusicSourceExternalLink()
+                            {
+                                music_source_id = msId,
+                                url = songSourceLink.Url,
+                                type = (int)songSourceLink.Type,
+                                name = songSourceLink.Name
+                            }, transaction))
+                    {
+                        throw new Exception();
+                    }
                 }
             }
 
@@ -874,12 +901,14 @@ public static class DbManager
                 }
                 else
                 {
-                    // ReSharper disable once RedundantAssignment
-                    msmId = await connection.InsertAsync(
-                        new MusicSourceMusic()
-                        {
-                            music_id = mId, music_source_id = msId, type = (int)songSourceSongType
-                        }, transaction);
+                    if (await connection.InsertAsync(
+                            new MusicSourceMusic()
+                            {
+                                music_id = mId, music_source_id = msId, type = (int)songSourceSongType
+                            }, transaction))
+                    {
+                        throw new Exception();
+                    }
                 }
             }
         }
@@ -887,9 +916,9 @@ public static class DbManager
 
         foreach (SongArtist songArtist in song.Artists)
         {
-            if (songArtist.Titles.Count > 1)
+            if (songArtist.Titles.Count != 1)
             {
-                throw new Exception("Artists can only have one artist_alias per song");
+                throw new Exception("Artists must have one artist_alias per song");
             }
 
             int aId = 0;
@@ -912,28 +941,38 @@ public static class DbManager
             }
             else
             {
-                aId = await connection.InsertAsync(
-                    new Artist()
-                    {
-                        primary_language = songArtist.PrimaryLanguage,
-                        sex = (int)songArtist.Sex,
-                        vndb_id = songArtist.VndbId
-                    }, transaction);
+                var artist = new Artist()
+                {
+                    primary_language = songArtist.PrimaryLanguage,
+                    sex = (int)songArtist.Sex,
+                    vndb_id = songArtist.VndbId
+                };
+
+                if (!await connection.InsertAsync(artist, transaction))
+                {
+                    throw new Exception();
+                }
+
+                aId = artist.id;
             }
 
             if (aaId < 1)
             {
-                foreach (Title songArtistAlias in songArtist.Titles)
+                var songArtistAlias = songArtist.Titles.Single();
+                var aa = new ArtistAlias()
                 {
-                    aaId = await connection.InsertAsync(
-                        new ArtistAlias()
-                        {
-                            artist_id = aId,
-                            latin_alias = songArtistAlias.LatinTitle,
-                            non_latin_alias = songArtistAlias.NonLatinTitle,
-                            is_main_name = songArtistAlias.IsMainTitle
-                        }, transaction);
+                    artist_id = aId,
+                    latin_alias = songArtistAlias.LatinTitle,
+                    non_latin_alias = songArtistAlias.NonLatinTitle,
+                    is_main_name = songArtistAlias.IsMainTitle
+                };
+
+                if (!await connection.InsertAsync(aa, transaction))
+                {
+                    throw new Exception();
                 }
+
+                aaId = aa.id;
             }
 
             if (mId < 1)
@@ -951,12 +990,14 @@ public static class DbManager
                 throw new Exception("aaId is invalid");
             }
 
-            // ReSharper disable once UnusedVariable
-            int amId = await connection.InsertAsync(
-                new ArtistMusic()
-                {
-                    music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
-                }, transaction);
+            if (!await connection.InsertAsync(
+                    new ArtistMusic()
+                    {
+                        music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
+                    }, transaction))
+            {
+                throw new Exception();
+            }
         }
 
         if (ownConnection)
@@ -1519,7 +1560,7 @@ public static class DbManager
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var categories = await connection.GetAllAsync<Category>();
+            var categories = await connection.GetListAsync<Category>();
             var songSourceCategories = categories.Select(category => new SongSourceCategory()
                 {
                     Id = category.id,
@@ -1726,9 +1767,9 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
-    public static async Task<int> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
+    public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
     {
-        int melId;
+        bool success;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var mel = new MusicExternalLink
@@ -1749,14 +1790,10 @@ AND msm.type = ANY(@msmType)";
 
             Console.WriteLine(
                 $"Attempting to insert MusicExternalLink: " + JsonSerializer.Serialize(mel, Utils.Jso));
-            melId = await connection.InsertAsync(mel, transaction);
-            if (melId > 0)
-            {
-                // todo
-            }
+            success = await connection.InsertAsync(mel, transaction);
         }
 
-        return melId;
+        return success;
     }
 
     public static async Task<bool> SetSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
@@ -1777,27 +1814,53 @@ WHERE id = {mId};
         }
     }
 
-    public static async Task<bool> IncrementSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
+    public static async Task<bool> RecalculateSongStats(HashSet<int> mIds)
     {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        const int useLastNPlaysPerPlayer = 3;
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
         {
-            var querySongStats = connection.QueryBuilder($@"UPDATE music SET
-                 stat_correct = stat_correct + {songStats.TimesCorrect},
-                 stat_played = stat_played + {songStats.TimesPlayed},
-                 stat_guessed = stat_guessed + {songStats.TimesGuessed},
-                 stat_totalguessms = stat_totalguessms + {songStats.TotalGuessMs}
+            foreach (int mId in mIds)
+            {
+                string sql =
+                    $@"select count(sq.is_correct) filter(where sq.is_correct) as correct, count(sq.music_id) as played, count(sq.guessed) as guessed, sum(sq.first_guess_ms) as totalguessms, count(distinct sq.user_id) as uniqueusers
+from (
+select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed, row_number() over (partition by qsh.user_id order by qsh.played_at desc) as row_number
+from quiz q
+join quiz_song_history qsh on qsh.quiz_id = q.id
+where q.should_update_stats and music_id = @mId
+order by qsh.played_at desc
+) sq
+where row_number <= {useLastNPlaysPerPlayer}";
+
+                var res =
+                    await connection.QuerySingleAsync<(int correct, int played, int guessed, int totalguessms, int uniqueusers)>(sql,
+                        new { mId = mId });
+
+                var querySongStats = connection.QueryBuilder($@"UPDATE music SET
+                 stat_correct = {res.correct},
+                 stat_played = {res.played},
+                 stat_guessed = {res.guessed},
+                 stat_totalguessms = {res.totalguessms},
+                 stat_uniqueusers = {res.uniqueusers}
 WHERE id = {mId};
                  ");
 
-            foreach ((string key, LibraryStats? _) in CachedLibraryStats)
-            {
-                CachedLibraryStats[key] = null;
+                Console.WriteLine($"Attempting to recalculate SongStats for mId {mId}");
+                await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction);
             }
 
-            Console.WriteLine(
-                $"Attempting to increment SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
-            return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
+            await transaction.CommitAsync();
         }
+
+        foreach ((string key, LibraryStats? _) in CachedLibraryStats)
+        {
+            CachedLibraryStats[key] = null;
+        }
+
+        return true;
     }
 
     public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string? analysis = null)
@@ -1825,7 +1888,8 @@ WHERE id = {mId};
                     rq.analysis = analysis;
                 }
 
-                rqId = await connection.InsertAsync(rq);
+                bool success = await connection.InsertAsync(rq);
+                rqId = rq.id;
                 if (rqId > 0)
                 {
                     Console.WriteLine($"Inserted ReviewQueue: " + JsonSerializer.Serialize(rq, Utils.Jso));
@@ -1859,7 +1923,8 @@ WHERE id = {mId};
                     note_user = songReport.note_user,
                 };
 
-                reportId = await connection.InsertAsync(report);
+                bool success = await connection.InsertAsync(report);
+                reportId = report.id;
                 if (reportId > 0)
                 {
                     Console.WriteLine($"Inserted Report: " + JsonSerializer.Serialize(report, Utils.Jso));
@@ -1993,7 +2058,7 @@ WHERE id = {mId};
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var reviewQueue = (await connection.GetAllAsync<ReviewQueue>()).OrderBy(x => x.id).ToList();
+            var reviewQueue = (await connection.GetListAsync<ReviewQueue>()).OrderBy(x => x.id).ToList();
             return JsonSerializer.Serialize(reviewQueue, Utils.JsoIndented);
         }
     }
@@ -2002,7 +2067,7 @@ WHERE id = {mId};
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var reviewQueue = (await connection.GetAllAsync<Report>()).OrderBy(x => x.id).ToList();
+            var reviewQueue = (await connection.GetListAsync<Report>()).OrderBy(x => x.id).ToList();
             return JsonSerializer.Serialize(reviewQueue, Utils.JsoIndented);
         }
     }
@@ -2183,7 +2248,7 @@ WHERE id = {mId};
             // todo date filter
             // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
             //     .ToList();
-            var reviewQueues = (await connection.GetAllAsync<ReviewQueue>()).ToList();
+            var reviewQueues = (await connection.GetListAsync<ReviewQueue>()).ToList();
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
@@ -2256,7 +2321,7 @@ WHERE id = {mId};
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             // todo date filter
-            var reports = (await connection.GetAllAsync<Report>()).ToList();
+            var reports = (await connection.GetListAsync<Report>()).ToList();
             foreach (Report report in reports)
             {
                 if (!CachedSongs.TryGetValue(report.music_id, out var song))
@@ -2286,10 +2351,10 @@ WHERE id = {mId};
         return songReports.OrderBy(x => x.id);
     }
 
-    public static async Task<int> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus,
+    public static async Task<bool> UpdateReviewQueueItem(int rqId, ReviewQueueStatus requestedStatus,
         string? reason = null, MediaAnalyserResult? analyserResult = null)
     {
-        int melId = -1;
+        bool success = false;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             ReviewQueue? rq = await connection.GetAsync<ReviewQueue>(rqId);
@@ -2342,7 +2407,7 @@ WHERE id = {mId};
                         SubmittedBy = rq.submitted_by,
                         Sha256 = rq.sha256,
                     };
-                    melId = await InsertSongLink(rq.music_id, songLink, null);
+                    success = await InsertSongLink(rq.music_id, songLink, null);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
@@ -2387,7 +2452,7 @@ WHERE id = {mId};
             }
         }
 
-        return melId;
+        return success;
     }
 
     public static async Task<LibraryStats> SelectLibraryStats(int limit, SongSourceSongType[] songSourceSongTypes)
@@ -2896,7 +2961,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             {
                 await connection.InsertAsync(musicBrainzReleaseRecording);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Console.WriteLine(e);
                 throw;
@@ -2913,7 +2978,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             {
                 await connection.InsertAsync(musicBrainzReleaseVgmdbAlbum);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Console.WriteLine(e);
                 throw;
@@ -2951,11 +3016,12 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         }
     }
 
-    public static async Task<int> InsertEntity_Auth<T>(T entity) where T : class
+    public static async Task<long> InsertEntity_Auth<T>(T entity) where T : class
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
-            return await connection.InsertAsync(entity);
+            bool success = await connection.InsertAsync(entity);
+            return entity.GetIdentityValue();
         }
     }
 
@@ -3123,36 +3189,43 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
 
     // we delete and recreate the label and the vns it contains every time because it's mendokusai to diff,
     // and it's probably faster this way anyways
-    public static async Task<int> RecreateUserLabel(UserLabel userLabel, Dictionary<string, int> vns)
+    public static async Task<long> RecreateUserLabel(UserLabel userLabel, Dictionary<string, int> vns)
     {
-        // todo transaction
         const string sqlDelete =
             "DELETE from users_label where user_id = @user_id AND vndb_uid = @vndb_uid AND vndb_label_id = @vndb_label_id";
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connection.OpenAsync();
+        await using (var transaction = await connection.BeginTransactionAsync())
         {
             await connection.ExecuteAsync(sqlDelete,
-                new { userLabel.user_id, userLabel.vndb_uid, userLabel.vndb_label_id });
+                new { userLabel.user_id, userLabel.vndb_uid, userLabel.vndb_label_id }, transaction);
 
-            int userLabelId = await connection.InsertAsync(userLabel);
+            await connection.InsertAsync(userLabel, transaction);
+            long userLabelId = userLabel.id;
             if (userLabelId <= 0)
             {
                 throw new Exception("Failed to insert UserLabel");
             }
 
-            var userLabelVns = new List<UserLabelVn>();
-            foreach ((string vnurl, int vote) in vns)
+            if (vns.Any())
             {
-                // todo? convert vnurl to vnid
-                var userLabelVn = new UserLabelVn { users_label_id = userLabelId, vnid = vnurl, vote = vote };
-                userLabelVns.Add(userLabelVn);
+                var userLabelVns = new List<UserLabelVn>();
+                foreach ((string vnurl, int vote) in vns)
+                {
+                    // todo convert vnurl to vnid
+                    var userLabelVn = new UserLabelVn { users_label_id = userLabelId, vnid = vnurl, vote = vote };
+                    userLabelVns.Add(userLabelVn);
+                }
+
+                bool success = await connection.InsertListAsync(userLabelVns, transaction);
+                if (!success)
+                {
+                    throw new Exception("Failed to insert userLabelVnRows");
+                }
             }
 
-            long userLabelVnRows = connection.Insert(userLabelVns);
-            if (userLabelVnRows != vns.Count)
-            {
-                throw new Exception("Failed to insert userLabelVnRows");
-            }
-
+            await transaction.CommitAsync();
             return userLabelId;
         }
     }
@@ -3276,6 +3349,23 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             return await connection.GetAsync<T?>(id);
+        }
+    }
+
+    public static async Task<long> InsertEntity<T>(T entity) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            bool _ = await connection.InsertAsync(entity);
+            return entity.GetIdentityValue();
+        }
+    }
+
+    public static async Task<bool> InsertEntityBulk<T>(IEnumerable<T> entity) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.InsertListAsync(entity);
         }
     }
 

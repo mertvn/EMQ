@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("verification_register")]
 public class VerificationRegister
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

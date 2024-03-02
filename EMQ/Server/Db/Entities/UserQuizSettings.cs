@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("users_quiz_settings")]
 public class UserQuizSettings
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

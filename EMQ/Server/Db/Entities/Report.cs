@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("report")]
 public class Report
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

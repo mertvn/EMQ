@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -284,5 +285,30 @@ public static class ExtensionMethods
         };
 
         return songSourceSongTypes;
+    }
+
+    public static long GetIdentityValue(this object o)
+    {
+        PropertyInfo[] properties = o.GetType().GetProperties();
+        foreach (PropertyInfo property in properties)
+        {
+            if (Attribute.GetCustomAttribute(property, typeof(DatabaseGeneratedAttribute)) is DatabaseGeneratedAttribute
+                {
+                    DatabaseGeneratedOption: DatabaseGeneratedOption.Identity
+                })
+            {
+                var type = property.PropertyType;
+                long? value = type switch
+                {
+                    not null when type == typeof(int) => property.GetValue(o) as int?,
+                    not null when type == typeof(long) => property.GetValue(o) as long?,
+                    _ => throw new Exception("only int and long identity properties are supported")
+                };
+
+                return value ?? 0;
+            }
+        }
+
+        return 0;
     }
 }

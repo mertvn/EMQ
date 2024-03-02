@@ -8,6 +8,8 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using EMQ.Server.Business;
+using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
@@ -183,7 +185,7 @@ public class QuizController : ControllerBase
     [CustomAuthorize(PermissionKind.CreateRoom)]
     [HttpPost]
     [Route("CreateRoom")]
-    public ActionResult<Guid> CreateRoom([FromBody] ReqCreateRoom req)
+    public async Task<ActionResult<Guid>> CreateRoom([FromBody] ReqCreateRoom req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
@@ -196,6 +198,14 @@ public class QuizController : ControllerBase
         {
             Password = req.Password, QuizSettings = req.QuizSettings
         };
+
+        var entityRoom = new EntityRoom
+        {
+            id = room.Id, initial_name = room.Name, created_by = owner.Id, created_at = room.CreatedAt
+        };
+
+        await DbManager.InsertEntity(entityRoom);
+
         ServerState.AddRoom(room);
         _logger.LogInformation("Created room {room.Id} {room.Name} {room.Password}", room.Id, room.Name, room.Password);
 

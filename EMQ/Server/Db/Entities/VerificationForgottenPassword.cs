@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("verification_forgottenpassword")]
 public class VerificationForgottenPassword
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

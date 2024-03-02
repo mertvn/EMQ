@@ -10,11 +10,11 @@ public class UserLabelVn
     // [Required]
     // public int id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public long users_label_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public string vnid { get; set; } = "";
 

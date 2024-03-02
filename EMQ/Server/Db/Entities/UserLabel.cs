@@ -7,7 +7,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("users_label")]
 public class UserLabel
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public long id { get; set; }
 

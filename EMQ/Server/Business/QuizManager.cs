@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -182,6 +182,7 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
+        Quiz.Songs[Quiz.QuizState.sp].PlayedAt = DateTime.UtcNow;
         Quiz.QuizState.ExtraInfo = "";
 
         foreach (var player in Quiz.Room.Players)
@@ -410,6 +411,7 @@ public class QuizManager
                     FirstGuessMs = player.FirstGuessMs,
                     IsGuessCorrect = correct,
                     Labels = labels,
+                    IsOnList = labels?.Any() ?? false,
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
@@ -654,8 +656,13 @@ public class QuizManager
 
     public async Task EndQuiz()
     {
-        Quiz.Room.Log("Ended");
+        if (Quiz.QuizState.QuizStatus == QuizStatus.Ended)
+        {
+            return;
+        }
+
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
+        Quiz.Room.Log("Ended");
 
         if (!Quiz.IsDisposed)
         {
@@ -664,12 +671,16 @@ public class QuizManager
         }
 
         Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
-
         await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEnded");
 
         Directory.CreateDirectory("RoomLog");
         await File.WriteAllTextAsync($"RoomLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.Room.RoomLog, Utils.JsoIndented));
+
+        if (!Quiz.SongsHistory.Any())
+        {
+            return;
+        }
 
         Directory.CreateDirectory("SongHistory");
         await File.WriteAllTextAsync(
@@ -683,28 +694,87 @@ public class QuizManager
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.OnlyOwnUploads;
+
+        var entityQuiz = new EntityQuiz
+        {
+            id = Quiz.Id,
+            room_id = Quiz.Room.Id,
+            settings_b64 = Quiz.Room.QuizSettings.SerializeToBase64String_PB(),
+            should_update_stats = shouldUpdateStats,
+            created_at = Quiz.CreatedAt,
+        };
+
+        try
+        {
+            long _ = await DbManager.InsertEntity(entityQuiz);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to insert Quiz: {JsonSerializer.Serialize(entityQuiz, Utils.JsoIndented)}");
+            Console.WriteLine(e);
+        }
+
+        var quizSongHistories = new List<QuizSongHistory>();
+        foreach ((int sp, SongHistory? songHistory) in Quiz.SongsHistory)
+        {
+            foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
+            {
+                // todo?
+                // bool isGuest = userId >= 1_000_000;
+                // if (isGuest)
+                // {
+                //     continue;
+                // }
+
+                var quizSongHistory = new QuizSongHistory
+                {
+                    quiz_id = Quiz.Id,
+                    sp = sp,
+                    music_id = songHistory.Song.Id,
+                    user_id = userId,
+                    guess = guessInfo.Guess,
+                    first_guess_ms = guessInfo.FirstGuessMs,
+                    is_correct = guessInfo.IsGuessCorrect,
+                    is_on_list = guessInfo.IsOnList,
+                    played_at = songHistory.Song.PlayedAt,
+                };
+
+                quizSongHistories.Add(quizSongHistory);
+            }
+        }
+
+        try
+        {
+            bool success = await DbManager.InsertEntityBulk(quizSongHistories);
+            if (!success)
+            {
+                throw new Exception();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Failed to insert QuizSongHistory");
+            Console.WriteLine(e);
+        }
+
         if (shouldUpdateStats)
         {
-            // If we don't create a new dictionary,
-            // when a player uses 'Return to room' right before the correct answer is revealed, we can get a Collection was modified exception
-            // might be better to just disallow returning to room except on results phase
-            await UpdateStats(Quiz.SongsHistory.ToDictionary(x => x.Value.Song.Id,
-                x => SongHistory.ToSongStats(x.Value)));
+            try
+            {
+                // If we don't create a new dictionary,
+                // when a player uses 'Return to room' right before the correct answer is revealed, we can get a Collection was modified exception
+                // might be better to just disallow returning to room except on results phase
+                await DbManager.RecalculateSongStats(Quiz.SongsHistory.Select(x => x.Value.Song.Id).ToHashSet());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to RecalculateSongStats");
+                Console.WriteLine(e);
+            }
         }
         else
         {
             Quiz.Room.Log("Not updating stats");
-        }
-    }
-
-    private static async Task UpdateStats(Dictionary<int, SongStats> songStatsDict)
-    {
-        foreach ((int mId, SongStats songStats) in songStatsDict)
-        {
-            if (songStats.TimesPlayed > 0)
-            {
-                await DbManager.IncrementSongStats(mId, songStats, null);
-            }
         }
     }
 
@@ -935,6 +1005,8 @@ public class QuizManager
                 Quiz.Room.Log($"NGMC: Every player must have at least 1 guess.", writeToChat: true);
                 return false;
             }
+
+            Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
         }
 
         CorrectAnswersDict = new Dictionary<int, List<string>>();
@@ -1086,12 +1158,14 @@ public class QuizManager
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
                             break;
                         }
-                    case ListDistributionKind.Balanced:
+                    case ListDistributionKind.Balanced
+                        : // todo if there are say 3 people in the room with a list and one without, 20 songs it adds 5 from those three players and 5 random songs
                     case ListDistributionKind.BalancedStrict:
                         {
                             // todo tests
                             if (validSourcesDict.Count <= 1)
                             {
+                                // todo error instead
                                 goto case ListDistributionKind.Random;
                             }
 
@@ -1106,6 +1180,9 @@ public class QuizManager
                                 Console.WriteLine($"strict targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
                             }
 
+                            // todo
+                            //so seems like balanced strict ignores when duplicate vns is off
+                            //we got 2 sanobas with duplicates off
                             foreach ((int pId, _) in validSourcesDict)
                             {
                                 Console.WriteLine(

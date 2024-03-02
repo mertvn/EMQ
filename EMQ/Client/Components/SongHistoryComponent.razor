@@ -37,20 +37,19 @@
                         {
                             var song = songHistory.Song;
                             string rowBackgroundColor = "initial";
-                            bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPlayerGuessInfo);
+                            bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
                             if (ownPgiExists)
                             {
-                                rowBackgroundColor = UiHelpers.Bool2Color(ownPlayerGuessInfo.IsGuessCorrect, "seagreen", "firebrick");
+                                rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
                             }
 
-                            bool ownPgiHasLabels = ownPlayerGuessInfo.Labels != null;
                             bool shouldDisplay = SongHistoryFilter switch
                             {
                                 SongHistoryFilterKind.All => true,
-                                SongHistoryFilterKind.Correct => ownPgiExists && ownPlayerGuessInfo.IsGuessCorrect,
-                                SongHistoryFilterKind.Wrong => ownPgiExists && !ownPlayerGuessInfo.IsGuessCorrect,
-                                SongHistoryFilterKind.Rig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo!.Labels!.Any(),
-                                SongHistoryFilterKind.Erig => ownPgiExists && ownPgiHasLabels && ownPlayerGuessInfo!.Labels!.Any() && ownPlayerGuessInfo.IsGuessCorrect && songHistory.TimesCorrect == 1,
+                                SongHistoryFilterKind.Correct => ownPgiExists && ownPgi.IsGuessCorrect,
+                                SongHistoryFilterKind.Wrong => ownPgiExists && !ownPgi.IsGuessCorrect,
+                                SongHistoryFilterKind.Rig => ownPgiExists && ownPgi.IsOnList,
+                                SongHistoryFilterKind.Erig => ownPgiExists && ownPgi.IsGuessCorrect && songHistory.TimesCorrect == 1,
                                 _ => throw new ArgumentOutOfRangeException()
                                 };
 
@@ -155,7 +154,7 @@
                                                     @value.Username:
                                                     <span> @value.Guess </span>
                                                     (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
-                                                    @if (value.Labels?.Any() ?? false)
+                                                    @if (value.IsOnList)
                                                     {
                                                         <span>(On List)</span>
                                                     }

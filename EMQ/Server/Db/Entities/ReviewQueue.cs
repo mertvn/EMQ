@@ -8,7 +8,7 @@ namespace EMQ.Server.Db.Entities;
 [Table("review_queue")]
 public class ReviewQueue
 {
-    [Dapper.Contrib.Extensions.Key]
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 

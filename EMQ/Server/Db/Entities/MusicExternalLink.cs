@@ -7,11 +7,11 @@ namespace EMQ.Server.Db.Entities;
 [Table("music_external_link")]
 public class MusicExternalLink
 {
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public int music_id { get; set; }
 
-    [Dapper.Contrib.Extensions.ExplicitKey]
+    [Key]
     [Required]
     public string url { get; set; } = "";
 
