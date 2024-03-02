@@ -32,8 +32,19 @@
         <label for="RoomPassword">Room password</label>
         <br/>
 
-        @* todo reserving two rooms at the same time breaks server *@
-        <input style="margin: 5px" type="submit" class="btn btn-primary" value="Reserve Room" disabled="@(ClientState.Session == null)"/>
+        @if (ClientState.Session != null)
+        {
+            @if (ClientState.ServerStats.IsServerReadOnly)
+            {
+                <p>Server is in read-only mode.</p>
+            }
+            else
+            {
+                @* todo reserving two rooms at the same time breaks server *@
+                <input style="margin: 5px" type="submit" class="btn btn-primary" value="Reserve Room"/>
+            }
+        }
+
     </EditForm>
 </div>
 

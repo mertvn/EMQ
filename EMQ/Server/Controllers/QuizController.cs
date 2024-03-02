@@ -193,6 +193,11 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         var owner = session.Player;
         var room = new Room(Guid.NewGuid(), req.Name, owner)
         {
