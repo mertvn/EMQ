@@ -29,7 +29,7 @@ public class AddTableQuizSongHistory : Migration
             .OnColumn("user_id").Ascending()
             .OnColumn("played_at");
 
-        Alter.Table("music").AddColumn("stat_uniqueusers").AsInt32().NotNullable();
+        Alter.Table("music").AddColumn("stat_uniqueusers").AsInt32().NotNullable().WithDefaultValue(0);
     }
 
     public override void Down()
