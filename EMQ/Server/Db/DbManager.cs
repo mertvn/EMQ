@@ -1014,7 +1014,7 @@ public static class DbManager
     // todo make Filters required
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
-        bool selectCategories = false, List<Player>? players = null)
+        bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1462,9 +1462,17 @@ public static class DbManager
                         }
                     }
 
-                    canAdd &= !addedMselUrls.Contains(mselUrl) || duplicates;
+                    bool isDuplicate = addedMselUrls.Contains(mselUrl);
+                    canAdd &=  !isDuplicate || duplicates;
                     if (canAdd)
                     {
+                        if ((listDistributionKind is ListDistributionKind.Balanced
+                                or ListDistributionKind.BalancedStrict) &&
+                            isDuplicate && Random.Shared.NextSingle() >= 0.2f)
+                        {
+                            continue;
+                        }
+
                         if (filters != null)
                         {
                             var songSource = song.Sources.First();

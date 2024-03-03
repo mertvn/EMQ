@@ -1159,7 +1159,8 @@ public class QuizManager
                         {
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind);
                             break;
                         }
                     case ListDistributionKind.Balanced:
