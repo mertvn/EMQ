@@ -1193,7 +1193,7 @@ public class QuizManager
                                     .Take(targetNumSongsPerPlayer));
                             }
 
-                            dbSongs = (await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
+                            dbSongs = (await DbManager.GetRandomSongs(targetNumSongsPerPlayer * validSourcesDict.Count,
                                 Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
 
