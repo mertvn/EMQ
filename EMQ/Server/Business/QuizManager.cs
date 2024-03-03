@@ -1189,7 +1189,8 @@ public class QuizManager
                             {
                                 Console.WriteLine(
                                     $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
-                                validSourcesSelected.AddRange(validSourcesDict[pId].Take(targetNumSongsPerPlayer));
+                                validSourcesSelected.AddRange(validSourcesDict[pId].OrderBy(x => Random.Shared.Next())
+                                    .Take(targetNumSongsPerPlayer));
                             }
 
                             dbSongs = (await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
