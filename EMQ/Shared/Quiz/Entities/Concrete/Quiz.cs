@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -18,6 +18,8 @@ public sealed class Quiz : IDisposable
     }
 
     public const float TickRate = 17;
+
+    public const float TickRateClient = TickRate * 4;
 
     public bool IsDisposed;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -364,7 +364,7 @@ public partial class QuizPage
         PageState.Timer.Stop();
         PageState.Timer.Elapsed -= OnTimedEvent;
 
-        PageState.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRate).TotalMilliseconds;
+        PageState.Timer.Interval = TimeSpan.FromMilliseconds(Quiz.TickRateClient).TotalMilliseconds;
         PageState.Timer.Elapsed += OnTimedEvent;
         PageState.Timer.AutoReset = true;
         PageState.Timer.Start();
@@ -671,7 +671,7 @@ public partial class QuizPage
 
             if (PageState.Countdown > 0)
             {
-                PageState.Countdown -= Quiz.TickRate;
+                PageState.Countdown -= Quiz.TickRateClient;
             }
             else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
             {
