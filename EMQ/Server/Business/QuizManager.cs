@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -1042,32 +1042,36 @@ public class QuizManager
 
                 if (vndbInfo.Labels != null)
                 {
-                    validSourcesDict[player.Id] = new List<string>();
                     var userLabels = await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId);
                     var include = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Include).ToList();
                     var exclude = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Exclude).ToList();
 
-                    // todo batch
-                    // todo method
-                    foreach (UserLabel userLabel in include)
+                    // todo Exclude does nothing on its own (don't break Balanced while fixing this)
+                    if (include.Any())
                     {
-                        var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
-                        validSourcesDict[player.Id].AddRange(userLabelVns.Select(x => x.vnid));
-                    }
-
-                    if (exclude.Any())
-                    {
-                        var excluded = new List<string>();
-                        foreach (UserLabel userLabel in exclude)
+                        validSourcesDict[player.Id] = new List<string>();
+                        // todo batch
+                        // todo method
+                        foreach (UserLabel userLabel in include)
                         {
                             var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
-                            excluded.AddRange(userLabelVns.Select(x => x.vnid));
+                            validSourcesDict[player.Id].AddRange(userLabelVns.Select(x => x.vnid));
                         }
 
-                        validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
-                    }
+                        if (exclude.Any())
+                        {
+                            var excluded = new List<string>();
+                            foreach (UserLabel userLabel in exclude)
+                            {
+                                var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                                excluded.AddRange(userLabelVns.Select(x => x.vnid));
+                            }
 
-                    validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
+                            validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
+                        }
+
+                        validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
+                    }
                 }
 
                 stopWatch.Stop();
@@ -1158,18 +1162,19 @@ public class QuizManager
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
                             break;
                         }
-                    case ListDistributionKind.Balanced
-                        : // todo if there are say 3 people in the room with a list and one without, 20 songs it adds 5 from those three players and 5 random songs
+                    case ListDistributionKind.Balanced:
                     case ListDistributionKind.BalancedStrict:
                         {
                             // todo tests
-                            if (validSourcesDict.Count <= 1)
+                            if (validSourcesDict.Count < 2)
                             {
-                                // todo error instead
-                                goto case ListDistributionKind.Random;
+                                Quiz.Room.Log(
+                                    $"Balanced mode requires there to be at least two players with a list active.",
+                                    writeToChat: true);
+                                return false;
                             }
 
-                            dbSongs = new List<Song>();
+                            var validSourcesSelected = new List<string>();
                             int targetNumSongsPerPlayer = Quiz.Room.QuizSettings.NumSongs / validSourcesDict.Count;
                             Console.WriteLine($"targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
 
@@ -1180,41 +1185,49 @@ public class QuizManager
                                 Console.WriteLine($"strict targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
                             }
 
-                            // todo
-                            //so seems like balanced strict ignores when duplicate vns is off
-                            //we got 2 sanobas with duplicates off
                             foreach ((int pId, _) in validSourcesDict)
                             {
                                 Console.WriteLine(
                                     $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
-                                dbSongs.AddRange(await DbManager.GetRandomSongs(targetNumSongsPerPlayer,
-                                    Quiz.Room.QuizSettings.Duplicates, validSourcesDict[pId],
-                                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
+                                validSourcesSelected.AddRange(validSourcesDict[pId].Take(targetNumSongsPerPlayer));
                             }
 
-                            dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
-                            if (!Quiz.Room.QuizSettings.Duplicates)
-                            {
-                                dbSongs = dbSongs.DistinctBy(x => x.Sources.Select(y => y.Id)).ToList();
-                            }
+                            dbSongs = (await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
+                                Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
+                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
 
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");
 
                             if (Quiz.Room.QuizSettings.ListDistributionKind != ListDistributionKind.BalancedStrict)
                             {
-                                int triesLeft = 5;
+                                int triesLeft = 3;
                                 while (dbSongs.Count < Quiz.Room.QuizSettings.NumSongs && triesLeft > 0)
                                 {
                                     triesLeft -= 1;
-                                    dbSongs.AddRange(await DbManager.GetRandomSongs(diff,
+                                    var newSongs = await DbManager.GetRandomSongs(diff,
                                         Quiz.Room.QuizSettings.Duplicates, validSources,
-                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
+                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
 
-                                    dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
-                                    if (!Quiz.Room.QuizSettings.Duplicates)
+                                    foreach (Song newSong in newSongs)
                                     {
-                                        dbSongs = dbSongs.DistinctBy(x => x.Sources.Select(y => y.Id)).ToList();
+                                        if (!dbSongs.Any(x => x.Id == newSong.Id))
+                                        {
+                                            if (Quiz.Room.QuizSettings.Duplicates)
+                                            {
+                                                dbSongs.Add(newSong);
+                                            }
+                                            else
+                                            {
+                                                bool isDuplicateSource = newSong.Sources.Select(x => x.Id)
+                                                    .Any(y => dbSongs.SelectMany(z => z.Sources).Select(c => c.Id)
+                                                        .Contains(y));
+                                                if (!isDuplicateSource)
+                                                {
+                                                    dbSongs.Add(newSong);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
