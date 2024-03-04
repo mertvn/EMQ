@@ -50,7 +50,7 @@
     {
         if (ClientState.Session != null)
         {
-            var req = new ReqGetSHRoomContainers(ClientState.Session.Player.Id, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow);
+            var req = new ReqGetSHRoomContainers(ClientState.Session.Player.Id, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
             var res = await _client.PostAsJsonAsync("Quiz/GetSHRoomContainers", req);
             if (res.IsSuccessStatusCode)
             {
