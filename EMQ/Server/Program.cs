@@ -324,7 +324,7 @@ app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
-bool precacheSongs = false && !app.Environment.IsDevelopment();
+bool precacheSongs = true && !app.Environment.IsDevelopment();
 
 string cnnStrSong;
 string cnnStrAuth;

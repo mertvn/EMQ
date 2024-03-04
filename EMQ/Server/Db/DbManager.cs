@@ -74,14 +74,13 @@ public static class DbManager
         var latinTitles = input.Titles.Select(x => x.LatinTitle).ToList();
         var links = input.Links.Select(x => x.Url).ToList();
 
-        // todo
-        // if (input.Id > 0 && !latinTitles.Any() && !links.Any())
-        // {
-        //     if (CachedSongs.TryGetValue(input.Id, out var s))
-        //     {
-        //         return new List<Song> { s };
-        //     }
-        // }
+        if (input.Id > 0 && !latinTitles.Any() && !links.Any() && !selectCategories)
+        {
+            if (CachedSongs.TryGetValue(input.Id, out var s))
+            {
+                return new List<Song> { s };
+            }
+        }
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -226,7 +225,7 @@ public static class DbManager
 
                 song.Sources = await SelectSongSource(connection, song, selectCategories);
                 song.Artists = await SelectArtist(connection, song, false);
-                // CachedSongs[input.Id] = song; // todo
+                CachedSongs[input.Id] = song;
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
@@ -2265,7 +2264,7 @@ WHERE id = {mId};
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
                 {
                     song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
-                    CachedSongs[reviewQueue.music_id] = song;
+                    // CachedSongs[reviewQueue.music_id] = song;
                 }
 
                 var rq = new RQ
@@ -2301,7 +2300,7 @@ WHERE id = {mId};
             if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
             {
                 song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
-                CachedSongs[reviewQueue.music_id] = song;
+                // CachedSongs[reviewQueue.music_id] = song;
             }
 
             var rq = new RQ
@@ -2338,7 +2337,7 @@ WHERE id = {mId};
                 if (!CachedSongs.TryGetValue(report.music_id, out var song))
                 {
                     song = (await SelectSongs(new Song { Id = report.music_id }, false)).Single();
-                    CachedSongs[report.music_id] = song;
+                    // CachedSongs[report.music_id] = song;
                 }
 
                 var songReport = new SongReport()
