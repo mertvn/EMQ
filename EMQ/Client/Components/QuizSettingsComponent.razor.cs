@@ -433,7 +433,7 @@ public partial class QuizSettingsComponent
 
         await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", preset.B64);
 
-        SharePresetButtonText = $"Copied {preset.Name}!";
+        SharePresetButtonText = $"Copied!";
         StateHasChanged();
         await Task.Delay(TimeSpan.FromSeconds(2));
         SharePresetButtonText = "Share";
