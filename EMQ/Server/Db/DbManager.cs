@@ -78,7 +78,8 @@ public static class DbManager
         {
             if (CachedSongs.TryGetValue(input.Id, out var s))
             {
-                return new List<Song> { s };
+                s = JsonSerializer.Deserialize<Song>(JsonSerializer.Serialize(s)); // need deep copy
+                return new List<Song> { s! };
             }
         }
 

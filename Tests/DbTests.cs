@@ -1072,4 +1072,24 @@ order by ms.id
     //     await File.WriteAllTextAsync("old", JsonSerializer.Serialize(allValidLinksOld, Utils.JsoIndented));
     //     await File.WriteAllTextAsync("new", JsonSerializer.Serialize(allValidLinksNew, Utils.JsoIndented));
     // }
+
+    [Test]
+    public async Task Test_GetSHRoomContainers()
+    {
+        var shRoomContainers = await DbManager.GetSHRoomContainers(8, DateTime.MinValue, DateTime.MaxValue);
+        Assert.That(shRoomContainers.Any());
+
+        foreach (SHRoomContainer shRoomContainer in shRoomContainers)
+        {
+            foreach (SHQuizContainer shQuizContainer in shRoomContainer.Quizzes)
+            {
+                Assert.That(shQuizContainer.Quiz.created_at > shRoomContainer.Room.created_at);
+                foreach ((int _, SongHistory? value) in shQuizContainer.SongHistories)
+                {
+                    Assert.That(value.Song.PlayedAt > shQuizContainer.Quiz.created_at);
+                    Assert.That(value.Song.PlayedAt > shRoomContainer.Room.created_at);
+                }
+            }
+        }
+    }
 }
