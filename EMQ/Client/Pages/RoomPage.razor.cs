@@ -49,7 +49,7 @@ public partial class RoomPage
 
     private GenericModal? _changeRoomNameAndPasswordModalRef;
 
-    private SongHistoryComponent? _songHistoryComponent;
+    private SongHistoryWrapperComponent? _songHistoryWrapperComponent;
 
     private string? RoomName { get; set; }
 
@@ -332,6 +332,6 @@ public partial class RoomPage
             }
         }
 
-        await _songHistoryComponent!.Show();
+        await _songHistoryWrapperComponent!.Show();
     }
 }

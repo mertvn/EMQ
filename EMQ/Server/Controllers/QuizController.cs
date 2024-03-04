@@ -13,6 +13,7 @@ using EMQ.Server.Db.Entities;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -859,5 +860,20 @@ public class QuizController : ControllerBase
         }
 
         return Unauthorized();
+    }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("GetSHRoomContainers")]
+    public async Task<ActionResult<List<SHRoomContainer>>> GetSHRoomContainers(ReqGetSHRoomContainers req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var shRoomContainers = await DbManager.GetSHRoomContainers(req.UserId, req.StartDate, req.EndDate);
+        return shRoomContainers;
     }
 }

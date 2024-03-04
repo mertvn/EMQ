@@ -20,6 +20,7 @@ using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz;
 using Npgsql;
@@ -1463,7 +1464,7 @@ public static class DbManager
                     }
 
                     bool isDuplicate = addedMselUrls.Contains(mselUrl);
-                    canAdd &=  !isDuplicate || duplicates;
+                    canAdd &= !isDuplicate || duplicates;
                     if (canAdd)
                     {
                         if ((listDistributionKind is ListDistributionKind.Balanced
@@ -1844,8 +1845,10 @@ order by qsh.played_at desc
 where row_number <= {useLastNPlaysPerPlayer}";
 
                 var res =
-                    await connection.QuerySingleAsync<(int correct, int played, int guessed, int totalguessms, int uniqueusers)>(sql,
-                        new { mId = mId });
+                    await connection
+                        .QuerySingleAsync<(int correct, int played, int guessed, int totalguessms, int uniqueusers)>(
+                            sql,
+                            new { mId = mId });
 
                 var querySongStats = connection.QueryBuilder($@"UPDATE music SET
                  stat_correct = {res.correct},
@@ -3511,5 +3514,81 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             await transaction.CommitAsync();
             return true;
         }
+    }
+
+    public static async Task<List<SHRoomContainer>> GetSHRoomContainers(int userId,
+        DateTime startDate, DateTime endDate)
+    {
+        var shRoomContainers = new List<SHRoomContainer>();
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+
+        var queryQuizIds = connection.QueryBuilder(
+            $"SELECT DISTINCT quiz_id FROM quiz_song_history where user_id = {userId} AND (played_at >= {startDate} AND played_at <= {endDate})");
+
+        var quizIds = (await connection.QueryAsync<Guid>(queryQuizIds.Sql, queryQuizIds.Parameters)).ToArray();
+        var quizzes = (await connection.QueryAsync<EntityQuiz>(
+                "SELECT * FROM quiz where id = ANY(@quizIds) order by created_at desc", new { quizIds = quizIds }))
+            .ToArray();
+
+        var roomIds = quizzes.Select(x => x.room_id).ToArray();
+        var rooms = (await connection.QueryAsync<EntityRoom>(
+                "SELECT * FROM room where id = ANY(@roomIds) order by created_at desc", new { roomIds = roomIds }))
+            .ToArray();
+
+        var quizSongHistories = (await connection.QueryAsync<QuizSongHistory>(
+            $"SELECT * FROM quiz_song_history where quiz_id = ANY(@quizIds) order by played_at", // not desc here!
+            new { quizIds = quizIds })).ToArray();
+
+        foreach (EntityRoom room in rooms)
+        {
+            var shQuizContainers = new List<SHQuizContainer>();
+            var roomQuizzes = quizzes.Where(x => x.room_id == room.id);
+            foreach (EntityQuiz roomQuiz in roomQuizzes)
+            {
+                var songHistories = new Dictionary<int, SongHistory>();
+                var qsh = quizSongHistories.Where(y => y.quiz_id == roomQuiz.id).GroupBy(z => z.sp);
+                foreach (IGrouping<int, QuizSongHistory> histories in qsh)
+                {
+                    var song = (await SelectSongs(new Song { Id = histories.First().music_id }, false)).Single();
+                    song.PlayedAt = histories.First().played_at;
+
+                    int[] userIds = histories.Select(x => x.user_id).ToArray();
+                    var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>(
+                            "select id, username from users where id = ANY(@userIds)", new { userIds = userIds }))
+                        .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+                    foreach (int id in userIds)
+                    {
+                        if (!usernamesDict.ContainsKey(id))
+                        {
+                            usernamesDict[id] = $"Guest_{id}";
+                        }
+                    }
+
+                    var sh = new SongHistory
+                    {
+                        Song = song,
+                        PlayerGuessInfos = histories.ToDictionary(c => c.user_id, c => new GuessInfo
+                        {
+                            Username = usernamesDict[c.user_id],
+                            Guess = c.guess,
+                            FirstGuessMs = c.first_guess_ms,
+                            IsGuessCorrect = c.is_correct,
+                            Labels = null,
+                            IsOnList = c.is_on_list,
+                        }),
+                    };
+
+                    songHistories[histories.Key] = sh;
+                }
+
+                shQuizContainers.Add(new SHQuizContainer { Quiz = roomQuiz, SongHistories = songHistories, });
+            }
+
+            shRoomContainers.Add(new SHRoomContainer { Room = room, Quizzes = shQuizContainers, });
+        }
+
+        return shRoomContainers;
     }
 }

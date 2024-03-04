@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -136,7 +136,7 @@ public partial class QuizPage
 
     private GenericModal? _returnToRoomModalRef;
 
-    private SongHistoryComponent? _songHistoryComponent;
+    private SongHistoryWrapperComponent? _songHistoryWrapperComponent;
 
     private GenericModal? _inventoryModalRef;
 
@@ -266,6 +266,7 @@ public partial class QuizPage
 
     protected override void OnAfterRender(bool firstRender)
     {
+        // Console.WriteLine("rendered qp");
         if (firstRender)
         {
             _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
@@ -934,12 +935,12 @@ public partial class QuizPage
                 if (serverSongHistory is not null)
                 {
                     ClientSongsHistory = serverSongHistory;
-                    await _songHistoryComponent!.CallStateHasChanged();
+                    await _songHistoryWrapperComponent!.CallStateHasChanged();
                 }
             }
         }
 
-        await _songHistoryComponent!.Show();
+        await _songHistoryWrapperComponent!.Show();
     }
 
     private async Task NGMCBurnPlayer(int playerId)

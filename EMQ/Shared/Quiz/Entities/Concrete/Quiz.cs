@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Timers;
+using EMQ.Shared.Core.SharedDbEntities;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -100,4 +101,18 @@ public readonly struct GuessInfo
     public List<Label>? Labels { get; init; }
 
     public bool IsOnList { get; init; }
+}
+
+public class SHRoomContainer
+{
+    public EntityRoom Room { get; set; } = new();
+
+    public List<SHQuizContainer> Quizzes { get; set; } = new();
+}
+
+public class SHQuizContainer
+{
+    public EntityQuiz Quiz { get; set; } = new();
+
+    public Dictionary<int, SongHistory> SongHistories { get; set; } = new();
 }

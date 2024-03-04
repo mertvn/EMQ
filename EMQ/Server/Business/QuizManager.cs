@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,6 +15,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.SignalR;
 

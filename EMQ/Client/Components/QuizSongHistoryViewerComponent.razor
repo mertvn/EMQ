@@ -1,0 +1,87 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
+
+@foreach (var shRoomContainer in SHRoomContainers)
+{
+    <details style="margin: 10px;">
+        <summary>
+            @shRoomContainer.Room.created_at.ToString("s") @shRoomContainer.Room.initial_name
+            <button type="button" class="btn btn-secondary" @onclick="@(() => DownloadRoomJson(shRoomContainer))">
+                Download JSON (Room)
+            </button>
+        </summary>
+        <div>
+            @foreach (var quiz in shRoomContainer.Quizzes)
+            {
+                <details style="padding-left: 6px; margin: 10px;">
+                    <summary>
+                        @quiz.Quiz.created_at.ToString("s") Quiz (@quiz.SongHistories.First().Value.PlayerGuessInfos.Count players)
+                        <button type="button" class="btn btn-secondary" @onclick="@(() => DownloadQuizJson(quiz))">
+                            Download JSON (Quiz)
+                        </button>
+
+                        <button type="button" class="btn btn-secondary" @onclick="@(() => CopySettingsCode(quiz))">
+                            Copy settings code
+                        </button>
+                    </summary>
+                    <div>
+                        <SongHistoryComponent SongsHistory="@quiz.SongHistories"></SongHistoryComponent>
+                    </div>
+                </details>
+            }
+        </div>
+    </details>
+}
+
+@code {
+
+    public List<SHRoomContainer> SHRoomContainers { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetSHRoomContainers();
+    }
+
+    public async Task GetSHRoomContainers()
+    {
+        if (ClientState.Session != null)
+        {
+            var req = new ReqGetSHRoomContainers(ClientState.Session.Player.Id, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow);
+            var res = await _client.PostAsJsonAsync("Quiz/GetSHRoomContainers", req);
+            if (res.IsSuccessStatusCode)
+            {
+                var content = await res.Content.ReadFromJsonAsync<List<SHRoomContainer>>();
+                if (content is not null)
+                {
+                    SHRoomContainers = content;
+                }
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task DownloadRoomJson(SHRoomContainer room)
+    {
+        string json = JsonSerializer.Serialize(room, Utils.JsoIndented);
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
+        await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_Room_{room.Room.created_at:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
+    }
+
+    private async Task DownloadQuizJson(SHQuizContainer quiz)
+    {
+        string json = JsonSerializer.Serialize(quiz, Utils.JsoIndented);
+        byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
+        await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_Quiz_{quiz.Quiz.created_at:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
+    }
+
+    private async Task CopySettingsCode(SHQuizContainer quiz)
+    {
+        await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", quiz.Quiz.settings_b64);
+    }
+
+}

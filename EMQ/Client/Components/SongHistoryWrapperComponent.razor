@@ -1,0 +1,77 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@inject IJSRuntime _jsRuntime
+
+<Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
+        <Blazorise.ModalHeader>
+            <Blazorise.ModalTitle>Song History</Blazorise.ModalTitle>
+        </Blazorise.ModalHeader>
+        <Blazorise.ModalBody>
+            <SongHistoryComponent @ref="_songHistoryComponentRef" SongsHistory="SongsHistory"></SongHistoryComponent>
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                Close
+            </button>
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>
+
+@code {
+
+    [Parameter]
+    public Dictionary<int, SongHistory>? SongsHistory { get; set; }
+
+    private bool _shouldRender;
+
+    private int _previousCount;
+
+    // todo FullyRenderedDict
+
+    protected override bool ShouldRender() => _shouldRender;
+
+    private Blazorise.Modal _modalRef = null!;
+
+    private SongHistoryComponent? _songHistoryComponentRef;
+
+    public async Task Show()
+    {
+        await _modalRef.Show();
+        StateHasChanged();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Console.WriteLine("paramset songhistory");
+        if (SongsHistory != null)
+        {
+            int newCount = SongsHistory.Count;
+            _shouldRender = newCount != _previousCount;
+
+            // if (_shouldRender)
+            // {
+                // Console.WriteLine("rendering songhistory");
+            // }
+
+            _previousCount = newCount;
+        }
+
+        if (_shouldRender)
+        {
+            await CallStateHasChanged();
+        }
+    }
+
+    public async Task CallStateHasChanged()
+    {
+        _shouldRender = true;
+        await Task.Yield();
+        if (_songHistoryComponentRef != null)
+        {
+            await _songHistoryComponentRef.CallStateHasChanged();
+        }
+
+        StateHasChanged();
+    }
+
+}

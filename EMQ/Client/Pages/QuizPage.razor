@@ -53,7 +53,7 @@
     }
 </GenericModal>
 
-<SongHistoryComponent @ref="_songHistoryComponent" SongsHistory="@ClientSongsHistory"></SongHistoryComponent>
+<SongHistoryWrapperComponent @ref="_songHistoryWrapperComponent" SongsHistory="@ClientSongsHistory"></SongHistoryWrapperComponent>
 
 @if (!_clientConnectionManager.IsConnected)
 {

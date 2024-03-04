@@ -3,182 +3,170 @@
 @using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
 
-<Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
-    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
-        <Blazorise.ModalHeader>
-            <Blazorise.ModalTitle>Song History</Blazorise.ModalTitle>
-        </Blazorise.ModalHeader>
-        <Blazorise.ModalBody>
-            <div>
-                <select id="SongSelectionKind" style="margin: 5px" @oninput="OnSongHistoryFilterChanged">
-                    @foreach (SongHistoryFilterKind librarySongFilter in Enum.GetValues<SongHistoryFilterKind>())
-                    {
-                        <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
-                    }
-                </select>
-                <label for="SongSelectionKind">Filter</label>
-                <br/>
-            </div>
+<div>
+    <select id="SongSelectionKind" style="margin: 5px" @oninput="OnSongHistoryFilterChanged">
+        @foreach (SongHistoryFilterKind librarySongFilter in Enum.GetValues<SongHistoryFilterKind>())
+        {
+            <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
+        }
+    </select>
+    <label for="SongSelectionKind">Filter</label>
 
-            <table id="songHistoryTable" style="width: 100%;">
-                <tr class="songHistoryHeaders">
-                    <th class="songHistoryHeader"></th>
-                    <th class="songHistoryHeader">#</th>
-                    <th class="songHistoryHeader">Sources</th>
-                    <th class="songHistoryHeader">Types</th>
-                    <th class="songHistoryHeader">Title</th>
-                    <th class="songHistoryHeader">Artists</th>
-                </tr>
-                @if (SongsHistory != null)
+    <button type="button" class="btn btn-secondary" style="float: right" @onclick="@DownloadSongHistoryJson">
+        Download JSON
+    </button>
+</div>
+
+<table id="songHistoryTable" style="width: 100%;">
+    <tr class="songHistoryHeaders">
+        <th class="songHistoryHeader"></th>
+        <th class="songHistoryHeader">#</th>
+        <th class="songHistoryHeader">Sources</th>
+        <th class="songHistoryHeader">Types</th>
+        <th class="songHistoryHeader">Title</th>
+        <th class="songHistoryHeader">Artists</th>
+    </tr>
+    @if (SongsHistory != null)
+    {
+        @for (int index = 0; index < SongsHistory.Count; index++)
+        {
+            if (SongsHistory.TryGetValue(index, out var songHistory))
+            {
+                var song = songHistory.Song;
+                string rowBackgroundColor = "initial";
+                bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
+                if (ownPgiExists)
                 {
-                    @for (int index = 0; index < SongsHistory.Count; index++)
-                    {
-                        if (SongsHistory.TryGetValue(index, out var songHistory))
-                        {
-                            var song = songHistory.Song;
-                            string rowBackgroundColor = "initial";
-                            bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
-                            if (ownPgiExists)
-                            {
-                                rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
-                            }
-
-                            bool shouldDisplay = SongHistoryFilter switch
-                            {
-                                SongHistoryFilterKind.All => true,
-                                SongHistoryFilterKind.Correct => ownPgiExists && ownPgi.IsGuessCorrect,
-                                SongHistoryFilterKind.Wrong => ownPgiExists && !ownPgi.IsGuessCorrect,
-                                SongHistoryFilterKind.Rig => ownPgiExists && ownPgi.IsOnList,
-                                SongHistoryFilterKind.Erig => ownPgiExists && ownPgi.IsGuessCorrect && songHistory.TimesCorrect == 1,
-                                _ => throw new ArgumentOutOfRangeException()
-                                };
-
-                            @if (!shouldDisplay)
-                            {
-                                continue;
-                            }
-
-                            bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
-                            <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor;">
-
-                                <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
-                                    @onclick="@(() => Onclick_SongHistoryRow(songHistory))">
-                                    @if (showRowDetail)
-                                    {
-                                        <span>▼</span>
-                                    }
-                                    else
-                                    {
-                                        <span>▶</span>
-                                    }
-                                </td>
-
-                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @(index + 1)
-                                </td>
-                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @if (song.Sources.Count == 1)
-                                    {
-                                        <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                                    }
-                                    else
-                                    {
-                                        var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
-                                        string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                                        string tooltipText = $"<ul>{joined}</ul>";
-
-                                        <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-                                        <Blazorise.Tooltip
-                                            Inline="true"
-                                            Text="@tooltipText">
-                                            <span> and @(song.Sources.Count - 1) more...</span>
-                                        </Blazorise.Tooltip>
-                                    }
-                                </td>
-                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @* todo? *@
-                                    @string.Join(", ", song.Sources.SelectMany(x => x.SongTypes).Distinct())
-                                </td>
-                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @Converters.GetSingleTitle(song.Titles).LatinTitle
-                                </td>
-                                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    @if (song.Artists.Count == 1)
-                                    {
-                                        <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                                    }
-                                    else
-                                    {
-                                        var otherSources = song.Artists.Where(x => x.Id != song.Artists.First().Id);
-                                        string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                                        string tooltipText = $"<ul>{joined}</ul>";
-
-                                        <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                                        <Blazorise.Tooltip
-                                            Inline="true"
-                                            Text="@tooltipText">
-                                            <span> and @(song.Artists.Count - 1) more...</span>
-                                        </Blazorise.Tooltip>
-                                    }
-                                </td>
-                            </tr>
-
-                            @if (showRowDetail)
-                            {
-                                <tr class="songHistoryRowDetail">
-                                    <td colspan="6">
-                                        @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
-
-                                        @if (!string.IsNullOrEmpty(song.ScreenshotUrl))
-                                        {
-                                            <ul>
-                                                <li>
-                                                    <a href="@song.ScreenshotUrl" target="_blank">@song.ScreenshotUrl</a>
-                                                </li>
-                                            </ul>
-                                        }
-
-                                        <ul>
-                                            @foreach (var link in song.Links)
-                                            {
-                                                <li>
-                                                    <a href="@link.Url" target="_blank">@link.Url</a>
-                                                </li>
-                                            }
-                                        </ul>
-
-                                        <ul>
-                                            @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
-                                            {
-                                                <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick"); padding-left: 4px;">
-                                                    @value.Username:
-                                                    <span> @value.Guess </span>
-                                                    (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
-                                                    @if (value.IsOnList)
-                                                    {
-                                                        <span>(On List)</span>
-                                                    }
-                                                </li>
-                                            }
-                                        </ul>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    }
+                    rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
                 }
-            </table>
-        </Blazorise.ModalBody>
-        <Blazorise.ModalFooter>
-            <button type="button" class="btn btn-secondary" @onclick="@DownloadSongHistoryJson">
-                Download JSON
-            </button>
-            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
-                Close
-            </button>
-        </Blazorise.ModalFooter>
-    </Blazorise.ModalContent>
-</Blazorise.Modal>
+
+                bool shouldDisplay = SongHistoryFilter switch
+                {
+                    SongHistoryFilterKind.All => true,
+                    SongHistoryFilterKind.Correct => ownPgiExists && ownPgi.IsGuessCorrect,
+                    SongHistoryFilterKind.Wrong => ownPgiExists && !ownPgi.IsGuessCorrect,
+                    SongHistoryFilterKind.Rig => ownPgiExists && ownPgi.IsOnList,
+                    SongHistoryFilterKind.Erig => ownPgiExists && ownPgi.IsGuessCorrect && songHistory.TimesCorrect == 1,
+                    _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                @if (!shouldDisplay)
+                {
+                    continue;
+                }
+
+                string key = $"{index}{rowBackgroundColor}";
+                // Console.WriteLine(key);
+                bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
+                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor;" @key="@key">
+
+                    <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                        @onclick="@(() => Onclick_SongHistoryRow(songHistory))">
+                        @if (showRowDetail)
+                        {
+                            <span>▼</span>
+                        }
+                        else
+                        {
+                            <span>▶</span>
+                        }
+                    </td>
+
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @(index + 1)
+                    </td>
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @if (song.Sources.Count == 1)
+                        {
+                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+                        }
+                        else
+                        {
+                            var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
+                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
+                            string tooltipText = $"<ul>{joined}</ul>";
+
+                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+                            <Blazorise.Tooltip
+                                Inline="true"
+                                Text="@tooltipText">
+                                <span> and @(song.Sources.Count - 1) more...</span>
+                            </Blazorise.Tooltip>
+                        }
+                    </td>
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @* todo? *@
+                        @string.Join(", ", song.Sources.SelectMany(x => x.SongTypes).Distinct())
+                    </td>
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @Converters.GetSingleTitle(song.Titles).LatinTitle
+                    </td>
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @if (song.Artists.Count == 1)
+                        {
+                            <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                        }
+                        else
+                        {
+                            var otherSources = song.Artists.Where(x => x.Id != song.Artists.First().Id);
+                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
+                            string tooltipText = $"<ul>{joined}</ul>";
+
+                            <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                            <Blazorise.Tooltip
+                                Inline="true"
+                                Text="@tooltipText">
+                                <span> and @(song.Artists.Count - 1) more...</span>
+                            </Blazorise.Tooltip>
+                        }
+                    </td>
+                </tr>
+
+                @if (showRowDetail)
+                {
+                    <tr class="songHistoryRowDetail">
+                        <td colspan="6">
+                            @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
+
+                            @if (!string.IsNullOrEmpty(song.ScreenshotUrl))
+                            {
+                                <ul>
+                                    <li>
+                                        <a href="@song.ScreenshotUrl" target="_blank">@song.ScreenshotUrl</a>
+                                    </li>
+                                </ul>
+                            }
+
+                            <ul>
+                                @foreach (var link in song.Links)
+                                {
+                                    <li>
+                                        <a href="@link.Url" target="_blank">@link.Url</a>
+                                    </li>
+                                }
+                            </ul>
+
+                            <ul>
+                                @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
+                                {
+                                    <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick"); padding-left: 4px;">
+                                        @value.Username:
+                                        <span> @value.Guess </span>
+                                        (@(Math.Round((float)value.FirstGuessMs / 1000, 2))s)
+                                        @if (value.IsOnList)
+                                        {
+                                            <span>(On List)</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </td>
+                    </tr>
+                }
+            }
+        }
+    }
+</table>
 
 
 @code {
@@ -186,46 +174,12 @@
     [Parameter]
     public Dictionary<int, SongHistory>? SongsHistory { get; set; }
 
-    private bool _shouldRender;
-
-    private int _previousCount;
-
-    // todo FullyRenderedDict
-
-    protected override bool ShouldRender() => _shouldRender;
-
-    private Blazorise.Modal _modalRef = null!;
-
     public Dictionary<int, bool> RowDetailsDict { get; set; } = new();
 
     private SongHistoryFilterKind SongHistoryFilter { get; set; }
 
-    protected override void OnParametersSet()
-    {
-    // Console.WriteLine("paramset songhistory");
-        if (SongsHistory != null)
-        {
-            int newCount = SongsHistory.Count;
-            _shouldRender = newCount != _previousCount;
-
-    // if (_shouldRender)
-    // {
-    //     Console.WriteLine("rendering songhistory");
-    // }
-
-            _previousCount = newCount;
-        }
-    }
-
-    public async Task Show()
-    {
-        await _modalRef.Show();
-        StateHasChanged();
-    }
-
     public async Task CallStateHasChanged()
     {
-        _shouldRender = true;
         await Task.Yield();
         StateHasChanged();
     }
