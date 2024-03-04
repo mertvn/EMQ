@@ -28,7 +28,7 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow);
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {

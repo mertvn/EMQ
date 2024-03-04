@@ -2256,12 +2256,17 @@ WHERE id = {mId};
         var rqs = new List<RQ>();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            // todo date filter
+            // todo proper date filter
             // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
             //     .ToList();
             var reviewQueues = (await connection.GetListAsync<ReviewQueue>()).ToList();
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
+                if (reviewQueue.submitted_on < startDate || reviewQueue.submitted_on > endDate)
+                {
+                    continue;
+                }
+
                 if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
                 {
                     song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
