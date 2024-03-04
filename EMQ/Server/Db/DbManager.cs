@@ -3545,6 +3545,9 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             $"SELECT * FROM quiz_song_history where quiz_id = ANY(@quizIds) order by played_at", // not desc here!
             new { quizIds = quizIds })).ToArray();
 
+        var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
         foreach (EntityRoom room in rooms)
         {
             var shQuizContainers = new List<SHQuizContainer>();
@@ -3559,10 +3562,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     song.PlayedAt = histories.First().played_at;
 
                     int[] userIds = histories.Select(x => x.user_id).ToArray();
-                    var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>(
-                            "select id, username from users where id = ANY(@userIds)", new { userIds = userIds }))
-                        .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
-
                     foreach (int id in userIds)
                     {
                         if (!usernamesDict.ContainsKey(id))
