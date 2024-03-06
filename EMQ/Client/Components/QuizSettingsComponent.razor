@@ -437,6 +437,19 @@
                                 @* <p style="text-align: center;">@(ClientQuizSettings.Filters.VoteCountStart)-@(ClientQuizSettings.Filters.VoteCountEnd)</p> *@
                             </div>
                         </div>
+
+                    <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
+                        <h5>Sample point %</h5>
+                        <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                            <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.StartTimePercentageStart"
+                                          @bind-ValueHigh="@ClientQuizSettings.Filters.StartTimePercentageEnd"
+                                          MinValue="@Constants.QFStartTimePercentageStart" MaxValue="@Constants.QFStartTimePercentageEnd">
+                            </RangeControl>
+                            <div style="display: inline-block">
+                                <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageStart" style="width: 60px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageEnd" style="width: 60px;"></InputNumber>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </Blazorise.TabPanel>
                 <Blazorise.TabPanel Name="TabTags">

@@ -392,6 +392,13 @@ public class QuizSettings
             diff.Add($"NGMC burning: {o.NGMCAllowBurning} → {n.NGMCAllowBurning}");
         }
 
+        if (o.Filters.StartTimePercentageStart != n.Filters.StartTimePercentageStart ||
+            o.Filters.StartTimePercentageEnd != n.Filters.StartTimePercentageEnd)
+        {
+            diff.Add(
+                $"Sample point: {o.Filters.StartTimePercentageStart} - {o.Filters.StartTimePercentageEnd} → {n.Filters.StartTimePercentageStart} - {n.Filters.StartTimePercentageEnd}");
+        }
+
         return diff;
     }
 }

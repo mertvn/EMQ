@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -311,4 +311,21 @@ public static class ExtensionMethods
 
         return 0;
     }
+
+    public static int DetermineSongStartTime(this Song song, QuizFilters? filters)
+    {
+        int duration = (int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds;
+        int startTimeStart = 0;
+        int startTimeEnd = duration;
+        const int leeway = 40;
+
+        if (filters != null)
+        {
+            startTimeStart = duration * filters.StartTimePercentageStart / 100;
+            startTimeEnd = duration * filters.StartTimePercentageEnd / 100;
+        }
+
+        return Random.Shared.Next(startTimeStart, Math.Clamp(duration - leeway, 0, startTimeEnd));
+    }
+
 }

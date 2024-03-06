@@ -798,7 +798,7 @@ public class QuizManager
                     // and OnlyFromLists is enabled
                     // todo?: this is somewhat expensive with big lists
                     var allPlayerVnTitles = await DbManager.FindSongsByLabels(allVndbInfos
-                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!));
+                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!), quizSettings.Filters);
 
                     foreach (Song song in allPlayerVnTitles)
                     {
@@ -1372,9 +1372,7 @@ public class QuizManager
                             Url = $"emqlocalmusiclibrary{filePath.Replace("G:/Music", "").Replace("G:\\Music", "")}"
                         });
 
-                        song.StartTime = Random.Shared.Next(0,
-                            Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
-                                int.MaxValue));
+                        song.StartTime = song.DetermineSongStartTime(Quiz.Room.QuizSettings.Filters);
                     }
                     catch (Exception e)
                     {

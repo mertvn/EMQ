@@ -113,6 +113,18 @@ public class QuizFilters
     [DefaultValue(ScreenshotKind.None)]
     public ScreenshotKind ScreenshotKind { get; set; } = ScreenshotKind.None;
 
+    [ProtoMember(18)]
+    [Required]
+    [DefaultValue(Constants.QFStartTimePercentageStart)]
+    [Range(Constants.QFStartTimePercentageStart, Constants.QFStartTimePercentageEnd)]
+    public int StartTimePercentageStart { get; set; } = Constants.QFStartTimePercentageStart;
+
+    [ProtoMember(19)]
+    [Required]
+    [DefaultValue(Constants.QFStartTimePercentageEnd)]
+    [Range(Constants.QFStartTimePercentageStart, Constants.QFStartTimePercentageEnd)]
+    public int StartTimePercentageEnd { get; set; } = Constants.QFStartTimePercentageEnd;
+
     // todo move all applicable filters here
 }
 

@@ -151,7 +151,7 @@ public class LibraryController : ControllerBase
     [Route("FindSongsByLabels")]
     public async Task<IEnumerable<Song>> FindSongsByLabels([FromBody] ReqFindSongsByLabels req)
     {
-        var songs = await DbManager.FindSongsByLabels(req.Labels);
+        var songs = await DbManager.FindSongsByLabels(req.Labels, null);
         return songs;
     }
 

@@ -1485,9 +1485,7 @@ public static class DbManager
                             song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
                         }
 
-                        song.StartTime = rng.Next(0,
-                            Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
-                                int.MaxValue));
+                        song.StartTime = song.DetermineSongStartTime(filters);
                         ret.Add(song);
                         addedMselUrls.Add(mselUrl);
                     }
@@ -2816,7 +2814,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     /// Limited to vocal songs for now.
-    public static async Task<List<Song>> FindSongsByLabels(IEnumerable<Label> reqLabels)
+    public static async Task<List<Song>> FindSongsByLabels(IEnumerable<Label> reqLabels, QuizFilters? filters)
     {
         var validSources = Label.GetValidSourcesFromLabels(reqLabels.ToList());
         // return await GetRandomSongs(int.MaxValue, true, validSources); // todo make mel param
@@ -2867,9 +2865,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 if (songs.Any())
                 {
                     var song = songs.First();
-                    song.StartTime = rng.Next(0,
-                        Math.Clamp((int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds - 40, 2,
-                            int.MaxValue));
+                    song.StartTime = song.DetermineSongStartTime(filters);
                     ret.Add(song);
                     addedMselUrls.Add(mselUrl);
                 }

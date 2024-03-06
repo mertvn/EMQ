@@ -177,7 +177,7 @@ public class DbTests
         };
 
         var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
-        var songs = await DbManager.FindSongsByLabels(labels);
+        var songs = await DbManager.FindSongsByLabels(labels, null);
         Assert.That(songs.Count > 0);
         GenericSongsAssert(songs);
     }
