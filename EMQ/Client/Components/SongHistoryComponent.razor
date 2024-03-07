@@ -128,6 +128,30 @@
                         <td colspan="6">
                             @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
 
+                            @* @if (ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null) *@
+                            @* { *@
+                            @*     <ul> *@
+                            @*         <li> *@
+                            @*             Previous interval: @ownPgi.PreviousUserSpacedRepetition.interval_days days *@
+                            @*         </li> *@
+                            @*         <li> *@
+                            @*             Previous due date: @ownPgi.PreviousUserSpacedRepetition.due_at.ToString("s") *@
+                            @*         </li> *@
+                            @*         <li> *@
+                            @*             Previous review date: @ownPgi.PreviousUserSpacedRepetition.reviewed_at.ToString("s") *@
+                            @*         </li> *@
+                            @* *@
+                            @*         <br/> *@
+                            @* *@
+                            @*         <li> *@
+                            @*             New interval: @ownPgi.CurrentUserSpacedRepetition.interval_days days *@
+                            @*         </li> *@
+                            @*         <li> *@
+                            @*             New due date: @ownPgi.CurrentUserSpacedRepetition.due_at.ToString("s") *@
+                            @*         </li> *@
+                            @*     </ul> *@
+                            @* } *@
+
                             @if (!string.IsNullOrEmpty(song.ScreenshotUrl))
                             {
                                 <ul>

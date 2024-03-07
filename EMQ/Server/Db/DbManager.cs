@@ -1015,7 +1015,8 @@ public static class DbManager
     // todo make Filters required
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
-        bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null)
+        bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
+        List<int>? validMids = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1343,6 +1344,11 @@ public static class DbManager
             if (validSources != null && validSources.Any())
             {
                 queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
+            }
+
+            if (validMids != null && validMids.Any())
+            {
+                queryMusicIds.Append($@" AND m.id = ANY({validMids})");
             }
 
             if (printSql)
@@ -3381,6 +3387,14 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
     }
 
+    public static async Task<bool> UpsertEntity<T>(T entity) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.UpsertAsync(entity);
+        }
+    }
+
     public static async Task<bool> DeleteEntity<T>(T entity) where T : class
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -3590,5 +3604,24 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         return shRoomContainers;
+    }
+
+    public static async Task<UserSpacedRepetition?> GetPreviousSpacedRepetitionInfo(int userId, int musicId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var userSpacedRepetition = await connection.QuerySingleOrDefaultAsync<UserSpacedRepetition?>(
+            "SELECT * FROM user_spaced_repetition where user_id = @userId AND music_id = @musicId",
+            new { userId, musicId });
+
+        return userSpacedRepetition;
+    }
+
+    public static async Task<List<int>> GetMidsWithReviewsDue(List<int> userIds)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var mids = await connection.QueryAsync<int>(
+            "SELECT music_id from user_spaced_repetition where user_id = ANY(@userIds) and due_at < now()",
+            new { userIds });
+        return mids.ToList();
     }
 }

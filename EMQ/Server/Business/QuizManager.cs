@@ -404,6 +404,18 @@ public class QuizManager
 
             if (player.HasActiveConnection)
             {
+                UserSpacedRepetition? previous = null;
+                UserSpacedRepetition? current = null;
+                try
+                {
+                    (previous, current) = await DoSpacedRepetition(player.Id, song.Id, correct);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to DoSpacedRepetition");
+                    Console.WriteLine(e);
+                }
+
                 _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
                 var guessInfo = new GuessInfo
                 {
@@ -413,6 +425,8 @@ public class QuizManager
                     IsGuessCorrect = correct,
                     Labels = labels,
                     IsOnList = labels?.Any() ?? false,
+                    PreviousUserSpacedRepetition = previous,
+                    CurrentUserSpacedRepetition = current,
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
@@ -789,6 +803,7 @@ public class QuizManager
         switch (quizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
+            case SongSelectionKind.SpacedRepetition:
             case SongSelectionKind.LocalMusicLibrary:
                 var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
                 if (quizSettings.OnlyFromLists &&
@@ -1154,6 +1169,14 @@ public class QuizManager
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
+            case SongSelectionKind.SpacedRepetition:
+                List<int>? validMids = null;
+                if (Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.SpacedRepetition)
+                {
+                    validMids = await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
+                    Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
+                }
+
                 switch (Quiz.Room.QuizSettings.ListDistributionKind)
                 {
                     case ListDistributionKind.Random:
@@ -1161,7 +1184,8 @@ public class QuizManager
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind);
+                                listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
+                                validMids: validMids);
                             break;
                         }
                     case ListDistributionKind.Balanced:
@@ -1197,7 +1221,8 @@ public class QuizManager
 
                             dbSongs = (await DbManager.GetRandomSongs(targetNumSongsPerPlayer * validSourcesDict.Count,
                                 Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList()));
+                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                validMids: validMids));
 
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");
@@ -1210,7 +1235,8 @@ public class QuizManager
                                     triesLeft -= 1;
                                     var newSongs = await DbManager.GetRandomSongs(diff,
                                         Quiz.Room.QuizSettings.Duplicates, validSources,
-                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                        validMids: validMids);
 
                                     foreach (Song newSong in newSongs)
                                     {
@@ -1418,6 +1444,7 @@ public class QuizManager
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
+            case SongSelectionKind.SpacedRepetition:
             case SongSelectionKind.LocalMusicLibrary:
                 await EnterQuiz();
                 await EnterGuessingPhase();
@@ -2072,5 +2099,32 @@ public class QuizManager
         }
 
         return playerLabels;
+    }
+
+    public static async Task<(UserSpacedRepetition previous, UserSpacedRepetition current)> DoSpacedRepetition(
+        int userId, int musicId, bool isCorrect)
+    {
+        var previous = await DbManager.GetPreviousSpacedRepetitionInfo(userId, musicId) ??
+                       new UserSpacedRepetition();
+
+        // Very rough implementation of an earliness nerf,
+        // which is necessary in EMQ's case as most songs will be reviewed very early most of the time.
+        // We don't care about lateness.
+        float previousDays = previous.interval_days; // backup old state for UI
+        float earlyDays = (float)(previous.due_at - DateTime.UtcNow).TotalDays;
+        if (earlyDays > 1)
+        {
+            previous.interval_days /= 1.5f;
+        }
+
+        var current = previous.DoSM2(isCorrect);
+        current.user_id = userId;
+        current.music_id = musicId;
+        current.reviewed_at = DateTime.UtcNow;
+        current.due_at = DateTime.UtcNow.AddHours(current.interval_days * 24);
+
+        previous.interval_days = previousDays; // restore old state for UI
+        bool success = await DbManager.UpsertEntity(current);
+        return (previous, current);
     }
 }

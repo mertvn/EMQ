@@ -10,6 +10,7 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
@@ -1091,5 +1092,35 @@ order by ms.id
                 }
             }
         }
+    }
+
+    [Test]
+    public async Task Test_DoSpacedRepetition()
+    {
+        int userId = 2;
+        int musicId = 2;
+        bool isCorrect = true;
+
+        (UserSpacedRepetition _, UserSpacedRepetition current) =
+            await QuizManager.DoSpacedRepetition(userId, musicId, isCorrect);
+        Assert.That(current.interval_days > 0);
+    }
+
+    [Test]
+    public async Task Test_SM2()
+    {
+        bool isCorrect = true;
+        var previous = new UserSpacedRepetition();
+
+        int iterations = 7;
+        for (int i = 1; i <= iterations; i++)
+        {
+            var current = previous.DoSM2(isCorrect);
+            Console.WriteLine(JsonSerializer.Serialize(current, Utils.JsoIndented));
+            previous = current;
+        }
+
+        Assert.That(Math.Abs(previous.ease - 2.5) < 0.01);
+        Assert.That(Math.Abs(previous.interval_days - 595) < 0.01);
     }
 }

@@ -657,6 +657,7 @@ public partial class QuizPage
                     }
                 }
 
+                await OnClickButtonSongHistory(false);
                 break;
             case QuizPhaseKind.Looting:
             default:
@@ -923,7 +924,7 @@ public partial class QuizPage
         await _jsRuntime.InvokeAsync<string>("playVideo", VisibleVideoElementId);
     }
 
-    private async Task OnClickButtonSongHistory()
+    private async Task OnClickButtonSongHistory(bool showSongHistoryModal)
     {
         if (Room?.Quiz != null && (!ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var sh) ||
                                    !sh.PlayerGuessInfos.Any()))
@@ -940,7 +941,10 @@ public partial class QuizPage
             }
         }
 
-        await _songHistoryWrapperComponent!.Show();
+        if (showSongHistoryModal)
+        {
+            await _songHistoryWrapperComponent!.Show();
+        }
     }
 
     private async Task NGMCBurnPlayer(int playerId)

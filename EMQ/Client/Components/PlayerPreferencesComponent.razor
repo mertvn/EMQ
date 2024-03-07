@@ -50,7 +50,11 @@
                                     <br/>
 
                                     <InputCheckbox id="ShowVndbCovers" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ShowVndbCovers" style="margin: 5px"></InputCheckbox>
-                                    <label for="ShowVndbCovers">Show VNDB cover images when there is no video </label>
+                                    <label for="ShowVndbCovers">Show VNDB cover images when there is no video</label>
+                                    <br/>
+
+                                    <InputCheckbox id="ShowSpacedRepetitionInfo" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo" style="margin: 5px"></InputCheckbox>
+                                    <label for="ShowSpacedRepetitionInfo">Show spaced repetition information</label>
                                     <br/>
 
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using ProtoBuf;
 
@@ -328,4 +329,33 @@ public static class ExtensionMethods
         return Random.Shared.Next(startTimeStart, Math.Clamp(duration - leeway, 0, startTimeEnd));
     }
 
+    public static UserSpacedRepetition DoSM2(this UserSpacedRepetition previous, bool isCorrect)
+    {
+        const float minEase = 1.7f;
+        int grade = isCorrect ? 4 : 2;
+        var ret = new UserSpacedRepetition
+        {
+            ease = Math.Max(minEase, previous.ease + (0.1f - (5 - grade) * (0.08f + (5 - grade) * 0.02f)))
+        };
+
+        if (grade < 3)
+        {
+            ret.n = 0;
+            ret.interval_days = 1;
+        }
+        else
+        {
+            ret.n = previous.n + 1;
+            ret.interval_days = previous.n switch
+            {
+                0 => 1,
+                1 => 6,
+                _ => (float)Math.Ceiling(previous.interval_days * ret.ease)
+            };
+        }
+
+        // safeguard against intervals that may go over database/language limits
+        ret.interval_days = Math.Min(99_999, ret.interval_days);
+        return ret;
+    }
 }

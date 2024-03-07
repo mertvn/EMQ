@@ -101,6 +101,10 @@ public readonly struct GuessInfo
     public List<Label>? Labels { get; init; }
 
     public bool IsOnList { get; init; }
+
+    public UserSpacedRepetition? PreviousUserSpacedRepetition { get; init; }
+
+    public UserSpacedRepetition? CurrentUserSpacedRepetition { get; init; }
 }
 
 public class SHRoomContainer

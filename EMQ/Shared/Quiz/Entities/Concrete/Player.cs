@@ -104,4 +104,7 @@ public class PlayerPreferences
 
     [Required]
     public bool ShowVndbCovers { get; set; } = true;
+
+    [Required]
+    public bool ShowSpacedRepetitionInfo { get; set; } = true;
 }

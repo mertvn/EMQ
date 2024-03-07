@@ -102,7 +102,7 @@
     </button>
 
     <button type="button" id="buttonSongHistory" class="btn btn-secondary" style="position: relative; top: 2px; left: 2px; padding: 2px; margin: 2px; width: 120px; height: 30px; z-index: 10;"
-            @onclick="@OnClickButtonSongHistory">
+            @onclick="@(() => OnClickButtonSongHistory(true))">
         Song History
     </button>
 
@@ -181,9 +181,52 @@
 }
 
 <div id="correctAnswerInfoDiv"
-     style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 330px; min-height:200px; max-height: 700px; float:right; padding-right: 20px">
+     style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 350px; min-height:200px; max-height: 870px; float:right; padding-right: 20px">
     @* todo Latin vs NonLatin title option *@
     <SongInfoCardComponent Song="@_correctAnswer"/>
+
+    @if (ClientState.Session != null && ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo &&
+         Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))
+    {
+        bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
+        if (ownPgiExists)
+        {
+            @if (ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
+            {
+                <div class="card" id="spacedRepetitionCard">
+                    <div class="card-body">
+                        <h5>Spaced repetition info</h5>
+                        <ul>
+                            @if (ownPgi.PreviousUserSpacedRepetition.due_at != default)
+                            {
+                                <details>
+                                    <summary>Previous</summary>
+                                    <li>
+                                        Interval: @ownPgi.PreviousUserSpacedRepetition.interval_days days
+                                    </li>
+                                    <li>
+                                        Due date: @ownPgi.PreviousUserSpacedRepetition.due_at.ToString("s")
+                                    </li>
+                                    <li>
+                                        Review date: @ownPgi.PreviousUserSpacedRepetition.reviewed_at.ToString("s")
+                                    </li>
+                                </details>
+                            }
+                            <details open>
+                                <summary>New</summary>
+                                <li>
+                                    Interval: @ownPgi.CurrentUserSpacedRepetition.interval_days days
+                                </li>
+                                <li>
+                                    Due date: @ownPgi.CurrentUserSpacedRepetition.due_at.ToString("s")
+                                </li>
+                            </details>
+                        </ul>
+                    </div>
+                </div>
+            }
+        }
+    }
 </div>
 
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">

@@ -235,7 +235,8 @@ public class QuizSettings
 
         if (o.SongSelectionKind != n.SongSelectionKind)
         {
-            diff.Add($"Song selection method: {o.SongSelectionKind} → {n.SongSelectionKind}");
+            diff.Add(
+                $"Song selection method: {o.SongSelectionKind.GetDescription()} → {n.SongSelectionKind.GetDescription()}");
         }
 
         if (o.AnsweringKind != n.AnsweringKind)
