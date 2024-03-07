@@ -326,7 +326,7 @@ public static class ExtensionMethods
             startTimeEnd = duration * filters.StartTimePercentageEnd / 100;
         }
 
-        return Random.Shared.Next(startTimeStart, Math.Clamp(duration - leeway, 0, startTimeEnd));
+        return Random.Shared.Next(startTimeStart, Math.Clamp(duration - leeway, startTimeStart, startTimeEnd));
     }
 
     public static UserSpacedRepetition DoSM2(this UserSpacedRepetition previous, bool isCorrect)
