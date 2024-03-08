@@ -163,7 +163,7 @@ public class AuthController : ControllerBase
             oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
             oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
 
-            // this doesnt work correctly sometimes idk
+            // todo this doesnt work correctly sometimes idk
             if (!oldRoomPlayer.Players.Any())
             {
                 ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
@@ -565,5 +565,14 @@ public class AuthController : ControllerBase
         await DbManager.DeleteUserQuizSettings(session.Player.Id, req.Name);
         Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted preset {req.Name}");
         return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetPublicUserInfo")]
+    public async Task<ActionResult<ResGetPublicUserInfo>> GetPublicUserInfo([FromBody] int userId)
+    {
+        var publicUserInfo = await DbManager.GetPublicUserInfo(userId);
+        return publicUserInfo;
     }
 }

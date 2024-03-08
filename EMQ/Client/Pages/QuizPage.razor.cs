@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto;
@@ -91,6 +92,8 @@ public partial class QuizPage
     private Room? Room { get; set; }
 
     private readonly List<Song?> _clientSongs;
+
+    public Dictionary<int, ResGetPublicUserInfo> UserDetailsDict { get; set; } = new();
 
     private Song? _currentSong
     {
@@ -971,6 +974,24 @@ public partial class QuizPage
         if (res.IsSuccessStatusCode)
         {
             StateHasChanged();
+        }
+    }
+
+    private async Task Onclick_Username(int userId)
+    {
+        if (UserDetailsDict.TryGetValue(userId, out _))
+        {
+            UserDetailsDict.Remove(userId);
+        }
+        else
+        {
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", userId);
+            if (res.IsSuccessStatusCode)
+            {
+                var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
+                UserDetailsDict[userId] = content;
+                StateHasChanged();
+            }
         }
     }
 }

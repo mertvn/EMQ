@@ -3624,4 +3624,18 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             new { userIds });
         return mids.ToList();
     }
+
+    public static async Task<ResGetPublicUserInfo> GetPublicUserInfo(int userId)
+    {
+        const string sql =
+            @"select count(music_id) as count, (100 / (count(music_id)::real / COALESCE(NULLIF(count(is_correct) filter(where is_correct), 0), 1))) as gr from quiz_song_history
+where user_id = @userId
+group by user_id
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        (int count, float gr) = await connection.QuerySingleAsync<(int count, float gr)>(sql, new { userId });
+
+        return new ResGetPublicUserInfo { UserId = userId, SongCount = count, GuessRate = (float)Math.Round(gr, 2), };
+    }
 }

@@ -514,10 +514,24 @@ else
 
                         <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
 
-                            @* todo make text smaller as it gets longer *@
-                            <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @player.Username
-                            </span>
+                            @if (UserDetailsDict.TryGetValue(player.Id, out var userInfo))
+                            {
+                                string tooltipText = $"<ul><li>Song count: {userInfo.SongCount}</li><li>Guess rate: {userInfo.GuessRate}%</li></ul>";
+                                <Blazorise.Tooltip Text="@tooltipText">
+                                    <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                                          @onclick="@(() => Onclick_Username(player.Id))">
+                                        @player.Username
+                                    </span>
+                                </Blazorise.Tooltip>
+                            }
+                            else
+                            {
+                                 @* todo make text smaller as it gets longer *@
+                                <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                                      @onclick="@(() => Onclick_Username(player.Id))">
+                                    @player.Username
+                                </span>
+                            }
 
                             <span style="color: white; position: absolute; bottom: 0%; left: 2%; ">@player.Score</span>
                             @{
