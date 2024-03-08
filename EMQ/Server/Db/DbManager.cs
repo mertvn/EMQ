@@ -1475,7 +1475,7 @@ public static class DbManager
                     {
                         if ((listDistributionKind is ListDistributionKind.Balanced
                                 or ListDistributionKind.BalancedStrict) &&
-                            isDuplicate && Random.Shared.NextSingle() >= 0.2f)
+                            isDuplicate && Random.Shared.NextSingle() >= 0.1f)
                         {
                             continue;
                         }
