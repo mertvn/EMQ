@@ -3634,7 +3634,7 @@ group by user_id
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        (int count, float gr) = await connection.QuerySingleAsync<(int count, float gr)>(sql, new { userId });
+        (int count, float gr) = await connection.QuerySingleOrDefaultAsync<(int count, float gr)>(sql, new { userId });
 
         return new ResGetPublicUserInfo { UserId = userId, SongCount = count, GuessRate = (float)Math.Round(gr, 2), };
     }
