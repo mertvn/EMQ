@@ -3158,15 +3158,6 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                 "UPDATE music_external_link SET submitted_by = @submitted_by WHERE url = @url";
 
             int rows = await connection.ExecuteAsync(sql, new { submitted_by = submittedBy, url = url });
-            if (rows > 0)
-            {
-                Console.WriteLine($"set {url} submitted_by to {submittedBy}");
-            }
-            else
-            {
-                Console.WriteLine($"failed setting {url} submitted_by to {submittedBy}");
-            }
-
             return rows;
         }
     }

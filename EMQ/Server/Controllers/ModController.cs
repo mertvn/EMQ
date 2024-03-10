@@ -119,7 +119,16 @@ public class ModController : ControllerBase
 
         foreach (string url in req.Urls)
         {
-            await DbManager.SetSubmittedBy(url, req.SubmittedBy);
+            int rows = await DbManager.SetSubmittedBy(url.UnReplaceSelfhostLink(), req.SubmittedBy);
+            if (rows > 0)
+            {
+                Console.WriteLine($"set {url} submitted_by to {req.SubmittedBy}");
+            }
+            else
+            {
+                Console.WriteLine($"failed setting {url} submitted_by to {req.SubmittedBy}");
+                return StatusCode(500);
+            }
         }
 
         return Ok();
