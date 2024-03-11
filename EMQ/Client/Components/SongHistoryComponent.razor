@@ -58,10 +58,10 @@
                 string key = $"{index}{rowBackgroundColor}";
                 // Console.WriteLine(key);
                 bool _ = RowDetailsDict.TryGetValue(song.Id, out bool showRowDetail);
-                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor;" @key="@key">
+                <tr class="songHistoryRow" style="border-bottom: 1px solid gray; background-color: @rowBackgroundColor; cursor: pointer;"
+                    @key="@key" @onclick="@(() => Onclick_SongHistoryRow(songHistory))">
 
-                    <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
-                        @onclick="@(() => Onclick_SongHistoryRow(songHistory))">
+                    <td style="padding: 4px; width: 25px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @if (showRowDetail)
                         {
                             <span>▼</span>
@@ -79,6 +79,39 @@
                         @if (song.Sources.Count == 1)
                         {
                             <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+
+                            foreach (var link in song.Sources.First().Links.OrderBy(x => x.Type))
+                            {
+                                string src;
+                                if (link.Url.Contains("vndb.org")) // todo
+                                {
+                                    src = "assets/favicon/vndb.ico";
+                                }
+                                else if (link.Url.Contains("musicbrainz.org"))
+                                {
+                                    src = "assets/favicon/musicbrainz.png";
+                                }
+                                else if (link.Url.Contains("vgmdb.net"))
+                                {
+                                    src = "assets/favicon/vgmdb.ico";
+                                }
+                                else
+                                {
+                                    // todo?
+                                    src = "";
+                                }
+
+                                @if (!string.IsNullOrEmpty(src))
+                                {
+                                    <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+                                        <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                            <img width="16px" height="16px"
+                                                 src="@src" alt="link"
+                                                 style="margin-left: 8px; scale: 1.2;">
+                                        </a>
+                                    </Blazorise.Tooltip>
+                                }
+                            }
                         }
                         else
                         {
@@ -87,10 +120,44 @@
                             string tooltipText = $"<ul>{joined}</ul>";
 
                             <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
+
+                            foreach (var link in song.Sources.First().Links.OrderBy(x => x.Type))
+                            {
+                                string src;
+                                if (link.Url.Contains("vndb.org")) // todo
+                                {
+                                    src = "assets/favicon/vndb.ico";
+                                }
+                                else if (link.Url.Contains("musicbrainz.org"))
+                                {
+                                    src = "assets/favicon/musicbrainz.png";
+                                }
+                                else if (link.Url.Contains("vgmdb.net"))
+                                {
+                                    src = "assets/favicon/vgmdb.ico";
+                                }
+                                else
+                                {
+                                    // todo?
+                                    src = "";
+                                }
+
+                                @if (!string.IsNullOrEmpty(src))
+                                {
+                                    <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+                                        <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                            <img width="16px" height="16px"
+                                                 src="@src" alt="link"
+                                                 style="margin-left: 8px; scale: 1.2;">
+                                        </a>
+                                    </Blazorise.Tooltip>
+                                }
+                            }
+
                             <Blazorise.Tooltip
                                 Inline="true"
                                 Text="@tooltipText">
-                                <span> and @(song.Sources.Count - 1) more...</span>
+                                <span style="margin-left: 8px;"> and @(song.Sources.Count - 1) more...</span>
                             </Blazorise.Tooltip>
                         }
                     </td>
@@ -105,6 +172,24 @@
                         @if (song.Artists.Count == 1)
                         {
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+
+                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                            @if (song.Artists.First().VndbId!.StartsWith("s"))
+                            {
+                                <a class="songArtistsTitle link-primary" href="@(song.Artists.First().VndbId.ToVndbUrl())" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/vndb.ico" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{song.Artists.First().VndbId}")" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/musicbrainz.png" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
                         }
                         else
                         {
@@ -113,10 +198,29 @@
                             string tooltipText = $"<ul>{joined}</ul>";
 
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+
+                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                            @if (song.Artists.First().VndbId!.StartsWith("s"))
+                            {
+                                <a class="songArtistsTitle link-primary" href="@(song.Artists.First().VndbId.ToVndbUrl())" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/vndb.ico" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
+                            else
+                            {
+                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{song.Artists.First().VndbId}")" target="_blank">
+                                    <img width="16px" height="16px"
+                                         src="assets/favicon/musicbrainz.png" alt="link"
+                                         style="margin-left: 6px; scale: 1.2;">
+                                </a>
+                            }
+
                             <Blazorise.Tooltip
                                 Inline="true"
                                 Text="@tooltipText">
-                                <span> and @(song.Artists.Count - 1) more...</span>
+                                <span style="margin-left: 8px;"> and @(song.Artists.Count - 1) more...</span>
                             </Blazorise.Tooltip>
                         }
                     </td>
