@@ -119,4 +119,6 @@ public class SHQuizContainer
     public EntityQuiz Quiz { get; set; } = new();
 
     public Dictionary<int, SongHistory> SongHistories { get; set; } = new();
+
+    public Dictionary<int, PlayerStats>? PlayerStats { get; set; }
 }

@@ -358,4 +358,9 @@ public static class ExtensionMethods
         ret.interval_days = Math.Min(99_999, ret.interval_days);
         return ret;
     }
+
+    public static float Div0(this float dividend, float divisor)
+    {
+        return (divisor == 0) ? 0 : dividend / divisor;
+    }
 }

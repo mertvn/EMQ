@@ -17,7 +17,7 @@
     </button>
 </div>
 
-<table id="songHistoryTable" style="width: 100%;">
+<table class="songHistoryTable" style="width: 100%;">
     <tr class="songHistoryHeaders">
         <th class="songHistoryHeader"></th>
         <th class="songHistoryHeader">#</th>
@@ -230,7 +230,7 @@
                 {
                     <tr class="songHistoryRowDetail">
                         <td colspan="6">
-                            @* <p> @songHistory.TimesCorrect / @songHistory.TimesPlayed</p> *@
+                            @* <span>Guess rate: @(Math.Round(song.Stats.CorrectPercentage, 2))% (@song.Stats.TimesCorrect/@song.Stats.TimesPlayed)</span> *@
 
                             @* @if (ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null) *@
                             @* { *@
@@ -296,56 +296,86 @@
     }
 </table>
 
-
-@code {
-
-    [Parameter]
-    public Dictionary<int, SongHistory>? SongsHistory { get; set; }
-
-    public Dictionary<int, bool> RowDetailsDict { get; set; } = new();
-
-    private SongHistoryFilterKind SongHistoryFilter { get; set; }
-
-    public async Task CallStateHasChanged()
-    {
-        await Task.Yield();
-        StateHasChanged();
-    }
-
-    private async Task Onclick_SongHistoryRow(SongHistory songHistory)
-    {
-        if (RowDetailsDict.TryGetValue(songHistory.Song.Id, out bool showRowDetail))
+<br/>
+<details>
+    <summary>Player stats</summary>
+    <table class="playerStatsTable" style="width: 100%;">
+        <tr class="playerStatsHeaders">
+            <th class="playerStatsHeader">Username</th>
+            <th class="playerStatsHeader">Guess rate</th>
+            <th class="playerStatsHeader">Avg guess time</th>
+            <th class="playerStatsHeader">Avg diff</th>
+            <th class="playerStatsHeader">Erigs</th>
+            <th class="playerStatsHeader">Avg/8</th>
+            <th class="playerStatsHeader">OP GR</th>
+            <th class="playerStatsHeader">ED GR</th>
+            <th class="playerStatsHeader">INS GR</th>
+            <th class="playerStatsHeader">Rig GR</th>
+            <th class="playerStatsHeader">Rig rate</th>
+            <th class="playerStatsHeader">Offlist GR</th>
+        </tr>
+        @foreach ((int key, PlayerStats value) in PlayerStatsDict)
         {
-            RowDetailsDict[songHistory.Song.Id] = !showRowDetail;
+            bool shouldDisplay = true;
+            @if (!shouldDisplay)
+            {
+                continue;
+            }
+
+            <tr class="playerStatsRow" style="border-bottom: 1px solid gray;" @key="@key">
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(value.Username)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.CorrectPercentage, 2))% (@value.TimesCorrect/@value.TimesPlayed)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round((float)value.AverageGuessMs / 1000, 2))s
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.AvgDiff, 2))%
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(value.Erigs)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.AvgOf8, 2))
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.OpGr, 2))% (@value.OpHit/@value.OpCount)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.EdGr, 2))% (@value.EdHit/@value.EdCount)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.InsGr, 2))% (@value.InsHit/@value.InsCount)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.RigGr, 2))% (@value.RigsHit/@value.Rigs)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.RigRate, 2))% (@value.Rigs/@value.TimesPlayed)
+                </td>
+                <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @(Math.Round(value.OfflistGr, 2))% (@value.OfflistHit/@value.OfflistCount)
+                </td>
+            </tr>
         }
-        else
-        {
-            RowDetailsDict[songHistory.Song.Id] = true;
-        }
+    </table>
+</details>
 
-        await CallStateHasChanged();
-    }
-
-    private async Task DownloadSongHistoryJson()
-    {
-        string json = JsonSerializer.Serialize(SongsHistory, Utils.JsoIndented);
-        byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
-        await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_SongHistory_{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
-    }
-
-    public enum SongHistoryFilterKind
-    {
-        All,
-        Correct,
-        Wrong,
-        Rig,
-        Erig,
-    }
-
-    private async Task OnSongHistoryFilterChanged(ChangeEventArgs arg)
-    {
-        SongHistoryFilter = Enum.Parse<SongHistoryFilterKind>((string)arg.Value!);
-        await CallStateHasChanged();
-    }
-
-}
+@* @foreach ((int key, PlayerStats value) in PlayerStatsDict) *@
+@* { *@
+@*     <h6>@value.Username</h6> *@
+@*     <span>GR: @(Math.Round(value.CorrectPercentage, 2))% (@value.TimesCorrect/@value.TimesPlayed)</span> *@
+@*     <br/> *@
+@* *@
+@*     <span>Avg Diff: @(Math.Round(value.AvgDiff, 2))%</span> *@
+@*     <br/> *@
+@* *@
+@*     <span>Avg of 8: @(Math.Round(value.AvgOf8, 2))</span> *@
+@*     <br/> *@
+@* *@
+@*     <br/> *@
+@*     <br/> *@
+@* } *@

@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
@@ -64,6 +64,11 @@
 
     private async Task DownloadRoomJson(SHRoomContainer room)
     {
+        foreach (var shQuizContainer in room.Quizzes)
+        {
+            shQuizContainer.PlayerStats = SongHistoryComponent.CalculatePlayerStats(shQuizContainer.SongHistories);
+        }
+
         string json = JsonSerializer.Serialize(room, Utils.JsoIndented);
         byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
         await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_Room_{room.Room.created_at:yyyy-MM-ddTHH_mm_ss}.json", "application/json", file);
