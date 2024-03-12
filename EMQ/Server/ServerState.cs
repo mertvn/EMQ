@@ -53,7 +53,7 @@ public static class ServerState
                 s_gitHash = version[(version.IndexOf('+') + 1)..];
             }
 
-            return s_gitHash;
+            return s_gitHash[..7];
         }
     }
 
