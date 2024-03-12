@@ -1473,8 +1473,7 @@ public static class DbManager
                     canAdd &= !isDuplicate || duplicates;
                     if (canAdd)
                     {
-                        if ((listDistributionKind is ListDistributionKind.Balanced
-                                or ListDistributionKind.BalancedStrict) &&
+                        if ((listDistributionKind is ListDistributionKind.Balanced) &&
                             isDuplicate && Random.Shared.NextSingle() >= 0.1f)
                         {
                             continue;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -1189,7 +1189,6 @@ public class QuizManager
                             break;
                         }
                     case ListDistributionKind.Balanced:
-                    case ListDistributionKind.BalancedStrict:
                         {
                             // todo tests
                             if (validSourcesDict.Count < 2)
@@ -1204,7 +1203,7 @@ public class QuizManager
                             int targetNumSongsPerPlayer = Quiz.Room.QuizSettings.NumSongs / validSourcesDict.Count;
                             Console.WriteLine($"targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
 
-                            if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.BalancedStrict)
+                            if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
                             {
                                 targetNumSongsPerPlayer = Math.Min(targetNumSongsPerPlayer,
                                     validSourcesDict.MinBy(x => x.Value.Count).Value.Count);
@@ -1227,66 +1226,11 @@ public class QuizManager
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");
 
-                            if (Quiz.Room.QuizSettings.ListDistributionKind != ListDistributionKind.BalancedStrict)
-                            {
-                                int triesLeft = 3;
-                                while (dbSongs.Count < Quiz.Room.QuizSettings.NumSongs && triesLeft > 0)
-                                {
-                                    triesLeft -= 1;
-                                    var newSongs = await DbManager.GetRandomSongs(diff,
-                                        Quiz.Room.QuizSettings.Duplicates, validSources,
-                                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                        validMids: validMids);
-
-                                    foreach (Song newSong in newSongs)
-                                    {
-                                        if (!dbSongs.Any(x => x.Id == newSong.Id))
-                                        {
-                                            if (Quiz.Room.QuizSettings.Duplicates)
-                                            {
-                                                dbSongs.Add(newSong);
-                                            }
-                                            else
-                                            {
-                                                bool isDuplicateSource = newSong.Sources.Select(x => x.Id)
-                                                    .Any(y => dbSongs.SelectMany(z => z.Sources).Select(c => c.Id)
-                                                        .Contains(y));
-                                                if (!isDuplicateSource)
-                                                {
-                                                    dbSongs.Add(newSong);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                while (dbSongs.Count > Quiz.Room.QuizSettings.NumSongs)
-                                {
-                                    dbSongs.RemoveAt(Random.Shared.Next(dbSongs.Count - 1));
-                                }
-                            }
-
-                            switch (Quiz.Room.QuizSettings.ListDistributionKind)
-                            {
-                                case ListDistributionKind.Balanced:
-                                    Quiz.Room.Log(
-                                        diff > 0
-                                            ? $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player, tried to top up the rest."
-                                            : $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
-                                        writeToChat: true);
-
-                                    break;
-                                case ListDistributionKind.BalancedStrict:
-                                    Quiz.Room.Log(
-                                        diff > 0
-                                            ? $"Balanced (strict) mode tried to select {targetNumSongsPerPlayer} songs per player, did not try to top up the rest."
-                                            : $"Balanced (strict) mode tried to select {targetNumSongsPerPlayer} songs per player.",
-                                        writeToChat: true);
-                                    break;
-                                case ListDistributionKind.Random:
-                                default:
-                                    throw new ArgumentOutOfRangeException();
-                            }
+                            Quiz.Room.Log(
+                                diff > 0
+                                    ? $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player, did not try to top up the rest."
+                                    : $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
+                                writeToChat: true);
 
                             dbSongs = dbSongs.OrderBy(_ => Random.Shared.Next()).ToList();
                             break;
