@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
@@ -26,6 +26,15 @@
                         </button>
                     </summary>
                     <div>
+                        @if (quiz.Quiz.should_update_stats)
+                        {
+                            <p>Counts for stats.</p>
+                        }
+                        else
+                        {
+                            <p>Does not count for stats.</p>
+                        }
+
                         <SongHistoryComponent SongsHistory="@quiz.SongHistories"></SongHistoryComponent>
                     </div>
                 </details>

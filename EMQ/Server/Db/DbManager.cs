@@ -3628,4 +3628,25 @@ group by user_id
 
         return new ResGetPublicUserInfo { UserId = userId, SongCount = count, GuessRate = (float)Math.Round(gr, 2), };
     }
+
+    public static async Task<Dictionary<int, PlayerSongStats>> GetPlayerSongStats(int mId, List<int> userIds)
+    {
+        const string sql =
+            @"select sq.user_id as userid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms
+from (
+select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed
+from quiz q
+join quiz_song_history qsh on qsh.quiz_id = q.id
+where q.should_update_stats and music_id = @mId and user_id = ANY(@userIds)
+order by qsh.played_at desc
+) sq
+group by sq.user_id
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var ret = (await connection.QueryAsync<PlayerSongStats>(sql, new { mId, userIds })).ToDictionary(x => x.UserId,
+            x => x);
+
+        return ret;
+    }
 }

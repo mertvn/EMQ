@@ -139,6 +139,7 @@ public partial class SongHistoryComponent
                             totalGuessMs += value.FirstGuessMs;
                         }
 
+                        // todo? cache this
                         var songSourceSongTypes = songHistory.Song.Sources.SelectMany(x => x.SongTypes).ToArray();
                         if (songSourceSongTypes.Contains(SongSourceSongType.OP))
                         {

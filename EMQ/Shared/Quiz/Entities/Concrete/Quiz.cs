@@ -105,6 +105,8 @@ public readonly struct GuessInfo
     public UserSpacedRepetition? PreviousUserSpacedRepetition { get; init; }
 
     public UserSpacedRepetition? CurrentUserSpacedRepetition { get; init; }
+
+    public PlayerSongStats? PlayerSongStats { get; init; }
 }
 
 public class SHRoomContainer

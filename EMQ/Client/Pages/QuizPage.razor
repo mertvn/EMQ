@@ -191,6 +191,26 @@
         bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
         if (ownPgiExists)
         {
+            @if (ownPgi.PlayerSongStats != null)
+            {
+                <div class="card" id="playerSongStatsCard">
+                    <div class="card-body">
+                        <h5>My song stats</h5>
+
+                        <div class="playerSongStatsGuessRate">
+                            Guess rate: @(Math.Round(ownPgi.PlayerSongStats.CorrectPercentage, 2))% (@(ownPgi.PlayerSongStats.TimesCorrect)/@(ownPgi.PlayerSongStats.TimesPlayed))
+                        </div>
+                        @if (ownPgi.PlayerSongStats.TimesGuessed > 0)
+                        {
+                            <div class="playerSongStatsGuessTime">
+                                Average guess time: @(Math.Round((float)ownPgi.PlayerSongStats.AverageGuessMs / 1000, 2))s (@ownPgi.PlayerSongStats.TimesGuessed)
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            }
+
             @if (ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
             {
                 <div class="card" id="spacedRepetitionCard">

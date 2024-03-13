@@ -173,10 +173,8 @@
                 {
                     <br/>
                     <div class="songStats">
-                        <div class="songStatsDifficulty">
-                            @* todo coloring *@
-                            @* todo tooltip  *@
-                            Difficulty: @(Math.Round(Song.Stats.CorrectPercentage, 2))% (@(Song.Stats.TimesCorrect)/@(Song.Stats.TimesPlayed))
+                        <div class="songStatsGuessRate">
+                            Guess rate: @(Math.Round(Song.Stats.CorrectPercentage, 2))% (@(Song.Stats.TimesCorrect)/@(Song.Stats.TimesPlayed))
                         </div>
                         @if (Song.Stats.TimesGuessed > 0)
                         {

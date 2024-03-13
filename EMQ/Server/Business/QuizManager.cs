@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -368,6 +368,8 @@ public class QuizManager
         }
 
         var songHistory = new SongHistory { Song = song };
+        var userSongStatsDict =
+            await DbManager.GetPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Id).ToList());
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -417,6 +419,7 @@ public class QuizManager
                 }
 
                 _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
+                _ = userSongStatsDict.TryGetValue(player.Id, out var userSongStats);
                 var guessInfo = new GuessInfo
                 {
                     Username = player.Username,
@@ -427,6 +430,7 @@ public class QuizManager
                     IsOnList = labels?.Any() ?? false,
                     PreviousUserSpacedRepetition = previous,
                     CurrentUserSpacedRepetition = current,
+                    PlayerSongStats = userSongStats,
                 };
                 songHistory.PlayerGuessInfos[player.Id] = guessInfo;
             }
@@ -702,6 +706,7 @@ public class QuizManager
             $"SongHistory/SongHistory_{Utils.FixFileName(Quiz.Room.Name)}_r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.SongsHistory, Utils.JsoIndented));
 
+        // todo? team
         bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
