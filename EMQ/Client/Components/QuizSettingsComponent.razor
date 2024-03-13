@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using System.Collections.Generic
+@using System.Globalization
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using Microsoft.AspNetCore.Components
@@ -374,8 +375,8 @@
                             <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
                                 <Blazorise.DatePicker TValue="DateTime"
                                                       @bind-Date="@ClientQuizSettings.Filters.StartDateFilter"
-                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin)"
-                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax)"/>
+                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture)"/>
                             </div>
                             <label for="StartDateFilter">Start date</label>
                             <br/>
@@ -383,8 +384,8 @@
                             <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
                                 <Blazorise.DatePicker TValue="DateTime"
                                                       @bind-Date="@ClientQuizSettings.Filters.EndDateFilter"
-                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin)"
-                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax)"/>
+                                                      Min="@DateTimeOffset.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture)"
+                                                      Max="@DateTimeOffset.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture)"/>
                             </div>
                             <label for="EndDateFilter">End date</label>
                             <br/>

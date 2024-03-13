@@ -2,8 +2,34 @@
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@using System.ComponentModel.DataAnnotations
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
+
+<div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
+    <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+        <Blazorise.DatePicker TValue="DateTime"
+                              @bind-Date="@StartDateFilter"
+                              Min="@DateTimeOffset.Parse(Constants.SHDateMin, CultureInfo.InvariantCulture)"
+                              Max="@DateTimeOffset.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture)"/>
+    </div>
+    <label for="StartDateFilter">Start date</label>
+    <br/>
+    <br/>
+    <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+        <Blazorise.DatePicker TValue="DateTime"
+                              @bind-Date="@EndDateFilter"
+                              Min="@DateTimeOffset.Parse(Constants.SHDateMin, CultureInfo.InvariantCulture)"
+                              Max="@DateTimeOffset.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture)"/>
+    </div>
+    <label for="EndDateFilter">End date</label>
+    <br/>
+
+    <br/>
+    <button type="button" class="btn btn-primary" @onclick="Onclick_Search">Search</button>
+</div>
 
 @foreach (var shRoomContainer in SHRoomContainers)
 {
@@ -45,6 +71,12 @@
 
 @code {
 
+    [Range(typeof(DateTime), Constants.SHDateMin, Constants.QFDateMax, ErrorMessage = $"Start date must be in range of {Constants.SHDateMin} to {Constants.QFDateMax}")]
+    public DateTime StartDateFilter { get; set; } = DateTime.UtcNow.AddDays(-1);
+
+    [Range(typeof(DateTime), Constants.SHDateMin, Constants.QFDateMax, ErrorMessage = $"Start date must be in range of {Constants.SHDateMin} to {Constants.QFDateMax}")]
+    public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
+
     public List<SHRoomContainer> SHRoomContainers { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
@@ -56,7 +88,7 @@
     {
         if (ClientState.Session != null)
         {
-            var req = new ReqGetSHRoomContainers(ClientState.Session.Player.Id, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow);
+            var req = new ReqGetSHRoomContainers(ClientState.Session.Player.Id, StartDateFilter, EndDateFilter);
             var res = await _client.PostAsJsonAsync("Quiz/GetSHRoomContainers", req);
             if (res.IsSuccessStatusCode)
             {
@@ -86,6 +118,11 @@
     private async Task CopySettingsCode(SHQuizContainer quiz)
     {
         await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", quiz.Quiz.settings_b64);
+    }
+
+    private async Task Onclick_Search()
+    {
+        await GetSHRoomContainers();
     }
 
 }

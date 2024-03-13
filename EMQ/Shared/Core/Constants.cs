@@ -39,6 +39,8 @@ public static class Constants
 
     public const int LinkToleranceSeconds = 17;
 
+    public const string SHDateMin = "2024-02-17";
+
     public const string QFDateMin = "1988-01-01";
 
     public const string QFDateMax = "2030-01-01";
