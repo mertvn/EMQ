@@ -265,7 +265,7 @@ public class QuizController : ControllerBase
             if (room.CanJoinDirectly)
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id}", player.Id, room.Id);
-                room.Players.Enqueue(player);
+                room.AddPlayer(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
 
                 // we don't want to show this message right after room creation
@@ -279,7 +279,7 @@ public class QuizController : ControllerBase
             else
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id} as a spectator", player.Id, room.Id);
-                room.Spectators.Enqueue(player);
+                room.AddSpectator(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
                 room.Log($"{player.Username} started spectating.", -1, true);
             }

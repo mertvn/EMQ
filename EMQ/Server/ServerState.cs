@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -14,13 +15,13 @@ public static class ServerState
     private static readonly object s_serverStateLock = new();
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ImmutableList<Room> Rooms { get; private set; } = ImmutableList<Room>.Empty;
+    public static List<Room> Rooms { get; private set; } = new();
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ImmutableList<QuizManager> QuizManagers { get; private set; } = ImmutableList<QuizManager>.Empty;
+    public static List<QuizManager> QuizManagers { get; private set; } = new();
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
+    public static List<Session> Sessions { get; private set; } = new();
 
     public static bool AllowGuests { get; set; } = true;
 
@@ -68,7 +69,7 @@ public static class ServerState
                 var qm = QuizManagers.First(x => x.Quiz.Id == room.Quiz.Id);
 
                 int oldQMCount = QuizManagers.Count;
-                QuizManagers = QuizManagers.Remove(qm);
+                QuizManagers.Remove(qm);
                 int newQMCount = QuizManagers.Count;
 
                 if (oldQMCount <= newQMCount)
@@ -80,7 +81,7 @@ public static class ServerState
             // room.Quiz = null;
 
             int oldRoomsCount = Rooms.Count;
-            Rooms = Rooms.Remove(room);
+            Rooms.Remove(room);
             int newRoomsCount = Rooms.Count;
 
             if (oldRoomsCount <= newRoomsCount)
@@ -98,7 +99,7 @@ public static class ServerState
             var qm = QuizManagers.First(x => x.Quiz.Id == quiz.Id);
 
             int oldQMCount = QuizManagers.Count;
-            QuizManagers = QuizManagers.Remove(qm);
+            QuizManagers.Remove(qm);
             int newQMCount = QuizManagers.Count;
 
             if (oldQMCount <= newQMCount)
@@ -114,7 +115,7 @@ public static class ServerState
         lock (s_serverStateLock)
         {
             int oldSessionsCount = Sessions.Count;
-            Sessions = Sessions.Remove(session);
+            Sessions.Remove(session);
             int newSessionsCount = Sessions.Count;
 
             if (oldSessionsCount <= newSessionsCount)
@@ -129,7 +130,7 @@ public static class ServerState
         lock (s_serverStateLock)
         {
             int oldRoomsCount = Rooms.Count;
-            Rooms = Rooms.Add(session);
+            Rooms.Add(session);
             int newRoomsCount = Rooms.Count;
 
             if (oldRoomsCount >= newRoomsCount)
@@ -144,7 +145,7 @@ public static class ServerState
         lock (s_serverStateLock)
         {
             int oldQuizManagersCount = QuizManagers.Count;
-            QuizManagers = QuizManagers.Add(quizManager);
+            QuizManagers.Add(quizManager);
             int newQuizManagersCount = QuizManagers.Count;
 
             if (oldQuizManagersCount >= newQuizManagersCount)
@@ -159,7 +160,7 @@ public static class ServerState
         lock (s_serverStateLock)
         {
             int oldSessionsCount = Sessions.Count;
-            Sessions = Sessions.Add(session);
+            Sessions.Add(session);
             int newSessionsCount = Sessions.Count;
 
             if (oldSessionsCount >= newSessionsCount)

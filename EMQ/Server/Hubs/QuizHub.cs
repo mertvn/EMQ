@@ -519,7 +519,7 @@ public class QuizHub : Hub
                 var player = room.Spectators.SingleOrDefault(player => player.Id == session.Player.Id);
                 if (player != null)
                 {
-                    room.Players.Enqueue(player);
+                    room.AddPlayer(player);
                     room.RemoveSpectator(player);
                     room.Log($"{player.Username} converted to player.", player.Id, true);
 
@@ -553,7 +553,7 @@ public class QuizHub : Hub
                 var player = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
                 if (player != null)
                 {
-                    room.Spectators.Enqueue(player);
+                    room.AddSpectator(player);
                     room.RemovePlayer(player);
                     room.Log($"{player.Username} converted to spectator.", player.Id, true);
 
