@@ -262,7 +262,7 @@ public class AuthController : ControllerBase
         PlayerVndbInfo vndbInfo = await DbManager.GetUserVndbInfo(session.Player.Id);
         if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
-            throw new Exception("Couldn't GetUserVndbInfo");
+            throw new Exception($"Couldn't GetUserVndbInfo for p{session.Player.Id}");
         }
 
         // todo
