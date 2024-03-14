@@ -169,6 +169,11 @@ public class QuizSettings
     [DefaultValue(true)]
     public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true;
 
+    [ProtoMember(22)]
+    [Required]
+    [DefaultValue(SpacedRepetitionKind.Review)]
+    public SpacedRepetitionKind SpacedRepetitionKind { get; set; } = SpacedRepetitionKind.Review;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)

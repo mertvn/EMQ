@@ -1016,7 +1016,7 @@ public static class DbManager
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
-        List<int>? validMids = null)
+        List<int>? validMids = null, List<int>? invalidMids = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1349,6 +1349,11 @@ public static class DbManager
             if (validMids != null && validMids.Any())
             {
                 queryMusicIds.Append($@" AND m.id = ANY({validMids})");
+            }
+
+            if (invalidMids != null && invalidMids.Any())
+            {
+                queryMusicIds.Append($@" AND NOT (m.id = ANY({invalidMids}))");
             }
 
             if (printSql)
@@ -3611,6 +3616,15 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var mids = await connection.QueryAsync<int>(
             "SELECT music_id from user_spaced_repetition where user_id = ANY(@userIds) and due_at < now()",
+            new { userIds });
+        return mids.ToList();
+    }
+
+    public static async Task<List<int>> GetMidsWithIntervals(List<int> userIds)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var mids = await connection.QueryAsync<int>(
+            "SELECT music_id from user_spaced_repetition where user_id = ANY(@userIds)",
             new { userIds });
         return mids.ToList();
     }

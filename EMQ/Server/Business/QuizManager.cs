@@ -1176,10 +1176,24 @@ public class QuizManager
             case SongSelectionKind.Random:
             case SongSelectionKind.SpacedRepetition:
                 List<int>? validMids = null;
+                List<int>? invalidMids = null;
                 if (Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.SpacedRepetition)
                 {
-                    validMids = await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
-                    Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
+                    switch (Quiz.Room.QuizSettings.SpacedRepetitionKind)
+                    {
+                        case SpacedRepetitionKind.Review:
+                            validMids =
+                                await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
+                            Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
+                            break;
+                        case SpacedRepetitionKind.NoIntervalOnly:
+                            invalidMids =
+                                await DbManager.GetMidsWithIntervals(Quiz.Room.Players.Select(x => x.Id).ToList());
+                            Quiz.Room.Log($"Excluding {invalidMids.Count} songs with intervals.", writeToChat: true);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
 
                 switch (Quiz.Room.QuizSettings.ListDistributionKind)
@@ -1190,7 +1204,7 @@ public class QuizManager
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                 listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
-                                validMids: validMids);
+                                validMids: validMids, invalidMids: invalidMids);
                             break;
                         }
                     case ListDistributionKind.Balanced:
@@ -1226,7 +1240,7 @@ public class QuizManager
                             dbSongs = (await DbManager.GetRandomSongs(targetNumSongsPerPlayer * validSourcesDict.Count,
                                 Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                validMids: validMids));
+                                validMids: validMids, invalidMids: invalidMids));
 
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");

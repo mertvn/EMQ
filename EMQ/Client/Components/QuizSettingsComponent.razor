@@ -104,6 +104,27 @@
                         <label for="SongSelectionKind">Song selection method</label>
                         <br/>
 
+                        @if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.SpacedRepetition)
+                        {
+                            <InputSelect id="SpacedRepetitionKind" @bind-Value="ClientQuizSettings.SpacedRepetitionKind" style="margin: 5px">
+                                @foreach (SpacedRepetitionKind spacedRepetitionKind in Enum.GetValues<SpacedRepetitionKind>())
+                                {
+                                    <option value="@spacedRepetitionKind">
+                                        @if (!string.IsNullOrEmpty(spacedRepetitionKind.GetDescription()))
+                                        {
+                                            @spacedRepetitionKind.GetDescription()
+                                        }
+                                        else
+                                        {
+                                            @spacedRepetitionKind
+                                        }
+                                    </option>
+                                }
+                            </InputSelect>
+                            <label for="SpacedRepetitionKind">Spaced repetition method</label>
+                            <br/>
+                        }
+
                         <InputSelect id="AnsweringKind" @bind-Value="ClientQuizSettings.AnsweringKind" style="margin: 5px">
                             @foreach (AnsweringKind answeringKind in Enum.GetValues<AnsweringKind>())
                             {
