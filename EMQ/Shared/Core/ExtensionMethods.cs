@@ -363,4 +363,68 @@ public static class ExtensionMethods
     {
         return (divisor == 0) ? 0 : dividend / divisor;
     }
+
+    public static TSource? FirstOrNull<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
+        where TSource : struct
+    {
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        if (predicate == null)
+        {
+            throw new ArgumentNullException(nameof(predicate));
+        }
+
+        using (IEnumerator<TSource> e = source.GetEnumerator())
+        {
+            while (e.MoveNext())
+            {
+                TSource result = e.Current;
+                if (predicate(result))
+                {
+                    return result;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static TSource? SingleOrNull<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
+        where TSource : struct
+    {
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        if (predicate == null)
+        {
+            throw new ArgumentNullException(nameof(predicate));
+        }
+
+        using (IEnumerator<TSource> e = source.GetEnumerator())
+        {
+            while (e.MoveNext())
+            {
+                TSource result = e.Current;
+                if (predicate(result))
+                {
+                    while (e.MoveNext())
+                    {
+                        if (predicate(e.Current))
+                        {
+                            throw new Exception("more than one match");
+                        }
+                    }
+
+                    return result;
+                }
+            }
+        }
+
+        return null;
+    }
 }

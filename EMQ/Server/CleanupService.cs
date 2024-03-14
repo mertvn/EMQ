@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ public sealed class CleanupService : BackgroundService
     private static void DoWork()
     {
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
-        foreach (Room room in ServerState.Rooms)
+        foreach (Room room in ServerState.Rooms.Values)
         {
             if ((DateTime.UtcNow - room.CreatedAt) < TimeSpan.FromMinutes(1))
             {
@@ -40,9 +41,12 @@ public sealed class CleanupService : BackgroundService
             }
 
             var roomSessions = ServerState.Sessions.Where(x =>
-                room.Players.Any(y => y.Id == x.Player.Id) || room.Spectators.Any(y => y.Id == x.Player.Id)).ToList();
+                    room.Players.Any(y => y.Id == x.Value.Player.Id) ||
+                    room.Spectators.Any(y => y.Id == x.Value.Player.Id))
+                .ToList();
             var activeSessions = roomSessions
-                .Where(x => (DateTime.UtcNow - x.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5)).ToList();
+                .Where(x => (DateTime.UtcNow - x.Value.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5))
+                .ToList();
             if (!activeSessions.Any()
                 //  && (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing) // not sure if we need this
                )
@@ -54,7 +58,7 @@ public sealed class CleanupService : BackgroundService
             if (room.Quiz == null || room.Quiz.QuizState.QuizStatus != QuizStatus.Playing)
             {
                 var inactiveSessions = roomSessions.Except(activeSessions);
-                foreach (Session inactiveSession in inactiveSessions)
+                foreach ((string _, Session inactiveSession) in inactiveSessions)
                 {
                     Console.WriteLine(
                         $"Cleaning up p{inactiveSession.Player.Id} {inactiveSession.Player.Username} from r{room.Id} {room.Name}");
@@ -89,7 +93,7 @@ public sealed class CleanupService : BackgroundService
             }
         }
 
-        foreach (Session session in ServerState.Sessions)
+        foreach ((string _, Session session) in ServerState.Sessions)
         {
             if ((DateTime.UtcNow - session.CreatedAt) < TimeSpan.FromMinutes(1))
             {
@@ -97,10 +101,11 @@ public sealed class CleanupService : BackgroundService
             }
 
             bool isInARoom =
-                ServerState.Rooms.FirstOrDefault(x =>
-                    x.Players.Any(y => y.Id == session.Player.Id) ||
-                    x.Spectators.Any(y => y.Id == session.Player.Id)) != null;
-            if ((DateTime.UtcNow - session.Player.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(30) && !isInARoom)
+                ServerState.Rooms.FirstOrNull(x =>
+                    x.Value.Players.Any(y => y.Id == session.Player.Id) ||
+                    x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value != null;
+            if ((DateTime.UtcNow - session.Player.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(1) &&
+                !isInARoom) // todo nocommit
             {
                 Console.WriteLine(
                     $"Evicting inactive session from memory p{session.Player.Id} {session.Player.Username}");

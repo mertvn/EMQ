@@ -67,7 +67,7 @@ public class AuthController : ControllerBase
                 } while (random < 1_000_000);
 
                 playerId = Convert.ToInt32(random.ToString()[..7]);
-            } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
+            } while (ServerState.Sessions.Any(x => x.Value.Player.Id == playerId));
 
             username = $"Guest-{playerId}";
         }
@@ -82,7 +82,7 @@ public class AuthController : ControllerBase
                 userRoleKind = (UserRoleKind)user.roles;
                 playerId = user.id;
 
-                var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
+                var existingSession = ServerState.Sessions.SingleOrNull(x => x.Value.Player.Id == playerId)?.Value;
                 if (existingSession != null)
                 {
                     // todo db (if necessary in the future)
@@ -107,7 +107,7 @@ public class AuthController : ControllerBase
                     userRoleKind = (UserRoleKind)user.roles;
                     playerId = user.id;
 
-                    var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
+                    var existingSession = ServerState.Sessions.SingleOrNull(x => x.Value.Player.Id == playerId)?.Value;
                     if (existingSession != null)
                     {
                         // todo db (if necessary in the future)
@@ -147,7 +147,7 @@ public class AuthController : ControllerBase
     [Route("RemoveSession")]
     public async Task RemoveSession([FromBody] ReqRemoveSession req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         _logger.LogInformation("Removing session " + session?.Token);
         if (session == null)
         {
@@ -155,8 +155,8 @@ public class AuthController : ControllerBase
         }
 
         var player = session.Player;
-        var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
-        var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == player.Id));
+        var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == player.Id))?.Value;
         if (oldRoomPlayer is not null)
         {
             oldRoomPlayer.RemovePlayer(player);
@@ -204,7 +204,9 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResValidateSession>> ValidateSession([FromBody] Session req)
     {
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
+
+        // for this endpoint only, we expect the token in the request body instead of the Authorization header
+        var session = ServerState.Sessions.SingleOrNull(x => x.Value.Token == req.Token)?.Value;
 
         var secret = await DbManager.GetSecret(req.Player.Id, new Guid(req.Token));
         if (secret is not null)
@@ -253,7 +255,7 @@ public class AuthController : ControllerBase
     [Route("UpdateLabel")]
     public async Task<ActionResult<Label>> UpdateLabel([FromBody] ReqUpdateLabel req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
         {
             return Unauthorized();
@@ -290,7 +292,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<PlayerPreferences>> UpdatePlayerPreferences(
         [FromBody] ReqUpdatePlayerPreferences req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
         {
             return Unauthorized();
@@ -321,7 +323,7 @@ public class AuthController : ControllerBase
     [Route("SetVndbInfo")]
     public async Task<ActionResult<PlayerVndbInfo>> SetVndbInfo([FromBody] ReqSetVndbInfo req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
         {
             return Unauthorized();
@@ -381,7 +383,7 @@ public class AuthController : ControllerBase
         {
             RoomsCount = ServerState.Rooms.Count,
             QuizManagersCount = ServerState.QuizManagers.Count,
-            ActiveSessionsCount = ServerState.Sessions.Count(x => x.Player.HasActiveConnection),
+            ActiveSessionsCount = ServerState.Sessions.Count(x => x.Value.Player.HasActiveConnection),
             SessionsCount = ServerState.Sessions.Count,
             IsServerReadOnly = ServerState.IsServerReadOnly,
             IsSubmissionDisabled = ServerState.IsSubmissionDisabled,
@@ -394,7 +396,7 @@ public class AuthController : ControllerBase
     [Route("GetRooms")]
     public IEnumerable<Room> GetRooms()
     {
-        var ret = ServerState.Rooms.ToList();
+        var ret = ServerState.Rooms.Values.ToList();
 
         ret = JsonSerializer.Deserialize<List<Room>>(JsonSerializer.Serialize(ret))!; // need deep-copy
         foreach (Room room in ret)
@@ -526,7 +528,7 @@ public class AuthController : ControllerBase
     [Route("GetUserQuizSettings")]
     public async Task<ActionResult<List<ResGetUserQuizSettings>>> GetUserQuizSettings(string token)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
         {
             return Unauthorized();
@@ -540,7 +542,7 @@ public class AuthController : ControllerBase
     [Route("StoreUserQuizSettings")]
     public async Task<ActionResult> StoreUserQuizSettings([FromBody] ReqStoreUserQuizSettings req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
         {
             return Unauthorized();
@@ -556,7 +558,7 @@ public class AuthController : ControllerBase
     [Route("DeleteUserQuizSettings")]
     public async Task<ActionResult> DeleteUserQuizSettings([FromBody] ReqDeleteUserQuizSettings req)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+        var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
         {
             return Unauthorized();

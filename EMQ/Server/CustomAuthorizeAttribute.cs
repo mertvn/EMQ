@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -24,8 +25,10 @@ public class CustomAuthorizeAttribute : Attribute, IAsyncActionFilter
         Session? session = null;
         if (context.HttpContext.Request.Headers.TryGetValue(AuthStuff.AuthorizationHeaderName, out var token))
         {
-            session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
-            context.HttpContext.Items["EMQ_SESSION"] = session;
+            if (ServerState.Sessions.TryGetValue(token.ToString(), out session))
+            {
+                context.HttpContext.Items["EMQ_SESSION"] = session;
+            }
         }
 
         UserRoleKind currentRole = session?.UserRoleKind ?? UserRoleKind.Visitor;
