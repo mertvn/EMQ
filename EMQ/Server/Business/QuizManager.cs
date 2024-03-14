@@ -341,7 +341,7 @@ public class QuizManager
                 Quiz.Room.HotjoinQueue.TryDequeue(out Player? player);
                 if (player != null)
                 {
-                    Quiz.Room.AddPlayer(player);
+                    Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
                 }

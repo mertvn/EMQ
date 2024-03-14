@@ -32,10 +32,10 @@ public sealed class Room : IDisposable
     public Quiz? Quiz { get; set; }
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public List<Player> Players { get; set; } = new();
+    public ConcurrentQueue<Player> Players { get; set; } = new();
 
     // TODO: would be better if this was a ConcurrentDictionary
-    public List<Player> Spectators { get; set; } = new();
+    public ConcurrentQueue<Player> Spectators { get; set; } = new();
 
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
 
@@ -84,7 +84,7 @@ public sealed class Room : IDisposable
         lock (_lock)
         {
             int oldPlayersCount = Players.Count;
-            Players.Remove(toRemove);
+            Players = new ConcurrentQueue<Player>(Players.Where(x => x != toRemove));
             int newPlayersCount = Players.Count;
 
             if (oldPlayersCount <= newPlayersCount)
@@ -99,7 +99,7 @@ public sealed class Room : IDisposable
         lock (_lock)
         {
             int oldSpectatorsCount = Spectators.Count;
-            Spectators.Remove(toRemove);
+            Spectators = new ConcurrentQueue<Player>(Spectators.Where(x => x != toRemove));
             int newSpectatorsCount = Spectators.Count;
 
             if (oldSpectatorsCount <= newSpectatorsCount)
@@ -112,33 +112,5 @@ public sealed class Room : IDisposable
         }
     }
 
-    public void AddPlayer(Player session)
-    {
-        lock (_lock)
-        {
-            int oldPlayersCount = Players.Count;
-            Players.Add(session);
-            int newPlayersCount = Players.Count;
-
-            if (oldPlayersCount >= newPlayersCount)
-            {
-                throw new Exception();
-            }
-        }
-    }
-
-    public void AddSpectator(Player session)
-    {
-        lock (_lock)
-        {
-            int oldSpectatorsCount = Spectators.Count;
-            Spectators.Add(session);
-            int newSpectatorsCount = Spectators.Count;
-
-            if (oldSpectatorsCount >= newSpectatorsCount)
-            {
-                throw new Exception();
-            }
-        }
-    }
+    // TODO: AddPlayer etc.
 }
