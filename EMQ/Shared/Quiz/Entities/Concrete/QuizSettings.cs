@@ -162,17 +162,17 @@ public class QuizSettings
     [ProtoMember(20)]
     [Required]
     [DefaultValue(false)]
-    public bool AllowViewingInventoryDuringQuiz { get; set; } = false;
+    public bool AllowViewingInventoryDuringQuiz { get; set; } = false; // todo diff
 
     [ProtoMember(21)]
     [Required]
     [DefaultValue(true)]
-    public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true;
+    public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true; // todo diff
 
     [ProtoMember(22)]
     [Required]
     [DefaultValue(SpacedRepetitionKind.Review)]
-    public SpacedRepetitionKind SpacedRepetitionKind { get; set; } = SpacedRepetitionKind.Review;
+    public SpacedRepetitionKind SpacedRepetitionKind { get; set; } = SpacedRepetitionKind.Review; // todo diff
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
