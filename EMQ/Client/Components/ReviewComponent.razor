@@ -4,13 +4,18 @@
 @using EMQ.Shared.Core
 @using System.Collections.Generic
 @using EMQ.Client.Pages
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Library.Entities.Concrete
 @inject ILogger<SongReportComponent> _logger
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 
-<button type="button" class="btn btn-primary" @onclick="@(() => { _modalRef.Show(); })">Review</button>
+@{
+    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink);
+}
+
+<button type="button" class="btn btn-primary" style="margin-bottom: 5px;" @onclick="@(() => { _modalRef.Show(); })">Review</button>
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000" Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
@@ -84,22 +89,25 @@
                     }
                 </div>
 
-                @if (reviewingItem.duration is null)
+                @if (isReviewModerator)
                 {
-                    <span>Cannot modify item without duration.</span>
-                }
-                else
-                {
-                    <textarea id="note_mod"
+                    @if (reviewingItem.duration is null)
+                    {
+                        <span>Cannot modify item without duration.</span>
+                    }
+                    else
+                    {
+                        <textarea id="note_mod"
                          rows="1" cols="35" maxlength="780" placeholder="Notes"
                          @bind="reviewingItem.reason"></textarea>
 
-                    <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="@(() => Onclick_Reject())">Rejected</button>
-                    <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="@(() => Onclick_Pending())">Pending</button>
-                    <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="@(() => Onclick_Approve())">Approved</button>
-                }
+                        <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="@(() => Onclick_Reject())">Rejected</button>
+                        <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="@(() => Onclick_Pending())">Pending</button>
+                        <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="@(() => Onclick_Approve())">Approved</button>
+                    }
 
-                <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
+                    <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
+                }
             }
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>
