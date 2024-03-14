@@ -23,7 +23,7 @@ public partial class TreasureRoomComponent
 
     private Timer _movementTimer = new() { Interval = 17 };
 
-    private bool IsSpectator => Room?.Spectators.Any(x => x.Value.Id == ClientState.Session?.Player.Id) ?? false;
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
     private Dictionary<string, bool> Keys { get; set; } = new()
     {
@@ -48,8 +48,8 @@ public partial class TreasureRoomComponent
         // todo? fix diagonal movement being faster
         const int speed = 4; // todo make this a quiz setting?
 
-        Player player = Room!.Players.SingleOrNull(x => x.Value.Id == ClientState.Session!.Player.Id)?.Value ??
-                        Room!.Spectators.Single(x => x.Value.Id == ClientState.Session!.Player.Id).Value;
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
 
         var newX = player.LootingInfo.X;
         var newY = player.LootingInfo.Y;
@@ -117,8 +117,8 @@ public partial class TreasureRoomComponent
 
     private async Task PickupTreasure(Treasure treasure)
     {
-        Player player = Room!.Players.SingleOrNull(x => x.Value.Id == ClientState.Session!.Player.Id)?.Value ??
-                        Room!.Spectators.Single(x => x.Value.Id == ClientState.Session!.Player.Id).Value;
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
 
         if (treasure.Position.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
         {
@@ -152,8 +152,8 @@ public partial class TreasureRoomComponent
     private async Task OnclickChangeTreasureRoomArrow(Point arrowPosition, Point treasureRoomCoords,
         Direction direction)
     {
-        Player player = Room!.Players.SingleOrNull(x => x.Value.Id == ClientState.Session!.Player.Id)?.Value ??
-                        Room!.Spectators.Single(x => x.Value.Id == ClientState.Session!.Player.Id).Value;
+        Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
+                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
 
         if (IsSpectator || arrowPosition.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
         {

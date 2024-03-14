@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
-using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Logging;
@@ -103,8 +102,8 @@ public partial class PyramidPage
     {
         if (Room != null)
         {
-            Player player = Room.Players.SingleOrNull(x => x.Value.Id == playerId)?.Value ??
-                            Room.Spectators.Single(x => x.Value.Id == playerId).Value;
+            Player player = Room.Players.SingleOrDefault(x => x.Id == playerId) ??
+                            Room.Spectators.Single(x => x.Id == playerId);
 
             player.LootingInfo.TreasureRoomCoords = playerLootingInfo.TreasureRoomCoords;
             if (playerId == ClientState.Session!.Player.Id)

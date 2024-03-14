@@ -36,7 +36,7 @@
     {
         @if (Room.QuizSettings.SongSelectionKind == SongSelectionKind.Looting && Room.QuizSettings.AllowViewingInventoryDuringQuiz)
         {
-            var ownPlayer = Room.Players.SingleOrNull(x => ClientState.Session != null && x.Value.Id == ClientState.Session.Player.Id)?.Value;
+            var ownPlayer = Room.Players.SingleOrDefault(x => ClientState.Session != null && x.Id == ClientState.Session.Player.Id);
             var inventory = ownPlayer?.LootingInfo.Inventory;
             @if (inventory != null)
             {
@@ -86,13 +86,13 @@
     }
     else
     {
-        int isSkippingCount = Room!.Players.Count(x => x.Value.IsSkipping);
+        int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
         int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
         <button type="button" class="btn btn-primary"
                 disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || Room?.Quiz?.QuizState.sp < 0 || !(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results && !(Room?.Quiz?.QuizState.IsPaused ?? false)))"
                 @onclick="SendToggleSkip"
                 style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 120px; height: 30px; z-index: 10;">
-            @UiHelpers.Bool2Text(Room?.Players.SingleOrNull(x => x.Value.Id == ClientState.Session?.Player.Id)?.Value.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
+            @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsSkipping, $"Skipping {isSkippingCount}/{skipNumber}", "Skip")
         </button>
     }
 
@@ -147,7 +147,7 @@
             <ul style="padding-left: 0">
                 @foreach (var spectator in Room.Spectators)
                 {
-                    <li>@spectator.Value.Username</li>
+                    <li>@spectator.Username</li>
                 }
             </ul>
         </div>
@@ -347,8 +347,8 @@
             {
                 @if (Room.Quiz.QuizState.RemainingMs <= 0)
                 {
-                    List<Player> buffered = Room.Players.Where(x => x.Value.IsBuffered).Select(y => y.Value).ToList();
-                    List<Player> notBuffered = Room.Players.Where(x => !x.Value.IsBuffered).Select(y => y.Value).ToList();
+                    List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
+                    List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
                     @if (buffered.Count > 0 && notBuffered.Count < 5)
                     {
                         // TODO: this says that we are waiting on inactive players even though we actually aren't
@@ -448,19 +448,19 @@ else
     <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
         @if (Room?.Players.Any() ?? false)
         {
-            var ownPlayer = Room.Players.SingleOrNull(x => ClientState.Session != null && x.Value.Id == ClientState.Session.Player.Id)?.Value ??
-                            Room.Spectators.SingleOrNull(x => ClientState.Session != null && x.Value.Id == ClientState.Session.Player.Id)?.Value;
+            var ownPlayer = Room.Players.SingleOrDefault(x => ClientState.Session != null && x.Id == ClientState.Session.Player.Id) ??
+                            Room.Spectators.SingleOrDefault(x => ClientState.Session != null && x.Id == ClientState.Session.Player.Id);
 
             IGrouping<int, Player>? team1 = null;
             IGrouping<int, Player>? team2 = null;
             @if (Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
             {
-                var teams = Room.Players.Select(y => y.Value).GroupBy(x => x.TeamId).ToArray();
+                var teams = Room.Players.GroupBy(x => x.TeamId).ToArray();
                 team1 = teams.ElementAtOrDefault(0);
                 team2 = teams.ElementAtOrDefault(1);
             }
 
-            @foreach ((int _, Player player) in Room.Players)
+            @foreach (var player in Room.Players)
             {
                 if (_playerGuesses.TryGetValue(player.Id, out string? playerGuess))
                 {

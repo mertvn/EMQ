@@ -149,7 +149,7 @@ public partial class QuizPage
 
     private bool PhaseChangeInProgress { get; set; }
 
-    private bool IsSpectator => Room?.Spectators.Any(x => x.Value.Id == ClientState.Session?.Player.Id) ?? false;
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
     private bool _isDisposed;
 

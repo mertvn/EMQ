@@ -40,8 +40,8 @@ public class QuizHub : Hub
                     $"p{session.Player.Id} ConnectionId changed from {oldConnectionId} to {newConnectionId}");
 
                 var room = ServerState.Rooms.SingleOrNull(x =>
-                    x.Value.Players.Any(player => player.Value.Id == session.Player.Id) ||
-                    x.Value.Spectators.Any(player => player.Value.Id == session.Player.Id))?.Value;
+                    x.Value.Players.Any(player => player.Id == session.Player.Id) ||
+                    x.Value.Spectators.Any(player => player.Id == session.Player.Id))?.Value;
 
                 if (room != null)
                 {
@@ -92,8 +92,8 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrNull(x =>
-                x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
-                x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
+                x.Value.Players.Any(y => y.Id == session.Player.Id) ||
+                x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -123,7 +123,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -153,7 +153,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -184,7 +184,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Owner.Id == session.Player.Id)
             {
                 if (room.Quiz != null)
@@ -223,13 +223,13 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrNull(x =>
-                x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
-                x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
+                x.Value.Players.Any(y => y.Id == session.Player.Id) ||
+                x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
             if (room != null)
             {
                 // await quizManager.OnSendPlayerLeaving(session.Player.Id);
                 Console.WriteLine($"Removing player {session.Player.Id} from room {room.Id}");
-                var player = room.Players.SingleOrNull(player => player.Value.Id == session.Player.Id)?.Value;
+                var player = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
                 if (player != null)
                 {
                     room.RemovePlayer(player);
@@ -270,7 +270,7 @@ public class QuizHub : Hub
                     {
                         if (room.Owner.Id == player.Id)
                         {
-                            var newOwner = room.Players.First().Value;
+                            var newOwner = room.Players.First();
                             room.Owner = newOwner;
                             room.Log($"{newOwner.Username} is the new owner.", -1, true);
                         }
@@ -278,7 +278,7 @@ public class QuizHub : Hub
                 }
                 else
                 {
-                    var spectator = room.Spectators.Single(spectator => spectator.Value.Id == session.Player.Id).Value;
+                    var spectator = room.Spectators.Single(spectator => spectator.Id == session.Player.Id);
                     room.RemoveSpectator(spectator);
                     room.AllConnectionIds.Remove(spectator.Id, out _);
                     room.Log($"{spectator.Username} stopped spectating.", spectator.Id, true);
@@ -306,7 +306,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -336,7 +336,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -366,7 +366,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -397,8 +397,8 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrNull(x =>
-                x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
-                x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
+                x.Value.Players.Any(y => y.Id == session.Player.Id) ||
+                x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Quiz != null)
             {
                 var quizManager = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
@@ -428,7 +428,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room != null)
             {
                 if (room.Quiz != null)
@@ -465,7 +465,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == session.Player.Id))
                 ?.Value;
             if (room?.Quiz != null)
             {
@@ -500,7 +500,7 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room != null)
             {
                 session.Player.IsReadiedUp = !session.Player.IsReadiedUp;
@@ -523,14 +523,14 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == session.Player.Id))
                 ?.Value;
             if (room != null)
             {
-                var player = room.Spectators.SingleOrNull(player => player.Value.Id == session.Player.Id)?.Value;
+                var player = room.Spectators.SingleOrDefault(player => player.Id == session.Player.Id);
                 if (player != null)
                 {
-                    room.AddPlayer(player);
+                    room.Players.Enqueue(player);
                     room.RemoveSpectator(player);
                     room.Log($"{player.Username} converted to player.", player.Id, true);
 
@@ -558,13 +558,13 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room != null)
             {
-                var player = room.Players.SingleOrNull(player => player.Value.Id == session.Player.Id)?.Value;
+                var player = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
                 if (player != null)
                 {
-                    room.AddSpectator(player);
+                    room.Spectators.Enqueue(player);
                     room.RemovePlayer(player);
                     room.Log($"{player.Username} converted to spectator.", player.Id, true);
 
@@ -592,10 +592,10 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Owner.Id == session.Player.Id)
             {
-                var targetPlayer = room.Players.SingleOrNull(x => x.Value.Id == playerId)?.Value;
+                var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
                 if (targetPlayer != null)
                 {
                     room.Owner = targetPlayer;
@@ -625,10 +625,10 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrNull(x => x.Value.ConnectionId == Context.ConnectionId)?.Value;
         if (session != null)
         {
-            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == session.Player.Id))?.Value;
+            var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == session.Player.Id))?.Value;
             if (room?.Owner.Id == session.Player.Id)
             {
-                var targetPlayer = room.Players.SingleOrNull(x => x.Value.Id == playerId)?.Value;
+                var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
                 if (targetPlayer != null)
                 {
                     room.RemovePlayer(targetPlayer);
