@@ -31,10 +31,9 @@ public sealed class Room : IDisposable
 
     public Quiz? Quiz { get; set; }
 
-    // TODO: would be better if this was a ConcurrentDictionary
+    // We cannot use a ConcurrentDictionary here, because the order of the players is important
     public ConcurrentQueue<Player> Players { get; set; } = new();
 
-    // TODO: would be better if this was a ConcurrentDictionary
     public ConcurrentQueue<Player> Spectators { get; set; } = new();
 
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Client;
 using EMQ.Server;
@@ -65,14 +68,13 @@ public class IntegrationTests
     public async Task Integration_1RoomWith10PlayersX1000()
     {
         var baseAddress = new Uri("https://localhost:7021/");
-        // baseAddress = new Uri("https://emq.crabdance.com/");
 
         HttpClient client = null!;
         ServerUtils.Client.BaseAddress = baseAddress;
 
         var dict = new Dictionary<string, HubConnection>();
 
-        for (int outerIndex = 0; outerIndex < 10; outerIndex++)
+        for (int outerIndex = 0; outerIndex < 50; outerIndex++)
         {
             int numPlayers = 10;
             Guid roomId = Guid.Empty;
@@ -93,6 +95,7 @@ public class IntegrationTests
                 client.BaseAddress = baseAddress;
                 client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
                     session.Token);
+                client.Timeout = TimeSpan.FromSeconds(2);
 
                 var hubConnection = new HubConnectionBuilder()
                     .WithUrl(new Nav(client.BaseAddress.ToString()).ToAbsoluteUri("/QuizHub"),
@@ -111,19 +114,102 @@ public class IntegrationTests
                     HttpResponseMessage res1 = await client.PostAsJsonAsync("Quiz/CreateRoom", req);
                     roomId = await res1.Content.ReadFromJsonAsync<Guid>();
                     p0Session = session;
+
+                    const int numSongs = 100;
+                    var quizSettings = new QuizSettings
+                    {
+                        NumSongs = numSongs,
+                        GuessMs = 5000,
+                        UI_GuessMs = 5,
+                        ResultsMs = 5000,
+                        UI_ResultsMs = 5,
+                        PreloadAmount = 1,
+                        IsHotjoinEnabled = false,
+                        TeamSize = 1,
+                        Duplicates = true,
+                        MaxLives = 0,
+                        OnlyFromLists = false,
+                        SongSelectionKind = SongSelectionKind.Random,
+                        AnsweringKind = AnsweringKind.Typing,
+                        LootingMs = 120000,
+                        UI_LootingMs = 120,
+                        InventorySize = 5,
+                        WaitPercentage = 55,
+                        TimeoutMs = 5000,
+                        UI_TimeoutMs = 5,
+                        Filters = new QuizFilters
+                        {
+                            CategoryFilters = new List<CategoryFilter>(),
+                            ArtistFilters = new List<ArtistFilter>(),
+                            VndbAdvsearchFilter = "",
+                            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, y => y == Language.ja),
+                            SongSourceSongTypeFilters =
+                                new()
+                                {
+                                    { SongSourceSongType.OP, new IntWrapper(0) },
+                                    { SongSourceSongType.ED, new IntWrapper(0) },
+                                    { SongSourceSongType.Insert, new IntWrapper(0) },
+                                    { SongSourceSongType.BGM, new IntWrapper(0) },
+                                    { SongSourceSongType.Random, new IntWrapper(numSongs) },
+                                },
+                            SongSourceSongTypeRandomEnabledSongTypes =
+                                new Dictionary<SongSourceSongType, bool>
+                                {
+                                    { SongSourceSongType.OP, true },
+                                    { SongSourceSongType.ED, true },
+                                    { SongSourceSongType.Insert, true },
+                                    { SongSourceSongType.BGM, true },
+                                },
+                            SongDifficultyLevelFilters =
+                                Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
+                            StartDateFilter = DateTime.Parse("1988-01-01", CultureInfo.InvariantCulture),
+                            EndDateFilter = DateTime.Parse("2030-01-01", CultureInfo.InvariantCulture),
+                            RatingAverageStart = 100,
+                            RatingAverageEnd = 1000,
+                            RatingBayesianStart = 100,
+                            RatingBayesianEnd = 1000,
+                            VoteCountStart = 5000,
+                            VoteCountEnd = 25000,
+                            OnlyOwnUploads = false,
+                            ScreenshotKind = ScreenshotKind.None
+                        },
+                        ListDistributionKind = ListDistributionKind.Random,
+                        GamemodeKind = GamemodeKind.Default,
+                        NGMCAllowBurning = false,
+                        AllowViewingInventoryDuringQuiz = false,
+                        NGMCAutoPickOnlyCorrectPlayerInTeam = false
+                    };
+
+                    HttpResponseMessage res4 = await client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
+                        new ReqChangeRoomSettings(
+                            session.Token, roomId, quizSettings));
                 }
 
                 HttpResponseMessage res2 = await client.PostAsJsonAsync("Quiz/JoinRoom",
                     new ReqJoinRoom(roomId, "", session.Token));
 
-                await Task.Delay(TimeSpan.FromSeconds(17)); // 4 login attempts per minute per IP
+                // await Task.Delay(TimeSpan.FromSeconds(17)); // 4 login attempts per minute per IP
             }
 
-            HttpResponseMessage res3 = await client.PostAsJsonAsync("Quiz/StartQuiz",
-                new ReqStartQuiz(p0Session!.Token, roomId));
+            try
+            {
+                client = new HttpClient();
+                client.BaseAddress = baseAddress;
+                client.DefaultRequestHeaders.TryAddWithoutValidation(AuthStuff.AuthorizationHeaderName,
+                    p0Session!.Token);
+                client.Timeout = TimeSpan.FromSeconds(2);
+                HttpResponseMessage res3 = await client.PostAsJsonAsync("Quiz/StartQuiz",
+                    new ReqStartQuiz(p0Session!.Token, roomId));
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
-        while (true)
+        var token = new CancellationTokenSource();
+        token.CancelAfter(TimeSpan.FromSeconds(30));
+        while (!token.IsCancellationRequested)
         {
             foreach (KeyValuePair<string, HubConnection> hubConnection in dict)
             {
@@ -131,6 +217,11 @@ public class IntegrationTests
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        foreach (KeyValuePair<string, HubConnection> hubConnection in dict)
+        {
+            await hubConnection.Value.SendAsync("SendPlayerLeaving");
         }
 
         // ReSharper disable once FunctionNeverReturns
