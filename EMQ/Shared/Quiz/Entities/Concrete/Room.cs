@@ -31,11 +31,11 @@ public sealed class Room : IDisposable
 
     public Quiz? Quiz { get; set; }
 
-    // TODO: would be better if this was a ConcurrentDictionary
-    public ConcurrentQueue<Player> Players { get; set; } = new();
+    // Key: Player.Id
+    public ConcurrentDictionary<int, Player> Players { get; set; } = new();
 
-    // TODO: would be better if this was a ConcurrentDictionary
-    public ConcurrentQueue<Player> Spectators { get; set; } = new();
+    // Key: Player.Id
+    public ConcurrentDictionary<int, Player> Spectators { get; set; } = new();
 
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
 
@@ -56,7 +56,7 @@ public sealed class Room : IDisposable
     public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
 
     [JsonIgnore]
-    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x => x.Id, x => x.Guess);
+    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x => x.Key, x => x.Value.Guess);
 
     public void Dispose()
     {
@@ -81,36 +81,36 @@ public sealed class Room : IDisposable
 
     public void RemovePlayer(Player toRemove)
     {
-        lock (_lock)
+        while (Players.ContainsKey(toRemove.Id))
         {
-            int oldPlayersCount = Players.Count;
-            Players = new ConcurrentQueue<Player>(Players.Where(x => x != toRemove));
-            int newPlayersCount = Players.Count;
-
-            if (oldPlayersCount <= newPlayersCount)
-            {
-                throw new Exception();
-            }
+            Players.TryRemove(toRemove.Id, out _);
         }
     }
 
     public void RemoveSpectator(Player toRemove)
     {
-        lock (_lock)
+        while (Spectators.ContainsKey(toRemove.Id))
         {
-            int oldSpectatorsCount = Spectators.Count;
-            Spectators = new ConcurrentQueue<Player>(Spectators.Where(x => x != toRemove));
-            int newSpectatorsCount = Spectators.Count;
+            Spectators.TryRemove(toRemove.Id, out _);
+        }
 
-            if (oldSpectatorsCount <= newSpectatorsCount)
-            {
-                throw new Exception();
-            }
+        // toRemove may or may not be here
+        HotjoinQueue = new ConcurrentQueue<Player>(HotjoinQueue.Where(x => x != toRemove));
+    }
 
-            // toRemove may or may not be here
-            HotjoinQueue = new ConcurrentQueue<Player>(HotjoinQueue.Where(x => x != toRemove));
+    public void AddPlayer(Player player)
+    {
+        while (!Players.ContainsKey(player.Id))
+        {
+            Players.TryAdd(player.Id, player);
         }
     }
 
-    // TODO: AddPlayer etc.
+    public void AddSpectator(Player spectator)
+    {
+        while (!Spectators.ContainsKey(spectator.Id))
+        {
+            Spectators.TryAdd(spectator.Id, spectator);
+        }
+    }
 }

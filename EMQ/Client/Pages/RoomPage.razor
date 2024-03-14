@@ -44,9 +44,9 @@
     <ul>
         @if (Room != null)
         {
-            foreach (var player in Room.Players.Where(x => !x.IsReadiedUp && x.Id != Room?.Owner.Id))
+            foreach (var player in Room.Players.Where(x => !x.Value.IsReadiedUp && x.Value.Id != Room?.Owner.Id))
             {
-                <li>@player.Username</li>
+                <li>@player.Value.Username</li>
             }
         }
     </ul>
@@ -132,7 +132,7 @@ else
             disabled="@(Room is null)"
             @onclick="SendToggleReadiedUp"
             style="position: relative; top: 2px; left: 2px; margin: 2px; padding: 2px; width: 78px; height: 30px;">
-        @UiHelpers.Bool2Text(Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.IsReadiedUp, $"Unready", "Ready", "Ready")
+        @UiHelpers.Bool2Text(Room?.Players.SingleOrNull(x => x.Value.Id == ClientState.Session?.Player.Id)?.Value.IsReadiedUp, $"Unready", "Ready", "Ready")
     </button>
 
     <button type="button" class="btn btn-primary"
@@ -167,7 +167,7 @@ else
 <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
     @if (Room?.Players.Any() ?? false)
     {
-        @foreach (var player in Room.Players)
+        @foreach ((int _, Player player) in Room.Players)
         {
             <div class="playerDiv" style="margin: 10px; width: 160px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                 <p style="text-align: center;">@(player.IsReadiedUp || Room?.Owner.Id == player.Id ? "Ready" : "Not ready")</p>
@@ -249,7 +249,7 @@ else
         <ul style="padding-left: 0">
             @foreach (var spectator in Room.Spectators)
             {
-                <li>@spectator.Username</li>
+                <li>@spectator.Value.Username</li>
             }
         </ul>
     </div>

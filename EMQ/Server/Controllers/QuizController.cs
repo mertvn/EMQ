@@ -47,8 +47,8 @@ public class QuizController : ControllerBase
         }
 
         var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id));
+            x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
+            x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -72,8 +72,8 @@ public class QuizController : ControllerBase
         }
 
         var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+            x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
+            x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -97,8 +97,8 @@ public class QuizController : ControllerBase
         }
 
         var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+            x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
+            x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -121,8 +121,8 @@ public class QuizController : ControllerBase
         }
 
         var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+            x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
+            x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value;
         if (room is not null)
         {
             if (room.Quiz != null)
@@ -242,14 +242,15 @@ public class QuizController : ControllerBase
         var player = session.Player;
         if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password || room.Owner == player)
         {
-            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
+            if (room.Players.Any(x => x.Value.Id == player.Id) || room.Spectators.Any(x => x.Value.Id == player.Id))
             {
                 // TODO we really shouldn't allow this (we should handle players manually changing pages better)
                 return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
-            var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
-            var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == player.Id))
+            var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))
+                ?.Value;
+            var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Value.Id == player.Id))
                 ?.Value;
             if (oldRoomPlayer is not null)
             {
@@ -266,7 +267,7 @@ public class QuizController : ControllerBase
                 {
                     if (oldRoomPlayer.Owner.Id == player.Id)
                     {
-                        var newOwner = oldRoomPlayer.Players.First();
+                        var newOwner = oldRoomPlayer.Players.First().Value;
                         oldRoomPlayer.Owner = newOwner;
                         oldRoomPlayer.Log($"{newOwner.Username} is the new owner.", -1, true);
                     }
@@ -283,7 +284,7 @@ public class QuizController : ControllerBase
             if (room.CanJoinDirectly)
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id}", player.Id, room.Id);
-                room.Players.Enqueue(player);
+                room.AddPlayer(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
 
                 // we don't want to show this message right after room creation
@@ -297,7 +298,7 @@ public class QuizController : ControllerBase
             else
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id} as a spectator", player.Id, room.Id);
-                room.Spectators.Enqueue(player);
+                room.AddSpectator(player);
                 room.AllConnectionIds[player.Id] = session.ConnectionId!;
                 room.Log($"{player.Username} started spectating.", -1, true);
             }
@@ -457,11 +458,13 @@ public class QuizController : ControllerBase
 
         var player = session.Player;
         var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == player.Id) || x.Value.Spectators.Any(y => y.Id == player.Id))?.Value;
+                x.Value.Players.Any(y => y.Value.Id == player.Id) ||
+                x.Value.Spectators.Any(y => y.Value.Id == player.Id))
+            ?.Value;
 
         if (room is not null)
         {
-            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(y => y.Id == player.Id))
+            if (room.Players.Any(x => x.Value.Id == player.Id) || room.Spectators.Any(y => y.Value.Id == player.Id))
             {
                 if (req.Contents.Length <= Constants.MaxChatMessageLength)
                 {
@@ -650,7 +653,7 @@ public class QuizController : ControllerBase
         ServerState.Rooms.TryGetValue(roomId, out Room? room);
         if (room?.Quiz is not null)
         {
-            if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
+            if (room.Players.Any(x => x.Value.Id == player.Id) || room.Spectators.Any(x => x.Value.Id == player.Id))
             {
                 return room.Quiz.SongsHistory;
             }
@@ -682,12 +685,12 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))?.Value;
         if (room is not null)
         {
             if (room.QuizSettings.TeamSize > 1)
             {
-                int currentTeamSize = room.Players.Count(x => x.TeamId == requestedTeamId);
+                int currentTeamSize = room.Players.Count(x => x.Value.TeamId == requestedTeamId);
                 if ((currentTeamSize + 1) <= room.QuizSettings.TeamSize)
                 {
                     player.TeamId = requestedTeamId;
@@ -724,7 +727,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))?.Value;
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
@@ -761,7 +764,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))?.Value;
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && room.QuizSettings.NGMCAllowBurning)
@@ -771,7 +774,7 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
                     if (qm != null)
                     {
-                        var burnedPlayer = room.Players.Single(x => x.Id == burnedPlayerId);
+                        var burnedPlayer = room.Players.Single(x => x.Value.Id == burnedPlayerId).Value;
                         await qm.NGMCBurnPlayer(burnedPlayer, player);
                         return Ok();
                     }
@@ -804,7 +807,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))?.Value;
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
@@ -814,7 +817,7 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
                     if (qm != null)
                     {
-                        var pickedPlayer = room.Players.Single(x => x.Id == pickedPlayerId);
+                        var pickedPlayer = room.Players.Single(x => x.Value.Id == pickedPlayerId).Value;
                         await qm.NGMCPickPlayer(pickedPlayer, player, false);
                         return Ok();
                     }
@@ -847,7 +850,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))?.Value;
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && room.QuizSettings.NGMCAllowBurning)

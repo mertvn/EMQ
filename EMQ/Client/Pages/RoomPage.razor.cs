@@ -57,14 +57,14 @@ public partial class RoomPage
 
     private IDisposable? _locationChangingRegistration;
 
-    private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
+    private bool IsSpectator => Room?.Spectators.Any(x => x.Value.Id == ClientState.Session?.Player.Id) ?? false;
 
     private string InviteLinkButtonText { get; set; } = "Invite link";
 
     private Dictionary<int, SongHistory> ClientSongsHistory { get; set; } = new();
 
     private int SelectedTeamId =>
-        Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.TeamId ?? 1;
+        Room?.Players.SingleOrNull(x => x.Value.Id == ClientState.Session?.Player.Id)?.Value.TeamId ?? 1;
 
     private async Task SetSelectedTeamIdAsync(int value)
     {
@@ -77,7 +77,7 @@ public partial class RoomPage
     }
 
     private int SelectedNGMCGuessesInitial =>
-        Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.NGMCGuessesInitial ?? 0;
+        Room?.Players.SingleOrNull(x => x.Value.Id == ClientState.Session?.Player.Id)?.Value.NGMCGuessesInitial ?? 0;
 
     private async Task SetSelectedNGMCGuessesInitialAsync(int value)
     {
@@ -139,7 +139,7 @@ public partial class RoomPage
 
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
-        if (Room!.Players.Any(x => !x.IsReadiedUp && Room.Owner.Id != x.Id))
+        if (Room!.Players.Any(x => !x.Value.IsReadiedUp && Room.Owner.Id != x.Value.Id))
         {
             _forceStartModalRef?.Show();
             return;

@@ -41,8 +41,8 @@ public sealed class CleanupService : BackgroundService
             }
 
             var roomSessions = ServerState.Sessions.Where(x =>
-                    room.Players.Any(y => y.Id == x.Value.Player.Id) ||
-                    room.Spectators.Any(y => y.Id == x.Value.Player.Id))
+                    room.Players.Any(y => y.Value.Id == x.Value.Player.Id) ||
+                    room.Spectators.Any(y => y.Value.Id == x.Value.Player.Id))
                 .ToList();
             var activeSessions = roomSessions
                 .Where(x => (DateTime.UtcNow - x.Value.Player.LastHeartbeatTimestamp) < TimeSpan.FromMinutes(5))
@@ -67,7 +67,7 @@ public sealed class CleanupService : BackgroundService
                     room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
                         true);
 
-                    if (room.Spectators.Any(x => x.Id == inactiveSession.Player.Id))
+                    if (room.Spectators.Any(x => x.Value.Id == inactiveSession.Player.Id))
                     {
                         room.RemoveSpectator(inactiveSession.Player);
                     }
@@ -82,7 +82,7 @@ public sealed class CleanupService : BackgroundService
                         {
                             if (room.Owner.Id == inactiveSession.Player.Id)
                             {
-                                var newOwner = room.Players.First();
+                                var newOwner = room.Players.First().Value;
                                 room.Owner = newOwner;
                                 room.Log($"{newOwner.Username} is the new owner.", -1, true);
                             }
@@ -102,8 +102,8 @@ public sealed class CleanupService : BackgroundService
 
             bool isInARoom =
                 ServerState.Rooms.FirstOrNull(x =>
-                    x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-                    x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value != null;
+                    x.Value.Players.Any(y => y.Value.Id == session.Player.Id) ||
+                    x.Value.Spectators.Any(y => y.Value.Id == session.Player.Id))?.Value != null;
             if ((DateTime.UtcNow - session.Player.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(1) &&
                 !isInARoom) // todo nocommit
             {

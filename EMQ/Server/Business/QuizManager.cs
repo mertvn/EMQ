@@ -136,7 +136,7 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        while (Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
+        while (Quiz.Room.Players.Any(x => x.Value.NGMCMustPick || x.Value.NGMCMustBurn))
         {
             Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -144,11 +144,12 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+        int isBufferedCount = Quiz.Room.Players.Count(x => x.Value.IsBuffered);
         int timeoutMs = Quiz.Room.QuizSettings.TimeoutMs;
         // Console.WriteLine("ibc " + isBufferedCount);
 
-        int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
+        int activePlayersCount = ServerState.Sessions
+            .Where(x => Quiz.Room.Players.Any(y => y.Value.Id == x.Value.Player.Id))
             .Count(x => x.Value.Player.HasActiveConnection);
         // Room.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
@@ -163,9 +164,10 @@ public class QuizManager
             await Task.Delay(1000);
             timeoutMs -= 1000;
 
-            isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+            isBufferedCount = Quiz.Room.Players.Count(x => x.Value.IsBuffered);
 
-            activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
+            activePlayersCount = ServerState.Sessions
+                .Where(x => Quiz.Room.Players.Any(y => y.Value.Id == x.Value.Player.Id))
                 .Count(x => x.Value.Player.HasActiveConnection);
 
             waitNumber = (float)Math.Round(
@@ -186,7 +188,7 @@ public class QuizManager
         Quiz.Songs[Quiz.QuizState.sp].PlayedAt = DateTime.UtcNow;
         Quiz.QuizState.ExtraInfo = "";
 
-        foreach (var player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             player.Guess = "";
             player.FirstGuessMs = 0;
@@ -227,7 +229,7 @@ public class QuizManager
     private async Task DetermineTeamGuesses()
     {
         HashSet<int> processedTeamIds = new();
-        foreach (Player player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             if (processedTeamIds.Contains(player.TeamId))
             {
@@ -237,7 +239,7 @@ public class QuizManager
             if (IsGuessCorrect(player.Guess))
             {
                 processedTeamIds.Add(player.TeamId);
-                foreach (Player possibleTeammate in Quiz.Room.Players)
+                foreach ((int _, Player possibleTeammate) in Quiz.Room.Players)
                 {
                     if (possibleTeammate.TeamId == player.TeamId)
                     {
@@ -290,7 +292,7 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
 
-        foreach (var player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             player.IsBuffered = false;
         }
@@ -309,22 +311,22 @@ public class QuizManager
         }
         else if (Quiz.Room.QuizSettings.MaxLives > 0)
         {
-            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+            var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToArray();
             bool isOneTeamGame = teams.Length == 1;
             if (isOneTeamGame)
             {
-                if (teams.Single().First().Lives <= 0)
+                if (teams.Single().First().Value.Lives <= 0)
                 {
                     await EndQuiz();
                 }
             }
             else
             {
-                var teamsWithLives = teams.Where(x => x.Any(y => y.Lives > 0)).ToArray();
+                var teamsWithLives = teams.Where(x => x.Any(y => y.Value.Lives > 0)).ToArray();
                 bool onlyOneTeamWithLivesLeft = teamsWithLives.Length == 1;
                 if (onlyOneTeamWithLivesLeft)
                 {
-                    Quiz.Room.Log($"Team {teamsWithLives.Single().First().TeamId} won!", writeToChat: true);
+                    Quiz.Room.Log($"Team {teamsWithLives.Single().First().Value.TeamId} won!", writeToChat: true);
                     await EndQuiz();
                 }
                 else if (teamsWithLives.Length == 0)
@@ -341,7 +343,7 @@ public class QuizManager
                 Quiz.Room.HotjoinQueue.TryDequeue(out Player? player);
                 if (player != null)
                 {
-                    Quiz.Room.Players.Enqueue(player);
+                    Quiz.Room.AddPlayer(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
                 }
@@ -369,9 +371,9 @@ public class QuizManager
 
         var songHistory = new SongHistory { Song = song };
         var userSongStatsDict =
-            await DbManager.GetPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Id).ToList());
+            await DbManager.GetPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Value.Id).ToList());
 
-        foreach (var player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             if (player.PlayerStatus == PlayerStatus.Dead)
             {
@@ -440,32 +442,32 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
         {
-            var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+            var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToArray();
             var team1 = teams.ElementAt(0);
             var team2 = teams.ElementAt(1);
 
             var team1CorrectPlayers = team1
-                .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
+                .Where(x => x.Value.NGMCGuessesCurrent >= 1f && x.Value.PlayerStatus == PlayerStatus.Correct)
                 .ToArray();
             var team2CorrectPlayers = team2
-                .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
+                .Where(x => x.Value.NGMCGuessesCurrent >= 1f && x.Value.PlayerStatus == PlayerStatus.Correct)
                 .ToArray();
 
-            foreach (Player correctPlayer in team1CorrectPlayers.Concat(team2CorrectPlayers))
+            foreach ((int _, Player correctPlayer) in team1CorrectPlayers.Concat(team2CorrectPlayers))
             {
                 correctPlayer.NGMCCanBePicked = true;
             }
 
             int team1CorrectPlayersCount = team1CorrectPlayers.Length;
             int team2CorrectPlayersCount = team2CorrectPlayers.Length;
-            var team1Captain = team1.First();
-            var team2Captain = team2.First();
+            var team1Captain = team1.First().Value;
+            var team2Captain = team2.First().Value;
 
             if (team1CorrectPlayersCount > 0)
             {
                 if (!team2CorrectPlayers.Any())
                 {
-                    foreach (Player player in team2)
+                    foreach ((int _, Player player) in team2)
                     {
                         player.Lives -= 1;
                     }
@@ -473,7 +475,7 @@ public class QuizManager
 
                 if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team1CorrectPlayersCount == 1)
                 {
-                    await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
+                    await NGMCPickPlayer(team1CorrectPlayers.Single().Value, team1Captain, true);
                 }
                 else
                 {
@@ -485,7 +487,7 @@ public class QuizManager
             {
                 if (!team1CorrectPlayers.Any())
                 {
-                    foreach (Player player in team1)
+                    foreach ((int _, Player player) in team1)
                     {
                         player.Lives -= 1;
                     }
@@ -493,7 +495,7 @@ public class QuizManager
 
                 if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team2CorrectPlayersCount == 1)
                 {
-                    await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
+                    await NGMCPickPlayer(team2CorrectPlayers.Single().Value, team2Captain, true);
                 }
                 else
                 {
@@ -506,9 +508,10 @@ public class QuizManager
             team1Captain.NGMCMustBurn = team1Captain.NGMCCanBurn;
             team2Captain.NGMCMustBurn = team2Captain.NGMCCanBurn;
 
-            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+            string team1GuessesStr = string.Join(";", team1.Select(x => x.Value.NGMCGuessesCurrent));
+            string team2GuessesStr = string.Join(";", team2.Select(x => x.Value.NGMCGuessesCurrent));
+            Quiz.Room.Log(
+                $"{team1GuessesStr} | {team2GuessesStr} {team1.First().Value.Lives}-{team2.First().Value.Lives}",
                 writeToChat: true);
         }
     }
@@ -539,22 +542,22 @@ public class QuizManager
             return;
         }
 
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToArray();
         var team1 = teams.ElementAt(0);
         var team2 = teams.ElementAt(1);
 
         var burnedPlayerTeam = burnedPlayer.TeamId == 1 ? team1 : team2;
         var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
-        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn && burnedPlayer.NGMCGuessesCurrent > 0)
+        if (burnedPlayerTeamFirstPlayer.Value.NGMCCanBurn && burnedPlayer.NGMCGuessesCurrent > 0)
         {
-            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
-            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
+            burnedPlayerTeamFirstPlayer.Value.NGMCCanBurn = false;
+            burnedPlayerTeamFirstPlayer.Value.NGMCMustBurn = false;
             burnedPlayer.NGMCGuessesCurrent -= 0.5f;
             Quiz.Room.Log($"{requestingPlayer.Username} burned {burnedPlayer.Username}.", writeToChat: true);
 
-            if (burnedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
+            if (burnedPlayerTeam.All(x => x.Value.NGMCGuessesCurrent == 0))
             {
-                foreach (Player player in burnedPlayerTeam)
+                foreach ((int _, Player player) in burnedPlayerTeam)
                 {
                     player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
                 }
@@ -562,9 +565,10 @@ public class QuizManager
                 Quiz.Room.Log($"Resetting guesses for team {burnedPlayer.TeamId}.", writeToChat: true);
             }
 
-            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+            string team1GuessesStr = string.Join(";", team1.Select(x => x.Value.NGMCGuessesCurrent));
+            string team2GuessesStr = string.Join(";", team2.Select(x => x.Value.NGMCGuessesCurrent));
+            Quiz.Room.Log(
+                $"{team1GuessesStr} | {team2GuessesStr} {team1.First().Value.Lives}-{team2.First().Value.Lives}",
                 writeToChat: true);
 
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -593,13 +597,13 @@ public class QuizManager
             return;
         }
 
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToArray();
         var burnedPlayerTeam = teams.ElementAt(requestingPlayer.TeamId - 1);
         var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
-        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn)
+        if (burnedPlayerTeamFirstPlayer.Value.NGMCCanBurn)
         {
-            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
-            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
+            burnedPlayerTeamFirstPlayer.Value.NGMCCanBurn = false;
+            burnedPlayerTeamFirstPlayer.Value.NGMCMustBurn = false;
 
             Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -633,7 +637,7 @@ public class QuizManager
             return;
         }
 
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToArray();
         var team1 = teams.ElementAt(0);
         var team2 = teams.ElementAt(1);
 
@@ -641,18 +645,18 @@ public class QuizManager
         var pickedPlayerTeamFirstPlayer = pickedPlayerTeam.First();
         if (pickedPlayer.NGMCCanBePicked)
         {
-            foreach (Player player in pickedPlayerTeam)
+            foreach ((int _, Player player) in pickedPlayerTeam)
             {
                 player.NGMCCanBePicked = false;
             }
 
-            pickedPlayerTeamFirstPlayer.NGMCMustPick = false;
+            pickedPlayerTeamFirstPlayer.Value.NGMCMustPick = false;
             pickedPlayer.NGMCGuessesCurrent -= 1;
             Quiz.Room.Log($"{requestingPlayer.Username} picked {pickedPlayer.Username}.", writeToChat: true);
 
-            if (pickedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
+            if (pickedPlayerTeam.All(x => x.Value.NGMCGuessesCurrent == 0))
             {
-                foreach (Player player in pickedPlayerTeam)
+                foreach ((int _, Player player) in pickedPlayerTeam)
                 {
                     player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
                 }
@@ -662,9 +666,10 @@ public class QuizManager
 
             if (!isAutoPick)
             {
-                string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-                string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-                Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
+                string team1GuessesStr = string.Join(";", team1.Select(x => x.Value.NGMCGuessesCurrent));
+                string team2GuessesStr = string.Join(";", team2.Select(x => x.Value.NGMCGuessesCurrent));
+                Quiz.Room.Log(
+                    $"{team1GuessesStr} | {team2GuessesStr} {team1.First().Value.Lives}-{team2.First().Value.Lives}",
                     writeToChat: true);
             }
 
@@ -940,7 +945,7 @@ public class QuizManager
                 break;
             case AnsweringKind.MultipleChoice:
                 var playerSessions =
-                    ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
+                    ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Value.Id == x.Value.Player.Id))
                         .Select(z => z.Value).ToList();
                 int numChoices = 4; // todo?: make this configurable
                 Quiz.MultipleChoiceOptions =
@@ -956,7 +961,7 @@ public class QuizManager
 
         if (!Quiz.Room.QuizSettings.AllowViewingInventoryDuringQuiz)
         {
-            foreach (var player in Quiz.Room.Players)
+            foreach ((int _, Player player) in Quiz.Room.Players)
             {
                 // reduce serialized Room size & prevent Inventory leak
                 player.LootingInfo = new PlayerLootingInfo();
@@ -970,7 +975,7 @@ public class QuizManager
     // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToList();
+        var teams = Quiz.Room.Players.GroupBy(x => x.Value.TeamId).ToList();
         if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
             var fullTeam = teams.FirstOrDefault(x => x.Count() > Quiz.Room.QuizSettings.TeamSize);
@@ -981,7 +986,7 @@ public class QuizManager
             }
 
             // todo? figure out how to handle hotjoining players for non-one-team teamed games
-            if (teams.Count > 1 || teams.Single().First().TeamId != 1)
+            if (teams.Count > 1 || teams.Single().First().Value.TeamId != 1)
             {
                 Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
             }
@@ -995,14 +1000,14 @@ public class QuizManager
                 return false;
             }
 
-            if (Quiz.Room.Players.Any(x => x.TeamId is < 1 or > 2))
+            if (Quiz.Room.Players.Any(x => x.Value.TeamId is < 1 or > 2))
             {
                 Quiz.Room.Log($"NGMC: The teams must use the team ids 1 and 2.", writeToChat: true);
                 return false;
             }
 
             bool saw2 = false;
-            foreach (Player player in Quiz.Room.Players)
+            foreach ((int _, Player player) in Quiz.Room.Players)
             {
                 if (player.TeamId == 2)
                 {
@@ -1022,7 +1027,7 @@ public class QuizManager
                 return false;
             }
 
-            if (Quiz.Room.Players.Any(x => x.NGMCGuessesInitial < 1))
+            if (Quiz.Room.Players.Any(x => x.Value.NGMCGuessesInitial < 1))
             {
                 Quiz.Room.Log($"NGMC: Every player must have at least 1 guess.", writeToChat: true);
                 return false;
@@ -1034,7 +1039,7 @@ public class QuizManager
         CorrectAnswersDict = new Dictionary<int, List<string>>();
         Dictionary<int, List<string>> validSourcesDict = new();
 
-        foreach (Player player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
@@ -1164,7 +1169,8 @@ public class QuizManager
         // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
         // todo handle hotjoining players
-        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id));
+        var playerSessions =
+            ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Value.Id == x.Value.Player.Id));
         var vndbInfos = new Dictionary<int, PlayerVndbInfo>();
         foreach ((string _, Session session) in playerSessions)
         {
@@ -1184,12 +1190,14 @@ public class QuizManager
                     {
                         case SpacedRepetitionKind.Review:
                             validMids =
-                                await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
+                                await DbManager.GetMidsWithReviewsDue(
+                                    Quiz.Room.Players.Select(x => x.Value.Id).ToList());
                             Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
                             break;
                         case SpacedRepetitionKind.NoIntervalOnly:
                             invalidMids =
-                                await DbManager.GetMidsWithIntervals(Quiz.Room.Players.Select(x => x.Id).ToList());
+                                await DbManager.GetMidsWithIntervals(Quiz.Room.Players.Select(x => x.Value.Id)
+                                    .ToList());
                             Quiz.Room.Log($"Excluding {invalidMids.Count} songs with intervals.", writeToChat: true);
                             break;
                         default:
@@ -1203,7 +1211,8 @@ public class QuizManager
                         {
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                filters: Quiz.Room.QuizSettings.Filters,
+                                players: Quiz.Room.Players.Select(x => x.Value).ToList(),
                                 listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
                                 validMids: validMids, invalidMids: invalidMids);
                             break;
@@ -1233,14 +1242,15 @@ public class QuizManager
                             foreach ((int pId, _) in validSourcesDict)
                             {
                                 Console.WriteLine(
-                                    $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
+                                    $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Value.Id == pId).Value.Username}");
                                 validSourcesSelected.AddRange(validSourcesDict[pId].OrderBy(x => Random.Shared.Next())
                                     .Take(targetNumSongsPerPlayer));
                             }
 
                             dbSongs = (await DbManager.GetRandomSongs(targetNumSongsPerPlayer * validSourcesDict.Count,
                                 Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                filters: Quiz.Room.QuizSettings.Filters,
+                                players: Quiz.Room.Players.Select(x => x.Value).ToList(),
                                 validMids: validMids, invalidMids: invalidMids));
 
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
@@ -1285,7 +1295,8 @@ public class QuizManager
                 {
                     var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
                         Quiz.Room.QuizSettings.Duplicates, validSources,
-                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                        filters: Quiz.Room.QuizSettings.Filters,
+                        players: Quiz.Room.Players.Select(x => x.Value).ToList());
 
                     if (!selectedSongs.Any())
                     {
@@ -1430,7 +1441,7 @@ public class QuizManager
 
     public async Task OnSendPlayerIsBuffered(int playerId, string source)
     {
-        Player? player = Quiz.Room.Players.SingleOrDefault(player => player.Id == playerId);
+        Player? player = Quiz.Room.Players.SingleOrNull(player => player.Value.Id == playerId)?.Value;
         if (player == null)
         {
             // early return if spectator
@@ -1438,7 +1449,7 @@ public class QuizManager
         }
 
         player.IsBuffered = true;
-        int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
+        int isBufferedCount = Quiz.Room.Players.Count(x => x.Value.IsBuffered);
         Quiz.Room.Log($"isBufferedCount: {isBufferedCount} Source: {source}", playerId, writeToConsole: false);
     }
 
@@ -1449,7 +1460,7 @@ public class QuizManager
             await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
 
             // todo player initialization logic shouldn't be here at all after the user + player separation
-            var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
+            var player = Quiz.Room.Players.SingleOrNull(x => x.Value.Id == playerId)?.Value;
             if (player == null)
             {
                 // early return if spectator
@@ -1474,7 +1485,7 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
-                var teammate = Quiz.Room.Players.FirstOrDefault(x => x.TeamId == player.TeamId);
+                var teammate = Quiz.Room.Players.FirstOrNull(x => x.Value.TeamId == player.TeamId)?.Value;
                 if (teammate != null)
                 {
                     player.Lives = teammate.Lives;
@@ -1495,7 +1506,7 @@ public class QuizManager
     {
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
         {
-            var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
+            var player = Quiz.Room.Players.SingleOrNull(x => x.Value.Id == playerId)?.Value;
             if (player != null)
             {
                 guess ??= "";
@@ -1522,12 +1533,12 @@ public class QuizManager
                 if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
                 {
                     // also includes the player themselves
-                    var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();
+                    var teammates = Quiz.Room.Players.Where(x => x.Value.TeamId == player.TeamId).ToArray();
                     IEnumerable<string> teammateConnectionIds = ServerState.Sessions
-                        .Where(x => teammates.Select(y => y.Id).Contains(x.Value.Player.Id))
+                        .Where(x => teammates.Select(y => y.Value.Id).Contains(x.Value.Player.Id))
                         .Select(z => z.Value.ConnectionId)!;
 
-                    var teammateIds = teammates.Select(x => x.Id);
+                    var teammateIds = teammates.Select(x => x.Value.Id);
                     var teammateGuesses = Quiz.Room.PlayerGuesses.Where(x => teammateIds.Contains(x.Key));
                     var dict = teammateGuesses.ToDictionary(x => x.Key, x => x.Value);
                     await HubContext.Clients.Clients(teammateConnectionIds)
@@ -1630,7 +1641,7 @@ public class QuizManager
 
             Quiz.QuizState.LootingGridSize = gridSize;
 
-            foreach (var player in Quiz.Room.Players)
+            foreach ((int _, Player player) in Quiz.Room.Players)
             {
                 player.PlayerStatus = PlayerStatus.Looting;
                 player.LootingInfo = new PlayerLootingInfo
@@ -1672,7 +1683,7 @@ public class QuizManager
     private async Task<bool> SetLootedSongs()
     {
         var validSources = new Dictionary<int, List<string>>();
-        foreach (var player in Quiz.Room.Players)
+        foreach ((int _, Player player) in Quiz.Room.Players)
         {
             validSources[player.Id] = new List<string>();
             foreach (var treasure in player.LootingInfo.Inventory)
@@ -1694,7 +1705,7 @@ public class QuizManager
             Quiz.Room.QuizSettings.Duplicates,
             validSources.SelectMany(x => x.Value).ToList(),
             Quiz.Room.QuizSettings.Filters,
-            players: Quiz.Room.Players.ToList());
+            players: Quiz.Room.Players.Select(x => x.Value).ToList());
 
         if (!dbSongs.Any())
         {
@@ -1810,7 +1821,7 @@ public class QuizManager
 
     public async Task OnSendDropTreasure(Session session, Guid treasureGuid)
     {
-        var player = Quiz.Room.Players.Single(x => x.Id == session.Player.Id);
+        var player = Quiz.Room.Players.Single(x => x.Value.Id == session.Player.Id).Value;
         var treasure = player.LootingInfo.Inventory.SingleOrDefault(x => x.Guid == treasureGuid);
         if (treasure is not null)
         {
@@ -1849,8 +1860,8 @@ public class QuizManager
             return;
         }
 
-        var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == session.Player.Id) ??
-                     Quiz.Room.Spectators.Single(x => x.Id == session.Player.Id);
+        var player = Quiz.Room.Players.SingleOrNull(x => x.Value.Id == session.Player.Id)?.Value ??
+                     Quiz.Room.Spectators.Single(x => x.Value.Id == session.Player.Id).Value;
 
         bool alreadyInTheRoom =
             player.LootingInfo.X == treasureRoomCoords.X && player.LootingInfo.Y == treasureRoomCoords.Y;
@@ -1942,7 +1953,7 @@ public class QuizManager
             Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
             !Quiz.QuizState.IsPaused)
         {
-            var player = Quiz.Room.Players.Single(x => x.Id == playerId);
+            var player = Quiz.Room.Players.Single(x => x.Value.Id == playerId).Value;
             if (player.IsSkipping)
             {
                 player.IsSkipping = false;
@@ -1960,7 +1971,8 @@ public class QuizManager
 
     private async Task TriggerSkipIfNecessary()
     {
-        var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
+        var activeSessions = ServerState.Sessions
+            .Where(x => Quiz.Room.Players.Any(y => y.Value.Id == x.Value.Player.Id))
             .Where(x => x.Value.Player.HasActiveConnection).ToList();
         int isSkippingCount = activeSessions.Count(x => x.Value.Player.IsSkipping);
 
@@ -1987,7 +1999,7 @@ public class QuizManager
             Quiz.QuizState.ExtraInfo = "Skipping...";
             Quiz.Room.Log($"Skipping...");
 
-            foreach (Player p in Quiz.Room.Players)
+            foreach ((int _, Player p) in Quiz.Room.Players)
             {
                 p.IsSkipping = false;
             }

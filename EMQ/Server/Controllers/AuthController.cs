@@ -155,8 +155,10 @@ public class AuthController : ControllerBase
         }
 
         var player = session.Player;
-        var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
-        var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == player.Id))?.Value;
+        var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Value.Id == player.Id))
+            ?.Value;
+        var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Value.Id == player.Id))
+            ?.Value;
         if (oldRoomPlayer is not null)
         {
             oldRoomPlayer.RemovePlayer(player);

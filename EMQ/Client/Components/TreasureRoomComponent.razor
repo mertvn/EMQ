@@ -20,11 +20,11 @@
     @if (Room != null)
     {
         // Console.WriteLine(JsonSerializer.Serialize(Room));
-        var ownPlayer = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
-                        Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
+        var ownPlayer = Room!.Players.SingleOrNull(x => x.Value.Id == ClientState.Session!.Player.Id)?.Value ??
+                        Room!.Spectators.Single(x => x.Value.Id == ClientState.Session!.Player.Id).Value;
 
         var currentTreasureRoomCoords = ownPlayer.LootingInfo.TreasureRoomCoords;
-        @foreach (var player in Room.Players)
+        @foreach ((int _, Player player) in Room.Players)
         {
             @if (player.LootingInfo.TreasureRoomCoords == currentTreasureRoomCoords)
             {
