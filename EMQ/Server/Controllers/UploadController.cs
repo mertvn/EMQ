@@ -161,7 +161,7 @@ public class UploadController : ControllerBase
                         {
                             string dupeUrl = dupesMel.FirstOrDefault()?.url ?? dupesRq.First().url;
                             Console.WriteLine($"dupe of {dupeUrl}");
-                            uploadResult.ResultUrl = dupeUrl;
+                            uploadResult.ResultUrl = dupeUrl.ReplaceSelfhostLink();
                         }
                         else
                         {
