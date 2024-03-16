@@ -88,7 +88,10 @@ public sealed class Room : IDisposable
 
             if (oldPlayersCount <= newPlayersCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (player)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
@@ -103,7 +106,10 @@ public sealed class Room : IDisposable
 
             if (oldSpectatorsCount <= newSpectatorsCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (spectator)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
 
             // toRemove may or may not be here

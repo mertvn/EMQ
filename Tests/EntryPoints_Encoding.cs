@@ -84,6 +84,7 @@ public class EntryPoints_Encoding
                 bool encodeAudioSeparately = !canCopyAudio && false;
 
                 float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
+                // volumeAdjust = 13;
                 (string ss, string to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationTokenSource.Token);
 
                 if (encodeAudioSeparately)

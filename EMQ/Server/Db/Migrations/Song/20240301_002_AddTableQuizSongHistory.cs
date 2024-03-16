@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -13,7 +14,7 @@ public class AddTableQuizSongHistory : Migration
         Create.Table(tableName)
             .WithColumn("quiz_id").AsGuid().PrimaryKey().ForeignKey("quiz", "id")
             .WithColumn("sp").AsInt32().PrimaryKey()
-            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
+            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("user_id").AsInt32().PrimaryKey() // todo FK
             .WithColumn("guess").AsString().NotNullable()
             .WithColumn("first_guess_ms").AsInt32().NotNullable()
