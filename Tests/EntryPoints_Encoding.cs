@@ -32,6 +32,7 @@ public class EntryPoints_Encoding
     {
         string audioEncoderName = "libopus";
         string[] copiableAudioFormats = { "vorbis", "opus" };
+        const int maxVideoBitrateKbps = 2500;
 
         string inputDir = @"M:\!emqraw\!auto";
         // inputDir = @"N:\!checkedsorted";
@@ -106,7 +107,7 @@ public class EntryPoints_Encoding
                                 $"-map 0:v " +
                                 $"-map 0:a " +
                                 $"-shortest " +
-                                $"-c:v libvpx-vp9 -b:v 2500k -crf 28 -pix_fmt yuv420p " +
+                                $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
                                 $"-deadline good -cpu-used 3 -tile-columns 2 -threads 4 -row-mt 1 " +
                                 $"-g 100 " +
                                 (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +

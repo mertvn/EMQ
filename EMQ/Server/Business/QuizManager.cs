@@ -136,7 +136,8 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        while (Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
+        while (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC &&
+               Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
         {
             Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
             await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
@@ -1471,6 +1472,10 @@ public class QuizManager
             player.IsReadiedUp = false;
             player.PlayerStatus = PlayerStatus.Default;
             player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
+            player.NGMCCanBurn = false;
+            player.NGMCMustPick = false;
+            player.NGMCCanBePicked = false;
+            player.NGMCMustBurn = false;
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
