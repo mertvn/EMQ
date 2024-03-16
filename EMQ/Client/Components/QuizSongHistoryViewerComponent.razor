@@ -31,6 +31,14 @@
     <button type="button" class="btn btn-primary" @onclick="Onclick_Search">Search</button>
 </div>
 
+<details>
+    <summary>Player stats</summary>
+    <p>Only counting quizzes that count for stats.</p>
+    <PlayerStatsComponent
+        PlayerStatsDict="@PlayerStatsComponent.CalculatePlayerStats(SHRoomContainers.SelectMany(x => x.Quizzes.Where(z => z.Quiz.should_update_stats).SelectMany(y => y.SongHistories)).Select(x => x.Value).ToArray())">
+    </PlayerStatsComponent>
+</details>
+
 @foreach (var shRoomContainer in SHRoomContainers)
 {
     <details style="margin: 10px;">
@@ -107,7 +115,7 @@
     {
         foreach (var shQuizContainer in room.Quizzes)
         {
-            shQuizContainer.PlayerStats = SongHistoryComponent.CalculatePlayerStats(shQuizContainer.SongHistories);
+            shQuizContainer.PlayerStats = PlayerStatsComponent.CalculatePlayerStats(shQuizContainer.SongHistories.Select(x => x.Value).ToArray());
         }
 
         string json = JsonSerializer.Serialize(room, Utils.JsoIndented);

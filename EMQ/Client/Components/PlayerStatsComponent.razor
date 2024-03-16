@@ -1,0 +1,276 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
+@using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@using System.ComponentModel.DataAnnotations
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
+
+<table class="playerStatsTable" style="width: 100%;">
+    <tr class="playerStatsHeaders">
+        <th class="playerStatsHeader">Username</th>
+        <th class="playerStatsHeader">Guess rate</th>
+        <th class="playerStatsHeader">Avg guess</th>
+        <th class="playerStatsHeader">Avg diff</th>
+        <th class="playerStatsHeader">Erigs</th>
+        <th class="playerStatsHeader">Avg/8</th>
+        <th class="playerStatsHeader">OP GR</th>
+        <th class="playerStatsHeader">ED GR</th>
+        <th class="playerStatsHeader">INS GR</th>
+        <th class="playerStatsHeader">Rig GR</th>
+        <th class="playerStatsHeader">Rig rate</th>
+        <th class="playerStatsHeader">Offlist GR</th>
+    </tr>
+    @foreach ((int key, PlayerStats value) in PlayerStatsDict)
+    {
+        bool shouldDisplay = true;
+        @if (!shouldDisplay)
+        {
+            continue;
+        }
+
+        <tr class="playerStatsRow" style="border-bottom: 1px solid gray;" @key="@key">
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(value.Username)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.CorrectPercentage, 2))% (@value.TimesCorrect/@value.TimesPlayed)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round((float)value.AverageGuessMs / 1000, 2))s
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.AvgDiff, 2))%
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(value.Erigs)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.AvgOf8, 2))
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.OpGr, 2))% (@value.OpHit/@value.OpCount)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.EdGr, 2))% (@value.EdHit/@value.EdCount)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.InsGr, 2))% (@value.InsHit/@value.InsCount)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.RigGr, 2))% (@value.RigsHit/@value.Rigs)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.RigRate, 2))% (@value.Rigs/@value.TimesPlayed)
+            </td>
+            <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(Math.Round(value.OfflistGr, 2))% (@value.OfflistHit/@value.OfflistCount)
+            </td>
+        </tr>
+    }
+</table>
+
+@code {
+
+    [Parameter]
+    public Dictionary<int, PlayerStats> PlayerStatsDict { get; set; } = null!;
+
+    public static Dictionary<int, PlayerStats> CalculatePlayerStats(SongHistory[] songHistories)
+    {
+        Console.WriteLine("CalculatePlayerStats");
+        var dict = new Dictionary<int, PlayerStats>();
+        var ssstCache = new Dictionary<int, SongSourceSongType[]>();
+
+        int[] playerIds = songHistories.SelectMany(x => x.PlayerGuessInfos.Select(y => y.Key)).Distinct()
+            .OrderBy(x => x).ToArray();
+        foreach (int playerId in playerIds)
+        {
+            string username = "";
+            const int quizCount = 1; // todo?
+            HashSet<int> songIds = new();
+
+            int timesCorrect = 0;
+            int timesPlayed = 0;
+            int timesGuessed = 0;
+            int totalGuessMs = 0;
+
+            float totalDiff = 0;
+            float totalHits = 0;
+
+            int opCount = 0;
+            int edCount = 0;
+            int insCount = 0;
+            int bgmCount = 0;
+
+            int opHit = 0;
+            int edHit = 0;
+            int insHit = 0;
+            int bgmHit = 0;
+
+            int rigOpCount = 0;
+            int rigEdCount = 0;
+            int rigInsCount = 0;
+            int rigBgmCount = 0;
+
+            int erigs = 0;
+            int rigs = 0;
+            int rigsHit = 0;
+            int offlistHit = 0;
+            int offlistCount = 0;
+
+            foreach (SongHistory songHistory in songHistories)
+            {
+                foreach ((int key, GuessInfo value) in songHistory.PlayerGuessInfos)
+                {
+                    if (key == playerId)
+                    {
+                        username = value.Username;
+                        timesPlayed += 1;
+                        songIds.Add(songHistory.Song.Id);
+                        if (!string.IsNullOrWhiteSpace(value.Guess))
+                        {
+                            timesGuessed += 1;
+                            totalGuessMs += value.FirstGuessMs;
+                        }
+
+                        if (!ssstCache.TryGetValue(songHistory.Song.Id, out var songSourceSongTypes))
+                        {
+                            songSourceSongTypes = songHistory.Song.Sources.SelectMany(x => x.SongTypes).ToArray();
+                            ssstCache[songHistory.Song.Id] = songSourceSongTypes;
+                        }
+
+                        if (songSourceSongTypes.Contains(SongSourceSongType.OP))
+                        {
+                            opCount += 1;
+                        }
+
+                        if (songSourceSongTypes.Contains(SongSourceSongType.ED))
+                        {
+                            edCount += 1;
+                        }
+
+                        if (songSourceSongTypes.Contains(SongSourceSongType.Insert))
+                        {
+                            insCount += 1;
+                        }
+
+                        if (songSourceSongTypes.Contains(SongSourceSongType.BGM))
+                        {
+                            bgmCount += 1;
+                        }
+
+                        if (value.IsOnList)
+                        {
+                            rigs += 1;
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.OP))
+                            {
+                                rigOpCount += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.ED))
+                            {
+                                rigEdCount += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.Insert))
+                            {
+                                rigInsCount += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.BGM))
+                            {
+                                rigBgmCount += 1;
+                            }
+                        }
+                        else
+                        {
+                            offlistCount += 1;
+                        }
+
+                        if (value.IsGuessCorrect)
+                        {
+                            timesCorrect += 1;
+
+                            totalDiff += songHistory.Song.Stats.CorrectPercentage;
+                            totalHits += songHistory.TimesCorrect;
+
+                            if (songHistory.TimesCorrect == 1)
+                            {
+                                erigs += 1;
+                            }
+
+                            if (value.IsOnList)
+                            {
+                                rigsHit += 1;
+                            }
+                            else
+                            {
+                                offlistHit += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.OP))
+                            {
+                                opHit += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.ED))
+                            {
+                                edHit += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.Insert))
+                            {
+                                insHit += 1;
+                            }
+
+                            if (songSourceSongTypes.Contains(SongSourceSongType.BGM))
+                            {
+                                bgmHit += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            int uniqueSongs = songIds.Count;
+            float avgDiff = totalDiff.Div0(timesCorrect);
+            float avgOf8 = totalHits.Div0(timesCorrect);
+
+            dict[playerId] = new PlayerStats
+            {
+                Username = username,
+                QuizCount = quizCount,
+                TimesCorrect = timesCorrect,
+                TimesPlayed = timesPlayed,
+                TimesGuessed = timesGuessed,
+                TotalGuessMs = totalGuessMs,
+                AvgDiff = avgDiff,
+                Erigs = erigs,
+                AvgOf8 = avgOf8,
+                OpCount = opCount,
+                EdCount = edCount,
+                InsCount = insCount,
+                BgmCount = bgmCount,
+                OpHit = opHit,
+                EdHit = edHit,
+                InsHit = insHit,
+                BgmHit = bgmHit,
+                RigsHit = rigsHit,
+                Rigs = rigs,
+                RigOp = rigOpCount,
+                RigEd = rigEdCount,
+                RigIns = rigInsCount,
+                RigBgm = rigBgmCount,
+                UniqueSongs = uniqueSongs,
+                OfflistHit = offlistHit,
+                OfflistCount = offlistCount,
+            };
+        }
+
+        return dict;
+    }
+
+}
