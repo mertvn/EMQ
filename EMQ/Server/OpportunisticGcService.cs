@@ -32,7 +32,7 @@ public sealed class OpportunisticGcService : BackgroundService
     private static void DoWork()
     {
         if (!ServerState.Rooms.Any(
-                x => x.Value.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && !x.Value.Quiz.QuizState.IsPaused) &&
+                x => x.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && !x.Quiz.QuizState.IsPaused) &&
             DateTime.UtcNow - LastGc > TimeSpan.FromMinutes(1))
         {
             LastGc = DateTime.UtcNow;

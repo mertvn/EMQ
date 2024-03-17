@@ -11,14 +11,16 @@ namespace EMQ.Server;
 
 public static class ServerState
 {
-    // Key: Room.Id
-    public static ConcurrentDictionary<Guid, Room> Rooms { get; } = new();
+    private static readonly object s_serverStateLock = new();
 
-    // Key: Quiz.Id
-    public static ConcurrentDictionary<Guid, QuizManager> QuizManagers { get; } = new();
+    // TODO: would be better if this was a ConcurrentDictionary
+    public static ImmutableList<Room> Rooms { get; private set; } = ImmutableList<Room>.Empty;
 
-    // Key: Session.Token
-    public static ConcurrentDictionary<string, Session> Sessions { get; } = new();
+    // TODO: would be better if this was a ConcurrentDictionary
+    public static ImmutableList<QuizManager> QuizManagers { get; private set; } = ImmutableList<QuizManager>.Empty;
+
+    // TODO: would be better if this was a ConcurrentDictionary
+    public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
 
     public static bool AllowGuests { get; set; } = true;
 
@@ -58,59 +60,112 @@ public static class ServerState
     public static void RemoveRoom(Room room, string source)
     {
         Console.WriteLine($"Removing r{room.Id} {room.Name}. Source: {source}");
-
-        room.Dispose();
-        if (room.Quiz != null)
+        lock (s_serverStateLock)
         {
-            RemoveQuizManager(room.Quiz);
-        }
+            room.Dispose();
+            if (room.Quiz != null)
+            {
+                var qm = QuizManagers.First(x => x.Quiz.Id == room.Quiz.Id);
 
-        // room.Quiz = null;
-        while (Rooms.ContainsKey(room.Id))
-        {
-            Rooms.TryRemove(room.Id, out _);
+                int oldQMCount = QuizManagers.Count;
+                QuizManagers = QuizManagers.Remove(qm);
+                int newQMCount = QuizManagers.Count;
+
+                if (oldQMCount <= newQMCount)
+                {
+                    throw new Exception();
+                }
+            }
+
+            // room.Quiz = null;
+
+            int oldRoomsCount = Rooms.Count;
+            Rooms = Rooms.Remove(room);
+            int newRoomsCount = Rooms.Count;
+
+            if (oldRoomsCount <= newRoomsCount)
+            {
+                throw new Exception();
+            }
         }
     }
 
     public static void RemoveQuizManager(Quiz quiz)
     {
         Console.WriteLine($"Removing qm{quiz.Id}");
-        while (QuizManagers.ContainsKey(quiz.Id))
+        lock (s_serverStateLock)
         {
-            QuizManagers.TryRemove(quiz.Id, out _);
+            var qm = QuizManagers.First(x => x.Quiz.Id == quiz.Id);
+
+            int oldQMCount = QuizManagers.Count;
+            QuizManagers = QuizManagers.Remove(qm);
+            int newQMCount = QuizManagers.Count;
+
+            if (oldQMCount <= newQMCount)
+            {
+                throw new Exception();
+            }
         }
     }
 
     public static void RemoveSession(Session session, string source)
     {
         Console.WriteLine($"Removing session for p{session.Player.Id} {session.Player.Username}. Source: {source}");
-        while (Sessions.ContainsKey(session.Token))
+        lock (s_serverStateLock)
         {
-            Sessions.TryRemove(session.Token, out _);
+            int oldSessionsCount = Sessions.Count;
+            Sessions = Sessions.Remove(session);
+            int newSessionsCount = Sessions.Count;
+
+            if (oldSessionsCount <= newSessionsCount)
+            {
+                throw new Exception();
+            }
         }
     }
 
-    public static void AddRoom(Room room)
+    public static void AddRoom(Room session)
     {
-        while (!Rooms.ContainsKey(room.Id))
+        lock (s_serverStateLock)
         {
-            Rooms.TryAdd(room.Id, room);
+            int oldRoomsCount = Rooms.Count;
+            Rooms = Rooms.Add(session);
+            int newRoomsCount = Rooms.Count;
+
+            if (oldRoomsCount >= newRoomsCount)
+            {
+                throw new Exception();
+            }
         }
     }
 
     public static void AddQuizManager(QuizManager quizManager)
     {
-        while (!QuizManagers.ContainsKey(quizManager.Quiz.Id))
+        lock (s_serverStateLock)
         {
-            QuizManagers.TryAdd(quizManager.Quiz.Id, quizManager);
+            int oldQuizManagersCount = QuizManagers.Count;
+            QuizManagers = QuizManagers.Add(quizManager);
+            int newQuizManagersCount = QuizManagers.Count;
+
+            if (oldQuizManagersCount >= newQuizManagersCount)
+            {
+                throw new Exception();
+            }
         }
     }
 
     public static void AddSession(Session session)
     {
-        while (!Sessions.ContainsKey(session.Token))
+        lock (s_serverStateLock)
         {
-            Sessions.TryAdd(session.Token, session);
+            int oldSessionsCount = Sessions.Count;
+            Sessions = Sessions.Add(session);
+            int newSessionsCount = Sessions.Count;
+
+            if (oldSessionsCount >= newSessionsCount)
+            {
+                throw new Exception();
+            }
         }
     }
 }

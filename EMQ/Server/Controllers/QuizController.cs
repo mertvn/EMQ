@@ -39,16 +39,15 @@ public class QuizController : ControllerBase
     [Route("SyncRoom")]
     public Room? SyncRoom([FromQuery] string token)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
             // _logger.LogError("Session not found for playerToken: " + token);
             return null;
         }
 
-        var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -56,7 +55,7 @@ public class QuizController : ControllerBase
         }
 
         // _logger.LogError(JsonSerializer.Serialize(room));
-        return room.Value.Value;
+        return room;
     }
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
@@ -71,9 +70,8 @@ public class QuizController : ControllerBase
             return null;
         }
 
-        var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -89,16 +87,15 @@ public class QuizController : ControllerBase
     [Route("SyncChat")]
     public ConcurrentQueue<ChatMessage>? SyncChat([FromQuery] string token)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
             // _logger.LogError("Session not found for playerToken: " + token);
             return null;
         }
 
-        var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is null)
         {
             // _logger.LogError("Room not found with playerToken: " + token);
@@ -114,15 +111,14 @@ public class QuizController : ControllerBase
     [Route("NextSong")]
     public ActionResult<ResNextSong> NextSong([FromBody] ReqNextSong req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
-        var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == session.Player.Id) ||
-            x.Value.Spectators.Any(y => y.Id == session.Player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
         if (room is not null)
         {
             if (room.Quiz != null)
@@ -192,7 +188,7 @@ public class QuizController : ControllerBase
     [Route("CreateRoom")]
     public async Task<ActionResult<Guid>> CreateRoom([FromBody] ReqCreateRoom req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
@@ -227,13 +223,14 @@ public class QuizController : ControllerBase
     [Route("JoinRoom")]
     public async Task<ActionResult<ResJoinRoom>> JoinRoom([FromBody] ReqJoinRoom req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session == null)
         {
             return Unauthorized();
         }
 
-        if (!ServerState.Rooms.TryGetValue(req.RoomId, out Room? room))
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
+        if (room is null)
         {
             _logger.LogWarning("p{player.Id} tried to join inexisting room r{room.Id}", session.Player.Id, req.RoomId);
             return BadRequest();
@@ -248,29 +245,14 @@ public class QuizController : ControllerBase
                 return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
             }
 
-            var oldRoomPlayer = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
-            var oldRoomSpec = ServerState.Rooms.SingleOrNull(x => x.Value.Spectators.Any(y => y.Id == player.Id))
-                ?.Value;
+            var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+            var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == player.Id));
             if (oldRoomPlayer is not null)
             {
                 _logger.LogInformation($"Removed player {player.Id} from room " + oldRoomPlayer.Id);
                 oldRoomPlayer.RemovePlayer(player);
                 oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
                 oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
-
-                if (!oldRoomPlayer.Players.Any())
-                {
-                    ServerState.RemoveRoom(oldRoomPlayer, "JoinRoom");
-                }
-                else
-                {
-                    if (oldRoomPlayer.Owner.Id == player.Id)
-                    {
-                        var newOwner = oldRoomPlayer.Players.First();
-                        oldRoomPlayer.Owner = newOwner;
-                        oldRoomPlayer.Log($"{newOwner.Username} is the new owner.", -1, true);
-                    }
-                }
             }
             else if (oldRoomSpec is not null)
             {
@@ -322,15 +304,16 @@ public class QuizController : ControllerBase
     [Route("StartQuiz")]
     public async Task<ActionResult> StartQuiz([FromBody] ReqStartQuiz req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
-        if (ServerState.Rooms.TryGetValue(req.RoomId, out Room? room))
+        if (room is not null)
         {
             // TODO: Check that quiz is not in the process of being started already
             if (room.Owner.Id == player.Id)
@@ -374,10 +357,8 @@ public class QuizController : ControllerBase
             }
             else
             {
-                _logger.LogWarning(
-                    "Attempt to start quiz in r{room.Id} that is owned by player token {room.Owner.Id} by non-owner player token {req.PlayerToken}",
-                    room.Id, ServerState.Sessions.Single(x => x.Value.Player.Id == room.Owner.Id).Value.Token,
-                    req.PlayerToken);
+                _logger.LogWarning("Attempt to start quiz in room {room.Id} by non-owner player {req.playerId}",
+                    room.Id, req.PlayerToken);
                 // todo warn not owner
             }
         }
@@ -395,15 +376,16 @@ public class QuizController : ControllerBase
     [Route("ChangeRoomSettings")]
     public async Task<ActionResult> ChangeRoomSettings([FromBody] ReqChangeRoomSettings req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
-        if (ServerState.Rooms.TryGetValue(req.RoomId, out Room? room))
+        if (room is not null)
         {
             if (room.Owner.Id == player.Id)
             {
@@ -449,15 +431,15 @@ public class QuizController : ControllerBase
     [Route("SendChatMessage")]
     public async Task<ActionResult> SendChatMessage([FromBody] ReqSendChatMessage req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x =>
-            x.Value.Players.Any(y => y.Id == player.Id) || x.Value.Spectators.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == player.Id) || x.Spectators.Any(y => y.Id == player.Id));
 
         if (room is not null)
         {
@@ -500,21 +482,22 @@ public class QuizController : ControllerBase
     [Route("ReturnToRoom")]
     public async Task<ActionResult> ReturnToRoom([FromBody] ReqReturnToRoom req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
-        if (ServerState.Rooms.TryGetValue(req.RoomId, out Room? room))
+        if (room is not null)
         {
             if (room.Owner.Id == player.Id)
             {
                 if (room.Quiz != null)
                 {
-                    var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
                         if (room.Quiz.QuizState.sp >= 0 && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
@@ -558,15 +541,16 @@ public class QuizController : ControllerBase
     [Route("GetRoomPassword")]
     public async Task<ActionResult<string>> GetRoomPassword(string token, Guid roomId)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == token);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
 
-        if (ServerState.Rooms.TryGetValue(roomId, out Room? room))
+        if (room is not null)
         {
             if (room.Owner.Id == player.Id)
             {
@@ -592,15 +576,16 @@ public class QuizController : ControllerBase
     [Route("ChangeRoomNameAndPassword")]
     public async Task<ActionResult> ChangeRoomNameAndPassword([FromBody] ReqChangeRoomNameAndPassword req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session is null)
         {
             return Unauthorized();
         }
 
         var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == req.RoomId);
 
-        if (ServerState.Rooms.TryGetValue(req.RoomId, out Room? room))
+        if (room is not null)
         {
             if (room.Owner.Id == player.Id)
             {
@@ -647,7 +632,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        ServerState.Rooms.TryGetValue(roomId, out Room? room);
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
         if (room?.Quiz is not null)
         {
             if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
@@ -682,7 +667,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
         if (room is not null)
         {
             if (room.QuizSettings.TeamSize > 1)
@@ -724,7 +709,7 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
@@ -761,14 +746,14 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && room.QuizSettings.NGMCAllowBurning)
             {
                 if (room.Quiz != null)
                 {
-                    var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
                         var burnedPlayer = room.Players.Single(x => x.Id == burnedPlayerId);
@@ -804,14 +789,14 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
             {
                 if (room.Quiz != null)
                 {
-                    var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
                         var pickedPlayer = room.Players.Single(x => x.Id == pickedPlayerId);
@@ -847,14 +832,14 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrNull(x => x.Value.Players.Any(y => y.Id == player.Id))?.Value;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
         if (room is not null)
         {
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC && room.QuizSettings.NGMCAllowBurning)
             {
                 if (room.Quiz != null)
                 {
-                    var qm = ServerState.QuizManagers.SingleOrNull(x => x.Value.Quiz.Id == room.Quiz.Id)?.Value;
+                    var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
                         await qm.NGMCDontBurn(player);

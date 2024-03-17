@@ -149,8 +149,8 @@ public class QuizManager
         int timeoutMs = Quiz.Room.QuizSettings.TimeoutMs;
         // Console.WriteLine("ibc " + isBufferedCount);
 
-        int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
-            .Count(x => x.Value.Player.HasActiveConnection);
+        int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .Count(x => x.Player.HasActiveConnection);
         // Room.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
         float waitNumber = (float)Math.Round(
@@ -166,8 +166,8 @@ public class QuizManager
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
 
-            activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
-                .Count(x => x.Value.Player.HasActiveConnection);
+            activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+                .Count(x => x.Player.HasActiveConnection);
 
             waitNumber = (float)Math.Round(
                 activePlayersCount * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
@@ -941,8 +941,7 @@ public class QuizManager
                 break;
             case AnsweringKind.MultipleChoice:
                 var playerSessions =
-                    ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
-                        .Select(z => z.Value).ToList();
+                    ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
                 int numChoices = 4; // todo?: make this configurable
                 Quiz.MultipleChoiceOptions =
                     await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
@@ -1165,9 +1164,9 @@ public class QuizManager
         // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
         // todo handle hotjoining players
-        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id));
+        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
         var vndbInfos = new Dictionary<int, PlayerVndbInfo>();
-        foreach ((string _, Session session) in playerSessions)
+        foreach (Session session in playerSessions)
         {
             vndbInfos[session.Player.Id] = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
         }
@@ -1529,8 +1528,8 @@ public class QuizManager
                     // also includes the player themselves
                     var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();
                     IEnumerable<string> teammateConnectionIds = ServerState.Sessions
-                        .Where(x => teammates.Select(y => y.Id).Contains(x.Value.Player.Id))
-                        .Select(z => z.Value.ConnectionId)!;
+                        .Where(x => teammates.Select(y => y.Id).Contains(x.Player.Id))
+                        .Select(z => z.ConnectionId)!;
 
                     var teammateIds = teammates.Select(x => x.Id);
                     var teammateGuesses = Quiz.Room.PlayerGuesses.Where(x => teammateIds.Contains(x.Key));
@@ -1965,9 +1964,9 @@ public class QuizManager
 
     private async Task TriggerSkipIfNecessary()
     {
-        var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Value.Player.Id))
-            .Where(x => x.Value.Player.HasActiveConnection).ToList();
-        int isSkippingCount = activeSessions.Count(x => x.Value.Player.IsSkipping);
+        var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .Where(x => x.Player.HasActiveConnection).ToList();
+        int isSkippingCount = activeSessions.Count(x => x.Player.IsSkipping);
 
         const float skipConst = 0.8f;
         int skipNumber = (int)Math.Round(activeSessions.Count * skipConst, MidpointRounding.AwayFromZero);
@@ -1978,8 +1977,7 @@ public class QuizManager
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
             {
                 bool everyoneAnsweredOrIsSkipping =
-                    activeSessions.All(x =>
-                        !string.IsNullOrWhiteSpace(x.Value.Player.Guess) || x.Value.Player.IsSkipping);
+                    activeSessions.All(x => !string.IsNullOrWhiteSpace(x.Player.Guess) || x.Player.IsSkipping);
                 if (!everyoneAnsweredOrIsSkipping)
                 {
                     Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)",
