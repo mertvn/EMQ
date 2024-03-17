@@ -13,13 +13,14 @@ public static class ServerState
 {
     private static readonly object s_serverStateLock = new();
 
-    // TODO: would be better if this was a ConcurrentDictionary
+    // We cannot use a ConcurrentDictionary here, because we can't get references after indexing
+    // TODO: would be better if this was a ConcurrentQueue
     public static ImmutableList<Room> Rooms { get; private set; } = ImmutableList<Room>.Empty;
 
-    // TODO: would be better if this was a ConcurrentDictionary
+    // TODO: would be better if this was a ConcurrentQueue
     public static ImmutableList<QuizManager> QuizManagers { get; private set; } = ImmutableList<QuizManager>.Empty;
 
-    // TODO: would be better if this was a ConcurrentDictionary
+    // TODO: would be better if this was a ConcurrentQueue
     public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
 
     public static bool AllowGuests { get; set; } = true;
@@ -65,6 +66,7 @@ public static class ServerState
             room.Dispose();
             if (room.Quiz != null)
             {
+                // we can't call RemoveQuizManager here because of the lock
                 var qm = QuizManagers.First(x => x.Quiz.Id == room.Quiz.Id);
 
                 int oldQMCount = QuizManagers.Count;
@@ -73,7 +75,10 @@ public static class ServerState
 
                 if (oldQMCount <= newQMCount)
                 {
-                    throw new Exception();
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("concurrency warning (qm3)");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    // throw new Exception();
                 }
             }
 
@@ -85,7 +90,10 @@ public static class ServerState
 
             if (oldRoomsCount <= newRoomsCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (room)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
@@ -103,7 +111,10 @@ public static class ServerState
 
             if (oldQMCount <= newQMCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (qm)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
@@ -119,7 +130,10 @@ public static class ServerState
 
             if (oldSessionsCount <= newSessionsCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (session)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
@@ -134,7 +148,10 @@ public static class ServerState
 
             if (oldRoomsCount >= newRoomsCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (room2)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
@@ -149,7 +166,10 @@ public static class ServerState
 
             if (oldQuizManagersCount >= newQuizManagersCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (qm2)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                //throw new Exception();
             }
         }
     }
@@ -164,7 +184,10 @@ public static class ServerState
 
             if (oldSessionsCount >= newSessionsCount)
             {
-                throw new Exception();
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("concurrency warning (session2)");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                // throw new Exception();
             }
         }
     }
