@@ -60,6 +60,7 @@ public static class Program
                         "OP (Ballad ver.)", // YOLO
                         "start theme",
                         "Main menu theme:",
+                        "Title BGM", // https://vndb.org/v2322
                     }.OrderByDescending(x => x).ToList()
                 }
             },
