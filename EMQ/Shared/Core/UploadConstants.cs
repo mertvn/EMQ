@@ -75,7 +75,7 @@ public static class UploadConstants
             RequiresEncode = false,
         },
 
-        // video formats that require encoding (currently not supported)
+        // video formats that require encoding
         new MediaTypeInfo
         {
             Extension = "mpg",
@@ -108,6 +108,15 @@ public static class UploadConstants
             RequiresTranscode = false,
             RequiresEncode = true,
         },
+        // problematic because we can't differentiate it from audio/ogg right now
+        // new MediaTypeInfo
+        // {
+        //     Extension = "ogv",
+        //     MimeType = "video/ogg",
+        //     Signature = "",
+        //     RequiresTranscode = false,
+        //     RequiresEncode = true,
+        // },
 
         // audio formats that require transcoding
         new MediaTypeInfo
