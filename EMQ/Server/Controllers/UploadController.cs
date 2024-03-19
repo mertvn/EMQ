@@ -36,6 +36,8 @@ public class UploadController : ControllerBase
 
     [EnableRateLimiting(RateLimitKind.UploadFile)]
     [RequestSizeLimit(UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
+    [RequestFormLimits(MultipartBodyLengthLimit =
+        UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("PostFile")]
@@ -69,11 +71,6 @@ public class UploadController : ControllerBase
             if (mediaTypeInfo is null)
             {
                 uploadResult.ErrorStr = "Invalid file format";
-                continue;
-            }
-            else if (mediaTypeInfo.RequiresEncode)
-            {
-                uploadResult.ErrorStr = "This file format requires encoding, which is not yet implemented";
                 continue;
             }
 
@@ -112,10 +109,45 @@ public class UploadController : ControllerBase
 
                         if (mediaTypeInfo.RequiresEncode)
                         {
-                            throw new NotImplementedException();
+                            await fs.DisposeAsync();
+                            string encodedPath;
+                            try
+                            {
+                                var cancellationTokenSource = new CancellationTokenSource();
+                                cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(55));
+
+                                await MediaAnalyser.SemaphoreEncode.WaitAsync(cancellationTokenSource.Token);
+                                try
+                                {
+                                    encodedPath =
+                                        await MediaAnalyser.EncodeIntoWebm(tempPath, cancellationTokenSource.Token);
+                                }
+                                finally
+                                {
+                                    MediaAnalyser.SemaphoreEncode.Release();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                uploadResult.ErrorStr = $"Error encoding: {e.Message}";
+                                continue;
+                            }
+                            finally
+                            {
+                                if (System.IO.File.Exists(tempPath))
+                                {
+                                    System.IO.File.Delete(tempPath);
+                                }
+                            }
+
+                            trustedFileNameForFileStorage = $"{guid}.webm";
+                            tempPath = encodedPath;
+                            fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read);
                         }
                         else if (mediaTypeInfo.RequiresTranscode)
                         {
+                            await fs.DisposeAsync();
                             string transcodedPath;
                             try
                             {
@@ -125,7 +157,9 @@ public class UploadController : ControllerBase
                                 await MediaAnalyser.SemaphoreTranscode.WaitAsync(cancellationTokenSource.Token);
                                 try
                                 {
-                                    transcodedPath = await MediaAnalyser.TranscodeInto192KMp3(tempPath);
+                                    transcodedPath =
+                                        await MediaAnalyser.TranscodeInto192KMp3(tempPath,
+                                            cancellationTokenSource.Token);
                                 }
                                 finally
                                 {
@@ -140,7 +174,6 @@ public class UploadController : ControllerBase
                             }
                             finally
                             {
-                                await fs.DisposeAsync();
                                 if (System.IO.File.Exists(tempPath))
                                 {
                                     System.IO.File.Delete(tempPath);

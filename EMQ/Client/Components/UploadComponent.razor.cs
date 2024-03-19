@@ -91,12 +91,6 @@ public partial class UploadComponent
                 continue;
             }
 
-            if (mediaTypeInfo.RequiresEncode)
-            {
-                uploadResult.ErrorStr = "This file format requires encoding, which is not yet implemented";
-                continue;
-            }
-
             await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
             StateHasChanged();
         }

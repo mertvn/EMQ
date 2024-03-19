@@ -5,18 +5,18 @@ namespace EMQ.Shared.Core;
 
 public static class UploadConstants
 {
-    public const int MaxFilesizeBytes = 100 * 1024 * 1024; // 100 MB
+    public const int MaxFilesizeBytes = 500 * 1024 * 1024; // 500 MB
 
     public const int MaxFilesPerRequest = 1;
 
-    public const int MaxFilesSpecificSongUpload = 2;
+    public const int MaxFilesSpecificSongUpload = 20;
 
-    public const int MaxFilesBatchUpload = 50;
+    public const int MaxFilesBatchUpload = 100;
 
     // todo? might need to apply this on the server as well
     public const int TimeoutSeconds = 30 * 60; // 30 minutes
 
-    public const int MaxConcurrentTranscodes = 3;
+    public const int MaxConcurrentTranscodes = 2;
 
     public const int MaxConcurrentEncodes = 1;
 
@@ -128,9 +128,8 @@ public static class UploadConstants
         },
     };
 
-    public static string ValidMediaTypesStr { get; set; } = string.Join(", ",
-        UploadConstants.ValidMediaTypes.Where(x => !x.RequiresEncode).DistinctBy(x => x.Extension)
-            .Select(x => x.Extension));
+    public static string ValidMediaTypesStr { get; set; } =
+        string.Join(", ", ValidMediaTypes.DistinctBy(x => x.Extension).Select(x => x.Extension));
 }
 
 public record MediaTypeInfo

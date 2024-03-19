@@ -95,12 +95,6 @@ public partial class UploadBatchComponent
                 continue;
             }
 
-            if (mediaTypeInfo.RequiresEncode)
-            {
-                uploadResult.ErrorStr = "This file format requires encoding, which is not yet implemented";
-                continue;
-            }
-
             try
             {
                 await using var stream = file.OpenReadStream(UploadConstants.MaxFilesizeBytes);

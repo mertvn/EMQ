@@ -16,6 +16,8 @@ namespace EMQ.Server.Business;
 
 public static class MediaAnalyser
 {
+    public static readonly SemaphoreSlim SemaphoreEncode = new(UploadConstants.MaxConcurrentEncodes);
+
     public static readonly SemaphoreSlim SemaphoreTranscode = new(UploadConstants.MaxConcurrentTranscodes);
 
     // todo detect bad transcodes
@@ -215,7 +217,81 @@ public static class MediaAnalyser
         }
     }
 
-    public static async Task<string> TranscodeInto192KMp3(string filePath)
+    public static async Task<string> EncodeIntoWebm(string filePath, CancellationToken cancellationToken,
+        string? outputFinal = null)
+    {
+        Console.WriteLine("encoding into .webm");
+        outputFinal ??= $"{Path.GetTempFileName()}.webm";
+        var result = await MediaAnalyser.Analyse(filePath);
+        Console.WriteLine(JsonSerializer.Serialize(result, Utils.JsoIndented));
+
+        // wmapro sources have clicks when converted to ogg or opus for some reason
+        string[] blacklistedAudioFormats = { "wmapro" };
+        string[] copiableAudioFormats = { "vorbis", "opus" };
+
+        const string audioEncoderName = "libopus";
+        const int maxVideoBitrateKbps = 2500;
+
+        if (blacklistedAudioFormats.Contains(result.PrimaryAudioStreamCodecName))
+        {
+            throw new Exception("Audio codec in the source video is unprocessable.");
+        }
+
+        bool requiresDownscale = result.Width > 1280 || result.Height > 768;
+        bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
+        bool encodeAudioSeparately = !canCopyAudio && false;
+
+        float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
+        // volumeAdjust = 13;
+        (string ss, string to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken);
+
+        if (encodeAudioSeparately)
+        {
+            // todo
+            throw new NotImplementedException();
+        }
+        else
+        {
+            var process = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "ffmpeg",
+                    Arguments =
+                        $"-i \"{filePath}\" " +
+                        $"-ss {ss} " +
+                        (to.Any() ? $"-to {to} " : "") +
+                        $"-map 0:v " +
+                        $"-map 0:a " +
+                        $"-shortest " +
+                        $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
+                        $"-deadline good -cpu-used 3 -tile-columns 2 -threads 3 -row-mt 1 " +
+                        $"-g 100 " +
+                        (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
+                        $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
+                        $"-nostdin " +
+                        $"\"{outputFinal}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+
+            string err = await process.StandardError.ReadToEndAsync(cancellationToken);
+            if (err.Any())
+            {
+                Console.WriteLine(err);
+            }
+        }
+
+        return outputFinal;
+    }
+
+    public static async Task<string> TranscodeInto192KMp3(string filePath, CancellationToken cancellationToken)
     {
         Console.WriteLine("transcoding into .mp3");
         string outputFinal = $"{Path.GetTempFileName()}.mp3";
@@ -223,7 +299,7 @@ public static class MediaAnalyser
 
         var result = await Analyse(filePath, false, false);
         float volumeAdjust = GetVolumeAdjust(result);
-        (string ss, string to) = await GetSsAndTo(filePath, new CancellationTokenSource().Token);
+        (string ss, string to) = await GetSsAndTo(filePath, cancellationToken);
 
         var process = new Process()
         {
@@ -247,7 +323,7 @@ public static class MediaAnalyser
         process.Start();
         process.BeginOutputReadLine();
 
-        string err = await process.StandardError.ReadToEndAsync();
+        string err = await process.StandardError.ReadToEndAsync(cancellationToken);
         if (err.Any())
         {
             Console.WriteLine(err.Last());

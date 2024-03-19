@@ -18,9 +18,7 @@ using FFMpegCore;
 using Npgsql;
 using NUnit.Framework;
 using SharpCompress.Archives;
-using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
-using SharpCompress.Readers;
 
 namespace Tests;
 
@@ -30,18 +28,12 @@ public class EntryPoints_Encoding
     [Test, Explicit]
     public async Task FindAndEncodeVideos()
     {
-        string audioEncoderName = "libopus";
-        string[] copiableAudioFormats = { "vorbis", "opus" };
-        const int maxVideoBitrateKbps = 2500;
+        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "webm" };
 
         string inputDir = @"M:\!emqraw\!auto";
         // inputDir = @"N:\!checkedsorted";
 
         string baseOutputDir = @"M:\!emqvideos\!auto";
-
-        // wmapro sources have clicks when converted to ogg or opus for some reason
-        string[] blacklistedAudioFormats = { "wmapro" };
-        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "webm" };
 
         var filePaths = new List<string>();
         foreach (string extension in searchForVideoExtensions)
@@ -71,65 +63,7 @@ public class EntryPoints_Encoding
                 var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(60));
 
-                var result = await MediaAnalyser.Analyse(filePath);
-                Console.WriteLine(JsonSerializer.Serialize(result, Utils.JsoIndented));
-
-                if (blacklistedAudioFormats.Contains(result.PrimaryAudioStreamCodecName))
-                {
-                    Console.WriteLine("skipping blacklisted audio codec");
-                    continue;
-                }
-
-                bool requiresDownscale = result.Width > 1280 || result.Height > 768;
-                bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
-                bool encodeAudioSeparately = !canCopyAudio && false;
-
-                float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
-                // volumeAdjust = 13;
-                (string ss, string to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationTokenSource.Token);
-
-                if (encodeAudioSeparately)
-                {
-                    // todo
-                    throw new NotImplementedException();
-                }
-                else
-                {
-                    var process = new Process()
-                    {
-                        StartInfo = new ProcessStartInfo()
-                        {
-                            FileName = "ffmpeg",
-                            Arguments =
-                                $"-i \"{filePath}\" " +
-                                $"-ss {ss} " +
-                                (to.Any() ? $"-to {to} " : "") +
-                                $"-map 0:v " +
-                                $"-map 0:a " +
-                                $"-shortest " +
-                                $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
-                                $"-deadline good -cpu-used 3 -tile-columns 2 -threads 4 -row-mt 1 " +
-                                $"-g 100 " +
-                                (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
-                                $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
-                                $"-nostdin " +
-                                $"\"{outputFinal}\"",
-                            CreateNoWindow = true,
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                        }
-                    };
-
-                    process.Start();
-                    process.BeginOutputReadLine();
-
-                    string err = await process.StandardError.ReadToEndAsync(cancellationTokenSource.Token);
-                    if (err.Any())
-                    {
-                        Console.WriteLine(err);
-                    }
-                }
+                _ = await MediaAnalyser.EncodeIntoWebm(filePath, cancellationTokenSource.Token, outputFinal);
             }
             catch (Exception e)
             {
