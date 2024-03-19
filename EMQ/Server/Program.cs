@@ -22,7 +22,6 @@ using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -320,11 +319,8 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
-
-app.MapHub<QuizHub>("/QuizHub",
-    options => { options.Transports = HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling; }
-);
-
+app.MapHub<GeneralHub>("/GeneralHub");
+app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
