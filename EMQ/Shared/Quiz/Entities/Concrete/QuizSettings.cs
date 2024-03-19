@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using EMQ.Shared.Core;
 using ProtoBuf;
 
@@ -189,6 +191,21 @@ public class QuizSettings
         {
             return new ValidationResult("The sum of selected song types cannot be greater than the number of songs.",
                 new[] { validationContext.MemberName! });
+        }
+
+        return ValidationResult.Success!;
+    }
+
+    public static ValidationResult ValidateVndbAdvsearchFilter(string str, ValidationContext validationContext)
+    {
+        if (!string.IsNullOrWhiteSpace(str))
+        {
+            if (str.Contains("/u", StringComparison.OrdinalIgnoreCase) ||
+                Regex.IsMatch(str, "u[1-9]{1,9}$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase))
+            {
+                return new ValidationResult("Read the explanation again.",
+                    new[] { validationContext.MemberName! });
+            }
         }
 
         return ValidationResult.Success!;

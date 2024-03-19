@@ -19,7 +19,7 @@ public class QuizFilters
     public List<ArtistFilter> ArtistFilters { get; set; } = new();
 
     [ProtoMember(3)]
-    // todo add basic validation here because people keep submitting their user ids :/
+    [CustomValidation(typeof(QuizSettings), nameof(QuizSettings.ValidateVndbAdvsearchFilter))]
     public string VndbAdvsearchFilter { get; set; } = "";
 
     [ProtoMember(4)]
