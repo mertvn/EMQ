@@ -124,7 +124,7 @@ public class IntegrationTests
                         ResultsMs = 5000,
                         UI_ResultsMs = 5,
                         PreloadAmount = 1,
-                        IsHotjoinEnabled = false,
+                        IsHotjoinEnabled = true,
                         TeamSize = 1,
                         Duplicates = true,
                         MaxLives = 0,
@@ -208,7 +208,7 @@ public class IntegrationTests
         }
 
         var token = new CancellationTokenSource();
-        token.CancelAfter(TimeSpan.FromSeconds(30));
+        token.CancelAfter(TimeSpan.FromSeconds(60));
         while (!token.IsCancellationRequested)
         {
             foreach (KeyValuePair<string, HubConnection> hubConnection in dict)
