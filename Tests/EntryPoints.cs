@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -1100,5 +1101,102 @@ GRANT ALL ON SCHEMA public TO public;";
 
             await DbManager.RecalculateSongStats(songHistories.Select(x => x.Value.Song.Id).ToHashSet());
         }
+    }
+
+    [Test, Explicit]
+    public async Task CalculateAvgSongsPerVn()
+    {
+        // @formatter:off
+        List<int> userIds = new() {2,4,5,9,10,11,16,18,20,21,22,25,27,30,31,32,33,35,38,39,40,42,51,52,54,55,63,66,72,82,92,94,104,111,113,117,123,124,126,134,136,138,147,185,187,};
+        // @formatter:on
+
+        string sql = @"select user_id, json_agg(ulv.vnid) from users_label_vn ulv
+join users_label ul on ul.id = ulv.users_label_id
+where ul.kind = 1
+and user_id < 1000000
+and user_id = ANY(@userIds)
+group by user_id
+order by user_id";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        Dictionary<int, List<string>> dict =
+            (await connection.QueryAsync<(int uid, string urls)>(sql, new { userIds })).ToDictionary(
+                x => x.uid,
+                x => JsonSerializer.Deserialize<List<string>>(x.urls))!;
+
+        foreach ((int key, List<string>? value) in dict)
+        {
+            dict[key] = value.Distinct().ToList();
+        }
+
+        var usernamesDict = (await connection.QueryAsync<(int, string)>("select id, username from users"))
+            .ToDictionary(x => x.Item1, x => x.Item2);
+
+        var filters = new QuizFilters()
+        {
+            CategoryFilters = new List<CategoryFilter>(),
+            ArtistFilters = new List<ArtistFilter>(),
+            VndbAdvsearchFilter = "",
+            SongSourceSongTypeFilters =
+                new Dictionary<SongSourceSongType, IntWrapper>
+                {
+                    { SongSourceSongType.OP, new IntWrapper(int.MaxValue) },
+                    { SongSourceSongType.ED, new IntWrapper(int.MaxValue) },
+                    { SongSourceSongType.Insert, new IntWrapper(int.MaxValue) },
+                },
+            SongSourceSongTypeRandomEnabledSongTypes = new Dictionary<SongSourceSongType, bool>(),
+            SongDifficultyLevelFilters = Enum.GetValues<SongDifficultyLevel>().ToDictionary(x => x, _ => true),
+            StartDateFilter = DateTime.Parse(Constants.QFDateMin, CultureInfo.InvariantCulture),
+            EndDateFilter = DateTime.Parse(Constants.QFDateMax, CultureInfo.InvariantCulture),
+            RatingAverageStart = Constants.QFRatingAverageMin,
+            RatingAverageEnd = Constants.QFRatingAverageMax,
+            RatingBayesianStart = Constants.QFRatingBayesianMin,
+            RatingBayesianEnd = Constants.QFRatingBayesianMax,
+            VoteCountStart = Constants.QFVoteCountMin,
+            VoteCountEnd = Constants.QFVoteCountMax,
+            OnlyOwnUploads = false,
+            VNOLangs = Enum.GetValues<Language>().ToDictionary(x => x, _ => true),
+        };
+
+        List<string> res = new();
+        foreach ((int key, List<string> value) in dict)
+        {
+            var songs = await DbManager.GetRandomSongs(int.MaxValue, true, value, filters);
+            string str =
+                $"{key}\t{usernamesDict[key]}\t{songs.Count}\t{value.Count}\t{(float)songs.Count / value.Count}";
+            res.Add(str);
+        }
+
+        foreach (string re in res)
+        {
+            Console.WriteLine(re);
+        }
+
+        await File.WriteAllLinesAsync("deleteme.tsv", res);
+
+        var res2 = new Dictionary<string, int>();
+        foreach ((int key, List<string> value) in dict)
+        {
+            foreach (string s in value)
+            {
+                var songs = await DbManager.GetRandomSongs(int.MaxValue, true, new List<string> { s }, filters);
+                if (!songs.Any())
+                {
+                    if (!res2.TryGetValue(usernamesDict[key], out _))
+                    {
+                        res2[usernamesDict[key]] = 0;
+                    }
+
+                    res2[usernamesDict[key]]++;
+                }
+            }
+        }
+
+        foreach ((string? key, int value) in res2)
+        {
+            Console.WriteLine($"{key}: {value}");
+        }
+
+        await File.WriteAllLinesAsync("deleteme_vnswith0songs.tsv", res);
     }
 }
