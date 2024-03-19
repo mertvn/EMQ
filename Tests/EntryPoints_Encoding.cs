@@ -63,7 +63,7 @@ public class EntryPoints_Encoding
                 var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(60));
 
-                _ = await MediaAnalyser.EncodeIntoWebm(filePath, cancellationTokenSource.Token, outputFinal);
+                _ = await MediaAnalyser.EncodeIntoWebm(filePath, 4, cancellationTokenSource.Token, outputFinal);
             }
             catch (Exception e)
             {

@@ -217,7 +217,7 @@ public static class MediaAnalyser
         }
     }
 
-    public static async Task<string> EncodeIntoWebm(string filePath, CancellationToken cancellationToken,
+    public static async Task<string> EncodeIntoWebm(string filePath, int threads, CancellationToken cancellationToken,
         string? outputFinal = null)
     {
         Console.WriteLine("encoding into .webm");
@@ -265,7 +265,7 @@ public static class MediaAnalyser
                         $"-map 0:a " +
                         $"-shortest " +
                         $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
-                        $"-deadline good -cpu-used 3 -tile-columns 2 -threads 3 -row-mt 1 " +
+                        $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
                         $"-g 100 " +
                         (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
                         $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
