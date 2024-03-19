@@ -179,6 +179,11 @@ public static class MediaAnalyser
 
                     result.VolumeDetect = final;
                 }
+                else
+                {
+                    Console.WriteLine(await process.StandardOutput.ReadToEndAsync());
+                    throw new Exception("failed to volumedetect");
+                }
             }
             catch (Exception e)
             {
