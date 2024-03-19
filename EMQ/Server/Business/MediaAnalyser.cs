@@ -167,9 +167,13 @@ public static class MediaAnalyser
                 string err = await process.StandardError.ReadToEndAsync();
                 if (err.Any())
                 {
-                    Console.WriteLine(err);
+                    // Console.WriteLine(err);
                     string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-                    string[] volumedetectLines = lines.SkipWhile(x => !x.Contains("volumedetect")).ToArray();
+                    string[] volumedetectLines =
+                        lines.Where(x =>
+                                x.Contains("Parsed_volumedetect", StringComparison.OrdinalIgnoreCase) &&
+                                !x.Contains("n_samples: 0", StringComparison.OrdinalIgnoreCase))
+                            .ToArray();
 
                     string[] final = new string[volumedetectLines.Length];
                     for (int index = 0; index < volumedetectLines.Length; index++)
