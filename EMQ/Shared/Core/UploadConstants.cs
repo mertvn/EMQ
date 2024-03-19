@@ -40,14 +40,6 @@ public static class UploadConstants
             RequiresTranscode = false,
             RequiresEncode = false,
         },
-        new MediaTypeInfo
-        {
-            Extension = "mp4",
-            MimeType = "video/mp4",
-            Signature = "",
-            RequiresTranscode = false,
-            RequiresEncode = false,
-        },
 
         // audio formats
         new MediaTypeInfo
@@ -92,15 +84,14 @@ public static class UploadConstants
             RequiresTranscode = false,
             RequiresEncode = true,
         },
-        // need to remove the mp4 above to enable this
-        // new MediaTypeInfo
-        // {
-        //     Extension = "mp4",
-        //     MimeType = "video/mp4",
-        //     Signature = "",
-        //     RequiresTranscode = false,
-        //     RequiresEncode = true,
-        // },
+        new MediaTypeInfo
+        {
+            Extension = "mp4",
+            MimeType = "video/mp4",
+            Signature = "",
+            RequiresTranscode = false,
+            RequiresEncode = true,
+        },
         new MediaTypeInfo
         {
             Extension = "wmv",
