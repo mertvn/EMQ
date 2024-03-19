@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -1122,5 +1123,37 @@ order by ms.id
 
         Assert.That(Math.Abs(previous.ease - 2.5) < 0.01);
         Assert.That(Math.Abs(previous.interval_days - 595) < 0.01);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_TooManyBGM()
+    {
+        var code =
+            "CDwQoJwBGJBOOAF4iCeCAZoBGgAiBAgAEAEiBAgBEAEiAggCIgIIAyICCAQiAggFKgYIARICCCMqBggCEgIICioGCAMSAggFKgQIBBIAKgcIiQYSAggKMgQIARABMgQIAhABMgQIAxABMgQIBBABOgQIABABOgQIARABOgQIAhABOgQIAxABOgQIBBABOgQIBRABQgMI3GZKBAi21gJQZFjoB2BkaOgHeKjDAQ==";
+        var quizSettings = code.DeserializeFromBase64String_PB<QuizSettings>();
+
+        PlayerVndbInfo vndbInfo = new PlayerVndbInfo()
+        {
+            VndbId = "u191585",
+            VndbApiToken = "",
+            Labels = new List<Label>
+            {
+                new()
+                {
+                    Id = 7, // Voted
+                    Kind = LabelKind.Include
+                },
+            }
+        };
+
+        var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+        var songs = await DbManager.GetRandomSongs(quizSettings.NumSongs, quizSettings.Duplicates,
+            labels.SelectMany(x => x.VNs.Select(y => y.Key)).ToList(), quizSettings.Filters);
+
+        int bgmCount = songs.Count(song =>
+            song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
+
+        Console.WriteLine(bgmCount);
+        Assert.That(bgmCount < 11);
     }
 }

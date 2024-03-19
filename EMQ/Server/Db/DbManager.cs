@@ -1427,9 +1427,14 @@ public static class DbManager
                         List<SongSourceSongType> songTypes = song.Sources.SelectMany(x => x.SongTypes).ToList();
                         foreach ((SongSourceSongType key, int value) in songTypesLeft!)
                         {
-                            if ((key == SongSourceSongType.Random && songTypesLeft[SongSourceSongType.Random] > 0) ||
-                                songTypes.Contains(key))
+                            if (key == SongSourceSongType.Random || songTypes.Contains(key))
                             {
+                                if (value <= 0)
+                                {
+                                    canAdd = false;
+                                    continue;
+                                }
+
                                 if (key == SongSourceSongType.Random &&
                                     (enabledSongTypesForRandom != null &&
                                      !songTypes.Any(x => enabledSongTypesForRandom.Contains(x))))
@@ -1440,36 +1445,17 @@ public static class DbManager
 
                                 if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
                                 {
-                                    // int lowestWeightForSongTypes =
-                                    //     filters!.SongSourceSongTypeRandomWeights
-                                    //         .Where(x => songTypes.Contains(x.Key))
-                                    //         .MinBy(x => x.Value.Value).Value.Value;
-
-                                    // float weight = lowestWeightForSongTypes;
                                     const float weight = 7f;
                                     if (Random.Shared.NextSingle() >= (weight / 100))
                                     {
-                                        // Console.WriteLine($"skip random with weight {weight}");
                                         canAdd = false;
                                         break;
                                     }
                                 }
 
-                                // bool exists =
-                                //     filters!.SongSourceSongTypeFilters.TryGetValue(key, out IntWrapper? maxAllowed);
-                                // if (exists)
-                                // {
-                                if (value > 0)
-                                {
-                                    canAdd = true;
-                                    songTypesLeft[key] -= 1;
-                                    break;
-                                }
-                                else
-                                {
-                                    canAdd = false;
-                                }
-                                //  }
+                                canAdd = true;
+                                songTypesLeft[key] -= 1;
+                                break;
                             }
                         }
                     }
