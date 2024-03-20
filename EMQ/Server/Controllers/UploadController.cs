@@ -120,7 +120,7 @@ public class UploadController : ControllerBase
                                 try
                                 {
                                     encodedPath =
-                                        await MediaAnalyser.EncodeIntoWebm(tempPath, 1, cancellationTokenSource.Token);
+                                        await MediaAnalyser.EncodeIntoWebm(tempPath, 2, cancellationTokenSource.Token);
                                 }
                                 finally
                                 {
