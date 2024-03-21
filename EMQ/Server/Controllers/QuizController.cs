@@ -336,6 +336,11 @@ public class QuizController : ControllerBase
                 {
                     if (room.Quiz != null)
                     {
+                        if (room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+                        {
+                            return StatusCode(409);
+                        }
+
                         ServerState.RemoveQuizManager(room.Quiz);
                     }
 

@@ -239,7 +239,7 @@ public class ClientUtils
                             "Gateway timeout. If you are trying to upload a video file that requires encoding, it's likely that the upload has succeeded and is in the encoding queue; wait at least 20 minutes before trying to upload the same file again.";
                         break;
                     default:
-                        uploadResult.ErrorStr = "Something went wrong when uploading.";
+                        uploadResult.ErrorStr = $"Something went wrong when uploading. ({response.StatusCode})";
                         break;
                 }
             }
