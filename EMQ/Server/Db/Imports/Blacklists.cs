@@ -31,6 +31,7 @@ public static class Blacklists
         ("v3679", "Sotto Kiss Shite"),
         ("v9409", "Key of Destiny"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
+        ("v10632", "Eternal Flower"),
         ("v11000", "Photograph Memory"),
         ("v14005", "Onaji Hohaba de, Zutto"),
         ("v15395", "Chaleur"),
