@@ -1219,29 +1219,56 @@ public class QuizManager
                                 return false;
                             }
 
-                            var validSourcesSelected = new List<string>();
-                            int targetNumSongsPerPlayer = Quiz.Room.QuizSettings.NumSongs / validSourcesDict.Count;
+                            var songTypesLeft = Quiz.Room.QuizSettings.Filters.SongSourceSongTypeFilters
+                                .OrderByDescending(x => x.Key) // Random must be selected first
+                                .Where(x => x.Value.Value > 0)
+                                .ToDictionary(x => x.Key, x => x.Value.Value);
+
+                            int sumOfSongTypesLeft = songTypesLeft.Sum(x => x.Value);
+                            int targetNumSongsPerPlayer = Math.Min(
+                                sumOfSongTypesLeft / validSourcesDict.Count,
+                                validSourcesDict.MinBy(x => x.Value.Count).Value.Count);
                             Console.WriteLine($"targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
 
-                            if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
-                            {
-                                targetNumSongsPerPlayer = Math.Min(targetNumSongsPerPlayer,
-                                    validSourcesDict.MinBy(x => x.Value.Count).Value.Count);
-                                Console.WriteLine($"strict targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
-                            }
+                            dbSongs = new List<Song>();
 
-                            foreach ((int pId, _) in validSourcesDict)
+                            // we randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount
+                            foreach ((int pId, _) in validSourcesDict.OrderBy(x => Random.Shared.Next()).ToArray())
                             {
                                 Console.WriteLine(
                                     $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
-                                validSourcesSelected.AddRange(validSourcesDict[pId].OrderBy(x => Random.Shared.Next())
-                                    .Take(targetNumSongsPerPlayer));
+
+                                dbSongs.AddRange(await DbManager.GetRandomSongs(
+                                    targetNumSongsPerPlayer,
+                                    Quiz.Room.QuizSettings.Duplicates,
+                                    validSourcesDict[pId].OrderBy(x => Random.Shared.Next()).ToList(),
+                                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                    validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft));
                             }
 
-                            dbSongs = (await DbManager.GetRandomSongs(targetNumSongsPerPlayer * validSourcesDict.Count,
-                                Quiz.Room.QuizSettings.Duplicates, validSourcesSelected,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                validMids: validMids, invalidMids: invalidMids));
+                            Console.WriteLine($"dbSongs.Count before distinct1: {dbSongs.Count}");
+                            if (!Quiz.Room.QuizSettings.Duplicates)
+                            {
+                                var finalDbSongs = new List<Song>();
+                                var seenSourceIds = new HashSet<int>();
+                                foreach (Song dbSong in dbSongs)
+                                {
+                                    foreach (SongSource dbSongSource in dbSong.Sources)
+                                    {
+                                        if (seenSourceIds.Add(dbSongSource.Id))
+                                        {
+                                            finalDbSongs.Add(dbSong);
+                                        }
+                                    }
+                                }
+
+                                dbSongs = finalDbSongs;
+                                Console.WriteLine($"dbSongs.Count after distinct1: {dbSongs.Count}");
+                            }
+
+                            Console.WriteLine($"dbSongs.Count before distinct2: {dbSongs.Count}");
+                            dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
+                            Console.WriteLine($"dbSongs.Count after distinct2: {dbSongs.Count}");
 
                             int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");

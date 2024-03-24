@@ -1016,7 +1016,8 @@ public static class DbManager
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
-        List<int>? validMids = null, List<int>? invalidMids = null)
+        List<int>? validMids = null, List<int>? invalidMids = null,
+        Dictionary<SongSourceSongType, int>? songTypesLeft = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1375,11 +1376,10 @@ public static class DbManager
 
         bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
 
-        Dictionary<SongSourceSongType, int>? songTypesLeft =
-            filters?.SongSourceSongTypeFilters
-                .OrderByDescending(x => x.Key) // Random must be selected first
-                .Where(x => x.Value.Value > 0)
-                .ToDictionary(x => x.Key, x => x.Value.Value);
+        songTypesLeft ??= filters?.SongSourceSongTypeFilters
+            .OrderByDescending(x => x.Key) // Random must be selected first
+            .Where(x => x.Value.Value > 0)
+            .ToDictionary(x => x.Key, x => x.Value.Value);
 
         List<SongSourceSongType>? enabledSongTypesForRandom =
             filters?.SongSourceSongTypeRandomEnabledSongTypes
@@ -1464,12 +1464,6 @@ public static class DbManager
                     canAdd &= !isDuplicate || duplicates;
                     if (canAdd)
                     {
-                        if ((listDistributionKind is ListDistributionKind.Balanced) &&
-                            isDuplicate && Random.Shared.NextSingle() >= 0.1f)
-                        {
-                            continue;
-                        }
-
                         if (filters != null)
                         {
                             var songSource = song.Sources.First();
