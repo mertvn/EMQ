@@ -154,33 +154,6 @@ public class AuthController : ControllerBase
             return;
         }
 
-        var player = session.Player;
-        var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
-        var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == player.Id));
-        if (oldRoomPlayer is not null)
-        {
-            oldRoomPlayer.RemovePlayer(player);
-            oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
-            oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
-
-            // todo this doesnt work correctly sometimes idk
-            if (!oldRoomPlayer.Players.Any())
-            {
-                ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
-            }
-        }
-        else if (oldRoomSpec is not null)
-        {
-            oldRoomSpec.RemoveSpectator(player);
-            oldRoomSpec.AllConnectionIds.Remove(player.Id, out _);
-            oldRoomSpec.Log($"{player.Username} left the room.", -1, true);
-
-            if (!oldRoomSpec.Players.Any())
-            {
-                ServerState.RemoveRoom(oldRoomSpec, "RemoveSession");
-            }
-        }
-
         var secret = await DbManager.GetSecret(session.Player.Id, new Guid(session.Token));
 
         // enable if guest sessions are ever written to DB

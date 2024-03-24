@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -124,6 +125,31 @@ public static class ServerState
         Console.WriteLine($"Removing session for p{session.Player.Id} {session.Player.Username}. Source: {source}");
         lock (s_serverStateLock)
         {
+            var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == session.Player.Id));
+            if (oldRoomPlayer is not null)
+            {
+                oldRoomPlayer.RemovePlayer(session.Player);
+                oldRoomPlayer.AllConnectionIds.Remove(session.Player.Id, out _);
+                oldRoomPlayer.Log($"{session.Player.Username} left the room.", -1, true);
+
+                if (!oldRoomPlayer.Players.Any())
+                {
+                    ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
+                }
+            }
+            else if (oldRoomSpec is not null)
+            {
+                oldRoomSpec.RemoveSpectator(session.Player);
+                oldRoomSpec.AllConnectionIds.Remove(session.Player.Id, out _);
+                oldRoomSpec.Log($"{session.Player.Username} left the room.", -1, true);
+
+                if (!oldRoomSpec.Players.Any())
+                {
+                    ServerState.RemoveRoom(oldRoomSpec, "RemoveSession");
+                }
+            }
+
             int oldSessionsCount = Sessions.Count;
             Sessions = Sessions.Remove(session);
             int newSessionsCount = Sessions.Count;
