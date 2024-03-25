@@ -176,6 +176,12 @@ public class QuizSettings
     [DefaultValue(SpacedRepetitionKind.Review)]
     public SpacedRepetitionKind SpacedRepetitionKind { get; set; } = SpacedRepetitionKind.Review; // todo diff
 
+    [ProtoMember(23)]
+    [Required]
+    [Range(4, 16)]
+    [DefaultValue(4)]
+    public int NumMultipleChoiceOptions { get; set; } = 4;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -420,6 +426,11 @@ public class QuizSettings
         {
             diff.Add(
                 $"Sample point: {o.Filters.StartTimePercentageStart} - {o.Filters.StartTimePercentageEnd} → {n.Filters.StartTimePercentageStart} - {n.Filters.StartTimePercentageEnd}");
+        }
+
+        if (o.NumMultipleChoiceOptions != n.NumMultipleChoiceOptions)
+        {
+            diff.Add($"Number of multiple choice options: {o.NumMultipleChoiceOptions} → {n.NumMultipleChoiceOptions}");
         }
 
         return diff;

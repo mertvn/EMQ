@@ -942,10 +942,10 @@ public class QuizManager
             case AnsweringKind.MultipleChoice:
                 var playerSessions =
                     ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
-                int numChoices = 4; // todo?: make this configurable
                 Quiz.MultipleChoiceOptions =
                     await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
-                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms, numChoices);
+                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms,
+                        Quiz.Room.QuizSettings.NumMultipleChoiceOptions);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

@@ -143,6 +143,13 @@
                         <label for="AnsweringKind">Answering method</label>
                         <br/>
 
+                        @if (ClientQuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+                        {
+                            <InputNumber id="NumMultipleChoiceOptions" @bind-Value="ClientQuizSettings.NumMultipleChoiceOptions" style="margin: 5px"></InputNumber>
+                            <label for="NumMultipleChoiceOptions">Number of multiple choice options</label>
+                            <br/>
+                        }
+
                         <InputSelect id="ScreenshotKind" @bind-Value="ClientQuizSettings.Filters.ScreenshotKind" style="margin: 5px">
                             @foreach (ScreenshotKind screenshotKind in Enum.GetValues<ScreenshotKind>())
                             {
