@@ -41,15 +41,18 @@ public partial class HotelPage
             StateHasChanged();
         }
 
-        // todo important stop this if user navigates away
-        var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
-        while (await timer.WaitForNextTickAsync())
+        if (!ClientState.Timers.ContainsKey("GetRooms"))
         {
-            IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
-            if (res is not null)
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+            ClientState.Timers["GetRooms"] = timer;
+            while (await timer.WaitForNextTickAsync())
             {
-                Rooms = res.ToList();
-                StateHasChanged();
+                IEnumerable<Room>? res = await _client.GetFromJsonAsync<IEnumerable<Room>>("Auth/GetRooms");
+                if (res is not null)
+                {
+                    Rooms = res.ToList();
+                    StateHasChanged();
+                }
             }
         }
     }

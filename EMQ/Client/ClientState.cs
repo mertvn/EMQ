@@ -1,4 +1,6 @@
-﻿using EMQ.Shared.Auth.Entities.Concrete;
+﻿using System.Collections.Generic;
+using System.Threading;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Client;
@@ -10,4 +12,6 @@ public static class ClientState
     public static ServerStats ServerStats { get; set; } = new();
 
     public static PlayerVndbInfo VndbInfo { get; set; } = new();
+
+    public static Dictionary<string, PeriodicTimer> Timers { get; set; } = new();
 }

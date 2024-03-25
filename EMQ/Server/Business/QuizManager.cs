@@ -1246,9 +1246,9 @@ public class QuizManager
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft));
                             }
 
-                            Console.WriteLine($"dbSongs.Count before distinct1: {dbSongs.Count}");
                             if (!Quiz.Room.QuizSettings.Duplicates)
                             {
+                                Console.WriteLine($"dbSongs.Count before distinct1: {dbSongs.Count}");
                                 var finalDbSongs = new List<Song>();
                                 var seenSourceIds = new HashSet<int>();
                                 foreach (Song dbSong in dbSongs)
@@ -1270,7 +1270,7 @@ public class QuizManager
                             dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
                             Console.WriteLine($"dbSongs.Count after distinct2: {dbSongs.Count}");
 
-                            int diff = Quiz.Room.QuizSettings.NumSongs - dbSongs.Count;
+                            int diff = (targetNumSongsPerPlayer * validSourcesDict.Count) - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");
 
                             Quiz.Room.Log(
