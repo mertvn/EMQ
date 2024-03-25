@@ -108,6 +108,15 @@ public static class UploadConstants
             RequiresTranscode = false,
             RequiresEncode = true,
         },
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1451786
+        // new MediaTypeInfo
+        // {
+        //     Extension = "mkv",
+        //     MimeType = "video/x-matroska",
+        //     Signature = "",
+        //     RequiresTranscode = false,
+        //     RequiresEncode = true,
+        // },
         // problematic because we can't differentiate it from audio/ogg right now
         // new MediaTypeInfo
         // {

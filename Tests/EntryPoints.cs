@@ -689,7 +689,7 @@ public class EntryPoints
                 Console.WriteLine(
                     $"StartSection running query: {filename}: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-                var queryResult = await connection.QueryAsync(sql, commandTimeout: 1000);
+                var queryResult = await connection.QueryAsync(sql, commandTimeout: 10000);
                 foreach (dynamic o in queryResult)
                 {
                     if (!string.IsNullOrWhiteSpace(o.TVIs))

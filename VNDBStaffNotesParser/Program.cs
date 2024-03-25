@@ -171,6 +171,7 @@ public static class Program
                         "Uguisu route song",
                         "anniversary songs",
                         "Event song",
+                        "Rhythm Segments Songs",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -565,7 +566,15 @@ public static class Program
 
         if (doIntegrityCheck)
         {
-            CheckIntegrity(songs);
+            try
+            {
+                CheckIntegrity(songs);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         return songs;

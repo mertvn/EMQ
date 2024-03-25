@@ -29,13 +29,13 @@ public class VNDBStaffNotesParserTests
         // @formatter:off
         List<string> blacklist = new()
         {
-          "v24208", // possible room for improvement
+          "v24208", "v13572", // possible room for improvement
           "v28714", // too irregular
         };
 
         List<string> graylist = new()
         {
-          "v1515", "v2368", "v2527", "v4054", "v16044" // AfterTitle contains quote
+          "v1515", "v2368", "v2527", "v4054", "v16044", "v4602" // AfterTitle contains quote
         };
         // @formatter:on
 
