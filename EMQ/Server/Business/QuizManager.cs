@@ -800,7 +800,7 @@ public class QuizManager
     }
 
     public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
-        List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms, int numChoices)
+        List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms)
     {
         var ret = new Dictionary<int, List<Title>>();
         Dictionary<int, Title> allTitles = new();
@@ -902,7 +902,8 @@ public class QuizManager
                 }
             }
 
-            randomIndexes = randomIndexes.OrderBy(_ => Random.Shared.Next()).Take(numChoices - 1).ToList();
+            randomIndexes = randomIndexes.OrderBy(_ => Random.Shared.Next())
+                .Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
 
             List<Title> list = new() { correctAnswerTitle };
@@ -944,8 +945,7 @@ public class QuizManager
                     ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
                 Quiz.MultipleChoiceOptions =
                     await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
-                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms,
-                        Quiz.Room.QuizSettings.NumMultipleChoiceOptions);
+                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

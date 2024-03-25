@@ -249,6 +249,11 @@ public class ModController : ControllerBase
     {
         var music = await DbManager.GetEntity<Music>(mId);
         bool success = await DbManager.DeleteEntity(music!);
+        if (success)
+        {
+            DbManager.EvictFromSongsCache(mId);
+        }
+
         return success ? Ok() : StatusCode(500);
     }
 }

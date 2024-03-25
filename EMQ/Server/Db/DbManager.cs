@@ -2450,10 +2450,7 @@ WHERE id = {mId};
                 CachedLibraryStats[key] = null;
             }
 
-            while (CachedSongs.ContainsKey(rq.music_id))
-            {
-                CachedSongs.TryRemove(rq.music_id, out _);
-            }
+            EvictFromSongsCache(rq.music_id);
         }
 
         return success;
@@ -3270,10 +3267,15 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
     public static async Task<int> DeleteMusicExternalLink(int mId, string url)
     {
         const string sqlDelete = "DELETE from music_external_link where music_id = @music_id AND url = @url";
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+
+        int rows = await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
+        if (rows > 0)
         {
-            return await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
+            EvictFromSongsCache(mId);
         }
+
+        return rows;
     }
 
     public static async Task<List<Song>> GetSongsByTitleAndArtistFuzzy(List<string> titles, List<string> artists,
@@ -3642,5 +3644,13 @@ group by sq.user_id
             x => x);
 
         return ret;
+    }
+
+    public static void EvictFromSongsCache(int musicId)
+    {
+        while (CachedSongs.ContainsKey(musicId))
+        {
+            CachedSongs.TryRemove(musicId, out _);
+        }
     }
 }

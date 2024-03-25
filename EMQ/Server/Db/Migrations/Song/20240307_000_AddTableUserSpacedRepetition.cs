@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -12,7 +13,7 @@ public class AddTableUserSpacedRepetition : Migration
     {
         Create.Table(tableName)
             .WithColumn("user_id").AsInt32().PrimaryKey() // todo FK
-            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
+            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("n").AsInt32().NotNullable()
             .WithColumn("ease").AsFloat().NotNullable()
             .WithColumn("interval_days").AsFloat().NotNullable()

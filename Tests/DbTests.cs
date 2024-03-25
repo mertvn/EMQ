@@ -793,7 +793,8 @@ public class DbTests
 
         var ret =
             await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
-                new QuizSettings { SongSelectionKind = SongSelectionKind.Looting }, treasureRooms, 4);
+                new QuizSettings { SongSelectionKind = SongSelectionKind.Looting, NumMultipleChoiceOptions = 4 },
+                treasureRooms);
 
         Assert.That(ret.Any());
     }
