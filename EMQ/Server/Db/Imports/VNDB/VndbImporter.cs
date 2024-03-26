@@ -304,7 +304,8 @@ public static class VndbImporter
             if (existingSong is not null)
             {
                 bool isBlacklisted = Blacklists.VndbImporterExistingSongBlacklist.Any(x =>
-                    x.Item1 == dynData.VNID && x.Item2 == dynData.ParsedSong.Title);
+                    x.Item1 == dynData.VNID &&
+                    string.Equals(x.Item2, dynData.ParsedSong.Title, StringComparison.InvariantCultureIgnoreCase));
 
                 if (isBlacklisted)
                 {

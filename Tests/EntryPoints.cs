@@ -726,14 +726,15 @@ public class EntryPoints
                 Console.WriteLine(
                     $"StartSection ImportVndbData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
                 await VndbImporter.ImportVndbData(DateTime.Parse(Constants.ImportDateVndb), false);
+
                 Console.WriteLine(
                     $"StartSection ImportSongLite: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
                 await entryPoints.ImportSongLite();
-            }
 
-            Console.WriteLine(
-                $"StartSection ImportEgsData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            await entryPoints.ImportEgsData();
+                Console.WriteLine(
+                    $"StartSection ImportEgsData: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+                await entryPoints.ImportEgsData();
+            }
         }
 
         Console.WriteLine(

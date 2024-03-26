@@ -26,9 +26,16 @@ public static class Blacklists
         ("v434", "GRIND"),
         ("v1899", "Futari"),
         ("v1950", "Tomodachi Ijou Koibito Miman"), // todo 1x1 + 2x1
+        ("v2112", "Yasashii Mori"),
+        ("v2112", "Ai no Chocolate Souffle"),
+        ("v2112", "Akai Akai Hana ~THE WILD FLOWER~"),
+        ("v2396", "Go! Go! Waitress"),
         ("v2438", "Blue Twilight ~Taiyou to Tsuki ga Deau Toki~"),
         ("v2501", "Hide and seek"),
         ("v3679", "Sotto Kiss Shite"),
+        // ("v4705", "Kimi no First Kiss"), // todo 1x1 + 2x1
+        // ("v4705", "Dakara Namida wo Fuite..."), // todo 1x1 + 2x1
+        ("v7221", "Yume Panorama Wide"),
         ("v9409", "Key of Destiny"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v10632", "Eternal Flower"),
@@ -36,7 +43,10 @@ public static class Blacklists
         ("v14005", "Onaji Hohaba de, Zutto"),
         ("v15395", "Chaleur"),
         ("v15641", "Want more need less"),
+        ("v15641", "hallucinate"),
+        ("v15641", "Let Us Cling Together"),
         ("v29066", "Meguriaetane"),
+        ("v29936", "Destiny"),
         ("v31469", "Half to Whole -Vocal Solo-"), // Half to Whole -Grand Finale- also needs to be split 14x1 + 14x1
         ("v31740", "Journey"),
     };

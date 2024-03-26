@@ -180,7 +180,7 @@ public class ModController : ControllerBase
     public async Task<ActionResult> RunVndbImporter()
     {
         var date = DateTime.UtcNow;
-        date = DateTime.UtcNow - TimeSpan.FromDays(2); // todo
+        date = DateTime.UtcNow - TimeSpan.FromDays(1); // todo
         await VndbImporter.ImportVndbData(date, true);
         return Ok();
     }
@@ -214,6 +214,8 @@ public class ModController : ControllerBase
                 VndbImporter.PendingSongs.RemoveAll(x =>
                     x.ToSongLite().EMQSongHash == song.ToSongLite().EMQSongHash);
             }
+
+            DbManager.EvictFromSongsCache(mId);
         }
 
         return mId > 0 ? Ok() : StatusCode(500);
@@ -237,6 +239,8 @@ public class ModController : ControllerBase
                 VndbImporter.PendingSongs.RemoveAll(x =>
                     x.ToSongLite().EMQSongHash == req.NewSong.ToSongLite().EMQSongHash);
             }
+
+            DbManager.EvictFromSongsCache(req.OldMid);
         }
 
         return success ? Ok() : StatusCode(500);

@@ -725,7 +725,7 @@ public static class DbManager
             var music = new Music { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
             if (!await connection.InsertAsync(music, transaction))
             {
-                throw new Exception();
+                throw new Exception("Failed to insert m");
             }
 
             mId = music.id;
@@ -744,7 +744,7 @@ public static class DbManager
 
             if (!await connection.InsertAsync(mt, transaction))
             {
-                throw new Exception();
+                throw new Exception("Failed to insert mt");
             }
         }
 
@@ -761,7 +761,7 @@ public static class DbManager
                     sha256 = songLink.Sha256,
                 }, transaction))
             {
-                throw new Exception();
+                throw new Exception("Failed to insert mel");
             }
         }
 
@@ -797,14 +797,14 @@ public static class DbManager
 
                 if (!await connection.InsertAsync(ms, transaction))
                 {
-                    throw new Exception();
+                    throw new Exception("Failed to insert ms");
                 }
 
                 msId = ms.id;
 
                 foreach (Title songSourceAlias in songSource.Titles)
                 {
-                    if (await connection.InsertAsync(
+                    if (!await connection.InsertAsync(
                             new MusicSourceTitle()
                             {
                                 music_source_id = msId,
@@ -814,7 +814,7 @@ public static class DbManager
                                 is_main_title = songSourceAlias.IsMainTitle
                             }, transaction))
                     {
-                        throw new Exception();
+                        throw new Exception("Failed to insert mst");
                     }
                 }
 
@@ -842,7 +842,7 @@ public static class DbManager
 
                         if (!await connection.InsertAsync(newCategory))
                         {
-                            throw new Exception();
+                            throw new Exception("Failed to insert c");
                         }
 
                         cId = newCategory.id;
@@ -886,7 +886,7 @@ public static class DbManager
                                 name = songSourceLink.Name
                             }, transaction))
                     {
-                        throw new Exception();
+                        throw new Exception("Failed to insert msel");
                     }
                 }
             }
@@ -902,13 +902,13 @@ public static class DbManager
                 }
                 else
                 {
-                    if (await connection.InsertAsync(
+                    if (!await connection.InsertAsync(
                             new MusicSourceMusic()
                             {
                                 music_id = mId, music_source_id = msId, type = (int)songSourceSongType
                             }, transaction))
                     {
-                        throw new Exception();
+                        throw new Exception("Failed to insert msm");
                     }
                 }
             }
@@ -951,7 +951,7 @@ public static class DbManager
 
                 if (!await connection.InsertAsync(artist, transaction))
                 {
-                    throw new Exception();
+                    throw new Exception("Failed to insert a");
                 }
 
                 aId = artist.id;
@@ -970,7 +970,7 @@ public static class DbManager
 
                 if (!await connection.InsertAsync(aa, transaction))
                 {
-                    throw new Exception();
+                    throw new Exception("Failed to insert aa");
                 }
 
                 aaId = aa.id;

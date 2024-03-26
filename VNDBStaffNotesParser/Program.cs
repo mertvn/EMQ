@@ -61,6 +61,7 @@ public static class Program
                         "start theme",
                         "Main menu theme:",
                         "Title BGM", // https://vndb.org/v2322
+                        "Title Song" // https://vndb.org/v852
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -104,7 +105,9 @@ public static class Program
                         "Sub-Ending",
                         "Cast roll theme",
                         "Happy end song",
+                        "Bad end song",
                         "credits theme",
+                        "ED/Cover",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
@@ -172,6 +175,7 @@ public static class Program
                         "anniversary songs",
                         "Event song",
                         "Rhythm Segments Songs",
+                        "Cover Song",
                     }.OrderByDescending(x => x).ToList()
                 }
             },
