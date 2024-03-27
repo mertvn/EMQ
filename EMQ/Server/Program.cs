@@ -320,7 +320,7 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapControllers();
 app.MapHub<GeneralHub>("/GeneralHub");
-app.MapHub<QuizHub>("/QuizHub");
+app.MapHub<QuizHub>("/QuizHub", opt => { opt.TransportSendTimeout = TimeSpan.FromSeconds(2); });
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
