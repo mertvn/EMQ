@@ -45,6 +45,7 @@ public static class Blacklists
         ("v15641", "Want more need less"),
         ("v15641", "hallucinate"),
         ("v15641", "Let Us Cling Together"),
+        ("v16974", "Resolve!"),
         ("v29066", "Meguriaetane"),
         ("v29936", "Destiny"),
         ("v31469", "Half to Whole -Vocal Solo-"), // Half to Whole -Grand Finale- also needs to be split 14x1 + 14x1

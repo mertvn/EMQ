@@ -28,6 +28,11 @@
             <span>Role: @roleStr</span>
             <br/>
 
+            <ul>
+                <li>Song count: @PublicUserInfo.SongCount</li>
+                <li>Guess rate: @PublicUserInfo.GuessRate%</li>
+            </ul>
+
             <button type="button" class="btn btn-primary" @onclick="Logout" disabled="@(LoginInProgress)">Logout</button>
             <br/>
 

@@ -1273,10 +1273,7 @@ public class QuizManager
                             int diff = (targetNumSongsPerPlayer * validSourcesDict.Count) - dbSongs.Count;
                             Console.WriteLine($"NumSongs to actual diff: {diff}");
 
-                            Quiz.Room.Log(
-                                diff > 0
-                                    ? $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player, did not try to top up the rest."
-                                    : $"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
+                            Quiz.Room.Log($"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
                                 writeToChat: true);
 
                             dbSongs = dbSongs.OrderBy(_ => Random.Shared.Next()).ToList();

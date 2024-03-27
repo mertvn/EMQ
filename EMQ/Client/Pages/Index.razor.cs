@@ -36,9 +36,11 @@ public partial class Index
 
     private LoginModel _loginModel = new();
 
-    public List<string> LoginProgressDisplay { get; set; } = new();
+    private List<string> LoginProgressDisplay { get; set; } = new();
 
-    public bool LoginInProgress { get; set; } = false;
+    private bool LoginInProgress { get; set; } = false;
+
+    private ResGetPublicUserInfo PublicUserInfo { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -47,6 +49,18 @@ public partial class Index
         await _clientUtils.TryRestoreSession();
         LoginInProgress = false;
         StateHasChanged();
+
+        if (ClientState.Session != null)
+        {
+            HttpResponseMessage res =
+                await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", ClientState.Session.Player.Id);
+            if (res.IsSuccessStatusCode)
+            {
+                var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
+                PublicUserInfo = content;
+                StateHasChanged();
+            }
+        }
     }
 
     private async Task Logout()
