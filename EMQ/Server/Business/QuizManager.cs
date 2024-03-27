@@ -65,7 +65,7 @@ public class QuizManager
             {
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
                 LastUpdate = DateTime.UtcNow;
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             }
 
@@ -126,7 +126,7 @@ public class QuizManager
             Quiz.Timer?.Dispose();
         }
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizCanceled");
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizCanceled");
     }
 
     private async Task EnterGuessingPhase()
@@ -140,7 +140,7 @@ public class QuizManager
                Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
         {
             Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
@@ -177,7 +177,7 @@ public class QuizManager
                 $"Waiting buffering... {isBufferedCount}/{waitNumber} timeout in {timeoutMs / 1000}s";
             // Console.WriteLine("ei: " + Quiz.QuizState.ExtraInfo);
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
 
@@ -198,10 +198,10 @@ public class QuizManager
         }
 
         // reset the guesses
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
     }
 
@@ -210,7 +210,7 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Judgement;
         Quiz.QuizState.ExtraInfo = "";
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
         if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
@@ -219,7 +219,7 @@ public class QuizManager
         }
 
         // need to do this AFTER the team guesses have been determined
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceivePlayerGuesses", Quiz.Room.PlayerGuesses);
 
         await JudgeGuesses();
@@ -248,7 +248,7 @@ public class QuizManager
             }
         }
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
     }
 
@@ -296,12 +296,12 @@ public class QuizManager
             player.IsBuffered = false;
         }
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveCorrectAnswer", Quiz.Songs[Quiz.QuizState.sp],
                 Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
                 Quiz.Room.PlayerGuesses);
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
             .SendAsync("ReceiveUpdateRoom", Quiz.Room, true, DateTime.UtcNow);
 
         if (Quiz.QuizState.sp + 1 == Quiz.Songs.Count)
@@ -348,7 +348,7 @@ public class QuizManager
                 }
             }
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -568,7 +568,7 @@ public class QuizManager
             Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
                 writeToChat: true);
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -603,7 +603,7 @@ public class QuizManager
             burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
 
             Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -669,7 +669,7 @@ public class QuizManager
                     writeToChat: true);
             }
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -691,7 +691,7 @@ public class QuizManager
         }
 
         Quiz.QuizState.ExtraInfo = "Quiz ended. Returning to room...";
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEnded");
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEnded");
 
         Directory.CreateDirectory("RoomLog");
         await File.WriteAllTextAsync($"RoomLog/r{Quiz.Room.Id}q{Quiz.Id}.json",
@@ -963,7 +963,7 @@ public class QuizManager
             }
         }
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values).SendAsync("ReceiveQuizEntered");
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
@@ -1427,7 +1427,7 @@ public class QuizManager
         Quiz.QuizState.QuizStatus = QuizStatus.Playing;
 
         // await EnterQuiz();
-        // await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizStarted");
+        // HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceiveQuizStarted");
 
         switch (Quiz.Room.QuizSettings.SongSelectionKind)
         {
@@ -1436,12 +1436,12 @@ public class QuizManager
             case SongSelectionKind.LocalMusicLibrary:
                 await EnterQuiz();
                 await EnterGuessingPhase();
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveQuizStarted");
                 break;
             case SongSelectionKind.Looting:
                 await EnterLootingPhase();
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceivePyramidEntered");
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 break;
@@ -1470,7 +1470,7 @@ public class QuizManager
     {
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
-            await HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
+            HubContext.Clients.Clients(connectionId).SendAsync("ReceiveQuizStarted");
 
             // todo player initialization logic shouldn't be here at all after the user + player separation
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
@@ -1514,7 +1514,7 @@ public class QuizManager
                 }
             }
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -1558,18 +1558,18 @@ public class QuizManager
                     var teammateIds = teammates.Select(x => x.Id);
                     var teammateGuesses = Quiz.Room.PlayerGuesses.Where(x => teammateIds.Contains(x.Key));
                     var dict = teammateGuesses.ToDictionary(x => x.Key, x => x.Value);
-                    await HubContext.Clients.Clients(teammateConnectionIds)
+                    HubContext.Clients.Clients(teammateConnectionIds)
                         .SendAsync("ReceivePlayerGuesses", dict);
                 }
                 else
                 {
-                    await HubContext.Clients.Clients(connectionId)
+                    HubContext.Clients.Clients(connectionId)
                         .SendAsync("ReceivePlayerGuesses",
                             Quiz.Room.PlayerGuesses.Where(x => x.Key == playerId)
                                 .ToDictionary(x => x.Key, x => x.Value));
                 }
 
-                await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                     .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
                 await TriggerSkipIfNecessary();
             }
@@ -1597,7 +1597,7 @@ public class QuizManager
                 Quiz.Room.Log("Paused", -1, true);
             }
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -1692,7 +1692,7 @@ public class QuizManager
         }
 
         Quiz.Room.TreasureRooms = GenerateTreasureRooms(Quiz.ValidSourcesForLooting);
-        // await HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceivePyramidEntered");
+        // HubContext.Clients.Clients(Quiz.Room.AllPlayerConnectionIds.Values).SendAsync("ReceivePyramidEntered");
 
         // todo
     }
@@ -1775,7 +1775,7 @@ public class QuizManager
         player.LootingInfo.X = newX;
         player.LootingInfo.Y = newY;
 
-        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values.Where(x => x != connectionId))
+        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values.Where(x => x != connectionId))
             .SendAsync("ReceiveUpdatePlayerLootingInfo",
                 player.Id,
                 player.LootingInfo with { Inventory = new List<Treasure>() },
@@ -1807,13 +1807,13 @@ public class QuizManager
                         player.LootingInfo.Inventory.Add(treasure);
                         treasureRoom.Treasures.Remove(treasure);
 
-                        await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+                        HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                             .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
 
-                        await HubContext.Clients.Clients(session.ConnectionId!)
+                        HubContext.Clients.Clients(session.ConnectionId!)
                             .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
-                        await HubContext.Clients.Clients(session.ConnectionId!)
+                        HubContext.Clients.Clients(session.ConnectionId!)
                             .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo, false);
                     }
                 }
@@ -1858,13 +1858,13 @@ public class QuizManager
             player.LootingInfo.Inventory.Remove(treasure);
             treasureRoom.Treasures.Add(treasure with { Position = new Point(newX, newY) });
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateTreasureRoom", treasureRoom);
 
-            await HubContext.Clients.Clients(session.ConnectionId!)
+            HubContext.Clients.Clients(session.ConnectionId!)
                 .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
-            await HubContext.Clients.Clients(session.ConnectionId!)
+            HubContext.Clients.Clients(session.ConnectionId!)
                 .SendAsync("ReceiveUpdatePlayerLootingInfo", player.Id, player.LootingInfo, false);
         }
     }
@@ -1884,7 +1884,7 @@ public class QuizManager
             player.LootingInfo.X == treasureRoomCoords.X && player.LootingInfo.Y == treasureRoomCoords.Y;
         if (alreadyInTheRoom)
         {
-            await HubContext.Clients.Clients(session.ConnectionId!)
+            HubContext.Clients.Clients(session.ConnectionId!)
                 .SendAsync("ReceiveUpdatePlayerLootingInfo",
                     player.Id,
                     player.LootingInfo,
@@ -1928,20 +1928,20 @@ public class QuizManager
                 player.LootingInfo.X = newX;
                 player.LootingInfo.Y = newY;
 
-                await HubContext.Clients.Clients(session.ConnectionId!)
+                HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdateTreasureRoom", newTreasureRoom);
 
-                await HubContext.Clients.Clients(session.ConnectionId!)
+                HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdateRemainingMs", Quiz.QuizState.RemainingMs);
 
-                await HubContext.Clients.Clients(session.ConnectionId!)
+                HubContext.Clients.Clients(session.ConnectionId!)
                     .SendAsync("ReceiveUpdatePlayerLootingInfo",
                         player.Id,
                         player.LootingInfo,
                         true
                     );
 
-                await HubContext.Clients
+                HubContext.Clients
                     .Clients(Quiz.Room.AllConnectionIds.Values.Where(x => x != session.ConnectionId))
                     .SendAsync("ReceiveUpdatePlayerLootingInfo",
                         player.Id,
@@ -1980,7 +1980,7 @@ public class QuizManager
                 player.IsSkipping = true;
             }
 
-            await HubContext.Clients.Clients(connectionId)
+            HubContext.Clients.Clients(connectionId)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
             await TriggerSkipIfNecessary();
         }
@@ -2019,7 +2019,7 @@ public class QuizManager
                 p.IsSkipping = false;
             }
 
-            await HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
+            HubContext.Clients.Clients(Quiz.Room.AllConnectionIds.Values)
                 .SendAsync("ReceiveUpdateRoom", Quiz.Room, false, DateTime.UtcNow);
         }
     }
@@ -2032,10 +2032,10 @@ public class QuizManager
         }
 
         // todo
-        // await HubContext.Clients.Clients(connectionId)
+        // HubContext.Clients.Clients(connectionId)
         //     .SendAsync("ReceiveRequestPlayerStatus");
 
-        // await HubContext.Clients.Client(oldConnectionId)
+        // HubContext.Clients.Client(oldConnectionId)
         //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
     }
 
