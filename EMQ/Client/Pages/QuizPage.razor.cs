@@ -159,6 +159,8 @@ public partial class QuizPage
 
     public DateTime LastBufferCheck { get; set; }
 
+    public DateTime LastPhaseChange { get; set; }
+
     public string VisibleVideoElementId
     {
         get
@@ -469,10 +471,12 @@ public partial class QuizPage
                             throw new ArgumentOutOfRangeException();
                     }
 
-                    if (phaseChanged || forcePhaseChange)
+                    if (DateTime.UtcNow - LastPhaseChange > TimeSpan.FromMilliseconds(500) &&
+                        (phaseChanged || forcePhaseChange))
                     {
+                        LastPhaseChange = DateTime.UtcNow;
                         Console.WriteLine(
-                            $"{oldSp}{(QuizPhaseKind)oldPhase} -> " +
+                            $"{DateTime.UtcNow:O} {oldSp}{(QuizPhaseKind)oldPhase} -> " +
                             $"{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
                         await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
                     }
