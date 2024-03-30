@@ -294,7 +294,6 @@ public class QuizManager
 
     private async Task EnterResultsPhase()
     {
-        // send answers again to make sure everyone receives late answers
         TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Songs[Quiz.QuizState.sp],
             Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
@@ -303,6 +302,7 @@ public class QuizManager
         // wait a little for these messages to reach players, otherwise it looks really janky
         await Task.Delay(TimeSpan.FromMilliseconds(150));
 
+        // send answers again to make sure everyone receives late answers
         TypedQuizHub.ReceivePlayerGuesses(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Room.PlayerGuesses);
 
