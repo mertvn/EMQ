@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -61,6 +61,7 @@ public class QuizManager
 
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
+            var tickStart = DateTime.UtcNow; // todo? this might not be precise enough
             if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
             {
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
@@ -112,6 +113,13 @@ public class QuizManager
                 {
                     Quiz.IsTimerRunning = true;
                 }
+            }
+
+            var tickEnd = DateTime.UtcNow;
+            double tickMs = (tickEnd - tickStart).TotalMilliseconds;
+            if (tickMs > Quiz.TickRate)
+            {
+                Console.WriteLine($"Can't keep up! {tickMs} ms");
             }
         }
     }
