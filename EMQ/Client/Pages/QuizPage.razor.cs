@@ -27,27 +27,9 @@ public partial class QuizPage
     {
         _handlers = new()
         {
-            {
-                "ReceiveQuizStarted", (Array.Empty<Type>(), async _ =>
-                {
-                    await OnReceiveQuizStarted();
-                    return "ack";
-                })
-            },
-            {
-                "ReceiveQuizEnded", (Array.Empty<Type>(), async _ =>
-                {
-                    await OnReceiveQuizEnded();
-                    return "ack";
-                })
-            },
-            {
-                "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ =>
-                {
-                    await OnReceiveQuizCanceled();
-                    return "ack";
-                })
-            },
+            { "ReceiveQuizStarted", (Array.Empty<Type>(), async _ => { await OnReceiveQuizStarted(); }) },
+            { "ReceiveQuizEnded", (Array.Empty<Type>(), async _ => { await OnReceiveQuizEnded(); }) },
+            { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
             {
                 "ReceiveCorrectAnswer", (
                     new Type[] { typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, string>) },
@@ -56,7 +38,6 @@ public partial class QuizPage
                         await OnReceiveCorrectAnswer((Song)param[0]!,
                             (Dictionary<int, List<Label>>)param[1]!,
                             (Dictionary<int, string>)param[2]!);
-                        return "ack";
                     })
             },
             {
@@ -64,16 +45,11 @@ public partial class QuizPage
                     async param =>
                     {
                         await OnReceiveUpdateRoom((Room)param[0]!, (bool)param[1]!, (DateTime)param[2]!);
-                        return "ack";
                     })
             },
             {
                 "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, string>) },
-                    async param =>
-                    {
-                        await OnReceivePlayerGuesses((Dictionary<int, string>)param[0]!);
-                        return "ack";
-                    })
+                    async param => { await OnReceivePlayerGuesses((Dictionary<int, string>)param[0]!); })
             },
         };
 
@@ -84,7 +60,7 @@ public partial class QuizPage
         _clientSongs = new List<Song?>(new Song[Room?.Quiz?.QuizState.NumSongs ?? 1000]) { };
     }
 
-    private readonly Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> _handlers;
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
 
     public class QuizPageState
     {
