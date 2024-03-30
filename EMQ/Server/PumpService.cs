@@ -59,7 +59,7 @@ public sealed class PumpService : BackgroundService
 
             while (!ServerState.PumpThreads.ContainsKey(playerId))
             {
-                Console.WriteLine($"{DateTime.UtcNow:O} attempting to create thread for {playerId}");
+                // Console.WriteLine($"{DateTime.UtcNow:O} attempting to create thread for p{playerId}");
                 ServerState.PumpThreads.TryAdd(playerId, thread);
             }
 
