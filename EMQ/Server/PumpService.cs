@@ -94,6 +94,13 @@ public sealed class PumpService : BackgroundService
                     while (queue.TryDequeue(out var message))
                     {
                         sentAtLeastOneMessage = true;
+
+                        if (message.Target == "ReceiveCorrectAnswer")
+                        {
+                            Console.WriteLine(
+                                $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
+                        }
+
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         _hubContext.Clients.Client(session.ConnectionId!)
                             .SendCoreAsync(message.Target, message.Arguments, token).GetAwaiter().GetResult();
