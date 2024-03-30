@@ -95,11 +95,11 @@ public sealed class PumpService : BackgroundService
                     {
                         sentAtLeastOneMessage = true;
 
-                        if (message.Target == "ReceiveCorrectAnswer")
-                        {
-                            Console.WriteLine(
-                                $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
-                        }
+                        // if (message.Target == "ReceiveCorrectAnswer")
+                        // {
+                        //     Console.WriteLine(
+                        //         $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
+                        // }
 
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         _hubContext.Clients.Client(session.ConnectionId!)
