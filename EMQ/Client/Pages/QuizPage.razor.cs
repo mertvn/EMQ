@@ -295,7 +295,11 @@ public partial class QuizPage
             return;
         }
 
-        ClientSongsHistory.Add(Room!.Quiz!.QuizState.sp, new SongHistory { Song = correctAnswer }); // hack
+        if (!ClientSongsHistory.ContainsKey(Room!.Quiz!.QuizState.sp))
+        {
+            ClientSongsHistory.Add(Room!.Quiz!.QuizState.sp, new SongHistory { Song = correctAnswer }); // hack
+        }
+
         _correctAnswerPlayerLabels = playerLabels;
         _playerGuesses = playerGuesses;
     }
