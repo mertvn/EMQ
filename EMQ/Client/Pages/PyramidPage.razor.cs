@@ -22,23 +22,37 @@ public partial class PyramidPage
                     {
                         await OnReceiveUpdatePlayerLootingInfo((int)param[0]!, (PlayerLootingInfo)param[1]!,
                             (bool)param[2]!);
+                        return "ack";
                     })
             },
             {
                 "ReceiveUpdateTreasureRoom", (new Type[] { typeof(TreasureRoom), },
-                    async param => { await OnReceiveUpdateTreasureRoom((TreasureRoom)param[0]!); })
+                    async param =>
+                    {
+                        await OnReceiveUpdateTreasureRoom((TreasureRoom)param[0]!);
+                        return "ack";
+                    })
             },
             {
-                "ReceiveUpdateRemainingMs",
-                (new Type[] { typeof(float) }, async param => { await OnReceiveUpdateRemainingMs((float)param[0]!); })
+                "ReceiveUpdateRemainingMs", (new Type[] { typeof(float) }, async param =>
+                {
+                    await OnReceiveUpdateRemainingMs((float)param[0]!);
+                    return "ack";
+                })
             },
-            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
+            {
+                "ReceiveQuizEntered", (new Type[] { }, async _ =>
+                {
+                    await OnReceiveQuizEntered();
+                    return "ack";
+                })
+            },
         };
     }
 
     private Room? Room { get; set; }
 
-    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> _handlers;
 
     private TreasureRoomComponent _treasureRoomComponentRef = null!;
 

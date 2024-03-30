@@ -99,11 +99,26 @@ public sealed class PumpService : BackgroundService
                         // {
                         //     Console.WriteLine(
                         //         $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
+
+                        string? ret = _hubContext.Clients.Client(session.ConnectionId!)
+                            .InvokeCoreAsync<string?>(message.Target, message.Arguments, token).GetAwaiter()
+                            .GetResult();
+
+                        if (!string.IsNullOrEmpty(ret) && ret == "ack")
+                        {
+                            // Console.WriteLine($"{DateTime.UtcNow:O} ack");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{DateTime.UtcNow:O} did not receive ack @@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                        }
+
+                        // continue;
                         // }
 
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
-                        _hubContext.Clients.Client(session.ConnectionId!)
-                            .SendCoreAsync(message.Target, message.Arguments, token).GetAwaiter().GetResult();
+                        // _hubContext.Clients.Client(session.ConnectionId!)
+                        //     .SendCoreAsync(message.Target, message.Arguments, token).GetAwaiter().GetResult();
                     }
                 }
 

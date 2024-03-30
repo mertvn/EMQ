@@ -26,7 +26,8 @@ public class ClientConnectionManager
     [Inject]
     private HttpClient Client { get; set; }
 
-    private Dictionary<string, (Type[] types, Func<object?[], Task> value)> CurrentHandlers { get; set; } = new();
+    private Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> CurrentHandlers { get; set; } =
+        new();
 
     public bool IsConnected =>
         ClientState.Session?.hubConnection?.State == HubConnectionState.Connected;
@@ -70,7 +71,8 @@ public class ClientConnectionManager
         }
     }
 
-    private async Task EnsureHubConnection(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
+    private async Task EnsureHubConnection(
+        Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> handlers)
     {
         if (ClientState.Session!.hubConnection is null ||
             ClientState.Session.hubConnection.State is not
@@ -103,14 +105,14 @@ public class ClientConnectionManager
         Logger.LogInformation("HubConnectionState=Connected");
     }
 
-    public async Task SetHandlers(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
+    public async Task SetHandlers(Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> handlers)
     {
         CurrentHandlers.Clear();
         await EnsureHubConnection(handlers);
         CurrentHandlers = handlers;
     }
 
-    public void RegisterMethod(string key, Type[] types, Func<object?[], Task> value)
+    public void RegisterMethod(string key, Type[] types, Func<object?[], Task<string?>> value)
     {
         // for (int i = 0; i < types.Length; i++)
         // {
@@ -123,15 +125,24 @@ public class ClientConnectionManager
             CurrentHandlers.Add(key, (types, value));
         }
 
-        // TODO: Use the return value and dispose of old handlers, i think this might be what's causing the double timer tick bug
-        ClientState.Session!.hubConnection!.On(key, types, value);
+        try
+        {
+            ClientState.Session!.hubConnection!.On(key, types, value);
+        }
+        catch (InvalidOperationException)
+        {
+            // this is really dumb
+            ClientState.Session!.hubConnection!.Remove(key);
+            ClientState.Session!.hubConnection!.On(key, types, value);
+        }
+
         Logger.LogInformation("Registered method {Key}", key);
     }
 
-    private void RegisterMethods(Dictionary<string, (Type[] types, Func<object?[], Task> value)> handlers)
+    private void RegisterMethods(Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> handlers)
     {
         Logger.LogInformation($"Registering {handlers.Count} methods");
-        foreach ((string key, (Type[] types, Func<object?[], Task> value)) in handlers)
+        foreach ((string key, (Type[] types, Func<object?[], Task<string?>> value)) in handlers)
         {
             // Logger.LogInformation($"CurrentHandlers: {JsonSerializer.Serialize(CurrentHandlers.Select(x => x.Key))}");
             // if (!CurrentHandlers.ContainsKey(key))

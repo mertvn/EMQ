@@ -20,22 +20,50 @@ public partial class RoomPage
 {
     public RoomPage()
     {
-        _handlers = new Dictionary<string, (Type[] types, Func<object?[], Task> value)>
+        _handlers = new()
         {
-            { "ReceivePlayerJoinedRoom", (new Type[] { }, async _ => { await OnReceivePlayerJoinedRoom(); }) },
-            { "ReceiveQuizEntered", (new Type[] { }, async _ => { await OnReceiveQuizEntered(); }) },
-            { "ReceivePyramidEntered", (new Type[] { }, async _ => { await OnReceivePyramidEntered(); }) },
+            {
+                "ReceivePlayerJoinedRoom", (new Type[] { }, async _ =>
+                {
+                    await OnReceivePlayerJoinedRoom();
+                    return "ack";
+                })
+            },
+            {
+                "ReceiveQuizEntered", (new Type[] { }, async _ =>
+                {
+                    await OnReceiveQuizEntered();
+                    return "ack";
+                })
+            },
+            {
+                "ReceivePyramidEntered", (new Type[] { }, async _ =>
+                {
+                    await OnReceivePyramidEntered();
+                    return "ack";
+                })
+            },
             {
                 "ReceiveUpdateRoomForRoom", (new Type[] { typeof(Room) },
-                    async param => { await OnReceiveUpdateRoomForRoom((Room)param[0]!); })
+                    async param =>
+                    {
+                        await OnReceiveUpdateRoomForRoom((Room)param[0]!);
+                        return "ack";
+                    })
             },
-            { "ReceiveKickedFromRoom", (new Type[] { }, async _ => { await OnReceiveKickedFromRoom(); }) },
+            {
+                "ReceiveKickedFromRoom", (new Type[] { }, async _ =>
+                {
+                    await OnReceiveKickedFromRoom();
+                    return "ack";
+                })
+            },
         };
     }
 
     private Room? Room { get; set; }
 
-    private readonly Dictionary<string, (Type[] types, Func<object?[], Task> value)> _handlers;
+    private readonly Dictionary<string, (Type[] types, Func<object?[], Task<string?>> value)> _handlers;
 
     public bool IsStartingQuiz { get; set; }
 
