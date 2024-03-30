@@ -104,6 +104,7 @@ public sealed class PumpService : BackgroundService
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         _hubContext.Clients.Client(session.ConnectionId!)
                             .SendCoreAsync(message.Target, message.Arguments, token).GetAwaiter().GetResult();
+                        Thread.Sleep(5); // let clients render i guess
                     }
                 }
 

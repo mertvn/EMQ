@@ -294,6 +294,21 @@ public class QuizManager
 
     private async Task EnterResultsPhase()
     {
+        // send answers again to make sure everyone receives late answers
+        TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
+            Quiz.Songs[Quiz.QuizState.sp],
+            Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
+            Quiz.Room.PlayerGuesses);
+
+        // wait a little for these messages to reach players, otherwise it looks really janky
+        await Task.Delay(TimeSpan.FromMilliseconds(150));
+
+        TypedQuizHub.ReceivePlayerGuesses(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
+            Quiz.Room.PlayerGuesses);
+
+        // wait a little for these messages to reach players, otherwise it looks really janky
+        await Task.Delay(TimeSpan.FromMilliseconds(150));
+
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
 
@@ -301,11 +316,6 @@ public class QuizManager
         {
             player.IsBuffered = false;
         }
-
-        TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
-            Quiz.Songs[Quiz.QuizState.sp],
-            Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
-            Quiz.Room.PlayerGuesses);
 
         TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
             true);
@@ -362,7 +372,7 @@ public class QuizManager
     private async Task JudgeGuesses()
     {
         // don't make this delay configurable (at least not for regular users)
-        await Task.Delay(TimeSpan.FromSeconds(2)); // add suspense & wait for late guesses
+        await Task.Delay(TimeSpan.FromMilliseconds(1400)); // add suspense & wait for late guesses
 
         var song = Quiz.Songs.ElementAtOrDefault(Quiz.QuizState.sp);
         if (song == null)
