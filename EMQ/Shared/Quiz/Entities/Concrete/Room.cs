@@ -42,9 +42,6 @@ public sealed class Room : IDisposable
 
     public DateTime CreatedAt { get; }
 
-    [JsonIgnore]
-    public ConcurrentDictionary<int, string> AllConnectionIds { get; set; } = new();
-
     public TreasureRoom[][] TreasureRooms { get; set; } = Array.Empty<TreasureRoom[]>();
 
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();

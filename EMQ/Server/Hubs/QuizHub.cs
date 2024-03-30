@@ -48,7 +48,6 @@ public class QuizHub : Hub
                     room.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
                         session.Player.Id);
 
-                    room.AllConnectionIds[session.Player.Id] = newConnectionId!;
                     if (room.Quiz != null)
                     {
                         var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
@@ -228,7 +227,6 @@ public class QuizHub : Hub
                 if (player != null)
                 {
                     room.RemovePlayer(player);
-                    room.AllConnectionIds.Remove(player.Id, out _);
                     room.Log($"{player.Username} left the room.", player.Id, true);
 
                     if (room.Quiz != null &&
@@ -273,14 +271,11 @@ public class QuizHub : Hub
                 {
                     var spectator = room.Spectators.Single(spectator => spectator.Id == session.Player.Id);
                     room.RemoveSpectator(spectator);
-                    room.AllConnectionIds.Remove(spectator.Id, out _);
                     room.Log($"{spectator.Username} stopped spectating.", spectator.Id, true);
                 }
 
-                await Clients.Clients(Context.ConnectionId)
-                    .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
-                await Clients.Clients(room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+                TypedQuizHub.ReceiveUpdateRoom(new[] { session.Player.Id }, room, false);
+                TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
             else
             {
@@ -465,8 +460,7 @@ public class QuizHub : Hub
                     if (room.QuizSettings.IsHotjoinEnabled && !room.HotjoinQueue.Contains(session.Player))
                     {
                         room.HotjoinQueue.Enqueue(session.Player);
-                        await Clients.Clients(Context.ConnectionId)
-                            .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
+                        TypedQuizHub.ReceiveUpdateRoom(new[] { session.Player.Id }, room, false);
                     }
                 }
                 else
@@ -494,8 +488,7 @@ public class QuizHub : Hub
             if (room != null)
             {
                 session.Player.IsReadiedUp = !session.Player.IsReadiedUp;
-                await Clients.Clients(room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+                TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
             else
             {
@@ -523,8 +516,7 @@ public class QuizHub : Hub
                     room.RemoveSpectator(player);
                     room.Log($"{player.Username} converted to player.", player.Id, true);
 
-                    await Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
                 else
                 {
@@ -557,8 +549,7 @@ public class QuizHub : Hub
                     room.RemovePlayer(player);
                     room.Log($"{player.Username} converted to spectator.", player.Id, true);
 
-                    await Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
                 else
                 {
@@ -589,8 +580,7 @@ public class QuizHub : Hub
                 {
                     room.Owner = targetPlayer;
                     room.Log($"{targetPlayer.Username} is the new owner.", -1, true);
-                    await Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
                 else
                 {
@@ -621,17 +611,10 @@ public class QuizHub : Hub
                 if (targetPlayer != null)
                 {
                     room.RemovePlayer(targetPlayer);
-                    room.AllConnectionIds.Remove(targetPlayer.Id, out string? targetPlayerConnectionId);
                     room.Log($"{targetPlayer.Username} was kicked from the room.", targetPlayer.Id, true);
 
-                    if (!string.IsNullOrWhiteSpace(targetPlayerConnectionId))
-                    {
-                        await Clients.Clients(targetPlayerConnectionId)
-                            .SendAsync("ReceiveKickedFromRoom");
-                    }
-
-                    await Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveKickedFromRoom(new[] { targetPlayer.Id });
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
                 else
                 {

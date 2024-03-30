@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Business;
+using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace EMQ.Server;
 
@@ -33,6 +35,10 @@ public static class ServerState
     public static bool IsSubmissionDisabled { get; set; } = false;
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
+
+    public static readonly ConcurrentDictionary<int, ConcurrentQueue<InvocationMessage>> PumpMessages = new();
+
+    public static readonly ConcurrentDictionary<int, Thread> PumpThreads = new();
 
     private static string? s_gitHash;
 
@@ -130,7 +136,6 @@ public static class ServerState
             if (oldRoomPlayer is not null)
             {
                 oldRoomPlayer.RemovePlayer(session.Player);
-                oldRoomPlayer.AllConnectionIds.Remove(session.Player.Id, out _);
                 oldRoomPlayer.Log($"{session.Player.Username} left the room.", -1, true);
 
                 if (!oldRoomPlayer.Players.Any())
@@ -141,7 +146,6 @@ public static class ServerState
             else if (oldRoomSpec is not null)
             {
                 oldRoomSpec.RemoveSpectator(session.Player);
-                oldRoomSpec.AllConnectionIds.Remove(session.Player.Id, out _);
                 oldRoomSpec.Log($"{session.Player.Username} left the room.", -1, true);
 
                 if (!oldRoomSpec.Players.Any())

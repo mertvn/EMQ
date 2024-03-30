@@ -15,7 +15,6 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
@@ -26,12 +25,10 @@ namespace EMQ.Server.Controllers;
 public class QuizController : ControllerBase
 {
     private readonly ILogger<QuizController> _logger;
-    private readonly IHubContext<QuizHub> _hubContext;
 
-    public QuizController(ILogger<QuizController> logger, IHubContext<QuizHub> hubContext)
+    public QuizController(ILogger<QuizController> logger)
     {
         _logger = logger;
-        _hubContext = hubContext;
     }
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
@@ -251,7 +248,6 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation($"Removed player {player.Id} from room " + oldRoomPlayer.Id);
                 oldRoomPlayer.RemovePlayer(player);
-                oldRoomPlayer.AllConnectionIds.Remove(player.Id, out _);
                 oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
 
                 if (!oldRoomPlayer.Players.Any())
@@ -272,7 +268,6 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation($"Removed spectator {player.Id} from room " + oldRoomSpec.Id);
                 oldRoomSpec.RemoveSpectator(player);
-                oldRoomSpec.AllConnectionIds.Remove(player.Id, out _);
                 oldRoomSpec.Log($"{player.Username} left the room.", -1, true);
             }
 
@@ -280,29 +275,25 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id}", player.Id, room.Id);
                 room.Players.Enqueue(player);
-                room.AllConnectionIds[player.Id] = session.ConnectionId!;
 
                 // we don't want to show this message right after room creation
                 if (room.Players.Count > 1)
                 {
                     room.Log($"{player.Username} joined the room.", -1, true);
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
             }
             else
             {
                 _logger.LogInformation("Added p{player.Id} to r{room.Id} as a spectator", player.Id, room.Id);
                 room.Spectators.Enqueue(player);
-                room.AllConnectionIds[player.Id] = session.ConnectionId!;
                 room.Log($"{player.Username} started spectating.", -1, true);
             }
 
             // let every other player in the room know that a new player joined,
             // we can't send this message to the joining player because their room page hasn't initialized yet
-            await _hubContext.Clients.Clients(room.AllConnectionIds
-                    .Where(x => x.Value != session.ConnectionId).Select(x => x.Value))
-                .SendAsync("ReceivePlayerJoinedRoom");
+            TypedQuizHub.ReceivePlayerJoinedRoom(
+                room.Players.Concat(room.Spectators).Where(x => x.Id != session.Player.Id).Select(x => x.Id));
 
             return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
         }
@@ -346,7 +337,7 @@ public class QuizController : ControllerBase
 
                     var quiz = new Quiz(room, Guid.NewGuid());
                     room.Quiz = quiz;
-                    var quizManager = new QuizManager(quiz, _hubContext);
+                    var quizManager = new QuizManager(quiz);
                     ServerState.AddQuizManager(quizManager);
                     room.Log("Created");
                     // room.Log(JsonSerializer.Serialize(room.QuizSettings, Utils.JsoIndented));
@@ -363,15 +354,14 @@ public class QuizController : ControllerBase
                             "No songs match the current filters - canceling quiz",
                             writeToChat: true);
                         await quizManager.CancelQuiz();
-                        await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                            .SendAsync("ReceiveUpdateRoomForRoom", room);
+                        TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id),
+                            room);
                     }
                 }
                 else
                 {
                     room.Log("Server is in read-only mode.", writeToChat: true);
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
             }
             else
@@ -420,8 +410,7 @@ public class QuizController : ControllerBase
                         room.Log(d, writeToChat: true);
                     }
 
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
 
                     return Ok();
                 }
@@ -474,10 +463,8 @@ public class QuizController : ControllerBase
                     var chatMessage = new ChatMessage(req.Contents, player);
                     room.Chat.Enqueue(chatMessage);
                     // todo we should only need 1 method here after a SignalR refactor
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+                    TypedQuizHub.ReceiveUpdateRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room, false);
                     _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
                 }
             }
@@ -522,8 +509,8 @@ public class QuizController : ControllerBase
                         if (room.Quiz.QuizState.sp >= 0 && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
-                            await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                                .SendAsync("ReceiveUpdateRoom", room, false, DateTime.UtcNow);
+                            TypedQuizHub.ReceiveUpdateRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room,
+                                false);
                             await qm.EndQuiz();
                         }
                     }
@@ -620,8 +607,7 @@ public class QuizController : ControllerBase
                 _logger.LogInformation("Changed room name and password {room.Id} {room.Name} {room.Password}", room.Id,
                     room.Name, room.Password);
                 room.Log("Room name and password changed.", -1, true);
-                await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+                TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
             else
             {
@@ -695,8 +681,7 @@ public class QuizController : ControllerBase
                 if ((currentTeamSize + 1) <= room.QuizSettings.TeamSize)
                 {
                     player.TeamId = requestedTeamId;
-                    await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                        .SendAsync("ReceiveUpdateRoomForRoom", room);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                     return Ok();
                 }
             }
@@ -734,8 +719,7 @@ public class QuizController : ControllerBase
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
             {
                 player.NGMCGuessesInitial = requestedGuesses;
-                await _hubContext.Clients.Clients(room.AllConnectionIds.Values)
-                    .SendAsync("ReceiveUpdateRoomForRoom", room);
+                TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 return Ok();
             }
             else

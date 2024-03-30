@@ -183,6 +183,7 @@ builder.Services.AddHsts(options =>
 
 builder.Services.AddHostedService<CleanupService>();
 builder.Services.AddHostedService<OpportunisticGcService>();
+builder.Services.AddHostedService<PumpService>();
 builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
 

@@ -59,7 +59,6 @@ public sealed class CleanupService : BackgroundService
                     Console.WriteLine(
                         $"Cleaning up p{inactiveSession.Player.Id} {inactiveSession.Player.Username} from r{room.Id} {room.Name}");
 
-                    room.AllConnectionIds.Remove(inactiveSession.Player.Id, out _);
                     room.Log($"{inactiveSession.Player.Username} was removed from the room due to inactivity.", -1,
                         true);
 
