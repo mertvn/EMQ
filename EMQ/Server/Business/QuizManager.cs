@@ -117,7 +117,7 @@ public class QuizManager
 
             var tickEnd = DateTime.UtcNow;
             double tickMs = (tickEnd - tickStart).TotalMilliseconds;
-            if (tickMs > Quiz.TickRate)
+            if (Quiz.QuizState.QuizStatus == QuizStatus.Playing && Quiz.QuizState.sp > 0 && tickMs > Quiz.TickRate)
             {
                 Console.WriteLine($"Can't keep up! {tickMs} ms");
             }
