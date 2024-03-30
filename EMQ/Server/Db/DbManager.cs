@@ -1538,7 +1538,7 @@ public static class DbManager
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             AutocompleteMst[] res = (await connection.QueryAsync<AutocompleteMst>(sqlAutocompleteMst))
-                .Where(x => x != null)
+                .Where(x => x != null!)
                 .OrderBy(x => x.MSTLatinTitle)
                 .ToArray();
 
@@ -1593,6 +1593,41 @@ public static class DbManager
         }
     }
 
+    public static async Task<string> SelectAutocompleteMt()
+    {
+        const string sqlAutocompleteMt =
+            @"SELECT DISTINCT music_id AS mId, mt.latin_title AS mtLatinTitle, '' AS mtLatinTitleNormalized
+            FROM music_title mt
+            WHERE music_id = ANY(@validMids)
+            ";
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+                .GroupBy(x => x.Item1)
+                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+            List<int> validMids = mids
+                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Select(z => z.Key)
+                .ToList();
+
+            AutocompleteMt[] res = (await connection.QueryAsync<AutocompleteMt>(sqlAutocompleteMt, new { validMids }))
+                .Where(x => x != null!)
+                .OrderBy(x => x.MTLatinTitle)
+                .ToArray();
+
+            foreach (var re in res)
+            {
+                re.MTLatinTitleNormalized = re.MTLatinTitle.NormalizeForAutocomplete();
+            }
+
+            string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
+            return autocomplete;
+        }
+    }
+
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)
     {
         List<Song> songs = new();
@@ -1635,6 +1670,14 @@ public static class DbManager
         // Persona 4: The Ultimax Ultra Suplex Hold and Persona 4: The Ultimate in Mayonaka Arena
         // and they share at least one song together
         return songs.DistinctBy(x => x.Id);
+    }
+
+    /// Only searches by LatinTitle for now.
+    public static async Task<IEnumerable<Song>> FindSongsBySongTitle(string songTitle)
+    {
+        var songs = await SelectSongs(new Song { Titles = new List<Title> { new() { LatinTitle = songTitle } } },
+            false);
+        return songs;
     }
 
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceCategories(

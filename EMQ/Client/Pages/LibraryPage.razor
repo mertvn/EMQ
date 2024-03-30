@@ -80,6 +80,7 @@
         <Items>
             <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteMt">Search by song title</Blazorise.Tab>
             <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
             <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
             <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
@@ -103,6 +104,15 @@
                                         @bind-Guess="@selectedArtist"
                                         Callback="SelectedResultChangedA">
                 </AutocompleteAComponent>
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabAutocompleteMt">
+                <AutocompleteMtComponent Placeholder="Enter song title here"
+                                        FreeTyping="true"
+                                        IsDisabled="false"
+                                        IsQuizPage="false"
+                                        @bind-Guess="@selectedMusicTitle"
+                                        Callback="SelectedResultChangedMt">
+                </AutocompleteMtComponent>
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabVndbAdvsearch">
                 <p>Enter either full VNDB search URL or just the f parameter. Only VN search is supported at the moment.</p>

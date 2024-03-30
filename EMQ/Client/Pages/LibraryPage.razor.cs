@@ -24,6 +24,8 @@ public partial class LibraryPage
 
     public AutocompleteA? selectedArtist { get; set; }
 
+    public string? selectedMusicTitle { get; set; }
+
     public List<Song> CurrentSongs { get; set; } = new();
 
     public string NoSongsText { get; set; } = "";
@@ -129,6 +131,33 @@ public partial class LibraryPage
                 {
                     CurrentSongs = songs;
                     selectedArtist = null;
+                }
+            }
+
+            NoSongsText = "No results.";
+
+            await StateHasChangedAsync();
+            await TabsComponentVndb!.SelectTab("TabVNDB");
+        }
+    }
+
+    public async Task SelectedResultChangedMt()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedMusicTitle))
+        {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
+            var req = new ReqFindSongsBySongTitle(selectedMusicTitle);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsBySongTitle", req);
+            if (res.IsSuccessStatusCode)
+            {
+                List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                if (songs != null && songs.Any())
+                {
+                    CurrentSongs = songs;
+                    selectedMusicTitle = null;
                 }
             }
 

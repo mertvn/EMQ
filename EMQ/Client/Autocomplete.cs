@@ -94,4 +94,34 @@ public static class Autocomplete
         // Console.WriteLine(JsonSerializer.Serialize(final));
         return final.Any() ? final.Take(25) : Array.Empty<AutocompleteA>();
     }
+
+    public static IEnumerable<string> SearchAutocompleteMt(AutocompleteMt[] data, string arg)
+    {
+        arg = arg.NormalizeForAutocomplete();
+        // Console.WriteLine(arg);
+
+        if (arg == "")
+        {
+            return Array.Empty<string>();
+        }
+
+        var startsWith = data.Where(x =>
+                x.MTLatinTitleNormalized.StartsWith(arg))
+            .OrderBy(x => x.MTLatinTitle)
+            .ToArray();
+
+        var contains = data.Where(x =>
+                x.MTLatinTitleNormalized.Contains(arg))
+            .OrderBy(x => x.MTLatinTitle)
+            .ToArray();
+
+        var startsWithLT = startsWith.Select(x => x.MTLatinTitle);
+        var containsLT = contains.Select(x => x.MTLatinTitle);
+
+        string[] final = startsWithLT.Concat(containsLT)
+            .Distinct()
+            .ToArray();
+        // Console.WriteLine(JsonSerializer.Serialize(final));
+        return final.Any() ? final.Take(25) : Array.Empty<string>();
+    }
 }

@@ -52,6 +52,15 @@ public class LibraryController : ControllerBase
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
+    [Route("FindSongsBySongTitle")]
+    public async Task<IEnumerable<Song>> FindSongsBySongTitle([FromBody] ReqFindSongsBySongTitle req)
+    {
+        var songs = await DbManager.FindSongsBySongTitle(req.SongTitle);
+        return songs;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
     [Route("FindSongsByArtistTitle")]
     public async Task<IEnumerable<Song>> FindSongsByArtistTitle([FromBody] ReqFindSongsByArtistTitle req)
     {
