@@ -129,7 +129,7 @@ public class ClientConnectionManager
         {
             ClientState.Session!.hubConnection!.On(key, types, value);
         }
-        catch (InvalidOperationException)
+        catch (Exception)
         {
             // this is really dumb
             ClientState.Session!.hubConnection!.Remove(key);
