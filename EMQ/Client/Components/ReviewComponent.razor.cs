@@ -67,32 +67,57 @@ public partial class ReviewComponent
 
     public async Task Onclick_Reject()
     {
-        await SendUpdateReviewQueueItem(ReviewQueueStatus.Rejected);
+        await SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason, ReviewQueueStatus.Rejected);
+        if (reviewingItem.is_video)
+        {
+            var weba = CurrentRQs.FirstOrDefault(x =>
+                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+            if (weba != null)
+            {
+                await SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Rejected);
+            }
+        }
     }
 
     public async Task Onclick_Pending()
     {
-        await SendUpdateReviewQueueItem(ReviewQueueStatus.Pending);
+        await SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason, ReviewQueueStatus.Pending);
+        if (reviewingItem.is_video)
+        {
+            var weba = CurrentRQs.FirstOrDefault(x =>
+                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+            if (weba != null)
+            {
+                await SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Pending);
+            }
+        }
     }
 
     public async Task Onclick_Approve()
     {
-        await SendUpdateReviewQueueItem(ReviewQueueStatus.Approved);
+        await SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason, ReviewQueueStatus.Approved);
+        if (reviewingItem.is_video)
+        {
+            var weba = CurrentRQs.FirstOrDefault(x =>
+                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+            if (weba != null)
+            {
+                await SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Approved);
+            }
+        }
     }
 
-    private async Task SendUpdateReviewQueueItem(ReviewQueueStatus reviewQueueStatus)
+    private async Task SendUpdateReviewQueueItem(RQ item, string? reason, ReviewQueueStatus reviewQueueStatus)
     {
-        var req = new ReqUpdateReviewQueueItem(reviewingId, reviewQueueStatus,
-            reviewingItem!.reason!);
-
+        var req = new ReqUpdateReviewQueueItem(item.id, reviewQueueStatus, reason);
         var res = await _client.PostAsJsonAsync("Mod/UpdateReviewQueueItem", req);
         if (res.IsSuccessStatusCode)
         {
-            var resFindRQ = await _client.PostAsJsonAsync("Library/FindRQ", reviewingId);
+            var resFindRQ = await _client.PostAsJsonAsync("Library/FindRQ", item.id);
             if (resFindRQ.IsSuccessStatusCode)
             {
                 RQ rq = (await resFindRQ.Content.ReadFromJsonAsync<RQ>())!;
-                int index = CurrentRQs.IndexOf(reviewingItem!);
+                int index = CurrentRQs.IndexOf(item);
                 // Console.WriteLine(index);
                 CurrentRQs[index] = rq;
 
