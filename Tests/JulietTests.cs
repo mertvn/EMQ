@@ -181,7 +181,7 @@ public class JulietTests
     }
 
     [Test]
-    public async Task Test_POST_vn_Developers()
+    public async Task Test_POST_vn_GetDevelopersNameByVnId()
     {
         var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
         {
@@ -192,6 +192,20 @@ public class JulietTests
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
         Assert.That(res!.Single().Results.Single().Developers.First().Name == "TYPE-MOON");
+    }
+
+    [Test]
+    public async Task Test_POST_vn_GetDevelopersTypeByVnId()
+    {
+        var res = await Juliet.Api.POST_vn(new ParamPOST_vn()
+        {
+            Fields = new List<FieldPOST_vn>() { FieldPOST_vn.DevelopersType },
+            Filters = new Predicate(FilterField.Id, FilterOperator.Equal, "v1483")
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Developers.First().Type == "co");
     }
 
     [Test]

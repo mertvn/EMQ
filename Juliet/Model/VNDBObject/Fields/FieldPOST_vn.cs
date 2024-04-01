@@ -24,4 +24,16 @@ public enum FieldPOST_vn
 
     [Description("developers.original")]
     DevelopersOriginal,
+
+    [Description("developers.aliases")]
+    DevelopersAliases,
+
+    [Description("developers.lang")]
+    DevelopersLang,
+
+    [Description("developers.type")]
+    DevelopersType,
+
+    [Description("developers.description")]
+    DevelopersDescription,
 }
