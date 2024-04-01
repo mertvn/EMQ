@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Juliet;
 using Juliet.Model.Filters;
 using Juliet.Model.Param;
 using Juliet.Model.VNDBObject;
@@ -246,5 +247,24 @@ public class JulietTests
             new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
         Assert.That(res!.Single().Results.First().Producers.First(x => x.Developer ?? false).Name == "TYPE-MOON");
+    }
+
+    [Test]
+    public async Task Test_POST_producer_Get100AmateurGroups()
+    {
+        var res = await Juliet.Api.POST_producer(new ParamPOST_producer()
+        {
+            Fields = new List<FieldPOST_producer>()
+            {
+                FieldPOST_producer.Id, FieldPOST_producer.Name, FieldPOST_producer.Lang, FieldPOST_producer.Type,
+            },
+            Filters = new Predicate(FilterField.Type, FilterOperator.Equal, "ng"),
+            Exhaust = false,
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Count == Constants.MaxResultsPerPage);
+        Assert.That(res!.Single().Results.All(x => x.Type == "ng"));
     }
 }

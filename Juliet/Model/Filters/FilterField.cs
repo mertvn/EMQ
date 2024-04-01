@@ -15,4 +15,10 @@ public enum FilterField
 
     [Description("vn")]
     Vn,
+
+    [Description("lang")]
+    Lang,
+
+    [Description("type")]
+    Type,
 }

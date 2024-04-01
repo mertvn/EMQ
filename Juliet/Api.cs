@@ -129,6 +129,13 @@ public static class Api
             cancellationToken);
     }
 
+    public static async Task<List<ResPOST<ResPOST_producer>>?> POST_producer(ParamPOST_producer param,
+        CancellationToken? cancellationToken = null)
+    {
+        return await POST_Generic<FieldPOST_producer, ResPOST_producer>(param, new Uri("producer", UriKind.Relative),
+            cancellationToken);
+    }
+
     public static async Task PATCH_ulist(ParamPATCH_ulist param, CancellationToken? cancellationToken = null)
     {
         var requestUri = new Uri($"ulist/{param.Id}", UriKind.Relative);
