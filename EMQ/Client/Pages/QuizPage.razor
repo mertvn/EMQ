@@ -185,10 +185,9 @@
     @* todo Latin vs NonLatin title option *@
     <SongInfoCardComponent Song="@_correctAnswer"/>
 
-    @if (ClientState.Session != null && ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo &&
-         Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))
+    @if (ClientState.Session != null && Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))
     {
-        bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
+        bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session.Player.Id, out var ownPgi);
         if (ownPgiExists)
         {
             @if (ownPgi.PlayerSongStats != null)
@@ -211,7 +210,7 @@
                 </div>
             }
 
-            @if (ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
+            @if (ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo && ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
             {
                 <div class="card" id="spacedRepetitionCard">
                     <div class="card-body">
