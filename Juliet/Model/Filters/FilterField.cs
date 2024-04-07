@@ -21,4 +21,10 @@ public enum FilterField
 
     [Description("type")]
     Type,
+
+    [Description("released")]
+    Released,
+
+    [Description("medium")]
+    Medium,
 }

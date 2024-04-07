@@ -242,8 +242,8 @@ public static class Api
             var res = await Send<ResPOST<TReturn>>(req, cancellationToken);
             if (res != null)
             {
-                Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters,
-                    new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+                // Console.WriteLine("normalized filters: " + JsonSerializer.Serialize(res.NormalizedFilters,
+                //     new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
                 final.Add(res);
                 more = res.More;

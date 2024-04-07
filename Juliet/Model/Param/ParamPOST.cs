@@ -8,8 +8,8 @@ public class ParamPOST<T> : Param
 {
     public IEnumerable<T> Fields { get; set; } = new List<T>();
 
-    [DefaultValue(true)]
-    public bool NormalizedFilters { get; set; } = true;
+    [DefaultValue(false)]
+    public bool NormalizedFilters { get; set; } = false;
 
     [DefaultValue(false)]
     public bool CompactFilters { get; set; } = false;

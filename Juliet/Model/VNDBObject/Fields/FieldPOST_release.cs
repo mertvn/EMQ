@@ -36,4 +36,8 @@ public enum FieldPOST_release
 
     [Description("released")]
     Released,
+
+    // todo media
+    // [Description("medium")]
+    // Medium,
 }
