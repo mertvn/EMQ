@@ -226,7 +226,11 @@ public static class DbManager
 
                 song.Sources = await SelectSongSource(connection, song, selectCategories);
                 song.Artists = await SelectArtist(connection, song, false);
-                CachedSongs[input.Id] = song;
+
+                if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
+                {
+                    CachedSongs[input.Id] = song;
+                }
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));

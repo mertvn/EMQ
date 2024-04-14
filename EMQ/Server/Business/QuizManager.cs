@@ -294,6 +294,8 @@ public class QuizManager
 
     private async Task EnterResultsPhase()
     {
+        // todo wait for every player in the room to have an empty message queue (with timeout like 5s, maybe configurable?) before switching phases
+
         TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Songs[Quiz.QuizState.sp],
             Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,

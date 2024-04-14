@@ -145,11 +145,14 @@ public static class VndbImporter
                 }
                 else
                 {
+                    // todo check if vn has any songs in the db, and insert the new song directly if it doesn't
+                    // ^ only do this if single source
                     PendingSongs.Add(song);
                 }
             }
             else
             {
+                // todo update source and artist data
                 // Console.WriteLine($"skipping existing song: {song}");
             }
         }
