@@ -378,6 +378,13 @@ public class AuthController : ControllerBase
         return ret;
     }
 
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpGet]
+    [Route("Ping")]
+    public void Ping()
+    {
+    }
+
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpPost]

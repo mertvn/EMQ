@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Shared.Core;
@@ -17,6 +19,8 @@ namespace EMQ.Client.Components;
 public partial class ChatComponent
 {
     public ConcurrentQueue<ChatMessage> Chat { get; set; } = new();
+
+    public ConcurrentQueue<ChatMessage> ClientChat { get; set; } = new();
 
     public string ChatInputText { get; set; } = "";
 
@@ -62,12 +66,72 @@ public partial class ChatComponent
             {
                 if (ChatInputText.Length <= Constants.MaxChatMessageLength)
                 {
-                    var req = new ReqSendChatMessage(session.Token, ChatInputText);
-                    ChatInputText = "";
-                    var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
-                    if (res.IsSuccessStatusCode)
+                    bool isCommandMessage = ChatInputText.StartsWith('/');
+                    if (isCommandMessage)
                     {
-                        await SyncChat();
+                        ChatMessage? message = null;
+                        string[] split = ChatInputText.Split(' ');
+                        string commandId = split[0].Replace("/", "").ToLowerInvariant();
+                        switch (commandId)
+                        {
+                            case "roll":
+                                {
+                                    if (split.Length != 2)
+                                    {
+                                        message = new ChatMessage("Usage: /roll <number>");
+                                    }
+                                    else
+                                    {
+                                        string limitStr = split[1];
+                                        if (int.TryParse(limitStr, out int limit))
+                                        {
+                                            if (limit is > 0 and < int.MaxValue)
+                                            {
+                                                int rolled = Random.Shared.Next(1, limit + 1);
+                                                message = new ChatMessage(rolled.ToString());
+                                            }
+                                        }
+                                    }
+
+                                    break;
+                                }
+                            case "ping":
+                                {
+                                    var stopwatch = new Stopwatch();
+                                    stopwatch.Start();
+                                    var res = await _client.GetAsync("Auth/Ping");
+                                    if (res.IsSuccessStatusCode)
+                                    {
+                                        message = new ChatMessage($"{stopwatch.ElapsedMilliseconds} ms");
+                                    }
+
+                                    stopwatch.Stop();
+                                    break;
+                                }
+                            default:
+                                message = new ChatMessage("Command not found.");
+                                break;
+                        }
+
+                        ChatInputText = "";
+                        if (message != null)
+                        {
+                            ClientChat.Enqueue(message);
+                            await ScrollToEnd();
+                            StateHasChanged();
+                            await ScrollToEnd();
+                            StateHasChanged();
+                        }
+                    }
+                    else
+                    {
+                        var req = new ReqSendChatMessage(session.Token, ChatInputText);
+                        ChatInputText = "";
+                        var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
+                        if (res.IsSuccessStatusCode)
+                        {
+                            await SyncChat();
+                        }
                     }
                 }
             }

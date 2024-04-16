@@ -17,9 +17,10 @@
 
 <div id="chat">
     <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
-        @foreach (ChatMessage chatMessage in Chat)
+        @foreach (ChatMessage chatMessage in Chat.Concat(ClientChat).OrderBy(x => x.Timestamp))
         {
             <div class="chatMessage" style="background-color: black; padding: 5px; margin:5px;">
+                @* <span class="chatMessageTimestamp">@(chatMessage.Timestamp.ToString("O"))</span> *@
                 @if (chatMessage.Sender != null)
                 {
                     <span class="chatMessageSenderName">
