@@ -139,6 +139,17 @@
         Leave
     </button>
 
+    @if (ClientState.Session?.Player != null)
+    {
+        <div style="display: inline-block;">
+            <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+                <Blazorise.Slider style="max-width: 100px;" id="QPVolumeMaster" @bind-Value="@ClientState.Session.Player.Preferences.VolumeMaster" Min="0" Max="100"/>
+                <label for="QPVolumeMaster" style="margin-left: 5px;">Master Volume</label>
+                <br/>
+            </div>
+        </div>
+    }
+
     // todo move to chat component
     @if (Room!.Spectators.Any())
     {

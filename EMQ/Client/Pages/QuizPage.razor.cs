@@ -714,6 +714,8 @@ public partial class QuizPage
                     ClientState.Session.Player.Preferences.VolumeMaster;
                 await _jsRuntime.InvokeVoidAsync("setVideoVolume", VisibleVideoElementId,
                     PageState.CurrentMasterVolumes[VisibleVideoElementId] / 100f);
+
+                await _clientUtils.SavePreferencesToLocalStorage();
             }
 
             if (DateTime.UtcNow - LastSetVideoPlay > TimeSpan.FromMilliseconds(500))
