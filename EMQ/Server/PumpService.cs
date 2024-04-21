@@ -123,7 +123,7 @@ public sealed class PumpService : BackgroundService
         {
             while (ServerState.PumpThreads.ContainsKey(playerId))
             {
-                Console.WriteLine($"{DateTime.UtcNow:O} attempting to remove thread for {playerId}");
+                // Console.WriteLine($"{DateTime.UtcNow:O} attempting to remove thread for {playerId}");
                 ServerState.PumpThreads.TryRemove(playerId, out _);
             }
         }
