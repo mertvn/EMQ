@@ -30,4 +30,7 @@ public enum SongReportKind
 
     [Display(Name = "Vocals under BGM type")]
     VocalsUnderBgm,
+
+    [Display(Name = "Unmarked spoilers")]
+    UunmarkedSpoilers,
 }
