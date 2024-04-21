@@ -134,6 +134,7 @@ public static class DbManager
 
                         song.Id = music.id;
                         song.Type = (SongType)music.type;
+                        song.Attributes = (SongAttributes)music.attributes;
                         song.MusicBrainzRecordingGid = music.musicbrainz_recording_gid;
                         song.Stats = new SongStats()
                         {
@@ -3391,6 +3392,14 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             return await connection.GetAsync<T?>(id);
+        }
+    }
+
+    public static async Task<bool> UpdateEntity<T>(T entity) where T : class
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            return await connection.UpdateAsync(entity);
         }
     }
 

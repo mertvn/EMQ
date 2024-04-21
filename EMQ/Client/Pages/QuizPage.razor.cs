@@ -634,6 +634,13 @@ public partial class QuizPage
                     }
                 }
 
+                if (ClientState.Session.Player.Preferences is { WantsVideo: true, HideSpoilers: true } &&
+                    _currentSong != null && _currentSong.Attributes.HasFlag(SongAttributes.Spoilers))
+                {
+                    // todo undo this, unless player manually toggles the setting
+                    ClientState.Session.Player.Preferences.HideVideo = true;
+                }
+
                 PageState.ProgressValue = 0;
                 PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
                 PageState.VideoPlayerVisibility = true;

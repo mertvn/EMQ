@@ -6,6 +6,7 @@
 
 @if (Song != null)
 {
+    bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
     @if (ClientState.Session != null && Song.Links.Any())
     {
@@ -185,6 +186,25 @@
                         Unique players: @Song.Stats.UniqueUsers
                     </div>
                 }
+
+                <br/>
+                <details>
+                    <summary>Attributes</summary>
+                    @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
+                    {
+                        if (key == SongAttributes.Spoilers) // todo others, eventually
+                        {
+                            string id = $"SongAttribute-{Song.Id}-{key}";
+                            <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod)"
+                                   @bind:get="@Song.Attributes.HasFlag(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            <label for="@id">@key.ToString()</label>
+                            <br/>
+                        }
+                    }
+                </details>
             </div>
 
         </div>

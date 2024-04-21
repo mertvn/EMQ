@@ -57,6 +57,10 @@
                                     <label for="ShowSpacedRepetitionInfo">Show spaced repetition information</label>
                                     <br/>
 
+                                    <InputCheckbox id="HideSpoilers" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.HideSpoilers" style="margin: 5px"></InputCheckbox>
+                                    <label for="HideSpoilers">Hideo videos with spoilers</label>
+                                    <br/>
+
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
                                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
                                         {

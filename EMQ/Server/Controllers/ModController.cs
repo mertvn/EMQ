@@ -260,4 +260,20 @@ public class ModController : ControllerBase
 
         return success ? Ok() : StatusCode(500);
     }
+
+    [CustomAuthorize(PermissionKind.Moderator)] // todo db mod requirement, eventually
+    [HttpPost]
+    [Route("SetSongAttributes")]
+    public async Task<ActionResult> SetSongAttributes([FromBody] Song song)
+    {
+        var music = await DbManager.GetEntity<Music>(song.Id);
+        music!.attributes = (int)song.Attributes;
+        bool success = await DbManager.UpdateEntity(music);
+        if (success)
+        {
+            DbManager.EvictFromSongsCache(song.Id);
+        }
+
+        return success ? Ok() : StatusCode(500);
+    }
 }

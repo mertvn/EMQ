@@ -52,4 +52,27 @@ public partial class SongInfoCardComponent
             await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {song}");
         }
     }
+
+    private async Task OnSongAttributesCheckboxClick(bool value, SongAttributes attribute)
+    {
+        if (value)
+        {
+            Song!.Attributes |= attribute;
+        }
+        else
+        {
+            Song!.Attributes ^= attribute;
+        }
+
+        await SetSongAttributes(Song);
+    }
+
+    private async Task SetSongAttributes(Song song)
+    {
+        var res = await _client.PostAsJsonAsync("Mod/SetSongAttributes", song);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", $"Error setting attributes for {song}");
+        }
+    }
 }

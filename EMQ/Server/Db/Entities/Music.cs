@@ -41,4 +41,7 @@ public class Music
 
     [Required]
     public int stat_uniqueusers { get; set; }
+
+    [Required]
+    public int attributes { get; set; }
 }

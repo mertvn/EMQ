@@ -107,4 +107,7 @@ public class PlayerPreferences
 
     [Required]
     public bool ShowSpacedRepetitionInfo { get; set; } = true;
+
+    [Required]
+    public bool HideSpoilers { get; set; } = true;
 }

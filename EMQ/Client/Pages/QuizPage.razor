@@ -282,6 +282,10 @@
     @if (ClientState.Session != null && ClientState.Session.Player.Preferences.HideVideo && (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
     {
         <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
+        @if (_currentSong != null && _currentSong.Attributes.HasFlag(SongAttributes.Spoilers))
+        {
+            <p style="position: absolute; top: 55%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Contains spoilers!</p>
+        }
     }
 
     <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
