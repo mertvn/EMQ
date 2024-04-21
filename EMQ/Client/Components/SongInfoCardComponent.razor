@@ -200,7 +200,16 @@
                                    @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
                                    @bind:event="oninput"
                                    style="margin: 5px"/>
-                            <label for="@id">@key.ToString()</label>
+                            <label for="@id">
+                                @if (!string.IsNullOrEmpty(key.GetDescription()))
+                                {
+                                    @key.GetDescription()
+                                }
+                                else
+                                {
+                                    @key.ToString()
+                                }
+                            </label>
                             <br/>
                         }
                     }
