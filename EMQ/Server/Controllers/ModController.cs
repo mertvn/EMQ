@@ -286,8 +286,17 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
-        var music = await DbManager.GetEntity<Music>(song.Id);
-        music!.attributes = (int)song.Attributes;
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        var music = (await DbManager.GetEntity<Music>(song.Id))!;
+        Console.WriteLine(
+            $"{session.Player.Username} is setting song attributes for mId {song.Id} {song} from {(SongAttributes)music.attributes} to {song.Attributes}");
+
+        music.attributes = (int)song.Attributes;
         bool success = await DbManager.UpdateEntity(music);
         if (success)
         {
