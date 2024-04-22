@@ -201,6 +201,11 @@ public class ModController : ControllerBase
     [Route("InsertSong")]
     public async Task<ActionResult> InsertSong([FromBody] Song song)
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         int mId = await DbManager.InsertSong(song);
         if (mId > 0)
         {
@@ -226,6 +231,11 @@ public class ModController : ControllerBase
     [Route("OverwriteMusic")]
     public async Task<ActionResult> OverwriteMusic([FromBody] ReqOverwriteMusic req)
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         bool success = await DbManager.OverwriteMusic(req.OldMid, req.NewSong);
         if (success)
         {
@@ -251,6 +261,11 @@ public class ModController : ControllerBase
     [Route("DeleteSong")]
     public async Task<ActionResult> DeleteSong([FromBody] int mId)
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         var music = await DbManager.GetEntity<Music>(mId);
         bool success = await DbManager.DeleteEntity(music!);
         if (success)
@@ -266,6 +281,11 @@ public class ModController : ControllerBase
     [Route("SetSongAttributes")]
     public async Task<ActionResult> SetSongAttributes([FromBody] Song song)
     {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
         var music = await DbManager.GetEntity<Music>(song.Id);
         music!.attributes = (int)song.Attributes;
         bool success = await DbManager.UpdateEntity(music);
