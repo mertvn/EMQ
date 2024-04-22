@@ -15,6 +15,8 @@ public partial class ReviewQueueComponent
 {
     public List<RQ> CurrentRQs { get; set; } = new();
 
+    public static HashSet<int> CurrentPendingRQsMIds { get; set; } = new();
+
     public string CellStyle { get; set; } =
         "max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
 
@@ -28,7 +30,7 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow);
+        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(1));
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {
@@ -37,6 +39,9 @@ public partial class ReviewQueueComponent
             {
                 content.Reverse();
                 CurrentRQs = content;
+                CurrentPendingRQsMIds = content.Where(x => x.status == ReviewQueueStatus.Pending)
+                    .Select(y => y.music_id)
+                    .ToHashSet();
             }
             else
             {

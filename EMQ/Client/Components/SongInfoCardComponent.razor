@@ -214,6 +214,12 @@
                         }
                     }
                 </details>
+
+                @if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(Song.Id))
+                {
+                    <br/>
+                    <span style="color: red">Has pending uploads in the review queue.</span>
+                }
             </div>
 
         </div>
