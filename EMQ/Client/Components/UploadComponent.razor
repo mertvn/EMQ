@@ -10,6 +10,12 @@
 @inject ILogger<Index> _logger
 @inject ClientUtils _clientUtils
 
+@if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(mId))
+{
+    <span style="color: red">Has pending uploads in the review queue.</span>
+    <br/>
+}
+
 <p>
     Allowed formats: @UploadConstants.ValidMediaTypesStr
     <br/>
