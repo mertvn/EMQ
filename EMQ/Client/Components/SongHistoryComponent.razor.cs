@@ -23,6 +23,10 @@ public partial class SongHistoryComponent
 
     private int _previousCount;
 
+    private string SelectedPlayerUsername { get; set; } = "-";
+
+    private bool SessionWasNull { get; set; } = true;
+
     protected override async Task OnParametersSetAsync()
     {
         // Console.WriteLine("paramset songhistory");
@@ -36,6 +40,13 @@ public partial class SongHistoryComponent
             }
 
             _previousCount = newCount;
+        }
+
+        // meh, also doesn't really work for hotjoining players, meeeh
+        if (SessionWasNull && ClientState.Session != null)
+        {
+            SessionWasNull = false;
+            SelectedPlayerUsername = ClientState.Session.Player.Username;
         }
     }
 
@@ -79,6 +90,12 @@ public partial class SongHistoryComponent
     private async Task OnSongHistoryFilterChanged(ChangeEventArgs arg)
     {
         SongHistoryFilter = Enum.Parse<SongHistoryFilterKind>((string)arg.Value!);
+        await CallStateHasChanged();
+    }
+
+    private async Task OnSelectedPlayerUsernameChanged(string value)
+    {
+        SelectedPlayerUsername = value;
         await CallStateHasChanged();
     }
 }

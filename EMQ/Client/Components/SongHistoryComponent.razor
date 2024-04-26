@@ -15,6 +15,16 @@
     <button type="button" class="btn btn-secondary" style="float: right" @onclick="@DownloadSongHistoryJson">
         Download JSON
     </button>
+
+    <br/>
+    <select id="SelectedPlayerUsername" style="margin: 5px" @bind:get="@SelectedPlayerUsername" @bind:set="@OnSelectedPlayerUsernameChanged">
+        <option value="-">-</option>
+        @foreach (string username in PlayerStatsDict.Select(x => x.Value.Username))
+        {
+            <option value="@username">@username</option>
+        }
+    </select>
+    <label for="SelectedPlayerUsername">Player</label>
 </div>
 
 <table class="songHistoryTable" style="width: 100%;">
@@ -28,13 +38,17 @@
     </tr>
     @if (SongsHistory != null)
     {
+        int selectedPlayerId = !string.IsNullOrEmpty(SelectedPlayerUsername)
+            ? PlayerStatsDict.FirstOrDefault(x=> x.Value.Username == SelectedPlayerUsername).Key
+            : 0;
+
         @for (int index = 0; index < SongsHistory.Count; index++)
         {
             if (SongsHistory.TryGetValue(index, out var songHistory))
             {
                 var song = songHistory.Song;
                 string rowBackgroundColor = "initial";
-                bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session?.Player.Id ?? 0, out var ownPgi);
+                bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(selectedPlayerId, out var ownPgi);
                 if (ownPgiExists)
                 {
                     rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
