@@ -1542,7 +1542,10 @@ public class QuizManager
 
     public async Task OnSendGuessChanged(string connectionId, int playerId, string? guess)
     {
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Judgement)
+        // don't allow players to change guesses in shared-guesses teamed games after team guesses have been determined
+        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess || (Quiz.QuizState.Phase is QuizPhaseKind.Judgement &&
+                                                            (Quiz.Room.QuizSettings.TeamSize <= 1 ||
+                                                             Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)))
         {
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
@@ -1572,9 +1575,6 @@ public class QuizManager
                 {
                     // also includes the player themselves
                     var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();
-                    IEnumerable<string> teammateConnectionIds = ServerState.Sessions
-                        .Where(x => teammates.Select(y => y.Id).Contains(x.Player.Id))
-                        .Select(z => z.ConnectionId)!;
 
                     var teammateIds = teammates.Select(x => x.Id);
                     var teammateGuesses = Quiz.Room.PlayerGuesses.Where(x => teammateIds.Contains(x.Key));
