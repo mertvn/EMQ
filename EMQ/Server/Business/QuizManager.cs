@@ -360,6 +360,9 @@ public class QuizManager
                 Quiz.Room.HotjoinQueue.TryDequeue(out Player? player);
                 if (player != null)
                 {
+                    player.Lives = Quiz.Room.QuizSettings.MaxLives;
+                    player.Score = 0;
+                    player.Guess = "";
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
