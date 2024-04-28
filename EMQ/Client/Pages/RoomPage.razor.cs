@@ -113,11 +113,23 @@ public partial class RoomPage
         }
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+
+        if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
+        {
+            if (Room.Quiz.QuizState.Phase == QuizPhaseKind.Looting)
+            {
+                await OnReceivePyramidEntered();
+            }
+            else
+            {
+                await OnReceiveQuizEntered();
+            }
         }
     }
 
@@ -201,12 +213,6 @@ public partial class RoomPage
         Room = await _clientUtils.SyncRoom();
         StateHasChanged();
         // _logger.LogInformation(JsonSerializer.Serialize(Room));
-    }
-
-    private void Hotjoin()
-    {
-        _logger.LogInformation("Hotjoining Quiz");
-        _navigation.NavigateTo("/QuizPage");
     }
 
     private async Task LeaveRoom()
