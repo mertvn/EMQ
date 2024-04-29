@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -280,7 +280,7 @@ public class QuizManager
                 }
             }
 
-            if (!processedTeamIdsMt.Contains(player.TeamId) && IsGuessCorrectMst(player.Guess.Mt))
+            if (!processedTeamIdsMt.Contains(player.TeamId) && IsGuessCorrectMt(player.Guess.Mt))
             {
                 processedTeamIdsMt.Add(player.TeamId);
                 foreach (Player possibleTeammate in Quiz.Room.Players)
