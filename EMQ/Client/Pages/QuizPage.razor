@@ -412,13 +412,13 @@
                     foreach (var title in current)
                     {
                         string tooltipText = title.ToString();
-                        bool selected = PageState.Guess == title.LatinTitle;
+                        bool selected = PageState.Guess?.Mst == title.LatinTitle;
                         <Blazorise.Tooltip
                             Inline="false"
                             Text="@tooltipText">
                             <div
                                 class="MultipleChoiceOption"
-                                @onclick="@(async () => { if (!IsSpectator) await SetGuess(title.LatinTitle); })"
+                                @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Mst = title.LatinTitle }); })"
                                 style="
 cursor: @UiHelpers.Bool2CursorPointer(!IsSpectator);
 color: @UiHelpers.Bool2Color(selected, "deepskyblue", "white");
@@ -443,19 +443,48 @@ text-align: center;
         <br/>
     </div>
 }
-else
+else if (!IsSpectator)
 {
-@* do not modify Placeholder text without changing the javascript file as well *@
     <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
-        <GuessInputComponent @ref="_guessInputComponent"
-                             Placeholder="Enter your guess here"
-                             FreeTyping="true"
-                             IsDisabled="@(Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
-                             IsQuizPage="true"
-                             @bind-Guess="@PageState.Guess">
-        </GuessInputComponent>
-        <br/>
+
+        @if (Room != null)
+        {
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst)
+            {
+                // do not modify Placeholder text without changing the javascript file as well
+                <GuessInputComponent @ref="_guessInputComponent"
+                                     Placeholder="Enter your guess here"
+                                     FreeTyping="true"
+                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                     IsQuizPage="true"
+                                     @bind-Guess="@PageState.Guess.Mst">
+                </GuessInputComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+            {
+                // todo @bind-Guess
+                <AutocompleteAComponent @ref="AutocompleteAComponent"
+                                        Placeholder="Enter artist name here"
+                                        FreeTyping="true"
+                                        IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                        IsQuizPage="true">
+                </AutocompleteAComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+            {
+                <AutocompleteMtComponent @ref="AutocompleteMtComponent"
+                                         Placeholder="Enter song title here"
+                                         FreeTyping="true"
+                                         IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                         IsQuizPage="true"
+                                         @bind-Guess="@PageState.Guess.Mt">
+                </AutocompleteMtComponent>
+            }
+        }
+
     </div>
 }
 
@@ -476,19 +505,45 @@ else
 
             @foreach (var player in Room.Players)
             {
-                if (_playerGuesses.TryGetValue(player.Id, out string? playerGuess))
+                if (_playerGuesses.TryGetValue(player.Id, out var playerGuess))
                 {
                 }
 
                 <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
-                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && !string.IsNullOrWhiteSpace(playerGuess));"
-                         @onclick="@(() => SetGuess(playerGuess))">
+                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (!string.IsNullOrWhiteSpace(playerGuess?.Mst) || !string.IsNullOrWhiteSpace(playerGuess?.A) || !string.IsNullOrWhiteSpace(playerGuess?.Mt)));"
+                         @onclick="@(() => SetGuess(playerGuess ?? new()))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block;
+                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block; z-index: 5;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @* todo make text smaller as it gets longer *@
-                                @playerGuess
+                                @if (playerGuess != null)
+                                {
+                                    // todo display isCorrect color separately for each answering column
+                                    @if (Room != null && Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value) > 1)
+                                    {
+                                        <ul>
+                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst)
+                                            {
+                                                <li>@playerGuess.Mst</li>
+                                            }
+
+                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                                            {
+                                                <li>@playerGuess.A</li>
+                                            }
+
+                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                                            {
+                                                <li>@playerGuess.Mt</li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        @playerGuess
+                                    }
+                                }
                             </span>
                         </div>
                     </div>

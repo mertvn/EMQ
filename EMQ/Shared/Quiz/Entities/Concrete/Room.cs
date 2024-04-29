@@ -52,7 +52,7 @@ public sealed class Room : IDisposable
     public bool CanJoinDirectly => Quiz == null || Quiz.QuizState.QuizStatus != QuizStatus.Playing;
 
     [JsonIgnore]
-    public Dictionary<int, string> PlayerGuesses => Players.ToDictionary(x => x.Id, x => x.Guess);
+    public Dictionary<int, PlayerGuess?> PlayerGuesses => Players.ToDictionary(x => x.Id, x => x.Guess);
 
     public void Dispose()
     {

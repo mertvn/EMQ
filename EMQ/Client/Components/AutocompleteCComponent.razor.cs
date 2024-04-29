@@ -101,7 +101,7 @@ public partial class AutocompleteCComponent
                 if (IsQuizPage)
                 {
                     // todo do this with callback
-                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedC", Guess);
                 }
 
                 Callback?.Invoke();

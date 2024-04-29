@@ -19,9 +19,8 @@ public class Player
 
     // public string DisplayName { get; }
 
-    // TODO: GuessInfo class
     [JsonIgnore]
-    public string Guess { get; set; } = "";
+    public PlayerGuess? Guess { get; set; }
 
     // todo: do we want last guess or first guess here?
     public int FirstGuessMs { get; set; }
@@ -62,6 +61,32 @@ public class Player
     public bool NGMCMustPick { get; set; }
 
     public bool NGMCMustBurn { get; set; }
+}
+
+public class PlayerGuess
+{
+    public string? Mst { get; set; }
+
+    public string? A { get; set; }
+
+    public string? Mt { get; set; }
+
+    public override string ToString()
+    {
+        string ret = Mst ?? "";
+
+        if (A is not null)
+        {
+            ret += $" A: {A}";
+        }
+
+        if (Mt is not null)
+        {
+            ret += $" S: {Mt}";
+        }
+
+        return ret;
+    }
 }
 
 public record PlayerLootingInfo

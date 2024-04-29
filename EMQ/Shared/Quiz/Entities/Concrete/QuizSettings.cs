@@ -182,6 +182,12 @@ public class QuizSettings
     [DefaultValue(4)]
     public int NumMultipleChoiceOptions { get; set; } = 4;
 
+    [CustomValidation(typeof(QuizSettings), nameof(ValidateEnabledGuessKinds))]
+    [ProtoMember(24)]
+    [Required]
+    public Dictionary<GuessKind, bool> EnabledGuessKinds { get; set; } =
+        new() { { GuessKind.Mst, true }, { GuessKind.A, false }, { GuessKind.Mt, false }, };
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -196,6 +202,18 @@ public class QuizSettings
         if (sum > numSongsPropertyValue)
         {
             return new ValidationResult("The sum of selected song types cannot be greater than the number of songs.",
+                new[] { validationContext.MemberName! });
+        }
+
+        return ValidationResult.Success!;
+    }
+
+    public static ValidationResult ValidateEnabledGuessKinds(Dictionary<GuessKind, bool> dict,
+        ValidationContext validationContext)
+    {
+        if (!dict.Any(x => x.Value))
+        {
+            return new ValidationResult("At least one Guess type must be enabled.",
                 new[] { validationContext.MemberName! });
         }
 
@@ -431,6 +449,20 @@ public class QuizSettings
         if (o.NumMultipleChoiceOptions != n.NumMultipleChoiceOptions)
         {
             diff.Add($"Number of multiple choice options: {o.NumMultipleChoiceOptions} → {n.NumMultipleChoiceOptions}");
+        }
+
+        if (JsonSerializer.Serialize(o.EnabledGuessKinds) !=
+            JsonSerializer.Serialize(n.EnabledGuessKinds))
+        {
+            var ol = o.EnabledGuessKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            var ne = n.EnabledGuessKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            diff.Add($"Guess types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         return diff;

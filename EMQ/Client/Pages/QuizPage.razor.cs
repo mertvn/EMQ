@@ -32,12 +32,15 @@ public partial class QuizPage
             { "ReceiveQuizCanceled", (Array.Empty<Type>(), async _ => { await OnReceiveQuizCanceled(); }) },
             {
                 "ReceiveCorrectAnswer", (
-                    new Type[] { typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, string>) },
+                    new Type[]
+                    {
+                        typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, PlayerGuess?>)
+                    },
                     async param =>
                     {
                         await OnReceiveCorrectAnswer((Song)param[0]!,
                             (Dictionary<int, List<Label>>)param[1]!,
-                            (Dictionary<int, string>)param[2]!);
+                            (Dictionary<int, PlayerGuess?>)param[2]!);
                     })
             },
             {
@@ -48,8 +51,8 @@ public partial class QuizPage
                     })
             },
             {
-                "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, string>) },
-                    async param => { await OnReceivePlayerGuesses((Dictionary<int, string>)param[0]!); })
+                "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, PlayerGuess?>) },
+                    async param => { await OnReceivePlayerGuesses((Dictionary<int, PlayerGuess?>)param[0]!); })
             },
         };
 
@@ -77,7 +80,7 @@ public partial class QuizPage
         public bool GuessesVisibility { get; set; } = true;
         // public bool GuessInputDisabled { get; set; } = true;
 
-        public string? Guess { get; set; }
+        public PlayerGuess Guess { get; set; } = new PlayerGuess();
 
         public float Countdown { get; set; }
 
@@ -127,9 +130,13 @@ public partial class QuizPage
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
 
-    private Dictionary<int, string> _playerGuesses { get; set; } = new();
+    private Dictionary<int, PlayerGuess?> _playerGuesses { get; set; } = new();
 
-    private GuessInputComponent _guessInputComponent = null!;
+    private GuessInputComponent? _guessInputComponent { get; set; }
+
+    private AutocompleteAComponent? AutocompleteAComponent { get; set; }
+
+    private AutocompleteMtComponent? AutocompleteMtComponent { get; set; }
 
     private ChatComponent? _chatComponent;
 
@@ -290,7 +297,7 @@ public partial class QuizPage
 
     private async Task OnReceiveCorrectAnswer(Song correctAnswer,
         Dictionary<int, List<Label>> playerLabels,
-        Dictionary<int, string> playerGuesses)
+        Dictionary<int, PlayerGuess?> playerGuesses)
     {
         if (_isDisposed)
         {
@@ -306,14 +313,14 @@ public partial class QuizPage
         _playerGuesses = playerGuesses;
     }
 
-    private async Task OnReceivePlayerGuesses(Dictionary<int, string> playerGuesses)
+    private async Task OnReceivePlayerGuesses(Dictionary<int, PlayerGuess?> playerGuesses)
     {
         if (_isDisposed)
         {
             return;
         }
 
-        foreach ((int playerId, string? playerGuess) in playerGuesses)
+        foreach ((int playerId, var playerGuess) in playerGuesses)
         {
             _playerGuesses[playerId] = playerGuess;
         }
@@ -562,8 +569,24 @@ public partial class QuizPage
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
-                PageState.Guess = "";
-                await _guessInputComponent.ClearInputField();
+                PageState.Guess.Mst = null;
+                PageState.Guess.A = null;
+                PageState.Guess.Mt = null;
+
+                if (_guessInputComponent != null)
+                {
+                    await _guessInputComponent.ClearInputField();
+                }
+
+                if (AutocompleteAComponent != null)
+                {
+                    await AutocompleteAComponent.ClearInputField();
+                }
+
+                if (AutocompleteMtComponent != null)
+                {
+                    await AutocompleteMtComponent.ClearInputField();
+                }
 
                 PageState.ProgressValue = 0;
                 PageState.ProgressDivisor = Room!.QuizSettings.GuessMs;
@@ -595,24 +618,68 @@ public partial class QuizPage
                 if (focusedElementName != null &&
                     !focusedElementName.Contains("chat", StringComparison.OrdinalIgnoreCase))
                 {
-                    await _guessInputComponent.CallFocusAsync();
+                    if (_guessInputComponent != null)
+                    {
+                        await _guessInputComponent.CallFocusAsync();
+                    }
                 }
 
                 // need to clear it again here or it doesn't work(???)
-                PageState.Guess = "";
-                await _guessInputComponent.ClearInputField();
-                _guessInputComponent.CallStateHasChanged();
-                break;
-            case QuizPhaseKind.Judgement:
-                // send the non-Entered guess if the player hasn't sent a guess before for the current song
-                if (string.IsNullOrEmpty(PageState.Guess))
+                PageState.Guess.Mst = null;
+                PageState.Guess.A = null;
+                PageState.Guess.Mt = null;
+
+                if (_guessInputComponent != null)
                 {
-                    PageState.Guess = _guessInputComponent.GetSelectedText();
+                    await _guessInputComponent.ClearInputField();
+                    _guessInputComponent.CallStateHasChanged();
                 }
 
-                if (!string.IsNullOrEmpty(PageState.Guess))
+                if (AutocompleteAComponent != null)
                 {
-                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
+                    await AutocompleteAComponent.ClearInputField();
+                    AutocompleteAComponent.CallStateHasChanged();
+                }
+
+                if (AutocompleteMtComponent != null)
+                {
+                    await AutocompleteMtComponent.ClearInputField();
+                    AutocompleteMtComponent.CallStateHasChanged();
+                }
+
+                break;
+            case QuizPhaseKind.Judgement:
+                // todo check for which answering columns to send
+                // send the non-Entered guess if the player hasn't sent a guess before for the current song
+                if (string.IsNullOrEmpty(PageState.Guess.Mst))
+                {
+                    PageState.Guess.Mst = _guessInputComponent?.GetSelectedText();
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess.Mst))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMst", PageState.Guess.Mst);
+                }
+
+                // todo artist binding is fucked right now
+                // if (string.IsNullOrEmpty(PageState.Guess.A))
+                // {
+                //     PageState.Guess.A = AutocompleteAComponent?.GetSelectedText();
+                // }
+                //
+                // if (!string.IsNullOrEmpty(PageState.Guess.A))
+                // {
+                //     await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", PageState.Guess.A);
+                // }
+
+                if (string.IsNullOrEmpty(PageState.Guess.Mt))
+                {
+                    PageState.Guess.Mt = AutocompleteMtComponent?.GetSelectedText();
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess.Mt))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMt", PageState.Guess.Mt);
                 }
 
                 // await SyncWithServer();
@@ -620,9 +687,14 @@ public partial class QuizPage
                 PageState.Countdown = 0;
                 StateHasChanged();
 
-                _guessInputComponent.CallClose();
-                _guessInputComponent.CallStateHasChanged();
+                _guessInputComponent?.CallClose();
+                _guessInputComponent?.CallStateHasChanged();
+                AutocompleteAComponent?.CallClose();
+                AutocompleteAComponent?.CallStateHasChanged();
+                AutocompleteMtComponent?.CallClose();
+                AutocompleteMtComponent?.CallStateHasChanged();
                 StateHasChanged();
+
                 break;
             case QuizPhaseKind.Results:
                 if (ClientState.Session!.Player.Preferences.RestartSongsOnResultsPhase)
@@ -646,8 +718,12 @@ public partial class QuizPage
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
-                _guessInputComponent.CallClose();
-                _guessInputComponent.CallStateHasChanged();
+                _guessInputComponent?.CallClose();
+                _guessInputComponent?.CallStateHasChanged();
+                AutocompleteAComponent?.CallClose();
+                AutocompleteAComponent?.CallStateHasChanged();
+                AutocompleteMtComponent?.CallClose();
+                AutocompleteMtComponent?.CallStateHasChanged();
 
                 if (_correctAnswer == null)
                 {
@@ -861,19 +937,39 @@ public partial class QuizPage
         }
     }
 
-    private async Task SetGuess(string? guess)
+    private async Task SetGuess(PlayerGuess guess)
     {
         if (Room is { Quiz: { } })
         {
             if (Room.Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
                 Room.Quiz.QuizState.Phase == QuizPhaseKind.Guess)
             {
-                PageState.Guess = guess;
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", PageState.Guess);
-                if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)
+                if (!string.IsNullOrWhiteSpace(guess.Mst) ||
+                    !string.IsNullOrWhiteSpace(guess.A) ||
+                    !string.IsNullOrWhiteSpace(guess.Mt))
                 {
-                    // todo dedup
-                    await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
+                    PageState.Guess = guess;
+                    if (_guessInputComponent != null || Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+                    {
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMst", PageState.Guess.Mst);
+                    }
+
+                    if (AutocompleteAComponent != null)
+                    {
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", PageState.Guess.A);
+                    }
+
+                    if (AutocompleteMtComponent != null)
+                    {
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMt", PageState.Guess.Mt);
+                    }
+
+                    if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)
+                    {
+                        // todo dedup
+                        // todo EnabledGuessKinds stuff
+                        await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
+                    }
                 }
             }
         }

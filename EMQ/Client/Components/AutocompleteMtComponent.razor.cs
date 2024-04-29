@@ -52,6 +52,8 @@ public partial class AutocompleteMtComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
+    public string? GetSelectedText() => AutocompleteComponent.SelectedText;
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt.json"))!;
@@ -99,7 +101,7 @@ public partial class AutocompleteMtComponent
             if (IsQuizPage)
             {
                 // todo do this with callback
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess);
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMt", Guess);
             }
 
             Callback?.Invoke();

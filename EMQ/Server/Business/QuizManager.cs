@@ -30,9 +30,17 @@ public class QuizManager
 
     public Quiz Quiz { get; }
 
-    private Dictionary<int, List<string>> CorrectAnswersDict { get; set; } = new();
+    private Dictionary<int, List<string>> CorrectAnswersDictMst { get; set; } = new();
 
-    public DateTime LastUpdate { get; set; }
+    private Dictionary<int, List<string>> CorrectAnswersDictA { get; set; } = new();
+
+    private Dictionary<int, List<string>> CorrectAnswersDictMt { get; set; } = new();
+
+    private DateTime LastUpdate { get; set; }
+
+    private bool IsOnlyMstGuessTypeEnabled =>
+        Quiz.Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst &&
+        !Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Key != GuessKind.Mst).Any(y => y.Value);
 
     private async Task SetTimer()
     {
@@ -195,7 +203,7 @@ public class QuizManager
 
         foreach (var player in Quiz.Room.Players)
         {
-            player.Guess = "";
+            player.Guess = null;
             player.FirstGuessMs = 0;
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
@@ -221,7 +229,7 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
         {
-            await DetermineTeamGuesses();
+            DetermineTeamGuesses();
         }
 
         // need to do this AFTER the team guesses have been determined
@@ -231,24 +239,57 @@ public class QuizManager
         await JudgeGuesses();
     }
 
-    private async Task DetermineTeamGuesses()
+    private void DetermineTeamGuesses()
     {
-        HashSet<int> processedTeamIds = new();
+        // todo this is inefficient, do it in a batched manner
+        HashSet<int> processedTeamIdsMst = new();
+        HashSet<int> processedTeamIdsA = new();
+        HashSet<int> processedTeamIdsMt = new();
         foreach (Player player in Quiz.Room.Players)
         {
-            if (processedTeamIds.Contains(player.TeamId))
+            if (player.Guess is null)
             {
                 continue;
             }
 
-            if (IsGuessCorrect(player.Guess))
+            if (!processedTeamIdsMst.Contains(player.TeamId) && IsGuessCorrectMst(player.Guess.Mst))
             {
-                processedTeamIds.Add(player.TeamId);
+                processedTeamIdsMst.Add(player.TeamId);
                 foreach (Player possibleTeammate in Quiz.Room.Players)
                 {
+                    possibleTeammate.Guess ??= new PlayerGuess();
                     if (possibleTeammate.TeamId == player.TeamId)
                     {
-                        possibleTeammate.Guess = player.Guess;
+                        // Console.WriteLine($"setting {possibleTeammate.Username}'s guess.Mst ({possibleTeammate.Guess.Mst} to {player.Username}'s guess.Mst ({player.Guess.Mst})");
+                        possibleTeammate.Guess.Mst = player.Guess.Mst;
+                    }
+                }
+            }
+
+            if (!processedTeamIdsA.Contains(player.TeamId) && IsGuessCorrectA(player.Guess.A))
+            {
+                processedTeamIdsA.Add(player.TeamId);
+                foreach (Player possibleTeammate in Quiz.Room.Players)
+                {
+                    possibleTeammate.Guess ??= new PlayerGuess();
+                    if (possibleTeammate.TeamId == player.TeamId)
+                    {
+                        // Console.WriteLine($"setting {possibleTeammate.Username}'s guess.A ({possibleTeammate.Guess.A} to {player.Username}'s guess.A ({player.Guess.A})");
+                        possibleTeammate.Guess.A = player.Guess.A;
+                    }
+                }
+            }
+
+            if (!processedTeamIdsMt.Contains(player.TeamId) && IsGuessCorrectMst(player.Guess.Mt))
+            {
+                processedTeamIdsMt.Add(player.TeamId);
+                foreach (Player possibleTeammate in Quiz.Room.Players)
+                {
+                    possibleTeammate.Guess ??= new PlayerGuess();
+                    if (possibleTeammate.TeamId == player.TeamId)
+                    {
+                        // Console.WriteLine($"setting {possibleTeammate.Username}'s guess.Mt ({possibleTeammate.Guess.Mt} to {player.Username}'s guess.Mt ({player.Guess.Mt})");
+                        possibleTeammate.Guess.Mt = player.Guess.Mt;
                     }
                 }
             }
@@ -258,34 +299,90 @@ public class QuizManager
             false);
     }
 
-    private bool IsGuessCorrect(string guess)
+    private bool IsGuessCorrectMst(string? guess)
     {
-        if (!CorrectAnswersDict.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+        bool correct = false;
+        if (!string.IsNullOrWhiteSpace(guess))
         {
-            if (Quiz.QuizState.sp < 0 || Quiz.QuizState.sp > Quiz.Songs.Count)
+            if (!CorrectAnswersDictMst.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
-                throw new Exception($"Invalid quiz state sp: {Quiz.QuizState.sp} SongsCount: {Quiz.Songs.Count}");
+                correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+                    .Select(x => x.LatinTitle).ToList();
+                correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
+                    .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                correctAnswers = correctAnswers.Distinct().ToList();
+
+                CorrectAnswersDictMst.Add(Quiz.QuizState.sp, correctAnswers);
+                Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
             }
 
-            correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-                .Select(x => x.LatinTitle).ToList();
-            correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-                .Select(x => x.NonLatinTitle).Where(x => x != null)!);
-            correctAnswers = correctAnswers.Distinct().ToList();
-
-            CorrectAnswersDict.Add(Quiz.QuizState.sp, correctAnswers);
-
-            // Console.WriteLine("-------");
-            Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            foreach (string correctAnswer in correctAnswers)
+            {
+                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    correct = true;
+                    break;
+                }
+            }
         }
 
+        return correct;
+    }
+
+    private bool IsGuessCorrectA(string? guess)
+    {
         bool correct = false;
-        foreach (string correctAnswer in correctAnswers)
+        if (!string.IsNullOrWhiteSpace(guess))
         {
-            if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+            if (!CorrectAnswersDictA.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
-                correct = true;
-                break;
+                correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
+                    .Select(x => x.LatinTitle).ToList();
+                correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
+                    .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                correctAnswers = correctAnswers.Distinct().ToList();
+
+                CorrectAnswersDictA.Add(Quiz.QuizState.sp, correctAnswers);
+                Quiz.Room.Log("cA-a: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            }
+
+            foreach (string correctAnswer in correctAnswers)
+            {
+                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    correct = true;
+                    break;
+                }
+            }
+        }
+
+        return correct;
+    }
+
+    private bool IsGuessCorrectMt(string? guess)
+    {
+        bool correct = false;
+        if (!string.IsNullOrWhiteSpace(guess))
+        {
+            if (!CorrectAnswersDictMt.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+            {
+                correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Titles
+                    .Select(x => x.LatinTitle).ToList();
+                correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Titles
+                    .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                correctAnswers = correctAnswers.Distinct().ToList();
+
+                CorrectAnswersDictMt.Add(Quiz.QuizState.sp, correctAnswers);
+                Quiz.Room.Log("cA-mt: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            }
+
+            foreach (string correctAnswer in correctAnswers)
+            {
+                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    correct = true;
+                    break;
+                }
             }
         }
 
@@ -362,7 +459,7 @@ public class QuizManager
                 {
                     player.Lives = Quiz.Room.QuizSettings.MaxLives;
                     player.Score = 0;
-                    player.Guess = "";
+                    player.Guess = null;
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
@@ -402,10 +499,29 @@ public class QuizManager
 
             Quiz.Room.Log("pG: " + player.Guess, player.Id);
 
-            bool correct = IsGuessCorrect(player.Guess);
-            if (correct)
+            int correctCount = 0;
+
+            bool correctMst = IsGuessCorrectMst(player.Guess?.Mst);
+            if (correctMst)
             {
-                player.Score += 1;
+                correctCount += 1;
+            }
+
+            bool correctA = IsGuessCorrectA(player.Guess?.A);
+            if (correctA)
+            {
+                correctCount += 1;
+            }
+
+            bool correctMt = IsGuessCorrectMt(player.Guess?.Mt);
+            if (correctMt)
+            {
+                correctCount += 1;
+            }
+
+            if (correctCount > 0)
+            {
+                player.Score += correctCount;
                 player.PlayerStatus = PlayerStatus.Correct;
             }
             else
@@ -416,7 +532,7 @@ public class QuizManager
                 {
                     if (Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
                     {
-                        player.Lives -= 1;
+                        player.Lives -= 1; // todo? reduce by wrongCount
                     }
 
                     if (player.Lives <= 0)
@@ -432,7 +548,7 @@ public class QuizManager
                 UserSpacedRepetition? current = null;
                 try
                 {
-                    (previous, current) = await DoSpacedRepetition(player.Id, song.Id, correct);
+                    (previous, current) = await DoSpacedRepetition(player.Id, song.Id, correctMst); // todo?
                 }
                 catch (Exception e)
                 {
@@ -445,9 +561,9 @@ public class QuizManager
                 var guessInfo = new GuessInfo
                 {
                     Username = player.Username,
-                    Guess = player.Guess,
+                    Guess = player.Guess?.Mst ?? "", // todo
                     FirstGuessMs = player.FirstGuessMs,
-                    IsGuessCorrect = correct,
+                    IsGuessCorrect = correctMst, // todo
                     Labels = labels,
                     IsOnList = labels?.Any() ?? false,
                     PreviousUserSpacedRepetition = previous,
@@ -732,6 +848,7 @@ public class QuizManager
         bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
+                                 IsOnlyMstGuessTypeEnabled &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&
@@ -1052,14 +1169,33 @@ public class QuizManager
             Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
         }
 
-        CorrectAnswersDict = new Dictionary<int, List<string>>();
+        if (!Quiz.Room.QuizSettings.EnabledGuessKinds.Any(x => x.Value))
+        {
+            Quiz.Room.Log("At least one Guess type must be enabled.", writeToChat: true);
+            return false;
+        }
+
+        if (Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+        {
+            if (!IsOnlyMstGuessTypeEnabled)
+            {
+                Quiz.Room.Log(
+                    $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled for the \"{AnsweringKind.MultipleChoice.GetDescription()}\" Answering method.",
+                    writeToChat: true);
+                return false;
+            }
+        }
+
+        CorrectAnswersDictMst = new Dictionary<int, List<string>>();
+        CorrectAnswersDictA = new Dictionary<int, List<string>>();
+        CorrectAnswersDictMt = new Dictionary<int, List<string>>();
         Dictionary<int, List<string>> validSourcesDict = new();
 
         foreach (Player player in Quiz.Room.Players)
         {
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
-            player.Guess = "";
+            player.Guess = null;
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
@@ -1501,15 +1637,15 @@ public class QuizManager
                 return;
             }
 
-            if (player.Score > 0 || player.Guess != "" || (Quiz.Room.QuizSettings.MaxLives > 0 &&
-                                                           player.Lives != Quiz.Room.QuizSettings.MaxLives))
+            if (player.Score > 0 || player.Guess != null || (Quiz.Room.QuizSettings.MaxLives > 0 &&
+                                                             player.Lives != Quiz.Room.QuizSettings.MaxLives))
             {
                 return;
             }
 
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
-            player.Guess = "";
+            player.Guess = null;
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
@@ -1540,7 +1676,7 @@ public class QuizManager
         }
     }
 
-    public async Task OnSendGuessChanged(string connectionId, int playerId, string? guess)
+    public async Task OnSendGuessChanged(int playerId, string? guess, GuessKind guessKind)
     {
         // don't allow players to change guesses in shared-guesses teamed games after team guesses have been determined
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess || (Quiz.QuizState.Phase is QuizPhaseKind.Judgement &&
@@ -1551,8 +1687,23 @@ public class QuizManager
             if (player != null)
             {
                 guess ??= "";
-                player.Guess = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                player.Guess ??= new PlayerGuess();
                 player.PlayerStatus = PlayerStatus.Guessed;
+
+                switch (guessKind)
+                {
+                    case GuessKind.Mst:
+                        player.Guess.Mst = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        break;
+                    case GuessKind.A:
+                        player.Guess.A = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        break;
+                    case GuessKind.Mt:
+                        player.Guess.Mt = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(guessKind), guessKind, null);
+                }
 
                 if (player.FirstGuessMs <= 0)
                 {
@@ -2000,8 +2151,30 @@ public class QuizManager
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
             {
-                bool everyoneAnsweredOrIsSkipping =
-                    activeSessions.All(x => !string.IsNullOrWhiteSpace(x.Player.Guess) || x.Player.IsSkipping);
+                bool everyoneAnsweredOrIsSkipping = true;
+                foreach (Session session in activeSessions)
+                {
+                    if (!session.Player.IsSkipping) // don't need to check their guesses if they are skipping
+                    {
+                        bool answeredAllTypes = true;
+                        foreach ((GuessKind key, bool value) in Quiz.Room.QuizSettings.EnabledGuessKinds)
+                        {
+                            if (value)
+                            {
+                                answeredAllTypes &= key switch
+                                {
+                                    GuessKind.Mst => !string.IsNullOrWhiteSpace(session.Player.Guess?.Mst),
+                                    GuessKind.A => !string.IsNullOrWhiteSpace(session.Player.Guess?.A),
+                                    GuessKind.Mt => !string.IsNullOrWhiteSpace(session.Player.Guess?.Mt),
+                                    _ => throw new ArgumentOutOfRangeException()
+                                };
+                            }
+                        }
+
+                        everyoneAnsweredOrIsSkipping &= answeredAllTypes;
+                    }
+                }
+
                 if (!everyoneAnsweredOrIsSkipping)
                 {
                     Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)",

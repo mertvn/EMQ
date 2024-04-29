@@ -40,7 +40,7 @@ public static class TypedQuizHub
         }
     }
 
-    public static void ReceivePlayerGuesses(IEnumerable<int> playerIds, Dictionary<int, string> dict)
+    public static void ReceivePlayerGuesses(IEnumerable<int> playerIds, Dictionary<int, PlayerGuess?> dict)
     {
         foreach (int playerId in playerIds)
         {
@@ -115,7 +115,7 @@ public static class TypedQuizHub
     }
 
     public static void ReceiveCorrectAnswer(IEnumerable<int> playerIds, Song song,
-        Dictionary<int, List<Label>> playerLabels, Dictionary<int, string> playerGuesses)
+        Dictionary<int, List<Label>> playerLabels, Dictionary<int, PlayerGuess?> playerGuesses)
     {
         foreach (int playerId in playerIds)
         {

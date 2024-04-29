@@ -197,6 +197,20 @@
                             <br/>
                         }
 
+                        <details>
+                            <summary>Guess types</summary>
+                            @foreach (var key in ClientQuizSettings.EnabledGuessKinds.Keys.ToList())
+                            {
+                                if (true)
+                                {
+                                    string id = $"EnabledGuessKinds-{key}";
+                                    <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.EnabledGuessKinds[key])" style="margin: 5px"/>
+                                    <label for="@id">@key.GetDescription()</label>
+                                    <br/>
+                                }
+                            }
+                        </details>
+
                         <InputNumber id="TeamSize" @bind-Value="ClientQuizSettings.TeamSize" style="margin: 5px"></InputNumber>
                         <label for="TeamSize">Maximum team size</label>
                         <br/>
