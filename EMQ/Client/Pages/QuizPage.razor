@@ -1,4 +1,4 @@
-﻿@page "/QuizPage"
+@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -450,9 +450,9 @@ else if (!IsSpectator)
 
         @if (Room != null)
         {
+            // do not modify Placeholder texts without changing the javascript file as well
             @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst)
             {
-                // do not modify Placeholder text without changing the javascript file as well
                 <GuessInputComponent @ref="_guessInputComponent"
                                      Placeholder="Enter your guess here"
                                      FreeTyping="true"
