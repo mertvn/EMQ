@@ -92,20 +92,20 @@ public partial class AutocompleteAComponent
     {
         if (obj.Key is "Enter" or "NumpadEnter")
         {
-            if (Guess?.AId != AutocompleteComponent.SelectedValue?.AId)
+            // if (Guess?.AId != AutocompleteComponent.SelectedValue?.AId)
+            // {
+            Guess = AutocompleteComponent.SelectedValue;
+            await AutocompleteComponent.Close();
+            StateHasChanged();
+
+            if (IsQuizPage)
             {
-                Guess = AutocompleteComponent.SelectedValue;
-                await AutocompleteComponent.Close();
-                StateHasChanged();
-
-                if (IsQuizPage)
-                {
-                    // todo do this with callback
-                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", Guess?.AALatinAlias);
-                }
-
-                Callback?.Invoke();
+                // todo do this with callback
+                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", Guess?.AALatinAlias);
             }
+
+            Callback?.Invoke();
+            // }
         }
     }
 
