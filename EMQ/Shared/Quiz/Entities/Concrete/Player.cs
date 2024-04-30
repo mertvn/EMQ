@@ -61,6 +61,8 @@ public class Player
     public bool NGMCMustPick { get; set; }
 
     public bool NGMCMustBurn { get; set; }
+
+    public Dictionary<GuessKind, bool?>? IsGuessKindCorrectDict { get; set; }
 }
 
 public class PlayerGuess

@@ -1,4 +1,4 @@
-@page "/QuizPage"
+﻿@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -519,23 +519,34 @@ else if (!IsSpectator)
                                 @* todo make text smaller as it gets longer *@
                                 @if (playerGuess != null)
                                 {
-                                    // todo display isCorrect color separately for each answering column
                                     @if (Room != null && Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value) > 1)
                                     {
                                         <ul>
                                             @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst)
                                             {
-                                                <li>@playerGuess.Mst</li>
+                                                bool? mstIsCorrect = null;
+                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Mst, out mstIsCorrect);
+                                                <li style="color: @UiHelpers.Bool2Color(mstIsCorrect, "green", "red")">
+                                                    @playerGuess.Mst
+                                                </li>
                                             }
 
                                             @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
                                             {
-                                                <li>@playerGuess.A</li>
+                                                bool? aIsCorrect = null;
+                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.A, out aIsCorrect);
+                                                <li style="color: @UiHelpers.Bool2Color(aIsCorrect, "green", "red")">
+                                                    @playerGuess.A
+                                                </li>
                                             }
 
                                             @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
                                             {
-                                                <li>@playerGuess.Mt</li>
+                                                bool? mtIsCorrect = null;
+                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Mt, out mtIsCorrect);
+                                                <li style="color: @UiHelpers.Bool2Color(mtIsCorrect, "green", "red")">
+                                                    @playerGuess.Mt
+                                                </li>
                                             }
                                         </ul>
                                     }

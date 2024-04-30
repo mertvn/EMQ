@@ -204,6 +204,7 @@ public class QuizManager
         foreach (var player in Quiz.Room.Players)
         {
             player.Guess = null;
+            player.IsGuessKindCorrectDict = null;
             player.FirstGuessMs = 0;
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
@@ -500,20 +501,25 @@ public class QuizManager
             Quiz.Room.Log("pG: " + player.Guess, player.Id);
 
             int correctCount = 0;
+            player.IsGuessKindCorrectDict = new Dictionary<GuessKind, bool?>();
 
+            // todo? only check enabled types
             bool correctMst = IsGuessCorrectMst(player.Guess?.Mst);
+            player.IsGuessKindCorrectDict[GuessKind.Mst] = correctMst;
             if (correctMst)
             {
                 correctCount += 1;
             }
 
             bool correctA = IsGuessCorrectA(player.Guess?.A);
+            player.IsGuessKindCorrectDict[GuessKind.A] = correctA;
             if (correctA)
             {
                 correctCount += 1;
             }
 
             bool correctMt = IsGuessCorrectMt(player.Guess?.Mt);
+            player.IsGuessKindCorrectDict[GuessKind.Mt] = correctMt;
             if (correctMt)
             {
                 correctCount += 1;
@@ -1196,6 +1202,7 @@ public class QuizManager
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
             player.Guess = null;
+            player.IsGuessKindCorrectDict = null;
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
@@ -1646,6 +1653,7 @@ public class QuizManager
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
             player.Guess = null;
+            player.IsGuessKindCorrectDict = null;
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
