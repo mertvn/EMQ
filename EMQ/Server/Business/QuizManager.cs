@@ -200,6 +200,7 @@ public class QuizManager
         Quiz.QuizState.sp += 1;
         Quiz.Songs[Quiz.QuizState.sp].PlayedAt = DateTime.UtcNow;
         Quiz.QuizState.ExtraInfo = "";
+        Quiz.QuizState.TeamGuessesHaveBeenDetermined = false;
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -230,6 +231,7 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
         {
+            await Task.Delay(TimeSpan.FromMilliseconds(500)); // wait for late guesses (especially non-Entered guesses)
             DetermineTeamGuesses();
         }
 
@@ -242,6 +244,7 @@ public class QuizManager
 
     private void DetermineTeamGuesses()
     {
+        Quiz.QuizState.TeamGuessesHaveBeenDetermined = true;
         // todo this is inefficient, do it in a batched manner
         HashSet<int> processedTeamIdsMst = new();
         HashSet<int> processedTeamIdsA = new();
@@ -475,7 +478,7 @@ public class QuizManager
     private async Task JudgeGuesses()
     {
         // don't make this delay configurable (at least not for regular users)
-        await Task.Delay(TimeSpan.FromMilliseconds(1400)); // add suspense & wait for late guesses
+        await Task.Delay(TimeSpan.FromMilliseconds(900)); // add suspense & wait for late guesses
 
         var song = Quiz.Songs.ElementAtOrDefault(Quiz.QuizState.sp);
         if (song == null)
@@ -1693,8 +1696,7 @@ public class QuizManager
     {
         // don't allow players to change guesses in shared-guesses teamed games after team guesses have been determined
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess || (Quiz.QuizState.Phase is QuizPhaseKind.Judgement &&
-                                                            (Quiz.Room.QuizSettings.TeamSize <= 1 ||
-                                                             Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)))
+                                                            !Quiz.QuizState.TeamGuessesHaveBeenDetermined))
         {
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)

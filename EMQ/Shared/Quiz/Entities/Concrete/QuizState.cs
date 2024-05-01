@@ -1,4 +1,6 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete;
+﻿using System.Text.Json.Serialization;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class QuizState
 {
@@ -23,4 +25,7 @@ public class QuizState
     public string ExtraInfo { get; set; } = "";
 
     public int LootingGridSize { get; set; }
+
+    [JsonIgnore]
+    public bool TeamGuessesHaveBeenDetermined { get; set; }
 }
