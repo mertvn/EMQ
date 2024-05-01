@@ -29,7 +29,7 @@
                 {
                     @if (Song.Id > 0)
                     {
-                        <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteSong(Song))"></i>
+                        <span style="display: inline-block; cursor: pointer; margin-right: 2px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
                         <span> @Song.Id </span>
                     }
 

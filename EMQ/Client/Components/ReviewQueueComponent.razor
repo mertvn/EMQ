@@ -39,7 +39,7 @@
 
                         @if (canDelete && rq.status == ReviewQueueStatus.Pending)
                         {
-                            <i class="bi bi-trash me-1" style="display: inline-block; cursor: pointer;" @onclick="@(async () => await DeleteReviewQueueItem(rq.id))"></i>
+                            <span style="display: inline-block; cursor: pointer; margin-right: 2px;" @onclick="@(async () => await DeleteReviewQueueItem(rq.id))">🗑</span>
                         }
                     }
 
