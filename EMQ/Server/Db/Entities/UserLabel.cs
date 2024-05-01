@@ -28,4 +28,7 @@ public class UserLabel
 
     [Required]
     public int kind { get; set; }
+
+    [Required]
+    public string preset_name { get; set; } = "";
 }

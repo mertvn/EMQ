@@ -8,10 +8,12 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
 using Juliet.Model.VNDBObject;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Components;
 
@@ -21,11 +23,36 @@ public partial class PlayerPreferencesComponent
 
     private string _selectedTab = "TabGeneral";
 
-    public bool LoginInProgress { get; set; }
+    public bool InProgress { get; set; }
 
     public List<string> LoginProgressDisplay { get; set; } = new();
 
     private string? ClientVndbApiToken { get; set; }
+
+    public List<UserLabelPreset> Presets { get; set; } = new();
+
+    public string SelectedPresetName { get; set; } = "";
+
+    // 1 more char. than the longest preset name allowed
+    public const string CreateNewPresetValue = "-----------------------------------------------------------------";
+
+    protected override async Task OnInitializedAsync()
+    {
+        while (ClientState.Session is null)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+        }
+
+        InProgress = true;
+        var resGet = await _client.GetAsync("Auth/GetUserLabelPresets");
+        if (resGet.IsSuccessStatusCode)
+        {
+            Presets = (await resGet.Content.ReadFromJsonAsync<List<UserLabelPreset>>())!;
+            SelectedPresetName = ClientState.Session.ActiveUserLabelPresetName ?? "";
+        }
+
+        InProgress = false;
+    }
 
     private async Task UpdatePlayerPreferences(PlayerPreferences playerPreferencesModel)
     {
@@ -178,7 +205,7 @@ public partial class PlayerPreferencesComponent
 
     public async Task SetVndbInfo(PlayerVndbInfo vndbInfo)
     {
-        LoginInProgress = true;
+        InProgress = true;
         LoginProgressDisplay.Clear();
         StateHasChanged();
 
@@ -263,12 +290,91 @@ public partial class PlayerPreferencesComponent
         else
         {
             // todo warn user
-
-            //todo?
-            // Labels.Clear();
+            ClientState.VndbInfo.Labels = new List<Label>();
         }
 
-        LoginInProgress = false;
+        InProgress = false;
         StateHasChanged();
+    }
+
+    private async Task OnSelectedPresetChanged(string value)
+    {
+        InProgress = true;
+        if (value == CreateNewPresetValue)
+        {
+            string? promptResult =
+                (await _jsRuntime.InvokeAsync<string?>("prompt", "Enter new preset name (64 chars max.)"))?.Trim();
+            if (!string.IsNullOrWhiteSpace(promptResult) && promptResult.Length is > 0 and <= 64)
+            {
+                if (!Presets.Any(x => string.Equals(x.name, promptResult, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var res = await _client.PostAsJsonAsync("Auth/UpsertUserLabelPreset", promptResult);
+                    if (res.IsSuccessStatusCode)
+                    {
+                        Presets.Add(new UserLabelPreset { name = promptResult });
+                        SelectedPresetName = promptResult;
+                        ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+                    }
+                    else
+                    {
+                        // todo warn user
+                        SelectedPresetName = "";
+                        ClientState.VndbInfo.Labels = new List<Label>();
+                    }
+                }
+            }
+        }
+        else
+        {
+            var res = await _client.PostAsJsonAsync("Auth/UpsertUserLabelPreset", value);
+            if (res.IsSuccessStatusCode)
+            {
+                SelectedPresetName = value;
+                ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+            }
+            else
+            {
+                // todo warn user
+                SelectedPresetName = "";
+                ClientState.VndbInfo.Labels = new List<Label>();
+            }
+        }
+
+        InProgress = false;
+    }
+
+    private async Task Onclick_DeletePreset(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return;
+        }
+
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete {name}?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var preset = Presets.SingleOrDefault(x => x.name == name);
+        if (preset == null)
+        {
+            return;
+        }
+
+        InProgress = true;
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/DeleteUserLabelPreset", preset.name);
+        if (res.IsSuccessStatusCode)
+        {
+            SelectedPresetName = "";
+            Presets.Remove(preset);
+            ClientState.VndbInfo = new PlayerVndbInfo();
+        }
+        else
+        {
+            // todo warn user
+        }
+
+        InProgress = false;
     }
 }

@@ -7,11 +7,12 @@ namespace EMQ.Shared.Auth.Entities.Concrete;
 
 public class Session
 {
-    public Session(Player player, string token, UserRoleKind userRoleKind)
+    public Session(Player player, string token, UserRoleKind userRoleKind, string? activeUserLabelPresetName)
     {
         Player = player;
         Token = token;
         UserRoleKind = userRoleKind;
+        ActiveUserLabelPresetName = activeUserLabelPresetName;
         CreatedAt = DateTime.UtcNow;
     }
 
@@ -28,4 +29,6 @@ public class Session
     public DateTime CreatedAt { get; }
 
     public UserRoleKind UserRoleKind { get; }
+
+    public string? ActiveUserLabelPresetName { get; set; }
 }

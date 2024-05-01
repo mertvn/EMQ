@@ -97,8 +97,9 @@ public static class ServerUtils
         var ret = new List<PlayerVndbInfo>();
         foreach (Session session in sessions)
         {
-            var vndbInfo = await GetVndbInfo_Inner(session.Player.Id);
-            ret.Add(vndbInfo ?? throw new InvalidOperationException());
+            PlayerVndbInfo vndbInfo =
+                await GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
+            ret.Add(vndbInfo);
         }
 
         return ret;
@@ -117,15 +118,15 @@ public static class ServerUtils
     }
 
     // todo return null if not found
-    public static async Task<PlayerVndbInfo> GetVndbInfo_Inner(int userId)
+    public static async Task<PlayerVndbInfo> GetVndbInfo_Inner(int userId, string? presetName)
     {
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
+        // var stopWatch = new Stopwatch();
+        // stopWatch.Start();
 
-        var vndbInfo = await DbManager.GetUserVndbInfo(userId);
-        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+        var vndbInfo = await DbManager.GetUserVndbInfo(userId, presetName);
+        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && !string.IsNullOrEmpty(presetName))
         {
-            var userLabels = await DbManager.GetUserLabels(userId, vndbInfo.VndbId);
+            var userLabels = await DbManager.GetUserLabels(userId, vndbInfo.VndbId, presetName);
             vndbInfo.Labels = new List<Label>();
 
             // todo batch
@@ -150,9 +151,9 @@ public static class ServerUtils
             vndbInfo.Labels = vndbInfo.Labels.OrderBy(x => x.Id <= 7 ? x.Id.ToString() : x.Name).ToList();
         }
 
-        stopWatch.Stop();
-        Console.WriteLine(
-            $"GetVndbInfo_Inner took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        // stopWatch.Stop();
+        // Console.WriteLine(
+        //     $"GetVndbInfo_Inner took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         return vndbInfo;
     }

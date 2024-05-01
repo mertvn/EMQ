@@ -14,6 +14,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Mvc;
@@ -129,9 +130,10 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId);
+        string? activeUserLabelPresetName = await DbManager.GetActiveUserLabelPresetName(playerId);
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
         var player = new Player(playerId, username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
-        var session = new Session(player, token, userRoleKind);
+        var session = new Session(player, token, userRoleKind, activeUserLabelPresetName);
 
         ServerState.AddSession(session);
 
@@ -216,7 +218,8 @@ public class AuthController : ControllerBase
         }
         else
         {
-            vndbInfo ??= await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+            vndbInfo ??=
+                await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
             return new ResValidateSession(session, vndbInfo);
         }
     }
@@ -232,7 +235,8 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        PlayerVndbInfo vndbInfo = await DbManager.GetUserVndbInfo(session.Player.Id);
+        PlayerVndbInfo vndbInfo =
+            await DbManager.GetUserVndbInfo(session.Player.Id, session.ActiveUserLabelPresetName);
         if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
             throw new Exception($"Couldn't GetUserVndbInfo for p{session.Player.Id}");
@@ -247,6 +251,7 @@ public class AuthController : ControllerBase
             vndb_label_name = req.Label.Name,
             vndb_label_is_private = req.Label.IsPrivate,
             kind = (int)req.Label.Kind,
+            preset_name = session.ActiveUserLabelPresetName!,
         };
         long userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
 
@@ -302,8 +307,12 @@ public class AuthController : ControllerBase
 
         _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
 
-        // Constraint: A user can only have a single vndb account connected at any given time
-        await DbManager.DeleteUserLabels(session.Player.Id);
+        if (string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
+        {
+            return StatusCode(520);
+        }
+
+        await DbManager.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
 
         if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId) && req.VndbInfo.Labels is not null)
         {
@@ -318,13 +327,14 @@ public class AuthController : ControllerBase
                     vndb_label_name = label.Name,
                     vndb_label_is_private = label.IsPrivate,
                     kind = (int)label.Kind,
+                    preset_name = session.ActiveUserLabelPresetName,
                 };
                 long _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);
             }
         }
 
         // todo this is inefficient
-        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
         return vndbInfo;
     }
 
@@ -501,6 +511,7 @@ public class AuthController : ControllerBase
         return session;
     }
 
+    // todo important publicly shared quiz settings presets
     [CustomAuthorize(PermissionKind.StoreQuizSettings)]
     [HttpGet]
     [Route("GetUserQuizSettings")]
@@ -554,5 +565,63 @@ public class AuthController : ControllerBase
     {
         var publicUserInfo = await DbManager.GetPublicUserInfo(userId);
         return publicUserInfo;
+    }
+
+    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [HttpGet]
+    [Route("GetUserLabelPresets")]
+    public async Task<ActionResult<List<UserLabelPreset>>> GetUserLabelPresets()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        return await DbManager.GetUserLabelPresets(session.Player.Id);
+    }
+
+    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [HttpPost]
+    [Route("UpsertUserLabelPreset")]
+    public async Task<ActionResult<PlayerVndbInfo>> UpsertUserLabelPreset([FromBody] string name)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        bool success =
+            await DbManager.UpsertUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
+        if (success)
+        {
+            Console.WriteLine($"p{session.Player.Id} {session.Player.Username} upserted user label preset {name}");
+            session.ActiveUserLabelPresetName = name;
+            var vndbInfo =
+                await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
+            return vndbInfo;
+        }
+        else
+        {
+            return StatusCode(520);
+        }
+    }
+
+    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [HttpPost]
+    [Route("DeleteUserLabelPreset")]
+    public async Task<ActionResult> DeleteUserLabelPreset([FromBody] string name)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await DbManager.DeleteUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
+        session.ActiveUserLabelPresetName = null;
+        Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted user label preset {name}");
+        return Ok();
     }
 }

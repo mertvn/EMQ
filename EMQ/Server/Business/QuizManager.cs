@@ -1197,6 +1197,8 @@ public class QuizManager
         CorrectAnswersDictMt = new Dictionary<int, List<string>>();
         Dictionary<int, List<string>> validSourcesDict = new();
 
+        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
+            .ToDictionary(x => x.Player.Id, x => x);
         foreach (Player player in Quiz.Room.Players)
         {
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
@@ -1217,18 +1219,21 @@ public class QuizManager
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
-                var stopWatch = new Stopwatch();
-                stopWatch.Start();
+                // var stopWatch = new Stopwatch();
+                // stopWatch.Start();
 
-                var vndbInfo = await ServerUtils.GetVndbInfo_Inner(player.Id);
-                if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+                var session = playerSessions[player.Id];
+                var vndbInfo = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
+                if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
+                    string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
                 {
                     continue;
                 }
 
                 if (vndbInfo.Labels != null)
                 {
-                    var userLabels = await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId);
+                    var userLabels =
+                        await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId, session.ActiveUserLabelPresetName);
                     var include = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Include).ToList();
                     var exclude = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Exclude).ToList();
 
@@ -1260,9 +1265,9 @@ public class QuizManager
                     }
                 }
 
-                stopWatch.Stop();
-                Console.WriteLine(
-                    $"OnlyFromLists took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+                // stopWatch.Stop();
+                // Console.WriteLine(
+                //     $"OnlyFromLists took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             }
         }
 
@@ -1328,11 +1333,11 @@ public class QuizManager
         // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
         // todo handle hotjoining players
-        var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id));
         var vndbInfos = new Dictionary<int, PlayerVndbInfo>();
-        foreach (Session session in playerSessions)
+        foreach ((int _, Session session) in playerSessions)
         {
-            vndbInfos[session.Player.Id] = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
+            vndbInfos[session.Player.Id] =
+                await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
         }
 
         List<Song> dbSongs;

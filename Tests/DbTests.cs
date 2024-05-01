@@ -780,7 +780,7 @@ public class DbTests
             validSourcesLooting.Remove(keyValuePair.Key);
         }
 
-        var sessions = new List<Session>() { new(new Player(7, "t") { }, "", UserRoleKind.User) };
+        var sessions = new List<Session>() { new(new Player(7, "t") { }, "", UserRoleKind.User, null) };
         var inventory = looted.Select(keyValuePair => new Treasure(Guid.NewGuid(), keyValuePair, new Point())).ToList();
 
         sessions.Single().Player.LootingInfo.Inventory = inventory;

@@ -7,6 +7,7 @@
 @inject HttpClient _client
 @inject ILogger<PlayerPreferencesComponent> _logger
 @inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
@@ -87,20 +88,22 @@
                                         </ul>
                                     </div>
 
-                                    @if (false && ClientState.VndbInfo.Labels is not null && ClientState.VndbInfo.Labels.Any())
-                                    {
-                                        <p>Logged in as @ClientState.VndbInfo.VndbId</p>
+                                    <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
+                                        🗑
+                                    </button>
 
-                                        @if (!string.IsNullOrWhiteSpace(ClientVndbApiToken))
+                                    <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
+                                        <option value="@CreateNewPresetValue">- Create new preset -</option>
+                                        @foreach (var preset in Presets)
                                         {
-                                            <p>API token is set.</p>
+                                            <option value="@preset.name">@preset.name</option>
                                         }
-                                        else
-                                        {
-                                            <p>API token is not set.</p>
-                                        }
-                                    }
-                                    else
+                                    </select>
+                                    <label for="SelectPreset">Preset</label>
+                                    <br/>
+
+                                    <br/>
+                                    @if (!string.IsNullOrEmpty(SelectedPresetName))
                                     {
                                         <InputText id="VndbId" type="text" @bind-Value="@ClientState.VndbInfo.VndbId" style="margin: 5px"/>
                                         <label for="VndbId">VNDB Id</label>
@@ -111,20 +114,19 @@
                                         </label>
                                         <br/>
 
-                                        <button type="button" class="btn btn-primary" disabled="@LoginInProgress" @onclick="@(() => SetVndbInfo(ClientState.VndbInfo))" style="margin: 5px">
+                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="@(() => SetVndbInfo(ClientState.VndbInfo))" style="margin: 5px">
                                             Set VNDB info
                                         </button>
                                         <br/>
-                                    }
 
-                                    <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
-                                        <h5> Label settings</h5>
-                                        @if (ClientState.VndbInfo.Labels is not null)
-                                        {
-                                            <p>
-                                                You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded.
-                                                You might get throttled by the VNDB API if you select a label that contains more than a few thousand VNs.
-                                            </p>
+                                        <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
+                                            <h5> Label settings</h5>
+                                            @if (ClientState.VndbInfo.Labels is not null)
+                                            {
+                                                <p>
+                                                    You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded.
+                                                    You might get throttled by the VNDB API if you select a label that contains more than a few thousand VNs.
+                                                </p>
 
                                             @*
                                             <button type="button" class="btn btn-primary" disabled="@LoginInProgress" @onclick="@(() => FetchLabels(ClientState.VndbInfo))">
@@ -133,61 +135,62 @@
                                             <br/>
                                             *@
 
-                                            <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
-                                                @foreach (var label in ClientState.VndbInfo.Labels)
-                                                {
-                                                    <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
-                                                        <div class="labelCardBody card-body">
-                                                            <span>#@label.Id @label.Name (@label.VNs.Count)</span>
-                                                            @if (label.IsPrivate)
-                                                            {
-                                                                <span> Private </span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span> Public </span>
-                                                            }
+                                                <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
+                                                    @foreach (var label in ClientState.VndbInfo.Labels)
+                                                    {
+                                                        <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
+                                                            <div class="labelCardBody card-body">
+                                                                <span>#@label.Id @label.Name (@label.VNs.Count)</span>
+                                                                @if (label.IsPrivate)
+                                                                {
+                                                                    <span> Private </span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span> Public </span>
+                                                                }
 
-                                                            <br/>
-                                                            <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
+                                                                <br/>
+                                                                <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
+                                                                    <label class="btn btn-outline-primary"
+                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!LoginInProgress);">
+                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Include)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
-                                                                </label>
+                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Include)"
+                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
+                                                                    </label>
 
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
+                                                                    <label class="btn btn-outline-primary"
+                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!LoginInProgress);">
+                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Ignore
-                                                                </label>
+                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
+                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Ignore
+                                                                    </label>
 
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
+                                                                    <label class="btn btn-outline-primary"
+                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!LoginInProgress);">
+                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
-                                                                </label>
+                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
+                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
+                                                                    </label>
+                                                                </div>
+
                                                             </div>
-
                                                         </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <p>Your VNDB info is not set.</p>
-                                        }
-                                    </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <p>Your VNDB info is not set.</p>
+                                            }
+                                        </div>
+                                    }
                                 </Blazorise.TabPanel>
                             </Content>
                         </Blazorise.Tabs>

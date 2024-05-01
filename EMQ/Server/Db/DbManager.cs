@@ -3192,13 +3192,19 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     // todo return null if not found
-    public static async Task<PlayerVndbInfo> GetUserVndbInfo(int userId)
+    public static async Task<PlayerVndbInfo> GetUserVndbInfo(int userId, string? presetName)
     {
+        if (string.IsNullOrEmpty(presetName))
+        {
+            return new PlayerVndbInfo();
+        }
+
         // todo? store actual vndb info and return that instead of this
-        const string sql = "SELECT * from users_label where user_id = @user_id";
+        const string sql =
+            "SELECT vndb_uid from users_label where user_id = @userId and preset_name = @presetName LIMIT 1";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
-            var userLabel = (await connection.QueryAsync<UserLabel>(sql, new { user_id = userId, })).ToList();
+            var userLabel = (await connection.QueryAsync<UserLabel>(sql, new { userId, presetName })).ToList();
             return new PlayerVndbInfo
             {
                 VndbId = userLabel.FirstOrDefault()?.vndb_uid, VndbApiToken = null, Labels = null
@@ -3206,13 +3212,14 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         }
     }
 
-    public static async Task<List<UserLabel>> GetUserLabels(int userId, string vndbUid)
+    public static async Task<List<UserLabel>> GetUserLabels(int userId, string vndbUid, string presetName)
     {
-        const string sql = "SELECT * from users_label where user_id = @user_id AND vndb_uid = @vndb_uid";
+        const string sql =
+            "SELECT * from users_label where user_id = @userId AND vndb_uid = @vndbUid and preset_name = @presetName";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
             return (await connection.QueryAsync<UserLabel>(sql,
-                new { user_id = userId, vndb_uid = vndbUid })).ToList();
+                new { userId, vndbUid, presetName })).ToList();
         }
     }
 
@@ -3230,14 +3237,15 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
     public static async Task<long> RecreateUserLabel(UserLabel userLabel, Dictionary<string, int> vns)
     {
         const string sqlDelete =
-            "DELETE from users_label where user_id = @user_id AND vndb_uid = @vndb_uid AND vndb_label_id = @vndb_label_id";
+            "DELETE from users_label where user_id = @user_id AND vndb_uid = @vndb_uid AND vndb_label_id = @vndb_label_id and preset_name = @preset_name";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
             await connection.ExecuteAsync(sqlDelete,
-                new { userLabel.user_id, userLabel.vndb_uid, userLabel.vndb_label_id }, transaction);
+                new { userLabel.user_id, userLabel.vndb_uid, userLabel.vndb_label_id, userLabel.preset_name },
+                transaction);
 
             await connection.InsertAsync(userLabel, transaction);
             long userLabelId = userLabel.id;
@@ -3268,12 +3276,12 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         }
     }
 
-    public static async Task DeleteUserLabels(int userId)
+    public static async Task DeleteUserLabels(int userId, string presetName)
     {
-        const string sqlDelete = "DELETE from users_label where user_id = @user_id";
+        const string sqlDelete = "DELETE from users_label where user_id = @userId and preset_name = @presetName";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
-            await connection.ExecuteAsync(sqlDelete, new { user_id = userId });
+            await connection.ExecuteAsync(sqlDelete, new { userId, presetName });
         }
     }
 
@@ -3708,5 +3716,61 @@ group by sq.user_id
         {
             CachedSongs.TryRemove(musicId, out _);
         }
+    }
+
+    public static async Task<string?> GetActiveUserLabelPresetName(int userId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        string? presetName =
+            await connection.ExecuteScalarAsync<string?>(
+                "select name from users_label_preset where user_id = @userId and is_active", new { userId });
+
+        return presetName;
+    }
+
+    public static async Task<List<UserLabelPreset>> GetUserLabelPresets(int userId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var presets =
+            (await connection.QueryAsync<UserLabelPreset>(
+                "select * from users_label_preset where user_id = @userId", new { userId })).ToList();
+
+        return presets;
+    }
+
+    public static async Task<bool> UpsertUserLabelPreset(UserLabelPreset preset)
+    {
+        try
+        {
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            await connection.OpenAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+
+            await connection.ExecuteAsync("update users_label_preset set is_active = false where user_id = @user_id",
+                new { preset.user_id }, transaction);
+
+            preset.is_active = true;
+            bool upserted = await connection.UpsertAsync(preset, transaction);
+            if (!upserted)
+            {
+                Console.WriteLine($"error upserting UserLabelPreset: {JsonSerializer.Serialize(preset, Utils.Jso)}");
+                return false;
+            }
+
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+    }
+
+    public static async Task DeleteUserLabelPreset(UserLabelPreset preset)
+    {
+        const string sqlDelete = "DELETE from users_label_preset where user_id = @user_id AND name = @name";
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connection.ExecuteAsync(sqlDelete, new { user_id = preset.user_id, name = preset.name });
     }
 }
