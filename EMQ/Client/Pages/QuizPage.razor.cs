@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -706,8 +706,9 @@ public partial class QuizPage
                     }
                 }
 
-                if (ClientState.Session.Player.Preferences is { WantsVideo: true, HideSpoilers: true } &&
-                    _currentSong != null && _currentSong.Attributes.HasFlag(SongAttributes.Spoilers))
+                if (ClientState.Session.Player.Preferences is { HideSpoilers: true } &&
+                    _correctAnswer != null && _correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers) &&
+                    _currentSong != null && _currentSong.Links.First().Url.IsVideoLink())
                 {
                     // todo undo this, unless player manually toggles the setting
                     ClientState.Session.Player.Preferences.HideVideo = true;
