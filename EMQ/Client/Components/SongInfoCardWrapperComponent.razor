@@ -131,7 +131,7 @@
                                         <li class="songInfoCardSongLinksVideoLink">
                                             @if (isAdmin)
                                             {
-                                                <span style="display: inline-block; cursor: pointer; margin-right: 2px;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))">🗑</span>
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))">🗑</span>
                                             }
                                             @if (validUrls.Contains(videoLink.Url))
                                             {
@@ -181,7 +181,7 @@
                                         <li class="songInfoCardSongLinksSoundLink">
                                             @if (isAdmin)
                                             {
-                                                <span style="display: inline-block; cursor: pointer; margin-right: 2px;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))">🗑</span>
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))">🗑</span>
                                             }
 
                                             @if (validUrls.Contains(soundLink.Url))
