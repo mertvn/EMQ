@@ -137,4 +137,7 @@ public class PlayerPreferences
 
     [Required]
     public bool HideSpoilers { get; set; } = true;
+
+    [Required]
+    public bool SwapArtistNameAndSongTitleDropdowns { get; set; } = false;
 }

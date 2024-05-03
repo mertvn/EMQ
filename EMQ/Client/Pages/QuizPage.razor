@@ -1,4 +1,4 @@
-﻿@page "/QuizPage"
+@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -463,26 +463,53 @@ else if (!IsSpectator)
                 </GuessInputComponent>
             }
 
-            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+            @if (ClientState.Session?.Player.Preferences.SwapArtistNameAndSongTitleDropdowns ?? false)
             {
-                // todo @bind-Guess
-                <AutocompleteAComponent @ref="AutocompleteAComponent"
-                                        Placeholder="Enter artist name here"
-                                        FreeTyping="true"
-                                        IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
-                                        IsQuizPage="true">
-                </AutocompleteAComponent>
-            }
+                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                {
+                    <AutocompleteMtComponent @ref="AutocompleteMtComponent"
+                                             Placeholder="Enter song title here"
+                                             FreeTyping="true"
+                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                             IsQuizPage="true"
+                                             @bind-Guess="@PageState.Guess.Mt">
+                    </AutocompleteMtComponent>
+                }
 
-            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                {
+                    // todo @bind-Guess
+                    <AutocompleteAComponent @ref="AutocompleteAComponent"
+                                            Placeholder="Enter artist name here"
+                                            FreeTyping="true"
+                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                            IsQuizPage="true">
+                    </AutocompleteAComponent>
+                }
+            }
+            else
             {
-                <AutocompleteMtComponent @ref="AutocompleteMtComponent"
-                                         Placeholder="Enter song title here"
-                                         FreeTyping="true"
-                                         IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
-                                         IsQuizPage="true"
-                                         @bind-Guess="@PageState.Guess.Mt">
-                </AutocompleteMtComponent>
+                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                {
+                    // todo @bind-Guess
+                    <AutocompleteAComponent @ref="AutocompleteAComponent"
+                                            Placeholder="Enter artist name here"
+                                            FreeTyping="true"
+                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                            IsQuizPage="true">
+                    </AutocompleteAComponent>
+                }
+
+                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                {
+                    <AutocompleteMtComponent @ref="AutocompleteMtComponent"
+                                             Placeholder="Enter song title here"
+                                             FreeTyping="true"
+                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                             IsQuizPage="true"
+                                             @bind-Guess="@PageState.Guess.Mt">
+                    </AutocompleteMtComponent>
+                }
             }
         }
 
