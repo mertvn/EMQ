@@ -8,13 +8,13 @@
 {
     bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
-    @if (ClientState.Session != null && Song.Links.Any())
+    @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
     }
 
     <div class="songInfoCard card">
-        @if (ClientState.Session != null && Song.Links.Any())
+        @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
         {
             <span class="songInfoCardReportButton link-danger"
                   style="position: absolute; right: 10px; top: 5px; cursor: pointer;"
@@ -84,36 +84,39 @@
 
                                     <span>@(final)</span>
 
-                                    foreach (var link in songSource.Links.OrderBy(x => x.Type))
+                                    @if (Song.Id > 0) // don't show links when playing with Hints
                                     {
-                                        string src;
-                                        if (link.Url.Contains("vndb.org")) // todo
+                                        foreach (var link in songSource.Links.OrderBy(x => x.Type))
                                         {
-                                            src = "assets/favicon/vndb.ico";
-                                        }
-                                        else if (link.Url.Contains("musicbrainz.org"))
-                                        {
-                                            src = "assets/favicon/musicbrainz.png";
-                                        }
-                                        else if (link.Url.Contains("vgmdb.net"))
-                                        {
-                                            src = "assets/favicon/vgmdb.ico";
-                                        }
-                                        else
-                                        {
-                                            // todo?
-                                            src = "";
-                                        }
+                                            string src;
+                                            if (link.Url.Contains("vndb.org")) // todo
+                                            {
+                                                src = "assets/favicon/vndb.ico";
+                                            }
+                                            else if (link.Url.Contains("musicbrainz.org"))
+                                            {
+                                                src = "assets/favicon/musicbrainz.png";
+                                            }
+                                            else if (link.Url.Contains("vgmdb.net"))
+                                            {
+                                                src = "assets/favicon/vgmdb.ico";
+                                            }
+                                            else
+                                            {
+                                                // todo?
+                                                src = "";
+                                            }
 
-                                        @if (!string.IsNullOrEmpty(src))
-                                        {
-                                            <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                                <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
-                                                    <img width="16px" height="16px"
-                                                         src="@src" alt="link"
-                                                         style="margin-left: 8px; scale: 1.2;">
-                                                </a>
-                                            </Blazorise.Tooltip>
+                                            @if (!string.IsNullOrEmpty(src))
+                                            {
+                                                <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+                                                    <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                                        <img width="16px" height="16px"
+                                                             src="@src" alt="link"
+                                                             style="margin-left: 8px; scale: 1.2;">
+                                                    </a>
+                                                </Blazorise.Tooltip>
+                                            }
                                         }
                                     }
 
@@ -124,7 +127,8 @@
                         }
 
                     </h5>
-                    @{
+                    @if (Song.Titles.Any())
+                    {
                         Title mainTitle = Converters.GetSingleTitle(Song.Titles);
                         string latinTitle = mainTitle.LatinTitle;
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
@@ -148,22 +152,26 @@
 
                             <div>
                                 <span>@songArtistTitle.ToString()</span>
-                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                                @if (songArtist.VndbId!.StartsWith("s"))
+
+                                @if (Song.Id > 0) // don't show links when playing with Hints
                                 {
-                                    <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
-                                        <img width="16px" height="16px"
-                                             src="assets/favicon/vndb.ico" alt="link"
-                                             style="margin-left: 6px; scale: 1.2;">
-                                    </a>
-                                }
-                                else
-                                {
-                                    <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
-                                        <img width="16px" height="16px"
-                                             src="assets/favicon/musicbrainz.png" alt="link"
-                                             style="margin-left: 6px; scale: 1.2;">
-                                    </a>
+                                    @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
+                                    @if (songArtist.VndbId!.StartsWith("s"))
+                                    {
+                                        <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
+                                            <img width="16px" height="16px"
+                                                 src="assets/favicon/vndb.ico" alt="link"
+                                                 style="margin-left: 6px; scale: 1.2;">
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
+                                            <img width="16px" height="16px"
+                                                 src="assets/favicon/musicbrainz.png" alt="link"
+                                                 style="margin-left: 6px; scale: 1.2;">
+                                        </a>
+                                    }
                                 }
 
                             </div>
@@ -188,6 +196,9 @@
                 }
 
                 <br/>
+
+            @if (Song.Id > 0)
+            {
                 <details open>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
@@ -214,6 +225,7 @@
                         }
                     }
                 </details>
+            }
             </div>
 
         </div>

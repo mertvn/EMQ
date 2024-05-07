@@ -153,7 +153,25 @@ public class QuizController : ControllerBase
                             url = url.Replace("https://files.catbox.moe/", "emqsongsbackup/");
                         }
 
-                        return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl);
+                        SongHint hint = new();
+                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Msst, out bool msst) &&
+                            msst)
+                        {
+                            hint.Sources = song.Sources;
+                        }
+
+                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.A, out bool a) && a)
+                        {
+                            hint.Artists = song.Artists;
+                        }
+
+                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Mt, out bool mt) && mt)
+                        {
+                            hint.Titles = song.Titles;
+                        }
+
+                        return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl,
+                            hint);
                     }
                     else
                     {

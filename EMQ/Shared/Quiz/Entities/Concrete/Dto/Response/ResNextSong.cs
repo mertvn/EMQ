@@ -2,13 +2,14 @@
 
 public class ResNextSong
 {
-    public ResNextSong(int songIndex, string url, int startTime, string screenshotUrl, string coverUrl)
+    public ResNextSong(int songIndex, string url, int startTime, string screenshotUrl, string coverUrl, SongHint hint)
     {
         SongIndex = songIndex;
         Url = url;
         StartTime = startTime;
         ScreenshotUrl = screenshotUrl;
         CoverUrl = coverUrl;
+        Hint = hint;
     }
 
     public int SongIndex { get; }
@@ -20,4 +21,6 @@ public class ResNextSong
     public string ScreenshotUrl { get; }
 
     public string CoverUrl { get; }
+
+    public SongHint Hint { get; set; }
 }

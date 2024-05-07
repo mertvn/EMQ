@@ -858,6 +858,7 @@ public class QuizManager
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
                                  IsOnlyMstGuessTypeEnabled &&
+                                 !Quiz.Room.QuizSettings.EnabledSongHintKinds.Any(x => x.Value) &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&

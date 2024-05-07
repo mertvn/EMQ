@@ -188,6 +188,11 @@ public class QuizSettings
     public Dictionary<GuessKind, bool> EnabledGuessKinds { get; set; } =
         new() { { GuessKind.Mst, true }, { GuessKind.A, false }, { GuessKind.Mt, false }, };
 
+    [ProtoMember(25)]
+    [Required]
+    public Dictionary<SongHintKind, bool> EnabledSongHintKinds { get; set; } =
+        new() { { SongHintKind.Msst, false }, { SongHintKind.A, false }, { SongHintKind.Mt, false }, };
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -463,6 +468,20 @@ public class QuizSettings
                 .Select(y => y.Key.GetDescription());
 
             diff.Add($"Guess types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+        }
+
+        if (JsonSerializer.Serialize(o.EnabledSongHintKinds) !=
+            JsonSerializer.Serialize(n.EnabledSongHintKinds))
+        {
+            var ol = o.EnabledSongHintKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            var ne = n.EnabledSongHintKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            diff.Add($"Hints: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         return diff;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -368,6 +368,9 @@ public partial class QuizPage
                     Links = new List<SongLink> { new() { Url = nextSong.Url } },
                     ScreenshotUrl = nextSong.ScreenshotUrl,
                     CoverUrl = nextSong.CoverUrl,
+                    Sources = nextSong.Hint.Sources,
+                    Artists = nextSong.Hint.Artists,
+                    Titles = nextSong.Hint.Titles,
                 };
                 return song;
             }

@@ -1,4 +1,4 @@
-@page "/QuizPage"
+﻿@page "/QuizPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -192,9 +192,13 @@
 }
 
 <div id="correctAnswerInfoDiv"
-     style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 350px; min-height:200px; max-height: 870px; float:right; padding-right: 20px">
-    @* todo Latin vs NonLatin title option *@
-    <SongInfoCardComponent Song="@_correctAnswer"/>
+     style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility || _currentSong != null && (_currentSong.Sources.Any() || _currentSong.Artists.Any() || _currentSong.Titles.Any()));
+      width: 350px; min-height:200px; max-height: 870px; float:right; padding-right: 20px">
+
+    @if (_correctAnswer != null || _currentSong != null) // necessary for hints to show up on the first song because of SongInfoCardComponent.ShouldRender()
+    {
+        <SongInfoCardComponent Song="@(_correctAnswer ?? _currentSong)"/>
+    }
 
     @if (ClientState.Session != null && Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))
     {
