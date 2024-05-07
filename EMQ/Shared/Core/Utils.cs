@@ -52,4 +52,12 @@ public static class Utils
 
         await Task.WhenAny(waitTask, Task.Delay(timeout));
     }
+
+    public static (string modStr, int number) ParseVndbScreenshotStr(string screenshot)
+    {
+        int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
+        int mod = number % 100;
+        string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+        return (modStr, number);
+    }
 }

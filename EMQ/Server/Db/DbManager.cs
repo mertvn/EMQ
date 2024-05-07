@@ -3461,11 +3461,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                             .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
-                            // Console.WriteLine(screenshot);
-                            // this substring may break in the future
-                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
-                            int mod = number % 100;
-                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
                             ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
                                 .ReplaceSelfhostLink();
                         }
@@ -3482,11 +3478,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                             .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
-                            // Console.WriteLine(screenshot);
-                            // this substring may break in the future
-                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
-                            int mod = number % 100;
-                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
                             ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv/{modStr}/{number}.jpg"
                                 .ReplaceSelfhostLink();
                         }
@@ -3504,13 +3496,31 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                             .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
-                            // Console.WriteLine(screenshot);
-                            // this substring may break in the future
-                            int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
-                            int mod = number % 100;
-                            string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
+                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
                             ret = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg"
                                 .ReplaceSelfhostLink();
+                        }
+                    }
+
+                    break;
+                }
+            case ScreenshotKind.VNPreferExplicit:
+                {
+                    const string sql =
+                        "SELECT scr from vn_screenshots vs join images i on i.id = vs.scr where vs.id = @id and i.c_sexual_avg > 100";
+                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    {
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                        if (!string.IsNullOrEmpty(screenshot))
+                        {
+                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
+                                .ReplaceSelfhostLink();
+                        }
+                        else
+                        {
+                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN);
                         }
                     }
 

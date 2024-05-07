@@ -10,4 +10,7 @@ public enum ScreenshotKind
     [Description("VN cover")]
     VNCover,
     Character,
+
+    [Description("VN (prefer explicit)")]
+    VNPreferExplicit,
 }
