@@ -341,9 +341,9 @@ public class QuizManager
             if (!CorrectAnswersDictA.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
                 correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
-                    .Select(x => x.LatinTitle).ToList();
+                    .Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                 correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
-                    .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                    .Select(x => x.NonLatinTitle?.NormalizeForAutocomplete()).Where(x => x != null)!);
                 correctAnswers = correctAnswers.Distinct().ToList();
 
                 CorrectAnswersDictA.Add(Quiz.QuizState.sp, correctAnswers);
@@ -352,7 +352,7 @@ public class QuizManager
 
             foreach (string correctAnswer in correctAnswers)
             {
-                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                if (guess.NormalizeForAutocomplete() == correctAnswer)
                 {
                     correct = true;
                     break;
