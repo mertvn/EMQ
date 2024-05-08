@@ -83,9 +83,12 @@
             <Content>
                 <Blazorise.TabPanel Name="TabGeneral">
                     <div>
-                        @* todo allow changing room name *@
                         <InputCheckbox id="IsHotjoinEnabled" class="form-check-input" @bind-Value="ClientQuizSettings.IsHotjoinEnabled" style="margin: 5px"></InputCheckbox>
                         <label for="IsHotjoinEnabled">Enable hotjoin</label>
+                        <br/>
+
+                        <InputCheckbox id="IsNoSoundMode" class="form-check-input" @bind-Value="ClientQuizSettings.IsNoSoundMode" style="margin: 5px"></InputCheckbox>
+                        <label for="IsNoSoundMode">No sound mode</label>
                         <br/>
 
                         <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">

@@ -858,6 +858,7 @@ public class QuizManager
                                  Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
                                  Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
                                  IsOnlyMstGuessTypeEnabled &&
+                                 !Quiz.Room.QuizSettings.IsNoSoundMode &&
                                  !Quiz.Room.QuizSettings.EnabledSongHintKinds.Any(x => x.Value) &&
                                  !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
                                  !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
@@ -1194,6 +1195,11 @@ public class QuizManager
                     writeToChat: true);
                 return false;
             }
+        }
+
+        if (Quiz.Room.QuizSettings.IsNoSoundMode)
+        {
+            Quiz.Room.QuizSettings.TimeoutMs = 5000;
         }
 
         CorrectAnswersDictMst = new Dictionary<int, List<string>>();

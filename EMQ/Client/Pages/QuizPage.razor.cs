@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -364,14 +364,19 @@ public partial class QuizPage
             {
                 Song song = new Song
                 {
-                    StartTime = nextSong.StartTime,
-                    Links = new List<SongLink> { new() { Url = nextSong.Url } },
                     ScreenshotUrl = nextSong.ScreenshotUrl,
                     CoverUrl = nextSong.CoverUrl,
                     Sources = nextSong.Hint.Sources,
                     Artists = nextSong.Hint.Artists,
                     Titles = nextSong.Hint.Titles,
                 };
+
+                if (!Room?.QuizSettings.IsNoSoundMode ?? true)
+                {
+                    song.StartTime = nextSong.StartTime;
+                    song.Links = new List<SongLink> { new() { Url = nextSong.Url } };
+                }
+
                 return song;
             }
         }
@@ -832,6 +837,14 @@ public partial class QuizPage
 
         if (song.DoneBuffering)
         {
+            return true;
+        }
+
+        if (!song.Links.Any()) // no sound mode
+        {
+            song.DoneBuffering = true;
+            await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",
+                ClientState.Session.Player.Id, $"Preload2|false");
             return true;
         }
 

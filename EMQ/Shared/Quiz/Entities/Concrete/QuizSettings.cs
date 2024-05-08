@@ -193,6 +193,11 @@ public class QuizSettings
     public Dictionary<SongHintKind, bool> EnabledSongHintKinds { get; set; } =
         new() { { SongHintKind.Msst, false }, { SongHintKind.A, false }, { SongHintKind.Mt, false }, };
 
+    [ProtoMember(26)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsNoSoundMode { get; set; } = false;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -482,6 +487,11 @@ public class QuizSettings
                 .Select(y => y.Key.GetDescription());
 
             diff.Add($"Hints: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+        }
+
+        if (o.IsNoSoundMode != n.IsNoSoundMode)
+        {
+            diff.Add($"No sound mode: {o.IsNoSoundMode} → {n.IsNoSoundMode}");
         }
 
         return diff;

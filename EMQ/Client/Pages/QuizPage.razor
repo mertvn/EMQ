@@ -301,8 +301,8 @@
 
                 if (VisibleVideoElementId == "video1")
                 {
-                    video1Src = _currentSong != null ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
-                    video2Src = _nextSong != null ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
+                    video1Src = _currentSong != null && _currentSong.Links.Any() ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
+                    video2Src = _nextSong != null && _nextSong.Links.Any() ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
 
                     if (DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(10))
                     {
@@ -313,8 +313,8 @@
                 }
                 else
                 {
-                    video2Src = _currentSong != null ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
-                    video1Src = _nextSong != null ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
+                    video2Src = _currentSong != null && _currentSong.Links.Any() ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
+                    video1Src = _nextSong != null && _nextSong.Links.Any() ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
 
                     if (DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(10))
                     {
@@ -335,7 +335,7 @@
                    style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video2")">
             </video>
 
-            @if (PageState.VideoPlayerVisibility && _currentSong is not null && !_currentSong.Links.First().Url.IsVideoLink())
+            @if (PageState.VideoPlayerVisibility && _currentSong is not null && (!_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false))
             {
                 @if (ClientState.Session != null && ClientState.Session.Player.Preferences.ShowVndbCovers && !string.IsNullOrEmpty(_currentSong.CoverUrl))
                 {
