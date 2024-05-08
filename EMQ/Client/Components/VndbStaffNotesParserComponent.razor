@@ -83,6 +83,11 @@
 
     private List<ParsedSong> Parse(string s)
     {
+        if (string.IsNullOrWhiteSpace(s))
+        {
+            return new List<ParsedSong>();
+        }
+
         var actual = VNDBStaffNotesParser.Program.Parse(s);
     // JsonSerializer.Serialize(actual, Utils.JsoIndented);
     // StateHasChanged();

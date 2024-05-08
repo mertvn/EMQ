@@ -195,10 +195,9 @@
                     </div>
                 }
 
-                <br/>
-
             @if (Song.Id > 0)
             {
+                <br/>
                 <details open>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())

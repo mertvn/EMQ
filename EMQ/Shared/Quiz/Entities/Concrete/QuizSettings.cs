@@ -169,7 +169,7 @@ public class QuizSettings
     [ProtoMember(21)]
     [Required]
     [DefaultValue(true)]
-    public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true; // todo diff
+    public bool NGMCAutoPickOnlyCorrectPlayerInTeam { get; set; } = true;
 
     [ProtoMember(22)]
     [Required]
