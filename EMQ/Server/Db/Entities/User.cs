@@ -32,8 +32,8 @@ public class User
 
     // "character" is semi-reserved
     [Required]
-    public AvatarCharacter avatar { get; set; }
+    public AvatarCharacter avatar { get; set; } = Avatar.DefaultAvatar.Character;
 
     [Required]
-    public string skin { get; set; } = "";
+    public string skin { get; set; } = Avatar.DefaultAvatar.Skin;
 }
