@@ -4,7 +4,7 @@ using Blazored.LocalStorage;
 using Blazorise;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
-using BlazorWasmProfiler;
+// using BlazorWasmProfiler;
 using EMQ.Client;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;

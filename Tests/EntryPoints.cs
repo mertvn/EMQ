@@ -27,6 +27,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Npgsql;
 using NUnit.Framework;
+using Renci.SshNet;
+using Renci.SshNet.Sftp;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Tests;
@@ -1205,5 +1207,48 @@ order by user_id";
         }
 
         await File.WriteAllLinesAsync("deleteme_vnswith0songs.tsv", res);
+    }
+
+    [Test, Explicit]
+    public static async Task DeleteOrphanedSelfHostStorageFiles()
+    {
+        var deletableFiles = new List<ISftpFile>();
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        string[] validFilenames =
+            (await connection.QueryAsync<string>("select url from music_external_link where type = 2"))
+            .Select(x => x.Replace("https://emqselfhost/selfhoststorage/", "")
+                .Replace("catbox/", "")
+                .Replace("userup/", "")
+                .Replace("weba/", "")).ToArray();
+
+        var connectionInfo =
+            new Renci.SshNet.ConnectionInfo(UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                new PasswordAuthenticationMethod(UploadConstants.SftpUsername, UploadConstants.SftpPassword));
+        using (var client = new SftpClient(connectionInfo))
+        {
+            client.Connect();
+
+            var files = client.ListDirectory(UploadConstants.SftpUserUploadDir);
+            foreach (ISftpFile file in files)
+            {
+                bool olderThan14Days = (DateTime.UtcNow - file.LastWriteTimeUtc) > TimeSpan.FromDays(14);
+                if (file.Name != ".." && olderThan14Days && !validFilenames.Contains(file.Name))
+                {
+                    deletableFiles.Add(file);
+                }
+            }
+
+            client.Disconnect();
+        }
+
+        Console.WriteLine(
+            $"{deletableFiles.Count} files ({(float)deletableFiles.Sum(x => x.Length) / 1024 / 1024 / 1024} GB)");
+
+        foreach (ISftpFile deletableFile in deletableFiles)
+        {
+            Console.WriteLine(deletableFile.FullName);
+        }
+
+        // todo delete
     }
 }

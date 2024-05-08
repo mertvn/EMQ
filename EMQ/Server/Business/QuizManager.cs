@@ -1186,15 +1186,26 @@ public class QuizManager
             return false;
         }
 
-        if (Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+        if (!IsOnlyMstGuessTypeEnabled)
         {
-            if (!IsOnlyMstGuessTypeEnabled)
+            if (Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
             {
                 Quiz.Room.Log(
                     $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled for the \"{AnsweringKind.MultipleChoice.GetDescription()}\" Answering method.",
                     writeToChat: true);
                 return false;
             }
+
+            // if ((Quiz.Room.QuizSettings.Filters.SongSourceSongTypeRandomEnabledSongTypes.TryGetValue(
+            //         SongSourceSongType.BGM, out bool bgmIsEnabledForRandom) && bgmIsEnabledForRandom) ||
+            //     Quiz.Room.QuizSettings.Filters.SongSourceSongTypeFilters.TryGetValue(
+            //         SongSourceSongType.BGM, out IntWrapper? bgmCount) && bgmCount.Value > 0)
+            // {
+            //     Quiz.Room.Log(
+            //         $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled if the song type \"{SongSourceSongType.BGM}\" is enabled.",
+            //         writeToChat: true);
+            //     return false;
+            // }
         }
 
         if (Quiz.Room.QuizSettings.IsNoSoundMode)
