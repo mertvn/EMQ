@@ -214,7 +214,7 @@
 
                                     @if (ClientAvatar?.Character is AvatarCharacter.VNDBCharacterImage)
                                     {
-                                        <input id="InputVNDBCharacterImage" type="text" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
+                                        <input id="InputVNDBCharacterImage" type="text" style="margin: 5px; width: 120px;" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
                                         <label for="InputVNDBCharacterImage">VNDB character ID (e.g. c465)</label>
                                         <br/>
                                     }
