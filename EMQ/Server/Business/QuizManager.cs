@@ -1392,6 +1392,7 @@ public class QuizManager
                 switch (Quiz.Room.QuizSettings.ListDistributionKind)
                 {
                     case ListDistributionKind.Random:
+                    case ListDistributionKind.Unread:
                         {
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                                 Quiz.Room.QuizSettings.Duplicates, validSources,

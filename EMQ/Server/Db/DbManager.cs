@@ -1349,7 +1349,14 @@ public static class DbManager
 
             if (validSources != null && validSources.Any())
             {
-                queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
+                if (listDistributionKind is ListDistributionKind.Unread)
+                {
+                    queryMusicIds.Append($@" AND NOT msel.url = ANY({validSources})");
+                }
+                else
+                {
+                    queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
+                }
             }
 
             if (validMids != null && validMids.Any())

@@ -6,4 +6,5 @@ public enum ListDistributionKind
 {
     Random = 0,
     Balanced = 2,
+    Unread = 3,
 }
