@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -28,4 +29,11 @@ public class User
 
     [Required]
     public string hash { get; set; } = "";
+
+    // "character" is semi-reserved
+    [Required]
+    public AvatarCharacter avatar { get; set; }
+
+    [Required]
+    public string skin { get; set; } = "";
 }

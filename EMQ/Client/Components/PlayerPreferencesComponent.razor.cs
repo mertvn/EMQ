@@ -36,6 +36,8 @@ public partial class PlayerPreferencesComponent
     // 1 more char. than the longest preset name allowed
     public const string CreateNewPresetValue = "-----------------------------------------------------------------";
 
+    public Avatar? ClientAvatar { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         while (ClientState.Session is null)
@@ -50,6 +52,8 @@ public partial class PlayerPreferencesComponent
             Presets = (await resGet.Content.ReadFromJsonAsync<List<UserLabelPreset>>())!;
             SelectedPresetName = ClientState.Session.ActiveUserLabelPresetName ?? "";
         }
+
+        ClientAvatar = ClientState.Session.Player.Avatar;
 
         InProgress = false;
     }
@@ -376,5 +380,53 @@ public partial class PlayerPreferencesComponent
         }
 
         InProgress = false;
+    }
+
+    private async Task OnSelectedCharacterChanged(AvatarCharacter? value)
+    {
+        InProgress = true;
+
+        string skin = Avatar.SkinsDict[value!.Value].First();
+        var avatar = new Avatar(value.Value, skin);
+        if (avatar.IsValidSkinForCharacter())
+        {
+            await SendSetAvatarReq(avatar);
+        }
+        else
+        {
+            // todo warn error
+        }
+
+        InProgress = false;
+    }
+
+    private async Task OnSelectedSkinChanged(string? value)
+    {
+        InProgress = true;
+
+        var avatar = new Avatar(ClientAvatar!.Character, value!);
+        if (avatar.IsValidSkinForCharacter())
+        {
+            await SendSetAvatarReq(avatar);
+        }
+        else
+        {
+            // todo warn error
+        }
+
+        InProgress = false;
+    }
+
+    private async Task SendSetAvatarReq(Avatar avatar)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetAvatar", avatar);
+        if (res.IsSuccessStatusCode)
+        {
+            ClientAvatar = await res.Content.ReadFromJsonAsync<Avatar>();
+        }
+        else
+        {
+            // todo warn error
+        }
     }
 }

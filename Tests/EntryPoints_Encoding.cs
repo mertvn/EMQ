@@ -308,7 +308,8 @@ public class EntryPoints_Encoding
                 }
 
                 var extractedAnalysis = await MediaAnalyser.Analyse(tempPath, isVideoOverride: true);
-                var session = new Session(new Player(-1, songLink.SubmittedBy!), "", UserRoleKind.User, null);
+                var session = new Session(new Player(-1, songLink.SubmittedBy!, new Avatar(AvatarCharacter.Auu)), "",
+                    UserRoleKind.User, null);
                 const string notes = "extracted from video";
 
                 string guid = Guid.NewGuid().ToString();

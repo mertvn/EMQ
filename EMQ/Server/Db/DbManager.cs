@@ -3783,4 +3783,24 @@ group by sq.user_id
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         await connection.ExecuteAsync(sqlDelete, new { user_id = preset.user_id, name = preset.name });
     }
+
+    public static async Task<string> GetCharacterImageId(string cId)
+    {
+        const string sql = "SELECT c.image from chars c where c.image is not null and c.id = @cId";
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+        string? screenshot = (await connection.QueryAsync<string?>(sql, new { cId }))
+            .OrderBy(x => Random.Shared.Next()).FirstOrDefault(); // surely we get multiple character images one day
+        return screenshot ?? "";
+    }
+
+    public static async Task SetAvatar(int userId, Avatar avatar)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        int rows = await connection.ExecuteAsync("UPDATE users SET avatar = @avatar, skin = @skin where id = @userId",
+            new { userId, avatar = avatar.Character, skin = avatar.Skin });
+        if (rows != 1)
+        {
+            throw new Exception($"Error setting avatar for {userId} to {avatar.Character} {avatar.Skin}");
+        }
+    }
 }

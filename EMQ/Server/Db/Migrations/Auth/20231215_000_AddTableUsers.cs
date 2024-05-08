@@ -18,7 +18,9 @@ public class AddTableUsers : Migration
             .WithColumn("roles").AsInt32().NotNullable()
             .WithColumn("created_at").AsDateTimeOffset().NotNullable()
             .WithColumn("salt").AsString().NotNullable()
-            .WithColumn("hash").AsString().NotNullable();
+            .WithColumn("hash").AsString().NotNullable()
+            .WithColumn("character").AsInt32().NotNullable()
+            .WithColumn("skin").AsString().NotNullable();
 
         Execute.Sql(@"CREATE UNIQUE INDEX UC_users_username_lower ON users(lower(username));");
         Execute.Sql($@"ALTER TABLE users ADD CHECK (username ~* '{RegexPatterns.UsernameRegex}');");

@@ -7,10 +7,11 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class Player
 {
-    public Player(int id, string username)
+    public Player(int id, string username, Avatar avatar)
     {
         Id = id;
         Username = username;
+        Avatar = avatar;
     }
 
     public int Id { get; }
@@ -27,7 +28,7 @@ public class Player
 
     public int Score { get; set; }
 
-    public Avatar? Avatar { get; set; }
+    public Avatar Avatar { get; set; }
 
     public PlayerStatus PlayerStatus { get; set; }
 
@@ -140,4 +141,7 @@ public class PlayerPreferences
 
     [Required]
     public bool SwapArtistNameAndSongTitleDropdowns { get; set; } = false;
+
+    [Required]
+    public bool ForceDefaultAvatar { get; set; } = false;
 }

@@ -704,7 +704,7 @@ public class DbTests
         const string uploader = "Mert";
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes, OnlyOwnUploads = true },
-            printSql: true, players: new List<Player> { new(2, uploader) });
+            printSql: true, players: new List<Player> { new(2, uploader, new Avatar(AvatarCharacter.Auu)) });
 
         // foreach (Song song in songs)
         // {
@@ -732,7 +732,9 @@ public class DbTests
         List<string> uploaders = new() { "mert", "hslead" };
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { SongSourceSongTypeFilters = validSongSourceSongTypes, OnlyOwnUploads = true },
-            printSql: true, players: uploaders.Select(x => new Player(Random.Shared.Next(), x)).ToList());
+            printSql: true,
+            players: uploaders.Select(x => new Player(Random.Shared.Next(), x, new Avatar(AvatarCharacter.Auu)))
+                .ToList());
 
         Assert.That(songs.Count > 200);
         Assert.That(songs.Count < 10000);
@@ -780,7 +782,10 @@ public class DbTests
             validSourcesLooting.Remove(keyValuePair.Key);
         }
 
-        var sessions = new List<Session>() { new(new Player(7, "t") { }, "", UserRoleKind.User, null) };
+        var sessions = new List<Session>()
+        {
+            new(new Player(7, "t", new Avatar(AvatarCharacter.Auu)) { }, "", UserRoleKind.User, null)
+        };
         var inventory = looted.Select(keyValuePair => new Treasure(Guid.NewGuid(), keyValuePair, new Point())).ToList();
 
         sessions.Single().Player.LootingInfo.Inventory = inventory;

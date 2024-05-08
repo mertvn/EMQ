@@ -48,6 +48,8 @@ public class AuthController : ControllerBase
         int playerId;
         string token;
         UserRoleKind userRoleKind;
+        AvatarCharacter character = AvatarCharacter.Auu;
+        string skin = "Default";
 
         if (req.IsGuest)
         {
@@ -82,6 +84,8 @@ public class AuthController : ControllerBase
                 token = secret.token.ToString();
                 userRoleKind = (UserRoleKind)user.roles;
                 playerId = user.id;
+                character = user.avatar;
+                skin = user.skin;
 
                 var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
                 if (existingSession != null)
@@ -107,6 +111,8 @@ public class AuthController : ControllerBase
                     token = secret.token.ToString();
                     userRoleKind = (UserRoleKind)user.roles;
                     playerId = user.id;
+                    character = user.avatar;
+                    skin = user.skin;
 
                     var existingSession = ServerState.Sessions.SingleOrDefault(x => x.Player.Id == playerId);
                     if (existingSession != null)
@@ -132,7 +138,7 @@ public class AuthController : ControllerBase
 
         string? activeUserLabelPresetName = await DbManager.GetActiveUserLabelPresetName(playerId);
         var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
-        var player = new Player(playerId, username) { Avatar = new Avatar(AvatarCharacter.Auu, "default"), };
+        var player = new Player(playerId, username, new Avatar(character, skin));
         var session = new Session(player, token, userRoleKind, activeUserLabelPresetName);
 
         ServerState.AddSession(session);
@@ -623,5 +629,33 @@ public class AuthController : ControllerBase
         session.ActiveUserLabelPresetName = null;
         Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted user label preset {name}");
         return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [HttpPost]
+    [Route("SetAvatar")]
+    public async Task<ActionResult<Avatar>> SetAvatar([FromBody] Avatar req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        if (req.Character is AvatarCharacter.VNDBCharacterImage)
+        {
+            req.Skin = await DbManager.GetCharacterImageId(req.Skin.ToVndbId());
+        }
+        else
+        {
+            if (!req.IsValidSkinForCharacter())
+            {
+                return StatusCode(520);
+            }
+        }
+
+        await DbManager.SetAvatar(session.Player.Id, req);
+        session.Player.Avatar = req;
+        return req;
     }
 }

@@ -1,5 +1,6 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.VNDB.Business
 @using Juliet.Model.VNDBObject
@@ -27,6 +28,7 @@
                             <Items>
                                 <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
                                 <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>
+                                <Blazorise.Tab Name="TabAvatar">Avatar</Blazorise.Tab>
                             </Items>
                             <Content>
                                 <Blazorise.TabPanel Name="TabGeneral">
@@ -64,6 +66,10 @@
 
                                     <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
                                     <label for="SwapArtistNameAndSongTitleDropdowns">Swap the positions of the artist name and song title dropdowns</label>
+                                    <br/>
+
+                                    <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
+                                    <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
                                     <br/>
 
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
@@ -195,6 +201,49 @@
                                             }
                                         </div>
                                     }
+                                </Blazorise.TabPanel>
+                                <Blazorise.TabPanel Name="TabAvatar">
+                                    <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
+                                        @foreach (var character in Enum.GetValues<AvatarCharacter>())
+                                        {
+                                            <option value="@character">@character.GetDescription()</option>
+                                        }
+                                    </select>
+                                    <label for="SelectCharacter">Character</label>
+                                    <br/>
+
+                                    @if (ClientAvatar?.Character is AvatarCharacter.VNDBCharacterImage)
+                                    {
+                                        <input id="InputVNDBCharacterImage" type="text" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
+                                        <label for="InputVNDBCharacterImage">VNDB character ID (e.g. c465)</label>
+                                        <br/>
+                                    }
+                                    else
+                                    {
+                                        <select id="SelectSkin" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged" disabled="@InProgress">
+                                            @foreach (string skin in Avatar.SkinsDict[ClientAvatar?.Character ?? AvatarCharacter.Auu])
+                                            {
+                                                <option value="@skin">@skin</option>
+                                            }
+                                        </select>
+                                        <label for="SelectSkin">Skin</label>
+                                        <br/>
+                                    }
+
+                                    <br/>
+                                    @if (!string.IsNullOrWhiteSpace(ClientAvatar?.Skin))
+                                    {
+                                        <div style="display: flex;">
+                                            @foreach (var status in Enum.GetValues<PlayerStatus>().Where(x => x != PlayerStatus.Dead))
+                                            {
+                                                <div style="display: flex; flex-direction: column;">
+                                                    <span style="text-align: center;">@status</span>
+                                                    <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(ClientAvatar, status)" alt="Avatar">
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
                                 </Blazorise.TabPanel>
                             </Content>
                         </Blazorise.Tabs>

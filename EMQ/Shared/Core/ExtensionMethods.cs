@@ -363,4 +363,10 @@ public static class ExtensionMethods
     {
         return (divisor == 0) ? 0 : dividend / divisor;
     }
+
+    public static bool IsValidSkinForCharacter(this Avatar avatar)
+    {
+        return avatar.Character is AvatarCharacter.VNDBCharacterImage ||
+               Avatar.SkinsDict.TryGetValue(avatar.Character, out var skins) && skins.Contains(avatar.Skin);
+    }
 }
