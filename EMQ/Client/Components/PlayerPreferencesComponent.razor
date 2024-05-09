@@ -5,6 +5,7 @@
 @using EMQ.Shared.VNDB.Business
 @using Juliet.Model.VNDBObject
 @using Microsoft.Extensions.Logging
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<PlayerPreferencesComponent> _logger
 @inject ClientUtils _clientUtils
@@ -19,6 +20,7 @@
         <Blazorise.ModalBody>
             @if (ClientState.Session != null)
             {
+                bool isUser = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
                     <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
                         <DataAnnotationsValidator/>
@@ -202,7 +204,9 @@
                                         </div>
                                     }
                                 </Blazorise.TabPanel>
-                                <Blazorise.TabPanel Name="TabAvatar">
+                            <Blazorise.TabPanel Name="TabAvatar">
+                                @if (isUser)
+                                {
                                     <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
                                         @foreach (var character in Enum.GetValues<AvatarCharacter>())
                                         {
@@ -243,8 +247,12 @@
                                             }
                                         </div>
                                     }
-
-                                </Blazorise.TabPanel>
+                                }
+                                else
+                                {
+                                    <p>You must be logged in as a registered user to change your avatar.</p>
+                                }
+                            </Blazorise.TabPanel>
                             </Content>
                         </Blazorise.Tabs>
                     </EditForm>
