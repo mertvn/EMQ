@@ -60,7 +60,7 @@
                 <div class="treasureRoomPlayerDiv" style="z-index: 3000; display: inline-block; position: absolute; left: @(player.LootingInfo.X)px; top: @(player.LootingInfo.Y)px;">
                     <Blazorise.Tooltip Text="@player.Username">
                         <img width="@(LootingConstants.PlayerAvatarSize)px" height="@(LootingConstants.PlayerAvatarSize)px"
-                             src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Looting)" alt="Avatar"
+                             src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Looting)" alt="Avatar" class="@player.PlayerStatus"
                              style="border-radius: 50%;">
                         @* <p>@player.Username</p> *@
                     </Blazorise.Tooltip>

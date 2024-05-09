@@ -605,7 +605,7 @@ else if (!IsSpectator)
                         @{
                             Avatar avatar = (ClientState.Session?.Player.Preferences.ForceDefaultAvatar ?? false) ? Avatar.DefaultAvatar : player.Avatar;
                         }
-                        <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, player.PlayerStatus)" alt="Avatar">
+                        <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, player.PlayerStatus)" alt="Avatar" class="@player.PlayerStatus">
 
                         @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
                         {
