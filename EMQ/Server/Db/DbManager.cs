@@ -3692,8 +3692,17 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         return mids.ToList();
     }
 
-    public static async Task<ResGetPublicUserInfo> GetPublicUserInfo(int userId)
+    public static async Task<ResGetPublicUserInfo?> GetPublicUserInfo(int userId)
     {
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var user = await connectionAuth.QuerySingleOrDefaultAsync<User>(
+            "SELECT username, roles, created_at, avatar, skin from users where id = @userId", new { userId });
+
+        if (user is null)
+        {
+            return null;
+        }
+
         const string sql =
             @"select count(music_id) as count, (100 / (count(music_id)::real / COALESCE(NULLIF(count(is_correct) filter(where is_correct), 0), 1))) as gr from quiz_song_history
 where user_id = @userId
@@ -3702,15 +3711,6 @@ group by user_id
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         (int count, float gr) = await connection.QuerySingleOrDefaultAsync<(int count, float gr)>(sql, new { userId });
-
-        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
-        var user = await connectionAuth.QuerySingleOrDefaultAsync<User>(
-            "SELECT username, roles, created_at, avatar, skin from users where id = @userId", new { userId });
-
-        if (user is null)
-        {
-            throw new Exception("user is null");
-        }
 
         var res = new ResGetPublicUserInfo
         {

@@ -570,7 +570,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResGetPublicUserInfo>> GetPublicUserInfo([FromBody] int userId)
     {
         var publicUserInfo = await DbManager.GetPublicUserInfo(userId);
-        return publicUserInfo;
+        return publicUserInfo != null ? publicUserInfo : StatusCode(520);
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
