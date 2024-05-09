@@ -1,0 +1,26 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Library.Entities.Concrete
+@inject HttpClient _client
+@inject ILogger<AutocompleteAComponent> _logger
+
+<Autocomplete @ref="AutocompleteComponent"
+              @onkeypress="Onkeypress"
+              TItem="string"
+              TValue="string"
+              Data="@CurrentDataSource"
+              ReadData="@OnHandleReadData"
+              TextField="@((item) => item)"
+              ValueField="@((item) => item)"
+              Placeholder="@Placeholder"
+              FreeTyping="@FreeTyping"
+              MinLength="1"
+              Debounce="true"
+              DebounceInterval="5"
+              MaxMenuHeight="340px"
+              AutoPreSelect="false"
+              AutoSelectFirstItem="false"
+              CustomFilter="CustomFilter"
+              SelectedValueChanged="SelectedValueChanged"
+              Disabled="@IsDisabled">
+</Autocomplete>

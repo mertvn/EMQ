@@ -11,5 +11,8 @@ public enum GuessKind
     A,
 
     [Description("Song Title")]
-    Mt
+    Mt,
+
+    [Description("Rigger Name")]
+    Rigger
 }

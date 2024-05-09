@@ -515,6 +515,18 @@ else if (!IsSpectator)
                     </AutocompleteMtComponent>
                 }
             }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Rigger, out bool rigger) && rigger)
+            {
+                <AutocompletePlayerComponent @ref="AutocompletePlayerComponent"
+                                     Placeholder="Enter player name here"
+                                     FreeTyping="true"
+                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                     IsQuizPage="true"
+                                     @bind-Guess="@PageState.Guess.Rigger"
+                                     AutocompleteData="Room.Players.Select(x => x.Username).ToArray()">
+                </AutocompletePlayerComponent>
+            }
         }
 
     </div>
@@ -543,7 +555,7 @@ else if (!IsSpectator)
 
                 <div class="playerDiv" style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5")">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
-                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (!string.IsNullOrWhiteSpace(playerGuess?.Mst) || !string.IsNullOrWhiteSpace(playerGuess?.A) || !string.IsNullOrWhiteSpace(playerGuess?.Mt)));"
+                                     cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (!string.IsNullOrWhiteSpace(playerGuess?.Mst) || !string.IsNullOrWhiteSpace(playerGuess?.A) || !string.IsNullOrWhiteSpace(playerGuess?.Mt) || !string.IsNullOrWhiteSpace(playerGuess?.Rigger)));"
                          @onclick="@(() => SetGuess(playerGuess ?? new()))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
                             <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block; z-index: 5;
@@ -563,23 +575,56 @@ else if (!IsSpectator)
                                                 </li>
                                             }
 
-                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                                            @if (ClientState.Session?.Player.Preferences.SwapArtistNameAndSongTitleDropdowns ?? false)
                                             {
-                                                bool? aIsCorrect = null;
-                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.A, out aIsCorrect);
-                                                <li style="color: @UiHelpers.Bool2Color(aIsCorrect, "green", "red")">
-                                                    @playerGuess.A
+                                                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                                                {
+                                                    bool? mtIsCorrect = null;
+                                                    _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Mt, out mtIsCorrect);
+                                                    <li style="color: @UiHelpers.Bool2Color(mtIsCorrect, "green", "red")">
+                                                        @playerGuess.Mt
+                                                    </li>
+                                                }
+
+                                                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                                                {
+                                                    bool? aIsCorrect = null;
+                                                    _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.A, out aIsCorrect);
+                                                    <li style="color: @UiHelpers.Bool2Color(aIsCorrect, "green", "red")">
+                                                        @playerGuess.A
+                                                    </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
+                                                {
+                                                    bool? aIsCorrect = null;
+                                                    _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.A, out aIsCorrect);
+                                                    <li style="color: @UiHelpers.Bool2Color(aIsCorrect, "green", "red")">
+                                                        @playerGuess.A
+                                                    </li>
+                                                }
+
+                                                @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
+                                                {
+                                                    bool? mtIsCorrect = null;
+                                                    _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Mt, out mtIsCorrect);
+                                                    <li style="color: @UiHelpers.Bool2Color(mtIsCorrect, "green", "red")">
+                                                        @playerGuess.Mt
+                                                    </li>
+                                                }
+                                            }
+
+                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Rigger, out bool rigger) && rigger)
+                                            {
+                                                bool? riggerIsCorrect = null;
+                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Rigger, out riggerIsCorrect);
+                                                <li style="color: @UiHelpers.Bool2Color(riggerIsCorrect, "green", "red")">
+                                                    @playerGuess.Rigger
                                                 </li>
                                             }
 
-                                            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
-                                            {
-                                                bool? mtIsCorrect = null;
-                                                _ = player.IsGuessKindCorrectDict?.TryGetValue(GuessKind.Mt, out mtIsCorrect);
-                                                <li style="color: @UiHelpers.Bool2Color(mtIsCorrect, "green", "red")">
-                                                    @playerGuess.Mt
-                                                </li>
-                                            }
                                         </ul>
                                     }
                                     else

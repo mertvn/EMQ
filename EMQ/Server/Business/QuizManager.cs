@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -35,6 +35,8 @@ public class QuizManager
     private Dictionary<int, List<string>> CorrectAnswersDictA { get; set; } = new();
 
     private Dictionary<int, List<string>> CorrectAnswersDictMt { get; set; } = new();
+
+    private Dictionary<int, List<string>> CorrectAnswersDictRigger { get; set; } = new();
 
     private DateTime LastUpdate { get; set; }
 
@@ -297,6 +299,19 @@ public class QuizManager
                     }
                 }
             }
+
+            if (!processedTeamIdsMt.Contains(player.TeamId) && IsGuessCorrectRigger(player.Guess.Rigger))
+            {
+                processedTeamIdsMt.Add(player.TeamId);
+                foreach (Player possibleTeammate in Quiz.Room.Players)
+                {
+                    possibleTeammate.Guess ??= new PlayerGuess();
+                    if (possibleTeammate.TeamId == player.TeamId)
+                    {
+                        possibleTeammate.Guess.Rigger = player.Guess.Rigger;
+                    }
+                }
+            }
         }
 
         TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
@@ -378,6 +393,35 @@ public class QuizManager
 
                 CorrectAnswersDictMt.Add(Quiz.QuizState.sp, correctAnswers);
                 Quiz.Room.Log("cA-mt: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            }
+
+            foreach (string correctAnswer in correctAnswers)
+            {
+                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    correct = true;
+                    break;
+                }
+            }
+        }
+
+        return correct;
+    }
+
+    private bool IsGuessCorrectRigger(string? guess)
+    {
+        bool correct = false;
+        if (!string.IsNullOrWhiteSpace(guess))
+        {
+            if (!CorrectAnswersDictRigger.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+            {
+                var riggerIds = Quiz.Songs[Quiz.QuizState.sp].PlayerLabels.Select(x => x.Key);
+                correctAnswers = Quiz.Room.Players.Where(x => riggerIds.Contains(x.Id)).Select(y => y.Username)
+                    .ToList();
+                // correctAnswers = correctAnswers.Distinct().ToList();
+
+                CorrectAnswersDictRigger.Add(Quiz.QuizState.sp, correctAnswers);
+                Quiz.Room.Log("cA-rigger: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
             }
 
             foreach (string correctAnswer in correctAnswers)
@@ -524,6 +568,13 @@ public class QuizManager
             bool correctMt = IsGuessCorrectMt(player.Guess?.Mt);
             player.IsGuessKindCorrectDict[GuessKind.Mt] = correctMt;
             if (correctMt)
+            {
+                correctCount += 1;
+            }
+
+            bool correctRigger = IsGuessCorrectRigger(player.Guess?.Rigger);
+            player.IsGuessKindCorrectDict[GuessKind.Rigger] = correctRigger;
+            if (correctRigger)
             {
                 correctCount += 1;
             }
@@ -1720,20 +1771,23 @@ public class QuizManager
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
             {
-                guess ??= "";
+                guess = guess == null ? "" : guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
                 player.Guess ??= new PlayerGuess();
                 player.PlayerStatus = PlayerStatus.Guessed;
 
                 switch (guessKind)
                 {
                     case GuessKind.Mst:
-                        player.Guess.Mst = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        player.Guess.Mst = guess;
                         break;
                     case GuessKind.A:
-                        player.Guess.A = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        player.Guess.A = guess;
                         break;
                     case GuessKind.Mt:
-                        player.Guess.Mt = guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+                        player.Guess.Mt = guess;
+                        break;
+                    case GuessKind.Rigger:
+                        player.Guess.Rigger = guess;
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(guessKind), guessKind, null);
@@ -2106,6 +2160,7 @@ public class QuizManager
                 int newY = (int)player.LootingInfo.Y;
                 switch (direction)
                 {
+                    // todo can get stuck in walls both ns and ew
                     case Direction.North:
                     case Direction.South:
                         newY = Math.Clamp((int)(LootingConstants.TreasureRoomHeight - player.LootingInfo.Y), 0,
@@ -2200,6 +2255,7 @@ public class QuizManager
                                     GuessKind.Mst => !string.IsNullOrWhiteSpace(session.Player.Guess?.Mst),
                                     GuessKind.A => !string.IsNullOrWhiteSpace(session.Player.Guess?.A),
                                     GuessKind.Mt => !string.IsNullOrWhiteSpace(session.Player.Guess?.Mt),
+                                    GuessKind.Rigger => !string.IsNullOrWhiteSpace(session.Player.Guess?.Rigger),
                                     _ => throw new ArgumentOutOfRangeException()
                                 };
                             }

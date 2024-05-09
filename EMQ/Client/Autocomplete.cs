@@ -124,4 +124,31 @@ public static class Autocomplete
         // Console.WriteLine(JsonSerializer.Serialize(final));
         return final.Any() ? final.Take(25) : Array.Empty<string>();
     }
+
+    public static IEnumerable<string> SearchAutocompletePlayer(string[] data, string arg)
+    {
+        arg = arg.NormalizeForAutocomplete();
+        // Console.WriteLine(arg);
+
+        if (arg == "")
+        {
+            return Array.Empty<string>();
+        }
+
+        var startsWith = data.Where(x =>
+                x.NormalizeForAutocomplete().StartsWith(arg))
+            .OrderBy(x => x)
+            .ToArray();
+
+        var contains = data.Where(x =>
+                x.NormalizeForAutocomplete().Contains(arg))
+            .OrderBy(x => x)
+            .ToArray();
+
+        string[] final = startsWith.Concat(contains)
+            .Distinct()
+            .ToArray();
+        // Console.WriteLine(JsonSerializer.Serialize(final));
+        return final.Any() ? final.Take(25) : Array.Empty<string>();
+    }
 }

@@ -138,6 +138,8 @@ public partial class QuizPage
 
     private AutocompleteMtComponent? AutocompleteMtComponent { get; set; }
 
+    private AutocompletePlayerComponent? AutocompletePlayerComponent { get; set; }
+
     private ChatComponent? _chatComponent;
 
     private QuizSettingsComponent? _quizSettingsComponent;
@@ -580,6 +582,7 @@ public partial class QuizPage
                 PageState.Guess.Mst = null;
                 PageState.Guess.A = null;
                 PageState.Guess.Mt = null;
+                PageState.Guess.Rigger = null;
 
                 if (_guessInputComponent != null)
                 {
@@ -594,6 +597,11 @@ public partial class QuizPage
                 if (AutocompleteMtComponent != null)
                 {
                     await AutocompleteMtComponent.ClearInputField();
+                }
+
+                if (AutocompletePlayerComponent != null)
+                {
+                    await AutocompletePlayerComponent.ClearInputField();
                 }
 
                 PageState.ProgressValue = 0;
@@ -636,6 +644,7 @@ public partial class QuizPage
                 PageState.Guess.Mst = null;
                 PageState.Guess.A = null;
                 PageState.Guess.Mt = null;
+                PageState.Guess.Rigger = null;
 
                 if (_guessInputComponent != null)
                 {
@@ -653,6 +662,12 @@ public partial class QuizPage
                 {
                     await AutocompleteMtComponent.ClearInputField();
                     AutocompleteMtComponent.CallStateHasChanged();
+                }
+
+                if (AutocompletePlayerComponent != null)
+                {
+                    await AutocompletePlayerComponent.ClearInputField();
+                    AutocompletePlayerComponent.CallStateHasChanged();
                 }
 
                 break;
@@ -690,6 +705,17 @@ public partial class QuizPage
                     await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMt", PageState.Guess.Mt);
                 }
 
+                if (string.IsNullOrEmpty(PageState.Guess.Rigger))
+                {
+                    PageState.Guess.Rigger = AutocompletePlayerComponent?.GetSelectedText();
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess.Rigger))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedRigger",
+                        PageState.Guess.Rigger);
+                }
+
                 // await SyncWithServer();
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
@@ -701,6 +727,8 @@ public partial class QuizPage
                 AutocompleteAComponent?.CallStateHasChanged();
                 AutocompleteMtComponent?.CallClose();
                 AutocompleteMtComponent?.CallStateHasChanged();
+                AutocompletePlayerComponent?.CallClose();
+                AutocompletePlayerComponent?.CallStateHasChanged();
                 StateHasChanged();
 
                 break;
@@ -733,6 +761,8 @@ public partial class QuizPage
                 AutocompleteAComponent?.CallStateHasChanged();
                 AutocompleteMtComponent?.CallClose();
                 AutocompleteMtComponent?.CallStateHasChanged();
+                AutocompletePlayerComponent?.CallClose();
+                AutocompletePlayerComponent?.CallStateHasChanged();
 
                 if (_correctAnswer == null)
                 {
@@ -963,7 +993,8 @@ public partial class QuizPage
             {
                 if (!string.IsNullOrWhiteSpace(guess.Mst) ||
                     !string.IsNullOrWhiteSpace(guess.A) ||
-                    !string.IsNullOrWhiteSpace(guess.Mt))
+                    !string.IsNullOrWhiteSpace(guess.Mt) ||
+                    !string.IsNullOrWhiteSpace(guess.Rigger))
                 {
                     PageState.Guess = guess;
                     if (_guessInputComponent != null || Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
@@ -979,6 +1010,12 @@ public partial class QuizPage
                     if (AutocompleteMtComponent != null)
                     {
                         await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMt", PageState.Guess.Mt);
+                    }
+
+                    if (AutocompletePlayerComponent != null)
+                    {
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedRigger",
+                            PageState.Guess.Rigger);
                     }
 
                     if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)

@@ -186,7 +186,10 @@ public class QuizSettings
     [ProtoMember(24)]
     [Required]
     public Dictionary<GuessKind, bool> EnabledGuessKinds { get; set; } =
-        new() { { GuessKind.Mst, true }, { GuessKind.A, false }, { GuessKind.Mt, false }, };
+        new()
+        {
+            { GuessKind.Mst, true }, { GuessKind.A, false }, { GuessKind.Mt, false }, { GuessKind.Rigger, false },
+        };
 
     [ProtoMember(25)]
     [Required]
