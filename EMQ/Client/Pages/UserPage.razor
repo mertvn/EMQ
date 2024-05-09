@@ -1,0 +1,11 @@
+﻿@page "/eu/{UserId:int}" // can get rid of of the slash in .NET 8
+@using EMQ.Client.Components
+
+<UserProfileComponent UserId="UserId"></UserProfileComponent>
+
+@code {
+
+    [Parameter]
+    public int UserId { get; set; }
+
+}

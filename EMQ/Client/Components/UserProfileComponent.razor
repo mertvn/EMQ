@@ -1,0 +1,43 @@
+﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+
+<h3>@PublicUserInfo.Username</h3>
+
+@{
+    Avatar avatar = (ClientState.Session?.Player.Preferences.ForceDefaultAvatar ?? false) ? Avatar.DefaultAvatar : PublicUserInfo.Avatar;
+}
+<img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar">
+<br/>
+
+<span>Role: @PublicUserInfo.UserRoleKind.ToString()</span>
+<br/>
+
+<span>Account creation date: @PublicUserInfo.CreatedAt.ToString("yyyy-MM-dd 'at' HH:mm")</span>
+<br/>
+
+<ul>
+    <li>Song count: @PublicUserInfo.SongCount</li>
+    <li>Guess rate: @PublicUserInfo.GuessRate%</li>
+</ul>
+<br/>
+
+@code {
+
+    [Parameter]
+    public int UserId { get; set; }
+
+    private ResGetPublicUserInfo PublicUserInfo { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage res =
+            await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", UserId);
+        if (res.IsSuccessStatusCode)
+        {
+            var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
+            PublicUserInfo = content;
+        }
+    }
+
+}

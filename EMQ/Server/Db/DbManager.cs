@@ -3703,7 +3703,27 @@ group by user_id
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         (int count, float gr) = await connection.QuerySingleOrDefaultAsync<(int count, float gr)>(sql, new { userId });
 
-        return new ResGetPublicUserInfo { UserId = userId, SongCount = count, GuessRate = (float)Math.Round(gr, 2), };
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var user = await connectionAuth.QuerySingleOrDefaultAsync<User>(
+            "SELECT username, roles, created_at, avatar, skin from users where id = @userId", new { userId });
+
+        if (user is null)
+        {
+            throw new Exception("user is null");
+        }
+
+        var res = new ResGetPublicUserInfo
+        {
+            UserId = userId,
+            SongCount = count,
+            GuessRate = (float)Math.Round(gr, 2),
+            Username = user.username,
+            Avatar = new Avatar(user.avatar, user.skin),
+            UserRoleKind = (UserRoleKind)user.roles,
+            CreatedAt = user.created_at,
+        };
+
+        return res;
     }
 
     public static async Task<Dictionary<int, PlayerSongStats>> GetPlayerSongStats(int mId, List<int> userIds)

@@ -1,4 +1,7 @@
-﻿namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+﻿using System;
+using EMQ.Shared.Quiz.Entities.Concrete;
+
+namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 
 public class ResGetPublicUserInfo
 {
@@ -7,4 +10,12 @@ public class ResGetPublicUserInfo
     public int SongCount { get; set; }
 
     public float GuessRate { get; set; }
+
+    public string Username { get; set; } = "";
+
+    public Avatar Avatar { get; set; } = Avatar.DefaultAvatar;
+
+    public UserRoleKind UserRoleKind { get; set; }
+
+    public DateTime CreatedAt { get; set; }
 }
