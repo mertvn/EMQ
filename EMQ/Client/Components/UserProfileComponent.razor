@@ -1,6 +1,10 @@
 ﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
+@inject NavigationManager _navigation
+
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId + 1}"))">Next</button>
 
 <h3>@PublicUserInfo.Username</h3>
 
@@ -29,7 +33,7 @@
 
     private ResGetPublicUserInfo PublicUserInfo { get; set; } = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         HttpResponseMessage res =
             await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", UserId);

@@ -20,7 +20,7 @@
         <Blazorise.ModalBody>
             @if (ClientState.Session != null)
             {
-                bool isUser = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
+                bool isUser = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
                     <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
                         <DataAnnotationsValidator/>
