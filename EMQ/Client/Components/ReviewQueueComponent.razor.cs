@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Blazorise.DataGrid;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Components.QuickGrid;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
@@ -13,12 +14,11 @@ namespace EMQ.Client.Components;
 
 public partial class ReviewQueueComponent
 {
-    public List<RQ> CurrentRQs { get; set; } = new();
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 25 };
+
+    public IQueryable<RQ>? CurrentRQs { get; set; }
 
     public static HashSet<int> CurrentPendingRQsMIds { get; set; } = new();
-
-    public string CellStyle { get; set; } =
-        "max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
 
     public string CellStyleInlineBlock { get; set; } =
         "max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
@@ -38,7 +38,7 @@ public partial class ReviewQueueComponent
             if (content is not null)
             {
                 content.Reverse();
-                CurrentRQs = content;
+                CurrentRQs = content.AsQueryable();
                 CurrentPendingRQsMIds = content.Where(x => x.status == ReviewQueueStatus.Pending)
                     .Select(y => y.music_id)
                     .ToHashSet();
