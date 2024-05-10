@@ -17,7 +17,7 @@
     <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="Npgsql" Version="7.0.2" />
+    <PackageReference Include="Npgsql" Version="7.0.7" />
     <PackageReference Include="SharpCompress" Version="0.36.0" />
     <PackageReference Include="SSH.NET" Version="2023.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
