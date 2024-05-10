@@ -11,105 +11,107 @@
 @inject IJSRuntime _jsRuntime
 @using Microsoft.AspNetCore.Components.QuickGrid
 
-<ReviewComponent CurrentRQs="@(CurrentRQs?.ToList() ?? new List<RQ>())" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
+<CascadingValue Value="@this" IsFixed="true">
+    <ReviewComponent CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
 
-<div class="page-size-chooser">
-    Items per page:
-    <select @bind="@_pagination.ItemsPerPage">
-        <option>10</option>
-        <option>25</option>
-        <option>50</option>
-        <option>100</option>
-        <option>250</option>
-    </select>
-</div>
-<Paginator Value="@_pagination"/>
+    <div class="page-size-chooser">
+        Items per page:
+        <select @bind="@_pagination.ItemsPerPage">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            <option>100</option>
+            <option>250</option>
+        </select>
+    </div>
+    <Paginator Value="@_pagination"/>
 
-<div class="grid" tabindex="-1">
-    <QuickGrid Items="@CurrentRQs" Pagination="_pagination">
-        <TemplateColumn Title="ID" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.id))" IsDefaultSort="Microsoft.AspNetCore.Components.QuickGrid.SortDirection.Descending">
-            <div>
-                @if (true)
-                {
-                    @if (ClientState.Session != null)
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@CurrentRQs" Pagination="_pagination">
+            <TemplateColumn Title="ID" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.id))" IsDefaultSort="Microsoft.AspNetCore.Components.QuickGrid.SortDirection.Descending">
+                <div>
+                    @if (true)
                     {
-                        bool canDelete =
-                            AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink) ||
-                            string.Equals(context.submitted_by, ClientState.Session.Player.Username, StringComparison.InvariantCultureIgnoreCase);
-
-                        @if (canDelete && context.status == ReviewQueueStatus.Pending)
+                        @if (ClientState.Session != null)
                         {
-                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteReviewQueueItem(context.id))">🗑</span>
+                            bool canDelete =
+                                AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+                                string.Equals(context.submitted_by, ClientState.Session.Player.Username, StringComparison.InvariantCultureIgnoreCase);
+
+                            @if (canDelete && context.status == ReviewQueueStatus.Pending)
+                            {
+                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteReviewQueueItem(context.id))">🗑</span>
+                            }
                         }
+
+                        <span>@context.id</span>
                     }
-
-                    <span>@context.id</span>
-                }
-            </div>
-        </TemplateColumn>
-        <TemplateColumn Title="Source Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">
-            <div>
-                @if (true)
-                {
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Source Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">
+                <div>
+                    @if (true)
+                    {
                     @* todo link might be different from what's displayed *@
-                    string title = Converters.GetSingleTitle(context.Song.Sources.First().Titles).LatinTitle;
-                    <a href="@context.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
-                        <span style="@CellStyleInlineBlock">@(title)</span>
-                    </a>
-                }
-            </div>
-        </TemplateColumn>
-        <TemplateColumn Title="Song Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Titles, "ja", "en").LatinTitle))">
-            <div>
-                @if (true)
-                {
-                    string title = Converters.GetSingleTitle(context.Song.Titles).LatinTitle;
-                    <span style="@CellStyleInlineBlock ">@(title)</span>
-                }
-            </div>
-        </TemplateColumn>
-        <TemplateColumn Title="Url" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.url))">
-            <div>
-                @if (true)
-                {
-                    <a href="@context.url" target="_blank">@context.url</a>
-                }
-            </div>
-        </TemplateColumn>
-        <TemplateColumn Title="Video?" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.is_video))">
-            <div>
-                @if (true)
-                {
-                    <span>@(context.is_video ? "Video" : "")</span>
-                }
-            </div>
-        </TemplateColumn>
-        <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true"/>
-        <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>
-        <PropertyColumn Property="@(x => x.analysis)" Title="Analysis" Sortable="true"/>
-        <PropertyColumn Property="@(x => x.duration)" Title="Duration" Format="mm\:ss" Sortable="true"/>
-        <TemplateColumn Title="Status" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.status))">
-            <div>
-                @if (true)
-                {
-                    <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
-                        @context.status
-                    </span>
-                }
-            </div>
-        </TemplateColumn>
-        <TemplateColumn Title="Notes" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.reason))">
-            <div>
-                @if (true)
-                {
-                    // todo get rid of the tooltip if we can because it slows things down by quite a lot
-                    <Blazorise.Tooltip Text="@context.reason">
-                        <span style="@CellStyleInlineBlock">@(context.reason)</span>
-                    </Blazorise.Tooltip>
-                }
-            </div>
-        </TemplateColumn>
-    </QuickGrid>
-</div>
+                        string title = Converters.GetSingleTitle(context.Song.Sources.First().Titles).LatinTitle;
+                        <a href="@context.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
+                            <span style="@CellStyleInlineBlock">@(title)</span>
+                        </a>
+                    }
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Song Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Titles, "ja", "en").LatinTitle))">
+                <div>
+                    @if (true)
+                    {
+                        string title = Converters.GetSingleTitle(context.Song.Titles).LatinTitle;
+                        <span style="@CellStyleInlineBlock ">@(title)</span>
+                    }
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Url" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.url))">
+                <div>
+                    @if (true)
+                    {
+                        <a href="@context.url" target="_blank">@context.url</a>
+                    }
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Video?" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.is_video))">
+                <div>
+                    @if (true)
+                    {
+                        <span>@(context.is_video ? "Video" : "")</span>
+                    }
+                </div>
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.analysis)" Title="Analysis" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.duration)" Title="Duration" Format="mm\:ss" Sortable="true"/>
+            <TemplateColumn Title="Status" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.status))">
+                <div>
+                    @if (true)
+                    {
+                        <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
+                            @context.status
+                        </span>
+                    }
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Notes" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.reason))">
+                <div>
+                    @if (true)
+                    {
+                        // todo get rid of the tooltip if we can because it slows things down by quite a lot
+                        <Blazorise.Tooltip Text="@context.reason">
+                            <span style="@CellStyleInlineBlock">@(context.reason)</span>
+                        </Blazorise.Tooltip>
+                    }
+                </div>
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
 
-<Paginator Value="@_pagination"/>
+    <Paginator Value="@_pagination"/>
+</CascadingValue>

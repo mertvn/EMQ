@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.DataGrid;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components.QuickGrid;
 using Microsoft.Extensions.Logging;
@@ -79,5 +80,27 @@ public partial class ReviewQueueComponent
                 await RefreshRQs();
             }
         }
+    }
+
+    public async Task SendUpdateReviewQueueItem(RQ item, string? reason, ReviewQueueStatus reviewQueueStatus)
+    {
+        var req = new ReqUpdateReviewQueueItem(item.id, reviewQueueStatus, reason);
+        var res = await _client.PostAsJsonAsync("Mod/UpdateReviewQueueItem", req);
+        if (res.IsSuccessStatusCode)
+        {
+            var resFindRQ = await _client.PostAsJsonAsync("Library/FindRQ", item.id);
+            if (resFindRQ.IsSuccessStatusCode)
+            {
+                RQ rq = (await resFindRQ.Content.ReadFromJsonAsync<RQ>())!;
+
+                var list = CurrentRQs!.ToList();
+                int index = list.IndexOf(item);
+                // Console.WriteLine(index);
+                list[index] = rq;
+                CurrentRQs = list.AsQueryable();
+            }
+        }
+
+        StateHasChanged();
     }
 }
