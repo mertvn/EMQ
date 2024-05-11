@@ -461,7 +461,7 @@ else
                 <GuessInputComponent @ref="_guessInputComponent"
                                      Placeholder="Enter your guess here"
                                      FreeTyping="true"
-                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                      IsQuizPage="true"
                                      @bind-Guess="@PageState.Guess.Mst">
                 </GuessInputComponent>
@@ -474,7 +474,7 @@ else
                     <AutocompleteMtComponent @ref="AutocompleteMtComponent"
                                              Placeholder="Enter song title here"
                                              FreeTyping="true"
-                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
                                              @bind-Guess="@PageState.Guess.Mt">
                     </AutocompleteMtComponent>
@@ -486,7 +486,7 @@ else
                     <AutocompleteAComponent @ref="AutocompleteAComponent"
                                             Placeholder="Enter artist name here"
                                             FreeTyping="true"
-                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                             IsQuizPage="true">
                     </AutocompleteAComponent>
                 }
@@ -499,7 +499,7 @@ else
                     <AutocompleteAComponent @ref="AutocompleteAComponent"
                                             Placeholder="Enter artist name here"
                                             FreeTyping="true"
-                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                            IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                             IsQuizPage="true">
                     </AutocompleteAComponent>
                 }
@@ -509,7 +509,7 @@ else
                     <AutocompleteMtComponent @ref="AutocompleteMtComponent"
                                              Placeholder="Enter song title here"
                                              FreeTyping="true"
-                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
                                              @bind-Guess="@PageState.Guess.Mt">
                     </AutocompleteMtComponent>
@@ -521,7 +521,7 @@ else
                 <AutocompletePlayerComponent @ref="AutocompletePlayerComponent"
                                      Placeholder="Enter player name here"
                                      FreeTyping="true"
-                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results)"
+                                     IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                      IsQuizPage="true"
                                      @bind-Guess="@PageState.Guess.Rigger"
                                      AutocompleteData="Room.Players.Select(x => x.Username).ToArray()">

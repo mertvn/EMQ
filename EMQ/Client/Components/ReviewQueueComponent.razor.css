@@ -23,6 +23,23 @@
     font-size: 20px !important;
 }
 
+::deep .col-sort-desc .sort-indicator {
+    background-image: none !important;
+}
+
+::deep .col-sort-desc .sort-indicator::before {
+    content: '▼' !important;
+}
+
+::deep .col-sort-asc .sort-indicator {
+    background-image: none !important;
+    align-self: normal;
+}
+
+::deep .col-sort-asc .sort-indicator::before {
+    content: '▼' !important;
+}
+
 ::deep tr {
     border-bottom: 1px solid rgb(73, 80, 87);
 }
