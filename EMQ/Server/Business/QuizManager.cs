@@ -2156,27 +2156,28 @@ public class QuizManager
             {
                 player.LootingInfo.TreasureRoomCoords = treasureRoomCoords;
 
-                int newX = (int)player.LootingInfo.X;
-                int newY = (int)player.LootingInfo.Y;
+                int newX = player.LootingInfo.X;
+                int newY = player.LootingInfo.Y;
                 switch (direction)
                 {
-                    // todo can get stuck in walls both ns and ew
                     case Direction.North:
                     case Direction.South:
-                        newY = Math.Clamp((int)(LootingConstants.TreasureRoomHeight - player.LootingInfo.Y), 0,
+                        newY = Math.Clamp(LootingConstants.TreasureRoomHeight - player.LootingInfo.Y, 0,
                             LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
                         break;
                     case Direction.East:
                     case Direction.West:
-                        newX = Math.Clamp((int)(LootingConstants.TreasureRoomWidth - player.LootingInfo.X), 0,
+                        newX = Math.Clamp(LootingConstants.TreasureRoomWidth - player.LootingInfo.X, 0,
                             LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
                 }
 
-                player.LootingInfo.X = newX;
-                player.LootingInfo.Y = newY;
+                player.LootingInfo.X = Math.Clamp(newX, 0,
+                    LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
+                player.LootingInfo.Y = Math.Clamp(newY, 0,
+                    LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
 
                 TypedQuizHub.ReceiveUpdateTreasureRoom(new[] { session.Player.Id }, newTreasureRoom);
 

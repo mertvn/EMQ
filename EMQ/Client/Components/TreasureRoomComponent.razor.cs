@@ -82,16 +82,11 @@ public partial class TreasureRoomComponent
 
         if (moved)
         {
-            // bounds check
-            if (newX > 0 && newX < LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize)
-            {
-                player.LootingInfo.X = newX;
-            }
+            player.LootingInfo.X = Math.Clamp(newX, 0,
+                LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
 
-            if (newY > 0 && newY < LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize)
-            {
-                player.LootingInfo.Y = newY;
-            }
+            player.LootingInfo.Y = Math.Clamp(newY, 0,
+                LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
 
             StateHasChanged();
 
@@ -120,7 +115,7 @@ public partial class TreasureRoomComponent
         Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
                         Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
 
-        if (treasure.Position.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
+        if (treasure.Position.IsReachableFromCoords(player.LootingInfo.X, player.LootingInfo.Y))
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendPickupTreasure", treasure.Guid);
         }
@@ -152,10 +147,11 @@ public partial class TreasureRoomComponent
     private async Task OnclickChangeTreasureRoomArrow(Point arrowPosition, Point treasureRoomCoords,
         Direction direction)
     {
+        // todo fix teleporting if you move while changing rooms
         Player player = Room!.Players.SingleOrDefault(x => x.Id == ClientState.Session!.Player.Id) ??
                         Room!.Spectators.Single(x => x.Id == ClientState.Session!.Player.Id);
 
-        if (IsSpectator || arrowPosition.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
+        if (IsSpectator || arrowPosition.IsReachableFromCoords(player.LootingInfo.X, player.LootingInfo.Y))
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendChangeTreasureRoom", treasureRoomCoords,
                 direction);
