@@ -22,7 +22,7 @@ public partial class ReviewQueueComponent
     public static HashSet<int> CurrentPendingRQsMIds { get; set; } = new();
 
     public string CellStyleInlineBlock { get; set; } =
-        "max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
+        "max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
 
     protected override async Task OnInitializedAsync()
     {
