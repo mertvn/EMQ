@@ -24,7 +24,10 @@
             <option>250</option>
         </select>
     </div>
-    <Paginator Value="@_pagination"/>
+
+    <div>
+        <Paginator Value="@_pagination"/>
+    </div>
 
     <div class="grid" tabindex="-1">
         <QuickGrid Items="@CurrentRQs" Pagination="_pagination">
@@ -112,6 +115,4 @@
             </TemplateColumn>
         </QuickGrid>
     </div>
-
-    <Paginator Value="@_pagination"/>
 </CascadingValue>
