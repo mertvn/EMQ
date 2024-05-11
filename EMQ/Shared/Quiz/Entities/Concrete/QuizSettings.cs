@@ -198,7 +198,7 @@ public class QuizSettings
 
     [ProtoMember(26)]
     [Required]
-    [DefaultValue(true)]
+    [DefaultValue(false)]
     public bool IsNoSoundMode { get; set; } = false;
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
