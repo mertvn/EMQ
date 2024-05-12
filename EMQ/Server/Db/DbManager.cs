@@ -1828,7 +1828,7 @@ AND msm.type = ANY(@msmType)";
             const string sql = @"SELECT DISTINCT m.id
 FROM music m
 JOIN music_source_music msm on m.id = msm.music_id
-WHERE stat_correctpercentage >= @diffMin AND stat_correctpercentage <= @diffMax
+WHERE stat_correctpercentage >= @diffMin + 0.01 AND stat_correctpercentage <= @diffMax - 0.01
 AND stat_played > 0 -- 0 play songs have a GR of 0%, we don't want them
 AND msm.type = ANY(@msmType)";
 
