@@ -97,7 +97,7 @@
                     <tr class="libraryStatsRow">
                         <td>@songDifficultyLevel.GetDisplayName()</td>
                         <td>
-                            <b>@count</b>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Difficulty(songDifficultyLevel); })">@count</b>
                         </td>
                     </tr>
                 }

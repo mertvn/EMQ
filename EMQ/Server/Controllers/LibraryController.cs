@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -92,6 +92,15 @@ public class LibraryController : ControllerBase
     public async Task<IEnumerable<Song>> FindSongsByYear([FromBody] ReqFindSongsByYear req)
     {
         var songs = await DbManager.FindSongsByYear(req.Year, req.Mode.ToSongSourceSongTypes());
+        return songs;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByDifficulty")]
+    public async Task<IEnumerable<Song>> FindSongsByDifficulty([FromBody] ReqFindSongsByDifficulty req)
+    {
+        var songs = await DbManager.FindSongsByDifficulty(req.Difficulty, req.Mode.ToSongSourceSongTypes());
         return songs;
     }
 

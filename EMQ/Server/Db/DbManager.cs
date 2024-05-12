@@ -1819,6 +1819,41 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
+    public static async Task<IEnumerable<Song>> FindSongsByDifficulty(SongDifficultyLevel difficulty,
+        SongSourceSongType[] songSourceSongTypes)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = @"SELECT DISTINCT m.id
+FROM music m
+JOIN music_source_music msm on m.id = msm.music_id
+WHERE stat_correctpercentage >= @diffMin AND stat_correctpercentage <= @diffMax
+AND stat_played > 0 -- 0 play songs have a GR of 0%, we don't want them
+AND msm.type = ANY(@msmType)";
+
+            var mids = (await connection.QueryAsync<int>(sql,
+                new
+                {
+                    diffMin = difficulty.GetRange()!.Minimum,
+                    diffMax = difficulty.GetRange()!.Maximum,
+                    msmType = songSourceSongTypes.Cast<int>().ToArray()
+                })).ToList();
+            if (mids.Count > 2000)
+            {
+                // too costly to process + browsers would freeze because there's no pagination right now
+                return songs;
+            }
+
+            foreach (int mid in mids)
+            {
+                songs.AddRange(await SelectSongs(new Song { Id = mid }, false));
+            }
+        }
+
+        return songs;
+    }
+
     public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
     {
         bool success;

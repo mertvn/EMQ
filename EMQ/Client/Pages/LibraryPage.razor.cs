@@ -215,6 +215,29 @@ public partial class LibraryPage
         await TabsComponentVndb!.SelectTab("TabVNDB");
     }
 
+    public async Task SelectedResultChangedDifficulty(SongDifficultyLevel difficulty, SongSourceSongTypeMode mode)
+    {
+        CurrentSongs = new List<Song>();
+        NoSongsText = "Loading...";
+        StateHasChanged();
+
+        var res = await _client.PostAsJsonAsync("Library/FindSongsByDifficulty",
+            new ReqFindSongsByDifficulty(difficulty, mode));
+        if (res.IsSuccessStatusCode)
+        {
+            List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+            if (songs != null && songs.Any())
+            {
+                CurrentSongs = songs;
+            }
+        }
+
+        NoSongsText = "No results.";
+
+        await StateHasChangedAsync();
+        await TabsComponentVndb!.SelectTab("TabVNDB");
+    }
+
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
     {
         if (ClientState.VndbInfo.Labels != null)

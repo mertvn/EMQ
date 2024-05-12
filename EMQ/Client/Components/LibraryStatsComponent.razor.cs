@@ -83,4 +83,14 @@ public partial class LibraryStatsComponent
             await LibraryPage.SelectedResultChangedYear(year, Mode);
         }
     }
+
+    private async Task Onclick_Difficulty(SongDifficultyLevel difficulty)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
+            LibraryPage.selectedMusicSourceTitle = null;
+            await LibraryPage.SelectedResultChangedDifficulty(difficulty, Mode);
+        }
+    }
 }
