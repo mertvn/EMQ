@@ -545,8 +545,8 @@ public class DbTests
 
         Assert.That(songs.Count > 0);
         Assert.That(songs.All(song =>
-            song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum &&
-            song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum));
+            song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum &&
+            song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum));
         GenericSongsAssert(songs);
     }
 
@@ -561,10 +561,10 @@ public class DbTests
 
         Assert.That(songs.Count > 0);
         Assert.That(songs.All(song =>
-            (song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.Easy.GetRange()!.Minimum &&
-             song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.Easy.GetRange()!.Maximum) ||
-            (song.Stats.CorrectPercentage >= (int)SongDifficultyLevel.Hard.GetRange()!.Minimum &&
-             song.Stats.CorrectPercentage <= (int)SongDifficultyLevel.Hard.GetRange()!.Maximum)));
+            (song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.Easy.GetRange()!.Minimum &&
+             song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.Easy.GetRange()!.Maximum) ||
+            (song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.Hard.GetRange()!.Minimum &&
+             song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.Hard.GetRange()!.Maximum)));
         GenericSongsAssert(songs);
     }
 

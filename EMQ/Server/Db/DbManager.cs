@@ -1229,8 +1229,8 @@ public static class DbManager
                     {
                         (SongDifficultyLevel songDifficultyLevel, _) = validSongDifficultyLevels.ElementAt(index);
                         var range = songDifficultyLevel.GetRange();
-                        int min = (int)range!.Minimum;
-                        int max = (int)range!.Maximum;
+                        double min = (double)range!.Minimum;
+                        double max = (double)range!.Maximum;
                         queryMusicIds.Append(index == 0
                             ? (FormattableString)
                             $" AND (( m.stat_correctpercentage >= {min} AND m.stat_correctpercentage <= {max} )"
@@ -1828,7 +1828,7 @@ AND msm.type = ANY(@msmType)";
             const string sql = @"SELECT DISTINCT m.id
 FROM music m
 JOIN music_source_music msm on m.id = msm.music_id
-WHERE stat_correctpercentage >= @diffMin + 0.01 AND stat_correctpercentage <= @diffMax - 0.01
+WHERE stat_correctpercentage >= @diffMin AND stat_correctpercentage <= @diffMax
 AND stat_played > 0 -- 0 play songs have a GR of 0%, we don't want them
 AND msm.type = ANY(@msmType)";
 
