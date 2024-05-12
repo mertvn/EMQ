@@ -14,6 +14,23 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 [ProtoContract]
 public class QuizSettings
 {
+    // todo? team
+    public bool ShouldUpdateStats =>
+        SongSelectionKind == SongSelectionKind.Random &&
+        AnsweringKind == AnsweringKind.Typing &&
+        Filters.ScreenshotKind == ScreenshotKind.None &&
+        IsOnlyMstGuessTypeEnabled &&
+        !IsNoSoundMode &&
+        !EnabledSongHintKinds.Any(x => x.Value) &&
+        !Filters.CategoryFilters.Any() &&
+        !Filters.ArtistFilters.Any() &&
+        !Filters.VndbAdvsearchFilter.Any() &&
+        !Filters.OnlyOwnUploads;
+
+    public bool IsOnlyMstGuessTypeEnabled =>
+        EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst &&
+        !EnabledGuessKinds.Where(x => x.Key != GuessKind.Mst).Any(y => y.Value);
+
     [ProtoMember(1)]
     [Required]
     [Range(1, 100)]

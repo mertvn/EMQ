@@ -40,10 +40,6 @@ public class QuizManager
 
     private DateTime LastUpdate { get; set; }
 
-    private bool IsOnlyMstGuessTypeEnabled =>
-        Quiz.Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst &&
-        !Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Key != GuessKind.Mst).Any(y => y.Value);
-
     private async Task SetTimer()
     {
         if (!Quiz.IsDisposed && !Quiz.IsTimerRunning)
@@ -904,24 +900,12 @@ public class QuizManager
             $"SongHistory/SongHistory_{Utils.FixFileName(Quiz.Room.Name)}_r{Quiz.Room.Id}q{Quiz.Id}.json",
             JsonSerializer.Serialize(Quiz.SongsHistory, Utils.JsoIndented));
 
-        // todo? team
-        bool shouldUpdateStats = Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Random &&
-                                 Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Typing &&
-                                 Quiz.Room.QuizSettings.Filters.ScreenshotKind == ScreenshotKind.None &&
-                                 IsOnlyMstGuessTypeEnabled &&
-                                 !Quiz.Room.QuizSettings.IsNoSoundMode &&
-                                 !Quiz.Room.QuizSettings.EnabledSongHintKinds.Any(x => x.Value) &&
-                                 !Quiz.Room.QuizSettings.Filters.CategoryFilters.Any() &&
-                                 !Quiz.Room.QuizSettings.Filters.ArtistFilters.Any() &&
-                                 !Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.Any() &&
-                                 !Quiz.Room.QuizSettings.Filters.OnlyOwnUploads;
-
         var entityQuiz = new EntityQuiz
         {
             id = Quiz.Id,
             room_id = Quiz.Room.Id,
             settings_b64 = Quiz.Room.QuizSettings.SerializeToBase64String_PB(),
-            should_update_stats = shouldUpdateStats,
+            should_update_stats = Quiz.Room.QuizSettings.ShouldUpdateStats,
             created_at = Quiz.CreatedAt,
         };
 
@@ -978,7 +962,7 @@ public class QuizManager
             Console.WriteLine(e);
         }
 
-        if (shouldUpdateStats)
+        if (Quiz.Room.QuizSettings.ShouldUpdateStats)
         {
             try
             {
@@ -1237,7 +1221,7 @@ public class QuizManager
             return false;
         }
 
-        if (!IsOnlyMstGuessTypeEnabled)
+        if (!Quiz.Room.QuizSettings.IsOnlyMstGuessTypeEnabled)
         {
             if (Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
             {

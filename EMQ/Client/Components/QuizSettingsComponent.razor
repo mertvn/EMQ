@@ -652,6 +652,8 @@
 }
 </Blazorise.ModalBody>
 <Blazorise.ModalFooter>
+    <span style="margin-right: auto;">Counts for stats: @ClientQuizSettings.ShouldUpdateStats</span>
+
     <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
         Close
     </button>
