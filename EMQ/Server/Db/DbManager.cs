@@ -2733,12 +2733,12 @@ order by count(music_id) desc
             //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var songDifficultyLevels = (await connection.QueryAsync<(int, int)>(@$"
 select case
-	WHEN stat_correctpercentage  = {SongDifficultyLevel.Impossible.GetRange()!.Minimum} 								                                                 THEN 5
-	WHEN stat_correctpercentage >= {SongDifficultyLevel.VeryHard.GetRange()!.Minimum}   and stat_correctpercentage <= {SongDifficultyLevel.VeryHard.GetRange()!.Maximum} THEN 4
-	WHEN stat_correctpercentage >= {SongDifficultyLevel.Hard.GetRange()!.Minimum}       and stat_correctpercentage <= {SongDifficultyLevel.Hard.GetRange()!.Maximum}     THEN 3
-	WHEN stat_correctpercentage >= {SongDifficultyLevel.Medium.GetRange()!.Minimum}     and stat_correctpercentage <= {SongDifficultyLevel.Medium.GetRange()!.Maximum}   THEN 2
-	WHEN stat_correctpercentage >= {SongDifficultyLevel.Easy.GetRange()!.Minimum}       and stat_correctpercentage <= {SongDifficultyLevel.Easy.GetRange()!.Maximum}     THEN 1
-	WHEN stat_correctpercentage >= {SongDifficultyLevel.VeryEasy.GetRange()!.Minimum}   and stat_correctpercentage <= {SongDifficultyLevel.VeryEasy.GetRange()!.Maximum} THEN 0
+	WHEN stat_correctpercentage  = {((double)SongDifficultyLevel.Impossible.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)} 								                                                                                                   THEN 5
+	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 4
+	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Hard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Hard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 3
+	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Medium.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}     and stat_correctpercentage <= {((double)SongDifficultyLevel.Medium.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}   THEN 2
+	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Easy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Easy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 1
+	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 0
 	END AS ""diff"",
 count(id)
 from music m
