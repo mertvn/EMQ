@@ -1755,6 +1755,15 @@ public class QuizManager
             var player = Quiz.Room.Players.SingleOrDefault(x => x.Id == playerId);
             if (player != null)
             {
+                if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement)
+                {
+                    if (player.PlayerStatus is PlayerStatus.Correct or PlayerStatus.Wrong)
+                    {
+                        // for lagging players
+                        return;
+                    }
+                }
+
                 guess = guess == null ? "" : guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
                 player.Guess ??= new PlayerGuess();
                 player.PlayerStatus = PlayerStatus.Guessed;
