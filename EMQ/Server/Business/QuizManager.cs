@@ -411,7 +411,8 @@ public class QuizManager
         {
             if (!CorrectAnswersDictRigger.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
-                var riggerIds = Quiz.Songs[Quiz.QuizState.sp].PlayerLabels.Select(x => x.Key);
+                var riggerIds = Quiz.Songs[Quiz.QuizState.sp].PlayerLabels
+                    .Where(x => x.Value.Any(y => y.Kind == LabelKind.Include)).Select(z => z.Key);
                 correctAnswers = Quiz.Room.Players.Where(x => riggerIds.Contains(x.Id)).Select(y => y.Username)
                     .ToList();
                 // correctAnswers = correctAnswers.Distinct().ToList();
