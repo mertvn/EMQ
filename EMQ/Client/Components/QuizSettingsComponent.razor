@@ -256,7 +256,11 @@
                         }
 
                         <InputNumber id="TimeoutMs" @bind-Value="ClientQuizSettings.UI_TimeoutMs" style="margin: 5px"></InputNumber>
-                        <label for="TimeoutMs">Timeout time (seconds)</label>
+                        <label for="TimeoutMs">Buffering timeout time (seconds)</label>
+                        <br/>
+
+                        <InputNumber id="MaxWaitForLaggingPlayersMs" @bind-Value="ClientQuizSettings.UI_MaxWaitForLaggingPlayersMs" style="margin: 5px"></InputNumber>
+                        <label for="MaxWaitForLaggingPlayersMs">Maximum wait time for lagging players (seconds)</label>
                         <br/>
 
                         <InputNumber id="WaitPercentage" @bind-Value="ClientQuizSettings.WaitPercentage" style="margin: 5px"></InputNumber>

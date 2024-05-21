@@ -148,7 +148,7 @@ public class QuizSettings
 
     [Required]
     [Range(5, 250)]
-    [DefaultValue(150)]
+    [DefaultValue(30)]
     // ReSharper disable once InconsistentNaming
     public int UI_TimeoutMs
     {
@@ -217,6 +217,22 @@ public class QuizSettings
     [Required]
     [DefaultValue(false)]
     public bool IsNoSoundMode { get; set; } = false;
+
+    [ProtoMember(27)]
+    [Required]
+    [Range(3000, 30000)]
+    [DefaultValue(7000)]
+    public int MaxWaitForLaggingPlayersMs { get; set; } = 7000;
+
+    [Required]
+    [Range(3, 30)]
+    [DefaultValue(7)]
+    // ReSharper disable once InconsistentNaming
+    public int UI_MaxWaitForLaggingPlayersMs
+    {
+        get { return MaxWaitForLaggingPlayersMs / 1000; }
+        set { MaxWaitForLaggingPlayersMs = value * 1000; }
+    }
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
@@ -512,6 +528,12 @@ public class QuizSettings
         if (o.IsNoSoundMode != n.IsNoSoundMode)
         {
             diff.Add($"No sound mode: {o.IsNoSoundMode} → {n.IsNoSoundMode}");
+        }
+
+        if (o.UI_MaxWaitForLaggingPlayersMs != n.UI_MaxWaitForLaggingPlayersMs)
+        {
+            diff.Add(
+                $"Maximum wait time for lagging players: {o.UI_MaxWaitForLaggingPlayersMs} → {n.UI_MaxWaitForLaggingPlayersMs}");
         }
 
         return diff;

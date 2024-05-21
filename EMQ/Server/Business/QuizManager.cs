@@ -64,7 +64,7 @@ public class QuizManager
 
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
-            var tickStart = DateTime.UtcNow; // todo? this might not be precise enough
+            // var tickStart = DateTime.UtcNow; // todo? this might not be precise enough
             if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
             {
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
@@ -85,6 +85,7 @@ public class QuizManager
                     Quiz.IsTimerRunning = false;
                 }
 
+                await WaitForLaggingPlayers();
                 switch (Quiz.QuizState.Phase)
                 {
                     case QuizPhaseKind.Guess:
@@ -118,12 +119,12 @@ public class QuizManager
                 }
             }
 
-            var tickEnd = DateTime.UtcNow;
-            double tickMs = (tickEnd - tickStart).TotalMilliseconds;
-            if (Quiz.QuizState.QuizStatus == QuizStatus.Playing && Quiz.QuizState.sp > 0 && tickMs > Quiz.TickRate)
-            {
-                // Console.WriteLine($"Can't keep up! {tickMs} ms");
-            }
+            // var tickEnd = DateTime.UtcNow;
+            // double tickMs = (tickEnd - tickStart).TotalMilliseconds;
+            // if (Quiz.QuizState.QuizStatus == QuizStatus.Playing && Quiz.QuizState.sp > 0 && tickMs > Quiz.TickRate)
+            // {
+            //     // Console.WriteLine($"Can't keep up! {tickMs} ms");
+            // }
         }
     }
 
@@ -434,24 +435,48 @@ public class QuizManager
         return correct;
     }
 
+    private async Task WaitForLaggingPlayers()
+    {
+        await Utils.WaitWhile(() =>
+        {
+            bool needToWait = false;
+            var playerIds = Quiz.Room.Players.Where(x => x.HasActiveConnection).Select(x => x.Id);
+            foreach (int playerId in playerIds)
+            {
+                if (ServerState.PumpMessages.TryGetValue(playerId, out var queue))
+                {
+                    // Console.WriteLine(queue.Count);
+                    if (queue.Count > 1)
+                    {
+                        // Console.WriteLine($"needToWait for p{playerId}");
+                        Quiz.QuizState.ExtraInfo = "Waiting for lagging players...";
+                        needToWait = true;
+                    }
+                }
+            }
+
+            return needToWait;
+        }, 160, Quiz.Room.QuizSettings.MaxWaitForLaggingPlayersMs);
+
+        Quiz.QuizState.ExtraInfo = "";
+    }
+
     private async Task EnterResultsPhase()
     {
-        // todo wait for every player in the room to have an empty message queue (with timeout like 5s, maybe configurable?) before switching phases
-
         TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Songs[Quiz.QuizState.sp],
             Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
             Quiz.Room.PlayerGuesses);
 
         // wait a little for these messages to reach players, otherwise it looks really janky
-        await Task.Delay(TimeSpan.FromMilliseconds(150));
+        await Task.Delay(TimeSpan.FromMilliseconds(160));
 
         // send answers again to make sure everyone receives late answers
         TypedQuizHub.ReceivePlayerGuesses(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Room.PlayerGuesses);
 
         // wait a little for these messages to reach players, otherwise it looks really janky
-        await Task.Delay(TimeSpan.FromMilliseconds(150));
+        await Task.Delay(TimeSpan.FromMilliseconds(160));
 
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
