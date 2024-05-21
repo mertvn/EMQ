@@ -247,7 +247,7 @@ public static class DbManager
 #pragma warning disable CS0618
                 song.Sources = await SelectSongSourceSingle(connection, song, selectCategories);
                 song.Artists = await SelectArtistSingle(connection, song, false);
-#pragma warning enable CS0618
+#pragma warning restore CS0618
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
                 // {
