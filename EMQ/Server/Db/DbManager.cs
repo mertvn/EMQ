@@ -4373,19 +4373,22 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             shRoomContainers.Add(new SHRoomContainer { Room = room, Quizzes = shQuizContainers, });
         }
 
-        var mIds = shRoomContainers.SelectMany(x =>
-            x.Quizzes.SelectMany(y => y.SongHistories.Select(z => z.Value.MId)));
-        var songs = (await SelectSongsMIds(mIds, false)).ToDictionary(x => x.Id, x => x);
+        int[] mIds = shRoomContainers.SelectMany(x =>
+            x.Quizzes.SelectMany(y => y.SongHistories.Select(z => z.Value.MId))).ToArray();
 
-        foreach (SHRoomContainer shRoomContainer in shRoomContainers)
+        if (mIds.Any())
         {
-            foreach (SHQuizContainer shQuizContainer in shRoomContainer.Quizzes)
+            var songs = (await SelectSongsMIds(mIds, false)).ToDictionary(x => x.Id, x => x);
+            foreach (SHRoomContainer shRoomContainer in shRoomContainers)
             {
-                foreach ((int _, SongHistory? value) in shQuizContainer.SongHistories)
+                foreach (SHQuizContainer shQuizContainer in shRoomContainer.Quizzes)
                 {
-                    var song = songs[value.MId].Clone();
-                    song.PlayedAt = value.PlayedAt;
-                    value.Song = song;
+                    foreach ((int _, SongHistory? value) in shQuizContainer.SongHistories)
+                    {
+                        var song = songs[value.MId].Clone();
+                        song.PlayedAt = value.PlayedAt;
+                        value.Song = song;
+                    }
                 }
             }
         }
