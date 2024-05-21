@@ -134,7 +134,6 @@ public static class DbManager
             // Console.WriteLine(queryMusic.Sql);
 
             var songs = new List<Song>();
-
             await connection.QueryAsync(queryMusic.Sql,
                 new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), }, (objects) =>
                 {
@@ -255,7 +254,6 @@ public static class DbManager
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
-
             return songs;
         }
     }
@@ -298,7 +296,6 @@ public static class DbManager
             /**where**/
     ");
 
-
             if (mIds.Any())
             {
                 queryMusic.Where($"m.id = ANY({mIds})");
@@ -322,7 +319,6 @@ public static class DbManager
             // Console.WriteLine(queryMusic.Sql);
 
             var songs = new Dictionary<int, Song>();
-
             await connection.QueryAsync(queryMusic.Sql,
                 new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), }, (objects) =>
                 {
@@ -413,7 +409,6 @@ public static class DbManager
                 splitOn:
                 "music_id,music_id", param: queryMusic.Parameters);
 
-
             foreach ((int key, Song? song) in songs)
             {
                 if (song.MusicBrainzRecordingGid is not null)
@@ -432,54 +427,16 @@ public static class DbManager
             }
 
             var sourcesDict = await SelectSongSourceBatch(connection, songs, selectCategories);
-            var mDictSource = sourcesDict;
-
-            // // todo rewrite this to select * from music_source_music
-            // var mDictSource = new Dictionary<int, List<SongSource>>();
-            // foreach ((int _, SongSource? value) in sourcesDict)
-            // {
-            //     foreach ((int key, HashSet<SongSourceSongType> _) in value.MusicIds)
-            //     {
-            //         if (!mDictSource.TryGetValue(key, out var songSources))
-            //         {
-            //             mDictSource[key] = new List<SongSource>() { value };
-            //         }
-            //         else
-            //         {
-            //             mDictSource[key].Add(value);
-            //         }
-            //     }
-            // }
-
             var artistsDict = await SelectArtistBatch(connection, songs, false);
-            var mDictArtist = artistsDict;
-            // foreach ((int _, SongArtist? value) in artistsDict)
-            // {
-            //     foreach ((int key, List<Title> _) in value.MusicIds)
-            //     {
-            //         if (!mDictArtist.TryGetValue(key, out var songSources))
-            //         {
-            //             mDictArtist[key] = new List<SongArtist>() { value };
-            //         }
-            //         else
-            //         {
-            //             mDictArtist[key].Add(value);
-            //         }
-            //     }
-            // }
 
             var msel = (await connection.GetListAsync<MusicSourceExternalLink>()).ToLookup(x => x.music_source_id);
-
             foreach ((int key, Song? song) in songs)
             {
-                song.Sources = mDictSource[song.Id].Values.ToList();
+                song.Sources = sourcesDict[song.Id].Values.ToList();
 
-                // todo do this everywhere SelectSongSourceBatch is called or implement inside somehow
-                for (int index = 0; index < song.Sources.Count; index++)
+                foreach (SongSource songSource in song.Sources)
                 {
-                    SongSource songSource = song.Sources[index];
-                    // songSource.SongTypes = songSource.MusicIds[song.Id].ToList();
-
+                    // todo do this everywhere SelectSongSourceBatch is called or implement inside somehow
                     // todo are we allowed to assume that each ms has at least one msel?
                     var ownMsel = msel[songSource.Id];
                     foreach (MusicSourceExternalLink musicSourceExternalLink in ownMsel)
@@ -525,16 +482,7 @@ public static class DbManager
                     }
                 }
 
-                song.Artists = mDictArtist[song.Id].Values.ToList();
-
-                // for (int index = 0; index < song.Artists.Count; index++)
-                // {
-                //     SongArtist songArtist = song.Artists[index];
-                //     // var newSongSource = (JsonSerializer.Deserialize<SongSource>(JsonSerializer.Serialize(songSource)))!;
-                //     // var newSongArtist = songArtist.Clone(); // ~2x faster than doing it with STJ
-                //     // song.Artists[index] = newSongArtist;
-                //     songArtist.Titles = songArtist.MusicIds[song.Id].ToList();
-                // }
+                song.Artists = artistsDict[song.Id].Values.ToList();
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
                 // {
@@ -543,7 +491,6 @@ public static class DbManager
             }
 
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
-
             return songs.Values.ToList();
         }
     }
@@ -891,12 +838,6 @@ public static class DbManager
         bool selectCategories)
     {
         var mIdSongSources = new Dictionary<int, Dictionary<int, SongSource>>();
-        // var songSources = new Dictionary<int, SongSource>();
-
-        // var songSourceTitles = new List<SongSourceTitle>();
-        // var songSourceLinks = new List<SongSourceLink>();
-        // var songSourceCategories = new List<SongSourceCategory>();
-
         QueryBuilder queryMusicSource;
         if (selectCategories)
         {
@@ -926,7 +867,6 @@ public static class DbManager
         queryMusicSource.Where($"msm.music_id = ANY({songs.Keys.ToArray()})");
 
         // Console.WriteLine(queryMusicSource.Sql);
-
         var types = selectCategories
             ? new[]
             {
@@ -1025,35 +965,8 @@ public static class DbManager
                         switch ((SongSourceLinkType)musicSourceExternalLink.type)
                         {
                             case SongSourceLinkType.MusicBrainzRelease:
-                                {
-                                    // if (input?.MusicBrainzReleases.Contains(
-                                    //         Guid.Parse(musicSourceExternalLink.url.LastSegment())) ?? false)
-                                    // {
-                                    //     songSources[musicSource.id].Links.Add(new SongSourceLink()
-                                    //     {
-                                    //         Url = musicSourceExternalLink.url,
-                                    //         Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                    //         Name = musicSourceExternalLink.name,
-                                    //     });
-                                    // }
-
-                                    break;
-                                }
                             case SongSourceLinkType.VGMdbAlbum:
-                                {
-                                    // if (input?.VgmdbAlbums.Contains(
-                                    //         int.Parse(musicSourceExternalLink.url.LastSegment())) ?? false)
-                                    // {
-                                    //     songSources[musicSource.id].Links.Add(new SongSourceLink()
-                                    //     {
-                                    //         Url = musicSourceExternalLink.url,
-                                    //         Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                    //         Name = musicSourceExternalLink.name,
-                                    //     });
-                                    // }
-
-                                    break;
-                                }
+                                break;
                             case SongSourceLinkType.Unknown:
                             case SongSourceLinkType.VNDB:
                             default:
@@ -1108,35 +1021,8 @@ public static class DbManager
                             switch ((SongSourceLinkType)musicSourceExternalLink.type)
                             {
                                 case SongSourceLinkType.MusicBrainzRelease:
-                                    {
-                                        // if (input?.MusicBrainzReleases.Contains(
-                                        //         Guid.Parse(musicSourceExternalLink.url.LastSegment())) ?? false)
-                                        // {
-                                        //     songSources[musicSource.id].Links.Add(new SongSourceLink()
-                                        //     {
-                                        //         Url = musicSourceExternalLink.url,
-                                        //         Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                        //         Name = musicSourceExternalLink.name,
-                                        //     });
-                                        // }
-
-                                        break;
-                                    }
                                 case SongSourceLinkType.VGMdbAlbum:
-                                    {
-                                        // if (input?.VgmdbAlbums.Contains(
-                                        //         int.Parse(musicSourceExternalLink.url.LastSegment())) ?? false)
-                                        // {
-                                        //     songSources[musicSource.id].Links.Add(new SongSourceLink()
-                                        //     {
-                                        //         Url = musicSourceExternalLink.url,
-                                        //         Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                        //         Name = musicSourceExternalLink.name,
-                                        //     });
-                                        // }
-
-                                        break;
-                                    }
+                                    break;
                                 case SongSourceLinkType.Unknown:
                                 case SongSourceLinkType.VNDB:
                                 default:
@@ -1257,7 +1143,6 @@ public static class DbManager
 
 
         // Console.WriteLine(queryArtist.Sql);
-
         await connection.QueryAsync(queryArtist.Sql,
             new[] { typeof(ArtistMusic), typeof(ArtistAlias), typeof(Artist), }, (objects) =>
             {
@@ -1306,14 +1191,6 @@ public static class DbManager
                     }
 
                     existingArtist.MusicIds.Add(artistMusic.music_id);
-                    // if (existingArtist.MusicIds.TryGetValue(artistMusic.music_id, out var titles))
-                    // {
-                    //     titles.Add(title);
-                    // }
-                    // else
-                    // {
-                    //     existingArtist.MusicIds[artistMusic.music_id] = new() { title };
-                    // }
                 }
 
                 return 0;
@@ -1336,10 +1213,6 @@ public static class DbManager
         bool needsRequery)
     {
         var mIdSongArtists = new Dictionary<int, Dictionary<int, SongArtist>>();
-
-        // var songArtists = new Dictionary<int, SongArtist>();
-        // var songArtistAliases = new List<SongArtistAlias>();
-
         var queryArtist = connection
             .QueryBuilder($@"SELECT *
             FROM artist_music am
@@ -1351,7 +1224,6 @@ public static class DbManager
         queryArtist.Where($"am.music_id = ANY({songs.Keys.ToArray()})");
 
         // Console.WriteLine(queryArtist.Sql);
-
         await connection.QueryAsync(queryArtist.Sql,
             new[] { typeof(ArtistMusic), typeof(ArtistAlias), typeof(Artist), }, (objects) =>
             {
@@ -1403,14 +1275,6 @@ public static class DbManager
                     }
 
                     existingArtist.MusicIds.Add(artistMusic.music_id);
-                    // if (existingArtist.MusicIds.TryGetValue(artistMusic.music_id, out var titles))
-                    // {
-                    //     titles.Add(title);
-                    // }
-                    // else
-                    // {
-                    //     existingArtist.MusicIds[artistMusic.music_id] = new() { title };
-                    // }
                 }
 
                 return 0;
@@ -2448,7 +2312,6 @@ public static class DbManager
                 }, true);
 
             // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-
             songs.AddRange(await SelectSongsMIds(songArtists.SelectMany(y => y.MusicIds), false));
         }
 
@@ -2465,7 +2328,6 @@ public static class DbManager
                 new Song { Artists = new List<SongArtist> { new() { Id = artistId } } }, false);
 
             // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-
             songs.AddRange(await SelectSongsMIds(songArtists.SelectMany(y => y.MusicIds), false));
         }
 
@@ -4336,8 +4198,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 foreach (IGrouping<int, QuizSongHistory> histories in qsh)
                 {
                     var firstHistory = histories.First();
-                    // var song = (await SelectSongs(new Song { Id = histories.First().music_id }, false)).Single();
-                    // song.PlayedAt = histories.First().played_at;
 
                     int[] userIds = histories.Select(x => x.user_id).ToArray();
                     foreach (int id in userIds)
@@ -4352,7 +4212,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     {
                         MId = firstHistory.music_id,
                         PlayedAt = firstHistory.played_at,
-                        // Song = song,
                         PlayerGuessInfos = histories.ToDictionary(c => c.user_id, c => new GuessInfo
                         {
                             Username = usernamesDict[c.user_id],
