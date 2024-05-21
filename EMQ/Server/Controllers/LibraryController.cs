@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
@@ -40,7 +41,7 @@ public class LibraryController : ControllerBase
         int mId = int.TryParse(req.SongSourceTitle, out mId) ? mId : 0;
         if (mId > 0)
         {
-            var songs = await DbManager.SelectSongs(new Song { Id = mId }, false);
+            var songs = await DbManager.SelectSongsMIds(new[] { mId }, false);
             return songs;
         }
         else
@@ -59,6 +60,7 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    // todo this is actually unused right now
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByArtistTitle")]
@@ -142,6 +144,10 @@ public class LibraryController : ControllerBase
     [Route("FindRQs")]
     public async Task<IEnumerable<RQ>> FindRQs([FromBody] ReqFindRQs req)
     {
+        // var re = new ReqFindRQs(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(1));
+        // var r = await ServerUtils.Client.PostAsJsonAsync("https://erogemusicquiz.com/Library/FindRQs", re);
+        // return await r.Content.ReadFromJsonAsync<List<RQ>>();
+
         var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate);
         return rqs;
     }

@@ -88,12 +88,15 @@ public class DbTests
     [Test]
     public async Task Test_SelectSongs_ByTitles()
     {
-        var songs = await DbManager.SelectSongs(new Song()
+        var songs = await DbManager.SelectSongsBatch(new List<Song>
         {
-            // Id = 210,
-            Titles = new List<Title>
+            new Song()
             {
-                new() { LatinTitle = "Restoration ~Chinmoku no Sora~" }, new() { LatinTitle = "SHOOTING STAR" }
+                // Id = 210,
+                Titles = new List<Title>
+                {
+                    new() { LatinTitle = "Restoration ~Chinmoku no Sora~" }, new() { LatinTitle = "SHOOTING STAR" }
+                }
             }
         }, false);
         GenericSongsAssert(songs);
@@ -104,7 +107,7 @@ public class DbTests
     [Test]
     public async Task Test_SelectSongs_YuminaMainTitleThing()
     {
-        var songs = (await DbManager.SelectSongs(new Song() { Id = 821, }, false)).ToList();
+        var songs = (await DbManager.SelectSongsMIds(new[] { 821 }, false)).ToList();
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 0);
@@ -937,8 +940,9 @@ public class DbTests
     [Test, Explicit]
     public async Task Test_FilterSongLinks()
     {
-        var song = (await DbManager.SelectSongs(
-            new Song { Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } } }, false)).Single();
+        var song = (await DbManager.SelectSongsBatch(
+            new List<Song> { new Song { Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } } } },
+            false)).Single();
 
         var filtered = SongLink.FilterSongLinks(song.Links);
         Assert.That(filtered.Count == 1);
@@ -1013,17 +1017,8 @@ order by ms.id
     [Test, Explicit]
     public async Task ListVNsWithNoMusicBrainzReleases()
     {
-        var ret = new List<Song>();
         int end = await DbManager.SelectCountUnsafe("music");
-        for (int i = 1; i < end; i++)
-        {
-            var songs = await DbManager.SelectSongs(new Song { Id = i }, false);
-            if (songs.Any())
-            {
-                var song = songs.First();
-                ret.Add(song);
-            }
-        }
+        var ret = await DbManager.SelectSongsMIds(Enumerable.Range(1, end), false);
 
         foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
         {
@@ -1130,6 +1125,316 @@ order by ms.id
         Assert.That(Math.Abs(previous.ease - 2.5) < 0.01);
         Assert.That(Math.Abs(previous.interval_days - 595) < 0.01);
     }
+
+    // class MusicContainer
+    // {
+    //     public int Id { get; set; }
+    //
+    //     public List<MusicTitle> Titles { get; set; }
+    // }
+    // [Test]
+    // public async Task Test_BenchmarkSelectSingle()
+    // {
+    //     async Task<(IEnumerable<Music> music, IEnumerable<MusicTitle> musicTitle)> single(int mId)
+    //     {
+    //         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+    //         {
+    //             var music = await connection.QueryAsync<Music>("select * from music where id = @mId", new { mId });
+    //             var musicTitle =
+    //                 await connection.QueryAsync<MusicTitle>("select * from music_title where music_id = @mId",
+    //                     new { mId });
+    //
+    //             return (music, musicTitle);
+    //         }
+    //     }
+    //
+    //     {
+    //         var mIds = Enumerable.Range(1, 41557);
+    //         var music = new List<Music>();
+    //         var musicTitle = new List<MusicTitle>();
+    //         foreach (int mId in mIds)
+    //         {
+    //             (IEnumerable<Music>? musics, IEnumerable<MusicTitle>? musicTitles) = await single(mId);
+    //             music.AddRange(musics);
+    //             musicTitle.AddRange(musicTitles);
+    //         }
+    //
+    //         var songs = music.Select(x =>
+    //             new MusicContainer() { Id = x.id, Titles = musicTitle.Where(y => y.music_id == x.id).ToList() });
+    //     }
+    // }
+    //
+    // [Test]
+    // public async Task Test_BenchmarkSelectBatch()
+    // {
+    //     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+    //     {
+    //         var music = await connection.QueryAsync<Music>("select * from music");
+    //         var musicTitle = await connection.QueryAsync<MusicTitle>("select * from music_title");
+    //
+    //         var songs = music.Select(x =>
+    //             new MusicContainer() { Id = x.id, Titles = musicTitle.Where(y => y.music_id == x.id).ToList() });
+    //     }
+    // }
+
+    [Test, Explicit]
+    public async Task Test_batch_eq()
+    {
+        var mIds = Enumerable.Range(1, 41800).ToList();
+        var b = await DbManager.SelectSongsMIds(mIds, false);
+        GenericSongsAssert(b);
+
+        var s = new List<Song>();
+        foreach (int mId in mIds)
+        {
+#pragma warning disable CS0618
+            s.AddRange(await DbManager.SelectSongsSingle(new Song() { Id = mId }, false));
+#pragma warning restore CS0618
+        }
+
+        GenericSongsAssert(s);
+
+        s = s.OrderBy(x => x.Id).ToList();
+        b = b.OrderBy(x => x.Id).ToList();
+
+        foreach (Song song in s)
+        {
+            foreach (SongSource songSource in song.Sources)
+            {
+                songSource.MusicIds = null!; // todo?
+                songSource.Titles = songSource.Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.Language).ToList();
+                songSource.Links = songSource.Links.OrderBy(x => x.Url).ToList();
+                songSource.SongTypes = songSource.SongTypes.OrderBy(x => x).ToList();
+                songSource.Categories = songSource.Categories.OrderBy(x => x.Id).ToList();
+            }
+
+            // foreach (SongArtist songArtist in song.Artists)
+            // {
+            //     // songArtist.MusicIds = null; // todo?
+            //     // songArtist.Role = SongArtistRole.Unknown; // todo?
+            // }
+
+            song.Sources = song.Sources.OrderBy(x => x.Id).ToList();
+            song.Artists = song.Artists.OrderBy(x => x.Id).ToList();
+            song.Titles = song.Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.Language).ToList();
+            song.Links = song.Links.OrderBy(x => x.Url).ToList();
+        }
+
+        foreach (Song song in b)
+        {
+            foreach (SongSource songSource in song.Sources)
+            {
+                songSource.MusicIds = null!; // todo?
+                songSource.Titles = songSource.Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.Language).ToList();
+                songSource.Links = songSource.Links.OrderBy(x => x.Url).ToList();
+                songSource.SongTypes = songSource.SongTypes.OrderBy(x => x).ToList();
+                songSource.Categories = songSource.Categories.OrderBy(x => x.Id).ToList();
+            }
+
+            // foreach (SongArtist songArtist in song.Artists)
+            // {
+            //     // songArtist.MusicIds = null; // todo?
+            //     // songArtist.Role = SongArtistRole.Unknown; // todo?
+            // }
+
+            song.Sources = song.Sources.OrderBy(x => x.Id).ToList();
+            song.Artists = song.Artists.OrderBy(x => x.Id).ToList();
+            song.Titles = song.Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.Language).ToList();
+            song.Links = song.Links.OrderBy(x => x.Url).ToList();
+        }
+
+        var str1 = JsonSerializer.Serialize(s, Utils.JsoIndented);
+        var str2 = JsonSerializer.Serialize(b, Utils.JsoIndented);
+
+        await File.WriteAllTextAsync(@"C:\Users\Mert\Desktop\s.json", str1);
+        await File.WriteAllTextAsync(@"C:\Users\Mert\Desktop\b.json", str2);
+
+        Assert.That(str1 == str2);
+    }
+
+    [Test, Explicit]
+    public async Task Test_batch_benchmark_s()
+    {
+        var mIds = Enumerable.Range(1, 41800).ToList();
+        var s = new List<Song>();
+        foreach (int mId in mIds)
+        {
+#pragma warning disable CS0618
+            s.AddRange(await DbManager.SelectSongsSingle(new Song() { Id = mId }, false));
+#pragma warning restore CS0618
+        }
+
+        Console.WriteLine(s.Count);
+    }
+
+    [Test]
+    public async Task Test_batch_benchmark_s_1song()
+    {
+        var mIds = Enumerable.Range(1, 1).ToList();
+        var s = new List<Song>();
+        foreach (int mId in mIds)
+        {
+#pragma warning disable CS0618
+            s.AddRange(await DbManager.SelectSongsSingle(new Song() { Id = mId }, false));
+#pragma warning restore CS0618
+        }
+
+        Console.WriteLine(s.Count);
+    }
+
+    [Test, Explicit]
+    public async Task Test_batch_benchmark_s_1songper()
+    {
+        var mIds = Enumerable.Range(1, 100).ToList();
+        var s = new List<Song>();
+        foreach (int mId in mIds)
+        {
+#pragma warning disable CS0618
+            s.AddRange(await DbManager.SelectSongsSingle(new Song() { Id = mId }, false));
+#pragma warning restore CS0618
+        }
+
+        Console.WriteLine(s.Count);
+    }
+
+    [Test]
+    public async Task Test_batch_benchmark_b()
+    {
+        var mIds = Enumerable.Range(1, 41800).ToList();
+        var b = await DbManager.SelectSongsMIds(mIds, false);
+        Console.WriteLine(b.Count);
+    }
+
+    [Test]
+    public async Task Test_batch_benchmark_b_1song()
+    {
+        var mIds = Enumerable.Range(1, 1).ToList();
+        var b = await DbManager.SelectSongsMIds(mIds, false);
+        Console.WriteLine(b.Count);
+    }
+
+    [Test, Explicit]
+    public async Task Test_batch_benchmark_b_1songper()
+    {
+        var mIds = Enumerable.Range(1, 100).ToList();
+        var s = new List<Song>();
+        foreach (int mId in mIds)
+        {
+            s.AddRange(await DbManager.SelectSongsMIds(new[] { mId }, false));
+        }
+
+        Console.WriteLine(s.Count);
+    }
+
+//     [Test]
+//     public async Task Test_batch_benchmark_agg()
+//     {
+//         var sql = @"SELECT *
+// FROM  music_source_music msm
+// CROSS JOIN LATERAL (
+//    SELECT json_agg(m) as m
+//    FROM music m
+//    WHERE m.id = msm.music_id
+//    ) m
+// CROSS JOIN LATERAL (
+//    SELECT json_agg(ms) as ms
+//    FROM   music_source ms
+//    WHERE  ms.id = msm.music_source_id
+//    ) ms
+// CROSS JOIN LATERAL (
+//    SELECT json_agg(mst) AS mst
+//    FROM   music_source_title mst
+//    WHERE  mst.music_source_id = msm.music_source_id
+//    ) mst
+// CROSS JOIN LATERAL (
+//    SELECT json_agg(msel) AS msel
+//    FROM   music_source_external_link msel
+//    WHERE  msel.music_source_id = msm.music_source_id
+//    ) msel
+//
+//    CROSS JOIN LATERAL (
+// SELECT json_agg(am) AS am
+// FROM   artist_music am
+// WHERE  am.music_id = msm.music_id
+// ) am";
+//
+//         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+//         {
+//             SqlMapper.AddTypeHandler(typeof(Music[]), new JsonTypeHandler());
+//             SqlMapper.AddTypeHandler(typeof(MusicSource[]), new JsonTypeHandler());
+//             SqlMapper.AddTypeHandler(typeof(MusicSourceTitle[]), new JsonTypeHandler());
+//             SqlMapper.AddTypeHandler(typeof(MusicSourceExternalLink[]), new JsonTypeHandler());
+//             SqlMapper.AddTypeHandler(typeof(ArtistMusic[]), new JsonTypeHandler());
+//
+//             var res = (await connection.QueryAsync<(int music_source_id, int music_id, int type,
+//                 Music[] musics, MusicSource[] musicSources, MusicSourceTitle[] musicSourceTitles,
+//                 MusicSourceExternalLink[] musicSourceExternalLinks, ArtistMusic[] artistMusics)>(sql)).ToArray();
+//             Console.WriteLine(res.First().Rest.Item1.First().artist_id);
+//
+//             var songs = new List<Song>();
+//             var grouped = res.GroupBy(x => x.music_id);
+//             foreach (IGrouping<int, (int music_source_id, int music_id, int type,
+//                              Music[] musics, MusicSource[]musicSources, MusicSourceTitle[] musicSourceTitles,
+//                              MusicSourceExternalLink[] musicSourceExternalLinks, ArtistMusic[] artistMusics)>
+//                          grouping in grouped)
+//             {
+//                 var song = new Song { Id = grouping.Key };
+//                 songs.Add(song);
+//
+//                 foreach ((int music_source_id, int music_id, int type,
+//                          Music[] musics, MusicSource[] musicSources, MusicSourceTitle[] musicSourceTitles,
+//                          MusicSourceExternalLink[] musicSourceExternalLinks, ArtistMusic[] artistMusics)
+//                          tuple in grouping)
+//                 {
+//                     // seems like doing it in the loop is faster (because of lazy materialization)
+//                     // var own = grouping.Where(x =>
+//                     //     x.music_id == tuple.music_id && x.music_source_id == tuple.music_source_id).ToArray();
+//
+//                     foreach (var musicSource in tuple.musicSources)
+//                     {
+//                         var songSource = new SongSource
+//                         {
+//                             Id = musicSource.id,
+//                             AirDateStart = musicSource.air_date_start,
+//                             AirDateEnd = musicSource.air_date_end,
+//                             LanguageOriginal = musicSource.language_original,
+//                             RatingAverage = musicSource.rating_average,
+//                             RatingBayesian = musicSource.rating_bayesian,
+//                             VoteCount = musicSource.votecount,
+//                             Type = (SongSourceType)musicSource.type,
+//                             SongTypes = grouping.Where(x =>
+//                                     x.music_id == tuple.music_id && x.music_source_id == tuple.music_source_id)
+//                                 .Select(y => (SongSourceSongType)y.type).ToList(),
+//                             // MusicIds = grouping.Where(x =>
+//                             //         x.music_id == tuple.music_id && x.music_source_id == tuple.music_source_id)
+//                             //     .Select(y => y.music_id).ToList(),
+//                         };
+//                         song.Sources.Add(songSource);
+//
+//                         foreach (MusicSourceTitle musicSourceTitle in tuple.musicSourceTitles.Where(x =>
+//                                      x.music_source_id == musicSource.id))
+//                         {
+//                             songSource.Titles.Add(new Title
+//                             {
+//                                 LatinTitle = musicSourceTitle.latin_title,
+//                                 NonLatinTitle = musicSourceTitle.non_latin_title,
+//                                 Language = musicSourceTitle.language,
+//                                 IsMainTitle = musicSourceTitle.is_main_title,
+//                             });
+//                         }
+//                     }
+//                 }
+//             }
+//
+//             Assert.That(songs.DistinctBy(x => x.Id).Count() == songs.Count);
+//             foreach (Song song in songs)
+//             {
+//                 Console.WriteLine($"sources of mId {song.Id}: {string.Join(',', song.Sources)}");
+//                 Console.WriteLine(
+//                     $"ssst of mId {song.Id}: {string.Join(',', song.Sources.SelectMany(x => x.SongTypes))}");
+//             }
+//         }
+//     }
 
     [Test]
     public async Task Test_GetRandomSongs_TooManyBGM()

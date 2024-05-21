@@ -59,6 +59,12 @@ public sealed class Quiz : IDisposable
 
 public class SongHistory
 {
+    [JsonIgnore]
+    public int MId { get; set; }
+
+    [JsonIgnore]
+    public DateTime PlayedAt { get; set; }
+
     public Song Song { get; set; } = new();
 
     public Dictionary<int, GuessInfo> PlayerGuessInfos { get; set; } = new();

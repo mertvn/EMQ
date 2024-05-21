@@ -325,7 +325,7 @@ app.MapHub<QuizHub>("/QuizHub");
 app.MapFallbackToFile("index.html");
 
 const bool hasDb = true;
-bool precacheSongs = true && !app.Environment.IsDevelopment();
+bool precacheSongs = false && !app.Environment.IsDevelopment();
 
 string cnnStrSong;
 string cnnStrAuth;
@@ -412,6 +412,11 @@ async Task Init()
             // Execute the migrations
             runner.MigrateUp();
         }
+
+        await DbManager.Init();
+        // var mIds = Enumerable.Range(1, 41800).ToList();
+        // var b = await DbManager.SelectSongsMIds(mIds, false);
+        // Environment.Exit(0);
 
         string autocompleteFolder = $"{wwwrootFolder}/autocomplete";
         Directory.CreateDirectory(autocompleteFolder);

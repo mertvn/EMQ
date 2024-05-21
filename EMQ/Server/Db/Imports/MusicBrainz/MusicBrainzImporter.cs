@@ -135,7 +135,7 @@ public static class MusicBrainzImporter
 
         // return;
 
-        var dbSongs = new List<Song>();
+        List<Song> dbSongs;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
@@ -148,10 +148,7 @@ public static class MusicBrainzImporter
                 .Select(z => z.Key)
                 .ToList();
 
-            foreach (int i in validMids)
-            {
-                dbSongs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
-            }
+            dbSongs = await DbManager.SelectSongsMIds(validMids, false);
         }
 
         HashSet<Guid> dbHashes = dbSongs

@@ -154,17 +154,6 @@ public class ModController : ControllerBase
     {
         foreach (Song song in MusicBrainzImporter.PendingSongs)
         {
-            // todo move this init step elsewhere
-            if (!DbManager.MusicBrainzRecordingReleases.Any())
-            {
-                await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-                {
-                    var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
-                    DbManager.MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
-                        .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
-                }
-            }
-
             if (song.MusicBrainzRecordingGid is not null)
             {
                 song.MusicBrainzReleases = DbManager.MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
@@ -306,3 +295,5 @@ public class ModController : ControllerBase
         return success ? Ok() : StatusCode(500);
     }
 }
+
+// todo only hide spoilers if not finished/voted

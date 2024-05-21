@@ -4,7 +4,8 @@ using System.Linq;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class SongSource
+[Cloneable.Cloneable]
+public partial class SongSource
 {
     public int Id { get; set; }
 
@@ -30,13 +31,15 @@ public class SongSource
 
     public List<SongSourceCategory> Categories { get; set; } = new();
 
+    // todo refactor into Dictionary<int, List<SongSourceSongType>> and get rid of MusicIds
     public List<SongSourceSongType> SongTypes { get; set; } = new();
 
-    public HashSet<int> MusicIds { get; set; } = new();
+    // todo? the hashset might need sorting
+    public Dictionary<int, HashSet<SongSourceSongType>> MusicIds { get; set; } = new();
 
     public override string ToString()
     {
-        var first = Titles.First();
+        var first = Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ?? Titles.First();
         return $"{first.LatinTitle}" +
                (!string.IsNullOrWhiteSpace(first.NonLatinTitle) && !string.Equals(first.NonLatinTitle, first.LatinTitle,
                    StringComparison.InvariantCultureIgnoreCase)

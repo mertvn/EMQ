@@ -60,6 +60,9 @@ public class EntryPoints_SongMatching
             int oldCount = uploaded.Count;
             var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
 
+            // todo move this one layer up
+            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()), false);
+
             for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
                 SongMatchInnerResult songMatchInnerResult = songMatchInnerResults[index];
@@ -90,7 +93,7 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                var song = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single();
+                var song = songs[uploadable.MId];
                 if (song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
                 {
                     Console.WriteLine("skipping bgm: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
@@ -221,8 +224,11 @@ public class EntryPoints_SongMatching
 
         foreach (var r in rq)
         {
-            var song = await DbManager.SelectSongs(
-                new Song() { Links = new List<SongLink>() { new SongLink() { Url = r.url } } }, false);
+            // this is really bad for performance, need a new overload of SelectSongs to make it faster
+            // however this method is unlikely to be used ever again, so it's whatever
+            var song = await DbManager.SelectSongsBatch(
+                new List<Song> { new Song() { Links = new List<SongLink>() { new SongLink() { Url = r.url } } } },
+                false);
             Console.WriteLine(song.Single().ToString());
 
             // int rows = await DbManager.SetSubmittedBy(r.url, r.submitted_by);
@@ -253,6 +259,9 @@ public class EntryPoints_SongMatching
 
             int oldCount = uploaded.Count;
             var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
+
+            // todo move this one layer up
+            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()), false);
 
             for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
@@ -339,8 +348,7 @@ public class EntryPoints_SongMatching
                     continue;
                 }
 
-                var songLite = (await DbManager.SelectSongs(new Song { Id = uploadable.MId }, false)).Single()
-                    .ToSongLite();
+                var songLite = songs[uploadable.MId].ToSongLite();
                 uploadable.SongLite = songLite;
                 uploaded.Add(uploadable);
 

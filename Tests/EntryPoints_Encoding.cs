@@ -263,7 +263,6 @@ public class EntryPoints_Encoding
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songs = new List<Song>();
             const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
             Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
                 .GroupBy(x => x.Item1)
@@ -274,11 +273,7 @@ public class EntryPoints_Encoding
                 .Select(z => z.Key)
                 .ToList();
 
-            foreach (int i in validMids)
-            {
-                songs.AddRange(await DbManager.SelectSongs(new Song { Id = i }, false));
-            }
-
+            var songs = await DbManager.SelectSongsMIds(validMids, false);
             foreach (Song song in songs)
             {
                 song.Links = SongLink.FilterSongLinks(song.Links);

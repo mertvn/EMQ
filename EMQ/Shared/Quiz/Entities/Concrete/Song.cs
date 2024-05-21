@@ -6,20 +6,21 @@ using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class Song
+[Cloneable.Cloneable]
+public partial class Song
 {
     public int Id { get; set; }
 
     [JsonIgnore]
     public bool DoneBuffering { get; set; }
 
-    public int StartTime { get; set; }
+    public int StartTime { get; set; } // todo move out of this class
 
-    public string ScreenshotUrl { get; set; } = "";
+    public string ScreenshotUrl { get; set; } = ""; // todo move out of this class
 
-    public string CoverUrl { get; set; } = "";
+    public string CoverUrl { get; set; } = ""; // todo move out of this class
 
-    public DateTime PlayedAt { get; set; }
+    public DateTime PlayedAt { get; set; } // todo move out of this class
 
     public List<Title> Titles { get; set; } = new();
 

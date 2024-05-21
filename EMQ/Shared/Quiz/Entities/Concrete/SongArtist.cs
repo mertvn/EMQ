@@ -18,6 +18,8 @@ public class SongArtist
     public SongArtistRole Role { get; set; } = SongArtistRole.Unknown; // todo needs to be list
 
     public HashSet<int> MusicIds { get; set; } = new();
+
+    // public Dictionary<int, List<Title>> MusicIds { get; set; } = new();
 }
 
 public enum Sex

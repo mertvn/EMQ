@@ -10,6 +10,7 @@ public struct Uploadable
 
     public string? ResultUrl { get; set; }
 
+    // todo broken since persistent mId changes
     public SongLite SongLite { get; set; }
 
     public string? MusicBrainzRecording { get; init; }

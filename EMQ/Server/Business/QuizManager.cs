@@ -1002,7 +1002,6 @@ public class QuizManager
                 {
                     // generate wrong multiple choice options from player vndb lists if there are any,
                     // and OnlyFromLists is enabled
-                    // todo?: this is somewhat expensive with big lists
                     var allPlayerVnTitles = await DbManager.FindSongsByLabels(allVndbInfos
                         .Where(x => x.Labels != null).SelectMany(x => x.Labels!), quizSettings.Filters);
 

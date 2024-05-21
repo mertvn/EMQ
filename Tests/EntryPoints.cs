@@ -723,7 +723,7 @@ public class EntryPoints
 
             Console.WriteLine(
                 $"StartSection Test_Batch: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            new Setup().RunBeforeTests();
+            await new Setup().RunBeforeTests();
             var vndbStaffNotesParserTests = new VNDBStaffNotesParserTests();
             await vndbStaffNotesParserTests.Test_Batch();
 
