@@ -981,9 +981,11 @@ order by ms.id
             Dictionary<SongSource, Guid[]> dict = new();
             foreach ((int msid, Guid[]? releasegids) in res)
             {
-                var songSource = await DbManager.SelectSongSource(connection,
-                    new Song { Sources = new List<SongSource> { new() { Id = msid } } }, false);
-                dict[songSource.Single()] = releasegids;
+                var songSources = await DbManager.SelectSongSourceBatch(connection,
+                    new List<Song> { new Song { Sources = new List<SongSource> { new() { Id = msid } } } }, false);
+                var distinct = songSources.SelectMany(x => x.Value.Select(y => y.Value)).DistinctBy(z => z.Id);
+                Assert.That(distinct.Count() == 1);
+                dict[songSources.First().Value.Single().Value] = releasegids;
             }
 
             var processedVndbUrls = new List<(string, string)>();

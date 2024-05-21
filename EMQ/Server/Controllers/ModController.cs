@@ -209,7 +209,7 @@ public class ModController : ControllerBase
                     x.ToSongLite().EMQSongHash == song.ToSongLite().EMQSongHash);
             }
 
-            DbManager.EvictFromSongsCache(mId);
+            await DbManager.EvictFromSongsCache(mId);
         }
 
         return mId > 0 ? Ok() : StatusCode(500);
@@ -239,7 +239,7 @@ public class ModController : ControllerBase
                     x.ToSongLite().EMQSongHash == req.NewSong.ToSongLite().EMQSongHash);
             }
 
-            DbManager.EvictFromSongsCache(req.OldMid);
+            await DbManager.EvictFromSongsCache(req.OldMid);
         }
 
         return success ? Ok() : StatusCode(500);
@@ -259,7 +259,7 @@ public class ModController : ControllerBase
         bool success = await DbManager.DeleteEntity(music!);
         if (success)
         {
-            DbManager.EvictFromSongsCache(mId);
+            await DbManager.EvictFromSongsCache(mId);
         }
 
         return success ? Ok() : StatusCode(500);
@@ -289,7 +289,7 @@ public class ModController : ControllerBase
         bool success = await DbManager.UpdateEntity(music);
         if (success)
         {
-            DbManager.EvictFromSongsCache(song.Id);
+            await DbManager.EvictFromSongsCache(song.Id);
         }
 
         return success ? Ok() : StatusCode(500);

@@ -29,13 +29,10 @@ namespace EMQ.Server.Db;
 
 public static class DbManager
 {
-    static DbManager()
-    {
-        SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
-    }
-
     public static async Task Init()
     {
+        SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
+
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
@@ -50,12 +47,7 @@ public static class DbManager
                 .ToDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
         }
 
-        // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        // {
-        //     var musicIdsRecordingGids =
-        //         await connection.QueryAsync<(int, Guid?)>("select id, musicbrainz_recording_gid from music");
-        //     MusicIdsRecordingGids = musicIdsRecordingGids.ToDictionary(x => x.Item1, x => x.Item2);
-        // }
+        await RefreshMusicIdsRecordingGidsCache();
 
         // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         // {
@@ -74,11 +66,21 @@ public static class DbManager
 
     private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
 
-    // private static Dictionary<int, Guid?> MusicIdsRecordingGids { get; set; } = new();
+    private static Dictionary<int, Guid?> MusicIdsRecordingGids { get; set; } = new();
 
     // public static Dictionary<int, List<SongSourceSongType>> MusicIdsSongSourceSongTypes { get; set; }
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
+
+    private static async Task RefreshMusicIdsRecordingGidsCache()
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var musicIdsRecordingGids =
+                await connection.QueryAsync<(int, Guid?)>("select id, musicbrainz_recording_gid from music");
+            MusicIdsRecordingGids = musicIdsRecordingGids.ToDictionary(x => x.Item1, x => x.Item2);
+        }
+    }
 
     /// <summary>
     /// Available filters: <br/>
@@ -242,10 +244,10 @@ public static class DbManager
                     }
                 }
 
-                song.Sources = await SelectSongSource(connection, song, selectCategories);
-
-
+#pragma warning disable CS0618
+                song.Sources = await SelectSongSourceSingle(connection, song, selectCategories);
                 song.Artists = await SelectArtist(connection, song, false);
+#pragma warning enable CS0618
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
                 // {
@@ -426,62 +428,12 @@ public static class DbManager
                 }
             }
 
-            var sourcesDict = await SelectSongSourceBatch(connection, songs, selectCategories);
+            var sourcesDict = await SelectSongSourceBatch(connection, songs.Values.ToList(), selectCategories);
             var artistsDict = await SelectArtistBatch(connection, songs, false);
 
-            var msel = (await connection.GetListAsync<MusicSourceExternalLink>()).ToLookup(x => x.music_source_id);
             foreach ((int key, Song? song) in songs)
             {
                 song.Sources = sourcesDict[song.Id].Values.ToList();
-
-                foreach (SongSource songSource in song.Sources)
-                {
-                    // todo do this everywhere SelectSongSourceBatch is called or implement inside somehow
-                    // todo are we allowed to assume that each ms has at least one msel?
-                    var ownMsel = msel[songSource.Id];
-                    foreach (MusicSourceExternalLink musicSourceExternalLink in ownMsel)
-                    {
-                        switch ((SongSourceLinkType)musicSourceExternalLink.type)
-                        {
-                            case SongSourceLinkType.Unknown:
-                            case SongSourceLinkType.VNDB:
-                                break;
-                            case SongSourceLinkType.MusicBrainzRelease:
-                                {
-                                    if (song.MusicBrainzReleases.Contains(
-                                            Guid.Parse(musicSourceExternalLink.url.LastSegment())))
-                                    {
-                                        songSource.Links.Add(new SongSourceLink()
-                                        {
-                                            Url = musicSourceExternalLink.url,
-                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                            Name = musicSourceExternalLink.name,
-                                        });
-                                    }
-
-                                    break;
-                                }
-                            case SongSourceLinkType.VGMdbAlbum:
-                                {
-                                    if (song.VgmdbAlbums.Contains(
-                                            int.Parse(musicSourceExternalLink.url.LastSegment())))
-                                    {
-                                        songSource.Links.Add(new SongSourceLink()
-                                        {
-                                            Url = musicSourceExternalLink.url,
-                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
-                                            Name = musicSourceExternalLink.name,
-                                        });
-                                    }
-
-                                    break;
-                                }
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-                    }
-                }
-
                 song.Artists = artistsDict[song.Id].Values.ToList();
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
@@ -495,7 +447,6 @@ public static class DbManager
         }
     }
 
-    // todo get rid of this
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
@@ -505,7 +456,8 @@ public static class DbManager
     /// Song.Sources.Titles.NonLatinTitle <br/>
     /// Song.Sources.Categories.VndbId <br/>
     /// </summary>
-    public static async Task<List<SongSource>> SelectSongSource(IDbConnection connection, Song input,
+    [Obsolete("Deprecated in favor of SelectSongSourceBatch")]
+    private static async Task<List<SongSource>> SelectSongSourceSingle(IDbConnection connection, Song input,
         bool selectCategories)
     {
         var songSources = new List<SongSource>();
@@ -834,7 +786,7 @@ public static class DbManager
 
     public static async Task<Dictionary<int, Dictionary<int, SongSource>>> SelectSongSourceBatch(
         IDbConnection connection,
-        Dictionary<int, Song> songs,
+        List<Song> songs,
         bool selectCategories)
     {
         var mIdSongSources = new Dictionary<int, Dictionary<int, SongSource>>();
@@ -864,7 +816,61 @@ public static class DbManager
     ");
         }
 
-        queryMusicSource.Where($"msm.music_id = ANY({songs.Keys.ToArray()})");
+        int[] mIds = songs.Select(a => a.Id).Where(x => x != 0).ToArray();
+        if (mIds.Any())
+        {
+            queryMusicSource.Where($"msm.music_id = ANY({mIds})");
+        }
+
+        int?[] sourceIds = songs.Select(a => a.Sources.FirstOrDefault()?.Id).Where(x => x != null && x != 0).ToArray();
+        if (sourceIds.Any())
+        {
+            queryMusicSource.Where($"ms.id = ANY({sourceIds})");
+        }
+
+        List<string> latinTitles = songs.SelectMany(a => a.Sources.SelectMany(x => x.Titles.Select(y => y.LatinTitle)))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
+        if (latinTitles.Any())
+        {
+            // todo? ILIKE instead of =
+            queryMusicSource.Where($"mst.latin_title = ANY({latinTitles})");
+        }
+
+        List<string> nonLatinTitles = songs
+            .SelectMany(a => a.Sources.SelectMany(x => x.Titles.Select(y => y.NonLatinTitle)))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList()!;
+        if (nonLatinTitles.Any())
+        {
+            queryMusicSource.Where($"mst.non_latin_title = ANY({nonLatinTitles})");
+        }
+
+        List<string> links = songs.SelectMany(a => a.Sources.SelectMany(x => x.Links.Select(y => y.Url))).ToList();
+        if (links.Any())
+        {
+            queryMusicSource.Where($"msel.url = ANY({links})");
+        }
+
+        // todo needs to take type into account as well / or just query with Id instead of VndbId
+        List<string?> categories = songs.SelectMany(a => a.Sources.SelectMany(x => x.Categories.Select(y => y.VndbId)))
+            .ToList();
+        if (categories.Any())
+        {
+            if (!selectCategories)
+            {
+                throw new ArgumentException(
+                    $"Parameter {nameof(selectCategories)} must be set to true in order to filter by categories.",
+                    nameof(selectCategories));
+            }
+
+            queryMusicSource.Where($"c.vndb_id = ANY({categories})");
+        }
+
+        if (queryMusicSource.GetFilters() is null)
+        {
+            throw new Exception("At least one filter must be applied");
+        }
 
         // Console.WriteLine(queryMusicSource.Sql);
         var types = selectCategories
@@ -900,24 +906,24 @@ public static class DbManager
                     category = (Category?)objects[5];
                 }
 
-                // List<Guid> musicBrainzReleases = new();
-                // if (MusicIdsRecordingGids.TryGetValue(musicSourceMusic.music_id, out var recording))
-                // {
-                //     if (recording is not null && recording != Guid.Empty)
-                //     {
-                //         musicBrainzReleases = MusicBrainzRecordingReleases[recording.Value];
-                //     }
-                // }
-                //
-                // List<int> vgmdbAlbums = new();
-                // foreach (Guid songMusicBrainzRelease in musicBrainzReleases)
-                // {
-                //     // not every musicbrainz release we have is connected to a vgmdb album
-                //     if (MusicBrainzReleaseVgmdbAlbums.TryGetValue(songMusicBrainzRelease, out var vgmdb))
-                //     {
-                //         vgmdbAlbums.AddRange(vgmdb);
-                //     }
-                // }
+                List<Guid> musicBrainzReleases = new();
+                if (MusicIdsRecordingGids.TryGetValue(musicSourceMusic.music_id, out var recording))
+                {
+                    if (recording is not null && recording != Guid.Empty)
+                    {
+                        musicBrainzReleases = MusicBrainzRecordingReleases[recording.Value];
+                    }
+                }
+
+                List<int> vgmdbAlbums = new();
+                foreach (Guid songMusicBrainzRelease in musicBrainzReleases)
+                {
+                    // not every musicbrainz release we have is connected to a vgmdb album
+                    if (MusicBrainzReleaseVgmdbAlbums.TryGetValue(songMusicBrainzRelease, out var vgmdb))
+                    {
+                        vgmdbAlbums.AddRange(vgmdb);
+                    }
+                }
 
                 // _ = songs.TryGetValue(musicSourceMusic.music_id, out var input);
 
@@ -965,8 +971,35 @@ public static class DbManager
                         switch ((SongSourceLinkType)musicSourceExternalLink.type)
                         {
                             case SongSourceLinkType.MusicBrainzRelease:
+                                {
+                                    if (musicBrainzReleases.Contains(
+                                            Guid.Parse(musicSourceExternalLink.url.LastSegment())))
+                                    {
+                                        songSources[musicSource.id].Links.Add(new SongSourceLink()
+                                        {
+                                            Url = musicSourceExternalLink.url,
+                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                            Name = musicSourceExternalLink.name,
+                                        });
+                                    }
+
+                                    break;
+                                }
                             case SongSourceLinkType.VGMdbAlbum:
-                                break;
+                                {
+                                    if (vgmdbAlbums.Contains(
+                                            int.Parse(musicSourceExternalLink.url.LastSegment())))
+                                    {
+                                        songSources[musicSource.id].Links.Add(new SongSourceLink()
+                                        {
+                                            Url = musicSourceExternalLink.url,
+                                            Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                            Name = musicSourceExternalLink.name,
+                                        });
+                                    }
+
+                                    break;
+                                }
                             case SongSourceLinkType.Unknown:
                             case SongSourceLinkType.VNDB:
                             default:
@@ -1021,8 +1054,35 @@ public static class DbManager
                             switch ((SongSourceLinkType)musicSourceExternalLink.type)
                             {
                                 case SongSourceLinkType.MusicBrainzRelease:
+                                    {
+                                        if (musicBrainzReleases.Contains(
+                                                Guid.Parse(musicSourceExternalLink.url.LastSegment())))
+                                        {
+                                            songSources[musicSource.id].Links.Add(new SongSourceLink()
+                                            {
+                                                Url = musicSourceExternalLink.url,
+                                                Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                                Name = musicSourceExternalLink.name,
+                                            });
+                                        }
+
+                                        break;
+                                    }
                                 case SongSourceLinkType.VGMdbAlbum:
-                                    break;
+                                    {
+                                        if (vgmdbAlbums.Contains(
+                                                int.Parse(musicSourceExternalLink.url.LastSegment())))
+                                        {
+                                            songSources[musicSource.id].Links.Add(new SongSourceLink()
+                                            {
+                                                Url = musicSourceExternalLink.url,
+                                                Type = (SongSourceLinkType)musicSourceExternalLink.type,
+                                                Name = musicSourceExternalLink.name,
+                                            });
+                                        }
+
+                                        break;
+                                    }
                                 case SongSourceLinkType.Unknown:
                                 case SongSourceLinkType.VNDB:
                                 default:
@@ -2233,33 +2293,43 @@ public static class DbManager
         List<Song> songs = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songSources = await SelectSongSource(connection,
-                new Song
+            var songSources = await SelectSongSourceBatch(connection,
+                new List<Song>
                 {
-                    Sources = new List<SongSource>
+                    new Song
                     {
-                        new() { Titles = new List<Title> { new() { LatinTitle = songSourceTitle } } }
+                        Sources = new List<SongSource>
+                        {
+                            new() { Titles = new List<Title> { new() { LatinTitle = songSourceTitle } } }
+                        }
                     }
                 }, false);
 
             if (!songSources.Any())
             {
-                songSources = await SelectSongSource(connection,
-                    new Song
+                songSources = await SelectSongSourceBatch(connection,
+                    new List<Song>
                     {
-                        Sources = new List<SongSource>
+                        new Song
                         {
-                            new() { Titles = new List<Title> { new() { NonLatinTitle = songSourceTitle } } }
+                            Sources = new List<SongSource>
+                            {
+                                new()
+                                {
+                                    Titles = new List<Title>
+                                    {
+                                        new() { NonLatinTitle = songSourceTitle }
+                                    }
+                                }
+                            }
                         }
                     }, false);
             }
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
-
             if (songSources.Any())
             {
-                songs.AddRange(await SelectSongsMIds(songSources.SelectMany(y => y.MusicIds.Select(x => x.Key)),
-                    false));
+                songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key), false));
             }
         }
 
@@ -2285,12 +2355,14 @@ public static class DbManager
         List<Song> songs = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songSources = await SelectSongSource(connection,
-                new Song { Sources = new List<SongSource> { new() { Categories = songSourceCategories } } }, true);
+            var songSources = await SelectSongSourceBatch(connection,
+                new List<Song>
+                {
+                    new Song { Sources = new List<SongSource> { new() { Categories = songSourceCategories } } }
+                }, true);
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
-
-            songs.AddRange(await SelectSongsMIds(songSources.SelectMany(y => y.MusicIds.Select(x => x.Key)), true));
+            songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key), true));
         }
 
         return songs;
@@ -3088,7 +3160,7 @@ WHERE id = {mId};
                 CachedLibraryStats[key] = null;
             }
 
-            EvictFromSongsCache(rq.music_id);
+            await EvictFromSongsCache(rq.music_id);
         }
 
         return success;
@@ -3909,7 +3981,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         int rows = await connection.ExecuteAsync(sqlDelete, new { music_id = mId, url = url });
         if (rows > 0)
         {
-            EvictFromSongsCache(mId);
+            await EvictFromSongsCache(mId);
         }
 
         return rows;
@@ -4335,14 +4407,20 @@ group by sq.user_id
         return ret;
     }
 
-    public static void EvictFromSongsCache(int musicId)
+    public static async Task EvictFromSongsCache(int musicId)
     {
         // while (CachedSongs.ContainsKey(musicId))
         // {
         //     CachedSongs.TryRemove(musicId, out _);
         // }
         //
-        // // todo? clear other caches
+
+        // todo enable after setting up live MusicBrainz imports
+        bool b = false;
+        if (b)
+        {
+            await RefreshMusicIdsRecordingGidsCache();
+        }
     }
 
     public static async Task<string?> GetActiveUserLabelPresetName(int userId)
