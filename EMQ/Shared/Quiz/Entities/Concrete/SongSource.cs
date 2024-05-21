@@ -4,8 +4,7 @@ using System.Linq;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-[Cloneable.Cloneable]
-public partial class SongSource
+public class SongSource
 {
     public int Id { get; set; }
 
