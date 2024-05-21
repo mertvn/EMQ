@@ -246,7 +246,7 @@ public static class DbManager
 
 #pragma warning disable CS0618
                 song.Sources = await SelectSongSourceSingle(connection, song, selectCategories);
-                song.Artists = await SelectArtist(connection, song, false);
+                song.Artists = await SelectArtistSingle(connection, song, false);
 #pragma warning enable CS0618
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
@@ -429,9 +429,9 @@ public static class DbManager
             }
 
             var sourcesDict = await SelectSongSourceBatch(connection, songs.Values.ToList(), selectCategories);
-            var artistsDict = await SelectArtistBatch(connection, songs, false);
+            var artistsDict = await SelectArtistBatch(connection, songs.Values.ToList(), false);
 
-            foreach ((int key, Song? song) in songs)
+            foreach ((int _, Song? song) in songs)
             {
                 song.Sources = sourcesDict[song.Id].Values.ToList();
                 song.Artists = artistsDict[song.Id].Values.ToList();
@@ -784,6 +784,15 @@ public static class DbManager
         return songSources;
     }
 
+    /// <summary>
+    /// Available filters: <br/>
+    /// Song.Id <br/>
+    /// Song.Sources.Id <br/>
+    /// Song.Sources.Links <br/>
+    /// Song.Sources.Titles.LatinTitle <br/>
+    /// Song.Sources.Titles.NonLatinTitle <br/>
+    /// Song.Sources.Categories.VndbId <br/>
+    /// </summary>
     public static async Task<Dictionary<int, Dictionary<int, SongSource>>> SelectSongSourceBatch(
         IDbConnection connection,
         List<Song> songs,
@@ -1148,7 +1157,6 @@ public static class DbManager
         return mIdSongSources;
     }
 
-    // todo get rid of this
     /// <summary>
     /// Available filters: <br/>
     /// Song.Id <br/>
@@ -1156,7 +1164,9 @@ public static class DbManager
     /// Song.Artists.Titles.LatinTitle <br/>
     /// Song.Artists.Titles.NonLatinTitle <br/>
     /// </summary>
-    public static async Task<List<SongArtist>> SelectArtist(IDbConnection connection, Song input, bool needsRequery)
+    [Obsolete("Deprecated in favor of SelectArtistBatch")]
+    private static async Task<List<SongArtist>> SelectArtistSingle(IDbConnection connection, Song input,
+        bool needsRequery)
     {
         var songArtists = new List<SongArtist>();
         // var songArtistAliases = new List<SongArtistAlias>();
@@ -1262,14 +1272,21 @@ public static class DbManager
         {
             var inputWithArtistId =
                 new Song { Artists = new List<SongArtist> { new() { Id = songArtists.First().Id } } };
-            songArtists = await SelectArtist(connection, inputWithArtistId, false);
+            songArtists = await SelectArtistSingle(connection, inputWithArtistId, false);
         }
 
         return songArtists;
     }
 
+    /// <summary>
+    /// Available filters: <br/>
+    /// Song.Id <br/>
+    /// Song.Artists.Id <br/>
+    /// Song.Artists.Titles.LatinTitle <br/>
+    /// Song.Artists.Titles.NonLatinTitle <br/>
+    /// </summary>
     public static async Task<Dictionary<int, Dictionary<int, SongArtist>>> SelectArtistBatch(IDbConnection connection,
-        Dictionary<int, Song> songs,
+        List<Song> songs,
         bool needsRequery)
     {
         var mIdSongArtists = new Dictionary<int, Dictionary<int, SongArtist>>();
@@ -1281,7 +1298,39 @@ public static class DbManager
             /**where**/
     ");
 
-        queryArtist.Where($"am.music_id = ANY({songs.Keys.ToArray()})");
+        int[] mIds = songs.Select(x => x.Id).Where(x => x != 0).ToArray();
+        if (mIds.Any())
+        {
+            queryArtist.Where($"am.music_id = ANY({mIds})");
+        }
+
+        int?[] artistIds = songs.Select(a => a.Artists.FirstOrDefault()?.Id).Where(x => x != null && x != 0).ToArray();
+        if (artistIds.Any())
+        {
+            queryArtist.Where($"a.id = ANY({artistIds})");
+        }
+
+        List<string> latinTitles = songs.SelectMany(a => a.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
+        if (latinTitles.Any())
+        {
+            queryArtist.Where($"lower(aa.latin_alias) = ANY(lower({latinTitles}::text)::text[])");
+        }
+
+        List<string?> nonLatinTitles = songs
+            .SelectMany(a => a.Artists.SelectMany(x => x.Titles.Select(y => y.NonLatinTitle)))
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
+        if (nonLatinTitles.Any())
+        {
+            queryArtist.Where($"aa.non_latin_alias = ANY({nonLatinTitles})");
+        }
+
+        if (queryArtist.GetFilters() is null)
+        {
+            throw new Exception("At least one filter must be applied");
+        }
 
         // Console.WriteLine(queryArtist.Sql);
         await connection.QueryAsync(queryArtist.Sql,
@@ -1342,9 +1391,12 @@ public static class DbManager
             splitOn:
             "id,id", param: queryArtist.Parameters);
 
-        if (needsRequery)
+        if (needsRequery && mIdSongArtists.Any())
         {
-            throw new NotImplementedException();
+            var inputWithArtistId = mIdSongArtists.SelectMany(x => x.Value.Keys).Select(x =>
+                new Song() { Artists = new List<SongArtist>() { new SongArtist() { Id = x } } }).ToList();
+
+            mIdSongArtists = await SelectArtistBatch(connection, inputWithArtistId, false);
         }
 
         return mIdSongArtists;
@@ -2374,17 +2426,23 @@ public static class DbManager
         List<Song> songs = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songArtists = await SelectArtist(connection,
-                new Song
+            var songArtists = await SelectArtistBatch(connection,
+                new List<Song>
                 {
-                    Artists = new List<SongArtist>
+                    new Song
                     {
-                        new() { Titles = new List<Title> { new() { LatinTitle = artistTitle } } }
+                        Artists = new List<SongArtist>
+                        {
+                            new() { Titles = new List<Title> { new() { LatinTitle = artistTitle } } }
+                        }
                     }
                 }, true);
 
-            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-            songs.AddRange(await SelectSongsMIds(songArtists.SelectMany(y => y.MusicIds), false));
+            if (songArtists.Any())
+            {
+                // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+                songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key), false));
+            }
         }
 
         return songs;
@@ -2396,11 +2454,14 @@ public static class DbManager
         List<Song> songs = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var songArtists = await SelectArtist(connection,
-                new Song { Artists = new List<SongArtist> { new() { Id = artistId } } }, false);
+            var songArtists = await SelectArtistBatch(connection,
+                new List<Song> { new Song { Artists = new List<SongArtist> { new() { Id = artistId } } } }, false);
 
-            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-            songs.AddRange(await SelectSongsMIds(songArtists.SelectMany(y => y.MusicIds), false));
+            if (songArtists.Any())
+            {
+                // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+                songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key), false));
+            }
         }
 
         return songs;
@@ -3569,6 +3630,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         return ret.OrderBy(x => x.Id).ToList();
     }
 
+    // todo tests
     public static async Task<List<int>> FindArtistIdsByArtistNames(List<string> artistNames)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -3594,18 +3656,25 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                         new() { Titles = new List<Title> { new() { LatinTitle = createrName } } }
                     }
                 };
-                var artist = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
-                if (artist != null)
+                var artist = await SelectArtistBatch(connection, new List<Song> { song }, true);
+                foreach ((int _, Dictionary<int, SongArtist>? value) in artist)
                 {
-                    aIds.Add(artist.Id);
+                    foreach ((int _, SongArtist? songArtist) in value)
+                    {
+                        aIds.Add(songArtist.Id);
+                    }
                 }
 
+                // todo? batch this
                 song.Artists.Single().Titles.Single().LatinTitle = "";
                 song.Artists.Single().Titles.Single().NonLatinTitle = createrName;
-                var artist2 = (await DbManager.SelectArtist(connection, song, true)).SingleOrDefault();
-                if (artist2 != null)
+                var artist2 = await SelectArtistBatch(connection, new List<Song> { song }, true);
+                foreach ((int _, Dictionary<int, SongArtist>? value) in artist2)
                 {
-                    aIds.Add(artist2.Id);
+                    foreach ((int _, SongArtist? songArtist) in value)
+                    {
+                        aIds.Add(songArtist.Id);
+                    }
                 }
             }
 
