@@ -19,6 +19,8 @@ public partial class ImportPage
 {
     public List<Song> ImporterPendingSongs { get; set; } = new();
 
+    private bool Ready { get; set; } = true;
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -60,13 +62,15 @@ public partial class ImportPage
 
     private async Task InsertSong(Song song)
     {
+        Ready = false;
         var _ = await _client.PostAsJsonAsync("Import/InsertSong", song);
         ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
-        StateHasChanged();
+        Ready = true;
     }
 
     private async Task InsertSongBatchMusicBrainzRelease(Song song)
     {
+        Ready = false;
         var allSongsInTheSameMusicBrainzRelease =
             ImporterPendingSongs.Where(x => x.MusicBrainzReleases.Any(y => song.MusicBrainzReleases.Contains(y)))
                 .ToList();
@@ -77,19 +81,21 @@ public partial class ImportPage
         }
 
         ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
-        StateHasChanged();
+        Ready = true;
     }
 
     private async Task OverwriteMusic(Song newSong)
     {
+        Ready = false;
         string? promptResult = await _jsRuntime.InvokeAsync<string?>("prompt", "Enter music id to overwrite");
         if (int.TryParse(promptResult?.Trim(), out int oldMid))
         {
             var _ = await _client.PostAsJsonAsync("Import/OverwriteMusic", new ReqOverwriteMusic(oldMid, newSong));
             ImporterPendingSongs =
                 (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
-            StateHasChanged();
         }
+
+        Ready = true;
     }
 
     private async Task OnInputFileChange(InputFileChangeEventArgs e)

@@ -169,10 +169,18 @@ public static class VndbImporter
         }
 
         PendingSongs.AddRange(canNotInsertDirectly);
-        foreach (Song song in canInsertDirectly)
+
         {
-            Console.WriteLine($"inserting non-existing-source song: {song}");
-            int _ = await DbManager.InsertSong(song);
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            await connection.OpenAsync();
+            await using var transaction = await connection.BeginTransactionAsync();
+            foreach (Song song in canInsertDirectly)
+            {
+                Console.WriteLine($"inserting non-existing-source song: {song}");
+                int _ = await DbManager.InsertSong(song, connection, transaction);
+            }
+
+            await transaction.CommitAsync();
         }
 
         foreach (SongSource songSource in incomingSongs.SelectMany(song => song.Sources))

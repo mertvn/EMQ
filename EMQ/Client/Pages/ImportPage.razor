@@ -44,6 +44,7 @@
 
             <button type="button"
                     class="btn btn-primary"
+                    disabled="@(!Ready)"
                     @onclick="@(async () => await InsertSong(song))">
                 This is a completely new song
             </button>
@@ -52,6 +53,7 @@
             {
                 <button type="button"
                         class="btn btn-primary"
+                        disabled="@(!Ready)"
                         @onclick="@(async () => await InsertSongBatchMusicBrainzRelease(song))">
                     This is a completely new release
                 </button>
@@ -59,6 +61,7 @@
 
             <button type="button"
                     class="btn btn-primary"
+                    disabled="@(!Ready)"
                     @onclick="@(async () => await OverwriteMusic(song))">
                 This is a modification of an existing song
             </button>
