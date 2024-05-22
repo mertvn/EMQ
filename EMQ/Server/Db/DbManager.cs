@@ -2090,6 +2090,11 @@ public static class DbManager
             ids = (await connection.QueryAsync<(int, string)>(queryMusicIds.Sql, queryMusicIds.Parameters))
                 .OrderBy(_ => rng.Next()).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
+
+            if (!ids.Any())
+            {
+                return ret;
+            }
         }
 
         Console.WriteLine(
