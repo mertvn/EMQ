@@ -385,6 +385,7 @@ public class AuthController : ControllerBase
     {
         var ret = ServerState.Rooms.ToList();
 
+        // todo use Clone()
         ret = JsonSerializer.Deserialize<List<Room>>(JsonSerializer.Serialize(ret))!; // need deep-copy
         foreach (Room room in ret)
         {

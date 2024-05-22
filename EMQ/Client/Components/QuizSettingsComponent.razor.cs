@@ -150,7 +150,7 @@ public partial class QuizSettingsComponent
         {
             ClientQuizSettings =
                 JsonSerializer.Deserialize<QuizSettings>(
-                    JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy
+                    JsonSerializer.Serialize(Room!.QuizSettings))!; // need a deep copy  // todo use Clone()
             SetNewEditContext(ClientQuizSettings);
         }
 
