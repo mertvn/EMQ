@@ -15,6 +15,8 @@ public class Setup
     {
         // Console.WriteLine(Directory.GetCurrentDirectory());
         DotEnv.Load("../../../../.env");
+
+        // todo important: don't run this if the db doesn't exist
         await DbManager.Init();
     }
 

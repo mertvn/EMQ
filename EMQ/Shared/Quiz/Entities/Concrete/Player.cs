@@ -143,6 +143,7 @@ public class PlayerPreferences
     [Required]
     public bool ShowSpacedRepetitionInfo { get; set; } = true;
 
+    // todo only hide spoilers if not finished/voted
     [Required]
     public bool HideSpoilers { get; set; } = true;
 
@@ -151,4 +152,7 @@ public class PlayerPreferences
 
     [Required]
     public bool ForceDefaultAvatar { get; set; } = false;
+
+    [Required]
+    public bool DebugMode { get; set; } = false;
 }

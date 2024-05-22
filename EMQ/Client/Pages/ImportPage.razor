@@ -1,0 +1,71 @@
+﻿@page "/ImportPage"
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Client.Components
+@inject HttpClient _client
+@inject ILogger<ModPage> _logger
+@inject ClientUtils _clientUtils
+@inject NavigationManager _navigation
+@inject IJSRuntime _jsRuntime
+
+<h3>ImportPage</h3>
+
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+{
+    <br/>
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadPendingSongs(); })">
+        Download PendingSongs.json
+    </button>
+    <br/>
+
+    <InputFile
+        OnChange="@OnInputFileChange"
+        style="width:50vw; max-width:100%; white-space: normal; word-break: break-all; overflow: hidden;"/>
+    <br/>
+    <br/>
+
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunVndbImporter(); })">
+        Run VndbImporter
+    </button>
+    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunMusicBrainzImporter(); })">
+        Run MusicBrainzImporter
+    </button>
+    <br/>
+}
+
+<p>Pending songs count: @ImporterPendingSongs.Count</p>
+<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
+    @foreach (var song in ImporterPendingSongs)
+    {
+        string key = (song.MusicBrainzRecordingGid is not null ? song.MusicBrainzRecordingGid.ToString() : song.ToSongLite().EMQSongHash)!;
+        <div class="song card" style="margin: 16px; width: 330px;" @key="@key">
+            <SongInfoCardComponent Song="song" IsModPage="true"></SongInfoCardComponent>
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="@(async () => await InsertSong(song))">
+                This is a completely new song
+            </button>
+
+            @if (song.MusicBrainzRecordingGid is not null)
+            {
+                <button type="button"
+                        class="btn btn-primary"
+                        @onclick="@(async () => await InsertSongBatchMusicBrainzRelease(song))">
+                    This is a completely new release
+                </button>
+            }
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="@(async () => await OverwriteMusic(song))">
+                This is a modification of an existing song
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+
+}

@@ -8,6 +8,7 @@
 {
     bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
+    bool isDebugMode = ClientState.Session != null && ClientState.Session.Player.Preferences.DebugMode;
     @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
@@ -25,11 +26,15 @@
 
         <div class="songInfoCardBody card-body">
             <div class="songInfo">
-                @if (isAdmin)
+                @if (isDebugMode)
                 {
                     @if (Song.Id > 0)
                     {
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
+                        @if (isAdmin)
+                        {
+                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
+                        }
+
                         <span> @Song.Id </span>
                     }
 
@@ -84,7 +89,7 @@
 
                                     <span>@(final)</span>
 
-                                    @if (Song.Id > 0) // don't show links when playing with Hints
+                                    @if (Song.Id > 0 || IsModPage) // don't show links when playing with Hints
                                     {
                                         foreach (var link in songSource.Links.OrderBy(x => x.Type))
                                         {
@@ -109,8 +114,14 @@
 
                                             @if (!string.IsNullOrEmpty(src))
                                             {
+                                                string href = link.Url;
+                                                @if (IsModPage && link.Url.Contains("vndb.org/v"))
+                                                {
+                                                    href += "/hist";
+                                                }
+
                                                 <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                                    <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
+                                                    <a class="songSourceVNID link-primary" href="@href" target="_blank">
                                                         <img width="16px" height="16px"
                                                              src="@src" alt="link"
                                                              style="margin-left: 8px; scale: 1.2;">
@@ -153,7 +164,7 @@
                             <div>
                                 <span>@songArtistTitle.ToString()</span>
 
-                                @if (Song.Id > 0) // don't show links when playing with Hints
+                                @if (Song.Id > 0 || IsModPage) // don't show links when playing with Hints
                                 {
                                     @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
                                     @if (songArtist.VndbId!.StartsWith("s"))

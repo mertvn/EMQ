@@ -20,7 +20,7 @@
 <div>
     @if (ClientState.Session != null && !LoginInProgress)
     {
-        bool isUserOrGreater = ClientState.Session.UserRoleKind >= UserRoleKind.User;
+        bool isUserOrGreater = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
         string roleStr = ClientState.Session.UserRoleKind.ToString();
         <div>
             Currently logged in as @ClientState.Session.Player.Username

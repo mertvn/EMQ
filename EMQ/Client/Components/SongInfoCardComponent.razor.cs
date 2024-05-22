@@ -12,6 +12,9 @@ public partial class SongInfoCardComponent
     [Parameter]
     public Song? Song { get; set; }
 
+    [Parameter]
+    public bool IsModPage { get; set; }
+
     public SongReportComponent _songReportComponent { get; set; } = null!;
 
     private int _currentSongId;

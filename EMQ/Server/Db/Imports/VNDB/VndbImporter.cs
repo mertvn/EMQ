@@ -15,7 +15,7 @@ namespace EMQ.Server.Db.Imports.VNDB;
 
 public static class VndbImporter
 {
-    public static List<Song> PendingSongs { get; } = new();
+    public static List<Song> PendingSongs { get; set; } = new();
 
     public static List<dynamic> musicSourcesJson { get; set; } = null!;
 
@@ -127,6 +127,8 @@ public static class VndbImporter
             }
         }
 
+        List<Song> canInsertDirectly = new();
+        List<Song> canNotInsertDirectly = new();
         foreach (Song song in incomingSongs)
         {
             var songLite = song.ToSongLite();
@@ -142,9 +144,21 @@ public static class VndbImporter
                 }
                 else
                 {
-                    // todo check if vn has any songs in the db, and insert the new song directly if it doesn't
-                    // ^ only do this if single source
-                    PendingSongs.Add(song);
+                    bool isSingleSource = song.Sources.Count == 1;
+                    if (isSingleSource)
+                    {
+                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        string url = song.Sources.First().Links.Single(x => x.Type == SongSourceLinkType.VNDB).Url;
+                        bool sourceExists = await connection.ExecuteScalarAsync<bool>(
+                            "SELECT 1 FROM music_source_external_link where url = @url", new { url });
+                        if (!sourceExists)
+                        {
+                            canInsertDirectly.Add(song);
+                            continue;
+                        }
+                    }
+
+                    canNotInsertDirectly.Add(song);
                 }
             }
             else
@@ -152,6 +166,13 @@ public static class VndbImporter
                 // todo update source and artist data
                 // Console.WriteLine($"skipping existing song: {song}");
             }
+        }
+
+        PendingSongs.AddRange(canNotInsertDirectly);
+        foreach (Song song in canInsertDirectly)
+        {
+            Console.WriteLine($"inserting non-existing-source song: {song}");
+            int _ = await DbManager.InsertSong(song);
         }
 
         foreach (SongSource songSource in incomingSongs.SelectMany(song => song.Sources))

@@ -36,14 +36,6 @@
     </button>
     <br/>
 
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunVndbImporter(); })">
-        Run VndbImporter
-    </button>
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunMusicBrainzImporter(); })">
-        Run MusicBrainzImporter
-    </button>
-    <br/>
-
     @ClientState.ServerStats.IsServerReadOnly
     <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsServerReadOnly(); })">
         Toggle IsServerReadOnly
@@ -55,37 +47,6 @@
     </button>
     <br/>
 }
-
-<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
-    @foreach (var song in ImporterPendingSongs)
-    {
-        string key = (song.MusicBrainzRecordingGid is not null ? song.MusicBrainzRecordingGid.ToString() : song.ToSongLite().EMQSongHash)!;
-        <div class="song card" style="margin: 16px; width: 330px;" @key="@key">
-            <SongInfoCardComponent Song="song"></SongInfoCardComponent>
-
-            <button type="button"
-                    class="btn btn-primary"
-                    @onclick="@(async () => await InsertSong(song))">
-                This is a completely new song
-            </button>
-
-            @if (song.MusicBrainzRecordingGid is not null)
-            {
-                <button type="button"
-                        class="btn btn-primary"
-                        @onclick="@(async () => await InsertSongBatchMusicBrainzRelease(song))">
-                    This is a completely new release
-                </button>
-            }
-
-            <button type="button"
-                    class="btn btn-primary"
-                    @onclick="@(async () => await OverwriteMusic(song))">
-                This is a modification of an existing song
-            </button>
-        </div>
-    }
-</div>
 
 <pre>
 @JsonSerializer.Serialize(SongReports, Utils.JsoIndented)

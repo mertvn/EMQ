@@ -147,104 +147,6 @@ public class ModController : ControllerBase
         return await DbManager.DeleteMusicExternalLink(req.MId, req.Url.UnReplaceSelfhostLink());
     }
 
-    [CustomAuthorize(PermissionKind.Moderator)]
-    [HttpGet]
-    [Route("GetImporterPendingSongs")]
-    public async Task<ActionResult<List<Song>>> GetImporterPendingSongs()
-    {
-        foreach (Song song in MusicBrainzImporter.PendingSongs)
-        {
-            if (song.MusicBrainzRecordingGid is not null)
-            {
-                song.MusicBrainzReleases = DbManager.MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
-            }
-        }
-
-        return VndbImporter.PendingSongs.Concat(MusicBrainzImporter.PendingSongs).ToList();
-    }
-
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("RunVndbImporter")]
-    public async Task<ActionResult> RunVndbImporter()
-    {
-        var date = DateTime.UtcNow;
-        date = DateTime.UtcNow - TimeSpan.FromDays(1); // todo
-        await VndbImporter.ImportVndbData(date, true);
-        return Ok();
-    }
-
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("RunMusicBrainzImporter")]
-    public async Task<ActionResult> RunMusicBrainzImporter()
-    {
-        var date = DateTime.UtcNow;
-        date = DateTime.UtcNow - TimeSpan.FromDays(2); // todo
-        await MusicBrainzImporter.ImportMusicBrainzData(true, true);
-        return Ok();
-    }
-
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("InsertSong")]
-    public async Task<ActionResult> InsertSong([FromBody] Song song)
-    {
-        if (ServerState.IsServerReadOnly)
-        {
-            return Unauthorized();
-        }
-
-        int mId = await DbManager.InsertSong(song);
-        if (mId > 0)
-        {
-            if (song.MusicBrainzRecordingGid != null)
-            {
-                MusicBrainzImporter.PendingSongs.RemoveAll(x =>
-                    x.ToSongLite_MB().Recording == song.ToSongLite_MB().Recording);
-            }
-            else
-            {
-                VndbImporter.PendingSongs.RemoveAll(x =>
-                    x.ToSongLite().EMQSongHash == song.ToSongLite().EMQSongHash);
-            }
-
-            await DbManager.EvictFromSongsCache(mId);
-        }
-
-        return mId > 0 ? Ok() : StatusCode(500);
-    }
-
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("OverwriteMusic")]
-    public async Task<ActionResult> OverwriteMusic([FromBody] ReqOverwriteMusic req)
-    {
-        if (ServerState.IsServerReadOnly)
-        {
-            return Unauthorized();
-        }
-
-        bool success = await DbManager.OverwriteMusic(req.OldMid, req.NewSong);
-        if (success)
-        {
-            if (req.NewSong.MusicBrainzRecordingGid != null)
-            {
-                MusicBrainzImporter.PendingSongs.RemoveAll(x =>
-                    x.ToSongLite_MB().Recording == req.NewSong.ToSongLite_MB().Recording);
-            }
-            else
-            {
-                VndbImporter.PendingSongs.RemoveAll(x =>
-                    x.ToSongLite().EMQSongHash == req.NewSong.ToSongLite().EMQSongHash);
-            }
-
-            await DbManager.EvictFromSongsCache(req.OldMid);
-        }
-
-        return success ? Ok() : StatusCode(500);
-    }
-
     [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]
     [Route("DeleteSong")]
@@ -255,11 +157,22 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
         var music = await DbManager.GetEntity<Music>(mId);
         bool success = await DbManager.DeleteEntity(music!);
         if (success)
         {
             await DbManager.EvictFromSongsCache(mId);
+        }
+
+        if (success)
+        {
+            Console.WriteLine($"{session.Player.Username} DeleteSong {mId}");
         }
 
         return success ? Ok() : StatusCode(500);
@@ -295,5 +208,3 @@ public class ModController : ControllerBase
         return success ? Ok() : StatusCode(500);
     }
 }
-
-// todo only hide spoilers if not finished/voted

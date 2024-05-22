@@ -27,7 +27,7 @@ public class MusicBrainzVndbArtistJson
 
 public static class MusicBrainzImporter
 {
-    public static List<Song> PendingSongs { get; } = new();
+    public static List<Song> PendingSongs { get; set; } = new();
 
     public static Dictionary<Guid, string[]> MusicBrainzVndbArtistDict { get; set; } = new();
 

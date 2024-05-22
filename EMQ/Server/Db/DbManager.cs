@@ -4291,7 +4291,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
             newSong.Id = oldMid;
             int mId = await InsertSong(newSong, connection, transaction);
-            if (mId <= 0)
+            if (mId <= 0 || mId != oldMid)
             {
                 throw new Exception($"Failed to insert song: {newSong}");
             }

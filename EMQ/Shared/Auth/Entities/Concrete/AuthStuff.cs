@@ -38,6 +38,9 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
             PermissionKind.ReportSongLink, PermissionKind.StoreQuizSettings
         }).ToArray();
 
+    public static PermissionKind[] DefaultImportHelperPermissions { get; } =
+        DefaultUserPermissions.Concat(new[] { PermissionKind.ImportHelper }).ToArray();
+
     public static PermissionKind[] DefaultModeratorPermissions { get; } =
         DefaultUserPermissions.Concat(new[] { PermissionKind.Moderator }).ToArray();
 
@@ -58,6 +61,7 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
             { UserRoleKind.Visitor, DefaultVisitorPermissions },
             { UserRoleKind.Guest, DefaultGuestPermissions },
             { UserRoleKind.User, DefaultUserPermissions },
+            { UserRoleKind.ImportHelper, DefaultImportHelperPermissions },
             { UserRoleKind.ChatModerator, DefaultChatModeratorPermissions },
             { UserRoleKind.ReviewQueueModerator, DefaultReviewQueueModeratorPermissions },
             { UserRoleKind.DatabaseModerator, DefaultDatabaseModeratorPermissions },
@@ -116,6 +120,7 @@ public enum UserRoleKind
     ChatModerator = 1 << 2,
     ReviewQueueModerator = 1 << 3,
     DatabaseModerator = 1 << 4,
+    ImportHelper = 1 << 5,
     Admin = int.MaxValue,
 }
 
@@ -139,6 +144,8 @@ public enum PermissionKind
     UploadSongLink = 3002,
     ReportSongLink = 3003,
     StoreQuizSettings = 3004,
+
+    ImportHelper = 3700,
 
     Moderator = 4000,
 

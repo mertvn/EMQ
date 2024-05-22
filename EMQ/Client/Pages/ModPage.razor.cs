@@ -17,8 +17,6 @@ public partial class ModPage
 {
     public List<SongReport> SongReports { get; set; } = new();
 
-    public List<Song> ImporterPendingSongs { get; set; } = new();
-
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -41,11 +39,6 @@ public partial class ModPage
 
             SongReports = songReports;
         }
-
-        if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
-        {
-            ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
-        }
     }
 
     private async Task Onclick_RunGc()
@@ -61,24 +54,6 @@ public partial class ModPage
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunAnalysis", "");
         if (res.IsSuccessStatusCode)
         {
-        }
-    }
-
-    private async Task Onclick_RunVndbImporter()
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunVndbImporter", "");
-        if (res.IsSuccessStatusCode)
-        {
-            ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
-        }
-    }
-
-    private async Task Onclick_RunMusicBrainzImporter()
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunMusicBrainzImporter", "");
-        if (res.IsSuccessStatusCode)
-        {
-            ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
         }
     }
 
@@ -109,46 +84,6 @@ public partial class ModPage
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ToggleIsSubmissionDisabled", "");
         if (res.IsSuccessStatusCode)
         {
-        }
-    }
-
-    private async Task InsertSong(Song song)
-    {
-        var res = await _client.PostAsJsonAsync("Mod/InsertSong", song);
-        if (res.IsSuccessStatusCode)
-        {
-            ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
-            StateHasChanged();
-        }
-    }
-
-    private async Task InsertSongBatchMusicBrainzRelease(Song song)
-    {
-        var allSongsInTheSameMusicBrainzRelease =
-            ImporterPendingSongs.Where(x => x.MusicBrainzReleases.Any(y => song.MusicBrainzReleases.Contains(y)))
-                .ToList();
-
-        foreach (Song song1 in allSongsInTheSameMusicBrainzRelease)
-        {
-            _ = await _client.PostAsJsonAsync("Mod/InsertSong", song1);
-        }
-
-        ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
-        StateHasChanged();
-    }
-
-    private async Task OverwriteMusic(Song newSong)
-    {
-        string? promptResult = await _jsRuntime.InvokeAsync<string?>("prompt", "Enter music id to overwrite");
-        if (int.TryParse(promptResult?.Trim(), out int oldMid))
-        {
-            var res = await _client.PostAsJsonAsync("Mod/OverwriteMusic", new ReqOverwriteMusic(oldMid, newSong));
-            if (res.IsSuccessStatusCode)
-            {
-                ImporterPendingSongs =
-                    (await _client.GetFromJsonAsync<List<Song>>("Mod/GetImporterPendingSongs"))!;
-                StateHasChanged();
-            }
         }
     }
 }
