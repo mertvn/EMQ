@@ -1,4 +1,13 @@
-﻿::deep table.quickgrid > tbody > tr > td {
+﻿::deep div.paginator {
+    flex-direction: row-reverse;
+}
+
+::deep nav[role=navigation] {
+    margin-left: inherit !important;
+    margin-right: auto;
+}
+
+::deep table.quickgrid > tbody > tr > td {
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
