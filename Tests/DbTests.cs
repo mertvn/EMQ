@@ -446,7 +446,7 @@ public class DbTests
         GenericSongsAssert(songs);
 
         var artistVndbIds = songs.SelectMany(x => x.Artists.Select(y => y.VndbId));
-        Assert.That(artistVndbIds.Any(x => x != vndbId));
+        Assert.That(!artistVndbIds.Any(x => x == vndbId));
         Assert.That(songs.Count > 1);
     }
 
