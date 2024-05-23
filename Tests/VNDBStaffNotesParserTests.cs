@@ -29,7 +29,7 @@ public class VNDBStaffNotesParserTests
         // @formatter:off
         List<string> blacklist = new()
         {
-          "v24208", "v13572", // possible room for improvement
+          "v24208", // possible room for improvement
           "v28714", // too irregular
         };
 

@@ -3551,9 +3551,18 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         foreach (LibraryStatsAm libraryStatsAm in am)
         {
             var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
-            var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
-            libraryStatsAm.AALatinAlias =
-                mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+
+            try
+            {
+                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
+                libraryStatsAm.AALatinAlias =
+                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(aliases, Utils.JsoIndented));
+                throw;
+            }
         }
 
         foreach (LibraryStatsAm libraryStatsAm in amAvailable)

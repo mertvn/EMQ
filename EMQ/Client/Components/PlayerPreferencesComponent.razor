@@ -34,6 +34,13 @@
                             </Items>
                             <Content>
                                 <Blazorise.TabPanel Name="TabGeneral">
+                                    @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
+                                    {
+                                        <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
+                                        <label for="DebugMode">Debug mode</label>
+                                        <br/>
+                                    }
+
                                     <InputCheckbox id="WantsVideo" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
                                     <label for="WantsVideo">Prefer video links over sound links</label>
                                     <br/>
@@ -73,13 +80,6 @@
                                     <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
                                     <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
                                     <br/>
-
-                                    @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
-                                    {
-                                        <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
-                                        <label for="DebugMode">Debug mode</label>
-                                        <br/>
-                                    }
 
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
                                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
