@@ -3511,8 +3511,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
             LibraryStatsMsm msmA = msmAvailable[index];
 
             msmA.AvailableMusicCount = msmA.MusicCount;
-            var match = msm.Where(x => x.MstLatinTitle == msmA.MstLatinTitle);
-            msmA.MusicCount = match.Sum(x => x.MusicCount);
+            msmA.MusicCount = msm.Where(x => x.MstLatinTitle == msmA.MstLatinTitle).Sum(x => x.MusicCount);
         }
 
         return (msm, msmAvailable);
@@ -3548,9 +3547,11 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
                 "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
             .ToList();
+        var aliasesDict = artistAliases.ToLookup(x => x.aId, x => x);
+
         foreach (LibraryStatsAm libraryStatsAm in am)
         {
-            var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+            var aliases = aliasesDict[libraryStatsAm.AId].ToArray();
 
             try
             {
@@ -3567,7 +3568,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
 
         foreach (LibraryStatsAm libraryStatsAm in amAvailable)
         {
-            var aliases = artistAliases.Where(x => x.aId == libraryStatsAm.AId).ToList();
+            var aliases = aliasesDict[libraryStatsAm.AId].ToArray();
             var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
             libraryStatsAm.AALatinAlias =
                 mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
