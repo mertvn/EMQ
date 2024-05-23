@@ -414,8 +414,8 @@ async Task Init()
         }
 
         await DbManager.Init();
-        // var mIds = Enumerable.Range(1, 41800).ToList();
-        // var b = await DbManager.SelectSongsMIds(mIds, false);
+        // var b = await DbManager.SelectSongsMIds(Enumerable.Range(1, 41800).ToList(), false);
+        // var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
         // Environment.Exit(0);
 
         string autocompleteFolder = $"{wwwrootFolder}/autocomplete";

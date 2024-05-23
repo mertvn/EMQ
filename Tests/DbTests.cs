@@ -422,16 +422,32 @@ public class DbTests
     }
 
     [Test]
-    public async Task Test_GetRandomSongs_ArtistFilter_1()
+    public async Task Test_GetRandomSongs_ArtistFilter_Maybe()
     {
-        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, "", ""), LabelKind.Maybe), };
+        const string vndbId = "s15974";
+        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, vndbId, ""), LabelKind.Maybe), };
 
-        var songs = await DbManager.GetRandomSongs(int.MaxValue, false,
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { ArtistFilters = artists }, printSql: true);
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 1);
-        Assert.That(songs.Count < 100);
+        Assert.That(songs.Count < 7);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_ArtistFilter_Exclude()
+    {
+        const string vndbId = "s15974";
+        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, vndbId, ""), LabelKind.Exclude), };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { ArtistFilters = artists }, printSql: true);
+        GenericSongsAssert(songs);
+
+        var artistVndbIds = songs.SelectMany(x => x.Artists.Select(y => y.VndbId));
+        Assert.That(artistVndbIds.Any(x => x != vndbId));
+        Assert.That(songs.Count > 1);
     }
 
     [Test]

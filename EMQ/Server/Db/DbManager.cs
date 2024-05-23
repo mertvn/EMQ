@@ -1754,6 +1754,8 @@ public static class DbManager
                                      ";
 
             var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
+            var excludedArtistVndbIds = new List<string>();
+            var excludedCategoryVndbIds = new List<string>();
 
             // Apply filters
             if (filters != null)
@@ -1789,6 +1791,13 @@ public static class DbManager
                         CategoryFilter categoryFilter = ordered[index];
                         // Console.WriteLine("processing c " + categoryFilter.SongSourceCategory.VndbId);
 
+                        if (categoryFilter.Trilean is LabelKind.Exclude)
+                        {
+                            // needs to be handled at the end
+                            excludedCategoryVndbIds.Add(categoryFilter.SongSourceCategory.VndbId ?? "");
+                            continue;
+                        }
+
                         if (index > 0)
                         {
                             switch (categoryFilter.Trilean)
@@ -1803,9 +1812,6 @@ public static class DbManager
                                     break;
                                 case LabelKind.Include:
                                     queryCategories.AppendLine($"INTERSECT");
-                                    break;
-                                case LabelKind.Exclude:
-                                    queryCategories.AppendLine($"EXCEPT");
                                     break;
                                 default:
                                     throw new ArgumentOutOfRangeException();
@@ -1833,7 +1839,6 @@ public static class DbManager
                     ids = resCategories;
                 }
 
-                // todo exclude doesnt work
                 if (filters.ArtistFilters.Any())
                 {
                     Console.WriteLine(
@@ -1864,6 +1869,13 @@ public static class DbManager
                     {
                         ArtistFilter artistFilter = ordered[index];
 
+                        if (artistFilter.Trilean is LabelKind.Exclude)
+                        {
+                            // needs to be handled at the end
+                             excludedArtistVndbIds.Add(artistFilter.Artist.VndbId);
+                             continue;
+                        }
+
                         if (index > 0)
                         {
                             switch (artistFilter.Trilean)
@@ -1878,9 +1890,6 @@ public static class DbManager
                                     break;
                                 case LabelKind.Include:
                                     queryArtists.AppendLine($"INTERSECT");
-                                    break;
-                                case LabelKind.Exclude:
-                                    queryArtists.AppendLine($"EXCEPT");
                                     break;
                                 default:
                                     throw new ArgumentOutOfRangeException();
@@ -2066,6 +2075,29 @@ public static class DbManager
                 {
                     queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
                 }
+            }
+
+            if (excludedCategoryVndbIds.Any())
+            {
+                var allMidsOfExcluded = await connection.QueryAsync<int>(
+                    @"select distinct music_id from music_source_music msm
+    join music_source_category msc on msm.music_source_id = msc.music_source_id
+    join category c on msc.category_id = c.id
+    where c.vndb_id = ANY(@excludedCategoryVndbIds)", new { excludedCategoryVndbIds });
+
+                invalidMids ??= new List<int>();
+                invalidMids.AddRange(allMidsOfExcluded);
+            }
+
+            if (excludedArtistVndbIds.Any())
+            {
+                var allMidsOfExcluded = await connection.QueryAsync<int>(
+                    @"select distinct music_id from artist_music am
+    join artist a on am.artist_id = a.id
+    where a.vndb_id = ANY(@excludedArtistVndbIds)", new { excludedArtistVndbIds });
+
+                invalidMids ??= new List<int>();
+                invalidMids.AddRange(allMidsOfExcluded);
             }
 
             if (validMids != null && validMids.Any())
