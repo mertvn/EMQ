@@ -168,7 +168,7 @@ public partial class QuizPage
 
     public DateTime LastBufferCheck { get; set; }
 
-    public DateTime LastPhaseChange { get; set; }
+    public Dictionary<int, HashSet<QuizPhaseKind>> CompletedPhaseChanges { get; set; } = new();
 
     public string VisibleVideoElementId
     {
@@ -488,14 +488,20 @@ public partial class QuizPage
                             throw new ArgumentOutOfRangeException();
                     }
 
-                    if (DateTime.UtcNow - LastPhaseChange > TimeSpan.FromMilliseconds(500) &&
-                        (phaseChanged || forcePhaseChange))
+                    if (!CompletedPhaseChanges.TryGetValue(Room.Quiz.QuizState.sp, out HashSet<QuizPhaseKind>? _))
                     {
-                        LastPhaseChange = DateTime.UtcNow;
-                        Console.WriteLine(
-                            $"{DateTime.UtcNow:O} {oldSp}{(QuizPhaseKind)oldPhase} -> " +
-                            $"{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
-                        await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                        CompletedPhaseChanges[Room.Quiz.QuizState.sp] = new HashSet<QuizPhaseKind>();
+                    }
+
+                    if (phaseChanged || forcePhaseChange)
+                    {
+                        if (CompletedPhaseChanges[Room.Quiz.QuizState.sp].Add(Room.Quiz.QuizState.Phase))
+                        {
+                            Console.WriteLine(
+                                $"{DateTime.UtcNow:O} {oldSp}{(QuizPhaseKind)oldPhase} -> " +
+                                $"{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase} forced: {forcePhaseChange}");
+                            await OnReceivePhaseChanged((int)Room.Quiz.QuizState.Phase);
+                        }
                     }
                 }
 
