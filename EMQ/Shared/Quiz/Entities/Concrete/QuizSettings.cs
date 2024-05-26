@@ -82,7 +82,7 @@ public class QuizSettings
 
     [ProtoMember(6)]
     [Required]
-    [Range(1, 8)]
+    [Range(1, 777)]
     [DefaultValue(1)]
     public int TeamSize { get; set; } = 1;
 
@@ -93,7 +93,7 @@ public class QuizSettings
 
     [ProtoMember(8)]
     [Required]
-    [Range(0, 9)]
+    [Range(0, 777)]
     [DefaultValue(0)]
     public int MaxLives { get; set; } = 0;
 
