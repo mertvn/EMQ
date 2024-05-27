@@ -276,6 +276,13 @@ public partial class QuizPage
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
             $"OnInitializedAsync");
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
+
+        // for refreshing on non-guess-phase
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        if (!await GetVideoPlaying())
+        {
+            await PlayVideo();
+        }
     }
 
     protected override void OnAfterRender(bool firstRender)
