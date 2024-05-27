@@ -265,6 +265,36 @@ public static class DbManager
         return await SelectSongsBatch(mIds.Select(x => new Song() { Id = x }).ToList(), selectCategories);
     }
 
+    public static async Task<List<Song>> SelectSongsMIdsCached(int[] mIds)
+    {
+        var cached = new List<Song>(mIds.Length);
+        foreach (int key in mIds)
+        {
+            if (CachedSongs.TryGetValue(key, out var value))
+            {
+                cached.Add(value);
+            }
+        }
+
+        var cachedMids = cached.Select(x => x.Id);
+        int[] uncachedMids = mIds.Except(cachedMids).ToArray();
+
+        List<Song> uncached = new();
+        if (uncachedMids.Any())
+        {
+            uncached = await SelectSongsBatch(uncachedMids.Select(x => new Song() { Id = x }).ToList(), false);
+            foreach (Song song in uncached)
+            {
+                if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
+                {
+                    CachedSongs[song.Id] = song;
+                }
+            }
+        }
+
+        return uncached.Concat(cached).ToList();
+    }
+
     // todo overload that takes int[] mIds to avoid Song object creation cost
     /// <summary>
     /// Available filters: <br/>
@@ -3053,14 +3083,15 @@ WHERE id = {mId};
 
     public static async Task<IEnumerable<RQ>> FindRQs(DateTime startDate, DateTime endDate)
     {
-        var rqs = new List<RQ>();
+        var rqs = new List<RQ>(777);
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             // todo proper date filter
             // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
             //     .ToList();
             var reviewQueues = (await connection.GetListAsync<ReviewQueue>()).ToList();
-            var songs = await SelectSongsMIds(reviewQueues.Select(x => x.music_id), false);
+            var songs = (await SelectSongsMIdsCached(reviewQueues.Select(x => x.music_id).Distinct().ToArray()))
+                .ToDictionary(x => x.Id, x => x);
 
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
@@ -3069,13 +3100,7 @@ WHERE id = {mId};
                     continue;
                 }
 
-                // if (!CachedSongs.TryGetValue(reviewQueue.music_id, out var song))
-                // {
-                //     song = (await SelectSongs(new Song { Id = reviewQueue.music_id }, false)).Single();
-                //     // CachedSongs[reviewQueue.music_id] = song;
-                // }
-
-                var song = songs.First(x => x.Id == reviewQueue.music_id);
+                var song = songs[reviewQueue.music_id];
                 var rq = new RQ
                 {
                     id = reviewQueue.id,
@@ -3106,7 +3131,7 @@ WHERE id = {mId};
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var reviewQueue = await connection.GetAsync<ReviewQueue>(rqId);
-            var song = (await SelectSongsMIds(new[] { reviewQueue.music_id }, false)).Single();
+            var song = (await SelectSongsMIdsCached(new[] { reviewQueue.music_id })).Single();
 
             var rq = new RQ
             {
