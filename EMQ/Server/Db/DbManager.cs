@@ -260,8 +260,13 @@ public static class DbManager
         }
     }
 
-    public static async Task<List<Song>> SelectSongsMIds(IEnumerable<int> mIds, bool selectCategories)
+    public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories)
     {
+        if (!mIds.Any())
+        {
+            return new List<Song>();
+        }
+
         return await SelectSongsBatch(mIds.Select(x => new Song() { Id = x }).ToList(), selectCategories);
     }
 
@@ -1902,8 +1907,8 @@ public static class DbManager
                         if (artistFilter.Trilean is LabelKind.Exclude)
                         {
                             // needs to be handled at the end
-                             excludedArtistVndbIds.Add(artistFilter.Artist.VndbId);
-                             continue;
+                            excludedArtistVndbIds.Add(artistFilter.Artist.VndbId);
+                            continue;
                         }
 
                         if (index > 0)
@@ -2180,7 +2185,8 @@ public static class DbManager
         Console.WriteLine(
             $"enabledSongTypesForRandom: {JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.Jso)}");
 
-        var songsDict = (await SelectSongsMIds(ids.Select(x => x.Item1), false)).ToDictionary(x => x.Id, x => x);
+        var songsDict =
+            (await SelectSongsMIds(ids.Select(x => x.Item1).ToArray(), false)).ToDictionary(x => x.Id, x => x);
         int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
         {
@@ -2446,10 +2452,7 @@ public static class DbManager
             }
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
-            if (songSources.Any())
-            {
-                songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key), false));
-            }
+            songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key).ToArray(), false));
         }
 
         // we can get duplicate songs here if two vns are searchable by the same string and they both share a song
@@ -2481,7 +2484,7 @@ public static class DbManager
                 }, true);
 
             // Console.WriteLine(JsonSerializer.Serialize(songSources, Utils.JsoIndented));
-            songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key), true));
+            songs.AddRange(await SelectSongsMIds(songSources.Select(y => y.Key).ToArray(), true));
         }
 
         return songs;
@@ -2505,11 +2508,8 @@ public static class DbManager
                     }
                 }, true);
 
-            if (songArtists.Any())
-            {
-                // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-                songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key), false));
-            }
+            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+            songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key).ToArray(), false));
         }
 
         return songs;
@@ -2524,11 +2524,8 @@ public static class DbManager
             var songArtists = await SelectArtistBatch(connection,
                 new List<Song> { new Song { Artists = new List<SongArtist> { new() { Id = artistId } } } }, false);
 
-            if (songArtists.Any())
-            {
-                // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
-                songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key), false));
-            }
+            // Console.WriteLine(JsonSerializer.Serialize(songArtists, Utils.JsoIndented));
+            songs.AddRange(await SelectSongsMIds(songArtists.Select(y => y.Key).ToArray(), false));
         }
 
         return songs;
@@ -2549,7 +2546,7 @@ public static class DbManager
                 return songs;
             }
 
-            songs.AddRange(await SelectSongsMIds(mids, false));
+            songs.AddRange(await SelectSongsMIds(mids.ToArray(), false));
         }
 
         return songs;
@@ -2574,7 +2571,7 @@ AND msm.type = ANY(@msmType)";
                 return songs;
             }
 
-            songs.AddRange(await SelectSongsMIds(mids, false));
+            songs.AddRange(await SelectSongsMIds(mids.ToArray(), false));
         }
 
         return songs;
@@ -2606,7 +2603,7 @@ AND msm.type = ANY(@msmType)";
                 return songs;
             }
 
-            songs.AddRange(await SelectSongsMIds(mids, false));
+            songs.AddRange(await SelectSongsMIds(mids.ToArray(), false));
         }
 
         return songs;
@@ -2808,7 +2805,7 @@ WHERE id = {mId};
                 .Select(z => z.Key)
                 .ToList();
 
-            songs.AddRange(await SelectSongsMIds(validMids, false));
+            songs.AddRange(await SelectSongsMIds(validMids.ToArray(), false));
         }
 
         var songLite = songs.Select(song => song.ToSongLite()).ToList();
@@ -2859,7 +2856,7 @@ WHERE id = {mId};
                 .Select(z => z.Key)
                 .ToList();
 
-            songs.AddRange(await SelectSongsMIds(validMids, false));
+            songs.AddRange(await SelectSongsMIds(validMids.ToArray(), false));
         }
 
         var songLite = songs.Select(song => song.ToSongLite_MB()).ToList();
@@ -3162,7 +3159,9 @@ WHERE id = {mId};
         {
             // todo date filter
             var reports = (await connection.GetListAsync<Report>()).ToList();
-            var songs = (await SelectSongsMIds(reports.Select(x => x.music_id), false)).ToDictionary(x => x.Id, x => x);
+            var songs =
+                (await SelectSongsMIds(reports.Select(x => x.music_id).ToArray(), false)).ToDictionary(x => x.Id,
+                    x => x);
 
             foreach (Report report in reports)
             {
@@ -3682,7 +3681,8 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
 
         // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
 
-        var songsDict = (await SelectSongsMIds(ids.Select(x => x.Item1), false)).ToDictionary(x => x.Id, x => x);
+        var songsDict =
+            (await SelectSongsMIds(ids.Select(x => x.Item1).ToArray(), false)).ToDictionary(x => x.Id, x => x);
         foreach ((int mId, string? mselUrl) in ids)
         {
             if (ret.Count >= numSongs)
@@ -3770,7 +3770,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             const string sqlMusicIds =
-                $@"SELECT DISTINCT ON (m.id) m.id FROM music m
+                $@"SELECT DISTINCT m.id FROM music m
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id";
@@ -3780,7 +3780,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
 
             var mIds = (await queryMusicIds.QueryAsync<int>()).ToList();
 
-            List<Song> songs = await SelectSongsMIds(mIds, false);
+            List<Song> songs = await SelectSongsMIds(mIds.ToArray(), false);
             return songs;
         }
     }
@@ -4162,7 +4162,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             // Console.WriteLine(JsonSerializer.Serialize(queryMusic.Parameters, Utils.JsoIndented));
 
             var mids = (await queryMusic.QueryAsync<int>()).ToList();
-            ret.AddRange(await SelectSongsMIds(mids, false));
+            ret.AddRange(await SelectSongsMIds(mids.ToArray(), false));
         }
 
         return ret;
