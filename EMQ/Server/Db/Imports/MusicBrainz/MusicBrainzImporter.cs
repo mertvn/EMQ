@@ -148,7 +148,7 @@ public static class MusicBrainzImporter
                 .Select(z => z.Key)
                 .ToList();
 
-            dbSongs = await DbManager.SelectSongsMIds(validMids, false);
+            dbSongs = await DbManager.SelectSongsMIds(validMids.ToArray(), false);
         }
 
         HashSet<Guid> dbHashes = dbSongs

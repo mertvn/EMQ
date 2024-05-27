@@ -273,7 +273,7 @@ public class EntryPoints_Encoding
                 .Select(z => z.Key)
                 .ToList();
 
-            var songs = await DbManager.SelectSongsMIds(validMids, false);
+            var songs = await DbManager.SelectSongsMIds(validMids.ToArray(), false);
             foreach (Song song in songs)
             {
                 song.Links = SongLink.FilterSongLinks(song.Links);

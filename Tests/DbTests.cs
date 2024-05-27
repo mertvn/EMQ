@@ -1036,7 +1036,7 @@ order by ms.id
     public async Task ListVNsWithNoMusicBrainzReleases()
     {
         int end = await DbManager.SelectCountUnsafe("music");
-        var ret = await DbManager.SelectSongsMIds(Enumerable.Range(1, end), false);
+        var ret = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
 
         foreach (SongSource songSource in ret.SelectMany(song => song.Sources))
         {
@@ -1199,7 +1199,7 @@ order by ms.id
     public async Task Test_batch_eq()
     {
         var mIds = Enumerable.Range(1, 41800).ToList();
-        var b = await DbManager.SelectSongsMIds(mIds, false);
+        var b = await DbManager.SelectSongsMIds(mIds.ToArray(), false);
         GenericSongsAssert(b);
 
         var s = new List<Song>();
@@ -1289,7 +1289,7 @@ order by ms.id
     public async Task Test_batch_benchmark_b()
     {
         var mIds = Enumerable.Range(1, 41800).ToList();
-        var b = await DbManager.SelectSongsMIds(mIds, false);
+        var b = await DbManager.SelectSongsMIds(mIds.ToArray(), false);
         Console.WriteLine(b.Count);
     }
 

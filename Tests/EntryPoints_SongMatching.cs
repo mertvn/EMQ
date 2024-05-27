@@ -61,7 +61,8 @@ public class EntryPoints_SongMatching
             var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
 
             // todo move this one layer up
-            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()), false);
+            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()).ToArray(),
+                false);
 
             for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
@@ -261,7 +262,8 @@ public class EntryPoints_SongMatching
             var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
 
             // todo move this one layer up
-            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()), false);
+            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()).ToArray(),
+                false);
 
             for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
