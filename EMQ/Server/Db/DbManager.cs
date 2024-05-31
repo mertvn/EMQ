@@ -1437,6 +1437,20 @@ public static class DbManager
         return mIdSongArtists;
     }
 
+    public static async Task<Dictionary<int, string[]>> SelectArtistAliases(int[] aIds)
+    {
+        string sql =
+            @"SELECT artist_id, array_remove(array_cat(array_agg(latin_alias), array_agg(non_latin_alias)), NULL) AS aliases
+FROM artist_alias aa
+WHERE artist_id = ANY(@aIds)
+GROUP BY artist_id";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var res = await connection.QueryAsync<(int aId, string[] aliases)>(sql, new { aIds });
+        var dict = res.ToDictionary(x => x.aId, x => x.aliases.Distinct().ToArray());
+        return dict;
+    }
+
     public static async Task<int> InsertSong(Song song, NpgsqlConnection? connection = null,
         NpgsqlTransaction? transaction = null)
     {

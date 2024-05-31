@@ -205,6 +205,17 @@
                                     string id = $"EnabledGuessKinds-{key}";
                                     <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.EnabledGuessKinds[key])" style="margin: 5px"/>
                                     <label for="@id">@key.GetDescription()</label>
+
+                                    @if (key == GuessKind.A)
+                                    {
+                                        <span style="margin-left: 15px;">(</span>
+                                        <InputCheckbox id="IsMergeArtistAliases" class="form-check-input" @bind-Value="ClientQuizSettings.IsMergeArtistAliases"
+                                                       disabled="@(!ClientQuizSettings.EnabledGuessKinds[GuessKind.A])">
+                                        </InputCheckbox>
+                                        <label for="IsMergeArtistAliases">Merge artist aliases</label>
+                                        <span style=" margin-right: 5px;">)</span>
+                                    }
+
                                     <br/>
                                 }
                             }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -30,6 +30,8 @@ public class QuizManager
 
     public Quiz Quiz { get; }
 
+    private DateTime LastUpdate { get; set; }
+
     private Dictionary<int, List<string>> CorrectAnswersDictMst { get; set; } = new();
 
     private Dictionary<int, List<string>> CorrectAnswersDictA { get; set; } = new();
@@ -38,7 +40,7 @@ public class QuizManager
 
     private Dictionary<int, List<string>> CorrectAnswersDictRigger { get; set; } = new();
 
-    private DateTime LastUpdate { get; set; }
+    private Dictionary<int, string[]>? ArtistAliasesDict { get; set; }
 
     private async Task SetTimer()
     {
@@ -352,12 +354,24 @@ public class QuizManager
         {
             if (!CorrectAnswersDictA.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
-                correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
-                    .Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
-                correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
-                    .Select(x => x.NonLatinTitle?.NormalizeForAutocomplete()).Where(x => x != null)!);
-                correctAnswers = correctAnswers.Distinct().ToList();
+                if (ArtistAliasesDict != null)
+                {
+                    correctAnswers = new List<string>();
+                    var aIds = Quiz.Songs[Quiz.QuizState.sp].Artists.Select(x => x.Id);
+                    foreach (int aId in aIds)
+                    {
+                        correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                    }
+                }
+                else
+                {
+                    correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
+                        .Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
+                    correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Artists.SelectMany(x => x.Titles)
+                        .Select(x => x.NonLatinTitle?.NormalizeForAutocomplete()).Where(x => x != null)!);
+                }
 
+                correctAnswers = correctAnswers.Distinct().ToList();
                 CorrectAnswersDictA.Add(Quiz.QuizState.sp, correctAnswers);
                 Quiz.Room.Log("cA-a: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
             }
@@ -1276,6 +1290,8 @@ public class QuizManager
         CorrectAnswersDictMst = new Dictionary<int, List<string>>();
         CorrectAnswersDictA = new Dictionary<int, List<string>>();
         CorrectAnswersDictMt = new Dictionary<int, List<string>>();
+        CorrectAnswersDictRigger = new Dictionary<int, List<string>>();
+        ArtistAliasesDict = null;
         Dictionary<int, List<string>> validSourcesDict = new();
 
         var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
@@ -1667,6 +1683,13 @@ public class QuizManager
         foreach (Song dbSong in dbSongs)
         {
             dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+        }
+
+        if (Quiz.Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a &&
+            Quiz.Room.QuizSettings.IsMergeArtistAliases)
+        {
+            ArtistAliasesDict =
+                await DbManager.SelectArtistAliases(dbSongs.SelectMany(x => x.Artists.Select(y => y.Id)).ToArray());
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));

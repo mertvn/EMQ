@@ -239,6 +239,12 @@ public class QuizSettings
         set { MaxWaitForLaggingPlayersMs = value * 1000; }
     }
 
+    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
+    [ProtoMember(28)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsMergeArtistAliases { get; set; } = true;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -539,6 +545,12 @@ public class QuizSettings
         {
             diff.Add(
                 $"Maximum wait time for lagging players: {o.UI_MaxWaitForLaggingPlayersMs} → {n.UI_MaxWaitForLaggingPlayersMs}");
+        }
+
+        if (o.IsMergeArtistAliases != n.IsMergeArtistAliases)
+        {
+            diff.Add(
+                $"Merge artist aliases: {o.IsMergeArtistAliases} → {n.IsMergeArtistAliases}");
         }
 
         return diff;
