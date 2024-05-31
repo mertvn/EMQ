@@ -60,6 +60,15 @@ public partial class Song
                 ? $" ({first.NonLatinTitle})"
                 : "");
     }
+
+    public string ToStringLatin()
+    {
+        var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();
+        var firstSource = Sources.FirstOrDefault(x => x.Titles.Any(y => y.Language == "ja" && y.IsMainTitle)) ??
+                          Sources.First();
+        return
+            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}";
+    }
 }
 
 public enum SongType

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -59,5 +61,11 @@ public static class Utils
         int mod = number % 100;
         string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
         return (modStr, number);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string UserIdToUsername(Dictionary<int, string> dict, int userId)
+    {
+        return dict.TryGetValue(userId, out string? username) ? username : $"Guest-{userId}";
     }
 }

@@ -21,18 +21,16 @@
     @if (ClientState.Session != null && !LoginInProgress)
     {
         bool isUserOrGreater = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
-        string roleStr = ClientState.Session.UserRoleKind.ToString();
         <div>
+            @if (true)
+            {
+                string myProfileHref = $"eu/{ClientState.Session.Player.Id}";
+                <a href="@myProfileHref">My profile page</a>
+                <br/>
+            }
+
             Currently logged in as @ClientState.Session.Player.Username
             <br/>
-            <span>Role: @roleStr</span>
-            <br/>
-
-            <ul>
-                <li>Song count: @PublicUserInfo.SongCount</li>
-                <li>Guess rate: @PublicUserInfo.GuessRate%</li>
-            </ul>
-
             <button type="button" class="btn btn-primary" @onclick="Logout" disabled="@(LoginInProgress)">Logout</button>
             <br/>
 

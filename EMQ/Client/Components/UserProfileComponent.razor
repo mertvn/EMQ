@@ -1,46 +1,107 @@
 ﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
 @inject HttpClient _client
 @inject NavigationManager _navigation
 
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId + 1}"))">Next</button>
 
-<h3>@PublicUserInfo.Username</h3>
+@if (PublicUserInfo != null)
+{
+    <h3>@PublicUserInfo.Username</h3>
 
-@{
     Avatar avatar = (ClientState.Session?.Player.Preferences.ForceDefaultAvatar ?? false) ? Avatar.DefaultAvatar : PublicUserInfo.Avatar;
+    <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar">
+    <br/>
+
+    <span>Role: @PublicUserInfo.UserRoleKind.ToString()</span>
+    <br/>
+
+    <span>Account creation date: @PublicUserInfo.CreatedAt.ToString("yyyy-MM-dd 'at' HH:mm")</span>
+    <br/>
+
+    <ul>
+        <li>Song count: @PublicUserInfo.SongCount</li>
+        <li>Guess rate: @PublicUserInfo.GuessRate%</li>
+    </ul>
+    <br/>
 }
-<img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar">
-<br/>
 
-<span>Role: @PublicUserInfo.UserRoleKind.ToString()</span>
-<br/>
+@if (MostPlayedSongs != null)
+{
+    <h4>Most played songs</h4>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@MostPlayedSongs">
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.Song.ToStringLatin()))">
+                @context.Song.ToStringLatin()
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true" IsDefaultSort="SortDirection.Descending"/>
+            <PropertyColumn Property="@(x => x.IntervalDays)" Title="Interval (days)" Sortable="true"/>
+        </QuickGrid>
+    </div>
+    <br/>
+}
 
-<span>Account creation date: @PublicUserInfo.CreatedAt.ToString("yyyy-MM-dd 'at' HH:mm")</span>
-<br/>
-
-<ul>
-    <li>Song count: @PublicUserInfo.SongCount</li>
-    <li>Guess rate: @PublicUserInfo.GuessRate%</li>
-</ul>
-<br/>
+@if (CommonPlayers != null)
+{
+    <h4>Most played players</h4>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@CommonPlayers">
+            <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ResCommonPlayers>.ByAscending(x => x.UserLite.Username))">
+                @if (!context.UserLite.Username.StartsWith("Guest"))
+                {
+                    string href = $"eu/{context.UserLite.Username}";
+                    <a href="@href">@context.UserLite.Username</a>
+                }
+                else
+                {
+                    @context.UserLite.Username
+                }
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.QuizCount)" Title="Quiz count" Sortable="true" IsDefaultSort="SortDirection.Descending"/>
+        </QuickGrid>
+    </div>
+    <br/>
+}
 
 @code {
 
     [Parameter]
     public int UserId { get; set; }
 
-    private ResGetPublicUserInfo PublicUserInfo { get; set; } = new();
+    private ResGetPublicUserInfo? PublicUserInfo { get; set; }
+
+    private IQueryable<ResMostPlayedSongs>? MostPlayedSongs { get; set; }
+
+    private IQueryable<ResCommonPlayers>? CommonPlayers { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
-        HttpResponseMessage res =
+        HttpResponseMessage res1 =
             await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", UserId);
-        if (res.IsSuccessStatusCode)
+        if (res1.IsSuccessStatusCode)
         {
-            var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
             PublicUserInfo = content;
+        }
+        else
+        {
+            PublicUserInfo = null;
+        }
+
+        HttpResponseMessage res2 =
+            await _client.PostAsJsonAsync("Auth/GetPublicUserInfoSongs", UserId);
+        if (res2.IsSuccessStatusCode)
+        {
+            var content = (await res2.Content.ReadFromJsonAsync<ResGetPublicUserInfoSongs>())!;
+            MostPlayedSongs = content.MostPlayedSongs.AsQueryable();
+            CommonPlayers = content.CommonPlayers.AsQueryable();
+        }
+        else
+        {
+            MostPlayedSongs = null;
+            CommonPlayers = null;
         }
     }
 

@@ -4411,23 +4411,13 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 foreach (IGrouping<int, QuizSongHistory> histories in qsh)
                 {
                     var firstHistory = histories.First();
-
-                    int[] userIds = histories.Select(x => x.user_id).ToArray();
-                    foreach (int id in userIds)
-                    {
-                        if (!usernamesDict.ContainsKey(id))
-                        {
-                            usernamesDict[id] = $"Guest_{id}";
-                        }
-                    }
-
                     var sh = new SongHistory
                     {
                         MId = firstHistory.music_id,
                         PlayedAt = firstHistory.played_at,
                         PlayerGuessInfos = histories.ToDictionary(c => c.user_id, c => new GuessInfo
                         {
-                            Username = usernamesDict[c.user_id],
+                            Username = Utils.UserIdToUsername(usernamesDict, c.user_id),
                             Guess = c.guess,
                             FirstGuessMs = c.first_guess_ms,
                             IsGuessCorrect = c.is_correct,
@@ -4549,6 +4539,89 @@ group by sq.user_id
             x => x);
 
         return ret;
+    }
+
+    public static async Task<ResGetPublicUserInfoSongs?> GetPublicUserInfoSongs(int userId)
+    {
+        const string sqlMostPlayedSongs =
+            @"select qsh.music_id AS MusicId, count(*) as Played, usr.interval_days AS IntervalDays
+from quiz q
+join quiz_song_history qsh on qsh.quiz_id = q.id
+LEFT JOIN user_spaced_repetition usr ON usr.music_id = qsh.music_id AND usr.user_id = qsh.user_id
+where qsh.user_id = @userId
+GROUP BY qsh.music_id, usr.interval_days
+ORDER BY count(*) DESC
+limit 100;
+";
+
+        const string sqlCommonPlayers =
+            @"SELECT array_agg(DISTINCT user_id) AS arr, q.id FROM quiz q
+join quiz_song_history qsh on qsh.quiz_id = q.id
+GROUP BY q.id
+HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT user_id) @> @userId
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var resMostPlayedSongs =
+            (await connection.QueryAsync<ResMostPlayedSongs>(sqlMostPlayedSongs, new { userId })).ToArray();
+        if (!resMostPlayedSongs.Any())
+        {
+            return null;
+        }
+
+        var songs =
+            (await SelectSongsMIds(resMostPlayedSongs.Select(x => x.MusicId).ToArray(), false))
+            .ToDictionary(x => x.Id, x => x);
+        foreach (ResMostPlayedSongs resMostPlayedSong in resMostPlayedSongs)
+        {
+            resMostPlayedSong.Song = songs[resMostPlayedSong.MusicId];
+        }
+
+        var resCommonPlayers =
+            (await connection.QueryAsync<(int[] arr, Guid quizId)>(sqlCommonPlayers, new { userId = new[] { userId } }))
+            .ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+        Dictionary<int, int> commonPlayersDict = new();
+        foreach ((int[] arr, Guid _) in resCommonPlayers)
+        {
+            foreach (int id in arr)
+            {
+                if (id == userId)
+                {
+                    continue;
+                }
+
+                if (!commonPlayersDict.ContainsKey(id))
+                {
+                    commonPlayersDict[id] = 0;
+                }
+
+                commonPlayersDict[id] += 1;
+            }
+        }
+
+        commonPlayersDict = commonPlayersDict.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+        // foreach ((var key, int value) in commonPlayersDict)
+        // {
+        //     Console.WriteLine($"{key}: {value} quizzes");
+        // }
+
+        var commonPlayers = commonPlayersDict.Select(x => new ResCommonPlayers
+        {
+            UserLite = new UserLite { Id = x.Key, Username = Utils.UserIdToUsername(usernamesDict, x.Key) },
+            QuizCount = x.Value
+        }).ToArray();
+
+        var res = new ResGetPublicUserInfoSongs
+        {
+            MostPlayedSongs = resMostPlayedSongs, CommonPlayers = commonPlayers,
+        };
+
+        return res;
     }
 
     public static async Task EvictFromSongsCache(int musicId)

@@ -1324,4 +1324,18 @@ order by ms.id
         Console.WriteLine(bgmCount);
         Assert.That(bgmCount < 11);
     }
+
+    [Test]
+    public async Task Test_GetPublicUserInfoSongs()
+    {
+        var res = await DbManager.GetPublicUserInfoSongs(2);
+        Assert.That(res != null);
+        Assert.That(res!.MostPlayedSongs.Any());
+        Assert.That(res.MostPlayedSongs.First().MusicId > 0);
+        Assert.That(res.MostPlayedSongs.First().Played > 0);
+        Assert.That(res.MostPlayedSongs.First().IntervalDays > 0);
+        Assert.That(res.CommonPlayers.Any());
+        Assert.That(res.CommonPlayers.First().UserLite.Id > 0);
+        Assert.That(res.CommonPlayers.First().QuizCount > 0);
+    }
 }

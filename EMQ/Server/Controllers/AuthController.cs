@@ -571,7 +571,16 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResGetPublicUserInfo>> GetPublicUserInfo([FromBody] int userId)
     {
         var publicUserInfo = await DbManager.GetPublicUserInfo(userId);
-        return publicUserInfo != null ? publicUserInfo : StatusCode(520);
+        return publicUserInfo != null ? publicUserInfo : StatusCode(404);
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetPublicUserInfoSongs")]
+    public async Task<ActionResult<ResGetPublicUserInfoSongs>> GetPublicUserInfoSongs([FromBody] int userId)
+    {
+        var publicUserInfo = await DbManager.GetPublicUserInfoSongs(userId);
+        return publicUserInfo != null ? publicUserInfo : StatusCode(404);
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
