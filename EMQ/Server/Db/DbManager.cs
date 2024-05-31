@@ -4553,11 +4553,10 @@ group by sq.user_id
 
     public static async Task EvictFromSongsCache(int musicId)
     {
-        // while (CachedSongs.ContainsKey(musicId))
-        // {
-        //     CachedSongs.TryRemove(musicId, out _);
-        // }
-        //
+        while (CachedSongs.ContainsKey(musicId))
+        {
+            CachedSongs.TryRemove(musicId, out _);
+        }
 
         // todo enable after setting up live MusicBrainz imports
         bool b = false;
