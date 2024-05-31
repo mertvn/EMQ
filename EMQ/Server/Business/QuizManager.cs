@@ -228,7 +228,7 @@ public class QuizManager
         TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
             true);
 
-        if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
+        if (Quiz.Room.QuizSettings.IsSharedGuessesTeams)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(500)); // wait for late guesses (especially non-Entered guesses)
             DetermineTeamGuesses();
@@ -1828,7 +1828,7 @@ public class QuizManager
                     }
                 }
 
-                if (Quiz.Room.QuizSettings.TeamSize > 1 && Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC)
+                if (Quiz.Room.QuizSettings.IsSharedGuessesTeams)
                 {
                     // also includes the player themselves
                     var teammates = Quiz.Room.Players.Where(x => x.TeamId == player.TeamId).ToArray();
