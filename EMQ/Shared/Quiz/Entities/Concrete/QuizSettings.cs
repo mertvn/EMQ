@@ -19,7 +19,7 @@ public class QuizSettings
         SongSelectionKind == SongSelectionKind.Random &&
         AnsweringKind == AnsweringKind.Typing &&
         Filters.ScreenshotKind == ScreenshotKind.None &&
-        IsOnlyMstGuessTypeEnabled &&
+        IsMstGuessTypeEnabled &&
         !IsNoSoundMode &&
         !EnabledSongHintKinds.Any(x => x.Value) &&
         !Filters.CategoryFilters.Any() &&
@@ -27,8 +27,11 @@ public class QuizSettings
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads;
 
+    public bool IsMstGuessTypeEnabled =>
+        EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst;
+
     public bool IsOnlyMstGuessTypeEnabled =>
-        EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst &&
+        IsMstGuessTypeEnabled &&
         !EnabledGuessKinds.Where(x => x.Key != GuessKind.Mst).Any(y => y.Value);
 
     [ProtoMember(1)]
