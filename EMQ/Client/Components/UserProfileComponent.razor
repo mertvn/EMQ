@@ -54,7 +54,7 @@
             <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ResCommonPlayers>.ByAscending(x => x.UserLite.Username))">
                 @if (!context.UserLite.Username.StartsWith("Guest"))
                 {
-                    string href = $"eu/{context.UserLite.Username}";
+                    string href = $"eu/{context.UserLite.Id}";
                     <a href="@href">@context.UserLite.Username</a>
                 }
                 else
