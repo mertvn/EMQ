@@ -4544,11 +4544,11 @@ group by sq.user_id
     public static async Task<ResGetPublicUserInfoSongs?> GetPublicUserInfoSongs(int userId)
     {
         const string sqlMostPlayedSongs =
-            @"select qsh.music_id AS MusicId, count(*) as Played, usr.interval_days AS IntervalDays
+            @"select qsh.music_id AS MusicId, count(*) as Played, count(qsh.is_correct) FILTER (WHERE qsh.is_correct) AS Correct, usr.interval_days AS IntervalDays
 from quiz q
 join quiz_song_history qsh on qsh.quiz_id = q.id
 LEFT JOIN user_spaced_repetition usr ON usr.music_id = qsh.music_id AND usr.user_id = qsh.user_id
-where qsh.user_id = @userId
+where q.should_update_stats and qsh.user_id = @userId
 GROUP BY qsh.music_id, usr.interval_days
 ORDER BY count(*) DESC
 limit 100;

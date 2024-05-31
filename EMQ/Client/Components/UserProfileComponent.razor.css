@@ -8,7 +8,7 @@
 }
 
 ::deep table.quickgrid > tbody > tr > td {
-    max-width: 340px;
+    max-width: 420px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
