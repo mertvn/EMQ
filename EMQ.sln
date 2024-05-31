@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Juliet", "Juliet\Juliet.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMQBackupScript", "EMQBackupScript\EMQBackupScript.csproj", "{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMQ.Benchmarks", "EMQ.Benchmarks\EMQ.Benchmarks.csproj", "{BDA86BF4-54C4-4EAA-A520-C8997F61DDC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7CA3ED6-A890-49F2-AB29-CF02CCD91733}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDA86BF4-54C4-4EAA-A520-C8997F61DDC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDA86BF4-54C4-4EAA-A520-C8997F61DDC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDA86BF4-54C4-4EAA-A520-C8997F61DDC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDA86BF4-54C4-4EAA-A520-C8997F61DDC0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
