@@ -4566,6 +4566,7 @@ where q.should_update_stats and music_id = @mId
 order by qsh.played_at desc
 ) sq
 where RowNumber <= {Constants.SHUseLastNPlaysPerPlayer}
+limit 777;
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
