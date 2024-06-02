@@ -1,8 +1,40 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Auth.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
+
+<GenericModal @ref="@_shSongStatsModalRef"
+              Title="@Song?.ToStringLatin()"
+              Size="@Blazorise.ModalSize.ExtraLarge">
+    @if (SHSongStats != null)
+    {
+        <div class="grid" tabindex="-1">
+            <QuickGrid Items="@SHSongStats">
+                <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSort="SortDirection.Descending"/>
+                <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+                <TemplateColumn Title="Correct?" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.IsCorrect)">
+                    @if (context.IsCorrect)
+                    {
+                        <span style="color: green">✓</span>
+                    }
+                    else
+                    {
+                        <span style="color: red">✘</span>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="Guess time" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.FirstGuessMs)">
+                    @if (context.FirstGuessMs > 0)
+                    {
+                        <span>@(Math.Round((float)context.FirstGuessMs / 1000, 2))s</span>
+                    }
+                </TemplateColumn>
+                <PropertyColumn Property="@(x => x.Guess)" Title="Guess" Sortable="true"/>
+            </QuickGrid>
+        </div>
+    }
+</GenericModal>
 
 @if (Song != null)
 {
@@ -192,7 +224,7 @@
                 @if (Song.Stats.TimesPlayed > 0)
                 {
                     <br/>
-                    <div class="songStats">
+                    <div class="songStats" @onclick="OnclickSongStatsDiv" style="cursor: pointer;">
                         <div class="songStatsGuessRate">
                             Guess rate: @(Math.Round(Song.Stats.CorrectPercentage, 2))% (@(Song.Stats.TimesCorrect)/@(Song.Stats.TimesPlayed))
                         </div>

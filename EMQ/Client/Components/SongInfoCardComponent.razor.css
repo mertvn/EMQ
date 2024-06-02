@@ -1,0 +1,78 @@
+﻿::deep div.paginator {
+    flex-direction: row-reverse;
+}
+
+::deep nav[role=navigation] {
+    margin-left: inherit !important;
+    margin-right: auto;
+}
+
+::deep table.quickgrid > tbody > tr > td {
+    max-width: 350px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+::deep .go-previous, ::deep .go-next {
+    background-image: none !important;
+}
+
+::deep .go-previous::before, ::deep .go-next::before {
+    content: '‹' !important;
+    font-size: 20px !important;
+}
+
+::deep .go-first, ::deep .go-last {
+    background-image: none !important;
+}
+
+::deep .go-first::before, ::deep .go-last::before {
+    content: '«' !important;
+    font-size: 20px !important;
+}
+
+::deep .col-sort-desc .sort-indicator {
+    background-image: none !important;
+}
+
+::deep .col-sort-desc .sort-indicator::before {
+    content: '▼' !important;
+}
+
+::deep .col-sort-asc .sort-indicator {
+    background-image: none !important;
+    align-self: normal;
+}
+
+::deep .col-sort-asc .sort-indicator::before {
+    content: '▼' !important;
+}
+
+::deep tr {
+    border-bottom: 1px solid rgb(73, 80, 87);
+}
+
+::deep td {
+    padding: 8px !important;
+}
+
+.grid ::deep table {
+    min-width: 100%;
+}
+
+/* Fix height and enable scrolling */
+.grid {
+    /*height: 75vh;*/
+    overflow-y: auto;
+}
+
+/*todo make this work*/
+/* Sticky header while scrolling */
+::deep thead {
+    position: sticky;
+    top: 0;
+    /*background-color: #d8d8d8;*/
+    outline: 1px solid gray;
+    z-index: 1;
+}

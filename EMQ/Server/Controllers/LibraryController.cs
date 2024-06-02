@@ -253,4 +253,13 @@ public class LibraryController : ControllerBase
             return Unauthorized();
         }
     }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetSHSongStats")]
+    public async Task<SHSongStats[]> GetSHSongStats([FromBody] int mId)
+    {
+        var res = await DbManager.GetSHSongStats(mId);
+        return res;
+    }
 }

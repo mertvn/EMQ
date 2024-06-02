@@ -560,19 +560,10 @@ public class QuizManager
         // don't make this delay configurable (at least not for regular users)
         await Task.Delay(TimeSpan.FromMilliseconds(900)); // add suspense & wait for late guesses
 
-        var song = Quiz.Songs.ElementAtOrDefault(Quiz.QuizState.sp);
-        if (song == null)
-        {
-            Quiz.Room.Log("Corruption was detected in quiz state. This incident will be investigated. Code: 2",
-                writeToChat: true);
-            Quiz.Room.Log(JsonSerializer.Serialize(Quiz.Room, Utils.JsoIndented));
-            await EndQuiz();
-            return;
-        }
-
+        var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
         var userSongStatsDict =
-            await DbManager.GetPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Id).ToList());
+            await DbManager.GetSHPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Id).ToList());
 
         foreach (var player in Quiz.Room.Players)
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -18,6 +19,10 @@ public partial class SongInfoCardComponent
     public SongReportComponent _songReportComponent { get; set; } = null!;
 
     private int _currentSongId;
+
+    private GenericModal _shSongStatsModalRef { get; set; } = null!;
+
+    private IQueryable<SHSongStats>? SHSongStats { get; set; }
 
     protected override bool ShouldRender()
     {
@@ -76,6 +81,16 @@ public partial class SongInfoCardComponent
         if (!res.IsSuccessStatusCode)
         {
             await _jsRuntime.InvokeVoidAsync("alert", $"Error setting attributes for {song}");
+        }
+    }
+
+    private async Task OnclickSongStatsDiv()
+    {
+        var res = await _client.PostAsJsonAsync("Library/GetSHSongStats", Song!.Id);
+        if (res.IsSuccessStatusCode)
+        {
+            SHSongStats = (await res.Content.ReadFromJsonAsync<SHSongStats[]>())!.AsQueryable();
+            _shSongStatsModalRef.Show();
         }
     }
 }

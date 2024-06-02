@@ -2672,8 +2672,6 @@ WHERE id = {mId};
 
     public static async Task<bool> RecalculateSongStats(HashSet<int> mIds)
     {
-        const int useLastNPlaysPerPlayer = 3;
-
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
@@ -2689,7 +2687,7 @@ join quiz_song_history qsh on qsh.quiz_id = q.id
 where q.should_update_stats and music_id = @mId
 order by qsh.played_at desc
 ) sq
-where row_number <= {useLastNPlaysPerPlayer}";
+where row_number <= {Constants.SHUseLastNPlaysPerPlayer}";
 
                 var res =
                     await connection
@@ -4534,7 +4532,7 @@ group by user_id
         return res;
     }
 
-    public static async Task<Dictionary<int, PlayerSongStats>> GetPlayerSongStats(int mId, List<int> userIds)
+    public static async Task<Dictionary<int, PlayerSongStats>> GetSHPlayerSongStats(int mId, List<int> userIds)
     {
         const string sql =
             @"select sq.user_id as userid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms
@@ -4551,6 +4549,36 @@ group by sq.user_id
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var ret = (await connection.QueryAsync<PlayerSongStats>(sql, new { mId, userIds })).ToDictionary(x => x.UserId,
             x => x);
+
+        return ret;
+    }
+
+    public static async Task<SHSongStats[]> GetSHSongStats(int mId)
+    {
+        string sql =
+            @$"select *
+from (
+select qsh.music_id as MusicId, qsh.user_id as UserId, qsh.is_correct as IsCorrect, qsh.first_guess_ms as FirstGuessMs, NULLIF(qsh.guess, '') as Guess, qsh.played_at as PlayedAt,
+       row_number() over (partition by qsh.user_id order by qsh.played_at desc) as RowNumber
+from quiz q
+join quiz_song_history qsh on qsh.quiz_id = q.id
+where q.should_update_stats and music_id = @mId
+order by qsh.played_at desc
+) sq
+where RowNumber <= {Constants.SHUseLastNPlaysPerPlayer}
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var ret = (await connection.QueryAsync<SHSongStats>(sql, new { mId })).ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+        foreach (SHSongStats shSongStats in ret)
+        {
+            shSongStats.Username = Utils.UserIdToUsername(usernamesDict, shSongStats.UserId);
+        }
 
         return ret;
     }
