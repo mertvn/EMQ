@@ -4572,7 +4572,7 @@ limit 777;
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var ret = (await connection.QueryAsync<SHSongStats>(sql, new { mId })).ToArray();
 
-        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
             .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
 
