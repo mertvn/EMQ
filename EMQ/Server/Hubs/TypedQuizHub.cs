@@ -10,6 +10,8 @@ public static class TypedQuizHub
 {
     private static void EnqueuePumpMessage(int playerId, string target, object?[] arguments)
     {
+        const int maxQueueSizePerPlayer = 200;
+
         if (!ServerState.PumpMessages.TryGetValue(playerId, out var queue))
         {
             // todo initialize this immediately after a session is created by sending a simple message
@@ -20,14 +22,14 @@ public static class TypedQuizHub
             }
         }
 
-        // todo max queue size per player
         // todo clear stale messages
         string? invocationId = null; // todo?
         queue!.Enqueue(new InvocationMessage(invocationId, target, arguments));
 
-        if (queue.Count > 500)
+        if (queue.Count > maxQueueSizePerPlayer)
         {
-            Console.WriteLine($"PumpMessages queue count for p{playerId}: {queue.Count}");
+            Console.WriteLine($"PumpMessages queue count for p{playerId}: {queue.Count}; clearing");
+            queue.Clear();
         }
     }
 
