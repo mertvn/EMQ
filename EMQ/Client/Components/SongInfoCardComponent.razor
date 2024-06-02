@@ -206,10 +206,10 @@
                     </div>
                 }
 
-            @if (Song.Id > 0)
+            @if (Song.Id > 0 && Song.Sources.Any()) // for VNDB staff notes parser
             {
                 <br/>
-                <details open>
+                <details>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
                     {

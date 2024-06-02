@@ -364,7 +364,7 @@ public class QuizSettings
 
         if (o.UI_TimeoutMs != n.UI_TimeoutMs)
         {
-            diff.Add($"Timeout time: {o.UI_TimeoutMs} → {n.UI_TimeoutMs}");
+            diff.Add($"Buffering timeout time: {o.UI_TimeoutMs} → {n.UI_TimeoutMs}");
         }
 
         // todo
