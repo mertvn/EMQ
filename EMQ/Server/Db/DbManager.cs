@@ -4736,8 +4736,7 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
     {
         const string sql = "SELECT c.image from chars c where c.image is not null and c.id = @cId";
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
-        string? screenshot = (await connection.QueryAsync<string?>(sql, new { cId }))
-            .OrderBy(x => Random.Shared.Next()).FirstOrDefault(); // surely we get multiple character images one day
+        string? screenshot = await connection.QuerySingleOrDefaultAsync<string?>(sql, new { cId });
         return screenshot ?? "";
     }
 
