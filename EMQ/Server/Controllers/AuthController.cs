@@ -349,13 +349,17 @@ public class AuthController : ControllerBase
     [Route("CspReport")]
     public async Task<IActionResult> CspReport([FromBody] dynamic report)
     {
-        string serialized = (string)JsonSerializer.Serialize(report, Utils.JsoIndented);
-        if (!serialized.Contains("blazor.webassembly.js") &&
-            !serialized.Contains("moz-extension") &&
-            !serialized.Contains("chrome-extension") &&
-            !serialized.Contains("google-analytics"))
+        bool log = false;
+        if (log)
         {
-            _logger.LogError("CSP violation: " + serialized);
+            string serialized = (string)JsonSerializer.Serialize(report, Utils.JsoIndented);
+            if (!serialized.Contains("blazor.webassembly.js") &&
+                !serialized.Contains("moz-extension") &&
+                !serialized.Contains("chrome-extension") &&
+                !serialized.Contains("google-analytics"))
+            {
+                _logger.LogError("CSP violation: " + serialized);
+            }
         }
 
         return Ok();
