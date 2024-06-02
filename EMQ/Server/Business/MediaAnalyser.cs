@@ -109,7 +109,7 @@ public static class MediaAnalyser
                 result.VideoBitrateKbps = mediaInfo.PrimaryVideoStream.BitRate / 1000;
                 result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
-                if (result.AvgFramerate is 1000)
+                if (result.AvgFramerate is 1000 or double.NaN)
                 {
                     result.AvgFramerate = mediaInfo.PrimaryVideoStream!.FrameRate;
                 }
