@@ -4647,13 +4647,7 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
             }
         }
 
-        commonPlayersDict = commonPlayersDict.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
-        // foreach ((var key, int value) in commonPlayersDict)
-        // {
-        //     Console.WriteLine($"{key}: {value} quizzes");
-        // }
-
-        var commonPlayers = commonPlayersDict.Select(x => new ResCommonPlayers
+        var commonPlayers = commonPlayersDict.OrderByDescending(x => x.Value).Select(x => new ResCommonPlayers
         {
             UserLite = new UserLite { Id = x.Key, Username = Utils.UserIdToUsername(usernamesDict, x.Key) },
             QuizCount = x.Value
