@@ -250,6 +250,7 @@ public class QuizManager
         HashSet<int> processedTeamIdsMst = new();
         HashSet<int> processedTeamIdsA = new();
         HashSet<int> processedTeamIdsMt = new();
+        HashSet<int> processedTeamIdsRigger = new();
         foreach (Player player in Quiz.Room.Players)
         {
             if (player.Guess is null)
@@ -299,9 +300,9 @@ public class QuizManager
                 }
             }
 
-            if (!processedTeamIdsMt.Contains(player.TeamId) && IsGuessCorrectRigger(player.Guess.Rigger))
+            if (!processedTeamIdsRigger.Contains(player.TeamId) && IsGuessCorrectRigger(player.Guess.Rigger))
             {
-                processedTeamIdsMt.Add(player.TeamId);
+                processedTeamIdsRigger.Add(player.TeamId);
                 foreach (Player possibleTeammate in Quiz.Room.Players)
                 {
                     possibleTeammate.Guess ??= new PlayerGuess();
