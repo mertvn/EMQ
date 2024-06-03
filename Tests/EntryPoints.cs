@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -1250,5 +1250,32 @@ order by user_id";
         }
 
         // todo delete
+    }
+
+    [Test, Explicit]
+    public static async Task RecalculateShouldUpdateStats()
+    {
+        const string sql = @"select id, settings_b64, should_update_stats from quiz";
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var res = await connection.QueryAsync<(Guid, string, bool)>(sql);
+        foreach ((var quizId, string settingsB64, bool oldShouldUpdateStats) in res)
+        {
+            var deser = settingsB64.DeserializeFromBase64String_PB<QuizSettings>();
+            bool newShouldUpdateStats = deser.ShouldUpdateStats;
+            if (newShouldUpdateStats != oldShouldUpdateStats)
+            {
+                Console.WriteLine($"{quizId}: {oldShouldUpdateStats} => {newShouldUpdateStats}");
+                await connection.ExecuteAsync(
+                    @"UPDATE quiz set should_update_stats = @newShouldUpdateStats where id = @quizId",
+                    new { newShouldUpdateStats, quizId });
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public static async Task RecalculateAllSongStats()
+    {
+        int count = await DbManager.SelectCountUnsafe("music");
+        await DbManager.RecalculateSongStats(Enumerable.Range(1, count).ToHashSet());
     }
 }
