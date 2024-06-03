@@ -175,8 +175,9 @@ public class LibraryController : ControllerBase
     [Route("FindSongsByLabels")]
     public async Task<IEnumerable<Song>> FindSongsByLabels([FromBody] ReqFindSongsByLabels req)
     {
-        var songs = await DbManager.FindSongsByLabels(req.Labels, null);
-        return songs;
+        int[] mIds = await DbManager.FindMusicIdsByLabels(req.Labels, SongSourceSongTypeMode.Vocals);
+        var songs = await DbManager.SelectSongsMIds(mIds, false);
+        return songs.OrderBy(x=> x.Id);
     }
 
     [CustomAuthorize(PermissionKind.ViewStats)]
@@ -260,6 +261,28 @@ public class LibraryController : ControllerBase
     public async Task<SHSongStats[]> GetSHSongStats([FromBody] int mId)
     {
         var res = await DbManager.GetSHSongStats(mId);
+        return res;
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetLabelStats")]
+    public async Task<ActionResult<LabelStats>> GetLabelStats([FromBody] string presetName)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, presetName);
+        if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) || vndbInfo.Labels is null || !vndbInfo.Labels.Any())
+        {
+            return StatusCode(404);
+        }
+
+        int[] mIds = await DbManager.FindMusicIdsByLabels(vndbInfo.Labels, SongSourceSongTypeMode.Vocals);
+        var res = await DbManager.GetLabelStats(mIds);
         return res;
     }
 }

@@ -138,6 +138,34 @@
                                         </button>
                                         <br/>
 
+                                        <br/>
+                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
+                                            Calculate stats (vocals)
+                                        </button>
+                                        @if (LabelStats.TryGetValue(SelectedPresetName, out var labelStats) && labelStats != null)
+                                        {
+                                            <ul>
+                                                <li>
+                                                    Total songs: @(labelStats.TotalSongs)
+                                                </li>
+                                                <li>
+                                                    Total VNs: @(labelStats.TotalSources)
+                                                </li>
+                                                <li>
+                                                    Total artists: @(labelStats.TotalArtists)
+                                                </li>
+                                                <li>
+                                                    Average guess rate: @(Math.Round(labelStats.CorrectPercentage, 2))%
+                                                </li>
+                                                <li>
+                                                    Average guess time: @(Math.Round(labelStats.GuessMs / 1000, 2))s
+                                                </li>
+                                                <li>
+                                                    Average unique players: @(Math.Round(labelStats.UniqueUsers, 2))
+                                                </li>
+                                            </ul>
+                                        }
+
                                         <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
                                             <h5> Label settings</h5>
                                             @if (ClientState.VndbInfo.Labels is not null)

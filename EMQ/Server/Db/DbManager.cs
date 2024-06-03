@@ -3654,14 +3654,10 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         return (am, amAvailable);
     }
 
-    /// Limited to vocal songs for now.
-    public static async Task<List<Song>> FindSongsByLabels(IEnumerable<Label> reqLabels, QuizFilters? filters)
+    public static async Task<int[]> FindMusicIdsByLabels(IEnumerable<Label> reqLabels, SongSourceSongTypeMode ssstm)
     {
         var validSources = Label.GetValidSourcesFromLabels(reqLabels.ToList());
-        // return await GetRandomSongs(int.MaxValue, true, validSources); // todo make mel param
-
-        string sqlMusicIdsNoMel =
-            $@"SELECT DISTINCT ON (m.id) m.id, msel.url FROM
+        const string sql = @"SELECT DISTINCT m.id FROM
                                      music m
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -3670,48 +3666,10 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
                                      AND msm.type = ANY(@msmType)
                                      ";
 
-        var ret = new List<Song>();
-        var addedMselUrls = new List<string>();
-        var rng = Random.Shared;
-        bool duplicates = true;
-        int numSongs = int.MaxValue;
-
-        List<(int, string)> ids;
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            ids = (await connection.QueryAsync<(int, string)>(sqlMusicIdsNoMel,
-                    new
-                    {
-                        validSources,
-                        msmType = new List<SongSourceSongType>
-                        {
-                            SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
-                        }.Cast<int>().ToList()
-                    }))
-                .OrderBy(_ => rng.Next()).ToList();
-        }
-
-        // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
-
-        var songsDict =
-            (await SelectSongsMIds(ids.Select(x => x.Item1).ToArray(), false)).ToDictionary(x => x.Id, x => x);
-        foreach ((int mId, string? mselUrl) in ids)
-        {
-            if (ret.Count >= numSongs)
-            {
-                break;
-            }
-
-            if (!addedMselUrls.Contains(mselUrl) || duplicates)
-            {
-                var song = songsDict[mId];
-                song.StartTime = song.DetermineSongStartTime(filters);
-                ret.Add(song);
-                addedMselUrls.Add(mselUrl);
-            }
-        }
-
-        return ret.OrderBy(x => x.Id).ToList();
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        int[] ids = (await connection.QueryAsync<int>(sql,
+            new { validSources, msmType = ssstm.ToSongSourceSongTypes().Cast<int>().ToList() })).ToArray();
+        return ids;
     }
 
     // todo tests
@@ -4659,6 +4617,36 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
         };
 
         return res;
+    }
+
+    public static async Task<LabelStats> GetLabelStats(int[] mIds)
+    {
+        const string sqlAvg = @"
+SELECT ((1.0 * sum(stat_correct) / COALESCE(NULLIF(sum(stat_played), 0), 1)) * 100) AS CorrectPercentage,
+sum(stat_totalguessms) / COALESCE(NULLIF(sum(stat_guessed), 0), 1) AS GuessMs,
+avg(stat_uniqueusers) AS UniqueUsers
+FROM music
+WHERE id = ANY(@mIds)
+and stat_played > 0
+";
+
+        const string sqlMs = @"
+SELECT count(DISTINCT music_source_id) FROM music_source_music
+where music_id = ANY(@mIds)
+";
+
+        const string sqlA = @"
+SELECT count(DISTINCT artist_id) FROM artist_music
+where music_id = ANY(@mIds)
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var retAvg = await connection.QuerySingleAsync<LabelStats>(sqlAvg, new { mIds });
+        retAvg.TotalSongs = mIds.Length;
+        retAvg.TotalSources = await connection.QuerySingleAsync<int>(sqlMs, new { mIds });
+        retAvg.TotalArtists = await connection.QuerySingleAsync<int>(sqlA, new { mIds });
+
+        return retAvg;
     }
 
     public static async Task EvictFromSongsCache(int musicId)

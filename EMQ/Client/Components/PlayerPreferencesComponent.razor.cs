@@ -38,6 +38,8 @@ public partial class PlayerPreferencesComponent
 
     public Avatar? ClientAvatar { get; set; }
 
+    public Dictionary<string, LabelStats?> LabelStats { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         while (ClientState.Session is null)
@@ -427,6 +429,19 @@ public partial class PlayerPreferencesComponent
         else
         {
             // todo warn error
+        }
+    }
+
+    private async Task OnclickCalculateStats()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/GetLabelStats", SelectedPresetName);
+        if (res.IsSuccessStatusCode)
+        {
+            LabelStats[SelectedPresetName] = await res.Content.ReadFromJsonAsync<LabelStats>();
+        }
+        else
+        {
+            LabelStats[SelectedPresetName] = null;
         }
     }
 }

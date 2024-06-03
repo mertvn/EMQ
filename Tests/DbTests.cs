@@ -167,7 +167,7 @@ public class DbTests
     [Test]
     public async Task Test_FindSongsByLabels()
     {
-        PlayerVndbInfo vndbInfo = new PlayerVndbInfo()
+        PlayerVndbInfo vndbInfo = new()
         {
             VndbId = "u101804",
             VndbApiToken = "",
@@ -182,9 +182,8 @@ public class DbTests
         };
 
         var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
-        var songs = await DbManager.FindSongsByLabels(labels, null);
-        Assert.That(songs.Count > 0);
-        GenericSongsAssert(songs);
+        int[] mIds = await DbManager.FindMusicIdsByLabels(labels, SongSourceSongTypeMode.Vocals);
+        Assert.That(mIds.Length > 0);
     }
 
     [Test]

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -1079,7 +1079,7 @@ GRANT ALL ON SCHEMA public TO public;";
                         guess = guessInfo.Guess,
                         first_guess_ms = guessInfo.FirstGuessMs,
                         is_correct = guessInfo.IsGuessCorrect,
-                        is_on_list = guessInfo.IsOnList,
+                        is_on_list = guessInfo.Labels?.Any() ?? false,
                         played_at = date,
                     };
 

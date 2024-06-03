@@ -1032,8 +1032,9 @@ public class QuizManager
                 {
                     // generate wrong multiple choice options from player vndb lists if there are any,
                     // and OnlyFromLists is enabled
-                    var allPlayerVnTitles = await DbManager.FindSongsByLabels(allVndbInfos
-                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!), quizSettings.Filters);
+                    int[] mIds = await DbManager.FindMusicIdsByLabels(allVndbInfos
+                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
+                    var allPlayerVnTitles = await DbManager.SelectSongsMIds(mIds, false);
 
                     foreach (Song song in allPlayerVnTitles)
                     {
