@@ -10,6 +10,7 @@
     // todo? move
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
     bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
+    bool isDebugMode = ClientState.Session != null && ClientState.Session.Player.Preferences.DebugMode;
     bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
 }
 
@@ -18,7 +19,7 @@
     <span style="margin: 5px">Count: @VisibleSongsCount</span>
     <br>
 
-    @if (false && isAdmin)
+    @if (false && isDebugMode && isAdmin)
     {
         <textarea id="textarea_batchSetSubmittedBy"
                          rows="1" cols="20" maxlength="16" placeholder=""
@@ -152,7 +153,7 @@
 
                                             @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
                                             {
-                                                @if (isAdmin)
+                                                @if (isDebugMode && isAdmin)
                                                 {
                                                     <SetSubmittedByComponent Url="@videoLink.Url" SubmittedBy="@videoLink.SubmittedBy"></SetSubmittedByComponent>
                                                 }
@@ -203,7 +204,7 @@
 
                                             @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
                                             {
-                                                @if (isAdmin)
+                                                @if (isDebugMode && isAdmin)
                                                 {
                                                     <SetSubmittedByComponent Url="@soundLink.Url" SubmittedBy="@soundLink.SubmittedBy"></SetSubmittedByComponent>
                                                 }
