@@ -9,7 +9,7 @@ public static class Converters
     public static Title GetSingleTitle(IEnumerable<Title> titles, string language1 = "ja", string language2 = "en")
     {
         // todo proper language preferences
-        if (ClientState.Session != null && ClientState.Session.Player.Preferences.WantsEnglish)
+        if (ClientState.Preferences.WantsEnglish)
         {
             language1 = "en";
             language2 = "ja";

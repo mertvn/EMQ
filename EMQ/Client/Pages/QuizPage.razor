@@ -143,7 +143,7 @@
     {
         <div style="display: inline-block;">
             <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                <Blazorise.Slider style="max-width: 100px;" id="QPVolumeMaster" @bind-Value="@ClientState.Session.Player.Preferences.VolumeMaster" Min="0" Max="100"/>
+                <Blazorise.Slider style="max-width: 100px;" id="QPVolumeMaster" @bind-Value="@ClientState.Preferences.VolumeMaster" Min="0" Max="100"/>
                 <label for="QPVolumeMaster" style="margin-left: 5px;">Master Volume</label>
                 <br/>
             </div>
@@ -225,7 +225,7 @@
                 </div>
             }
 
-            @if (ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo && ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
+            @if (ClientState.Preferences.ShowSpacedRepetitionInfo && ownPgi.PreviousUserSpacedRepetition != null && ownPgi.CurrentUserSpacedRepetition != null)
             {
                 <div class="card" id="spacedRepetitionCard">
                     <div class="card-body">
@@ -281,9 +281,9 @@
 
 <div class="videoWrapper"
      style="position: relative; background: dimgrey; width:720px; height:400px; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
-     onclick="@(() => { if (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None) ClientState.Session!.Player.Preferences.HideVideo = !ClientState.Session!.Player.Preferences.HideVideo; })">
+     onclick="@(() => { if (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None) ClientState.Preferences.HideVideo = !ClientState.Preferences.HideVideo; })">
 
-    @if (ClientState.Session != null && ClientState.Session.Player.Preferences.HideVideo &&
+    @if (ClientState.Preferences.HideVideo &&
          (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
     {
         <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
@@ -293,7 +293,7 @@
         }
     }
 
-    <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Session!.Player.Preferences.HideVideo)">
+    <div class="videoPlayer" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility && !ClientState.Preferences.HideVideo)">
 
             @{
                 string? video1Src;
@@ -337,9 +337,9 @@
 
             @if (PageState.VideoPlayerVisibility && _currentSong is not null && (!_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false))
             {
-                @if (ClientState.Session != null && ClientState.Session.Player.Preferences.ShowVndbCovers && !string.IsNullOrEmpty(_currentSong.CoverUrl))
+                @if (ClientState.Preferences.ShowVndbCovers && !string.IsNullOrEmpty(_currentSong.CoverUrl))
                 {
-                    <div id="vnCoverDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Session!.Player.Preferences.HideVideo);">
+                    <div id="vnCoverDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Preferences.HideVideo);">
                         <img width="720px" height="400px" src="@_currentSong.CoverUrl" alt="" style="object-fit: contain;">
                     </div>
                 }
@@ -386,7 +386,7 @@
     {
         @if (!string.IsNullOrEmpty(_currentSong?.ScreenshotUrl))
         {
-            <div id="screenshotDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Session!.Player.Preferences.HideVideo);">
+            <div id="screenshotDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Preferences.HideVideo);">
                 <img width="720px" height="400px" src="@_currentSong.ScreenshotUrl" alt="" style="object-fit: contain;">
             </div>
         }
@@ -467,7 +467,7 @@ else
                 </GuessInputComponent>
             }
 
-            @if (ClientState.Session?.Player.Preferences.SwapArtistNameAndSongTitleDropdowns ?? false)
+            @if (ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns)
             {
                 @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
                 {
@@ -575,7 +575,7 @@ else
                                                 </li>
                                             }
 
-                                            @if (ClientState.Session?.Player.Preferences.SwapArtistNameAndSongTitleDropdowns ?? false)
+                                            @if (ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns)
                                             {
                                                 @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt)
                                                 {
@@ -648,7 +648,7 @@ else
 
                     <div style="position: relative">
                         @{
-                            Avatar avatar = (ClientState.Session?.Player.Preferences.ForceDefaultAvatar ?? false) ? Avatar.DefaultAvatar : player.Avatar;
+                            Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : player.Avatar;
                         }
                         <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, player.PlayerStatus)" alt="Avatar" class="@player.PlayerStatus">
 

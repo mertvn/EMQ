@@ -22,7 +22,7 @@
             {
                 bool isUser = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
-                    <EditForm Model="@ClientState.Session.Player.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Session.Player.Preferences))">
+                    <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
                         <DataAnnotationsValidator/>
                         <ValidationSummary/>
 
@@ -36,52 +36,52 @@
                                 <Blazorise.TabPanel Name="TabGeneral">
                                     @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
                                     {
-                                        <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
+                                        <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
                                         <label for="DebugMode">Debug mode</label>
                                         <br/>
                                     }
 
-                                    <InputCheckbox id="WantsVideo" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="WantsVideo" class="form-check-input" @bind-Value="ClientState.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
                                     <label for="WantsVideo">Prefer video links over sound links</label>
                                     <br/>
 
-                                    <InputCheckbox id="WantsEnglish" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.WantsEnglish" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="WantsEnglish" class="form-check-input" @bind-Value="ClientState.Preferences.WantsEnglish" style="margin: 5px"></InputCheckbox>
                                     <label for="WantsEnglish">Prefer English titles when available</label>
                                     <br/>
 
-                                    <InputCheckbox id="RestartSongsOnResultsPhase" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="RestartSongsOnResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
                                     <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
                                     <br/>
 
-                                    <InputCheckbox id="AutoSkipGuessPhase" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="AutoSkipGuessPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
                                     <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
                                     <br/>
 
-                                    <InputCheckbox id="AutoSkipResultsPhase" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="AutoSkipResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
                                     <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
                                     <br/>
 
-                                    <InputCheckbox id="ShowVndbCovers" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ShowVndbCovers" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="ShowVndbCovers" class="form-check-input" @bind-Value="ClientState.Preferences.ShowVndbCovers" style="margin: 5px"></InputCheckbox>
                                     <label for="ShowVndbCovers">Show VNDB cover images when there is no video</label>
                                     <br/>
 
-                                    <InputCheckbox id="ShowSpacedRepetitionInfo" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ShowSpacedRepetitionInfo" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="ShowSpacedRepetitionInfo" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSpacedRepetitionInfo" style="margin: 5px"></InputCheckbox>
                                     <label for="ShowSpacedRepetitionInfo">Show spaced repetition information</label>
                                     <br/>
 
-                                    <InputCheckbox id="HideSpoilers" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.HideSpoilers" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="HideSpoilers" class="form-check-input" @bind-Value="ClientState.Preferences.HideSpoilers" style="margin: 5px"></InputCheckbox>
                                     <label for="HideSpoilers">Hide videos containing spoilers</label>
                                     <br/>
 
-                                    <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
                                     <label for="SwapArtistNameAndSongTitleDropdowns">Swap the positions of the artist name and song title dropdowns</label>
                                     <br/>
 
-                                    <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Session.Player.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
+                                    <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
                                     <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
                                     <br/>
 
-                                    <InputSelect id="LinkHost" @bind-Value="ClientState.Session.Player.Preferences.LinkHost" style="margin: 5px">
+                                    <InputSelect id="LinkHost" @bind-Value="ClientState.Preferences.LinkHost" style="margin: 5px">
                                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
                                         {
                                             <option value="@songLinkType">@songLinkType</option>
@@ -91,7 +91,7 @@
                                     <br/>
 
                                     <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                                        <Blazorise.Slider style="max-width: 100px;" id="VolumeMaster" @bind-Value="@ClientState.Session.Player.Preferences.VolumeMaster" Min="0" Max="100"/>
+                                        <Blazorise.Slider style="max-width: 100px;" id="VolumeMaster" @bind-Value="@ClientState.Preferences.VolumeMaster" Min="0" Max="100"/>
                                         <label for="VolumeMaster" style="margin-left: 5px;">Master Volume</label>
                                         <br/>
                                     </div>
@@ -303,7 +303,7 @@
                 Close
             </button>
             <button type="button" class="btn btn-primary" disabled="@(ClientState.Session == null)"
-                    @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Session.Player.Preferences); } })">
+                    @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Preferences); } })">
                 Save preferences
             </button>
         </Blazorise.ModalFooter>

@@ -10,7 +10,7 @@
     // todo? move
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
     bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
-    bool isDebugMode = ClientState.Session != null && ClientState.Session.Player.Preferences.DebugMode;
+    bool isDebugMode = ClientState.Preferences.DebugMode;
     bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
 }
 

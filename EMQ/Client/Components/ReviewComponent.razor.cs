@@ -118,12 +118,9 @@ public partial class ReviewComponent
         // Console.WriteLine("OnOpened");
         IsOpen = true;
 
-        await Task.Delay(300);
-        if (ClientState.Session != null)
-        {
-            await _jsRuntime.InvokeVoidAsync("setVideoVolume", VideoElementId,
-                ClientState.Session.Player.Preferences.VolumeMaster / 100f);
-        }
+        await Task.Delay(500);
+        await _jsRuntime.InvokeVoidAsync("setVideoVolume", VideoElementId,
+            ClientState.Preferences.VolumeMaster / 100f);
     }
 
     private async Task OnClosed()

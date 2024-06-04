@@ -115,7 +115,7 @@ public class ClientUtils
     public async Task SavePreferencesToLocalStorage()
     {
         Console.WriteLine("saving preferences to local storage");
-        var preferences = ClientState.Session?.Player.Preferences ?? new PlayerPreferences();
+        var preferences = ClientState.Preferences;
         await SaveToLocalStorage("preferences", preferences);
     }
 
@@ -182,7 +182,7 @@ public class ClientUtils
                     PlayerPreferences? preferences = JsonSerializer.Deserialize<PlayerPreferences>(preferencesStr);
                     if (preferences != null && ClientState.Session != null)
                     {
-                        ClientState.Session.Player.Preferences = preferences;
+                        ClientState.Preferences = preferences;
                     }
                 }
             }

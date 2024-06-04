@@ -11,7 +11,7 @@
 {
     <h3>@PublicUserInfo.Username</h3>
 
-    Avatar avatar = (ClientState.Session?.Player.Preferences.ForceDefaultAvatar ?? false) ? Avatar.DefaultAvatar : PublicUserInfo.Avatar;
+    Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : PublicUserInfo.Avatar;
     <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar">
     <br/>
 

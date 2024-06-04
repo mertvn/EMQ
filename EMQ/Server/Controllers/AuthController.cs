@@ -268,22 +268,21 @@ public class AuthController : ControllerBase
         return label;
     }
 
-    [CustomAuthorize(PermissionKind.UpdatePreferences)]
-    [HttpPost]
-    [Route("UpdatePlayerPreferences")]
-    public async Task<ActionResult<PlayerPreferences>> UpdatePlayerPreferences(
-        [FromBody] ReqUpdatePlayerPreferences req)
-    {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
-        if (session == null)
-        {
-            return Unauthorized();
-        }
-
-        // todo? db
-        session.Player.Preferences = req.PlayerPreferences;
-        return session.Player.Preferences;
-    }
+    // [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    // [HttpPost]
+    // [Route("UpdatePlayerPreferences")]
+    // public async Task<ActionResult<PlayerPreferences>> UpdatePlayerPreferences(
+    //     [FromBody] ReqUpdatePlayerPreferences req)
+    // {
+    //     var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
+    //     if (session == null)
+    //     {
+    //         return Unauthorized();
+    //     }
+    //
+    //     session.Player.Preferences = req.PlayerPreferences;
+    //     return session.Player.Preferences;
+    // }
 
     // [CustomAuthorize(PermissionKind.UpdatePreferences)]
     // [HttpPost]

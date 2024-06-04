@@ -357,8 +357,8 @@ public partial class QuizPage
     public async Task<Song?> NextSong(int index)
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong",
-            new ReqNextSong(ClientState.Session!.Token, index, ClientState.Session.Player.Preferences.WantsVideo,
-                ClientState.Session.Player.Preferences.LinkHost));
+            new ReqNextSong(ClientState.Session!.Token, index, ClientState.Preferences.WantsVideo,
+                ClientState.Preferences.LinkHost));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);
@@ -739,7 +739,7 @@ public partial class QuizPage
 
                 break;
             case QuizPhaseKind.Results:
-                if (ClientState.Session!.Player.Preferences.RestartSongsOnResultsPhase)
+                if (ClientState.Preferences.RestartSongsOnResultsPhase)
                 {
                     if (_currentSong != null)
                     {
@@ -748,12 +748,12 @@ public partial class QuizPage
                     }
                 }
 
-                if (ClientState.Session.Player.Preferences is { HideSpoilers: true } &&
+                if (ClientState.Preferences is { HideSpoilers: true } &&
                     _correctAnswer != null && _correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers) &&
                     _currentSong != null && (_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false))
                 {
                     // todo undo this, unless player manually toggles the setting
-                    ClientState.Session.Player.Preferences.HideVideo = true;
+                    ClientState.Preferences.HideVideo = true;
                 }
 
                 PageState.ProgressValue = 0;
@@ -775,7 +775,7 @@ public partial class QuizPage
                     // todo request
                 }
 
-                if (ClientState.Session!.Player.Preferences.AutoSkipResultsPhase)
+                if (ClientState.Preferences.AutoSkipResultsPhase)
                 {
                     await SendToggleSkip();
                 }
@@ -836,10 +836,10 @@ public partial class QuizPage
 
             if (ClientState.Session != null &&
                 PageState.CurrentMasterVolumes[VisibleVideoElementId] !=
-                ClientState.Session.Player.Preferences.VolumeMaster)
+                ClientState.Preferences.VolumeMaster)
             {
                 PageState.CurrentMasterVolumes[VisibleVideoElementId] =
-                    ClientState.Session.Player.Preferences.VolumeMaster;
+                    ClientState.Preferences.VolumeMaster;
                 await _jsRuntime.InvokeVoidAsync("setVideoVolume", VisibleVideoElementId,
                     PageState.CurrentMasterVolumes[VisibleVideoElementId] / 100f);
 
@@ -1024,7 +1024,7 @@ public partial class QuizPage
                             PageState.Guess.Rigger);
                     }
 
-                    if (ClientState.Session!.Player.Preferences.AutoSkipGuessPhase)
+                    if (ClientState.Preferences.AutoSkipGuessPhase)
                     {
                         // todo dedup
                         // todo EnabledGuessKinds stuff

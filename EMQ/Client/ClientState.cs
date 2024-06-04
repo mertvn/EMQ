@@ -14,4 +14,6 @@ public static class ClientState
     public static PlayerVndbInfo VndbInfo { get; set; } = new();
 
     public static Dictionary<string, PeriodicTimer> Timers { get; set; } = new();
+
+    public static PlayerPreferences Preferences { get; set; } = new();
 }

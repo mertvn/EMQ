@@ -40,7 +40,7 @@
 {
     bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
-    bool isDebugMode = ClientState.Session != null && ClientState.Session.Player.Preferences.DebugMode;
+    bool isDebugMode = ClientState.Preferences.DebugMode;
     @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>

@@ -75,7 +75,7 @@ public partial class PlayerPreferencesComponent
         // {
         // }
 
-        ClientState.Session!.Player.Preferences = playerPreferencesModel;
+        ClientState.Preferences = playerPreferencesModel;
         await _clientUtils.SavePreferencesToLocalStorage();
         await _modalRef.Hide();
 

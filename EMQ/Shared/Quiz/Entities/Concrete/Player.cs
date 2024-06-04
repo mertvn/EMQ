@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -41,8 +41,6 @@ public class Player
     public PlayerLootingInfo LootingInfo { get; set; } = new();
 
     public bool IsSkipping { get; set; }
-
-    public PlayerPreferences Preferences { get; set; } = new();
 
     // do not rename to IsReady
     public bool IsReadiedUp { get; set; }
