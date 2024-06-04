@@ -63,9 +63,15 @@ public partial class Song
 
     public string ToStringLatin()
     {
-        var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();
+        var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.FirstOrDefault();
         var firstSource = Sources.FirstOrDefault(x => x.Titles.Any(y => y.Language == "ja" && y.IsMainTitle)) ??
-                          Sources.First();
+                          Sources.FirstOrDefault();
+
+        if (first == null || firstSource is not { Id: > 0 })
+        {
+            return "";
+        }
+
         return
             $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}";
     }

@@ -40,7 +40,7 @@
                 ParsedSong parsedSong = parsed[i];
                 var song = new Song
                 {
-                    Id = i,
+                    Id = -i,
                     Titles = new List<Title> { new() { LatinTitle = parsedSong.Title, Language = "ja", IsMainTitle = true } },
                     Artists = new List<SongArtist>(),
                     Links = new List<SongLink>(),
