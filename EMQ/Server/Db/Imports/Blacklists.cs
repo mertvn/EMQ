@@ -35,6 +35,7 @@ public static class Blacklists
         ("v3679", "Sotto Kiss Shite"),
         // ("v4705", "Kimi no First Kiss"), // todo 1x1 + 2x1
         // ("v4705", "Dakara Namida wo Fuite..."), // todo 1x1 + 2x1
+		("v5844", "Kamiyozakura"),
         ("v7221", "Yume Panorama Wide"),
         ("v9409", "Key of Destiny"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
