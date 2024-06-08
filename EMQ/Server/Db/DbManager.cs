@@ -3485,22 +3485,7 @@ order by count(music_id) desc
 
             // Console.WriteLine(
             //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-            var songDifficultyLevels = (await connection.QueryAsync<(int, int)>(@$"
-select case
-	WHEN stat_correctpercentage  = {((double)SongDifficultyLevel.Impossible.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)} 								                                                                                                   THEN 5
-	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 4
-	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Hard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Hard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 3
-	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Medium.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}     and stat_correctpercentage <= {((double)SongDifficultyLevel.Medium.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}   THEN 2
-	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Easy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Easy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 1
-	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 0
-	END AS ""diff"",
-count(id)
-from music m
-where stat_played > 0
-and m.id = ANY(@validMids)
-group by diff
-order by diff
-", new { validMids })).ToDictionary(x => (SongDifficultyLevel)x.Item1, x => x.Item2);
+            var songDifficultyLevels = await GetSongDifficultyLevelCounts(validMids.ToArray());
 
             var libraryStats = new LibraryStats
             {
@@ -3652,6 +3637,28 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         }
 
         return (am, amAvailable);
+    }
+
+    private static async Task<Dictionary<SongDifficultyLevel, int>> GetSongDifficultyLevelCounts(int[] mIds)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var songDifficultyLevels = (await connection.QueryAsync<(int, int)>(@$"
+    select case
+    	WHEN stat_correctpercentage  = {((double)SongDifficultyLevel.Impossible.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)} 								                                                                                                   THEN 5
+    	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryHard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 4
+    	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Hard.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Hard.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 3
+    	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Medium.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}     and stat_correctpercentage <= {((double)SongDifficultyLevel.Medium.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}   THEN 2
+    	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.Easy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}       and stat_correctpercentage <= {((double)SongDifficultyLevel.Easy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)}     THEN 1
+    	WHEN stat_correctpercentage >= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum).ToString(CultureInfo.InvariantCulture)}   and stat_correctpercentage <= {((double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum).ToString(CultureInfo.InvariantCulture)} THEN 0
+    	END AS ""diff"",
+    count(id)
+    from music m
+    where stat_played > 0
+    and m.id = ANY(@mIds)
+    group by diff
+    order by diff
+    ", new { mIds })).ToDictionary(x => (SongDifficultyLevel)x.Item1, x => x.Item2);
+        return songDifficultyLevels;
     }
 
     public static async Task<int[]> FindMusicIdsByLabels(IEnumerable<Label> reqLabels, SongSourceSongTypeMode ssstm)
@@ -4645,6 +4652,7 @@ where music_id = ANY(@mIds)
         retAvg.TotalSongs = mIds.Length;
         retAvg.TotalSources = await connection.QuerySingleAsync<int>(sqlMs, new { mIds });
         retAvg.TotalArtists = await connection.QuerySingleAsync<int>(sqlA, new { mIds });
+        retAvg.SongDifficultyLevels = await GetSongDifficultyLevelCounts(mIds);
 
         return retAvg;
     }

@@ -156,6 +156,12 @@
                                                 </li>
                                                 <li>
                                                     Average guess rate: @(Math.Round(labelStats.CorrectPercentage, 2))%
+                                                    <ul>
+                                                        @foreach ((SongDifficultyLevel key, int value) in labelStats.SongDifficultyLevels)
+                                                        {
+                                                            <li>@key.GetDisplayName(): @value</li>
+                                                        }
+                                                    </ul>
                                                 </li>
                                                 <li>
                                                     Average guess time: @(Math.Round(labelStats.GuessMs / 1000, 2))s

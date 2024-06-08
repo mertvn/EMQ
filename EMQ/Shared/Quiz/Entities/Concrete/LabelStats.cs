@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -15,4 +16,6 @@ public class LabelStats
     public int TotalSources { get; set; }
 
     public int TotalArtists { get; set; }
+
+    public Dictionary<SongDifficultyLevel, int> SongDifficultyLevels { get; set; } = new();
 }
