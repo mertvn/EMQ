@@ -75,6 +75,7 @@ public partial class ReviewComponent
         if (reviewingItem.is_video)
         {
             var weba = CurrentRQs?.FirstOrDefault(x =>
+                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
@@ -90,6 +91,7 @@ public partial class ReviewComponent
         if (reviewingItem.is_video)
         {
             var weba = CurrentRQs?.FirstOrDefault(x =>
+                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
@@ -105,6 +107,7 @@ public partial class ReviewComponent
         if (reviewingItem.is_video)
         {
             var weba = CurrentRQs?.FirstOrDefault(x =>
+                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
