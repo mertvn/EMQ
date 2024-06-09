@@ -461,7 +461,7 @@ public class QuizManager
                 if (ServerState.PumpMessages.TryGetValue(playerId, out var queue))
                 {
                     // Console.WriteLine(queue.Count);
-                    if (queue.Count > 1)
+                    if (queue.SendingTasks.Count > 1)
                     {
                         // Console.WriteLine($"needToWait for p{playerId}");
                         Quiz.QuizState.ExtraInfo = "Waiting for lagging players...";

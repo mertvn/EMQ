@@ -5,12 +5,20 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Business;
 using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace EMQ.Server;
+
+public class PumpQueue
+{
+    public ConcurrentQueue<InvocationMessage> MessagesToSend { get; } = new();
+
+    public Queue<Task> SendingTasks { get; } = new();
+}
 
 public static class ServerState
 {
@@ -36,7 +44,7 @@ public static class ServerState
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
 
-    public static readonly ConcurrentDictionary<int, ConcurrentQueue<InvocationMessage>> PumpMessages = new();
+    public static readonly ConcurrentDictionary<int, PumpQueue> PumpMessages = new();
 
     public static readonly ConcurrentDictionary<int, Thread> PumpThreads = new();
 
