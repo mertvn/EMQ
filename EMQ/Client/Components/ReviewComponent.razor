@@ -99,11 +99,18 @@
                     {
                         <textarea id="note_mod"
                          rows="1" cols="35" maxlength="780" placeholder="Notes"
-                         @bind="reviewingItem.reason"></textarea>
+                         @bind="reviewingItem.reason" style="margin-right: 5px;"></textarea>
 
-                        <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="@(() => Onclick_Reject())">Rejected</button>
-                        <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="@(() => Onclick_Pending())">Pending</button>
-                        <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="@(() => Onclick_Approve())">Approved</button>
+                        <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="Onclick_Reject">Rejected</button>
+                        <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="Onclick_Pending">Pending</button>
+                        <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">Approved</button>
+
+                        @if (reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+                        {
+                            <br/>
+                            <input type="checkbox" id="checkbox-ApplyToBGMBatch" class="form-check-input" @bind="@ApplyToBGMBatch"/>
+                            <label for="checkbox-ApplyToBGMBatch">Apply to BGM batch</label>
+                        }
                     }
 
                     <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>

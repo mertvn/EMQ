@@ -64,6 +64,8 @@ public partial class ReviewComponent
 
     private bool controls = true;
 
+    public bool ApplyToBGMBatch { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
     }
@@ -74,12 +76,26 @@ public partial class ReviewComponent
             ReviewQueueStatus.Rejected);
         if (reviewingItem.is_video)
         {
-            var weba = CurrentRQs?.FirstOrDefault(x =>
+            var weba = CurrentRQs!.FirstOrDefault(x =>
                 x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Rejected);
+            }
+        }
+
+        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+        {
+            var bgmBatch = CurrentRQs!.Where(x =>
+                x.submitted_by == reviewingItem.submitted_by &&
+                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
+                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
+                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
+
+            foreach (RQ rq in bgmBatch)
+            {
+                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Rejected);
             }
         }
     }
@@ -90,12 +106,26 @@ public partial class ReviewComponent
             ReviewQueueStatus.Pending);
         if (reviewingItem.is_video)
         {
-            var weba = CurrentRQs?.FirstOrDefault(x =>
+            var weba = CurrentRQs!.FirstOrDefault(x =>
                 x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Pending);
+            }
+        }
+
+        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+        {
+            var bgmBatch = CurrentRQs!.Where(x =>
+                x.submitted_by == reviewingItem.submitted_by &&
+                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
+                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
+                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
+
+            foreach (RQ rq in bgmBatch)
+            {
+                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Pending);
             }
         }
     }
@@ -106,12 +136,26 @@ public partial class ReviewComponent
             ReviewQueueStatus.Approved);
         if (reviewingItem.is_video)
         {
-            var weba = CurrentRQs?.FirstOrDefault(x =>
+            var weba = CurrentRQs!.FirstOrDefault(x =>
                 x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
                 x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
             if (weba != null)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Approved);
+            }
+        }
+
+        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+        {
+            var bgmBatch = CurrentRQs!.Where(x =>
+                x.submitted_by == reviewingItem.submitted_by &&
+                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
+                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
+                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
+
+            foreach (RQ rq in bgmBatch)
+            {
+                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Approved);
             }
         }
     }

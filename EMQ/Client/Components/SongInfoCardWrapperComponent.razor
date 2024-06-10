@@ -262,6 +262,13 @@
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
                                 }
+
+                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(song.Id))
+                                {
+                                    <br/>
+                                    <span style="color: red">Has pending uploads in the review queue.</span>
+                                    <br/>
+                                }
                             }
                         }
 
