@@ -33,7 +33,7 @@ public partial class UploadBatchComponent
     public List<Song>? Songs { get; set; }
 
     [Parameter]
-    public bool BGMMode { get; set; }
+    public bool IsBGMMode { get; set; }
 
     private List<Task> UploadTasks { get; } = new();
 
@@ -103,7 +103,8 @@ public partial class UploadBatchComponent
                 continue;
             }
 
-            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
+            var validMediaTypes = IsBGMMode ? UploadConstants.ValidMediaTypesBgm : UploadConstants.ValidMediaTypes;
+            var mediaTypeInfo = validMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
             if (mediaTypeInfo is null)
             {
                 uploadResult.ErrorStr = $"Invalid file format: {file.ContentType}";
@@ -125,7 +126,7 @@ public partial class UploadBatchComponent
                     // ms.Position = 0; // doesn't work in the browser ¯\_(ツ)_/¯, check again after .NET 9 I guess
 
                     Track tFile = new(ms, file.ContentType);
-                    if (BGMMode)
+                    if (IsBGMMode)
                     {
                         foreach (string possibleRecordingIdName in UploadConstants.PossibleMetadataRecordingIdNames)
                         {
@@ -161,7 +162,7 @@ public partial class UploadBatchComponent
                     continue;
                 }
 
-                if (BGMMode)
+                if (IsBGMMode)
                 {
                     uploadResult.MBRecordingOrTrackIds = metadataMBRecordingOrTrackIds;
                     if (!metadataMBRecordingOrTrackIds.Any())

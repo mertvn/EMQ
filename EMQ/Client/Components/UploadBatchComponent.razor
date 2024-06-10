@@ -15,7 +15,7 @@
 
 @* <h4>Batch uploader</h4> *@
 
-@if (BGMMode)
+@if (IsBGMMode)
 {
     <p>
         The batch uploader (BGM mode) lets you upload many files at once by matching your files with the songs belonging to this release automatically.
@@ -35,7 +35,7 @@ else
 }
 
 <p>
-    Allowed formats: @UploadConstants.ValidMediaTypesStr
+    Allowed formats: @(IsBGMMode ? UploadConstants.ValidMediaTypesBgmStr : UploadConstants.ValidMediaTypesStr)
     <br/>
     Upload up to @UploadConstants.MaxFilesBatchUpload files:
     <InputFile
@@ -57,7 +57,7 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                 @file.FileName
                 <br>
 
-                @if (BGMMode)
+                @if (IsBGMMode)
                 {
                     <span> MusicBrainz Recording/Track Ids: @string.Join(", ", file.MBRecordingOrTrackIds)</span>
                     <br>

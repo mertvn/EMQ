@@ -40,6 +40,7 @@ public static class UploadConstants
         // video formats
         new MediaTypeInfo
         {
+            IsVideoFormat = true,
             Extension = "webm",
             MimeType = "video/webm",
             Signature = "",
@@ -50,6 +51,7 @@ public static class UploadConstants
         // audio formats
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "mp3",
             MimeType = "audio/mpeg",
             Signature = "",
@@ -58,6 +60,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "ogg",
             MimeType = "video/ogg",
             Signature = "",
@@ -66,6 +69,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "ogg",
             MimeType = "application/ogg",
             Signature = "",
@@ -74,6 +78,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "ogg",
             MimeType = "audio/ogg",
             Signature = "",
@@ -84,6 +89,7 @@ public static class UploadConstants
         // video formats that require encoding
         new MediaTypeInfo
         {
+            IsVideoFormat = true,
             Extension = "mpg",
             MimeType = "video/mpeg",
             Signature = "",
@@ -92,6 +98,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = true,
             Extension = "mp4",
             MimeType = "video/mp4",
             Signature = "",
@@ -100,6 +107,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = true,
             Extension = "wmv",
             MimeType = "video/x-ms-wmv",
             Signature = "",
@@ -108,6 +116,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = true,
             Extension = "avi",
             MimeType = "video/avi",
             Signature = "",
@@ -136,6 +145,7 @@ public static class UploadConstants
         // audio formats that require transcoding
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "flac",
             MimeType = "audio/flac",
             Signature = "",
@@ -144,6 +154,7 @@ public static class UploadConstants
         },
         new MediaTypeInfo
         {
+            IsVideoFormat = false,
             Extension = "wav",
             MimeType = "audio/wav",
             Signature = "",
@@ -154,6 +165,12 @@ public static class UploadConstants
 
     public static string ValidMediaTypesStr { get; set; } =
         string.Join(", ", ValidMediaTypes.DistinctBy(x => x.Extension).Select(x => x.Extension));
+
+    public static MediaTypeInfo[] ValidMediaTypesBgm { get; set; } =
+        ValidMediaTypes.Where(x => !x.IsVideoFormat).ToArray();
+
+    public static string ValidMediaTypesBgmStr { get; set; } =
+        string.Join(", ", ValidMediaTypesBgm.DistinctBy(x => x.Extension).Select(x => x.Extension));
 }
 
 public record MediaTypeInfo
@@ -167,4 +184,6 @@ public record MediaTypeInfo
     public bool RequiresTranscode = false;
 
     public bool RequiresEncode = false;
+
+    public bool IsVideoFormat = false;
 }
