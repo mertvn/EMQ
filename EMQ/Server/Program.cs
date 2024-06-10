@@ -91,9 +91,9 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new TokenBucketRateLimiterOptions()
         {
             AutoReplenishment = true,
-            TokenLimit = 100,
+            TokenLimit = 500,
             ReplenishmentPeriod = TimeSpan.FromMinutes(30),
-            TokensPerPeriod = 5,
+            TokensPerPeriod = 25,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
         }));
