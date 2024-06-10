@@ -184,16 +184,21 @@ public partial class UploadBatchComponent
                             HaveCount += 1;
                             uploadResult.PossibleMatches.Add(matchingSongs.First());
                             uploadResult.File = file;
-                            UploadTasks.Add(ChooseAndUpload(uploadResult, matchingSongs.First().Id));
-                            StateHasChanged();
+
+                            if (!matchingSongs.First().Links.Any())
+                            {
+                                UploadTasks.Add(ChooseAndUpload(uploadResult, matchingSongs.First().Id));
+                            }
+
                             break;
                         case > 1:
                             HaveCount += 1;
                             uploadResult.PossibleMatches.AddRange(matchingSongs);
                             uploadResult.File = file;
-                            StateHasChanged();
                             break;
                     }
+
+                    StateHasChanged();
                 }
                 else
                 {
