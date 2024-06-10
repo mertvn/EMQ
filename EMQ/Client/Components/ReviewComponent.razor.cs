@@ -64,7 +64,25 @@ public partial class ReviewComponent
 
     private bool controls = true;
 
-    public bool ApplyToBGMBatch { get; set; }
+    private bool ApplyToBGMBatch { get; set; }
+
+    private RQ[] BGMBatch
+    {
+        get
+        {
+            if (CurrentRQs == null || reviewingItem == null ||
+                !reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            {
+                return Array.Empty<RQ>();
+            }
+
+            return CurrentRQs.Where(x =>
+                x.submitted_by == reviewingItem.submitted_by &&
+                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
+                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
+                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60))).ToArray();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,13 +105,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            var bgmBatch = CurrentRQs!.Where(x =>
-                x.submitted_by == reviewingItem.submitted_by &&
-                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
-                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
-                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
-
-            foreach (RQ rq in bgmBatch)
+            foreach (RQ rq in BGMBatch)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Rejected);
             }
@@ -117,13 +129,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            var bgmBatch = CurrentRQs!.Where(x =>
-                x.submitted_by == reviewingItem.submitted_by &&
-                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
-                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
-                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
-
-            foreach (RQ rq in bgmBatch)
+            foreach (RQ rq in BGMBatch)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Pending);
             }
@@ -147,13 +153,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            var bgmBatch = CurrentRQs!.Where(x =>
-                x.submitted_by == reviewingItem.submitted_by &&
-                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
-                (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
-                 x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60)));
-
-            foreach (RQ rq in bgmBatch)
+            foreach (RQ rq in BGMBatch)
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Approved);
             }
