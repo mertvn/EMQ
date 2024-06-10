@@ -15,13 +15,24 @@
 
 @* <h4>Batch uploader</h4> *@
 
-<p>
-    The batch uploader lets you upload many files at once by matching your files with the songs in the database automatically.
-    <br/>
-    Currently it uses the song title and artist metadata in the file. Currently only vocal songs are supported.
-    <br/>
-    To use it, first browse for files, and then click the button under the song info to upload it. If there are multiple matches, make sure you choose the correct one.
-</p>
+@if (BGMMode)
+{
+    <p>
+        The batch uploader (BGM mode) lets you upload many files at once by matching your files with the songs belonging to this release automatically.
+        <br/>
+        Currently it uses the MusicBrainz Track Id and MusicBrainz Recording Id metadata in the file. You must tag your files with MusicBrainz Picard in order to use this.
+    </p>
+}
+else
+{
+    <p>
+        The batch uploader lets you upload many files at once by matching your files with the songs in the database automatically.
+        <br/>
+        Currently it uses the song title and artist metadata in the file. Currently only vocal songs are supported.
+        <br/>
+        To use it, first browse for files, and then click the button under the song info to upload it. If there are multiple matches, make sure you choose the correct one.
+    </p>
+}
 
 <p>
     Allowed formats: @UploadConstants.ValidMediaTypesStr
@@ -35,6 +46,7 @@
 </p>
 
 Songs with at least one possible match: @HaveCount/@_uploadResults.Count
+<br/>
 
 @if (_uploadResults.Count > 0)
 {
@@ -45,10 +57,18 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                 @file.FileName
                 <br>
 
-                <span>Title: @file.Title</span>
-                <br>
-                <span>Artists: @string.Join(", ", file.Artists)</span>
-                <br>
+                @if (BGMMode)
+                {
+                    <span> MusicBrainz Recording/Track Ids: @string.Join(", ", file.MBRecordingOrTrackIds)</span>
+                    <br>
+                }
+                else
+                {
+                    <span>Title: @file.Title</span>
+                    <br>
+                    <span>Artists: @string.Join(", ", file.Artists)</span>
+                    <br>
+                }
 
                 @if (file.Uploaded)
                 {
@@ -85,20 +105,6 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                                 }
 
                                 <p>Possible matches: </p>
-                                @* <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
-                                    @foreach (var song in file.PossibleMatches)
-                                    {
-                                        <div class="song card" style="margin: 16px; width: 330px;">
-                                            <SongInfoCardComponent Song="song"></SongInfoCardComponent>
-                                            <button type="button"
-                                                    class="btn btn-primary"
-                                                    @onclick="@(() => ChooseAndUpload(file, song.Id))">
-                                                Choose and upload
-                                            </button>
-                                        </div>
-                                    }
-                                   </div> *@
-
                                 <SongInfoCardWrapperComponent
                                     CurrentSongs="@file.PossibleMatches"
                                     LibrarySongFilter="LibrarySongFilterKind.All"

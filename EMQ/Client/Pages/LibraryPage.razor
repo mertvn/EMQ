@@ -52,23 +52,28 @@
     bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
 }
 
-@if (hasImportSongLinkPerms)
-{
-    <details>
-        <summary>Batch uploader</summary>
-        @if (ClientState.ServerStats.IsServerReadOnly)
+<details>
+    <summary>Batch uploader</summary>
+    @if (ClientState.ServerStats.IsServerReadOnly)
+    {
+        <span>Server is in read-only mode.</span>
+    }
+    else if (ClientState.ServerStats.IsSubmissionDisabled)
+    {
+        <span>Submissions are currently disabled.</span>
+    }
+    else
+    {
+        @if (hasImportSongLinkPerms)
         {
-            <span>Server is in read-only mode.</span>
+            <UploadBatchComponent></UploadBatchComponent>
         }
-        else if (ClientState.ServerStats.IsSubmissionDisabled)
+        else
         {
-            <span>Submissions are currently disabled.</span>
+            <p>Insufficient permissions.</p>
         }
-
-        <UploadBatchComponent></UploadBatchComponent>
-
-    </details>
-}
+    }
+</details>
 
 <details>
     <summary>VNDB staff notes parser</summary>
@@ -234,6 +239,26 @@
                 @foreach ((string key, List<Song> value) in tabs)
                 {
                     <Blazorise.TabPanel @key="@key" Name="@key">
+                        <details style="margin: 5px;">
+                            <summary>Batch uploader (BGM mode)</summary>
+                            @if (ClientState.ServerStats.IsServerReadOnly)
+                            {
+                                <span>Server is in read-only mode.</span>
+                            }
+                            else if (ClientState.ServerStats.IsSubmissionDisabled)
+                            {
+                                <span>Submissions are currently disabled.</span>
+                            }
+                            else
+                            {
+                                @if (hasImportSongLinkPerms)
+                                {
+                                    <UploadBatchComponent Songs="value" BGMMode="true"></UploadBatchComponent>
+                                }
+                            }
+                        </details>
+                        <br/>
+
                         <SongInfoCardWrapperComponent
                             CurrentSongs="value"
                             LibrarySongFilter="@LibrarySongFilter"

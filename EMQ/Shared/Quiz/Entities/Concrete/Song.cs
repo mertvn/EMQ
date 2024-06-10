@@ -46,6 +46,8 @@ public partial class Song
 
     public List<int> VgmdbAlbums { get; set; } = new();
 
+    public List<Guid> MusicBrainzTracks { get; set; } = new();
+
     public SongAttributes Attributes { get; set; } = SongAttributes.None;
 
     public override string ToString()

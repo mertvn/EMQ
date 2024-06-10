@@ -29,10 +29,25 @@ public partial class UploadBatchComponent
 
     public int HaveCount { get; set; }
 
+    [Parameter]
+    public List<Song>? Songs { get; set; }
+
+    [Parameter]
+    public bool BGMMode { get; set; }
+
+    private List<Task> UploadTasks { get; } = new();
+
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
+        if (UploadTasks.Any(x => !x.IsCompleted))
+        {
+            return;
+        }
+
         // todo? cancellation
         Console.WriteLine("OnInputFileChange");
+        UploadTasks.Clear();
+
         List<IBrowserFile> files;
         try
         {
@@ -100,7 +115,9 @@ public partial class UploadBatchComponent
                 await using var stream = file.OpenReadStream(UploadConstants.MaxFilesizeBytes);
 
                 string title = "";
-                List<string> artists;
+                List<string> artists = new();
+                var metadataMBRecordingOrTrackIds = new List<string>();
+
                 try
                 {
                     await using var ms = new MemoryStream();
@@ -108,16 +125,34 @@ public partial class UploadBatchComponent
                     // ms.Position = 0; // doesn't work in the browser ¯\_(ツ)_/¯, check again after .NET 9 I guess
 
                     Track tFile = new(ms, file.ContentType);
-
-                    string? metadataTitle = tFile.Title;
-                    List<string> metadataArtists = new() { tFile.Artist, tFile.AlbumArtist };
-
-                    if (!string.IsNullOrWhiteSpace(metadataTitle))
+                    if (BGMMode)
                     {
-                        title = metadataTitle;
-                    }
+                        foreach (string possibleRecordingIdName in UploadConstants.PossibleMetadataRecordingIdNames)
+                        {
+                            if (tFile.AdditionalFields.TryGetValue(possibleRecordingIdName,
+                                    out string? possibleRecordingId))
+                            {
+                                if (!string.IsNullOrWhiteSpace(possibleRecordingId))
+                                {
+                                    metadataMBRecordingOrTrackIds.Add(possibleRecordingId);
+                                }
+                            }
+                        }
 
-                    artists = metadataArtists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                        // Console.WriteLine(JsonSerializer.Serialize(metadataMBRecordingOrTrackIds));
+                    }
+                    else
+                    {
+                        string? metadataTitle = tFile.Title;
+                        List<string> metadataArtists = new() { tFile.Artist, tFile.AlbumArtist };
+
+                        if (!string.IsNullOrWhiteSpace(metadataTitle))
+                        {
+                            title = metadataTitle;
+                        }
+
+                        artists = metadataArtists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                    }
                 }
                 catch (Exception atlException)
                 {
@@ -126,28 +161,63 @@ public partial class UploadBatchComponent
                     continue;
                 }
 
-                uploadResult.Title = title;
-                uploadResult.Artists = artists;
-
-                // todo allow bgm, but only with musicbrainz recording/track data or acoustid
-                if (!title.Any() || !artists.Any())
+                if (BGMMode)
                 {
-                    continue;
-                }
-
-                var mode = SongSourceSongTypeMode.Vocals;
-                var res = await _client.PostAsJsonAsync("Library/FindSongsByTitleAndArtistFuzzy",
-                    new ReqFindSongsByTitleAndArtistFuzzy(new List<string> { title }, artists, mode));
-                if (res.IsSuccessStatusCode)
-                {
-                    var content = await res.Content.ReadFromJsonAsync<List<Song>>();
-                    if (content is not null && content.Any())
+                    uploadResult.MBRecordingOrTrackIds = metadataMBRecordingOrTrackIds;
+                    if (!metadataMBRecordingOrTrackIds.Any())
                     {
-                        HaveCount += 1;
-                        Console.WriteLine(JsonSerializer.Serialize(content, Utils.Jso));
-                        uploadResult.PossibleMatches.AddRange(content);
-                        uploadResult.File = file;
-                        StateHasChanged();
+                        continue;
+                    }
+
+                    var matchingSongs = Songs!.Where(x =>
+                            x.MusicBrainzRecordingGid is not null &&
+                            (metadataMBRecordingOrTrackIds.Contains(x.MusicBrainzRecordingGid.Value.ToString()) ||
+                             x.MusicBrainzTracks.Any(y => metadataMBRecordingOrTrackIds.Contains(y.ToString()))))
+                        .DistinctBy(x => x.MusicBrainzRecordingGid).ToArray();
+
+                    switch (matchingSongs.Length)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            HaveCount += 1;
+                            uploadResult.PossibleMatches.Add(matchingSongs.First());
+                            uploadResult.File = file;
+                            UploadTasks.Add(ChooseAndUpload(uploadResult, matchingSongs.First().Id));
+                            StateHasChanged();
+                            break;
+                        case > 1:
+                            HaveCount += 1;
+                            uploadResult.PossibleMatches.AddRange(matchingSongs);
+                            uploadResult.File = file;
+                            StateHasChanged();
+                            break;
+                    }
+                }
+                else
+                {
+                    uploadResult.Title = title;
+                    uploadResult.Artists = artists;
+
+                    if (!title.Any() || !artists.Any())
+                    {
+                        continue;
+                    }
+
+                    var mode = SongSourceSongTypeMode.Vocals;
+                    var res = await _client.PostAsJsonAsync("Library/FindSongsByTitleAndArtistFuzzy",
+                        new ReqFindSongsByTitleAndArtistFuzzy(new List<string> { title }, artists, mode));
+                    if (res.IsSuccessStatusCode)
+                    {
+                        var content = await res.Content.ReadFromJsonAsync<List<Song>>();
+                        if (content is not null && content.Any())
+                        {
+                            HaveCount += 1;
+                            // Console.WriteLine(JsonSerializer.Serialize(content, Utils.Jso));
+                            uploadResult.PossibleMatches.AddRange(content);
+                            uploadResult.File = file;
+                            StateHasChanged();
+                        }
                     }
                 }
             }
@@ -156,6 +226,8 @@ public partial class UploadBatchComponent
                 uploadResult.ErrorStr = $"Client-side exception: {ex}";
             }
         }
+
+        await Task.WhenAll(UploadTasks);
     }
 
     private async Task ChooseAndUpload(UploadResult uploadResult, int mId)

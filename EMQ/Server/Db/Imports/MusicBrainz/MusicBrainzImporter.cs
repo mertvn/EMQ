@@ -18,6 +18,17 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace EMQ.Server.Db.Imports.MusicBrainz;
 
+public class ResImportMusicBrainzDataInner
+{
+    public List<Song> Songs { get; set; } = new();
+
+    public List<MusicBrainzReleaseRecording> MusicBrainzReleaseRecordings { get; set; } = new();
+
+    public List<MusicBrainzReleaseVgmdbAlbum> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
+
+    public List<MusicBrainzTrackRecording> MusicBrainzTrackRecordings { get; set; } = new();
+}
+
 public class MusicBrainzVndbArtistJson
 {
     public Guid mb { get; set; } = Guid.Empty;
@@ -61,9 +72,11 @@ public static class MusicBrainzImporter
         Console.WriteLine(
             $"StartSection ImportMusicBrainzDataInner: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-        (List<Song>? incomingSongs, List<MusicBrainzReleaseRecording>? musicBrainzReleaseRecordings,
-                List<MusicBrainzReleaseVgmdbAlbum>? musicBrainzReleaseVgmdbAlbums) =
-            await ImportMusicBrainzDataInner(json!);
+        var resImportMusicBrainzDataInner = await ImportMusicBrainzDataInner(json!);
+        var incomingSongs = resImportMusicBrainzDataInner.Songs;
+        var musicBrainzReleaseRecordings = resImportMusicBrainzDataInner.MusicBrainzReleaseRecordings;
+        var musicBrainzReleaseVgmdbAlbums = resImportMusicBrainzDataInner.MusicBrainzReleaseVgmdbAlbums;
+        var musicBrainzTrackRecordings = resImportMusicBrainzDataInner.MusicBrainzTrackRecordings;
 
         if (incomingSongs.DistinctBy(x => x.MusicBrainzRecordingGid).Count() != incomingSongs.Count)
         {
@@ -88,7 +101,7 @@ public static class MusicBrainzImporter
             try
             {
                 // todo check existence before trying to insert
-                await DbManager.InsertMusicBrainzReleaseRecording(musicBrainzReleaseRecording);
+                await DbManager.InsertEntity(musicBrainzReleaseRecording);
             }
             catch (Exception)
             {
@@ -114,7 +127,7 @@ public static class MusicBrainzImporter
             try
             {
                 // todo check existence before trying to insert
-                await DbManager.InsertMusicBrainzReleaseVgmdbAlbum(musicBrainzReleaseVgmdbAlbum);
+                await DbManager.InsertEntity(musicBrainzReleaseVgmdbAlbum);
             }
             catch (Exception)
             {
@@ -125,6 +138,32 @@ public static class MusicBrainzImporter
                 else
                 {
                     Console.WriteLine(JsonSerializer.Serialize(musicBrainzReleaseVgmdbAlbum, Utils.JsoIndented));
+                    throw;
+                }
+            }
+        }
+
+        Console.WriteLine(
+            $"StartSection InsertMusicBrainzTrackRecording: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+        // return;
+        foreach (var musicBrainzTrackRecording in musicBrainzTrackRecordings.DistinctBy(x =>
+                     (x.track, x.recording)))
+        {
+            try
+            {
+                // todo check existence before trying to insert
+                await DbManager.InsertEntity(musicBrainzTrackRecording);
+            }
+            catch (Exception)
+            {
+                if (isIncremental)
+                {
+                    Console.WriteLine("ignoring InsertMusicBrainzTrackRecording error");
+                }
+                else
+                {
+                    Console.WriteLine(JsonSerializer.Serialize(musicBrainzTrackRecording, Utils.JsoIndented));
                     throw;
                 }
             }
@@ -209,12 +248,13 @@ public static class MusicBrainzImporter
     }
 
     [SuppressMessage("ReSharper", "StringLiteralTypo")]
-    private static async Task<(List<Song>, List<MusicBrainzReleaseRecording>, List<MusicBrainzReleaseVgmdbAlbum>)>
-        ImportMusicBrainzDataInner(IEnumerable<MusicBrainzJson> json)
+    private static async Task<ResImportMusicBrainzDataInner> ImportMusicBrainzDataInner(
+        IEnumerable<MusicBrainzJson> json)
     {
         var songs = new List<Song>();
         var musicBrainzReleaseRecordings = new List<MusicBrainzReleaseRecording>();
         var musicBrainzReleaseVgmdbAlbums = new List<MusicBrainzReleaseVgmdbAlbum>();
+        var musicBrainzTrackRecordings = new List<MusicBrainzTrackRecording>();
 
         var releaseGroups = json.OrderBy(x => x.release_group.id).GroupBy(y => y.release_group.id);
         foreach (IGrouping<int, MusicBrainzJson> releaseGroup in releaseGroups)
@@ -351,7 +391,7 @@ public static class MusicBrainzImporter
                                 {
                                     Type = SongSourceLinkType.VNDB,
                                     Url = data.aaa_rids.vndbid.ToVndbUrl(),
-                                    Name = "will be overridden",
+                                    Name = "will be overridden", // todo?
                                 },
                                 new SongSourceLink()
                                 {
@@ -369,7 +409,7 @@ public static class MusicBrainzImporter
                 {
                     song.Sources.Single().Links.Add(new SongSourceLink()
                     {
-                        Type = SongSourceLinkType.VGMdbAlbum, Url = data.aaa_rids.vgmdburl, Name = "VGMdb", // todo?
+                        Type = SongSourceLinkType.VGMdbAlbum, Url = data.aaa_rids.vgmdburl, Name = "", // todo?
                     });
 
                     var musicBrainzReleaseVgmdbAlbum = new MusicBrainzReleaseVgmdbAlbum()
@@ -403,10 +443,23 @@ public static class MusicBrainzImporter
                     release = data.release.gid, recording = data.recording.gid
                 };
                 musicBrainzReleaseRecordings.Add(musicBrainzReleaseRecording);
+
+                var musicBrainzTrackRecording = new MusicBrainzTrackRecording
+                {
+                    track = data.track.gid, recording = data.recording.gid
+                };
+                musicBrainzTrackRecordings.Add(musicBrainzTrackRecording);
             }
         }
 
-        return (songs, musicBrainzReleaseRecordings, musicBrainzReleaseVgmdbAlbums);
+        var res = new ResImportMusicBrainzDataInner
+        {
+            Songs = songs,
+            MusicBrainzReleaseRecordings = musicBrainzReleaseRecordings,
+            MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums,
+            MusicBrainzTrackRecordings = musicBrainzTrackRecordings
+        };
+        return res;
     }
 
     private static async Task<List<Song>> InsertMissingMusicSources(List<Song> songs, bool calledFromApi)

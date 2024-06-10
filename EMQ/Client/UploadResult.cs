@@ -25,4 +25,6 @@ public class UploadResult
     public string Title { get; set; } = "";
 
     public List<string> Artists { get; set; } = new();
+
+    public List<string> MBRecordingOrTrackIds { get; set; }  = new();
 }

@@ -47,6 +47,13 @@ public static class DbManager
                 .ToDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
         }
 
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
+            MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
+                .ToDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
+        }
+
         await RefreshMusicIdsRecordingGidsCache();
 
         // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -65,6 +72,8 @@ public static class DbManager
     public static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
 
     private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
+
+    public static Dictionary<Guid, List<Guid>> MusicBrainzRecordingTracks { get; set; } = new();
 
     private static Dictionary<int, Guid?> MusicIdsRecordingGids { get; set; } = new();
 
@@ -233,6 +242,10 @@ public static class DbManager
                 if (song.MusicBrainzRecordingGid is not null)
                 {
                     song.MusicBrainzReleases = MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
+                    if (MusicBrainzRecordingTracks.TryGetValue(song.MusicBrainzRecordingGid.Value, out var tracks))
+                    {
+                        song.MusicBrainzTracks = tracks;
+                    }
                 }
 
                 foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
@@ -451,6 +464,10 @@ public static class DbManager
                 if (song.MusicBrainzRecordingGid is not null)
                 {
                     song.MusicBrainzReleases = MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
+                    if (MusicBrainzRecordingTracks.TryGetValue(song.MusicBrainzRecordingGid.Value, out var tracks))
+                    {
+                        song.MusicBrainzTracks = tracks;
+                    }
                 }
 
                 foreach (Guid songMusicBrainzRelease in song.MusicBrainzReleases)
@@ -3768,39 +3785,6 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
         {
             const string sql = @"UPDATE music_external_link SET duration = @resultDuration WHERE url = @url";
             await connection.ExecuteAsync(sql, new { resultDuration, url });
-        }
-    }
-
-    public static async Task InsertMusicBrainzReleaseRecording(MusicBrainzReleaseRecording musicBrainzReleaseRecording)
-    {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            try
-            {
-                await connection.InsertAsync(musicBrainzReleaseRecording);
-            }
-            catch (Exception)
-            {
-                // Console.WriteLine(e);
-                throw;
-            }
-        }
-    }
-
-    public static async Task InsertMusicBrainzReleaseVgmdbAlbum(
-        MusicBrainzReleaseVgmdbAlbum musicBrainzReleaseVgmdbAlbum)
-    {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            try
-            {
-                await connection.InsertAsync(musicBrainzReleaseVgmdbAlbum);
-            }
-            catch (Exception)
-            {
-                // Console.WriteLine(e);
-                throw;
-            }
         }
     }
 

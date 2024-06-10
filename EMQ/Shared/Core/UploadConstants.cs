@@ -11,7 +11,7 @@ public static class UploadConstants
 
     public const int MaxFilesSpecificSongUpload = 20;
 
-    public const int MaxFilesBatchUpload = 100;
+    public const int MaxFilesBatchUpload = 200;
 
     // todo? might need to apply this on the server as well
     public const int TimeoutSeconds = 30 * 60; // 30 minutes
@@ -27,6 +27,12 @@ public static class UploadConstants
     public static string SftpPassword { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_PASSWORD")!;
 
     public static string SftpUserUploadDir { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_USER_UPLOAD_DIR")!;
+
+    public static string[] PossibleMetadataRecordingIdNames { get; set; } =
+    {
+        "MUSICBRAINZ_TRACKID", "MusicBrainz Recording Id", "MUSICBRAINZ_RELEASETRACKID",
+        "MusicBrainz Release Track Id",
+    };
 
     public static MediaTypeInfo[] ValidMediaTypes { get; set; } =
     {

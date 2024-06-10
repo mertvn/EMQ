@@ -41,7 +41,17 @@ public class ImportController : ControllerBase
         {
             if (song.MusicBrainzRecordingGid is not null)
             {
-                song.MusicBrainzReleases = DbManager.MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
+                if (DbManager.MusicBrainzRecordingReleases.TryGetValue(song.MusicBrainzRecordingGid.Value,
+                        out var releases))
+                {
+                    song.MusicBrainzReleases = releases;
+                }
+
+                if (DbManager.MusicBrainzRecordingTracks.TryGetValue(song.MusicBrainzRecordingGid.Value,
+                        out var tracks))
+                {
+                    song.MusicBrainzTracks = tracks;
+                }
             }
         }
 
