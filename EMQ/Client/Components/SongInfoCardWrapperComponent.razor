@@ -235,16 +235,18 @@
                             }
                             else
                             {
-                                @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
+                                if (hasImportSongLinkPerms)
                                 {
-                                    <span>Use the batch uploader to upload BGM.</span>
-                                }
-                                else
-                                {
-                                    @if (hasVideo && hasSound)
+                                    @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
-                                        <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                        <span>Use the batch uploader to upload BGM.</span>
                                     }
+                                    else
+                                    {
+                                        @if (hasVideo && hasSound)
+                                        {
+                                            <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                        }
 
                                   @*  <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
                                         <DataAnnotationsValidator/>
@@ -257,8 +259,6 @@
                                         <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
                                     </EditForm> *@
 
-                                    @if (hasImportSongLinkPerms)
-                                    {
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
                                 }
