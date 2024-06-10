@@ -84,6 +84,13 @@ public class UploadController : ControllerBase
             uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
             Console.WriteLine($"processing {uploadResult.FileName}");
 
+            var song = (await DbManager.SelectSongsMIds(new[] { mId }, false)).SingleOrDefault();
+            if (song == null)
+            {
+                throw new Exception("song is null");
+            }
+
+            bool isBgm = song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
             if (filesProcessed < maxAllowedFiles)
             {
                 if (file.Length == 0)
@@ -159,7 +166,7 @@ public class UploadController : ControllerBase
                                 {
                                     transcodedPath =
                                         await MediaAnalyser.TranscodeInto192KMp3(tempPath,
-                                            cancellationTokenSource.Token);
+                                            cancellationTokenSource.Token, !isBgm);
                                 }
                                 finally
                                 {

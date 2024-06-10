@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -291,7 +291,8 @@ public static class MediaAnalyser
         return outputFinal;
     }
 
-    public static async Task<string> TranscodeInto192KMp3(string filePath, CancellationToken cancellationToken)
+    public static async Task<string> TranscodeInto192KMp3(string filePath, CancellationToken cancellationToken,
+        bool cropSilence)
     {
         Console.WriteLine("transcoding into .mp3");
         string outputFinal = $"{Path.GetTempFileName()}.mp3";
@@ -299,7 +300,13 @@ public static class MediaAnalyser
 
         var result = await Analyse(filePath, false, false);
         float volumeAdjust = GetVolumeAdjust(result);
-        (string ss, string to) = await GetSsAndTo(filePath, cancellationToken);
+
+        string ss = TimeSpan.FromSeconds(0).ToString("c");
+        string to = "";
+        if (cropSilence)
+        {
+            (ss, to) = await GetSsAndTo(filePath, cancellationToken);
+        }
 
         var process = new Process()
         {
