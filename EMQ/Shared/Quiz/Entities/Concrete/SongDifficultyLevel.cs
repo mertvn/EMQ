@@ -12,15 +12,15 @@ public enum SongDifficultyLevel
     [Display(Name = "Easy")]
     Easy,
 
-    [Range(30.01d, 50d)]
+    [Range(20.01d, 50d)]
     [Display(Name = "Medium")]
     Medium,
 
-    [Range(15.01d, 30d)]
+    [Range(10.01d, 20d)]
     [Display(Name = "Hard")]
     Hard,
 
-    [Range(0.01d, 15d)]
+    [Range(0.01d, 10d)]
     [Display(Name = "Very Hard")]
     VeryHard,
 
