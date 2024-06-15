@@ -1151,7 +1151,7 @@ public class QuizManager
 
     private async Task EnterQuiz()
     {
-        // we have to do this here instead of PrimeQuiz because songs won't be determined until here if it's looting
+        // we have to do these here instead of PrimeQuiz because songs won't be determined until here if it's looting
         switch (Quiz.Room.QuizSettings.AnsweringKind)
         {
             case AnsweringKind.Typing:
@@ -1165,6 +1165,13 @@ public class QuizManager
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
+        }
+
+        if (Quiz.Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a &&
+            Quiz.Room.QuizSettings.IsMergeArtistAliases)
+        {
+            ArtistAliasesDict =
+                await DbManager.SelectArtistAliases(Quiz.Songs.SelectMany(x => x.Artists.Select(y => y.Id)).ToArray());
         }
 
         // reduce serialized Room size
@@ -1676,13 +1683,6 @@ public class QuizManager
         foreach (Song dbSong in dbSongs)
         {
             dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
-        }
-
-        if (Quiz.Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a &&
-            Quiz.Room.QuizSettings.IsMergeArtistAliases)
-        {
-            ArtistAliasesDict =
-                await DbManager.SelectArtistAliases(dbSongs.SelectMany(x => x.Artists.Select(y => y.Id)).ToArray());
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
