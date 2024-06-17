@@ -37,6 +37,7 @@ public static class Blacklists
         // ("v4705", "Dakara Namida wo Fuite..."), // todo 1x1 + 2x1
 		("v5844", "Kamiyozakura"),
         ("v7221", "Yume Panorama Wide"),
+        ("v8462", "Over The Distance"),
         ("v9409", "Key of Destiny"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v10632", "Eternal Flower"),

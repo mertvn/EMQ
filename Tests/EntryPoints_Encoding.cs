@@ -522,4 +522,253 @@ public class EntryPoints_Encoding
             }
         }
     }
+
+    [Test, Explicit]
+    public async Task DoPSP_Step1_ExtractFromISO()
+    {
+        string isoDumpDir = @"M:\!emqraw\!psp\!isodump";
+        string inputDir = @"";
+        var isoFiles = Directory.EnumerateFiles(inputDir, $"*.iso", SearchOption.AllDirectories);
+        foreach (string isoFile in isoFiles)
+        {
+            // Console.WriteLine($"processing {isoFile}");
+            var process1 = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "7z",
+                    Arguments = $"l \"{isoFile}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process1.Start();
+            process1.BeginErrorReadLine();
+
+            string err = await process1.StandardOutput.ReadToEndAsync();
+            if (err.Contains(".pmf", StringComparison.OrdinalIgnoreCase))
+            {
+                string isoFilename = Path.GetFileNameWithoutExtension(isoFile);
+                string finalDir = $"{isoDumpDir}/{isoFilename}";
+                if (Directory.Exists(finalDir))
+                {
+                    // Console.WriteLine($"skipping {finalDir}");
+                    continue;
+                }
+
+                Directory.CreateDirectory(finalDir);
+                var process2 = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "7z",
+                        Arguments = $"e \"{isoFile}\" -r -y -o\"{finalDir}\" \"*.pmf\"",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    }
+                };
+
+                process2.Start();
+                process2.BeginErrorReadLine();
+
+                string err2 = await process2.StandardOutput.ReadToEndAsync();
+                Console.WriteLine(err2);
+            }
+            else if (err.Contains(".cpk", StringComparison.OrdinalIgnoreCase))
+            {
+                string isoFilename = Path.GetFileNameWithoutExtension(isoFile);
+                string finalDir = $"{isoDumpDir}/{isoFilename}";
+                if (Directory.Exists(finalDir))
+                {
+                    // Console.WriteLine($"skipping {finalDir}");
+                    continue;
+                }
+
+                Directory.CreateDirectory(finalDir);
+                var process2 = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "7z",
+                        Arguments = $"e \"{isoFile}\" -r -y -o\"{finalDir}\" \"*.cpk\"",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    }
+                };
+
+                process2.Start();
+                process2.BeginErrorReadLine();
+
+                string err2 = await process2.StandardOutput.ReadToEndAsync();
+                Console.WriteLine(err2);
+            }
+            else if (err.Contains(".cvm", StringComparison.OrdinalIgnoreCase))
+            {
+               Console.WriteLine($".cvm support is not yet implemented: {isoFile}");
+               // todo extract pmf from cvm with 7z
+            }
+            else
+            {
+                Console.WriteLine($"no valid files found in: {isoFile}");
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task DoPSP_Step2_Encode()
+    {
+        string inputDir = @"M:\!emqraw\!psp\!isodump";
+        Directory.SetCurrentDirectory(inputDir);
+
+        bool doCpk = true;
+        if (doCpk)
+        {
+            var cpkFiles = Directory.EnumerateFiles(inputDir, $"*.cpk", SearchOption.AllDirectories);
+            foreach (string cpkFile in cpkFiles)
+            {
+                if (Directory.Exists(cpkFile.Replace(".cpk", "", StringComparison.OrdinalIgnoreCase)))
+                {
+                    Console.WriteLine($"skipping {cpkFile}");
+                }
+                else
+                {
+                    Console.WriteLine($"processing {cpkFile}");
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = @"G:\jp\Programs\YACpkTool_v1.1\YACpkTool.exe",
+                            Arguments = $"\"{cpkFile}\"",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                        }
+                    };
+
+                    process.Start();
+                    await process.WaitForExitAsync();
+                }
+            }
+        }
+
+        bool doPmf = true;
+        if (doPmf)
+        {
+            var pmfFiles = Directory.EnumerateFiles(inputDir, $"*.pmf", SearchOption.AllDirectories);
+            foreach (string pmfFile in pmfFiles)
+            {
+                string omaFile = pmfFile.Replace(".pmf", "_000001BD.oma", StringComparison.OrdinalIgnoreCase);
+                if (File.Exists(omaFile))
+                {
+                    Console.WriteLine($"skipping {omaFile}");
+                }
+                else
+                {
+                    Console.WriteLine($"processing {pmfFile}");
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName =
+                                @"G:\Code\VGMToolbox\vgmtoolboxdemultiplexercli\bin\Debug\vgmtoolboxdemultiplexercli.exe",
+                            Arguments = $"\"{pmfFile}\"",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+
+                    string err = await process.StandardError.ReadToEndAsync();
+                    if (err.Any())
+                    {
+                        Console.WriteLine(err);
+                    }
+                }
+            }
+        }
+
+        bool doOma = true;
+        if (doOma)
+        {
+            var omaFiles = Directory.EnumerateFiles(inputDir, $"*.oma", SearchOption.AllDirectories);
+            foreach (string omaFile in omaFiles)
+            {
+                string videoFile = omaFile.Replace("BD.oma", "E0.264");
+                if (!File.Exists(videoFile))
+                {
+                    throw new Exception($".264 file not found at {videoFile}");
+                }
+
+                string flacFile = $"{omaFile}.flac";
+                if (File.Exists(flacFile))
+                {
+                    Console.WriteLine($"skipping {omaFile}");
+                }
+                else
+                {
+                    Console.WriteLine($"processing {omaFile}");
+                    {
+                        var process = new Process()
+                        {
+                            StartInfo = new ProcessStartInfo()
+                            {
+                                FileName = "ffmpeg",
+                                Arguments = $"-nostdin -i \"{omaFile}\" \"{flacFile}\"",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                            }
+                        };
+
+                        process.Start();
+                        process.BeginOutputReadLine();
+
+                        string err = await process.StandardError.ReadToEndAsync();
+                        if (err.Any())
+                        {
+                            Console.WriteLine(err);
+                        }
+                    }
+
+                    {
+                        var process = new Process()
+                        {
+                            StartInfo = new ProcessStartInfo()
+                            {
+                                FileName = "ffmpeg",
+                                Arguments =
+                                    $"-nostdin -i \"{videoFile}\" -i \"{flacFile}\" -c copy -map 0:v:0 -map 1:a:0 -strict -2 \"{videoFile}.mp4\"",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                            }
+                        };
+
+                        process.Start();
+                        process.BeginOutputReadLine();
+
+                        string err = await process.StandardError.ReadToEndAsync();
+                        if (err.Any())
+                        {
+                            Console.WriteLine(err);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
