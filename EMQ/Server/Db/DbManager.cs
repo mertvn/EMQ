@@ -17,6 +17,7 @@ using DapperQueryBuilder;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
 using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
@@ -54,6 +55,29 @@ public static class DbManager
                 .ToDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
         }
 
+        string[] vnIds;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            vnIds = (await connection.QueryAsync<string>(
+                    $"select url from music_source_external_link where type = {(int)SongSourceLinkType.VNDB}"))
+                .Select(x => x.ToVndbId()).ToArray();
+        }
+
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+        {
+            const string sql = @"
+SELECT distinct v.id, p.name, p.latin FROM producers p
+join releases_producers rp ON rp.pid = p.id
+JOIN releases r ON r.id = rp.id
+JOIN releases_vn rv ON rv.id = r.id
+JOIN vn v ON v.id = rv.vid
+WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
+
+            var vnDevelopers =
+                await connection.QueryAsync<(string id, string name, string latin)>(sql, new { vnIds });
+            VnDevelopers = vnDevelopers.GroupBy(x => x.id).ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
+        }
+
         await RefreshMusicIdsRecordingGidsCache();
 
         // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -78,6 +102,8 @@ public static class DbManager
     private static Dictionary<int, Guid?> MusicIdsRecordingGids { get; set; } = new();
 
     // public static Dictionary<int, List<SongSourceSongType>> MusicIdsSongSourceSongTypes { get; set; }
+
+    public static Dictionary<string, (string id, string name, string? latin)[]> VnDevelopers { get; set; } = new();
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 
@@ -2442,6 +2468,20 @@ GROUP BY artist_id";
             string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
             return autocomplete;
         }
+    }
+
+    public static async Task<string> SelectAutocompleteDeveloper()
+    {
+        var res = VnDevelopers.SelectMany(x =>
+                x.Value.Select(y =>
+                {
+                    (string? latinTitle, string? nonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(y.name, y.latin);
+                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                        latinTitle.NormalizeForAutocomplete(), nonLatinTitle?.NormalizeForAutocomplete() ?? "");
+                }))
+            .DistinctBy(x => x.MSTLatinTitle);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
+        return autocomplete;
     }
 
     public static async Task<IEnumerable<Song>> FindSongsBySongSourceTitle(string songSourceTitle)

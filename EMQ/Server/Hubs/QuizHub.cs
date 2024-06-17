@@ -182,6 +182,23 @@ public class QuizHub : Hub
         }
     }
 
+    public async Task SendGuessChangedDeveloper(string? guess)
+    {
+        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        if (session != null)
+        {
+            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            if (room?.Quiz != null)
+            {
+                var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                if (quizManager != null)
+                {
+                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.Developer);
+                }
+            }
+        }
+    }
+
     // [Authorize]
     public async Task SendPlayerIsBuffered(int playerId, string source)
     {

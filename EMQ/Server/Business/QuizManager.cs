@@ -40,6 +40,8 @@ public class QuizManager
 
     private Dictionary<int, List<string>> CorrectAnswersDictRigger { get; set; } = new();
 
+    private Dictionary<int, List<string>> CorrectAnswersDictDeveloper { get; set; } = new();
+
     private Dictionary<int, string[]>? ArtistAliasesDict { get; set; }
 
     private async Task SetTimer()
@@ -251,6 +253,7 @@ public class QuizManager
         HashSet<int> processedTeamIdsA = new();
         HashSet<int> processedTeamIdsMt = new();
         HashSet<int> processedTeamIdsRigger = new();
+        HashSet<int> processedTeamIdsDeveloper = new();
         foreach (Player player in Quiz.Room.Players)
         {
             if (player.Guess is null)
@@ -309,6 +312,19 @@ public class QuizManager
                     if (possibleTeammate.TeamId == player.TeamId)
                     {
                         possibleTeammate.Guess.Rigger = player.Guess.Rigger;
+                    }
+                }
+            }
+
+            if (!processedTeamIdsDeveloper.Contains(player.TeamId) && IsGuessCorrectDeveloper(player.Guess.Developer))
+            {
+                processedTeamIdsDeveloper.Add(player.TeamId);
+                foreach (Player possibleTeammate in Quiz.Room.Players)
+                {
+                    possibleTeammate.Guess ??= new PlayerGuess();
+                    if (possibleTeammate.TeamId == player.TeamId)
+                    {
+                        possibleTeammate.Guess.Developer = player.Guess.Developer;
                     }
                 }
             }
@@ -435,6 +451,41 @@ public class QuizManager
 
                 CorrectAnswersDictRigger.Add(Quiz.QuizState.sp, correctAnswers);
                 Quiz.Room.Log("cA-rigger: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+            }
+
+            foreach (string correctAnswer in correctAnswers)
+            {
+                if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    correct = true;
+                    break;
+                }
+            }
+        }
+
+        return correct;
+    }
+
+    private bool IsGuessCorrectDeveloper(string? guess)
+    {
+        bool correct = false;
+        if (!string.IsNullOrWhiteSpace(guess))
+        {
+            if (!CorrectAnswersDictDeveloper.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+            {
+                correctAnswers = new List<string>();
+                foreach (string vndbId in Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x =>
+                             x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(z => z.Url.ToVndbId())))
+                {
+                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                    {
+                        correctAnswers.AddRange(developers.Select(x => x.latin)
+                            .Concat(developers.Select(x => x.name)));
+                    }
+                }
+
+                CorrectAnswersDictDeveloper.Add(Quiz.QuizState.sp, correctAnswers);
+                Quiz.Room.Log("cA-developer: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
             }
 
             foreach (string correctAnswer in correctAnswers)
@@ -603,6 +654,13 @@ public class QuizManager
             bool correctRigger = IsGuessCorrectRigger(player.Guess?.Rigger);
             player.IsGuessKindCorrectDict[GuessKind.Rigger] = correctRigger;
             if (correctRigger)
+            {
+                correctCount += 1;
+            }
+
+            bool correctDeveloper = IsGuessCorrectDeveloper(player.Guess?.Developer);
+            player.IsGuessKindCorrectDict[GuessKind.Developer] = correctDeveloper;
+            if (correctDeveloper)
             {
                 correctCount += 1;
             }
@@ -1823,6 +1881,9 @@ public class QuizManager
                     case GuessKind.Rigger:
                         player.Guess.Rigger = guess;
                         break;
+                    case GuessKind.Developer:
+                        player.Guess.Developer = guess;
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(guessKind), guessKind, null);
                 }
@@ -2291,6 +2352,7 @@ public class QuizManager
                                     GuessKind.A => !string.IsNullOrWhiteSpace(session.Player.Guess?.A),
                                     GuessKind.Mt => !string.IsNullOrWhiteSpace(session.Player.Guess?.Mt),
                                     GuessKind.Rigger => !string.IsNullOrWhiteSpace(session.Player.Guess?.Rigger),
+                                    GuessKind.Developer => !string.IsNullOrWhiteSpace(session.Player.Guess?.Developer),
                                     _ => throw new ArgumentOutOfRangeException()
                                 };
                             }

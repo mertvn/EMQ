@@ -140,6 +140,8 @@ public partial class QuizPage
 
     private AutocompletePlayerComponent? AutocompletePlayerComponent { get; set; }
 
+    private AutocompleteDeveloperComponent? AutocompleteDeveloperComponent { get; set; }
+
     private ChatComponent? _chatComponent;
 
     private QuizSettingsComponent? _quizSettingsComponent;
@@ -589,6 +591,7 @@ public partial class QuizPage
                 PageState.Guess.A = null;
                 PageState.Guess.Mt = null;
                 PageState.Guess.Rigger = null;
+                PageState.Guess.Developer = null;
 
                 if (_guessInputComponent != null)
                 {
@@ -608,6 +611,11 @@ public partial class QuizPage
                 if (AutocompletePlayerComponent != null)
                 {
                     await AutocompletePlayerComponent.ClearInputField();
+                }
+
+                if (AutocompleteDeveloperComponent != null)
+                {
+                    await AutocompleteDeveloperComponent.ClearInputField();
                 }
 
                 PageState.ProgressValue = 0;
@@ -651,6 +659,7 @@ public partial class QuizPage
                 PageState.Guess.A = null;
                 PageState.Guess.Mt = null;
                 PageState.Guess.Rigger = null;
+                PageState.Guess.Developer = null;
 
                 if (_guessInputComponent != null)
                 {
@@ -674,6 +683,12 @@ public partial class QuizPage
                 {
                     await AutocompletePlayerComponent.ClearInputField();
                     AutocompletePlayerComponent.CallStateHasChanged();
+                }
+
+                if (AutocompleteDeveloperComponent != null)
+                {
+                    await AutocompleteDeveloperComponent.ClearInputField();
+                    AutocompleteDeveloperComponent.CallStateHasChanged();
                 }
 
                 break;
@@ -722,6 +737,17 @@ public partial class QuizPage
                         PageState.Guess.Rigger);
                 }
 
+                if (string.IsNullOrEmpty(PageState.Guess.Developer))
+                {
+                    PageState.Guess.Developer = AutocompleteDeveloperComponent?.GetSelectedText();
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess.Developer))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedDeveloper",
+                        PageState.Guess.Developer);
+                }
+
                 // await SyncWithServer();
                 PageState.GuessesVisibility = true;
                 PageState.Countdown = 0;
@@ -735,6 +761,8 @@ public partial class QuizPage
                 AutocompleteMtComponent?.CallStateHasChanged();
                 AutocompletePlayerComponent?.CallClose();
                 AutocompletePlayerComponent?.CallStateHasChanged();
+                AutocompleteDeveloperComponent?.CallClose();
+                AutocompleteDeveloperComponent?.CallStateHasChanged();
                 StateHasChanged();
 
                 break;
@@ -769,6 +797,8 @@ public partial class QuizPage
                 AutocompleteMtComponent?.CallStateHasChanged();
                 AutocompletePlayerComponent?.CallClose();
                 AutocompletePlayerComponent?.CallStateHasChanged();
+                AutocompleteDeveloperComponent?.CallClose();
+                AutocompleteDeveloperComponent?.CallStateHasChanged();
 
                 if (_correctAnswer == null)
                 {
@@ -1000,7 +1030,8 @@ public partial class QuizPage
                 if (!string.IsNullOrWhiteSpace(guess.Mst) ||
                     !string.IsNullOrWhiteSpace(guess.A) ||
                     !string.IsNullOrWhiteSpace(guess.Mt) ||
-                    !string.IsNullOrWhiteSpace(guess.Rigger))
+                    !string.IsNullOrWhiteSpace(guess.Rigger) ||
+                    !string.IsNullOrWhiteSpace(guess.Developer))
                 {
                     PageState.Guess = guess;
                     if (_guessInputComponent != null || Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
@@ -1022,6 +1053,12 @@ public partial class QuizPage
                     {
                         await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedRigger",
                             PageState.Guess.Rigger);
+                    }
+
+                    if (AutocompleteDeveloperComponent != null)
+                    {
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedDeveloper",
+                            PageState.Guess.Developer);
                     }
 
                     if (ClientState.Preferences.AutoSkipGuessPhase)

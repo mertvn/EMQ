@@ -14,5 +14,8 @@ public enum GuessKind
     Mt,
 
     [Description("Rigger Name")]
-    Rigger
+    Rigger,
+
+    [Description("Developer Name")]
+    Developer,
 }

@@ -268,7 +268,7 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         var maxAge = TimeSpan.FromDays(30);
-        if (ctx.File.Name is "mst.json" or "c.json" or "a.json" or "mt.json")
+        if (ctx.File.Name is "mst.json" or "c.json" or "a.json" or "mt.json" or "developer.json")
         {
             maxAge = TimeSpan.FromHours(1);
         }
@@ -429,6 +429,8 @@ async Task Init()
             await DbManager.SelectAutocompleteA());
         await File.WriteAllTextAsync($"{autocompleteFolder}/mt.json",
             await DbManager.SelectAutocompleteMt());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json",
+            await DbManager.SelectAutocompleteDeveloper());
 
         if (precacheSongs)
         {

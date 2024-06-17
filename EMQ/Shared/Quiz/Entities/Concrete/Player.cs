@@ -74,6 +74,8 @@ public class PlayerGuess
 
     public string? Rigger { get; set; }
 
+    public string? Developer { get; set; }
+
     public override string ToString()
     {
         string ret = Mst ?? "";
@@ -91,6 +93,11 @@ public class PlayerGuess
         if (Rigger is not null)
         {
             ret += $" P: {Rigger}";
+        }
+
+        if (Developer is not null)
+        {
+            ret += $" D: {Developer}";
         }
 
         return ret;
