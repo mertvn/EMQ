@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime;
 using System.Threading.Tasks;
+using Dapper;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
@@ -16,6 +17,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 using Renci.SshNet;
 using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
@@ -55,23 +57,54 @@ public static class ServerUtils
         {
             if (rq.analysis == "Pending")
             {
-                string filePath = System.IO.Path.GetTempPath() + rq.url.LastSegment();
-
-                bool dlSuccess =
-                    await ExtensionMethods.DownloadFile(
-                        new HttpClient
-                        {
-                            DefaultRequestHeaders = { UserAgent = { new ProductInfoHeaderValue("g", "4") } },
-                            Timeout = TimeSpan.FromMinutes(30)
-                        },
-                        filePath, new Uri(rq.url));
+                string filePath = Path.GetTempPath() + rq.url.LastSegment();
+                bool dlSuccess = await Client.DownloadFile(filePath, new Uri(rq.url));
                 if (dlSuccess)
                 {
                     var analyserResult = await MediaAnalyser.Analyse(filePath);
-                    System.IO.File.Delete(filePath);
+                    File.Delete(filePath);
 
                     await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
                         analyserResult: analyserResult);
+                }
+            }
+        }
+
+        int end = await DbManager.SelectCountUnsafe("music");
+        var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
+
+        foreach (Song song in songs)
+        {
+            foreach (SongLink songLink in song.Links)
+            {
+                string tempPath = $"{Path.GetTempPath()}/{songLink.Url.LastSegment()}";
+                try
+                {
+                    bool success = await Client.DownloadFile(tempPath, new Uri(songLink.Url));
+                    if (success)
+                    {
+                        var analyserResult = await MediaAnalyser.Analyse(tempPath);
+                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        int rows = await connection.ExecuteAsync(
+                            "UPDATE music_external_link SET analysis_raw = @analyserResult WHERE url = @url",
+                            new { analyserResult, url = songLink.Url.UnReplaceSelfhostLink() });
+
+                        if (rows <= 0)
+                        {
+                            Console.WriteLine($"failed to set analysis_raw: {songLink.Url}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"failed to download file: {songLink.Url}");
+                    }
+                }
+                finally
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
                 }
             }
         }

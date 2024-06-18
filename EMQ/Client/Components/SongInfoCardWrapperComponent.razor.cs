@@ -39,6 +39,10 @@ public partial class SongInfoCardWrapperComponent
 
     private string _batchSetSubmittedByText = "";
 
+    private IQueryable<RQ>? CurrentRQs { get; set; }
+
+    private ReviewComponent _reviewComponent = null!;
+
     private async Task SubmitSongUrl(int mId, string url)
     {
         if (ClientState.Session?.Player.Username is null)
@@ -122,6 +126,32 @@ public partial class SongInfoCardWrapperComponent
     private async Task CallStateHasChanged()
     {
         StateHasChanged();
+    }
+
+    private async Task OnclickAnalysis(SongLink soundLink)
+    {
+        CurrentRQs = new List<RQ>
+        {
+            new()
+            {
+                id = 1,
+                music_id = 0,
+                url = soundLink.Url,
+                type = soundLink.Type,
+                is_video = soundLink.IsVideo,
+                submitted_by = soundLink.SubmittedBy ?? "",
+                submitted_on = default,
+                status = ReviewQueueStatus.Pending,
+                reason = null,
+                analysis = null,
+                Song = new Song(),
+                duration = soundLink.Duration,
+                analysis_raw = soundLink.AnalysisRaw,
+                sha256 = soundLink.Sha256
+            }
+        }.AsQueryable();
+
+        _reviewComponent.Show();
     }
 }
 

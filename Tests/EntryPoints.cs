@@ -460,7 +460,7 @@ public class EntryPoints
                             SubmittedBy = catboxLink.SubmittedBy,
                             Sha256 = catboxLink.Sha256
                         };
-                        await DbManager.InsertSongLink(mid, selfLink, null);
+                        await DbManager.InsertSongLink(mid, selfLink, null, null);
                     }
                 }
             }

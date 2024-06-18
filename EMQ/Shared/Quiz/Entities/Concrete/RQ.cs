@@ -83,4 +83,6 @@ public class MediaAnalyserResult
     public string? PrimaryAudioStreamCodecName { get; set; }
 
     public string? Sha256 { get; set; }
+
+    public DateTime? Timestamp { get; set; }
 }

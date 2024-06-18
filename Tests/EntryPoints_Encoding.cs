@@ -282,6 +282,11 @@ public class EntryPoints_Encoding
             var links = songs.Where(z => z.Links.Any() && !z.Links.Any(v => !v.IsVideo))
                 .Select(x => x.Links.First(y => y.Type == SongLinkType.Self && y.IsVideo)).ToList();
 
+            var links2 = songs.Where(z =>
+                    z.Links.Any(x => x.Url.EndsWith(".webm")) &&
+                    !z.Links.Any(v => v.Url.EndsWith(".weba") || v.Url.EndsWith(".ogg")))
+                .Select(x => x.Links.First(y => y.Type == SongLinkType.Self && y.IsVideo)).ToList();
+
             Dictionary<string, int> dict = new();
             foreach (Song song in songs)
             {
@@ -291,10 +296,16 @@ public class EntryPoints_Encoding
                 }
             }
 
+            const string notes = "extracted from video";
             List<string> unsupported = new();
-            foreach (SongLink songLink in links)
+            HashSet<int> processedMids = new();
+            foreach (SongLink songLink in links.Concat(links2))
             {
                 int mId = dict[songLink.Url];
+                if (!processedMids.Add(mId))
+                {
+                    continue;
+                }
 
                 string tempPath = "M:/!!!temp/" + $"{songLink.Url.LastSegment()}";
                 if (!File.Exists(tempPath))
@@ -305,9 +316,10 @@ public class EntryPoints_Encoding
                 var extractedAnalysis = await MediaAnalyser.Analyse(tempPath, isVideoOverride: true);
                 var session = new Session(new Player(-1, songLink.SubmittedBy!, new Avatar(AvatarCharacter.Auu)), "",
                     UserRoleKind.User, null);
-                const string notes = "extracted from video";
 
-                string guid = Guid.NewGuid().ToString();
+                string guid = songLink.Url.Contains("userup")
+                    ? songLink.Url.LastSegment().Replace(".webm", "")
+                    : Guid.NewGuid().ToString();
                 FileStream? fs;
 
                 switch (extractedAnalysis.PrimaryAudioStreamCodecName)
@@ -372,10 +384,14 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
-                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal, false);
+                            if (rqId > 0)
+                            {
+                                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                                    reason: notes);
+                            }
+
                             break;
                         }
                     case "vorbis":
@@ -436,10 +452,14 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
-                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal, false);
+                            if (rqId > 0)
+                            {
+                                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                                    reason: notes);
+                            }
+
                             break;
                         }
                     case "mp3":
@@ -501,10 +521,14 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            var res = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
-                            await DbManager.UpdateReviewQueueItem(res.rqId, ReviewQueueStatus.Pending, reason: notes);
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                                extractedOutputFinal, false);
+                            if (rqId > 0)
+                            {
+                                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
+                                    reason: notes);
+                            }
+
                             break;
                         }
                     default:
@@ -519,6 +543,53 @@ public class EntryPoints_Encoding
             foreach (string s in unsupported)
             {
                 Console.WriteLine(s);
+            }
+
+            var rqs = await DbManager.FindRQs(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1));
+            var validRqs = rqs.Where(x => x.reason == notes);
+            var processedMidsSongs = await DbManager.SelectSongsMIds(validRqs.Select(x => x.music_id).ToArray(), false);
+            foreach (var processedMidsSong in processedMidsSongs)
+            {
+                var filtered = SongLink.FilterSongLinks(processedMidsSong.Links);
+                if (filtered.Any(x => x.Url.EndsWith(".weba")))
+                {
+                    foreach (var songLink in filtered.Where(x => !x.IsVideo && !x.Url.EndsWith(".weba")))
+                    {
+                        Console.WriteLine(JsonSerializer.Serialize(songLink, Utils.Jso));
+                        await DbManager.DeleteMusicExternalLink(processedMidsSong.Id,
+                            songLink.Url.UnReplaceSelfhostLink());
+                    }
+                }
+                else if (filtered.Any(x => x.Url.EndsWith(".ogg")))
+                {
+                    foreach (var songLink in filtered.Where(x => !x.IsVideo && !x.Url.EndsWith(".ogg")))
+                    {
+                        Console.WriteLine(JsonSerializer.Serialize(songLink, Utils.Jso));
+                        await DbManager.DeleteMusicExternalLink(processedMidsSong.Id,
+                            songLink.Url.UnReplaceSelfhostLink());
+                    }
+                }
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task FindCorruptVids()
+    {
+        int end = await DbManager.SelectCountUnsafe("music");
+        var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
+
+        foreach (Song song in songs)
+        {
+            if (song.Id == 832)
+            {
+                continue;
+            }
+
+            var filtered = SongLink.FilterSongLinks(song.Links);
+            if (filtered.Any(x => x.Url.EndsWith(".weba") && x.SubmittedBy != "Lkyda") && !filtered.Any(x => x.IsVideo))
+            {
+                Console.WriteLine($"possibly corrupt link: {song}");
             }
         }
     }
@@ -611,8 +682,8 @@ public class EntryPoints_Encoding
             }
             else if (err.Contains(".cvm", StringComparison.OrdinalIgnoreCase))
             {
-               Console.WriteLine($".cvm support is not yet implemented: {isoFile}");
-               // todo extract pmf from cvm with 7z
+                Console.WriteLine($".cvm support is not yet implemented: {isoFile}");
+                // todo extract pmf from cvm with 7z
             }
             else
             {

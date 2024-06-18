@@ -219,6 +219,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                 Duration = musicExternalLink.duration,
                                 SubmittedBy = musicExternalLink.submitted_by,
                                 Sha256 = musicExternalLink.sha256,
+                                AnalysisRaw = musicExternalLink.analysis_raw,
                             });
                         }
 
@@ -252,6 +253,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                     Duration = musicExternalLink.duration,
                                     SubmittedBy = musicExternalLink.submitted_by,
                                     Sha256 = musicExternalLink.sha256,
+                                    AnalysisRaw = musicExternalLink.analysis_raw,
                                 });
                             }
                         }
@@ -442,6 +444,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                 Duration = musicExternalLink.duration,
                                 SubmittedBy = musicExternalLink.submitted_by,
                                 Sha256 = musicExternalLink.sha256,
+                                AnalysisRaw = musicExternalLink.analysis_raw,
                             });
                         }
 
@@ -475,6 +478,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                     Duration = musicExternalLink.duration,
                                     SubmittedBy = musicExternalLink.submitted_by,
                                     Sha256 = musicExternalLink.sha256,
+                                    AnalysisRaw = musicExternalLink.analysis_raw,
                                 });
                             }
                         }
@@ -1565,6 +1569,7 @@ GROUP BY artist_id";
                     duration = songLink.Duration,
                     submitted_by = songLink.SubmittedBy,
                     sha256 = songLink.Sha256,
+                    analysis_raw = songLink.AnalysisRaw,
                 }, transaction))
             {
                 throw new Exception("Failed to insert mel");
@@ -2680,7 +2685,8 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
-    public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
+    public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction,
+        MediaAnalyserResult? analyserResult)
     {
         bool success;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -2694,6 +2700,7 @@ AND msm.type = ANY(@msmType)";
                 duration = songLink.Duration,
                 submitted_by = songLink.SubmittedBy,
                 sha256 = songLink.Sha256,
+                analysis_raw = analyserResult,
             };
 
             if (mel.duration == default)
@@ -2796,6 +2803,7 @@ WHERE id = {mId};
                     sha256 = songLink.Sha256,
                 };
 
+                rq.analysis_raw ??= songLink.AnalysisRaw;
                 if (!string.IsNullOrWhiteSpace(analysis))
                 {
                     rq.analysis = analysis;
@@ -3045,7 +3053,7 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mId, link, transaction);
+                        await InsertSongLink(mId, link, transaction, null);
                     }
 
                     if (songLite.SongStats != null)
@@ -3110,7 +3118,7 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mId, link, transaction);
+                        await InsertSongLink(mId, link, transaction, null);
                     }
 
                     if (songLite.SongStats != null)
@@ -3311,8 +3319,9 @@ WHERE id = {mId};
                         Duration = rq.duration.Value,
                         SubmittedBy = rq.submitted_by,
                         Sha256 = rq.sha256,
+                        AnalysisRaw = rq.analysis_raw,
                     };
-                    success = await InsertSongLink(rq.music_id, songLink, null);
+                    success = await InsertSongLink(rq.music_id, songLink, null, analyserResult);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);

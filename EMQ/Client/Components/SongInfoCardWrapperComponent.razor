@@ -6,6 +6,8 @@
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 
+<ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
+
 @{
     // todo? move
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
@@ -134,6 +136,13 @@
                                             {
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))">🗑</span>
                                             }
+
+                                            @if (videoLink.AnalysisRaw != null)
+                                            {
+                                                string analysisColor = videoLink.AnalysisRaw.Warnings.Any() ? "red" : "green";
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(videoLink))">?</span>
+                                            }
+
                                             @if (validUrls.Contains(videoLink.Url))
                                             {
                                                 <a href="@videoLink.Url" target="_blank">
@@ -183,6 +192,12 @@
                                             @if (isAdmin)
                                             {
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))">🗑</span>
+                                            }
+
+                                            @if (soundLink.AnalysisRaw != null)
+                                            {
+                                                string analysisColor = soundLink.AnalysisRaw.Warnings.Any() ? "red" : "green";
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(soundLink))">?</span>
                                             }
 
                                             @if (validUrls.Contains(soundLink.Url))

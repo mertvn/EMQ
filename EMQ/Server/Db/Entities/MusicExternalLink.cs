@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -28,4 +29,6 @@ public class MusicExternalLink
 
     // [Required] // todo
     public string sha256 { get; set; }  = "";
+
+    public MediaAnalyserResult? analysis_raw { get; set; }
 }

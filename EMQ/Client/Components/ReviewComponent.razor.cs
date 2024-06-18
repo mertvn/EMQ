@@ -29,6 +29,9 @@ public partial class ReviewComponent
     [Parameter]
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
 
+    [Parameter]
+    public bool IsLibraryPage { get; set; }
+
     private Blazorise.Modal _modalRef = null!;
 
     private const string VideoElementId = "videoReview";
@@ -174,5 +177,11 @@ public partial class ReviewComponent
     {
         // Console.WriteLine("OnClosed");
         IsOpen = false;
+    }
+
+    public void Show()
+    {
+        StateHasChanged();
+        _modalRef!.Show();
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -27,7 +27,10 @@ public static class MediaAnalyser
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
 
-        var result = new MediaAnalyserResult { IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(), };
+        var result = new MediaAnalyserResult
+        {
+            IsValid = false, Warnings = new List<MediaAnalyserWarningKind>(), Timestamp = DateTime.UtcNow
+        };
 
         try
         {
@@ -41,7 +44,7 @@ public static class MediaAnalyser
 
             // Console.WriteLine(new { mediaInfo.Duration });
             result.Duration = mediaInfo.Duration;
-            if (mediaInfo.Duration < TimeSpan.FromSeconds(25))
+            if (mediaInfo.Duration < TimeSpan.FromSeconds(2))
             {
                 result.Warnings.Add(MediaAnalyserWarningKind.TooShort);
             }
@@ -52,7 +55,7 @@ public static class MediaAnalyser
             }
 
             result.PrimaryAudioStreamCodecName =
-                mediaInfo.PrimaryAudioStream?.CodecName ?? mediaInfo.AudioStreams.First().CodecName;
+                mediaInfo.PrimaryAudioStream?.CodecName ?? mediaInfo.AudioStreams.FirstOrDefault()?.CodecName;
             // Console.WriteLine(new { mediaInfo.Format.FormatName });
             result.FormatList = mediaInfo.Format.FormatName;
             bool isVideo = true;
@@ -80,6 +83,7 @@ public static class MediaAnalyser
 
             long filesizeBytes = new FileInfo(filePath).Length;
             result.FilesizeMb = (float)filesizeBytes / 1024 / 1024;
+            result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
             if (isVideoOverride != null)
             {
@@ -87,7 +91,6 @@ public static class MediaAnalyser
                 if (string.Equals($".weba", Path.GetExtension(filePath), StringComparison.OrdinalIgnoreCase))
                 {
                     format = "weba";
-                    result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
                 }
             }
 
@@ -107,14 +110,13 @@ public static class MediaAnalyser
                 result.Width = mediaInfo.PrimaryVideoStream.Width;
                 result.Height = mediaInfo.PrimaryVideoStream.Height;
                 result.VideoBitrateKbps = mediaInfo.PrimaryVideoStream.BitRate / 1000;
-                result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
 
                 if (result.AvgFramerate is 1000 or double.NaN)
                 {
                     result.AvgFramerate = mediaInfo.PrimaryVideoStream!.FrameRate;
                 }
 
-                if (result.AvgFramerate < 23)
+                if (result.AvgFramerate < 7)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.FramerateTooLow);
                 }
@@ -135,16 +137,25 @@ public static class MediaAnalyser
 
             // Console.WriteLine(new { mediaInfo.PrimaryAudioStream!.BitRate });
             // webm returns 0
-            if (format != "webm" && format != "weba")
+            if (format != "webm")
             {
-                long kbps = mediaInfo.PrimaryAudioStream!.BitRate / 1000;
+                long kbps;
+                if (format == "weba")
+                {
+                    kbps = (long)result.OverallBitrateKbps!.Value;
+                }
+                else
+                {
+                    kbps = mediaInfo.PrimaryAudioStream?.BitRate / 1000 ?? (long)result.OverallBitrateKbps!.Value;
+                }
+
                 result.AudioBitrateKbps = kbps;
-                if (kbps < 89)
+                if (kbps < 120)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooLow);
                 }
 
-                if (kbps > 321)
+                if (kbps > 500)
                 {
                     result.Warnings.Add(MediaAnalyserWarningKind.AudioBitrateTooHigh);
                 }
@@ -262,13 +273,13 @@ public static class MediaAnalyser
                         $"-ss {ss} " +
                         (to.Any() ? $"-to {to} " : "") +
                         $"-map 0:v " +
-                        $"-map 0:a " +
+                        $"-map 0:a? " +
                         $"-shortest " +
                         $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
                         $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
                         $"-g 100 " +
                         (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
-                        $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
+                        $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " + // todo copy audio
                         $"-nostdin " +
                         $"\"{outputFinal}\"",
                     CreateNoWindow = true,
@@ -343,6 +354,11 @@ public static class MediaAnalyser
     {
         float targetVolumeMean = -15.1f;
         float targetVolumeMax = -0.6f;
+
+        if (result.VolumeDetect == null || !result.VolumeDetect.Any())
+        {
+            return 0;
+        }
 
         float meanVolume = Convert.ToSingle(result.VolumeDetect?.Single(x => x.Contains("mean_volume"))
             .Replace("mean_volume:", "")

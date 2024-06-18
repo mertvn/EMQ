@@ -15,7 +15,10 @@
     bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink);
 }
 
-<button type="button" class="btn btn-primary" style="margin-bottom: 5px;" @onclick="@(() => { _modalRef.Show(); })">Review</button>
+@if (IsLibraryPage)
+{
+    <button type="button" class="btn btn-primary" style="margin-bottom: 5px;" @onclick="@(() => { _modalRef.Show(); })">Review</button>
+}
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000" Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
@@ -25,15 +28,22 @@
         </Blazorise.ModalHeader>
         <Blazorise.ModalBody>
 
-            <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentRQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
-            ID: <input type="number" id="input_reviewingId" @bind="reviewingId"/>
-            URL: <a class="link-primary" href="@videoSrc" target="_blank"> @videoSrc</a>
-            Status:
-            <span style="color: @UiHelpers.Bools2Color(reviewingItem?.status == ReviewQueueStatus.Approved, reviewingItem?.status == ReviewQueueStatus.Rejected, "green", "red")">
-                @reviewingItem?.status.ToString()
-            </span>
+            @if (IsLibraryPage)
+            {
+                <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentRQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
 
-            @if (reviewingItem != null && reviewingItem.analysis != Constants.AnalysisOkStr)
+                <span>ID: </span>
+                <input type="number" id="input_reviewingId" @bind="reviewingId"/>
+
+                <span>Status: </span>
+                <span style="color: @UiHelpers.Bools2Color(reviewingItem?.status == ReviewQueueStatus.Approved, reviewingItem?.status == ReviewQueueStatus.Rejected, "green", "red")">
+                    @reviewingItem?.status.ToString()
+                </span>
+            }
+
+            URL: <a class="link-primary" href="@videoSrc" target="_blank"> @videoSrc</a>
+
+            @if (reviewingItem != null && !string.IsNullOrEmpty(reviewingItem.analysis) && reviewingItem.analysis != Constants.AnalysisOkStr)
             {
                 <span>Analysis: @reviewingItem.analysis</span>
             }
@@ -41,10 +51,13 @@
             <br/>
             @if ((CurrentRQs?.Any() ?? false) && IsOpen && reviewingItem != null)
             {
-                <div style="margin: 5px;">
-                    <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentRQs.MinBy(x => x.id)!.id))" @onclick="@(() => { reviewingId -= 1; })">←Previous</button>
-                    <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentRQs.MaxBy(x => x.id)!.id))" @onclick="@(() => { reviewingId += 1; })">Next→</button>
-                </div>
+                @if (IsLibraryPage)
+                {
+                    <div style="margin: 5px;">
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentRQs.MinBy(x => x.id)!.id))" @onclick="@(() => { reviewingId -= 1; })">←Previous</button>
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentRQs.MaxBy(x => x.id)!.id))" @onclick="@(() => { reviewingId += 1; })">Next→</button>
+                    </div>
+                }
 
                 <button type="button" class="btn btn-secondary" @onclick="@(() => controls = !controls)">Toggle controls</button>
 
@@ -61,7 +74,10 @@
                         }
                     </div>
 
-                    <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem!.Song })" LibrarySongFilter="LibrarySongFilterKind.All" IsLibraryPage="false"/>
+                    @if (IsLibraryPage)
+                    {
+                        <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem!.Song })" LibrarySongFilter="LibrarySongFilterKind.All" IsLibraryPage="false"/>
+                    }
 
                     @if (reviewingItem.analysis_raw != null)
                     {
@@ -89,7 +105,7 @@
                     }
                 </div>
 
-                @if (isReviewModerator)
+                @if (isReviewModerator && IsLibraryPage)
                 {
                     @if (reviewingItem.duration is null)
                     {
@@ -112,7 +128,10 @@
                             <label for="checkbox-ApplyToBGMBatch">Apply to BGM batch</label>
                         }
                     }
+                }
 
+                @if (isReviewModerator)
+                {
                     <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
                 }
             }

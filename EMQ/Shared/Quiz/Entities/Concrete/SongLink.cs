@@ -19,7 +19,7 @@ public class SongLink
 
     public string Sha256 { get; set; } = "";
 
-    // todo add total_bytes
+    public MediaAnalyserResult? AnalysisRaw { get; set; }
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
     {
