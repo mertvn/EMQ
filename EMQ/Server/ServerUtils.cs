@@ -61,7 +61,13 @@ public static class ServerUtils
                 bool dlSuccess = await Client.DownloadFile(filePath, new Uri(rq.url));
                 if (dlSuccess)
                 {
-                    var analyserResult = await MediaAnalyser.Analyse(filePath);
+                    bool? isVideoOverride = null;
+                    if (filePath.EndsWith(".weba"))
+                    {
+                        isVideoOverride = false;
+                    }
+
+                    var analyserResult = await MediaAnalyser.Analyse(filePath, false, isVideoOverride);
                     File.Delete(filePath);
 
                     await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
