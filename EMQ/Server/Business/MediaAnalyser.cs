@@ -84,6 +84,10 @@ public static class MediaAnalyser
             long filesizeBytes = new FileInfo(filePath).Length;
             result.FilesizeMb = (float)filesizeBytes / 1024 / 1024;
             result.OverallBitrateKbps = ((filesizeBytes * 8) / result.Duration!.Value.TotalSeconds) / 1000;
+            if (result.OverallBitrateKbps != 0 && result.OverallBitrateKbps > 3400)
+            {
+                result.Warnings.Add(MediaAnalyserWarningKind.OverallBitrateTooHigh);
+            }
 
             if (isVideoOverride != null)
             {

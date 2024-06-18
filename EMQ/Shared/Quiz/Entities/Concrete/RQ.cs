@@ -48,6 +48,7 @@ public enum MediaAnalyserWarningKind
     FramerateTooHigh,
     FakeVideo,
     WrongExtension,
+    OverallBitrateTooHigh,
 }
 
 public class MediaAnalyserResult
