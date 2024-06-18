@@ -143,7 +143,7 @@ public partial class SongInfoCardWrapperComponent
                 submitted_on = default,
                 status = ReviewQueueStatus.Pending,
                 reason = null,
-                analysis = null,
+                analysis = string.Join(", ", soundLink.AnalysisRaw!.Warnings.Select(x => x.ToString())),
                 Song = new Song(),
                 duration = soundLink.Duration,
                 analysis_raw = soundLink.AnalysisRaw,
