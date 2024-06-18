@@ -2685,6 +2685,42 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
+    public static async Task<IEnumerable<Song>> FindSongsByWarnings(MediaAnalyserWarningKind[] warnings,
+        SongSourceSongType[] songSourceSongTypes)
+    {
+        List<Song> songs = new();
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            const string sql = @"SELECT DISTINCT mel.music_id
+FROM music_external_link mel
+JOIN music_source_music msm on mel.music_id = msm.music_id
+WHERE mel.analysis_raw NOT LIKE '%Warnings"":[]%'
+AND msm.type = ANY(@msmType)";
+
+            var mids = (await connection.QueryAsync<int>(sql,
+                new
+                {
+                    msmType = songSourceSongTypes.Cast<int>().ToArray()
+                })).ToList();
+
+            var ret = await SelectSongsMIds(mids.ToArray(), false);
+            foreach (Song song in ret)
+            {
+                var filtered = SongLink.FilterSongLinks(song.Links); // todo? option to not filter
+                foreach (SongLink songLink in filtered)
+                {
+                    if (songLink.AnalysisRaw?.Warnings.Any(x => warnings.Contains(x)) ?? false)
+                    {
+                        songs.Add(song);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return songs;
+    }
+
     public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction,
         MediaAnalyserResult? analyserResult)
     {
@@ -3553,6 +3589,14 @@ order by count(music_id) desc
             //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var songDifficultyLevels = await GetSongDifficultyLevelCounts(validMids.ToArray());
 
+            // todo batch
+            var warningsDict = new Dictionary<MediaAnalyserWarningKind, int>();
+            foreach (MediaAnalyserWarningKind warningKind in Enum.GetValues<MediaAnalyserWarningKind>())
+            {
+                warningsDict[warningKind] =
+                    (await FindSongsByWarnings(new[] { warningKind }, songSourceSongTypes)).Count();
+            }
+
             var libraryStats = new LibraryStats
             {
                 // General
@@ -3587,6 +3631,9 @@ order by count(music_id) desc
 
                 // Song difficulty
                 SongDifficultyLevels = songDifficultyLevels,
+
+                // Warnings
+                Warnings = warningsDict,
             };
 
             // stopWatch.Stop();

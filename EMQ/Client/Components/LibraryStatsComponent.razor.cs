@@ -93,4 +93,14 @@ public partial class LibraryStatsComponent
             await LibraryPage.SelectedResultChangedDifficulty(difficulty, Mode);
         }
     }
+
+    private async Task Onclick_Warning(MediaAnalyserWarningKind warning)
+    {
+        if (LibraryPage != null)
+        {
+            await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
+            LibraryPage.selectedMusicSourceTitle = null;
+            await LibraryPage.SelectedResultChangedWarning(warning, Mode);
+        }
+    }
 }

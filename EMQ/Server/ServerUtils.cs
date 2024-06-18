@@ -86,6 +86,7 @@ public static class ServerUtils
                 string tempPath = $"{Path.GetTempPath()}/{songLink.Url.LastSegment()}";
                 try
                 {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
                     bool success = await Client.DownloadFile(tempPath, new Uri(songLink.Url));
                     if (success)
                     {

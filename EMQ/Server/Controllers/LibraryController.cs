@@ -106,6 +106,15 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByWarnings")]
+    public async Task<IEnumerable<Song>> FindSongsByWarnings([FromBody] ReqFindSongsByWarnings req)
+    {
+        var songs = await DbManager.FindSongsByWarnings(req.Warnings, req.Mode.ToSongSourceSongTypes());
+        return songs;
+    }
+
     [Obsolete("deprecated in favor of Upload/PostFile")]
     [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]

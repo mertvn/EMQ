@@ -1,6 +1,7 @@
 ﻿@using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
 
 @if (LibraryStats is { } libraryStats)
@@ -82,6 +83,23 @@
                     }
                 </ul>
             </div>
+
+            <table style="max-width: 400px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">Warning</th>
+                    <th class="libraryStatsHeader">Songs</th>
+                </tr>
+                @foreach ((MediaAnalyserWarningKind warningKind, int count) in libraryStats.Warnings)
+                {
+                    <tr class="libraryStatsRow">
+                        <td>@warningKind.GetDisplayName()</td>
+                        <td>
+                            <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Warning(warningKind); })">@count</b>
+                        </td>
+                    </tr>
+                }
+            </table>
+
         </Blazorise.TabPanel>
 
 
