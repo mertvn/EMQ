@@ -480,7 +480,7 @@ public class QuizManager
                     if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
                     {
                         correctAnswers.AddRange(developers.Select(x => x.latin)
-                            .Concat(developers.Select(x => x.name)));
+                            .Concat(developers.Select(x => x.name))!);
                     }
                 }
 

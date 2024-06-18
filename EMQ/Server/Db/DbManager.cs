@@ -74,7 +74,7 @@ JOIN vn v ON v.id = rv.vid
 WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
             var vnDevelopers =
-                await connection.QueryAsync<(string id, string name, string latin)>(sql, new { vnIds });
+                await connection.QueryAsync<(string id, string name, string? latin)>(sql, new { vnIds });
             VnDevelopers = vnDevelopers.GroupBy(x => x.id).ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
         }
 
