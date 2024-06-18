@@ -2721,8 +2721,7 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
-    public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction,
-        MediaAnalyserResult? analyserResult)
+    public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
     {
         bool success;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -2736,7 +2735,7 @@ AND msm.type = ANY(@msmType)";
                 duration = songLink.Duration,
                 submitted_by = songLink.SubmittedBy,
                 sha256 = songLink.Sha256,
-                analysis_raw = analyserResult,
+                analysis_raw = songLink.AnalysisRaw,
             };
 
             if (mel.duration == default)
@@ -3089,7 +3088,7 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mId, link, transaction, null);
+                        await InsertSongLink(mId, link, transaction);
                     }
 
                     if (songLite.SongStats != null)
@@ -3154,7 +3153,7 @@ WHERE id = {mId};
                 {
                     foreach (SongLink link in songLite.Links)
                     {
-                        await InsertSongLink(mId, link, transaction, null);
+                        await InsertSongLink(mId, link, transaction);
                     }
 
                     if (songLite.SongStats != null)
@@ -3357,7 +3356,7 @@ WHERE id = {mId};
                         Sha256 = rq.sha256,
                         AnalysisRaw = rq.analysis_raw,
                     };
-                    success = await InsertSongLink(rq.music_id, songLink, null, analyserResult);
+                    success = await InsertSongLink(rq.music_id, songLink, null);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
