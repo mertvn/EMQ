@@ -89,7 +89,13 @@ public static class ServerUtils
                     bool success = await Client.DownloadFile(tempPath, new Uri(songLink.Url));
                     if (success)
                     {
-                        var analyserResult = await MediaAnalyser.Analyse(tempPath);
+                        bool? isVideoOverride = null;
+                        if (tempPath.EndsWith(".weba"))
+                        {
+                            isVideoOverride = false;
+                        }
+
+                        var analyserResult = await MediaAnalyser.Analyse(tempPath, false, isVideoOverride);
                         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
                         int rows = await connection.ExecuteAsync(
                             "UPDATE music_external_link SET analysis_raw = @analyserResult WHERE url = @url",

@@ -842,4 +842,10 @@ public class EntryPoints_Encoding
             }
         }
     }
+
+    [Test, Explicit]
+    public async Task RunAnalysis()
+    {
+        await ServerUtils.RunAnalysis();
+    }
 }
