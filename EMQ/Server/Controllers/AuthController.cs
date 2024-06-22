@@ -381,6 +381,14 @@ public class AuthController : ControllerBase
         };
     }
 
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetServerActivityStats")]
+    public async Task<ServerActivityStats> GetServerActivityStats(ReqGetServerActivityStats req)
+    {
+        return await DbManager.GetServerActivityStats(req.StartDate, req.EndDate, req.IncludeGuests);
+    }
+
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpGet]
     [Route("GetRooms")]

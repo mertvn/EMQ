@@ -1,8 +1,15 @@
 ﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Client.Components
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 @inject NavigationManager _navigation
+
+<GenericModal @ref="@_serverStatsModalRef"
+              Title="Server stats"
+              Size="@Blazorise.ModalSize.ExtraLarge">
+    <ChartDailyPlayersComponent></ChartDailyPlayersComponent>
+</GenericModal>
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -49,7 +56,7 @@
         }
     </nav>
 
-    <div style="color: white;">
+    <div style="color: white; cursor: pointer;" @onclick="@(() => _serverStatsModalRef.Show())">
         <ul>
             <li>Rooms: @ClientState.ServerStats.RoomsCount</li>
             @* <li>QMs: @ClientState.ServerStats.QuizManagersCount</li> *@
@@ -81,6 +88,8 @@
     }
 
     private DateTime LastSync { get; set; }
+
+    private GenericModal _serverStatsModalRef = null!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

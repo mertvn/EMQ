@@ -2698,10 +2698,7 @@ WHERE mel.analysis_raw NOT LIKE '%Warnings"":[]%'
 AND msm.type = ANY(@msmType)";
 
             var mids = (await connection.QueryAsync<int>(sql,
-                new
-                {
-                    msmType = songSourceSongTypes.Cast<int>().ToArray()
-                })).ToList();
+                new { msmType = songSourceSongTypes.Cast<int>().ToArray() })).ToList();
 
             var ret = await SelectSongsMIds(mids.ToArray(), false);
             foreach (Song song in ret)
@@ -4824,5 +4821,28 @@ where music_id = ANY(@mIds)
         {
             throw new Exception($"Error setting avatar for {userId} to {avatar.Character} {avatar.Skin}");
         }
+    }
+
+    public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate,
+        bool includeGuests)
+    {
+        const string sqlDailyPlayers = @"
+SELECT to_char(played_at, 'yyyy-mm-dd'), count(DISTINCT user_id) FILTER(WHERE user_id < 1000000) AS users, count(DISTINCT user_id) FILTER(WHERE user_id >= 1000000) AS guests
+FROM quiz_song_history qsh
+WHERE played_at >= @startDate AND played_at <= @endDate
+--AND user_id < @maxUserId
+GROUP BY to_char(played_at, 'yyyy-mm-dd')
+";
+
+        // int maxUserId = includeGuests ? int.MaxValue : 1_000_000;
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var resDailyPlayers =
+            (await connection.QueryAsync<(string date, int users, int guests)>(sqlDailyPlayers,
+                new { startDate, endDate }))
+            .ToDictionary(x => x.date,
+                x => new ServerActivityStatsDailyPlayers() { Users = x.users, Guests = x.guests });
+
+        var ret = new ServerActivityStats { DailyPlayers = resDailyPlayers };
+        return ret;
     }
 }

@@ -1,0 +1,85 @@
+﻿@using Blazorise.Charts
+@using Blazorise
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+
+@* <Blazorise.Button Color="Color.Primary" Clicked="@(async () => await HandleRedraw())">Redraw</Blazorise.Button> *@
+
+@* <input id="InputIncludeGuests" type="checkbox" @bind="IncludeGuests" style="margin: 5px;"/> *@
+@* <label for="InputIncludeGuests">Include guests?</label> *@
+
+<h4>Daily players (at least one song played)</h4>
+<Chart @ref="_barChart" Type="ChartType.Bar" TItem="int" Options="@Options"/>
+
+@code {
+    private Chart<int> _barChart = null!;
+
+    private ServerActivityStats ServerActivityStats { get; set; } = new();
+
+    private bool IncludeGuests { get; set; } = true;
+
+    private List<string> _backgroundColors = new() { ChartColor.FromRgba(54, 162, 235, 0.2f), ChartColor.FromRgba(255, 99, 132, 0.2f), };
+
+    private List<string> _borderColors = new() { ChartColor.FromRgba(54, 162, 235, 1f), ChartColor.FromRgba(255, 99, 132, 1f), };
+
+    private ChartOptions Options { get; set; } = new BarChartOptions
+    {
+        Scales = new ChartScales
+        {
+            X = new ChartAxis { Stacked = true },
+            Y = new ChartAxis { Stacked = true },
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    private async Task HandleRedraw()
+    {
+        await _barChart.Clear();
+
+        var req = new ReqGetServerActivityStats(DateTime.UtcNow.AddDays(-90), DateTime.UtcNow.AddDays(1), IncludeGuests);
+        var res = await _client.PostAsJsonAsync("Auth/GetServerActivityStats", req);
+        if (res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadFromJsonAsync<ServerActivityStats>();
+            ServerActivityStats = content!;
+        }
+
+        await _barChart.AddLabelsDatasetsAndUpdate(ServerActivityStats.DailyPlayers.Keys, GetBarChartDataset(0), GetBarChartDataset(1));
+    }
+
+    private BarChartDataset<int> GetBarChartDataset(int i)
+    {
+        if (i == 0)
+        {
+            return new()
+            {
+                Label = "Users",
+                Data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Users).ToList(),
+                BackgroundColor = _backgroundColors[i],
+                BorderColor = _borderColors[i],
+                BorderWidth = 1,
+            };
+        }
+        else
+        {
+            return new()
+            {
+                Label = "Guests",
+                Data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Guests).ToList(),
+                BackgroundColor = _backgroundColors[i],
+                BorderColor = _borderColors[i],
+                BorderWidth = 1,
+            };
+        }
+    }
+
+}
