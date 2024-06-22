@@ -5,7 +5,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
 
-@* <Blazorise.Button Color="Color.Primary" Clicked="@(async () => await HandleRedraw())">Redraw</Blazorise.Button> *@
+@* <button type="button" class="btn btn-primary" @onclick="@(async () => await HandleRedraw())">Fetch</button> *@
 
 @* <input id="InputIncludeGuests" type="checkbox" @bind="IncludeGuests" style="margin: 5px;"/> *@
 @* <label for="InputIncludeGuests">Include guests?</label> *@
@@ -58,28 +58,30 @@
 
     private BarChartDataset<int> GetBarChartDataset(int i)
     {
-        if (i == 0)
+        string label;
+        List<int> data;
+        switch (i)
         {
-            return new()
-            {
-                Label = "Users",
-                Data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Users).ToList(),
-                BackgroundColor = _backgroundColors[i],
-                BorderColor = _borderColors[i],
-                BorderWidth = 1,
-            };
+            case 0:
+                label = "Users";
+                data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Users).ToList();
+                break;
+            case 1:
+                label = "Guests";
+                data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Guests).ToList();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(i));
         }
-        else
+
+        return new BarChartDataset<int>
         {
-            return new()
-            {
-                Label = "Guests",
-                Data = ServerActivityStats.DailyPlayers.Values.Select(x => x.Guests).ToList(),
-                BackgroundColor = _backgroundColors[i],
-                BorderColor = _borderColors[i],
-                BorderWidth = 1,
-            };
-        }
+            Label = label,
+            Data = data,
+            BackgroundColor = _backgroundColors[i],
+            BorderColor = _borderColors[i],
+            BorderWidth = 1,
+        };
     }
 
 }
