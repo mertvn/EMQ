@@ -10,6 +10,10 @@ public enum SongAttributes
 
     [Description("Video contains spoilers")]
     Spoilers = 1,
+
+    [Description("Non-canon")]
     NonCanon = 2,
+
+    [Description("Unofficial")]
     Unofficial = 4,
 }

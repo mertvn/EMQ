@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Auth.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
@@ -240,31 +240,34 @@
 
             @if (Song.Id > 0)
             {
+                bool open = Song.Attributes > 0;
                 <br/>
-                <details>
+                <details open=@open>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
                     {
-                        if (key == SongAttributes.Spoilers) // todo others, eventually
+                        if (key != SongAttributes.Spoilers) // todo others, eventually
                         {
-                            string id = $"SongAttribute-{Song.Id}-{key}";
-                            <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod)"
-                                   @bind:get="@Song.Attributes.HasFlag(key)"
-                                   @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
-                                   @bind:event="oninput"
-                                   style="margin: 5px"/>
-                            <label for="@id">
-                                @if (!string.IsNullOrEmpty(key.GetDescription()))
-                                {
-                                    @key.GetDescription()
-                                }
-                                else
-                                {
-                                    @key.ToString()
-                                }
-                            </label>
-                            <br/>
+                            continue;
                         }
+
+                        string id = $"SongAttribute-{Song.Id}-{key}";
+                        <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod)"
+                               @bind:get="@Song.Attributes.HasFlag(key)"
+                               @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
+                               @bind:event="oninput"
+                               style="margin: 5px"/>
+                        <label for="@id">
+                            @if (!string.IsNullOrEmpty(key.GetDescription()))
+                            {
+                                @key.GetDescription()
+                            }
+                            else
+                            {
+                                @key.ToString()
+                            }
+                        </label>
+                        <br/>
                     }
                 </details>
             }
