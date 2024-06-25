@@ -5,7 +5,7 @@ namespace EMQ.Shared.Core;
 
 public static class UploadConstants
 {
-    public const int MaxFilesizeBytes = 500 * 1024 * 1024; // 500 MB
+    public const int MaxFilesizeBytes = 1000 * 1024 * 1024; // 1000 MB
 
     public const int MaxFilesPerRequest = 1;
 
