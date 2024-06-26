@@ -255,10 +255,17 @@ public static class MediaAnalyser
         bool requiresDownscale = result.Width > 1280 || result.Height > 768;
         bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
         bool encodeAudioSeparately = !canCopyAudio && false;
+        bool cropSilence = true;
 
         float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
         // volumeAdjust = 13;
-        (string ss, string to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken);
+
+        string ss = TimeSpan.FromSeconds(0).ToString("c");
+        string to = "";
+        if (cropSilence)
+        {
+            (ss, to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken);
+        }
 
         if (encodeAudioSeparately)
         {
@@ -267,39 +274,107 @@ public static class MediaAnalyser
         }
         else
         {
-            var process = new Process()
+            // todo copy audio
+            bool twoPass = true;
+            int pass = 0;
+
+            string args = $"-i \"{filePath}\" " + $"-ss {ss} " + (to.Any() ? $"-to {to} " : "") +
+                          $"-map 0:v " +
+                          $"-map 0:a? " + $"-shortest " +
+                          $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
+                          $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
+                          $"-g 100 " +
+                          (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
+                          $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
+                          $"-nostdin " + $"\"{outputFinal}\"";
+
+            if (twoPass)
             {
-                StartInfo = new ProcessStartInfo()
+                string argsPass1 = $"-i \"{filePath}\" " + $"-ss {ss} " + (to.Any() ? $"-to {to} " : "") +
+                                   $"-map 0:v " +
+                                   $"-map 0:a? " + $"-shortest " +
+                                   $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
+                                   $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
+                                   $"-g 100 " +
+                                   (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
+                                   $"-pass {++pass} " +
+                                   $"-an " + $"-nostdin " +
+                                   $"-f null -";
+
                 {
-                    FileName = "ffmpeg",
-                    Arguments =
-                        $"-i \"{filePath}\" " +
-                        $"-ss {ss} " +
-                        (to.Any() ? $"-to {to} " : "") +
-                        $"-map 0:v " +
-                        $"-map 0:a? " +
-                        $"-shortest " +
-                        $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
-                        $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
-                        $"-g 100 " +
-                        (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
-                        $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " + // todo copy audio
-                        $"-nostdin " +
-                        $"\"{outputFinal}\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "ffmpeg",
+                            Arguments = argsPass1,
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+
+                    string err = await process.StandardError.ReadToEndAsync(cancellationToken);
+                    if (err.Any())
+                    {
+                        Console.WriteLine(err);
+                    }
                 }
-            };
 
-            process.Start();
-            process.BeginOutputReadLine();
+                string argsPass2 = args.Replace($"-g 100 ", $"-g 100 -pass {++pass} ");
+                {
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "ffmpeg",
+                            Arguments = argsPass2,
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
 
-            string err = await process.StandardError.ReadToEndAsync(cancellationToken);
-            if (err.Any())
+                    process.Start();
+                    process.BeginOutputReadLine();
+
+                    string err = await process.StandardError.ReadToEndAsync(cancellationToken);
+                    if (err.Any())
+                    {
+                        Console.WriteLine(err);
+                    }
+                }
+            }
+            else
             {
-                Console.WriteLine(err);
+                {
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "ffmpeg",
+                            Arguments = args,
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+
+                    string err = await process.StandardError.ReadToEndAsync(cancellationToken);
+                    if (err.Any())
+                    {
+                        Console.WriteLine(err);
+                    }
+                }
             }
         }
 
@@ -449,7 +524,7 @@ public static class MediaAnalyser
                                 // start silence
                                 ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
                             }
-                            else
+                            else // todo? this can produce 0s files sometimes
                             {
                                 // end silence
                                 to = TimeSpan.FromSeconds(silenceStart + silenceLeewaySeconds).ToString("c");
@@ -475,6 +550,7 @@ public static class MediaAnalyser
                                     throw new Exception("case 4 silence_start not 0");
                                 }
 
+                                // silenceEnd -= silenceStart;
                                 ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
                             }
 
