@@ -429,11 +429,36 @@ public static class MediaAnalyser
         return outputFinal;
     }
 
+    public static float GetVolumeAdjust_Inner(float meanVolume, float maxVolume)
+    {
+        const float targetVolumeMean = -15.0f;
+        const float targetVolumeMax = -0.5f;
+
+        float volumeAdjust = 0;
+        if (meanVolume > targetVolumeMean)
+        {
+            volumeAdjust = targetVolumeMean - meanVolume;
+        }
+        else if (meanVolume < targetVolumeMean && maxVolume < targetVolumeMax)
+        {
+            float maxAdjustMax = Math.Abs(maxVolume - targetVolumeMax);
+            float maxAdjustMean = Math.Abs(meanVolume - targetVolumeMean);
+            float min = maxAdjustMax > maxAdjustMean ? maxAdjustMean : maxAdjustMax;
+            float max = maxAdjustMax > maxAdjustMean ? maxAdjustMax : maxAdjustMean;
+            volumeAdjust = Math.Clamp(volumeAdjust, min, max);
+        }
+
+        if (maxVolume > targetVolumeMax && volumeAdjust > targetVolumeMax)
+        {
+            volumeAdjust += targetVolumeMax - maxVolume;
+        }
+
+        Console.WriteLine($"volumeAdjust: {volumeAdjust}");
+        return volumeAdjust;
+    }
+
     public static float GetVolumeAdjust(MediaAnalyserResult result)
     {
-        float targetVolumeMean = -15.1f;
-        float targetVolumeMax = -0.6f;
-
         if (result.VolumeDetect == null || !result.VolumeDetect.Any())
         {
             return 0;
@@ -454,18 +479,7 @@ public static class MediaAnalyser
             throw new Exception("meanVolume is 0; this usually means the input file was inaccessible");
         }
 
-        float volumeAdjust = 0;
-        if (meanVolume > targetVolumeMean)
-        {
-            volumeAdjust = targetVolumeMean - meanVolume;
-        }
-
-        if (maxVolume > targetVolumeMax && volumeAdjust > targetVolumeMax)
-        {
-            volumeAdjust += targetVolumeMax - maxVolume;
-        }
-
-        Console.WriteLine($"volumeAdjust: {volumeAdjust}");
+        float volumeAdjust = GetVolumeAdjust_Inner(meanVolume, maxVolume);
         return volumeAdjust;
     }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -213,5 +213,21 @@ public class MediaAnalyserTests
         {
             Assert.Fail();
         }
+    }
+
+    [Test]
+    public async Task Test_GetVolumeAdjust_Inner()
+    {
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-10, 0) - -5.0f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-10, -2) - -5.0f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-15, 0) - -0.5f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-14, -0.5f) - -1f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-19, -0.5f) - 0f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-19, -0.6f) - 0.1f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-16, -2) - 1f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-17, -2) - 1.5f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-17, -1) - 0.5f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-16, -1) - 0.5f) < 0.1);
+        Assert.That(Math.Abs(MediaAnalyser.GetVolumeAdjust_Inner(-25, 0) - -0.5f) < 0.1);
     }
 }
