@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -38,7 +38,7 @@ public class Player
 
     public bool IsBuffered { get; set; }
 
-    public PlayerLootingInfo LootingInfo { get; set; } = new();
+    public PlayerLootingInfo LootingInfo { get; set; } = new(); // todo null if not looting
 
     public bool IsSkipping { get; set; }
 

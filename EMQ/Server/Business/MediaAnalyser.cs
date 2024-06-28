@@ -256,6 +256,7 @@ public static class MediaAnalyser
         bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
         bool encodeAudioSeparately = !canCopyAudio && false;
         bool cropSilence = true;
+        bool doTwoPass = true;
 
         float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
         // volumeAdjust = 13;
@@ -275,9 +276,6 @@ public static class MediaAnalyser
         else
         {
             // todo copy audio
-            bool twoPass = true;
-            int pass = 0;
-
             string args = $"-i \"{filePath}\" " + $"-ss {ss} " + (to.Any() ? $"-to {to} " : "") +
                           $"-map 0:v " +
                           $"-map 0:a? " + $"-shortest " +
@@ -286,21 +284,11 @@ public static class MediaAnalyser
                           $"-g 100 " +
                           (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
                           $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
-                          $"-nostdin " + $"\"{outputFinal}\"";
+                          $"-nostdin \"{outputFinal}\"";
 
-            if (twoPass)
+            if (doTwoPass)
             {
-                string argsPass1 = $"-i \"{filePath}\" " + $"-ss {ss} " + (to.Any() ? $"-to {to} " : "") +
-                                   $"-map 0:v " +
-                                   $"-map 0:a? " + $"-shortest " +
-                                   $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
-                                   $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
-                                   $"-g 100 " +
-                                   (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
-                                   $"-pass {++pass} " +
-                                   $"-an " + $"-nostdin " +
-                                   $"-f null -";
-
+                string argsPass1 = args.Replace($"-nostdin \"{outputFinal}\"", "-nostdin -pass 1 -an -f null -");
                 {
                     var process = new Process()
                     {
@@ -325,7 +313,7 @@ public static class MediaAnalyser
                     }
                 }
 
-                string argsPass2 = args.Replace($"-g 100 ", $"-g 100 -pass {++pass} ");
+                string argsPass2 = args.Replace($"-g 100 ", $"-g 100 -pass 2 ");
                 {
                     var process = new Process()
                     {
@@ -485,7 +473,8 @@ public static class MediaAnalyser
 
     public static async Task<(string ss, string to)> GetSsAndTo(string filePath, CancellationToken cancellationToken)
     {
-        float silenceLeewaySeconds = 0.2f;
+        const float silenceLeewaySeconds = 0.2f;
+        const float silenceStartTolerance = 0.4f;
 
         string ss = TimeSpan.FromSeconds(0).ToString("c");
         string to = "";
@@ -533,7 +522,7 @@ public static class MediaAnalyser
                                 split[0].Replace("silence_end: ", "").Trim(),
                                 CultureInfo.InvariantCulture);
 
-                            if (silenceStart <= 0)
+                            if (silenceStart <= silenceStartTolerance)
                             {
                                 // start silence
                                 ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
@@ -558,8 +547,7 @@ public static class MediaAnalyser
                                     split[0].Replace("silence_end: ", "").Trim(),
                                     CultureInfo.InvariantCulture);
 
-                                // need a little bit of tolerance here
-                                if (silenceStart > 0.4f)
+                                if (silenceStart > silenceStartTolerance)
                                 {
                                     throw new Exception("case 4 silence_start not 0");
                                 }

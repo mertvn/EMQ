@@ -38,7 +38,7 @@ public sealed class Room : IDisposable
 
     public ConcurrentQueue<Player> HotjoinQueue { get; set; } = new();
 
-    public Player Owner { get; set; }
+    public Player Owner { get; set; } // todo only store id
 
     public DateTime CreatedAt { get; }
 
