@@ -622,6 +622,7 @@ public static class Program
         ret = ret.Replace("''", "\"");
         ret = ret.Replace("“", "\"");
         ret = ret.Replace("”", "\"");
+        ret = ret.Replace(" chorus & ", " & ", StringComparison.OrdinalIgnoreCase); // https://vndb.org/v2236
 
         if (ret.EndsWith(','))
         {
