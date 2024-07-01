@@ -36,7 +36,7 @@
             <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.Song.ToStringLatin()))">
                 @context.Song.ToStringLatin()
             </TemplateColumn>
-            <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true" IsDefaultSort="SortDirection.Descending"/>
+            <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
             <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.CorrectPercentage))">
                 @(Math.Round((double)context.CorrectPercentage, 2))% (@(context.Correct)/@(context.Played))
             </TemplateColumn>
@@ -62,7 +62,7 @@
                     @context.UserLite.Username
                 }
             </TemplateColumn>
-            <PropertyColumn Property="@(x => x.QuizCount)" Title="Quiz count" Sortable="true" IsDefaultSort="SortDirection.Descending"/>
+            <PropertyColumn Property="@(x => x.QuizCount)" Title="Quiz count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
         </QuickGrid>
     </div>
     <br/>

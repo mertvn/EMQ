@@ -12,7 +12,7 @@
     {
         <div class="grid" tabindex="-1">
             <QuickGrid Items="@SHSongStats">
-                <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSort="SortDirection.Descending"/>
+                <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
                 <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
                 <TemplateColumn Title="Correct?" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.IsCorrect)">
                     @if (context.IsCorrect)
