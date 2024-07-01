@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>
   </PropertyGroup>
@@ -10,8 +10,8 @@
 <!--    <PackageReference Include="BlazorWasmProfiler" Version="0.0.1" />-->
     <PackageReference Include="Blazorise.Charts" Version="1.1.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="0.1.0-alpha.22351.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.3" />
     <PackageReference Include="Blazorise.Bootstrap5" Version="1.1.5" />
     <PackageReference Include="Blazorise.Components" Version="1.1.5" />
