@@ -558,7 +558,7 @@ public partial class QuizPage
     {
         Console.WriteLine("Force returning to Room");
         // NavigationManager.NavigateTo just does nothing sometimes on Firefox
-        await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}/RoomPage");
+        await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}RoomPage");
     }
 
     private async Task LeaveQuiz()
