@@ -24,7 +24,7 @@
         <div>
             @if (true)
             {
-                string myProfileHref = $"eu/{ClientState.Session.Player.Id}";
+                string myProfileHref = $"eu{ClientState.Session.Player.Id}";
                 <a href="@myProfileHref">My profile page</a>
                 <br/>
             }

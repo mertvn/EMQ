@@ -4,8 +4,8 @@
 @inject HttpClient _client
 @inject NavigationManager _navigation
 
-<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId - 1}"))">Prev</button>
-<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu/{UserId + 1}"))">Next</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId + 1}"))">Next</button>
 
 @if (PublicUserInfo != null)
 {
@@ -54,7 +54,7 @@
             <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ResCommonPlayers>.ByAscending(x => x.UserLite.Username))">
                 @if (!context.UserLite.Username.StartsWith("Guest"))
                 {
-                    string href = $"eu/{context.UserLite.Id}";
+                    string href = $"eu{context.UserLite.Id}";
                     <a href="@href">@context.UserLite.Username</a>
                 }
                 else
