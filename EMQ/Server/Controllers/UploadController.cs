@@ -41,7 +41,7 @@ public class UploadController : ControllerBase
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("PostFile")]
-    public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files)
+    public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files, [FromForm] int mId)
     {
         if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
         {
@@ -75,12 +75,7 @@ public class UploadController : ControllerBase
             }
 
             string extension = mediaTypeInfo.Extension;
-
-            // this may fail but we don't really care
-            string[] split = file.FileName.Split(";");
-            int mId = Convert.ToInt32(split[0]);
-
-            string untrustedFileName = split[1];
+            string untrustedFileName = file.FileName;
             uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
             Console.WriteLine($"processing {uploadResult.FileName} by {session.Player.Username}");
 

@@ -206,7 +206,8 @@ public class ClientUtils
             using var content = new MultipartFormDataContent();
             var fileContent = new StreamContent(file.OpenReadStream(UploadConstants.MaxFilesizeBytes));
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-            content.Add(fileContent, "\"files\"", $"{mId};{file.Name}");
+            content.Add(fileContent, "\"files\"", file.Name);
+            content.Add(new StringContent(mId.ToString()), "\"mId\"");
 
             // await Task.Delay(TimeSpan.FromSeconds(1));
             var response = await client.PostAsync("Upload/PostFile", content);
