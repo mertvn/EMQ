@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -82,7 +82,7 @@ public class UploadController : ControllerBase
 
             string untrustedFileName = split[1];
             uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
-            Console.WriteLine($"processing {uploadResult.FileName}");
+            Console.WriteLine($"processing {uploadResult.FileName} by {session.Player.Username}");
 
             var song = (await DbManager.SelectSongsMIds(new[] { mId }, false)).SingleOrDefault();
             if (song == null)

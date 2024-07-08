@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -307,7 +307,7 @@ public class EntryPoints_Encoding
                     continue;
                 }
 
-                string tempPath = "M:/!!!temp/" + $"{songLink.Url.LastSegment()}";
+                string tempPath = "O:/!!!temp/" + $"{songLink.Url.LastSegment()}";
                 if (!File.Exists(tempPath))
                 {
                     await ServerUtils.Client.DownloadFile(tempPath, new Uri(songLink.Url));
