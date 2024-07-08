@@ -22,6 +22,13 @@ using SharpCompress.Common;
 
 namespace Tests;
 
+// todo ps3
+// ps3dec.exe --iso 1.iso --auto --tc 4
+
+// todo psv
+// pkg2zip.exe -x 1.pkg
+// psvpfsparser.exe -i in -o out -f http://cma. -z zRifKey
+
 // ReSharper disable once InconsistentNaming
 public class EntryPoints_Encoding
 {
@@ -873,6 +880,309 @@ public class EntryPoints_Encoding
             else
             {
                 Console.WriteLine($"no valid files found in: {isoFile}");
+            }
+        }
+    }
+
+    class Platform
+    {
+        public string Name { get; set; } = "";
+
+        public string Cpk { get; set; } = "";
+
+        public string[] Pmf { get; set; } = Array.Empty<string>();
+
+        public string[] Oma { get; set; } = Array.Empty<string>();
+
+        public string[] Two64 { get; set; } = Array.Empty<string>();
+    }
+
+    [Test, Explicit]
+    public async Task DoGeneric_Step2_Encode()
+    {
+        var platforms = new List<Platform>()
+        {
+            new()
+            {
+                Name = "psp",
+                Cpk = "cpk",
+                Pmf = new[] { "pmf" },
+                Oma = new[] { "oma" }, // todo at3 for tamayura
+                Two64 = new[] { "264" }
+            },
+            new()
+            {
+                Name = "ps3",
+                Cpk = "cpk",
+                Pmf = new[] { "pam", "usm" },
+                Oma = new[] { "aa3", "adx", "genh" },
+                Two64 = new[] { "264", "m2v" }
+            },
+            new()
+            {
+                Name = "ps2",
+                Cpk = "cpk",
+                Pmf = new[] { "pss" },
+                Oma = new[] { "ss2" },
+                Two64 = new[] { "m2v" }
+            },
+            new()
+            {
+                Name = "psvita",
+                Cpk = "cpk",
+                Pmf = new[] { "pam", "usm" },
+                Oma = new[] { "aa3", "adx", "genh" },
+                Two64 = new[] { "264", "m2v" }
+            },
+        };
+
+        foreach (Platform platform in platforms)
+        {
+            string inputDir = $@"M:\!emqraw\!{platform.Name}\!isodump";
+            Directory.SetCurrentDirectory(inputDir);
+
+            bool doCpk = !string.IsNullOrEmpty(platform.Cpk) && true;
+            if (doCpk)
+            {
+                var cpkFiles = Directory.EnumerateFiles(inputDir, $"*.{platform.Cpk}", SearchOption.AllDirectories);
+                foreach (string cpkFile in cpkFiles)
+                {
+                    if (Directory.Exists(cpkFile.Replace($".{platform.Cpk}", "", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // Console.WriteLine($"skipping {cpkFile}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"processing {cpkFile}");
+                        var process = new Process()
+                        {
+                            StartInfo = new ProcessStartInfo()
+                            {
+                                FileName = @"G:\jp\Programs\YACpkTool_v1.1\YACpkTool.exe",
+                                Arguments = $"\"{cpkFile}\"",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = false,
+                                RedirectStandardError = false,
+                            }
+                        };
+
+                        process.Start();
+                        await process.WaitForExitAsync();
+                    }
+                }
+            }
+
+            bool doPmf = true;
+            if (doPmf)
+            {
+                foreach (string possiblePmf in platform.Pmf)
+                {
+                    var pmfFiles = Directory.EnumerateFiles(inputDir, $"*.{possiblePmf}", SearchOption.AllDirectories);
+                    foreach (string pmfFile in pmfFiles)
+                    {
+                        bool alreadyExists = false;
+                        var possibleOmaFiles = platform.Oma.SelectMany(x =>
+                        {
+                            var ret = new List<string>
+                            {
+                                // todo important prop
+                                pmfFile.Replace($".{possiblePmf}", $"_000001BD.{x}",
+                                    StringComparison.OrdinalIgnoreCase),
+                                pmfFile.Replace($".{possiblePmf}", $"_40534641.{x}",
+                                    StringComparison.OrdinalIgnoreCase),
+                                pmfFile.Replace($".{possiblePmf}", $"_400001BD.{x}",
+                                    StringComparison.OrdinalIgnoreCase),
+                                pmfFile.Replace($".{possiblePmf}", $"_A00001BD.{x}",
+                                    StringComparison.OrdinalIgnoreCase)
+                            };
+                            return ret;
+                        });
+
+                        foreach (string possibleOmaFile in possibleOmaFiles)
+                        {
+                            if (File.Exists(possibleOmaFile))
+                            {
+                                // Console.WriteLine($"skipping {possibleOmaFile}");
+                                alreadyExists = true;
+                                break;
+                            }
+                        }
+
+                        if (alreadyExists)
+                        {
+                            continue;
+                        }
+
+                        // foreach (string possibleOma in platform.Oma)
+                        // {
+                        // string omaFile = pmfFile.Replace($".{possiblePmf}", $"_000001BD.{possibleOma}",
+                        //     StringComparison.OrdinalIgnoreCase);
+                        // if (File.Exists(omaFile))
+                        // {
+                        //     // Console.WriteLine($"skipping {omaFile}");
+                        // }
+                        // else
+                        // {
+
+                        if (new FileInfo(pmfFile).Length == 0)
+                        {
+                            Console.WriteLine($"skipping 0 byte file: {pmfFile}");
+                            continue;
+                        }
+
+                        Console.WriteLine($"processing {pmfFile}");
+                        var process = new Process()
+                        {
+                            StartInfo = new ProcessStartInfo()
+                            {
+                                FileName =
+                                    @"G:\Code\VGMToolbox\vgmtoolboxdemultiplexercli\bin\Debug\vgmtoolboxdemultiplexercli.exe",
+                                Arguments = $"\"{pmfFile}\"",
+                                CreateNoWindow = true,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                            }
+                        };
+
+                        process.Start();
+                        process.BeginOutputReadLine();
+
+                        string err = await process.StandardError.ReadToEndAsync();
+                        if (err.Any())
+                        {
+                            Console.WriteLine(err);
+                        }
+                        // }
+                        // }
+                    }
+                }
+            }
+
+            bool doOma = true;
+            if (doOma)
+            {
+                foreach (string possibleOma in platform.Oma)
+                {
+                    var omaFiles = Directory.EnumerateFiles(inputDir, $"*.{possibleOma}", SearchOption.AllDirectories);
+                    foreach (string omaFile in omaFiles)
+                    {
+                        string? videoFile = null;
+                        foreach (string possibleTwo64 in platform.Two64)
+                        {
+                            string searchStr = $"BD.{possibleOma}";
+                            bool contains = omaFile.Contains(searchStr);
+                            string possibleVideoFile = omaFile.Replace(searchStr, $"E0.{possibleTwo64}");
+                            if (contains && File.Exists(possibleVideoFile))
+                            {
+                                videoFile = possibleVideoFile;
+                                break;
+                            }
+                            else
+                            {
+                                // idonteven
+                                string searchStr2 = $"40534641.{possibleOma}";
+                                bool contains2 = omaFile.Contains(searchStr2);
+                                string possibleVideoFile2 = omaFile.Replace(searchStr2, $"40534656.{possibleTwo64}");
+                                if (contains2 && File.Exists(possibleVideoFile2))
+                                {
+                                    videoFile = possibleVideoFile2;
+                                    break;
+                                }
+                                else
+                                {
+                                    // idontevenpart2theelectricboogaloo
+                                    string searchStr3 = $"400001BD.{possibleOma}";
+                                    bool contains3 = omaFile.Contains(searchStr3);
+                                    string possibleVideoFile3 =
+                                        omaFile.Replace(searchStr3, $"000001E0.{possibleTwo64}");
+                                    if (contains3 && File.Exists(possibleVideoFile3))
+                                    {
+                                        videoFile = possibleVideoFile3;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        // ...
+                                        string searchStr4 = $"A00001BD.{possibleOma}";
+                                        bool contains4 = omaFile.Contains(searchStr4);
+                                        string possibleVideoFile4 =
+                                            omaFile.Replace(searchStr4, $"000001E0.{possibleTwo64}");
+                                        if (contains4 && File.Exists(possibleVideoFile4))
+                                        {
+                                            videoFile = possibleVideoFile4;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (videoFile == null)
+                        {
+                            throw new Exception($".264 file not found for {omaFile}");
+                        }
+
+                        string flacFile = $"{omaFile}.flac";
+                        if (File.Exists(flacFile))
+                        {
+                            // Console.WriteLine($"skipping {omaFile}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"processing {omaFile}");
+                            {
+                                var process = new Process()
+                                {
+                                    StartInfo = new ProcessStartInfo()
+                                    {
+                                        FileName = "ffmpeg",
+                                        Arguments = $"-nostdin -i \"{omaFile}\" \"{flacFile}\"",
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false,
+                                        RedirectStandardOutput = true,
+                                        RedirectStandardError = true,
+                                    }
+                                };
+
+                                process.Start();
+                                process.BeginOutputReadLine();
+
+                                string err = await process.StandardError.ReadToEndAsync();
+                                if (err.Any())
+                                {
+                                    Console.WriteLine(err);
+                                }
+                            }
+
+                            {
+                                var process = new Process()
+                                {
+                                    StartInfo = new ProcessStartInfo()
+                                    {
+                                        FileName = "ffmpeg",
+                                        Arguments =
+                                            $"-nostdin -i \"{videoFile}\" -i \"{flacFile}\" -c copy -map 0:v:0 -map 1:a:0 -strict -2 \"{videoFile}.mp4\"",
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false,
+                                        RedirectStandardOutput = true,
+                                        RedirectStandardError = true,
+                                    }
+                                };
+
+                                process.Start();
+                                process.BeginOutputReadLine();
+
+                                string err = await process.StandardError.ReadToEndAsync();
+                                if (err.Any())
+                                {
+                                    Console.WriteLine(err);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
