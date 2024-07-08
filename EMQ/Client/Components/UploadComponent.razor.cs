@@ -91,7 +91,8 @@ public partial class UploadComponent
                 continue;
             }
 
-            ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
+            string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size}";
+            ClientState.UploadResults[tempUploadId] = uploadResult;
             await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
             await Utils.WaitWhile(async () =>
             {
