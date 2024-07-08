@@ -86,7 +86,7 @@
         Refresh
     </button>
     <ul>
-        @foreach ((string _, UploadResult file) in ClientState.UploadResults.OrderBy(x=> x.Value.FileName))
+        @foreach ((string _, UploadResult file) in ClientState.UploadResults.OrderBy(x => x.Value.FileName))
         {
             <li>
                 @file.FileName (@file.ChosenMatch?.ToString())
