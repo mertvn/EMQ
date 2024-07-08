@@ -221,6 +221,8 @@ public class ClientUtils
                     uploadResult.ResultUrl = res.ResultUrl;
                     uploadResult.ErrorStr = res.ErrorStr;
                     uploadResult.ExtractedResultUrl = res.ExtractedResultUrl;
+                    uploadResult.UploadId = res.UploadId;
+                    uploadResult.ChosenMatch = res.ChosenMatch;
                 }
                 else
                 {

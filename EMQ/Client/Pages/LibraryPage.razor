@@ -80,6 +80,48 @@
     <VndbStaffNotesParserComponent></VndbStaffNotesParserComponent>
 </details>
 
+<details>
+    <summary>Upload status</summary>
+    <button type="button" id="ButtonRefreshUploadStatus" class="btn btn-primary" style="margin: 5px" @onclick="@StateHasChanged">
+        Refresh
+    </button>
+    <ul>
+        @foreach ((string _, UploadResult file) in ClientState.UploadResults)
+        {
+            <li>
+                @file.FileName (@file.ChosenMatch?.ToString())
+                <br>
+                @if (file.Uploaded)
+                {
+                    <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
+                        <span>@file.ResultUrl</span>
+                    </a>
+                    <br/>
+                    @if (!string.IsNullOrEmpty(file.ExtractedResultUrl))
+                    {
+                        <a class="link-primary" href="@(file.ExtractedResultUrl)" target="_blank" style="display: inline-block;">
+                            <span>@file.ExtractedResultUrl</span>
+                        </a>
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(file.ErrorStr))
+                    {
+                        <span>Uploading...</span>
+                    }
+                    else
+                    {
+                        <span>@file.ErrorStr</span>
+                    }
+                }
+                <br>
+                <br>
+            </li>
+        }
+    </ul>
+</details>
+
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
         <Items>

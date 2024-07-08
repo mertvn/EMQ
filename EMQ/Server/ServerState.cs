@@ -44,6 +44,8 @@ public static class ServerState
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
 
+    public static ConcurrentDictionary<string, UploadQueueItem> UploadQueue { get; set; } = new();
+
     public static readonly ConcurrentDictionary<int, PumpQueue> PumpMessages = new();
 
     public static readonly ConcurrentDictionary<int, Thread> PumpThreads = new();

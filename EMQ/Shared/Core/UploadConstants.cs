@@ -7,8 +7,6 @@ public static class UploadConstants
 {
     public const int MaxFilesizeBytes = 1000 * 1024 * 1024; // 1000 MB
 
-    public const int MaxFilesPerRequest = 1;
-
     public const int MaxFilesSpecificSongUpload = 20;
 
     public const int MaxFilesBatchUpload = 200;

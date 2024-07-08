@@ -26,5 +26,12 @@ public class UploadResult
 
     public List<string> Artists { get; set; } = new();
 
-    public List<string> MBRecordingOrTrackIds { get; set; }  = new();
+    public List<string> MBRecordingOrTrackIds { get; set; } = new();
+
+    public string UploadId { get; set; } = "";
+
+    // null: no action taken so far
+    // true: currently being processed
+    // false: processing has finished
+    public bool? IsProcessing { get; set; }
 }

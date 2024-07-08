@@ -521,7 +521,7 @@ public class QuizManager
                 }
             }
 
-            return needToWait;
+            return Task.FromResult(needToWait);
         }, 160, Quiz.Room.QuizSettings.MaxWaitForLaggingPlayersMs);
 
         Quiz.QuizState.ExtraInfo = "";

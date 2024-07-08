@@ -92,6 +92,38 @@ public partial class UploadComponent
             }
 
             await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
+            await Utils.WaitWhile(async () =>
+            {
+                bool needToWait = true;
+                HttpResponseMessage res =
+                    await _client.PostAsJsonAsync("Upload/GetUploadResult", uploadResult.UploadId);
+                if (res.IsSuccessStatusCode)
+                {
+                    var content = (await res.Content.ReadFromJsonAsync<UploadResult>())!;
+                    uploadResult.Uploaded = content.Uploaded;
+                    uploadResult.FileName = content.FileName;
+                    uploadResult.ResultUrl = content.ResultUrl;
+                    uploadResult.ErrorStr = content.ErrorStr;
+                    uploadResult.ExtractedResultUrl = content.ExtractedResultUrl;
+                    uploadResult.UploadId = content.UploadId;
+                    uploadResult.ChosenMatch = content.ChosenMatch;
+                    ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
+                    StateHasChanged();
+
+                    if (content.IsProcessing != null && !content.IsProcessing.Value)
+                    {
+                        needToWait = false;
+                    }
+                }
+                else
+                {
+                    uploadResult.ErrorStr = "Failed to fetch upload status.";
+                    needToWait = false;
+                }
+
+                return needToWait;
+            }, 5000, UploadConstants.TimeoutSeconds * 1000);
+
             StateHasChanged();
         }
     }

@@ -45,11 +45,11 @@ public static class Utils
         return string.Join(" ", name.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
     }
 
-    public static async Task WaitWhile(Func<bool> condition, int frequency = 25, int timeout = -1)
+    public static async Task WaitWhile(Func<Task<bool>> condition, int frequency = 25, int timeout = -1)
     {
         var waitTask = Task.Run(async () =>
         {
-            while (condition()) await Task.Delay(frequency);
+            while (await condition()) await Task.Delay(frequency);
         });
 
         await Task.WhenAny(waitTask, Task.Delay(timeout));

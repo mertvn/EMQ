@@ -35,9 +35,8 @@ public class UploadController : ControllerBase
     private readonly ILogger<UploadController> _logger;
 
     [EnableRateLimiting(RateLimitKind.UploadFile)]
-    [RequestSizeLimit(UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
-    [RequestFormLimits(MultipartBodyLengthLimit =
-        UploadConstants.MaxFilesizeBytes * UploadConstants.MaxFilesPerRequest)]
+    [RequestSizeLimit(UploadConstants.MaxFilesizeBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = UploadConstants.MaxFilesizeBytes)]
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("PostFile")]
@@ -54,427 +53,59 @@ public class UploadController : ControllerBase
             return Unauthorized();
         }
 
-        int storageMode = 1; // 0: local disk, 1: SFTP
-        const string outDir = @"M:\a\mb\selfhoststorage\pending"; // only used if storageMode == 0
-        const int maxAllowedFiles = UploadConstants.MaxFilesPerRequest;
-        const long maxFileSize = UploadConstants.MaxFilesizeBytes;
+        // todo
+        // if (files.Count() > 1)
+        // {
+        //     uploadResult.ErrorStr = $"Only a single file is allowed per request";
+        //     return new CreatedResult(uploadResult.ResultUrl ?? "", uploadResult);
+        // }
 
-        List<UploadResult> uploadResults = new();
-        IFormFile[] formFiles = files as IFormFile[] ?? files.ToArray();
-        foreach (var file in formFiles)
+        var song = (await DbManager.SelectSongsMIds(new[] { mId }, false)).SingleOrDefault();
+        if (song == null)
         {
-            var uploadResult = new UploadResult();
-            uploadResults.Add(uploadResult);
-
-            if (formFiles.Length > maxAllowedFiles)
-            {
-                uploadResult.ErrorStr = $"Only {maxAllowedFiles} files is allowed per request";
-                continue;
-            }
-
-            switch (file.Length)
-            {
-                case 0:
-                    uploadResult.ErrorStr = "File length is 0";
-                    continue;
-                case > maxFileSize:
-                    uploadResult.ErrorStr = "File is too large";
-                    continue;
-            }
-
-            // todo check file signatures instead
-            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
-            if (mediaTypeInfo is null)
-            {
-                uploadResult.ErrorStr = "Invalid file format";
-                continue;
-            }
-
-            string extension = mediaTypeInfo.Extension;
-            string untrustedFileName = file.FileName;
-            uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
-            Console.WriteLine($"processing {uploadResult.FileName} by {session.Player.Username}");
-
-            var song = (await DbManager.SelectSongsMIds(new[] { mId }, false)).SingleOrDefault();
-            if (song == null)
-            {
-                throw new Exception("song is null");
-            }
-
-            bool isBgm = song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
-            FileStream? fs = null;
-            string? tempPath = null;
-            try
-            {
-                string guid = Guid.NewGuid().ToString();
-                string trustedFileNameForFileStorage = $"{guid}.{extension}";
-                tempPath = $"{Path.GetTempPath()}{trustedFileNameForFileStorage}";
-                fs = new FileStream(tempPath, FileMode.Create);
-                await file.CopyToAsync(fs);
-                fs.Position = 0;
-
-                if (mediaTypeInfo.RequiresEncode)
-                {
-                    await fs.DisposeAsync();
-                    string encodedPath;
-                    try
-                    {
-                        var cancellationTokenSource = new CancellationTokenSource();
-                        cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(55));
-
-                        await MediaAnalyser.SemaphoreEncode.WaitAsync(cancellationTokenSource.Token);
-                        try
-                        {
-                            encodedPath =
-                                await MediaAnalyser.EncodeIntoWebm(tempPath, 2, cancellationTokenSource.Token);
-                        }
-                        finally
-                        {
-                            MediaAnalyser.SemaphoreEncode.Release();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                        uploadResult.ErrorStr = $"Error encoding: {e.Message}";
-                        continue;
-                    }
-                    finally
-                    {
-                        if (System.IO.File.Exists(tempPath))
-                        {
-                            System.IO.File.Delete(tempPath);
-                        }
-                    }
-
-                    trustedFileNameForFileStorage = $"{guid}.webm";
-                    tempPath = encodedPath;
-                    fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read);
-                }
-                else if (mediaTypeInfo.RequiresTranscode)
-                {
-                    await fs.DisposeAsync();
-                    string transcodedPath;
-                    try
-                    {
-                        var cancellationTokenSource = new CancellationTokenSource();
-                        cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(25));
-
-                        await MediaAnalyser.SemaphoreTranscode.WaitAsync(cancellationTokenSource.Token);
-                        try
-                        {
-                            transcodedPath =
-                                await MediaAnalyser.TranscodeInto192KMp3(tempPath,
-                                    cancellationTokenSource.Token, !isBgm);
-                        }
-                        finally
-                        {
-                            MediaAnalyser.SemaphoreTranscode.Release();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                        uploadResult.ErrorStr = $"Error transcoding: {e.Message}";
-                        continue;
-                    }
-                    finally
-                    {
-                        if (System.IO.File.Exists(tempPath))
-                        {
-                            System.IO.File.Delete(tempPath);
-                        }
-                    }
-
-                    trustedFileNameForFileStorage = $"{guid}.mp3";
-                    tempPath = transcodedPath;
-                    fs = new FileStream(tempPath, FileMode.Open, FileAccess.Read);
-                }
-
-                string sha256 = CryptoUtils.Sha256Hash(fs);
-                Console.WriteLine($"sha256:{sha256}");
-
-                var dupesMel = await DbManager.FindMusicExternalLinkBySha256(sha256);
-                var dupesRq = await DbManager.FindReviewQueueBySha256(sha256);
-                if (dupesMel.Any() || dupesRq.Any())
-                {
-                    string dupeUrl = dupesMel.FirstOrDefault()?.url ?? dupesRq.First().url;
-                    Console.WriteLine($"dupe of {dupeUrl}");
-                    uploadResult.ResultUrl = dupeUrl.ReplaceSelfhostLink();
-                }
-                else
-                {
-                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    if (storageMode == 0)
-                    {
-                        // have not tested if this storageMode works properly
-                        Directory.CreateDirectory(outDir);
-                        string newPath = Path.Combine(outDir, trustedFileNameForFileStorage);
-                        System.IO.File.Copy(tempPath, newPath);
-
-                        var resourcePath = new Uri($"{Request.Scheme}://{Request.Host}/");
-                        uploadResult.ResultUrl =
-                            $"{resourcePath}selfhoststorage/userup/{trustedFileNameForFileStorage}";
-                    }
-                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    else if (storageMode == 1)
-                    {
-                        // we need to use a FileStream here because it seems like FFProbe doesn't work when using a MemoryStream
-                        ServerUtils.SftpFileUpload(
-                            UploadConstants.SftpHost, UploadConstants.SftpUsername,
-                            UploadConstants.SftpPassword,
-                            fs, Path.Combine(UploadConstants.SftpUserUploadDir, trustedFileNameForFileStorage));
-
-                        uploadResult.ResultUrl =
-                            $"https://emqselfhost/selfhoststorage/userup/{trustedFileNameForFileStorage}"
-                                .ReplaceSelfhostLink();
-                    }
-                    else
-                    {
-                        throw new Exception("invalid storageMode");
-                    }
-                }
-
-                uploadResult.Uploaded = true;
-                var songLink = new SongLink
-                {
-                    Url = uploadResult.ResultUrl.UnReplaceSelfhostLink(),
-                    Type = SongLinkType.Self,
-                    IsVideo = uploadResult.ResultUrl.IsVideoLink(),
-                    SubmittedBy = session.Player.Username,
-                    Sha256 = sha256,
-                };
-
-                await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
-                var extractedAnalysis = await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null);
-
-                // todo cleanup
-                if (songLink.IsVideo && extractedAnalysis != null)
-                {
-                    switch (extractedAnalysis.PrimaryAudioStreamCodecName)
-                    {
-                        case "opus":
-                            {
-                                string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.weba";
-                                Console.WriteLine(
-                                    $"extracting audio from video to {extractedOutputFinal}");
-
-                                var process = new Process()
-                                {
-                                    StartInfo = new ProcessStartInfo()
-                                    {
-                                        FileName = "ffmpeg",
-                                        Arguments =
-                                            $"-i \"{tempPath}\" " +
-                                            $"-map 0:a " +
-                                            $"-c copy " +
-                                            $"-f webm " +
-                                            $"-nostdin " +
-                                            $"\"{extractedOutputFinal}\"",
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false,
-                                        RedirectStandardOutput = true,
-                                        RedirectStandardError = true,
-                                    }
-                                };
-
-                                process.Start();
-                                process.BeginOutputReadLine();
-                                string err = await process.StandardError.ReadToEndAsync();
-                                if (err.Any())
-                                {
-                                    Console.WriteLine(err.Last());
-                                }
-
-                                string extractedTrustedFileNameForFileStorage = $"{guid}.weba";
-                                Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
-                                    "weba/",
-                                    extractedTrustedFileNameForFileStorage));
-
-                                fs = new FileStream(extractedOutputFinal, FileMode.Open,
-                                    FileAccess.Read);
-                                ServerUtils.SftpFileUpload(
-                                    UploadConstants.SftpHost, UploadConstants.SftpUsername,
-                                    UploadConstants.SftpPassword,
-                                    fs, Path.Combine(UploadConstants.SftpUserUploadDir, "weba/",
-                                        extractedTrustedFileNameForFileStorage));
-
-                                string extractedResultUrl =
-                                    $"https://emqselfhost/selfhoststorage/userup/weba/{extractedTrustedFileNameForFileStorage}"
-                                        .ReplaceSelfhostLink();
-
-                                uploadResult.ExtractedResultUrl = extractedResultUrl;
-                                var songLinkExtracted = new SongLink
-                                {
-                                    Url = extractedResultUrl.UnReplaceSelfhostLink(),
-                                    Type = SongLinkType.Self,
-                                    IsVideo = false,
-                                    SubmittedBy = session.Player.Username,
-                                    Sha256 = CryptoUtils.Sha256Hash(fs),
-                                };
-
-                                await fs.DisposeAsync();
-                                await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                    extractedOutputFinal,
-                                    false);
-                                break;
-                            }
-                        case "vorbis":
-                            {
-                                string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.ogg";
-                                Console.WriteLine(
-                                    $"extracting audio from video to {extractedOutputFinal}");
-
-                                var process = new Process()
-                                {
-                                    StartInfo = new ProcessStartInfo()
-                                    {
-                                        FileName = "ffmpeg",
-                                        Arguments =
-                                            $"-i \"{tempPath}\" " +
-                                            $"-map 0:a " +
-                                            $"-c copy " +
-                                            $"-nostdin " +
-                                            $"\"{extractedOutputFinal}\"",
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false,
-                                        RedirectStandardOutput = true,
-                                        RedirectStandardError = true,
-                                    }
-                                };
-
-                                process.Start();
-                                process.BeginOutputReadLine();
-                                string err = await process.StandardError.ReadToEndAsync();
-                                if (err.Any())
-                                {
-                                    Console.WriteLine(err.Last());
-                                }
-
-                                string extractedTrustedFileNameForFileStorage = $"{guid}.ogg";
-                                Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
-                                    extractedTrustedFileNameForFileStorage));
-
-                                fs = new FileStream(extractedOutputFinal, FileMode.Open,
-                                    FileAccess.Read);
-                                ServerUtils.SftpFileUpload(
-                                    UploadConstants.SftpHost, UploadConstants.SftpUsername,
-                                    UploadConstants.SftpPassword,
-                                    fs, Path.Combine(UploadConstants.SftpUserUploadDir,
-                                        extractedTrustedFileNameForFileStorage));
-
-                                string extractedResultUrl =
-                                    $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
-                                        .ReplaceSelfhostLink();
-
-                                uploadResult.ExtractedResultUrl = extractedResultUrl;
-                                var songLinkExtracted = new SongLink
-                                {
-                                    Url = extractedResultUrl.UnReplaceSelfhostLink(),
-                                    Type = SongLinkType.Self,
-                                    IsVideo = false,
-                                    SubmittedBy = session.Player.Username,
-                                    Sha256 = CryptoUtils.Sha256Hash(fs),
-                                };
-
-                                await fs.DisposeAsync();
-                                await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                    extractedOutputFinal,
-                                    false);
-                                break;
-                            }
-                        case "mp3":
-                            {
-                                string extractedOutputFinal = $"{Path.GetTempPath()}{guid}.mp3";
-                                Console.WriteLine(
-                                    $"extracting audio from video to {extractedOutputFinal}");
-
-                                var process = new Process()
-                                {
-                                    StartInfo = new ProcessStartInfo()
-                                    {
-                                        FileName = "ffmpeg",
-                                        Arguments =
-                                            $"-i \"{tempPath}\" " +
-                                            $"-map 0:a " +
-                                            $"-c copy " +
-                                            $"-nostdin " +
-                                            $"\"{extractedOutputFinal}\"",
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false,
-                                        RedirectStandardOutput = true,
-                                        RedirectStandardError = true,
-                                    }
-                                };
-
-                                process.Start();
-                                process.BeginOutputReadLine();
-                                string err = await process.StandardError.ReadToEndAsync();
-                                if (err.Any())
-                                {
-                                    Console.WriteLine(err.Last());
-                                }
-
-                                string extractedTrustedFileNameForFileStorage = $"{guid}.mp3";
-                                Console.WriteLine(Path.Combine(UploadConstants.SftpUserUploadDir,
-                                    "weba/",
-                                    extractedTrustedFileNameForFileStorage));
-
-                                fs = new FileStream(extractedOutputFinal, FileMode.Open,
-                                    FileAccess.Read);
-                                ServerUtils.SftpFileUpload(
-                                    UploadConstants.SftpHost, UploadConstants.SftpUsername,
-                                    UploadConstants.SftpPassword,
-                                    fs, Path.Combine(UploadConstants.SftpUserUploadDir,
-                                        extractedTrustedFileNameForFileStorage));
-
-                                string extractedResultUrl =
-                                    $"https://emqselfhost/selfhoststorage/userup/{extractedTrustedFileNameForFileStorage}"
-                                        .ReplaceSelfhostLink();
-
-                                uploadResult.ExtractedResultUrl = extractedResultUrl;
-                                var songLinkExtracted = new SongLink
-                                {
-                                    Url = extractedResultUrl.UnReplaceSelfhostLink(),
-                                    Type = SongLinkType.Self,
-                                    IsVideo = false,
-                                    SubmittedBy = session.Player.Username,
-                                    Sha256 = CryptoUtils.Sha256Hash(fs),
-                                };
-
-                                await fs.DisposeAsync();
-                                await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                    extractedOutputFinal,
-                                    false);
-                                break;
-                            }
-                        default:
-                            Console.WriteLine(
-                                $"unsupported codec when extracting audio: {extractedAnalysis.PrimaryAudioStreamCodecName}");
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                uploadResult.ErrorStr = $"Error uploading: {ex.Message}";
-            }
-            finally
-            {
-                if (fs != null)
-                {
-                    await fs.DisposeAsync();
-                }
-
-                if (tempPath != null && System.IO.File.Exists(tempPath))
-                {
-                    System.IO.File.Delete(tempPath);
-                }
-            }
+            return BadRequest("song is null");
         }
 
-        UploadResult single = uploadResults.Single();
-        return new CreatedResult(single.ResultUrl ?? "", single);
+        var uploadResult = new UploadResult();
+        var file = files.Single();
+        string uploadId = $"{session.Player.Id};{mId};{file.Length}";
+        while (!ServerState.UploadQueue.ContainsKey(uploadId))
+        {
+            string tempFsPath = $"{Path.GetTempPath()}{Guid.NewGuid().ToString()}";
+            var fs = new FileStream(tempFsPath, FileMode.Create);
+            await file.CopyToAsync(fs);
+            fs.Position = 0;
+
+            var myFormFile = new MyFormFile(file.Length, file.ContentType, file.FileName, fs, tempFsPath);
+            ServerState.UploadQueue.TryAdd(uploadId,
+                new UploadQueueItem(uploadId, song, myFormFile, uploadResult, session, Request));
+        }
+
+        uploadResult.UploadId = uploadId;
+        uploadResult.ErrorStr = "Uploaded, processing...";
+        uploadResult.FileName = file.FileName;
+        uploadResult.ChosenMatch = song;
+        return new CreatedResult(uploadResult.ResultUrl ?? "", uploadResult);
+    }
+
+    [HttpPost]
+    [Route("GetUploadResult")]
+    public async Task<ActionResult<UploadResult>> GetUploadResult([FromBody] string uploadId)
+    {
+        Session? session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        string[] split = uploadId.Split(';');
+        if (split[0] != session.Player.Id.ToString())
+        {
+            return Unauthorized();
+        }
+
+        return ServerState.UploadQueue.TryGetValue(uploadId, out var uploadQueueItem)
+            ? uploadQueueItem.UploadResult
+            : StatusCode(404);
     }
 }
