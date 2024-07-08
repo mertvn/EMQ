@@ -91,6 +91,7 @@ public partial class UploadComponent
                 continue;
             }
 
+            ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
             await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
             await Utils.WaitWhile(async () =>
             {

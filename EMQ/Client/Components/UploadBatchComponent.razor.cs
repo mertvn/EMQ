@@ -242,6 +242,7 @@ public partial class UploadBatchComponent
         StateHasChanged();
         var file = uploadResult.File!;
 
+        ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
         await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
         var waitTask = Utils.WaitWhile(async () =>
         {
