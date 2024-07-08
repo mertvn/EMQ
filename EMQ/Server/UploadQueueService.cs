@@ -83,7 +83,6 @@ public sealed class UploadQueueService : BackgroundService
                         {
                             while (ServerState.UploadQueue.ContainsKey(key))
                             {
-                                Console.WriteLine("removing from uq");
                                 ServerState.UploadQueue.TryRemove(key, out _);
                             }
                         }
