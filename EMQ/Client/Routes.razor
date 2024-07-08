@@ -1,7 +1,7 @@
 ﻿@* <Router *@
 @*      AppAssembly="@typeof(App).Assembly" *@
 @*      AdditionalAssemblies="new[] { typeof(BlazorWasmProfiler.BlazorTimerAttribute).Assembly }"> *@
-<Router AppAssembly="@typeof(App).Assembly">
+<Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1"/>

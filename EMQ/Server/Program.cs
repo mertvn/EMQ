@@ -187,6 +187,8 @@ builder.Services.AddHostedService<PumpService>();
 builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
 
+builder.Services.AddRazorComponents().AddInteractiveWebAssemblyComponents();
+
 builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
     .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
 
@@ -260,8 +262,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseBlazorFrameworkFiles();
-
 app.UseStaticFiles(new StaticFileOptions
 {
     HttpsCompression = HttpsCompressionMode.Compress,
@@ -317,12 +317,15 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 app.MapRazorPages();
 app.MapControllers();
 app.MapHub<GeneralHub>("/GeneralHub");
 app.MapHub<QuizHub>("/QuizHub");
-app.MapFallbackToFile("index.html");
+app.MapRazorComponents<App>()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(EMQ.Client._Imports).Assembly);
 
 const bool hasDb = true;
 bool precacheSongs = false && !app.Environment.IsDevelopment();

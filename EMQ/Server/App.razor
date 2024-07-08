@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 
 <head>
@@ -10,7 +10,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <title>EMQ</title>
+    <HeadOutlet @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)"/>
     <base href="/"/>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -23,20 +23,21 @@
     <link href="css/font-awesome-5.15.4/css/all.css" rel="stylesheet"/>
 
     <link href="css/app.css" rel="stylesheet"/>
-    <link href="EMQ.Client.styles.css" rel="stylesheet"/>
+    <link href="EMQ.Server.styles.css" rel="stylesheet"/>
 
     <link href="_content/Blazorise/blazorise.css" rel="stylesheet"/>
     <link href="_content/Blazorise.Bootstrap5/blazorise.bootstrap5.css" rel="stylesheet"/>
 </head>
 
 <body>
-<div id="app">
-    <svg class="loading-progress">
-        <circle r="40%" cx="50%" cy="50%"/>
-        <circle r="40%" cx="50%" cy="50%"/>
-    </svg>
-    <div class="loading-progress-text"></div>
-</div>
+@* <div id="app"> *@
+@*     <svg class="loading-progress"> *@
+@*         <circle r="40%" cx="50%" cy="50%"/> *@
+@*         <circle r="40%" cx="50%" cy="50%"/> *@
+@*     </svg> *@
+@*     <div class="loading-progress-text"></div> *@
+@* </div> *@
+<Routes @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)" />
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
@@ -46,7 +47,7 @@
 
 <script src="js/chart.min.js"></script>
 <script src="js/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="_framework/blazor.webassembly.js"></script>
+<script src="_framework/blazor.web.js"></script>
 
 <!--https://getbootstrap.com/docs/5.3/customize/color-modes/#javascript-->
 <script>
