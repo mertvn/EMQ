@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -78,6 +78,191 @@ public class EntryPoints_Encoding
                 {
                     Directory.Delete(outputDir);
                 }
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task SearchArchivesExtractIsoFromRar()
+    {
+        string inputDir = @"N:\!checkedsorted\";
+        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "mkv", "webm" };
+        string extractToDir = @"O:\!rarextract";
+        Directory.CreateDirectory(extractToDir);
+
+        var rarFiles = new List<string>();
+        string[] rarExtensions = { "rar", "zip", "7z", };
+        string[] isoExtensions = { "iso", "mdf", "img", "bin", "cdi" };
+        foreach (string rarExtension in rarExtensions)
+        {
+            rarFiles.AddRange(Directory.EnumerateFiles(inputDir, $"*.{rarExtension}", SearchOption.AllDirectories));
+        }
+
+        const char startChar = char.MinValue;
+        const char endChar = 'F';
+
+        rarFiles = rarFiles.Where(x =>
+        {
+            char firstChar = x.Replace(inputDir, "").First();
+            return firstChar is >= startChar and <= endChar;
+        }).ToList();
+
+        foreach (string rarFile in rarFiles)
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(600));
+
+            Console.WriteLine($"processing {rarFile}");
+            var process1 = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "7z",
+                    Arguments = $"l \"{rarFile}\" -p ",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process1.Start();
+            process1.BeginErrorReadLine();
+
+            string err = await process1.StandardOutput.ReadToEndAsync(cancellationTokenSource.Token);
+            try
+            {
+                if (isoExtensions.Any(x => err.Contains(x, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // string rarFilename = Path.GetFileNameWithoutExtension(rarFile);
+                    var parent = new DirectoryInfo(rarFile).Parent;
+                    // string finalDir = $"{extractToDir}/{parent!.Name}/{rarFilename}";
+                    string finalDir = $"{extractToDir}/{parent!.Name}";
+                    // if (Directory.Exists(finalDir))
+                    // {
+                    //     // Console.WriteLine($"skipping {finalDir}");
+                    //     continue;
+                    // }
+
+                    Directory.CreateDirectory(finalDir);
+                    var process2 = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "7z",
+                            Arguments = $"x \"{rarFile}\" -r -y -p -o\"{finalDir}\"",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process2.Start();
+                    process2.BeginErrorReadLine();
+
+                    string err2 = await process2.StandardOutput.ReadToEndAsync(cancellationTokenSource.Token);
+                    Console.WriteLine(err2);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error processing {rarFile}: {e.Message}");
+            }
+            finally
+            {
+                cancellationTokenSource.Dispose();
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task SearchArchivesIso()
+    {
+        string inputDir = @"N:\!checkedsorted";
+        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "mkv", "webm" };
+        string extractToDir = @"M:\!!tempiso";
+        Directory.CreateDirectory(extractToDir);
+
+        var isoFiles = new List<string>();
+        string[] isoExtensions = { "iso", "mdf", "img", "bin", "cdi" };
+        foreach (string isoExtension in isoExtensions)
+        {
+            isoFiles.AddRange(Directory.EnumerateFiles(inputDir, $"*.{isoExtension}", SearchOption.AllDirectories));
+        }
+
+        foreach (string isoFile in isoFiles)
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(60));
+
+            Console.WriteLine($"processing {isoFile}");
+            var process1 = new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "7z",
+                    Arguments = $"l \"{isoFile}\" -p ",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                }
+            };
+
+            process1.Start();
+            process1.BeginErrorReadLine();
+
+            string err = await process1.StandardOutput.ReadToEndAsync(cancellationTokenSource.Token);
+            try
+            {
+                if (searchForVideoExtensions.Any(x => err.Contains(x, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // var foundExtensions = searchForVideoExtensions.Where(x=> entry.Contains(x));
+                    // Console.WriteLine($"foundExtensions: {string.Join(",", foundExtensions)}");
+
+                    var parent = new DirectoryInfo(isoFile).Parent;
+                    // string isoFilename = Path.GetFileNameWithoutExtension(isoFile);
+                    string finalDir = $"{extractToDir}/{parent!.Name}";
+                    if (Directory.Exists(finalDir))
+                    {
+                        // Console.WriteLine($"skipping {finalDir}");
+                        continue;
+                    }
+
+                    Directory.CreateDirectory(finalDir);
+                    string extensionFilterStr = new(searchForVideoExtensions.SelectMany(x => $"\"*.{x}\" ").ToArray());
+                    var process2 = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "7z",
+                            Arguments = $"e \"{isoFile}\" -r -y -p -o\"{finalDir}\" {extensionFilterStr}",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process2.Start();
+                    process2.BeginErrorReadLine();
+
+                    string err2 = await process2.StandardOutput.ReadToEndAsync(cancellationTokenSource.Token);
+                    Console.WriteLine(err2);
+                }
+                else
+                {
+                    Console.WriteLine($"not found: {isoFile}");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error processing {isoFile}: {e.Message}");
+            }
+            finally
+            {
+                cancellationTokenSource.Dispose();
             }
         }
     }
