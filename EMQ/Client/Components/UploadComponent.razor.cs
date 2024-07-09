@@ -93,38 +93,41 @@ public partial class UploadComponent
 
             string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size}";
             ClientState.UploadResults[tempUploadId] = uploadResult;
-            await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
-            await Utils.WaitWhile(async () =>
+            bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
+            if (success)
             {
-                bool needToWait = true;
-                HttpResponseMessage res =
-                    await _client.PostAsJsonAsync("Upload/GetUploadResult", uploadResult.UploadId);
-                if (res.IsSuccessStatusCode)
+                await Utils.WaitWhile(async () =>
                 {
-                    var content = (await res.Content.ReadFromJsonAsync<UploadResult>())!;
-                    uploadResult.Uploaded = content.Uploaded;
-                    uploadResult.FileName = content.FileName;
-                    uploadResult.ResultUrl = content.ResultUrl;
-                    uploadResult.ErrorStr = content.ErrorStr;
-                    uploadResult.ExtractedResultUrl = content.ExtractedResultUrl;
-                    uploadResult.UploadId = content.UploadId;
-                    uploadResult.ChosenMatch = content.ChosenMatch;
-                    ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
-                    StateHasChanged();
-
-                    if (content.IsProcessing != null && !content.IsProcessing.Value)
+                    bool needToWait = true;
+                    HttpResponseMessage res =
+                        await _client.PostAsJsonAsync("Upload/GetUploadResult", uploadResult.UploadId);
+                    if (res.IsSuccessStatusCode)
                     {
+                        var content = (await res.Content.ReadFromJsonAsync<UploadResult>())!;
+                        uploadResult.Uploaded = content.Uploaded;
+                        uploadResult.FileName = content.FileName;
+                        uploadResult.ResultUrl = content.ResultUrl;
+                        uploadResult.ErrorStr = content.ErrorStr;
+                        uploadResult.ExtractedResultUrl = content.ExtractedResultUrl;
+                        uploadResult.UploadId = content.UploadId;
+                        uploadResult.ChosenMatch = content.ChosenMatch;
+                        ClientState.UploadResults[uploadResult.UploadId] = uploadResult;
+                        StateHasChanged();
+
+                        if (content.IsProcessing != null && !content.IsProcessing.Value)
+                        {
+                            needToWait = false;
+                        }
+                    }
+                    else
+                    {
+                        uploadResult.ErrorStr = "Failed to fetch upload status.";
                         needToWait = false;
                     }
-                }
-                else
-                {
-                    uploadResult.ErrorStr = "Failed to fetch upload status.";
-                    needToWait = false;
-                }
 
-                return needToWait;
-            }, 5000, UploadConstants.TimeoutSeconds * 1000);
+                    return needToWait;
+                }, 5000, UploadConstants.TimeoutSeconds * 1000);
+            }
 
             StateHasChanged();
         }

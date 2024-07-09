@@ -199,7 +199,8 @@ public class ClientUtils
         }
     }
 
-    public static async Task SendPostFileReq(HttpClient client, UploadResult uploadResult, IBrowserFile file, int mId)
+    public static async Task<bool> SendPostFileReq(HttpClient client, UploadResult uploadResult, IBrowserFile file,
+        int mId)
     {
         try
         {
@@ -223,10 +224,12 @@ public class ClientUtils
                     uploadResult.ExtractedResultUrl = res.ExtractedResultUrl;
                     uploadResult.UploadId = res.UploadId;
                     uploadResult.ChosenMatch = res.ChosenMatch;
+                    return true;
                 }
                 else
                 {
                     uploadResult.ErrorStr = "UploadResult was null";
+                    return false;
                 }
             }
             else
@@ -245,11 +248,14 @@ public class ClientUtils
                         uploadResult.ErrorStr = $"Something went wrong when uploading. ({response.StatusCode})";
                         break;
                 }
+
+                return false;
             }
         }
         catch (Exception ex)
         {
             uploadResult.ErrorStr = $"Client-side exception while uploading: {ex}";
+            return false;
         }
     }
 }
