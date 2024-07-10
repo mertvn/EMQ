@@ -153,6 +153,9 @@ public class PlayerPreferences
     public bool HideSpoilers { get; set; } = true;
 
     [Required]
+    public bool HideFlashingLights { get; set; } = true;
+
+    [Required]
     public bool SwapArtistNameAndSongTitleDropdowns { get; set; } = false;
 
     [Required]

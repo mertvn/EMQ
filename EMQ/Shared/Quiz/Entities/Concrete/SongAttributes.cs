@@ -16,4 +16,7 @@ public enum SongAttributes
 
     [Description("Unofficial")]
     Unofficial = 4,
+
+    [Description("Video contains flashing lights")]
+    FlashingLights = 8,
 }

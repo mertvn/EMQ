@@ -89,7 +89,7 @@
         @foreach ((string _, UploadResult file) in ClientState.UploadResults.OrderBy(x => x.Value.FileName))
         {
             <li>
-                @file.FileName (@file.ChosenMatch?.ToString())
+                @file.FileName (@file.ChosenMatch?.ToStringLatin())
                 <br>
                 @if (file.Uploaded)
                 {

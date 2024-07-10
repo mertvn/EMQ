@@ -246,7 +246,7 @@
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
                     {
-                        if (key != SongAttributes.Spoilers) // todo others, eventually
+                        if (key == SongAttributes.None)
                         {
                             continue;
                         }

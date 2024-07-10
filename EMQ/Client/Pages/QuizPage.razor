@@ -287,9 +287,18 @@
          (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None))
     {
         <p style="position: absolute; top: 40%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Click to show video</p>
-        @if (_correctAnswer != null && _correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers))
+
+        @if (_correctAnswer != null)
         {
-            <p style="position: absolute; top: 55%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Contains spoilers!</p>
+            @if (_correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers))
+            {
+                <p style="position: absolute; top: 55%; right: 22%; font-size: xxx-large; color: white; z-index: 3000">Contains spoilers!</p>
+            }
+
+            @if (_correctAnswer.Attributes.HasFlag(SongAttributes.FlashingLights))
+            {
+                <p style="position: absolute; top: 70%; right: 14%; font-size: xxx-large; color: white; z-index: 3000">Contains flashing lights!</p>
+            }
         }
     }
 

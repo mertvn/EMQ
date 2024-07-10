@@ -776,12 +776,22 @@ public partial class QuizPage
                     }
                 }
 
-                if (ClientState.Preferences is { HideSpoilers: true } &&
-                    _correctAnswer != null && _correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers) &&
-                    _currentSong != null && (_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false))
+                if (_currentSong != null && (_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false) &&
+                    _correctAnswer != null)
                 {
-                    // todo undo this, unless player manually toggles the setting
-                    ClientState.Preferences.HideVideo = true;
+                    if (ClientState.Preferences is { HideSpoilers: true } &&
+                        _correctAnswer.Attributes.HasFlag(SongAttributes.Spoilers))
+                    {
+                        // todo undo this, unless player manually toggles the setting
+                        ClientState.Preferences.HideVideo = true;
+                    }
+
+                    if (ClientState.Preferences is { HideFlashingLights: true } &&
+                        _correctAnswer.Attributes.HasFlag(SongAttributes.FlashingLights))
+                    {
+                        // todo undo this, unless player manually toggles the setting
+                        ClientState.Preferences.HideVideo = true;
+                    }
                 }
 
                 PageState.ProgressValue = 0;

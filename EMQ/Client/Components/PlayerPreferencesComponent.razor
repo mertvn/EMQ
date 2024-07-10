@@ -73,6 +73,10 @@
                                     <label for="HideSpoilers">Hide videos containing spoilers</label>
                                     <br/>
 
+                                    <InputCheckbox id="HideFlashingLights" class="form-check-input" @bind-Value="ClientState.Preferences.HideFlashingLights" style="margin: 5px"></InputCheckbox>
+                                    <label for="HideFlashingLights">Hide videos containing flashing lights</label>
+                                    <br/>
+
                                     <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
                                     <label for="SwapArtistNameAndSongTitleDropdowns">Swap the positions of the artist name and song title dropdowns</label>
                                     <br/>
