@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using EMQ.Client;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
@@ -70,7 +71,12 @@ public class EntryPoints_Encoding
                 var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(60));
 
-                _ = await MediaAnalyser.EncodeIntoWebm(filePath, 4, cancellationTokenSource.Token, outputFinal);
+                UploadOptions uploadOptions = new()
+                {
+                    DoTwoPass = true, ShouldCropSilence = true, ShouldAdjustVolume = true
+                };
+                _ = await MediaAnalyser.EncodeIntoWebm(filePath, 4, uploadOptions, cancellationTokenSource.Token,
+                    outputFinal);
             }
             catch (Exception e)
             {
