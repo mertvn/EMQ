@@ -68,7 +68,8 @@ public class UploadController : ControllerBase
 
         var uploadResult = new UploadResult();
         var file = files.Single();
-        string uploadId = $"{session.Player.Id};{mId};{file.Length}";
+        string filename = WebUtility.HtmlEncode(file.FileName);
+        string uploadId = $"{session.Player.Id};{mId};{file.Length};{filename}";
         while (!ServerState.UploadQueue.ContainsKey(uploadId))
         {
             string tempFsPath = $"{Path.GetTempPath()}{Guid.NewGuid().ToString()}";
@@ -76,7 +77,7 @@ public class UploadController : ControllerBase
             await file.CopyToAsync(fs);
             fs.Position = 0;
 
-            var myFormFile = new MyFormFile(file.Length, file.ContentType, file.FileName, fs, tempFsPath);
+            var myFormFile = new MyFormFile(file.Length, file.ContentType, filename, fs, tempFsPath);
             ServerState.UploadQueue.TryAdd(uploadId,
                 new UploadQueueItem(uploadId, song, myFormFile, uploadResult, session, Request));
         }

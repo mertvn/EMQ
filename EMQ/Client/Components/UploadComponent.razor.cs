@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -91,7 +92,8 @@ public partial class UploadComponent
                 continue;
             }
 
-            string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size}";
+            string filename = WebUtility.HtmlEncode(file.Name);
+            string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size};{filename}";
             ClientState.UploadResults[tempUploadId] = uploadResult;
             bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
             if (success)
