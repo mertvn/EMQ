@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using EMQ.Client;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
@@ -232,8 +233,8 @@ public static class MediaAnalyser
         }
     }
 
-    public static async Task<string> EncodeIntoWebm(string filePath, int threads, CancellationToken cancellationToken,
-        string? outputFinal = null)
+    public static async Task<string> EncodeIntoWebm(string filePath, int threads, UploadOptions uploadOptions,
+        CancellationToken cancellationToken, string? outputFinal = null)
     {
         Console.WriteLine("encoding into .webm");
         outputFinal ??= $"{Path.GetTempFileName()}.webm";
@@ -255,10 +256,9 @@ public static class MediaAnalyser
         bool requiresDownscale = result.Width > 1280 || result.Height > 768;
         bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
         bool encodeAudioSeparately = !canCopyAudio && false;
-        bool cropSilence = true;
-        bool doTwoPass = true;
-
-        float volumeAdjust = MediaAnalyser.GetVolumeAdjust(result);
+        bool cropSilence = uploadOptions.ShouldCropSilence;
+        bool doTwoPass = uploadOptions.DoTwoPass;
+        float volumeAdjust = uploadOptions.ShouldAdjustVolume ? MediaAnalyser.GetVolumeAdjust(result) : 0;
         // volumeAdjust = 13;
 
         string ss = TimeSpan.FromSeconds(0).ToString("c");
@@ -369,19 +369,19 @@ public static class MediaAnalyser
         return outputFinal;
     }
 
-    public static async Task<string> TranscodeInto192KMp3(string filePath, CancellationToken cancellationToken,
-        bool cropSilence)
+    public static async Task<string> TranscodeInto192KMp3(string filePath, UploadOptions uploadOptions,
+        CancellationToken cancellationToken)
     {
         Console.WriteLine("transcoding into .mp3");
         string outputFinal = $"{Path.GetTempFileName()}.mp3";
         const string audioEncoderName = "libmp3lame";
 
         var result = await Analyse(filePath, false, false);
-        float volumeAdjust = GetVolumeAdjust(result);
+        float volumeAdjust = uploadOptions.ShouldAdjustVolume ? GetVolumeAdjust(result) : 0;
 
         string ss = TimeSpan.FromSeconds(0).ToString("c");
         string to = "";
-        if (cropSilence)
+        if (uploadOptions.ShouldCropSilence)
         {
             (ss, to) = await GetSsAndTo(filePath, cancellationToken);
         }

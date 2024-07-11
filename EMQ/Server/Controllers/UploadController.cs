@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Client;
@@ -40,7 +41,8 @@ public class UploadController : ControllerBase
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("PostFile")]
-    public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files, [FromForm] int mId)
+    public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files, [FromForm] int mId,
+        [FromForm] string uploadOptionsStr)
     {
         if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
         {
@@ -66,6 +68,12 @@ public class UploadController : ControllerBase
             return BadRequest("song is null");
         }
 
+        var uploadOptions = JsonSerializer.Deserialize<UploadOptions>(uploadOptionsStr);
+        if (uploadOptions == null)
+        {
+            return BadRequest("uploadOptions is null");
+        }
+
         var uploadResult = new UploadResult();
         var file = files.Single();
         string filename = WebUtility.HtmlEncode(file.FileName);
@@ -79,7 +87,7 @@ public class UploadController : ControllerBase
 
             var myFormFile = new MyFormFile(file.Length, file.ContentType, filename, fs, tempFsPath);
             ServerState.UploadQueue.TryAdd(uploadId,
-                new UploadQueueItem(uploadId, song, myFormFile, uploadResult, session, Request));
+                new UploadQueueItem(uploadId, song, myFormFile, uploadResult, session, Request, uploadOptions));
         }
 
         uploadResult.UploadId = uploadId;

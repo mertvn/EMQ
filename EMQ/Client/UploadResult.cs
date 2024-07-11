@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -34,4 +36,19 @@ public class UploadResult
     // true: currently being processed
     // false: processing has finished
     public bool? IsProcessing { get; set; }
+}
+
+public class UploadOptions
+{
+    [Required]
+    [DefaultValue(true)]
+    public bool DoTwoPass { get; set; } = true;
+
+    [Required]
+    [DefaultValue(true)]
+    public bool ShouldCropSilence { get; set; } = true;
+
+    [Required]
+    [DefaultValue(true)]
+    public bool ShouldAdjustVolume { get; set; } = true;
 }

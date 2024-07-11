@@ -200,7 +200,7 @@ public class ClientUtils
     }
 
     public static async Task<bool> SendPostFileReq(HttpClient client, UploadResult uploadResult, IBrowserFile file,
-        int mId)
+        int mId, UploadOptions uploadOptions)
     {
         try
         {
@@ -209,6 +209,7 @@ public class ClientUtils
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
             content.Add(fileContent, "\"files\"", file.Name);
             content.Add(new StringContent(mId.ToString()), "\"mId\"");
+            content.Add(new StringContent(JsonSerializer.Serialize(uploadOptions)), "\"uploadOptionsStr\"");
 
             // await Task.Delay(TimeSpan.FromSeconds(1));
             var response = await client.PostAsync("Upload/PostFile", content);

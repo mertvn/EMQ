@@ -38,6 +38,8 @@ public partial class UploadBatchComponent
 
     private List<Task> UploadTasks { get; } = new();
 
+    public UploadOptions UploadOptions { get; set; } = new();
+
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         if (UploadTasks.Any(x => !x.IsCompleted))
@@ -246,7 +248,7 @@ public partial class UploadBatchComponent
         string filename = WebUtility.HtmlEncode(file.Name);
         string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size};{filename}";
         ClientState.UploadResults[tempUploadId] = uploadResult;
-        bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
+        bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId, UploadOptions);
         if (success)
         {
             var waitTask = Utils.WaitWhile(async () =>

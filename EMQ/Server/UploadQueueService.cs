@@ -160,7 +160,8 @@ public sealed class UploadQueueService : BackgroundService
                     {
                         uploadResult.ErrorStr = "Encoding...";
                         encodedPath =
-                            await MediaAnalyser.EncodeIntoWebm(tempPath, 2, cancellationTokenSource.Token);
+                            await MediaAnalyser.EncodeIntoWebm(tempPath, 2, value.UploadOptions,
+                                cancellationTokenSource.Token);
                     }
                     finally
                     {
@@ -201,7 +202,7 @@ public sealed class UploadQueueService : BackgroundService
                         uploadResult.ErrorStr = "Transcoding...";
                         transcodedPath =
                             await MediaAnalyser.TranscodeInto192KMp3(tempPath,
-                                cancellationTokenSource.Token, !isBgm);
+                                value.UploadOptions, cancellationTokenSource.Token);
                     }
                     finally
                     {

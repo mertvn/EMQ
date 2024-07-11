@@ -26,6 +26,8 @@ public partial class UploadComponent
 
     private string StatusText { get; set; } = "";
 
+    public UploadOptions UploadOptions { get; set; } = new();
+
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         // todo? cancellation
@@ -95,7 +97,7 @@ public partial class UploadComponent
             string filename = WebUtility.HtmlEncode(file.Name);
             string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size};{filename}";
             ClientState.UploadResults[tempUploadId] = uploadResult;
-            bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId);
+            bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId, UploadOptions);
             if (success)
             {
                 await Utils.WaitWhile(async () =>

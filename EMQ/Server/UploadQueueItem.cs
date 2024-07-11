@@ -33,7 +33,7 @@ public class MyFormFile
 public class UploadQueueItem
 {
     public UploadQueueItem(string id, Song song, MyFormFile myFormFile, UploadResult uploadResult, Session session,
-        HttpRequest request)
+        HttpRequest request, UploadOptions uploadOptions)
     {
         Id = id;
         Song = song;
@@ -41,6 +41,7 @@ public class UploadQueueItem
         UploadResult = uploadResult;
         Session = session;
         Request = request;
+        UploadOptions = uploadOptions;
     }
 
     public string Id { get; }
@@ -56,4 +57,6 @@ public class UploadQueueItem
     public HttpRequest Request { get; }
 
     public DateTime CreatedAt { get; } = DateTime.UtcNow;
+
+    public UploadOptions UploadOptions { get; }
 }

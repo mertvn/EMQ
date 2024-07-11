@@ -36,6 +36,25 @@ else
     </p>
 }
 
+<details>
+    <summary>Upload options</summary>
+    <label>
+        <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.DoTwoPass" style="margin: 5px"></InputCheckbox>
+        2-pass encoding
+    </label>
+    <br/>
+    <label>
+        <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldCropSilence" style="margin: 5px"></InputCheckbox>
+        Crop silence
+    </label>
+    <br/>
+    <label>
+        <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldAdjustVolume" style="margin: 5px"></InputCheckbox>
+        Adjust volume
+    </label>
+    <br/>
+</details>
+
 <p>
     Allowed formats: @(IsBGMMode ? UploadConstants.ValidMediaTypesBgmStr : UploadConstants.ValidMediaTypesStr)
     <br/>
