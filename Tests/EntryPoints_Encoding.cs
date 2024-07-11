@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -192,9 +192,9 @@ public class EntryPoints_Encoding
     [Test, Explicit]
     public async Task SearchArchivesIso()
     {
-        string inputDir = @"N:\!checkedsorted";
+        string inputDir = @"O:\!rarextract";
         string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "mkv", "webm" };
-        string extractToDir = @"M:\!!tempiso";
+        string extractToDir = @"M:\!!tempisofromrar";
         Directory.CreateDirectory(extractToDir);
 
         var isoFiles = new List<string>();
@@ -263,6 +263,73 @@ public class EntryPoints_Encoding
 
                     string err2 = await process2.StandardOutput.ReadToEndAsync(cancellationTokenSource.Token);
                     Console.WriteLine(err2);
+
+                    string[] filesFinal = Directory.GetFiles(finalDir, "*", SearchOption.AllDirectories);
+                    if (!filesFinal.Any())
+                    {
+                        Directory.Delete(finalDir, true);
+                        continue;
+                    }
+
+                    foreach (string fileFinal in filesFinal)
+                    {
+                        bool isValidVideoFile = true;
+                        try
+                        {
+                            Console.WriteLine($"analyzing {fileFinal}");
+                            IMediaAnalysis mediaInfo = await FFProbe.AnalyseAsync(fileFinal);
+                            // todo additional checks?
+                            Console.WriteLine($"duration: {mediaInfo.Duration.TotalSeconds}s");
+                            if (mediaInfo.Duration > TimeSpan.FromSeconds(3600))
+                            {
+                                Console.WriteLine("too long");
+                                isValidVideoFile = false;
+                            }
+                            else if (mediaInfo.Duration > TimeSpan.FromSeconds(1) &&
+                                     mediaInfo.Duration < TimeSpan.FromSeconds(25))
+                            {
+                                Console.WriteLine("too short 1-25");
+                                isValidVideoFile = false;
+                            }
+                            else if (mediaInfo.Duration <= TimeSpan.FromSeconds(1))
+                            {
+                                Console.WriteLine("too short <= 1");
+                                isValidVideoFile = false;
+                            }
+
+                            if (fileFinal.Contains("demo", StringComparison.OrdinalIgnoreCase) ||
+                                fileFinal.Contains("デモ"))
+                            {
+                                Console.WriteLine("demo");
+                                isValidVideoFile = false;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            if (e.Message.Contains("Invalid data found when processing input") ||
+                                e.Message.Contains("End of file") ||
+                                e.Message.Contains("Invalid frame size") ||
+                                e.Message.Contains("Not yet implemented") ||
+                                e.Message.Contains("Failed to read frame"))
+                            {
+                                Console.WriteLine(e.Message);
+                                isValidVideoFile = false;
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+
+                        if (!isValidVideoFile)
+                        {
+                            File.Delete(fileFinal);
+                            if (Directory.GetFiles(finalDir, "*", SearchOption.AllDirectories).Length == 0)
+                            {
+                                Directory.Delete(finalDir, true);
+                            }
+                        }
+                    }
                 }
                 else
                 {
