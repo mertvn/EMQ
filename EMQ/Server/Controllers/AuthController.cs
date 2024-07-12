@@ -679,4 +679,62 @@ public class AuthController : ControllerBase
         session.Player.Avatar = req;
         return req;
     }
+
+    [CustomAuthorize(PermissionKind.Vote)]
+    [HttpPost]
+    [Route("UpsertMusicVote")]
+    public async Task<ActionResult<MusicVote>> UpsertMusicVote([FromBody] ReqUpsertMusicVote req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        bool success;
+        MusicVote musicVote;
+        if (req.Vote is null)
+        {
+            musicVote = new MusicVote { music_id = req.MusicId, user_id = session.Player.Id, };
+            success = await DbManager.DeleteEntity(musicVote);
+        }
+        else
+        {
+            musicVote = new MusicVote
+            {
+                music_id = req.MusicId,
+                user_id = session.Player.Id,
+                vote = req.Vote.Value,
+                updated_at = DateTime.UtcNow,
+            };
+            success = await DbManager.UpsertEntity(musicVote);
+        }
+
+        if (success)
+        {
+            Console.WriteLine(
+                $"p{session.Player.Id} {session.Player.Username} upserted music vote {req.MusicId} = {req.Vote}");
+            return musicVote;
+        }
+        else
+        {
+            return StatusCode(520);
+        }
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetUserMusicVotes")]
+    public async Task<ActionResult<MusicVote[]>> GetUserMusicVotes([FromBody] int userId)
+    {
+        return await DbManager.GetUserMusicVotes(userId);
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetMusicVotes")]
+    public async Task<ActionResult<ResGetMusicVotes>> GetMusicVotes([FromBody] int musicId)
+    {
+        return await DbManager.GetMusicVotes(musicId);
+    }
 }

@@ -50,6 +50,10 @@ public partial class Song
 
     public SongAttributes Attributes { get; set; } = SongAttributes.None;
 
+    public float VoteAverage { get; set; }
+
+    public int VoteCount { get; set; }
+
     public override string ToString()
     {
         var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();

@@ -35,7 +35,7 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
         DefaultGuestPermissions.Concat(new[]
         {
             PermissionKind.User, PermissionKind.JoinRanked, PermissionKind.UploadSongLink,
-            PermissionKind.ReportSongLink, PermissionKind.StoreQuizSettings
+            PermissionKind.ReportSongLink, PermissionKind.StoreQuizSettings, PermissionKind.Vote
         }).ToArray();
 
     public static PermissionKind[] DefaultImportHelperPermissions { get; } =
@@ -144,6 +144,7 @@ public enum PermissionKind
     UploadSongLink = 3002,
     ReportSongLink = 3003,
     StoreQuizSettings = 3004,
+    Vote = 3005,
 
     ImportHelper = 3700,
 

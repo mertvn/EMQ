@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -10,6 +11,8 @@ public class ResGetPublicUserInfoSongs
     public ResMostPlayedSongs[] MostPlayedSongs { get; set; } = Array.Empty<ResMostPlayedSongs>();
 
     public ResCommonPlayers[] CommonPlayers { get; set; } = Array.Empty<ResCommonPlayers>();
+
+    public ResUserMusicVotes[] UserMusicVotes { get; set; } = Array.Empty<ResUserMusicVotes>();
 }
 
 public class ResMostPlayedSongs
@@ -32,4 +35,11 @@ public class ResCommonPlayers
     public UserLite UserLite { get; set; } = new();
 
     public int QuizCount { get; set; }
+}
+
+public class ResUserMusicVotes
+{
+    public Song Song { get; set; } = new();
+
+    public MusicVote MusicVote { get; set; } = new();
 }

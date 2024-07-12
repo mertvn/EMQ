@@ -524,6 +524,16 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 // }
             }
 
+            var musicVotes =
+                (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = ANY(@mIds)",
+                    new { mIds })).GroupBy(x => x.music_id).ToArray();
+
+            foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
+            {
+                songs[musicVote.Key].VoteAverage = (float)Math.Round(musicVote.Average(x => x.vote!.Value), 2) / 10;
+                songs[musicVote.Key].VoteCount = musicVote.Count();
+            }
+
             // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
             return songs.Values.ToList();
         }
@@ -4648,17 +4658,27 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var resMostPlayedSongs =
             (await connection.QueryAsync<ResMostPlayedSongs>(sqlMostPlayedSongs, new { userId })).ToArray();
-        if (!resMostPlayedSongs.Any())
+
+        var musicVotes = await GetUserMusicVotes(userId);
+        var resUserMusicVotes = musicVotes.Select(x => new ResUserMusicVotes { MusicVote = x }).ToArray();
+
+        if (!resMostPlayedSongs.Any() && !resUserMusicVotes.Any())
         {
             return null;
         }
 
         var songs =
-            (await SelectSongsMIds(resMostPlayedSongs.Select(x => x.MusicId).ToArray(), false))
+            (await SelectSongsMIds(
+                resMostPlayedSongs.Select(x => x.MusicId).Concat(musicVotes.Select(x => x.music_id)).ToArray(), false))
             .ToDictionary(x => x.Id, x => x);
         foreach (ResMostPlayedSongs resMostPlayedSong in resMostPlayedSongs)
         {
             resMostPlayedSong.Song = songs[resMostPlayedSong.MusicId];
+        }
+
+        foreach (ResUserMusicVotes resUserMusicVote in resUserMusicVotes)
+        {
+            resUserMusicVote.Song = songs[resUserMusicVote.MusicVote.music_id];
         }
 
         var resCommonPlayers =
@@ -4696,7 +4716,7 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
 
         var res = new ResGetPublicUserInfoSongs
         {
-            MostPlayedSongs = resMostPlayedSongs, CommonPlayers = commonPlayers,
+            MostPlayedSongs = resMostPlayedSongs, CommonPlayers = commonPlayers, UserMusicVotes = resUserMusicVotes,
         };
 
         return res;
@@ -4844,5 +4864,28 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
 
         var ret = new ServerActivityStats { DailyPlayers = resDailyPlayers };
         return ret;
+    }
+
+    public static async Task<MusicVote[]> GetUserMusicVotes(int userId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return (await connection.QueryAsync<MusicVote>("select * from music_vote where user_id = @userId",
+            new { userId })).ToArray();
+    }
+
+    public static async Task<ResGetMusicVotes> GetMusicVotes(int musicId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var musicVotes = (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = @musicId",
+            new { musicId })).ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = musicVotes.Select(x => x.user_id).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+        return new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes };
     }
 }

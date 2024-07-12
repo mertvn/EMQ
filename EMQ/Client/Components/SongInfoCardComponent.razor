@@ -1,7 +1,9 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Auth.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using System.Globalization
+@using EMQ.Shared.Core.SharedDbEntities
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
 
@@ -31,6 +33,25 @@
                     }
                 </TemplateColumn>
                 <PropertyColumn Property="@(x => x.Guess)" Title="Guess" Sortable="true"/>
+            </QuickGrid>
+        </div>
+    }
+</GenericModal>
+
+<GenericModal @ref="@_MusicVotesModalRef"
+              Title="@(Song?.Id > 0 ? Song.ToStringLatin() : "")"
+              Size="@Blazorise.ModalSize.Large">
+    @if (MusicVotes != null)
+    {
+        <div class="grid" tabindex="-1">
+            <QuickGrid Items="@MusicVotes">
+                <PropertyColumn Property="@(x => x.updated_at)" Title="Vote date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                <TemplateColumn Title="Username" Sortable="true">
+                    @Utils.UserIdToUsername(ResGetMusicVotes!.UsernamesDict, context.user_id)
+                </TemplateColumn>
+                <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => x.vote))">
+                    @(((float)context.vote! / 10).ToString(CultureInfo.InvariantCulture))
+                </TemplateColumn>
             </QuickGrid>
         </div>
     }
@@ -238,8 +259,33 @@
                     </div>
                 }
 
+            <br/>
             @if (Song.Id > 0)
             {
+                @if (Song.VoteCount > 0)
+                {
+                    <div class="songRating" @onclick="OnclickSongRatingDiv" style="cursor: pointer; margin-bottom: 4px;">
+                        Rating: @Song.VoteAverage.ToString("F2", CultureInfo.InvariantCulture) (@Song.VoteCount)
+                    </div>
+                }
+
+                @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Vote))
+                {
+                    bool hasVote = ClientState.MusicVotes.TryGetValue(Song.Id, out MusicVote? musicVote);
+                    <span>My vote: </span>
+                    <input type="text" placeholder="" style="width: 50px;"
+                           @bind:get="@(!hasVote ? "" : ((float)musicVote!.vote! / 10).ToString(CultureInfo.InvariantCulture))"
+                           @bind:set="@(new Func<string, Task>(async value => await OnSongVote(value)))"/>
+
+                    @if (hasVote)
+                    {
+                        <span style="display: inline-block; cursor: pointer; margin-left: 4px;"
+                              @onclick="@(async () => { var res = await SendUpsertMusicVoteReq(Song.Id, null); if (res != null) { ClientState.MusicVotes.Remove(Song.Id); ForceRender = true; } })">
+                            🗑
+                        </span>
+                    }
+                }
+
                 bool open = Song.Attributes > 0;
                 <br/>
                 <details open=@open>

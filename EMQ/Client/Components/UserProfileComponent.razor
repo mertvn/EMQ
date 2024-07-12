@@ -1,6 +1,8 @@
 ﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
+@using System.Globalization
 @inject HttpClient _client
 @inject NavigationManager _navigation
 
@@ -28,11 +30,38 @@
     <br/>
 }
 
+@if (UserMusicVotes != null)
+{
+    <h4>Song votes</h4>
+
+    <span>@UserMusicVotes.Count() votes total, average @((((float)UserMusicVotes.Average(x => x.MusicVote.vote)! / 10)).ToString("F2", CultureInfo.InvariantCulture))</span>
+    <br/>
+    <div>
+        <Paginator State="@_paginationUserMusicVotes"/>
+    </div>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@UserMusicVotes" Pagination="@_paginationUserMusicVotes">
+            <PropertyColumn Property="@(x => x.MusicVote.updated_at)" Title="Vote date" Format="s" Sortable="true"/>
+            <TemplateColumn Title="Vote" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
+                @(((float)context.MusicVote.vote! / 10).ToString(CultureInfo.InvariantCulture))
+            </TemplateColumn>
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.Song.ToStringLatin()))">
+                @context.Song.ToStringLatin()
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+    <br/>
+}
+
 @if (MostPlayedSongs != null)
 {
     <h4>Most played songs</h4>
+
+    <div>
+        <Paginator State="@_paginationMostPlayedSongs"/>
+    </div>
     <div class="grid" tabindex="-1">
-        <QuickGrid Items="@MostPlayedSongs">
+        <QuickGrid Items="@MostPlayedSongs" Pagination="@_paginationMostPlayedSongs">
             <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.Song.ToStringLatin()))">
                 @context.Song.ToStringLatin()
             </TemplateColumn>
@@ -49,8 +78,12 @@
 @if (CommonPlayers != null)
 {
     <h4>Most played players</h4>
+
+    <div>
+        <Paginator State="@_paginationCommonPlayers"/>
+    </div>
     <div class="grid" tabindex="-1">
-        <QuickGrid Items="@CommonPlayers">
+        <QuickGrid Items="@CommonPlayers" Pagination="@_paginationCommonPlayers">
             <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ResCommonPlayers>.ByAscending(x => x.UserLite.Username))">
                 @if (!context.UserLite.Username.StartsWith("Guest"))
                 {
@@ -79,6 +112,14 @@
 
     private IQueryable<ResCommonPlayers>? CommonPlayers { get; set; }
 
+    private IQueryable<ResUserMusicVotes>? UserMusicVotes { get; set; }
+
+    private readonly PaginationState _paginationMostPlayedSongs = new() { ItemsPerPage = 100 };
+
+    private readonly PaginationState _paginationCommonPlayers = new() { ItemsPerPage = 25 };
+
+    private readonly PaginationState _paginationUserMusicVotes = new() { ItemsPerPage = 50 };
+
     protected override async Task OnParametersSetAsync()
     {
         HttpResponseMessage res1 =
@@ -100,11 +141,13 @@
             var content = (await res2.Content.ReadFromJsonAsync<ResGetPublicUserInfoSongs>())!;
             MostPlayedSongs = content.MostPlayedSongs.AsQueryable();
             CommonPlayers = content.CommonPlayers.AsQueryable();
+            UserMusicVotes = content.UserMusicVotes.AsQueryable();
         }
         else
         {
             MostPlayedSongs = null;
             CommonPlayers = null;
+            UserMusicVotes = null;
         }
     }
 

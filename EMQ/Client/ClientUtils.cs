@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -10,6 +11,7 @@ using EMQ.Client.Components;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components;
@@ -156,6 +158,19 @@ public class ClientUtils
 
                         await TryRestorePreferences();
                         await ClientConnectionManager.StartManagingConnection();
+
+                        const bool fetchMusicVotes = true;
+                        if (fetchMusicVotes)
+                        {
+                            HttpResponseMessage resMusicVote =
+                                await Client.PostAsJsonAsync("Auth/GetUserMusicVotes", session.Player.Id);
+                            if (resMusicVote.IsSuccessStatusCode)
+                            {
+                                ClientState.MusicVotes =
+                                    (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
+                                        x => x.music_id, x => x);
+                            }
+                        }
                     }
                     else
                     {

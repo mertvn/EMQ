@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -24,8 +28,22 @@ public partial class SongInfoCardComponent
 
     private IQueryable<SHSongStats>? SHSongStats { get; set; }
 
+    private bool ForceRender { get; set; }
+
+    private GenericModal _MusicVotesModalRef { get; set; } = null!;
+
+    private IQueryable<MusicVote>? MusicVotes { get; set; }
+
+    public ResGetMusicVotes? ResGetMusicVotes { get; set; }
+
     protected override bool ShouldRender()
     {
+        if (ForceRender)
+        {
+            ForceRender = false;
+            return true;
+        }
+
         if (Song is null || _currentSongId == Song.Id)
         {
             // Console.WriteLine("should not render");
@@ -92,5 +110,42 @@ public partial class SongInfoCardComponent
             SHSongStats = (await res.Content.ReadFromJsonAsync<SHSongStats[]>())!.AsQueryable();
             _shSongStatsModalRef.Show();
         }
+    }
+
+    private async Task OnclickSongRatingDiv()
+    {
+        var res = await _client.PostAsJsonAsync("Auth/GetMusicVotes", Song!.Id);
+        if (res.IsSuccessStatusCode)
+        {
+            ResGetMusicVotes = (await res.Content.ReadFromJsonAsync<ResGetMusicVotes>())!;
+            MusicVotes = ResGetMusicVotes.MusicVotes.AsQueryable();
+            _MusicVotesModalRef.Show();
+        }
+    }
+
+    private async Task OnSongVote(string value)
+    {
+        value = value.Replace(',', '.');
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
+        {
+            short sh = (short)(f * 10);
+            if (sh is >= 10 and <= 100)
+            {
+                var res = await SendUpsertMusicVoteReq(Song!.Id, sh);
+                if (res != null)
+                {
+                    ClientState.MusicVotes[Song.Id] = res;
+                }
+            }
+        }
+
+        ForceRender = true;
+    }
+
+    private async Task<MusicVote?> SendUpsertMusicVoteReq(int musicId, short? vote)
+    {
+        var req = new ReqUpsertMusicVote(musicId, vote);
+        var res = await _client.PostAsJsonAsync("Auth/UpsertMusicVote", req);
+        return res.IsSuccessStatusCode ? (await res.Content.ReadFromJsonAsync<MusicVote>())! : null;
     }
 }
