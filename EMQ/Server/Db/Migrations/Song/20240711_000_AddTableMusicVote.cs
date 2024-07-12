@@ -18,6 +18,9 @@ public class AddTableMusicVote : Migration
             .WithColumn("updated_at").AsDateTimeOffset().NotNullable();
 
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("user_id");
+
+        Execute.Sql(
+            @"ALTER TABLE music_vote ADD CONSTRAINT check_vote CHECK ( vote >= 10 AND vote <= 100 );");
     }
 
     public override void Down()

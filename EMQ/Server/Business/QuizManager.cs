@@ -1532,7 +1532,7 @@ public class QuizManager
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                 listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
-                                validMids: validMids, invalidMids: invalidMids);
+                                validMids: validMids, invalidMids: invalidMids, ownerUserId: Quiz.Room.Owner.Id);
                             break;
                         }
                     case ListDistributionKind.Balanced:
@@ -1570,7 +1570,8 @@ public class QuizManager
                                     Quiz.Room.QuizSettings.Duplicates,
                                     validSourcesDict[pId].OrderBy(x => Random.Shared.Next()).ToList(),
                                     filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                    validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft));
+                                    validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
+                                    ownerUserId: Quiz.Room.Owner.Id));
                             }
 
                             if (!Quiz.Room.QuizSettings.Duplicates)
@@ -1636,7 +1637,8 @@ public class QuizManager
                 {
                     var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
                         Quiz.Room.QuizSettings.Duplicates, validSources,
-                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList());
+                        filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                        ownerUserId: Quiz.Room.Owner.Id);
 
                     if (!selectedSongs.Any())
                     {
@@ -2075,7 +2077,8 @@ public class QuizManager
             Quiz.Room.QuizSettings.Duplicates,
             validSources.SelectMany(x => x.Value).ToList(),
             Quiz.Room.QuizSettings.Filters,
-            players: Quiz.Room.Players.ToList());
+            players: Quiz.Room.Players.ToList(),
+            ownerUserId: Quiz.Room.Owner.Id);
 
         if (!dbSongs.Any())
         {

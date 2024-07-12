@@ -1284,4 +1284,38 @@ order by user_id";
         int count = await DbManager.SelectCountUnsafe("music");
         await DbManager.RecalculateSongStats(Enumerable.Range(1, count).ToHashSet());
     }
+
+    [Test, Explicit]
+    public static async Task PopulateMusicVote()
+    {
+        if (ConnectionHelper.GetConnectionString().Contains("erogemusicquiz.com"))
+        {
+            throw new Exception("wrong db");
+        }
+
+        const int numPlayers = 1_000;
+        const int votesPerPlayer = 200;
+        int count = await DbManager.SelectCountUnsafe("music");
+        for (int i = 1; i <= numPlayers; i++)
+        {
+            for (int j = 1; j <= votesPerPlayer; j++)
+            {
+                var musicVote = new MusicVote
+                {
+                    music_id = Random.Shared.Next(1, count),
+                    user_id = Random.Shared.Next(1, numPlayers),
+                    vote = (short?)Random.Shared.Next(10, 100),
+                    updated_at = DateTime.UtcNow
+                };
+                try
+                {
+                    await DbManager.UpsertEntity(musicVote);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+        }
+    }
 }

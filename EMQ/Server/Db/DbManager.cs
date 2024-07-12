@@ -1838,7 +1838,7 @@ GROUP BY artist_id";
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
         List<int>? validMids = null, List<int>? invalidMids = null,
-        Dictionary<SongSourceSongType, int>? songTypesLeft = null)
+        Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -2170,6 +2170,42 @@ GROUP BY artist_id";
                         $"lower(mel.submitted_by) = ANY({players.Select(x => x.Username.ToLowerInvariant()).ToList()})");
                     queryMusicIds.Append($")");
                 }
+
+                if (filters.SongRatingAverageStart != Constants.QFSongRatingAverageMin ||
+                    filters.SongRatingAverageEnd != Constants.QFSongRatingAverageMax)
+                {
+                    // TOSCALE
+                    var musicVotes =
+                        await connection.QueryAsync<(int mId, float avg)>(
+                            @"SELECT music_id, avg(vote) * 10 FROM music_vote GROUP BY music_id");
+
+                    var validMidsMusicVotes = musicVotes.Where(x =>
+                            x.avg >= filters.SongRatingAverageStart &&
+                            x.avg <= filters.SongRatingAverageEnd)
+                        .Select(x => x.mId);
+
+                    validMids = validMids == null
+                        ? validMidsMusicVotes.ToList()
+                        : validMidsMusicVotes.Intersect(validMids).ToList();
+                }
+
+                if (filters.OwnersSongRatingAverageStart != Constants.QFSongRatingAverageMin ||
+                    filters.OwnersSongRatingAverageEnd != Constants.QFSongRatingAverageMax)
+                {
+                    var musicVotes =
+                        await connection.QueryAsync<(int mId, float avg)>(
+                            @"SELECT music_id, avg(vote) * 10 FROM music_vote where user_id = @ownerUserId GROUP BY music_id",
+                            new { ownerUserId });
+
+                    var validMidsMusicVotes = musicVotes.Where(x =>
+                            x.avg >= filters.OwnersSongRatingAverageStart &&
+                            x.avg <= filters.OwnersSongRatingAverageEnd)
+                        .Select(x => x.mId);
+
+                    validMids = validMids == null
+                        ? validMidsMusicVotes.ToList()
+                        : validMidsMusicVotes.Intersect(validMids).ToList();
+                }
             }
 
             if (validSources != null && validSources.Any())
@@ -2207,12 +2243,12 @@ GROUP BY artist_id";
                 invalidMids.AddRange(allMidsOfExcluded);
             }
 
-            if (validMids != null && validMids.Any())
+            if (validMids != null)
             {
                 queryMusicIds.Append($@" AND m.id = ANY({validMids})");
             }
 
-            if (invalidMids != null && invalidMids.Any())
+            if (invalidMids != null)
             {
                 queryMusicIds.Append($@" AND NOT (m.id = ANY({invalidMids}))");
             }

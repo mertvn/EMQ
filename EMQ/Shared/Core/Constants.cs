@@ -63,7 +63,11 @@ public static class Constants
 
     public const int QFVoteCountMax = 25000;
 
-    public const int QFStartTimePercentageStart = 0;
+    public const int QFStartTimePercentageMin = 0;
 
-    public const int QFStartTimePercentageEnd = 100;
+    public const int QFStartTimePercentageMax = 100;
+
+    public const int QFSongRatingAverageMin = 100;
+
+    public const int QFSongRatingAverageMax = 1000;
 }

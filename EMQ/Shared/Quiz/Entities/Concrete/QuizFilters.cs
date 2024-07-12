@@ -115,15 +115,31 @@ public class QuizFilters
 
     [ProtoMember(18)]
     [Required]
-    [DefaultValue(Constants.QFStartTimePercentageStart)]
-    [Range(Constants.QFStartTimePercentageStart, Constants.QFStartTimePercentageEnd)]
-    public int StartTimePercentageStart { get; set; } = Constants.QFStartTimePercentageStart;
+    [DefaultValue(Constants.QFStartTimePercentageMin)]
+    [Range(Constants.QFStartTimePercentageMin, Constants.QFStartTimePercentageMax)]
+    public int StartTimePercentageStart { get; set; } = Constants.QFStartTimePercentageMin;
 
     [ProtoMember(19)]
     [Required]
-    [DefaultValue(Constants.QFStartTimePercentageEnd)]
-    [Range(Constants.QFStartTimePercentageStart, Constants.QFStartTimePercentageEnd)]
-    public int StartTimePercentageEnd { get; set; } = Constants.QFStartTimePercentageEnd;
+    [DefaultValue(Constants.QFStartTimePercentageMax)]
+    [Range(Constants.QFStartTimePercentageMin, Constants.QFStartTimePercentageMax)]
+    public int StartTimePercentageEnd { get; set; } = Constants.QFStartTimePercentageMax;
+
+    [ProtoMember(20)]
+    [Range(Constants.QFSongRatingAverageMin, Constants.QFSongRatingAverageMax)]
+    public int SongRatingAverageStart { get; set; } = Constants.QFSongRatingAverageMin;
+
+    [ProtoMember(21)]
+    [Range(Constants.QFSongRatingAverageMin, Constants.QFSongRatingAverageMax)]
+    public int SongRatingAverageEnd { get; set; } = Constants.QFSongRatingAverageMax;
+
+    [ProtoMember(22)]
+    [Range(Constants.QFSongRatingAverageMin, Constants.QFSongRatingAverageMax)]
+    public int OwnersSongRatingAverageStart { get; set; } = Constants.QFSongRatingAverageMin;
+
+    [ProtoMember(23)]
+    [Range(Constants.QFSongRatingAverageMin, Constants.QFSongRatingAverageMax)]
+    public int OwnersSongRatingAverageEnd { get; set; } = Constants.QFSongRatingAverageMax;
 
     // todo move all applicable filters here
 }

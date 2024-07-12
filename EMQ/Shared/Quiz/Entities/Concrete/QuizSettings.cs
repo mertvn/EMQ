@@ -557,6 +557,20 @@ public class QuizSettings
                 $"Merge artist aliases: {o.IsMergeArtistAliases} → {n.IsMergeArtistAliases}");
         }
 
+        if (o.Filters.SongRatingAverageStart != n.Filters.SongRatingAverageStart ||
+            o.Filters.SongRatingAverageEnd != n.Filters.SongRatingAverageEnd)
+        {
+            diff.Add(
+                $"Song rating: {o.Filters.SongRatingAverageStart / 100f:N2} - {o.Filters.SongRatingAverageEnd / 100f:N2} → {n.Filters.SongRatingAverageStart / 100f:N2} - {n.Filters.SongRatingAverageEnd / 100f:N2}");
+        }
+
+        if (o.Filters.OwnersSongRatingAverageStart != n.Filters.OwnersSongRatingAverageStart ||
+            o.Filters.OwnersSongRatingAverageEnd != n.Filters.OwnersSongRatingAverageEnd)
+        {
+            diff.Add(
+                $"Owner's song rating: {o.Filters.OwnersSongRatingAverageStart / 100f:N2} - {o.Filters.OwnersSongRatingAverageEnd / 100f:N2} → {n.Filters.OwnersSongRatingAverageStart / 100f:N2} - {n.Filters.OwnersSongRatingAverageEnd / 100f:N2}");
+        }
+
         return diff;
     }
 }
