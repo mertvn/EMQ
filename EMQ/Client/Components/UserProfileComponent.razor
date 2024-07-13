@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
@@ -30,7 +30,7 @@
     <br/>
 }
 
-@if (UserMusicVotes != null)
+@if (UserMusicVotes != null && UserMusicVotes.Any())
 {
     <h4>Song votes</h4>
 
