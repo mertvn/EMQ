@@ -40,16 +40,16 @@
         if (UserMusicVotes != null)
         {
     // always rounded down, unlike VNDB
+            var musicVotes = UserMusicVotes.Select(x => x.MusicVote);
             var dict = new Dictionary<string, int>();
             for (int i = 10; i >= 1; i--)
             {
                 int i1 = i;
-                int count = UserMusicVotes.Select(x => x.MusicVote).Count(x => x.vote >= i1 * 10 && x.vote <= (i1 + 1) * 10);
+                int count = musicVotes.Count(x => x.vote >= i1 * 10 && x.vote <= (i1 + 1) * 10);
                 dict[i.ToString()] = count;
             }
 
             UserMusicVotesDict = dict;
-
             await _barChart.AddLabelsDatasetsAndUpdate(UserMusicVotesDict.Keys, GetBarChartDataset(0));
         }
     }
