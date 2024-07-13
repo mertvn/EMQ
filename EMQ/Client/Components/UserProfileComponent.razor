@@ -1,4 +1,4 @@
-@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
@@ -33,6 +33,10 @@
 @if (UserMusicVotes != null && UserMusicVotes.Any())
 {
     <h4>Song votes</h4>
+
+    <div style="max-width: 25%; max-height: 30%;">
+        <ChartUserMusicVotesComponent UserMusicVotes="UserMusicVotes"/>
+    </div>
 
     <span>@UserMusicVotes.Count() votes total, average @((((float)UserMusicVotes.Average(x => x.MusicVote.vote)! / 10)).ToString("F2", CultureInfo.InvariantCulture))</span>
     <br/>

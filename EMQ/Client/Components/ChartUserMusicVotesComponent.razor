@@ -1,0 +1,81 @@
+﻿@using Blazorise.Charts
+@using Blazorise
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Quiz.Entities.Concrete
+@inject HttpClient _client
+
+<Chart @ref="_barChart" Type="ChartType.Bar" TItem="int" Options="@Options"/>
+
+@code {
+    private Chart<int> _barChart = null!;
+
+    private Dictionary<string, int> UserMusicVotesDict { get; set; } = new();
+
+    private List<string> _backgroundColors = new() { ChartColor.FromRgba(54, 162, 235, 0.2f), };
+
+    private List<string> _borderColors = new() { ChartColor.FromRgba(54, 162, 235, 1f), };
+
+    private ChartOptions Options { get; set; } = new BarChartOptions
+    {
+        IndexAxis = "y",
+    };
+
+    [Parameter]
+    public IQueryable<ResUserMusicVotes>? UserMusicVotes { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    private async Task HandleRedraw()
+    {
+        await _barChart.Clear();
+        if (UserMusicVotes != null)
+        {
+    // always rounded down, unlike VNDB
+            var dict = new Dictionary<string, int>();
+            for (int i = 10; i >= 1; i--)
+            {
+                int i1 = i;
+                int count = UserMusicVotes.Select(x => x.MusicVote).Count(x => x.vote >= i1 * 10 && x.vote <= (i1 + 1) * 10);
+                dict[i.ToString()] = count;
+            }
+
+            UserMusicVotesDict = dict;
+
+            await _barChart.AddLabelsDatasetsAndUpdate(UserMusicVotesDict.Keys, GetBarChartDataset(0));
+        }
+    }
+
+    private BarChartDataset<int> GetBarChartDataset(int i)
+    {
+        string label;
+        List<int> data;
+        switch (i)
+        {
+            case 0:
+                label = "Count";
+                data = UserMusicVotesDict.Values.ToList();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(i));
+        }
+
+        return new BarChartDataset<int>
+        {
+            Label = label,
+            Data = data,
+            BackgroundColor = _backgroundColors[i],
+            BorderColor = _borderColors[i],
+            BorderWidth = 1,
+        };
+    }
+
+}
