@@ -26,11 +26,18 @@
     [Parameter]
     public IQueryable<ResUserMusicVotes>? UserMusicVotes { get; set; }
 
+    private int OldUserId { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (UserMusicVotes != null)
         {
-            await HandleRedraw();
+            int newUserId = UserMusicVotes.First().MusicVote.user_id;
+            if (OldUserId != newUserId)
+            {
+                OldUserId = newUserId;
+                await HandleRedraw();
+            }
         }
     }
 
