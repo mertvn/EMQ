@@ -524,6 +524,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 // }
             }
 
+            // TOSCALE
             var musicVotes =
                 (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = ANY(@mIds)",
                     new { mIds })).GroupBy(x => x.music_id).ToArray();

@@ -159,17 +159,13 @@ public class ClientUtils
                         await TryRestorePreferences();
                         await ClientConnectionManager.StartManagingConnection();
 
-                        const bool fetchMusicVotes = true;
-                        if (fetchMusicVotes)
+                        HttpResponseMessage resMusicVote =
+                            await Client.PostAsJsonAsync("Auth/GetUserMusicVotes", session.Player.Id);
+                        if (resMusicVote.IsSuccessStatusCode)
                         {
-                            HttpResponseMessage resMusicVote =
-                                await Client.PostAsJsonAsync("Auth/GetUserMusicVotes", session.Player.Id);
-                            if (resMusicVote.IsSuccessStatusCode)
-                            {
-                                ClientState.MusicVotes =
-                                    (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
-                                        x => x.music_id, x => x);
-                            }
+                            ClientState.MusicVotes =
+                                (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
+                                    x => x.music_id, x => x);
                         }
                     }
                     else

@@ -11,6 +11,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
@@ -113,9 +114,19 @@ public partial class Index
                     LoginProgressDisplay.Add($"Initialized websocket connection.");
                     StateHasChanged();
 
-                    // LoginProgressDisplay.Add($"Synchronizing VNDB list...");
-                    // StateHasChanged();
-                    // await _playerPreferencesComponent.GetVndbInfoFromServer(resCreateSession.VndbInfo);
+                    if (!loginModel.IsGuest)
+                    {
+                        LoginProgressDisplay.Add($"Fetching song votes...");
+                        StateHasChanged();
+                        HttpResponseMessage resMusicVote =
+                            await _client.PostAsJsonAsync("Auth/GetUserMusicVotes", ClientState.Session.Player.Id);
+                        if (resMusicVote.IsSuccessStatusCode)
+                        {
+                            ClientState.MusicVotes =
+                                (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
+                                    x => x.music_id, x => x);
+                        }
+                    }
 
                     LoginProgressDisplay.Add($"Successfully logged in.");
                     LoginInProgress = false;
