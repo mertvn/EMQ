@@ -46,12 +46,38 @@
     <div class="grid" tabindex="-1">
         <QuickGrid Items="@UserMusicVotes" Pagination="@_paginationUserMusicVotes">
             <PropertyColumn Property="@(x => x.MusicVote.updated_at)" Title="Vote date" Format="s" Sortable="true"/>
-            <TemplateColumn Title="Vote" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
-                @(((float)context.MusicVote.vote! / 10).ToString(CultureInfo.InvariantCulture))
+            @if (!IsOwnPage)
+            {
+                <TemplateColumn Title="Vote" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
+                    @(((float)context.MusicVote.vote! / 10).ToString(CultureInfo.InvariantCulture))
+                </TemplateColumn>
+            }
+
+            <TemplateColumn Title="My vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => GetGridSortMyVote(x.Song.Id)))">
+                @{
+                    _ = ClientState.MusicVotes.TryGetValue(context.Song.Id, out MusicVote? musicVote);
+                }
+
+                <div style="margin-right: 5px; display: inline-block;">
+                    <MusicVoteComponent Song="context.Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
+                </div>
+            </TemplateColumn>
+            <TemplateColumn Title="Link">
+                @{
+                    string? href = ClientUtils.GetPreferredSongLinkUrl(context.Song, ClientState.Preferences.WantsVideo, ClientState.Preferences.LinkHost);
+                }
+
+                @if (href != null)
+                {
+                    <a class="link-primary" href="@href" target="_blank">
+                        Link
+                    </a>
+                }
             </TemplateColumn>
             <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.Song.ToStringLatin()))">
                 @context.Song.ToStringLatin()
             </TemplateColumn>
+            <PropertyColumn Property="@(x => Converters.GetSingleTitle(x.Song.Artists.First().Titles, "ja", "en").LatinTitle)" Title="Artist" Sortable="true"/>
         </QuickGrid>
     </div>
     <br/>
@@ -124,6 +150,8 @@
 
     private readonly PaginationState _paginationUserMusicVotes = new() { ItemsPerPage = 50 };
 
+    private bool IsOwnPage => ClientState.Session != null && ClientState.Session.Player.Id == UserId;
+
     protected override async Task OnParametersSetAsync()
     {
         HttpResponseMessage res1 =
@@ -153,6 +181,16 @@
             CommonPlayers = null;
             UserMusicVotes = null;
         }
+    }
+
+    public async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+    private short? GetGridSortMyVote(int songId)
+    {
+        return ClientState.MusicVotes.GetValueOrDefault(songId)?.vote;
     }
 
 }

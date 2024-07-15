@@ -1,0 +1,62 @@
+﻿@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using System.Globalization
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
+@inject HttpClient _client
+
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Vote))
+{
+    bool hasVote = MusicVote != null;
+    <span>My vote: </span>
+    <input type="text" placeholder="" style="width: 50px;"
+           @bind:get="@(!hasVote ? "" : ((float)MusicVote!.vote! / 10).ToString(CultureInfo.InvariantCulture))"
+           @bind:set="@(new Func<string, Task>(async value => await OnSongVote(value)))"/>
+
+    @if (hasVote)
+    {
+        <span style="display: inline-block; cursor: pointer; margin-left: 4px;"
+              @onclick="@(async () => { var res = await SendUpsertMusicVoteReq(Song.Id, null); if (res != null) { ClientState.MusicVotes.Remove(Song.Id); ParentStateHasChangedCallback?.Invoke(); } })">
+            🗑
+        </span>
+    }
+}
+
+@code {
+
+    [Parameter]
+    public Song Song { get; set; } = null!;
+
+    [Parameter]
+    public Func<Task>? ParentStateHasChangedCallback { get; set; }
+
+    [Parameter]
+    public MusicVote? MusicVote { get; set; }
+
+    private async Task OnSongVote(string value)
+    {
+        value = value.Replace(',', '.');
+        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
+        {
+            short sh = (short)(f * 10);
+            if (sh is >= 10 and <= 100)
+            {
+                var res = await SendUpsertMusicVoteReq(Song!.Id, sh);
+                if (res != null)
+                {
+                    ClientState.MusicVotes[Song.Id] = res;
+                }
+            }
+        }
+
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+    private async Task<MusicVote?> SendUpsertMusicVoteReq(int musicId, short? vote)
+    {
+        var req = new ReqUpsertMusicVote(musicId, vote);
+        var res = await _client.PostAsJsonAsync("Auth/UpsertMusicVote", req);
+        return res.IsSuccessStatusCode ? (await res.Content.ReadFromJsonAsync<MusicVote>())! : null;
+    }
+
+}

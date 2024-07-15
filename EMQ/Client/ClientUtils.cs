@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -269,5 +270,31 @@ public class ClientUtils
             uploadResult.ErrorStr = $"Client-side exception while uploading: {ex}";
             return false;
         }
+    }
+
+    public static string? GetPreferredSongLinkUrl(Song song, bool wantsVideo, SongLinkType host)
+    {
+        string? url;
+        if (wantsVideo)
+        {
+            url = song.Links.FirstOrDefault(x => x.Type == host && x.IsVideo)?.Url;
+        }
+        else
+        {
+            url = song.Links.FirstOrDefault(x => x.Type == host && !x.IsVideo)?.Url;
+        }
+
+        // todo priority setting for host or video
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            url = song.Links.FirstOrDefault(x => x.Type == host)?.Url;
+        }
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            url = song.Links.FirstOrDefault()?.Url;
+        }
+
+        return url;
     }
 }

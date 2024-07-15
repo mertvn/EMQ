@@ -1,5 +1,6 @@
 ﻿@page "/eu{UserId:int}"
 @using EMQ.Client.Components
+@inject ClientUtils _clientUtils
 
 <UserProfileComponent UserId="UserId"></UserProfileComponent>
 
@@ -7,5 +8,10 @@
 
     [Parameter]
     public int UserId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await _clientUtils.TryRestoreSession();
+    }
 
 }

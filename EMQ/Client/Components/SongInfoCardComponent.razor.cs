@@ -123,29 +123,9 @@ public partial class SongInfoCardComponent
         }
     }
 
-    private async Task OnSongVote(string value)
+    public async Task CallStateHasChanged()
     {
-        value = value.Replace(',', '.');
-        if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
-        {
-            short sh = (short)(f * 10);
-            if (sh is >= 10 and <= 100)
-            {
-                var res = await SendUpsertMusicVoteReq(Song!.Id, sh);
-                if (res != null)
-                {
-                    ClientState.MusicVotes[Song.Id] = res;
-                }
-            }
-        }
-
         ForceRender = true;
-    }
-
-    private async Task<MusicVote?> SendUpsertMusicVoteReq(int musicId, short? vote)
-    {
-        var req = new ReqUpsertMusicVote(musicId, vote);
-        var res = await _client.PostAsJsonAsync("Auth/UpsertMusicVote", req);
-        return res.IsSuccessStatusCode ? (await res.Content.ReadFromJsonAsync<MusicVote>())! : null;
+        StateHasChanged();
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Client;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
@@ -126,27 +127,7 @@ public class QuizController : ControllerBase
                     {
                         var song = room.Quiz.Songs[req.SongIndex];
 
-                        string? url;
-                        if (req.WantsVideo)
-                        {
-                            url = song.Links.FirstOrDefault(x => x.Type == req.Host && x.IsVideo)?.Url;
-                        }
-                        else
-                        {
-                            url = song.Links.FirstOrDefault(x => x.Type == req.Host && !x.IsVideo)?.Url;
-                        }
-
-                        // todo priority setting for host or video
-                        if (string.IsNullOrWhiteSpace(url))
-                        {
-                            url = song.Links.FirstOrDefault(x => x.Type == req.Host)?.Url;
-                        }
-
-                        if (string.IsNullOrWhiteSpace(url))
-                        {
-                            url = song.Links.First().Url;
-                        }
-
+                        string url = ClientUtils.GetPreferredSongLinkUrl(song, req.WantsVideo, req.Host)!;
                         if (Constants.UseLocalSongFilesForDevelopment &&
                             room.QuizSettings.SongSelectionKind != SongSelectionKind.LocalMusicLibrary)
                         {
