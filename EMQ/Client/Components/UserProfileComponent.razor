@@ -45,10 +45,10 @@
     </div>
     <div class="grid" tabindex="-1">
         <QuickGrid Items="@UserMusicVotes" Pagination="@_paginationUserMusicVotes">
-            <PropertyColumn Property="@(x => x.MusicVote.updated_at)" Title="Vote date" Format="s" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.MusicVote.updated_at)" Title="Vote date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" />
             @if (!IsOwnPage)
             {
-                <TemplateColumn Title="Vote" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
+                <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
                     @(((float)context.MusicVote.vote! / 10).ToString(CultureInfo.InvariantCulture))
                 </TemplateColumn>
             }
