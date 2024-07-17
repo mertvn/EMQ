@@ -418,6 +418,10 @@ public class EntryPoints
                     {
                         await Task.Delay(10000);
                     }
+                    else
+                    {
+                        await Task.Delay(1000);
+                    }
                 }
                 else
                 {

@@ -166,20 +166,24 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio && Quiz.QuizState.sp >= 0)
         {
-            Quiz.QuizState.RemainingMs =
+            float remaining =
                 (float)(PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
-                            .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp + 1].Links).Duration.TotalMilliseconds) -
-                        DateTime.UtcNow)
-                .TotalMilliseconds;
-            while (Quiz.QuizState.RemainingMs > 0)
-            {
-                Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
-                Quiz.QuizState.RemainingMs -= 1000;
-                await Task.Delay(1000);
-            }
+                            .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp].Links).Duration.TotalMilliseconds) -
+                        DateTime.UtcNow).TotalMilliseconds;
 
-            PreviousGuessPhaseStartedAt = DateTime.UtcNow;
+            if (remaining >= 0) // to avoid showing int.MinValue to users when sp is -1
+            {
+                Quiz.QuizState.RemainingMs = remaining;
+                while (Quiz.QuizState.RemainingMs > 0)
+                {
+                    Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
+                    Quiz.QuizState.RemainingMs -= 1000;
+                    await Task.Delay(1000);
+                }
+            }
         }
+
+        PreviousGuessPhaseStartedAt = DateTime.UtcNow;
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
         int timeoutMs = Quiz.Room.QuizSettings.TimeoutMs;
@@ -2326,11 +2330,10 @@ public class QuizManager
 
     public async Task OnSendToggleSkip(string connectionId, int playerId)
     {
-        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio ||
-            (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
-             Quiz.QuizState.RemainingMs > 2000 &&
-             Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
-             !Quiz.QuizState.IsPaused))
+        if (!Quiz.QuizState.IsPaused && (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio ||
+                                         (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+                                          Quiz.QuizState.RemainingMs > 2000 &&
+                                          Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results)))
         {
             var player = Quiz.Room.Players.Single(x => x.Id == playerId);
             if (player.IsSkipping)

@@ -55,6 +55,7 @@
 
             <TemplateColumn Title="My vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => GetGridSortMyVote(x.Song.Id)))">
                 @{
+                    // todo fix desync that happens when you vote on the library page and then go to user profile page
                     _ = ClientState.MusicVotes.TryGetValue(context.Song.Id, out MusicVote? musicVote);
                 }
 
