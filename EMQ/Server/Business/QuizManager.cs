@@ -166,20 +166,15 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio && Quiz.QuizState.sp >= 0)
         {
-            float remaining =
-                (float)(PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
-                            .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp].Links).Duration.TotalMilliseconds) -
-                        DateTime.UtcNow).TotalMilliseconds;
-
-            if (remaining >= 0) // to avoid showing int.MinValue to users when sp is -1
+            Quiz.QuizState.RemainingMs = (float)(PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
+                                                     .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp].Links).Duration
+                                                     .TotalMilliseconds) -
+                                                 DateTime.UtcNow).TotalMilliseconds;
+            while (Quiz.QuizState.RemainingMs > 0)
             {
-                Quiz.QuizState.RemainingMs = remaining;
-                while (Quiz.QuizState.RemainingMs > 0)
-                {
-                    Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
-                    Quiz.QuizState.RemainingMs -= 1000;
-                    await Task.Delay(1000);
-                }
+                Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
+                Quiz.QuizState.RemainingMs -= 1000;
+                await Task.Delay(1000);
             }
         }
 
