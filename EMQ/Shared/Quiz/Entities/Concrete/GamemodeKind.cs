@@ -4,4 +4,5 @@ public enum GamemodeKind
 {
     Default,
     NGMC,
+    Radio,
 }

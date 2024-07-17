@@ -44,6 +44,8 @@ public class QuizManager
 
     private Dictionary<int, string[]>? ArtistAliasesDict { get; set; }
 
+    private DateTime PreviousGuessPhaseStartedAt { get; set; }
+
     private async Task SetTimer()
     {
         if (!Quiz.IsDisposed && !Quiz.IsTimerRunning)
@@ -160,6 +162,23 @@ public class QuizManager
             TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
                 false);
             await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio && Quiz.QuizState.sp >= 0)
+        {
+            Quiz.QuizState.RemainingMs =
+                (float)(PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
+                            .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp + 1].Links).Duration.TotalMilliseconds) -
+                        DateTime.UtcNow)
+                .TotalMilliseconds;
+            while (Quiz.QuizState.RemainingMs > 0)
+            {
+                Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
+                Quiz.QuizState.RemainingMs -= 1000;
+                await Task.Delay(1000);
+            }
+
+            PreviousGuessPhaseStartedAt = DateTime.UtcNow;
         }
 
         int isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
@@ -1532,7 +1551,8 @@ public class QuizManager
                                 Quiz.Room.QuizSettings.Duplicates, validSources,
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                 listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
-                                validMids: validMids, invalidMids: invalidMids, ownerUserId: Quiz.Room.Owner.Id);
+                                validMids: validMids, invalidMids: invalidMids, ownerUserId: Quiz.Room.Owner.Id,
+                                gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
                             break;
                         }
                     case ListDistributionKind.Balanced:
@@ -1571,7 +1591,8 @@ public class QuizManager
                                     validSourcesDict[pId].OrderBy(x => Random.Shared.Next()).ToList(),
                                     filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
-                                    ownerUserId: Quiz.Room.Owner.Id));
+                                    ownerUserId: Quiz.Room.Owner.Id,
+                                    gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind));
                             }
 
                             if (!Quiz.Room.QuizSettings.Duplicates)
@@ -1638,7 +1659,7 @@ public class QuizManager
                     var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
                         Quiz.Room.QuizSettings.Duplicates, validSources,
                         filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                        ownerUserId: Quiz.Room.Owner.Id);
+                        ownerUserId: Quiz.Room.Owner.Id, gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
 
                     if (!selectedSongs.Any())
                     {
@@ -2078,7 +2099,8 @@ public class QuizManager
             validSources.SelectMany(x => x.Value).ToList(),
             Quiz.Room.QuizSettings.Filters,
             players: Quiz.Room.Players.ToList(),
-            ownerUserId: Quiz.Room.Owner.Id);
+            ownerUserId: Quiz.Room.Owner.Id,
+            gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
 
         if (!dbSongs.Any())
         {
@@ -2304,10 +2326,11 @@ public class QuizManager
 
     public async Task OnSendToggleSkip(string connectionId, int playerId)
     {
-        if (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
-            Quiz.QuizState.RemainingMs > 2000 &&
-            Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
-            !Quiz.QuizState.IsPaused)
+        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio ||
+            (Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+             Quiz.QuizState.RemainingMs > 2000 &&
+             Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results &&
+             !Quiz.QuizState.IsPaused))
         {
             var player = Quiz.Room.Players.Single(x => x.Id == playerId);
             if (player.IsSkipping)

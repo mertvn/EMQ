@@ -1839,7 +1839,8 @@ GROUP BY artist_id";
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
         List<int>? validMids = null, List<int>? invalidMids = null,
-        Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null)
+        Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null,
+        GamemodeKind? gamemodeKind = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -2370,7 +2371,7 @@ GROUP BY artist_id";
                         song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
                     }
 
-                    song.StartTime = song.DetermineSongStartTime(filters);
+                    song.StartTime = gamemodeKind == GamemodeKind.Radio ? 0 : song.DetermineSongStartTime(filters);
                     ret.Add(song);
                     addedMselUrls.Add(mselUrl);
                 }

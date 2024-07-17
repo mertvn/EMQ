@@ -17,6 +17,7 @@ public class QuizSettings
     public bool ShouldUpdateStats =>
         SongSelectionKind == SongSelectionKind.Random &&
         AnsweringKind == AnsweringKind.Typing &&
+        GamemodeKind != GamemodeKind.Radio &&
         Filters.ScreenshotKind == ScreenshotKind.None &&
         IsMstGuessTypeEnabled &&
         !IsSharedGuessesTeams &&
