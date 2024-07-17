@@ -710,14 +710,19 @@ public class QuizManager
             {
                 UserSpacedRepetition? previous = null;
                 UserSpacedRepetition? current = null;
-                try
+
+                bool doSpacedRepetition = Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.Radio;
+                if (doSpacedRepetition)
                 {
-                    (previous, current) = await DoSpacedRepetition(player.Id, song.Id, correctMst); // todo?
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failed to DoSpacedRepetition");
-                    Console.WriteLine(e);
+                    try
+                    {
+                        (previous, current) = await DoSpacedRepetition(player.Id, song.Id, correctMst); // todo?
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Failed to DoSpacedRepetition");
+                        Console.WriteLine(e);
+                    }
                 }
 
                 _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
