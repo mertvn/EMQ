@@ -527,7 +527,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             // TOSCALE
             var musicVotes =
                 (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = ANY(@mIds)",
-                    new { mIds })).GroupBy(x => x.music_id).ToArray();
+                    new { mIds = songs.Select(x => x.Value.Id).ToArray() })).GroupBy(x => x.music_id).ToArray();
 
             foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
             {
