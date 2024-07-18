@@ -14,6 +14,7 @@
     bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isDebugMode = ClientState.Preferences.DebugMode;
     bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
+    bool hasDeleteSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.DeleteSongLink);
 }
 
 @if (IsLibraryPage)
@@ -133,7 +134,7 @@
                                     @foreach (SongLink videoLink in videoLinks)
                                     {
                                         <li class="songInfoCardSongLinksVideoLink">
-                                            @if (isAdmin)
+                                            @if (hasDeleteSongLinkPerms)
                                             {
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, videoLink.Url))">🗑</span>
                                             }
@@ -190,7 +191,7 @@
                                     @foreach (SongLink soundLink in soundLinks)
                                     {
                                         <li class="songInfoCardSongLinksSoundLink">
-                                            @if (isAdmin)
+                                            @if (hasDeleteSongLinkPerms)
                                             {
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSongLink(song.Id, soundLink.Url))">🗑</span>
                                             }

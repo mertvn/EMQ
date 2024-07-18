@@ -48,10 +48,12 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
         DefaultModeratorPermissions.Concat(new[] { PermissionKind.ModerateChat }).ToArray();
 
     public static PermissionKind[] DefaultReviewQueueModeratorPermissions { get; } =
-        DefaultModeratorPermissions.Concat(new[] { PermissionKind.ReviewSongLink }).ToArray();
+        DefaultModeratorPermissions.Concat(new[] { PermissionKind.ReviewSongLink, PermissionKind.DeleteSongLink })
+            .ToArray();
 
     public static PermissionKind[] DefaultDatabaseModeratorPermissions { get; } =
-        DefaultModeratorPermissions.Concat(new[] { PermissionKind.EditSongMetadata }).ToArray();
+        DefaultModeratorPermissions.Concat(new[] { PermissionKind.DeleteSongLink, PermissionKind.EditSongMetadata })
+            .ToArray();
 
     public static PermissionKind[] DefaultAdminPermissions { get; } = Enum.GetValues<PermissionKind>();
 
@@ -153,6 +155,7 @@ public enum PermissionKind
     ModerateChat = 5001,
 
     ReviewSongLink = 6001,
+    DeleteSongLink = 6002,
 
     EditSongMetadata = 7001,
 

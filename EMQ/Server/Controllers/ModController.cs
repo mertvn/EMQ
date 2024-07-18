@@ -134,7 +134,7 @@ public class ModController : ControllerBase
         return Ok();
     }
 
-    [CustomAuthorize(PermissionKind.Admin)]
+    [CustomAuthorize(PermissionKind.DeleteSongLink)]
     [HttpPost]
     [Route("DeleteSongLink")]
     public async Task<ActionResult<int>> DeleteSongLink([FromBody] ReqDeleteSongLink req)

@@ -83,7 +83,7 @@
                 {
                     @if (Song.Id > 0)
                     {
-                        @if (isAdmin)
+                        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.EditSongMetadata))
                         {
                             <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
                         }
