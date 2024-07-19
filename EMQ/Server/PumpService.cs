@@ -99,6 +99,7 @@ public sealed class PumpService : BackgroundService
                         // }
 
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
+                        // session.ConnectionId can actually be null here very very rarely but it doesn't matter
                         var task = _hubContext.Clients.Client(session.ConnectionId!)
                             .SendCoreAsync(message.Target, message.Arguments, token);
 

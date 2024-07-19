@@ -175,6 +175,8 @@ public class QuizManager
                 Quiz.QuizState.ExtraInfo = $"Waiting for the song to end...";
                 Quiz.QuizState.RemainingMs -= 1000;
                 await Task.Delay(1000);
+                TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
+                    Quiz.Room, false);
             }
         }
 
