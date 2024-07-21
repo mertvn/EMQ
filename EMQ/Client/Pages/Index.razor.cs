@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Threading.Tasks;
 using EMQ.Client.Components;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -42,29 +43,45 @@ public partial class Index
 
     private bool LoginInProgress { get; set; } = false;
 
-    public MyAutocompleteComponent<string> a { get; set; }
+    public MyAutocompleteComponent<AutocompleteMst> a { get; set; }
 
-    public string[] Data { get; set; }
+    public AutocompleteMst[] Data { get; set; }
 
     private TValue[] OnSearch<TValue>(string value)
     {
+        value = value.NormalizeForAutocomplete();
         if (string.IsNullOrWhiteSpace(value))
         {
             return Array.Empty<TValue>();
         }
 
+        bool hasNonAscii = Encoding.UTF8.GetByteCount(value) != value.Length;
         const int maxResults = 25; // todo
-        var dict = new Dictionary<string, ExtensionMethods.StringMatch>();
-        foreach (string d in Data)
+        var dictLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
+        foreach (AutocompleteMst d in Data)
         {
-            var match = d.StartsWithContains(value, StringComparison.OrdinalIgnoreCase);
-            if (match > 0)
+            var matchLT = d.MSTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
+            if (matchLT > 0)
             {
-                dict[d] = match;
+                dictLT[d] = matchLT;
+            }
+
+            if (hasNonAscii)
+            {
+                var matchNLT = d.MSTNonLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
             }
         }
 
-        return (TValue[])(object)dict.OrderByDescending(x => x.Value).Take(maxResults).Select(x => x.Key).ToArray();
+        return (TValue[])(object)dictLT.Concat(dictNLT)
+            .OrderByDescending(x => x.Value)
+            .Take(maxResults)
+            .Select(x => x.Key)
+            .ToArray();
     }
 
     protected override async Task OnInitializedAsync()
@@ -73,7 +90,7 @@ public partial class Index
         StateHasChanged();
         await _clientUtils.TryRestoreSession();
         LoginInProgress = false;
-        Data = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!.Select(x=> x.MSTLatinTitle).ToArray();
+        Data = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
         await a.Focus(false);
         StateHasChanged();
     }

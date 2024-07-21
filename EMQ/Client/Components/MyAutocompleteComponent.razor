@@ -9,7 +9,7 @@
            class="form-control"
            placeholder="@Placeholder"
            disabled="@Disabled"
-           @ref="inputRef"
+           @ref="InputRef"
            @bind:get="@CurrentText"
            @bind:set="@(new Func<string, Task>(async value => await OnSetInputSearch(value)))"
            @bind:event="oninput"

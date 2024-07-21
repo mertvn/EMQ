@@ -13,10 +13,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
 {
     public string CurrentText { get; set; } = "";
 
-    public TValue CurrentValue { get; set; }
-
-    // [Parameter]
-    // public string[] Data { get; set; }
+    public TValue? CurrentValue { get; set; }
 
     public TValue[] CurrentSearchResults = Array.Empty<TValue>();
 
@@ -24,7 +21,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
 
     public bool ShowDropdown { get; set; }
 
-    public ElementReference inputRef { get; set; }
+    public ElementReference InputRef { get; set; }
 
     public int CurrentFocus { get; set; } = -1;
 
@@ -44,11 +41,13 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public bool HighlightMatch { get; set; } = true;
 
+    [EditorRequired]
     [Parameter]
-    public Func<string, TValue[]> OnSearch { get; set; }
+    public Func<string, TValue[]> OnSearch { get; set; } = null!;
 
+    [EditorRequired]
     [Parameter]
-    public Func<TValue, string> TextField { get; set; }
+    public Func<TValue, string> TextField { get; set; } = null!;
 
     public void Close()
     {
@@ -59,7 +58,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
 
     public async Task Focus(bool preventScroll)
     {
-        await inputRef.FocusAsync(preventScroll);
+        await InputRef.FocusAsync(preventScroll);
     }
 
     public void Clear()
@@ -73,13 +72,8 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
 
     private async Task OnSetInputSearch(string value)
     {
-        Console.WriteLine(value);
         CurrentText = value;
-        // CurrentSearchResults = DoSearch(value);
-
         CurrentSearchResults = OnSearch.Invoke(value);
-        // await Task.Yield();
-
         CurrentFocus = Math.Clamp(CurrentFocus, -1,
             CurrentSearchResults.Length == 0 ? -1 : CurrentSearchResults.Length - 1);
         ShowDropdown = true;

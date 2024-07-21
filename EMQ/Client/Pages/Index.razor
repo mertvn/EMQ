@@ -5,6 +5,7 @@
 @using EMQ.Client.Components
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Shared.Library.Entities.Concrete
 @inject NavigationManager _navigation
 @inject HttpClient _client
 @inject ILogger<Index> _logger
@@ -19,9 +20,9 @@
     <MyAutocompleteComponent @ref="a"
                              MaxMenuHeight="325px"
                              Placeholder="Enter your guess here"
-                             TValue="string"
-                             OnSearch="@(x => OnSearch<string>(x))"
-                             TextField="@((item) => item)"/>
+                             TValue="AutocompleteMst"
+                             OnSearch="@(x => OnSearch<AutocompleteMst>(x))"
+                             TextField="@((item) => item.MSTLatinTitle)"/>
 </div>
 
 <h1>@Constants.WebsiteName</h1>
