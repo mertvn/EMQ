@@ -1,6 +1,7 @@
 ﻿@using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
+@typeparam TValue
 
 @* todo width param *@
 <div class="autocomplete" style="width: 630px;">
@@ -17,186 +18,38 @@
            @onfocus="OnFocus"
            @onblur="OnBlur"/>
 
-    <div class="autocomplete-items" style="display: @UiHelpers.Bool2Display(ShowDropdown && CurrentSearchResults.Any()); max-height: @MaxMenuHeight; overflow: scroll">
-        @for (int index = 0; index < CurrentSearchResults.Length; index++)
+    <div class="autocomplete-items"
+         style="display: @UiHelpers.Bool2Display(ShowDropdown && CurrentSearchResults.Any()); max-height: @MaxMenuHeight; overflow-x: auto; overflow-y: scroll;">
+        @for (int i = 0; i < CurrentSearchResults.Length; i++)
         {
-            string searchResult = CurrentSearchResults[index];
-            int indexCopy = index;
-            string divClass = index == CurrentFocus ? "autocomplete-active" : "";
-            string divId = $"autocomplete-item-{index}";
+            TValue searchResult = CurrentSearchResults[i];
+            int indexCopy = i;
+            string divClass = i == CurrentFocus ? "autocomplete-active" : "";
+            string divId = $"autocomplete-item-{i}";
+            string textField = TextField.Invoke(searchResult);
             <div id="@divId" class="@divClass" @onpointerdown="@(args => Onclick_AutocompleteItem(args, indexCopy))" @onpointerdown:preventDefault="true">
-                @searchResult
+                @if (HighlightMatch)
+                {
+                    int highlightStart = textField.IndexOf(CurrentText, StringComparison.OrdinalIgnoreCase);
+                    int highlightEnd = highlightStart + (CurrentText.Length - 1);
+                    @for (int j = 0; j < textField.Length; j++)
+                    {
+                        char c = textField[j];
+                        if (j >= highlightStart && j <= highlightEnd)
+                        {
+                            <span style="color: #418eff">@c</span>
+                        }
+                        else
+                        {
+                            <span>@c</span>
+                        }
+                    }
+                }
+                else
+                {
+                    @textField
+                }
             </div>
         }
     </div>
 </div>
-
-@code {
-
-    public string CurrentText { get; set; } = "";
-
-    public string CurrentValue { get; set; } = "";
-
-    [Parameter]
-    public string[] Data { get; set; } = new string[] { "a", "ab", "abc", "e" };
-
-    public string[] CurrentSearchResults = Array.Empty<string>();
-
-    public bool PreventDefault { get; set; }
-
-    public bool ShowDropdown { get; set; }
-
-    public ElementReference inputRef { get; set; }
-
-    public int CurrentFocus { get; set; } = -1;
-
-    // todo implement
-    [Parameter]
-    public int MinLength { get; set; } = 1;
-
-    [Parameter]
-    public string MaxMenuHeight { get; set; }
-
-    [Parameter]
-    public string? Placeholder { get; set; }
-
-    [Parameter]
-    public bool Disabled { get; set; }
-
-    public void Close()
-    {
-        ShowDropdown = false;
-        CurrentFocus = -1;
-        StateHasChanged();
-    }
-
-    public async Task Focus(bool preventScroll)
-    {
-        await inputRef.FocusAsync(preventScroll);
-    }
-
-    public async void Clear()
-    {
-        CurrentText = "";
-        CurrentValue = "";
-        CurrentFocus = -1;
-        CurrentSearchResults = Array.Empty<string>();
-        StateHasChanged();
-    }
-
-    private async Task OnSetInputSearch(string value)
-    {
-        Console.WriteLine(value);
-        CurrentText = value;
-        CurrentSearchResults = DoSearch(value);
-        CurrentFocus = Math.Clamp(CurrentFocus, -1, CurrentSearchResults.Length == 0 ? -1 : CurrentSearchResults.Length - 1);
-        ShowDropdown = true;
-    }
-
-    private string[] DoSearch(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return Array.Empty<string>();
-        }
-
-        const int maxResults = 25; // todo
-        var dict = new Dictionary<string, ExtensionMethods.StringMatch>();
-        foreach (string d in Data)
-        {
-            var match = d.StartsWithContains(value, StringComparison.OrdinalIgnoreCase);
-            if (match > 0)
-            {
-                dict[d] = match;
-            }
-        }
-        return dict.OrderByDescending(x => x.Value).Take(maxResults).Select(x => x.Key).ToArray();
-
-    // return Data
-    //     .Where(x => x.StartsWithContains(value, StringComparison.OrdinalIgnoreCase) > ExtensionMethods.StringMatch.None)
-    //     .OrderByDescending(x => x.StartsWithContains(value, StringComparison.OrdinalIgnoreCase))
-    //     .Distinct()
-    //     .Take(maxResults)
-    //     .ToArray();
-    }
-
-    private async Task OnKeyDown(KeyboardEventArgs args)
-    {
-        switch (args.Key)
-        {
-            case "ArrowUp":
-                {
-                    PreventDefault = true; // prevent the input box cursor jumping to start
-                    ShowDropdown = true;
-                    CurrentFocus = Math.Clamp(CurrentFocus - 1, 0, CurrentSearchResults.Length == 0 ? 0 : CurrentSearchResults.Length - 1);
-                    await ScrollItemIntoView(CurrentFocus);
-                    break;
-                }
-            case "ArrowDown":
-                {
-                    PreventDefault = true; // prevent the input box cursor jumping to end
-                    ShowDropdown = true;
-                    CurrentFocus = Math.Clamp(CurrentFocus + 1, 0, CurrentSearchResults.Length == 0 ? 0 : CurrentSearchResults.Length - 1);
-                    await ScrollItemIntoView(CurrentFocus);
-                    break;
-                }
-            case "Enter":
-            case "NumpadEnter":
-            case "Tab":
-                {
-                    SelectValue();
-                    break;
-                }
-            case "Escape":
-                {
-                    Close();
-                    break;
-                }
-            default:
-                {
-                    PreventDefault = false;
-                    break;
-                }
-        }
-    }
-
-    private async Task ScrollItemIntoView(int index)
-    {
-        if (!ShowDropdown || index < 0)
-        {
-            return;
-        }
-
-        string elementId = $"autocomplete-item-{index}";
-        await _jsRuntime.InvokeVoidAsync("scrollElementIntoView", elementId, true);
-    }
-
-    private void SelectValue()
-    {
-        string? value = CurrentSearchResults.ElementAtOrDefault(CurrentFocus);
-        if (value != null)
-        {
-            CurrentText = value;
-            CurrentValue = value;
-            ShowDropdown = false;
-            CurrentSearchResults = DoSearch(value);
-        }
-    }
-
-    private void OnFocus(FocusEventArgs obj)
-    {
-        ShowDropdown = true;
-    }
-
-    private void OnBlur(FocusEventArgs obj)
-    {
-        Close();
-    }
-
-    private async void Onclick_AutocompleteItem(MouseEventArgs obj, int index)
-    {
-        CurrentFocus = index;
-        SelectValue();
-    }
-
-}

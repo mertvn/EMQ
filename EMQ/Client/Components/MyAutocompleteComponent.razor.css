@@ -44,6 +44,6 @@ input[type=search] {
 
 .autocomplete-active {
     /*when navigating through the items using the arrow keys:*/
-    background-color: DodgerBlue !important;
+    background-color: #5656c2 !important;
     color: #ffffff;
 }

@@ -16,7 +16,12 @@
 @* <a href="RenderTimeStatistics">Render Time Statistics</a> *@
 
 <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;">
-    <MyAutocompleteComponent @ref="a" Data="Data" MaxMenuHeight="325px;"></MyAutocompleteComponent>
+    <MyAutocompleteComponent @ref="a"
+                             MaxMenuHeight="325px"
+                             Placeholder="Enter your guess here"
+                             TValue="string"
+                             OnSearch="@(x => OnSearch<string>(x))"
+                             TextField="@((item) => item)"/>
 </div>
 
 <h1>@Constants.WebsiteName</h1>

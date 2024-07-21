@@ -42,9 +42,30 @@ public partial class Index
 
     private bool LoginInProgress { get; set; } = false;
 
-    public MyAutocompleteComponent a { get; set; }
+    public MyAutocompleteComponent<string> a { get; set; }
 
     public string[] Data { get; set; }
+
+    private TValue[] OnSearch<TValue>(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<TValue>();
+        }
+
+        const int maxResults = 25; // todo
+        var dict = new Dictionary<string, ExtensionMethods.StringMatch>();
+        foreach (string d in Data)
+        {
+            var match = d.StartsWithContains(value, StringComparison.OrdinalIgnoreCase);
+            if (match > 0)
+            {
+                dict[d] = match;
+            }
+        }
+
+        return (TValue[])(object)dict.OrderByDescending(x => x.Value).Take(maxResults).Select(x => x.Key).ToArray();
+    }
 
     protected override async Task OnInitializedAsync()
     {
