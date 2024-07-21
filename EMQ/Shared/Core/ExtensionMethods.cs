@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -368,5 +369,29 @@ public static class ExtensionMethods
     {
         return avatar.Character is AvatarCharacter.VNDBCharacterImage ||
                Avatar.SkinsDict.TryGetValue(avatar.Character, out var skins) && skins.Contains(avatar.Skin);
+    }
+
+    public enum StringMatch
+    {
+        None = 0,
+        Contains = 1,
+        StartsWith = 2,
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch StartsWithContains(this string str, string search, StringComparison stringComparison)
+    {
+        if (str == "" || search == "")
+        {
+            return StringMatch.None;
+        }
+
+        int result = str.IndexOf(search, stringComparison);
+        if (result < 0)
+        {
+            return StringMatch.None;
+        }
+
+        return result == 0 ? StringMatch.StartsWith : StringMatch.Contains;
     }
 }

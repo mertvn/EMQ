@@ -12,6 +12,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
@@ -41,12 +42,18 @@ public partial class Index
 
     private bool LoginInProgress { get; set; } = false;
 
+    public MyAutocompleteComponent a { get; set; }
+
+    public string[] Data { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         LoginInProgress = true;
         StateHasChanged();
         await _clientUtils.TryRestoreSession();
         LoginInProgress = false;
+        Data = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!.Select(x=> x.MSTLatinTitle).ToArray();
+        await a.Focus(false);
         StateHasChanged();
     }
 
