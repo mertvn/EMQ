@@ -79,6 +79,7 @@ public partial class Index
 
         return (TValue[])(object)dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value)
+            .DistinctBy(x=> x.Key.MSTLatinTitle)
             .Take(maxResults)
             .Select(x => x.Key)
             .ToArray();

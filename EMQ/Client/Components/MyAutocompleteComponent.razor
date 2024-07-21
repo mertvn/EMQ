@@ -35,7 +35,7 @@
                     @for (int j = 0; j < textField.Length; j++)
                     {
                         char c = textField[j];
-                        if (j >= highlightStart && j <= highlightEnd)
+                        if (highlightStart >= 0 && j >= highlightStart && j <= highlightEnd)
                         {
                             <span style="color: #418eff">@c</span>
                         }
