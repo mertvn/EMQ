@@ -6,7 +6,6 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
-@inject ILogger<GuessInputComponent> _logger
 @inject ClientUtils _clientUtils
 
 <CascadingValue Value="@this" IsFixed="true">
@@ -134,9 +133,7 @@
         </Items>
         <Content>
             <Blazorise.TabPanel Name="TabAutocompleteMst">
-                @* todo FreeTyping should be false after the artist autocomplete changes *@
                 <GuessInputComponent Placeholder="Enter VN title here"
-                                     FreeTyping="true"
                                      IsDisabled="false"
                                      IsQuizPage="false"
                                      @bind-Guess="@selectedMusicSourceTitle"
@@ -145,7 +142,6 @@
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabAutocompleteA">
                 <AutocompleteAComponent Placeholder="Enter artist name here"
-                                        FreeTyping="true"
                                         IsDisabled="false"
                                         IsQuizPage="false"
                                         @bind-Guess="@selectedArtist"
@@ -154,11 +150,10 @@
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabAutocompleteMt">
                 <AutocompleteMtComponent Placeholder="Enter song title here"
-                                        FreeTyping="true"
-                                        IsDisabled="false"
-                                        IsQuizPage="false"
-                                        @bind-Guess="@selectedMusicTitle"
-                                        Callback="SelectedResultChangedMt">
+                                         IsDisabled="false"
+                                         IsQuizPage="false"
+                                         @bind-Guess="@selectedMusicTitle"
+                                         Callback="SelectedResultChangedMt">
                 </AutocompleteMtComponent>
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabVndbAdvsearch">

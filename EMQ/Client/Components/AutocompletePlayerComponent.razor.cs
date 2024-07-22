@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,18 +14,13 @@ namespace EMQ.Client.Components;
 
 public partial class AutocompletePlayerComponent
 {
+    public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
+
     [Parameter]
     public string[] AutocompleteData { get; set; } = Array.Empty<string>();
 
-    private IEnumerable<string> CurrentDataSource { get; set; } = Array.Empty<string>();
-
-    public Autocomplete<string, string> AutocompleteComponent { get; set; } = null!;
-
     [Parameter]
     public string Placeholder { get; set; } = "";
-
-    [Parameter]
-    public bool FreeTyping { get; set; }
 
     [Parameter]
     public bool IsDisabled { get; set; }
@@ -55,20 +52,6 @@ public partial class AutocompletePlayerComponent
 
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
-    private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
-    {
-        if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
-        {
-            CurrentDataSource =
-                Autocomplete.SearchAutocompletePlayer(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
-        }
-    }
-
-    private bool CustomFilter(string item, string searchValue)
-    {
-        return true;
-    }
-
     public void CallStateHasChanged()
     {
         StateHasChanged();
@@ -77,43 +60,60 @@ public partial class AutocompletePlayerComponent
     public async Task ClearInputField()
     {
 #pragma warning disable CS4014
-        AutocompleteComponent.Clear(); // awaiting this causes signalr messages not to be processed in time (???)
+        AutocompleteComponent.Clear(false); // awaiting this causes signalr messages not to be processed in time (???)
 #pragma warning restore CS4014
         await Task.Delay(100);
         StateHasChanged();
     }
 
-    private async Task Onkeypress(KeyboardEventArgs obj)
-    {
-        if (obj.Key is "Enter" or "NumpadEnter")
-        {
-            // todo important find another way to prevent spam
-            // if (Guess?.MId != AutocompleteComponent.SelectedValue?.MId)
-            // {
-            Guess = AutocompleteComponent.SelectedValue;
-            await AutocompleteComponent.Close();
-            StateHasChanged();
-
-            if (IsQuizPage)
-            {
-                // todo do this with callback
-                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedRigger", Guess);
-            }
-
-            Callback?.Invoke();
-            // }
-        }
-    }
-
-    private void SelectedValueChanged(string arg)
-    {
-        CurrentDataSource =
-            Autocomplete.SearchAutocompletePlayer(AutocompleteData,
-                arg); // work-around for an issue I'm too lazy to submit a report for
-    }
-
     public void CallClose()
     {
         AutocompleteComponent.Close();
+    }
+
+    private TValue[] OnSearch<TValue>(string value)
+    {
+        value = value.NormalizeForAutocomplete();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<TValue>();
+        }
+
+        const int maxResults = 25; // todo
+        var dictLT = new Dictionary<string, StringMatch>();
+        foreach (string d in AutocompleteData)
+        {
+            var matchLT = d.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);
+            if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+        }
+
+        return (TValue[])(object)dictLT
+            .OrderByDescending(x => x.Value)
+            .DistinctBy(x => x.Key)
+            .Take(maxResults)
+            .Select(x => x.Key)
+            .ToArray();
+    }
+
+    private async Task OnValueChanged(string? value)
+    {
+        if (string.IsNullOrEmpty(Guess) && string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        Guess = value;
+        // Console.WriteLine(Guess);
+
+        if (IsQuizPage)
+        {
+            // todo do this with callback
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedRigger", Guess);
+        }
+
+        Callback?.Invoke();
     }
 }

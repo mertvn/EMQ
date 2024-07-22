@@ -1,0 +1,66 @@
+﻿@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
+@inject IJSRuntime _jsRuntime
+@typeparam TValue
+
+<div class="autocomplete" style="display: flex; justify-content: flex-end; align-items: center;">
+    @if (Answered && !string.IsNullOrEmpty(GuessStr))
+    {
+        string opacity = string.Equals(GuessStr, SelectedText, StringComparison.OrdinalIgnoreCase) ? "" : "0.5";
+        <div style="position: absolute; padding: 7px; background-color: cornflowerblue; opacity: @opacity">
+            <Blazorise.Tooltip
+                Inline="true"
+                Text="@GuessStr">
+                ✔
+            </Blazorise.Tooltip>
+        </div>
+    }
+
+    <input type="search"
+           class="form-control"
+           placeholder="@Placeholder"
+           disabled="@Disabled"
+           @ref="InputRef"
+           @bind:get="@SelectedText"
+           @bind:set="@(new Func<string, Task>(async value => await OnSetInputSearch(value)))"
+           @bind:event="oninput"
+           @onkeydown="OnKeyDown"
+           @onkeydown:preventDefault="PreventDefault"
+           @onfocus="OnFocus"
+           @onblur="OnBlur"/>
+
+    <div class="autocomplete-items"
+         style="display: @UiHelpers.Bool2Display(ShowDropdown && CurrentSearchResults.Any()); max-height: @MaxMenuHeight; overflow-x: auto; overflow-y: scroll;">
+        @for (int i = 0; i < CurrentSearchResults.Length; i++)
+        {
+            TValue searchResult = CurrentSearchResults[i];
+            int indexCopy = i;
+            string divClass = i == CurrentFocus ? "autocomplete-active" : "";
+            string divId = $"autocomplete-item-{i}";
+            string textField = TextField.Invoke(searchResult);
+            <div id="@divId" class="@divClass" @onpointerdown="@(async args => await Onclick_AutocompleteItem(args, indexCopy))" @onpointerdown:preventDefault="true">
+                @if (HighlightMatch)
+                {
+                    int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);
+                    int highlightEnd = highlightStart + (SelectedText.Length - 1);
+                    @for (int j = 0; j < textField.Length; j++)
+                    {
+                        char c = textField[j];
+                        if (highlightStart >= 0 && j >= highlightStart && j <= highlightEnd)
+                        {
+                            <span style="color: #418eff">@c</span>
+                        }
+                        else
+                        {
+                            <span>@c</span>
+                        }
+                    }
+                }
+                else
+                {
+                    @textField
+                }
+            </div>
+        }
+    </div>
+</div>

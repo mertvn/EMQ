@@ -256,7 +256,7 @@ const string reportTo = @"
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["Content-Security-Policy"] = $"{csp.Replace("\n", " ")}";
+    // context.Response.Headers["Content-Security-Policy"] = $"{csp.Replace("\n", " ")}";
     context.Response.Headers["Report-To"] = $"{reportTo.Replace("\n", " ")}";
     await next();
 });

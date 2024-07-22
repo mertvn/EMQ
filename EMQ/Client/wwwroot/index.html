@@ -331,6 +331,30 @@
         return ret;
     }
 
+    function scrollElementIntoView(elementId, smooth) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            let top;
+            if (element.offsetTop < element.parentElement.scrollTop || element.clientHeight > element.parentElement.clientHeight) {
+                top = element.offsetTop;
+            } else if (element.offsetTop + element.offsetHeight > element.parentElement.scrollTop + element.parentElement.clientHeight) {
+                top = element.offsetTop + element.offsetHeight - element.parentElement.clientHeight;
+            }
+
+            const scrollableParent = getScrollableParent(element);
+            if (scrollableParent) {
+                const behavior = smooth ? "smooth" : "instant";
+                scrollableParent.scrollTo({top: top, behavior: behavior});
+            }
+        }
+    }
+
+    function getScrollableParent(el) {
+        // noinspection StatementWithEmptyBodyJS
+        while ((el = el.parentElement) && window.getComputedStyle(el).overflowY.indexOf('scroll') === -1) ;
+        return el;
+    }
+
 </script>
 
 </body>

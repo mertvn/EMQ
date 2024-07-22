@@ -49,7 +49,7 @@ public partial class ReviewQueueComponent
             }
             else
             {
-                _logger.LogError("Failed to find RQs");
+                Console.WriteLine("Failed to find RQs");
             }
         }
 
