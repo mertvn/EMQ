@@ -481,7 +481,6 @@ else
                 {
                     <AutocompleteMtComponent @ref="AutocompleteMtComponent"
                                              Placeholder="Enter song title here"
-                                             FreeTyping="true"
                                              IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
                                              @bind-Guess="@PageState.Guess.Mt">
@@ -514,7 +513,6 @@ else
                 {
                     <AutocompleteMtComponent @ref="AutocompleteMtComponent"
                                              Placeholder="Enter song title here"
-                                             FreeTyping="true"
                                              IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
                                              @bind-Guess="@PageState.Guess.Mt">
