@@ -1,5 +1,4 @@
 ﻿@using EMQ.Shared.Core.UI
-@using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
 @typeparam TValue
 
@@ -43,18 +42,26 @@
                 {
                     int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);
                     int highlightEnd = highlightStart + (SelectedText.Length - 1);
-                    @for (int j = 0; j < textField.Length; j++)
+                    string beforeHighlight = "";
+                    string highlight = "";
+                    string afterHighlight = "";
+                    @if (highlightStart >= 0)
                     {
-                        char c = textField[j];
-                        if (highlightStart >= 0 && j >= highlightStart && j <= highlightEnd)
+                        if (highlightStart > 0)
                         {
-                            <span style="color: #418eff">@c</span>
+                            beforeHighlight = textField[..highlightStart];
                         }
-                        else
-                        {
-                            <span>@c</span>
-                        }
+
+                        highlight = textField[highlightStart..(highlightEnd + 1)];
+                        afterHighlight = textField[(highlightEnd + 1)..];
                     }
+                    else
+                    {
+                        beforeHighlight = textField;
+                    }
+
+                    // these spans must be be on the same line to be displayed correctly
+                    <span>@beforeHighlight</span><span style="color: #418eff">@highlight</span><span>@afterHighlight</span>
                 }
                 else
                 {
