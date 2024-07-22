@@ -127,7 +127,7 @@ public partial class AutocompleteAComponent
 
         return (TValue[])(object)dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value)
-            .DistinctBy(x => x.Key.AALatinAlias)
+            .DistinctBy(x => x.Key.AId)
             .Take(maxResults)
             .Select(x => x.Key)
             .ToArray();
