@@ -232,7 +232,7 @@ string csp = @$"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-8g5qU45KOUO6nCo2ImP510ZweyoBl70VSswuLSk5j4Y='
+                          'sha256-HWLcyH0Wf02kMUJz/PnWVYIHR0OtDnF7z19AQSZxYnw='
                           ;
                style-src 'self'
                          'unsafe-inline'
@@ -256,7 +256,7 @@ const string reportTo = @"
 
 app.Use(async (context, next) =>
 {
-    // context.Response.Headers["Content-Security-Policy"] = $"{csp.Replace("\n", " ")}";
+    context.Response.Headers["Content-Security-Policy"] = $"{csp.Replace("\n", " ")}";
     context.Response.Headers["Report-To"] = $"{reportTo.Replace("\n", " ")}";
     await next();
 });
