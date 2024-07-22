@@ -490,12 +490,11 @@ else
 
                 @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
                 {
-                    // todo @bind-Guess
                     <AutocompleteAComponent @ref="AutocompleteAComponent"
                                             Placeholder="Enter artist name here"
-                                            FreeTyping="true"
                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
-                                            IsQuizPage="true">
+                                            IsQuizPage="true"
+                                            @bind-GuessLatin="@PageState.Guess.A">
                     </AutocompleteAComponent>
                 }
             }
@@ -503,12 +502,11 @@ else
             {
                 @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a)
                 {
-                    // todo @bind-Guess
                     <AutocompleteAComponent @ref="AutocompleteAComponent"
                                             Placeholder="Enter artist name here"
-                                            FreeTyping="true"
                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
-                                            IsQuizPage="true">
+                                            IsQuizPage="true"
+                                            @bind-GuessLatin="@PageState.Guess.A">
                     </AutocompleteAComponent>
                 }
 

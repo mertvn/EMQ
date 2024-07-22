@@ -705,16 +705,15 @@ public partial class QuizPage
                     await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMst", PageState.Guess.Mst);
                 }
 
-                // todo artist binding is fucked right now
-                // if (string.IsNullOrEmpty(PageState.Guess.A))
-                // {
-                //     PageState.Guess.A = AutocompleteAComponent?.GetSelectedText();
-                // }
-                //
-                // if (!string.IsNullOrEmpty(PageState.Guess.A))
-                // {
-                //     await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", PageState.Guess.A);
-                // }
+                if (string.IsNullOrEmpty(PageState.Guess.A))
+                {
+                    PageState.Guess.A = AutocompleteAComponent?.MapValue(null)?.AALatinAlias;
+                }
+
+                if (!string.IsNullOrEmpty(PageState.Guess.A))
+                {
+                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", PageState.Guess.A);
+                }
 
                 if (string.IsNullOrEmpty(PageState.Guess.Mt))
                 {
