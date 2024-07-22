@@ -1,27 +1,12 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
-@using Microsoft.Extensions.Logging
-@using EMQ.Shared.Library.Entities.Concrete
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @inject HttpClient _client
-@inject ILogger<AutocompleteCComponent> _logger
 
-<Autocomplete @ref="AutocompleteComponent"
-              @onkeypress="Onkeypress"
-              TItem="SongSourceCategory"
-              TValue="SongSourceCategory"
-              Data="@CurrentDataSource"
-              ReadData="@OnHandleReadData"
-              TextField="@((item) => $"{item.Name}")"
-              ValueField="@((item) => item)"
-              Placeholder="@Placeholder"
-              FreeTyping="@FreeTyping"
-              MinLength="1"
-              Debounce="true"
-              DebounceInterval="5"
-              MaxMenuHeight="340px"
-              AutoPreSelect="false"
-              AutoSelectFirstItem="false"
-              CustomFilter="CustomFilter"
-              SelectedValueChanged="SelectedValueChanged"
-              Disabled="@IsDisabled">
-</Autocomplete>
+<MyAutocompleteComponent @ref="AutocompleteComponent"
+                         TValue="SongSourceCategory"
+                         MaxMenuHeight="340px"
+                         Disabled="IsDisabled"
+                         Placeholder="@Placeholder"
+                         GuessStr="@(Guess == null ? "" : Guess.Name)"
+                         TextField="@((item) => item.Name)"
+                         OnSearch="@(x => OnSearch<SongSourceCategory>(x))"
+                         OnValueChanged="OnValueChanged"/>

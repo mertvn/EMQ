@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Blazorise.Components;
@@ -15,17 +17,12 @@ namespace EMQ.Client.Components;
 
 public partial class AutocompleteCComponent
 {
+    public MyAutocompleteComponent<SongSourceCategory> AutocompleteComponent { get; set; } = null!;
+
     public SongSourceCategory[] AutocompleteData { get; set; } = Array.Empty<SongSourceCategory>();
-
-    private IEnumerable<SongSourceCategory> CurrentDataSource { get; set; } = Array.Empty<SongSourceCategory>();
-
-    public Autocomplete<SongSourceCategory, SongSourceCategory> AutocompleteComponent { get; set; } = null!;
 
     [Parameter]
     public string Placeholder { get; set; } = "";
-
-    [Parameter]
-    public bool FreeTyping { get; set; }
 
     [Parameter]
     public bool IsDisabled { get; set; }
@@ -60,20 +57,6 @@ public partial class AutocompleteCComponent
         AutocompleteData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
     }
 
-    private void OnHandleReadData(AutocompleteReadDataEventArgs autocompleteReadDataEventArgs)
-    {
-        if (!autocompleteReadDataEventArgs.CancellationToken.IsCancellationRequested)
-        {
-            CurrentDataSource =
-                Autocomplete.SearchAutocompleteC(AutocompleteData, autocompleteReadDataEventArgs.SearchValue);
-        }
-    }
-
-    private bool CustomFilter(SongSourceCategory item, string searchValue)
-    {
-        return true;
-    }
-
     public void CallStateHasChanged()
     {
         StateHasChanged();
@@ -82,42 +65,76 @@ public partial class AutocompleteCComponent
     public async Task ClearInputField()
     {
 #pragma warning disable CS4014
-        AutocompleteComponent.Clear(); // awaiting this causes signalr messages not to be processed in time (???)
+        AutocompleteComponent.Clear(false); // awaiting this causes signalr messages not to be processed in time (???)
 #pragma warning restore CS4014
         await Task.Delay(100);
         StateHasChanged();
     }
 
-    private async Task Onkeypress(KeyboardEventArgs obj)
-    {
-        if (obj.Key is "Enter" or "NumpadEnter")
-        {
-            if (Guess != AutocompleteComponent.SelectedValue)
-            {
-                Guess = AutocompleteComponent.SelectedValue;
-                await AutocompleteComponent.Close();
-                StateHasChanged();
-
-                if (IsQuizPage)
-                {
-                    // todo do this with callback
-                    await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedC", Guess);
-                }
-
-                Callback?.Invoke();
-            }
-        }
-    }
-
-    private void SelectedValueChanged(SongSourceCategory arg)
-    {
-        CurrentDataSource =
-            Autocomplete.SearchAutocompleteC(AutocompleteData,
-                arg.Name); // work-around for an issue I'm too lazy to submit a report for
-    }
-
     public void CallClose()
     {
         AutocompleteComponent.Close();
+    }
+
+    private TValue[] OnSearch<TValue>(string value)
+    {
+        value = value.NormalizeForAutocomplete();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<TValue>();
+        }
+
+        const int maxResults = 25; // todo
+        var dictLT = new Dictionary<SongSourceCategory, ExtensionMethods.StringMatch>();
+        var dictNLT = new Dictionary<SongSourceCategory, ExtensionMethods.StringMatch>();
+        foreach (SongSourceCategory d in AutocompleteData)
+        {
+            var matchLT = d.Name.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);
+            if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+
+            if (!string.IsNullOrEmpty(d.VndbId))
+            {
+                var matchNLT = d.VndbId.StartsWithContains(value, StringComparison.Ordinal);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+            }
+        }
+
+        return (TValue[])(object)dictLT.Concat(dictNLT)
+            .OrderByDescending(x => x.Value)
+            // .DistinctBy(x => x.Key.VndbId)
+            .Take(maxResults)
+            .Select(x => x.Key)
+            .ToArray();
+    }
+
+    public SongSourceCategory? MapValue(SongSourceCategory? value)
+    {
+        string s = value != null ? value.Name : AutocompleteComponent.SelectedText;
+        if (string.IsNullOrEmpty(Guess?.Name) && string.IsNullOrEmpty(s))
+        {
+            return null;
+        }
+
+        return value ?? new SongSourceCategory { Name = s };
+    }
+
+    private async Task OnValueChanged(SongSourceCategory? value)
+    {
+        Guess = MapValue(value);
+        // Console.WriteLine(Guess);
+
+        if (IsQuizPage)
+        {
+            // todo do this with callback
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedC", Guess);
+        }
+
+        Callback?.Invoke();
     }
 }
