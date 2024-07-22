@@ -91,8 +91,8 @@ public partial class GuessInputComponent
 
         bool hasNonAscii = !Ascii.IsValid(value);
         const int maxResults = 25; // todo
-        var dictLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
+        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
         foreach (AutocompleteMst d in AutocompleteData)
         {
             var matchLT = d.MSTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);

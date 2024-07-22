@@ -86,8 +86,8 @@ public partial class AutocompleteMtComponent
 
         // bool hasNonAscii = !Ascii.IsValid(value);
         const int maxResults = 25; // todo
-        var dictLT = new Dictionary<AutocompleteMt, ExtensionMethods.StringMatch>();
-        // var dictNLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
+        var dictLT = new Dictionary<AutocompleteMt, StringMatch>();
+        // var dictNLT = new Dictionary<AutocompleteMt, StringMatch>();
         foreach (AutocompleteMt d in AutocompleteData)
         {
             var matchLT = d.MTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);

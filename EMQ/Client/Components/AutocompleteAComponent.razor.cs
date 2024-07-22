@@ -103,8 +103,8 @@ public partial class AutocompleteAComponent
 
         bool hasNonAscii = !Ascii.IsValid(value);
         const int maxResults = 25; // todo
-        var dictLT = new Dictionary<AutocompleteA, ExtensionMethods.StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteA, ExtensionMethods.StringMatch>();
+        var dictLT = new Dictionary<AutocompleteA, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
         {
             var matchLT = d.AALatinAlias.NormalizeForAutocomplete()

@@ -80,7 +80,7 @@ public partial class AutocompletePlayerComponent
         }
 
         const int maxResults = 25; // todo
-        var dictLT = new Dictionary<string, ExtensionMethods.StringMatch>();
+        var dictLT = new Dictionary<string, StringMatch>();
         foreach (string d in AutocompleteData)
         {
             var matchLT = d.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);

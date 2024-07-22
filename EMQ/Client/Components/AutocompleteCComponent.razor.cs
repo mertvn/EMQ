@@ -85,8 +85,8 @@ public partial class AutocompleteCComponent
         }
 
         const int maxResults = 25; // todo
-        var dictLT = new Dictionary<SongSourceCategory, ExtensionMethods.StringMatch>();
-        var dictNLT = new Dictionary<SongSourceCategory, ExtensionMethods.StringMatch>();
+        var dictLT = new Dictionary<SongSourceCategory, StringMatch>();
+        var dictNLT = new Dictionary<SongSourceCategory, StringMatch>();
         foreach (SongSourceCategory d in AutocompleteData)
         {
             var matchLT = d.Name.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);

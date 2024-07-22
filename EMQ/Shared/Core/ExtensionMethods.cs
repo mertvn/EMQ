@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -369,13 +369,6 @@ public static class ExtensionMethods
     {
         return avatar.Character is AvatarCharacter.VNDBCharacterImage ||
                Avatar.SkinsDict.TryGetValue(avatar.Character, out var skins) && skins.Contains(avatar.Skin);
-    }
-
-    public enum StringMatch
-    {
-        None = 0,
-        Contains = 1,
-        StartsWith = 2,
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
