@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace EMQ.Shared.Core;
@@ -19,4 +20,13 @@ public static class RegexPatterns
 
     public static readonly Regex EmailRegexCompiled =
         new(EmailRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(690));
+
+    public static readonly Dictionary<string, string> AutocompleteStringReplacements = new()
+    {
+        { " ", "" },
+        { "　", "" },
+        { "Ω", "" },
+        { "√", "root" },
+        { "μ", "myu" },
+    };
 }

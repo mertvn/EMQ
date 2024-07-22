@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -216,16 +216,21 @@ public static class ExtensionMethods
         return songLite;
     }
 
+    // todo search exact match on unnormalized input first for e.g. ONE.
     public static string NormalizeForAutocomplete(this string input)
     {
-        // todo Coμ, √ after and another
-        // todo ☆, ♪ etc.
+        foreach ((string? key, string? value) in RegexPatterns.AutocompleteStringReplacements)
+        {
+            input = input.Replace(key, value);
+        }
+
         return new string(input
                 .Trim()
                 .ToLowerInvariant()
                 .Normalize(NormalizationForm.FormD)
-                .Where(ch => CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
-                .Where(y => (char.IsLetterOrDigit(y) || char.IsWhiteSpace(y)))
+                .Where(ch =>
+                    CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark &&
+                    char.IsLetterOrDigit(ch))
                 .ToArray())
             .Normalize(NormalizationForm.FormC);
     }
