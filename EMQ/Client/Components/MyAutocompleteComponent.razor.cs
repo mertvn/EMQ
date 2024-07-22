@@ -56,9 +56,8 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public EventCallback<TValue?> OnValueChanged { get; set; }
 
-    // todo freetyping then deleting shows no bound value but the deletion won't actually be sent to server
-    // todo important actually you just have to make any change for this to be an issue, must fix
-    public string BoundValueForDisplay => SelectedValue != null ? TextField.Invoke(SelectedValue) : SelectedText;
+    [Parameter]
+    public string? GuessStr { get; set; }
 
     public void Close()
     {

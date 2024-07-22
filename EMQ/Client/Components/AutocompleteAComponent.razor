@@ -6,6 +6,7 @@
                          MaxMenuHeight="340px"
                          Disabled="IsDisabled"
                          Placeholder="@Placeholder"
-                         TextField="@((item) => $"{item.AALatinAlias}" + (!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : ""))"
+                         GuessStr="@(Guess == null ? "" : $"{Guess.AALatinAlias}{(!string.IsNullOrWhiteSpace(Guess.AANonLatinAlias) ? $" ({Guess.AANonLatinAlias})" : "")}")"
+                         TextField="@((item) => $"{item.AALatinAlias}{(!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : "")}")"
                          OnSearch="@(x => OnSearch<AutocompleteA>(x))"
                          OnValueChanged="OnValueChanged"/>

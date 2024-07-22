@@ -4,12 +4,13 @@
 @typeparam TValue
 
 <div class="autocomplete" style="display: flex; justify-content: flex-end; align-items: center;">
-    @if (Answered)
+    @if (Answered && !string.IsNullOrEmpty(GuessStr))
     {
-        <div style="position: absolute; padding: 7px; background-color: cornflowerblue">
+        string opacity = string.Equals(GuessStr, SelectedText, StringComparison.OrdinalIgnoreCase) ? "" : "0.5";
+        <div style="position: absolute; padding: 7px; background-color: cornflowerblue; opacity: @opacity">
             <Blazorise.Tooltip
                 Inline="true"
-                Text="@BoundValueForDisplay">
+                Text="@GuessStr">
                 ✔
             </Blazorise.Tooltip>
         </div>
