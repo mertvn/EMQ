@@ -3,14 +3,24 @@
 @inject IJSRuntime _jsRuntime
 @typeparam TValue
 
-@* todo width param *@
-<div class="autocomplete" style="width: 630px;">
+<div class="autocomplete" style="display: flex; justify-content: flex-end; align-items: center;">
+    @if (Answered)
+    {
+        <div style="position: absolute; padding: 7px; background-color: cornflowerblue">
+            <Blazorise.Tooltip
+                Inline="true"
+                Text="@BoundValueForDisplay">
+                ✔
+            </Blazorise.Tooltip>
+        </div>
+    }
+
     <input type="search"
            class="form-control"
            placeholder="@Placeholder"
            disabled="@Disabled"
            @ref="InputRef"
-           @bind:get="@CurrentText"
+           @bind:get="@SelectedText"
            @bind:set="@(new Func<string, Task>(async value => await OnSetInputSearch(value)))"
            @bind:event="oninput"
            @onkeydown="OnKeyDown"
@@ -27,11 +37,11 @@
             string divClass = i == CurrentFocus ? "autocomplete-active" : "";
             string divId = $"autocomplete-item-{i}";
             string textField = TextField.Invoke(searchResult);
-            <div id="@divId" class="@divClass" @onpointerdown="@(args => Onclick_AutocompleteItem(args, indexCopy))" @onpointerdown:preventDefault="true">
+            <div id="@divId" class="@divClass" @onpointerdown="@(async args => await Onclick_AutocompleteItem(args, indexCopy))" @onpointerdown:preventDefault="true">
                 @if (HighlightMatch)
                 {
-                    int highlightStart = textField.IndexOf(CurrentText, StringComparison.OrdinalIgnoreCase);
-                    int highlightEnd = highlightStart + (CurrentText.Length - 1);
+                    int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);
+                    int highlightEnd = highlightStart + (SelectedText.Length - 1);
                     @for (int j = 0; j < textField.Length; j++)
                     {
                         char c = textField[j];

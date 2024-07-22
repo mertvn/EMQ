@@ -1,30 +1,11 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
-@using Microsoft.Extensions.Logging
+﻿@using EMQ.Shared.Library.Entities.Concrete
 @inject HttpClient _client
-@inject ILogger<GuessInputComponent> _logger
 
-<Autocomplete @ref="AutocompleteComponent"
-              @onkeypress="Onkeypress"
-              TItem="string"
-              TValue="string"
-              Data="@CurrentDataSource"
-              ReadData="@OnHandleReadData"
-              TextField="@((item) => item)"
-              ValueField="@((item) => item)"
-              Placeholder="@Placeholder"
-              FreeTyping="@FreeTyping"
-              MinLength="1"
-              Debounce="true"
-              DebounceInterval="5"
-              MaxMenuHeight="325px"
-              AutoPreSelect="false"
-              AutoSelectFirstItem="false"
-              CustomFilter="CustomFilter"
-              SelectedValueChanged="SelectedValueChanged"
-              Disabled="@IsDisabled">
-</Autocomplete>
-
-@* @if (IsQuizPage) *@
-@* { *@
-@*     <span style="word-wrap: anywhere">Guess: @Guess</span> *@
-@* } *@
+<MyAutocompleteComponent @ref="AutocompleteComponent"
+                         TValue="AutocompleteMst"
+                         MaxMenuHeight="325px"
+                         Disabled="IsDisabled"
+                         Placeholder="@Placeholder"
+                         TextField="@((item) => item.MSTLatinTitle)"
+                         OnSearch="@(x => OnSearch<AutocompleteMst>(x))"
+                         OnValueChanged="OnValueChanged"/>

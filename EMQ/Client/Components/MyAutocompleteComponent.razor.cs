@@ -11,19 +11,21 @@ namespace EMQ.Client.Components;
 
 public partial class MyAutocompleteComponent<TValue> where TValue : notnull
 {
-    public string CurrentText { get; set; } = "";
+    public string SelectedText { get; private set; } = "";
 
-    public TValue? CurrentValue { get; set; }
+    public TValue? SelectedValue { get; private set; }
 
-    public TValue[] CurrentSearchResults = Array.Empty<TValue>();
+    public TValue[] CurrentSearchResults { get; private set; } = Array.Empty<TValue>();
 
-    public bool PreventDefault { get; set; }
+    public bool PreventDefault { get; private set; }
 
-    public bool ShowDropdown { get; set; }
+    public bool ShowDropdown { get; private set; }
 
-    public ElementReference InputRef { get; set; }
+    public ElementReference InputRef { get; private set; }
 
-    public int CurrentFocus { get; set; } = -1;
+    public int CurrentFocus { get; private set; } = -1;
+
+    public bool Answered { get; private set; }
 
     // todo implement
     [Parameter]
@@ -38,6 +40,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public bool Disabled { get; set; }
 
+    // todo option
     [Parameter]
     public bool HighlightMatch { get; set; } = true;
 
@@ -49,6 +52,13 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public Func<TValue, string> TextField { get; set; } = null!;
 
+    [EditorRequired]
+    [Parameter]
+    public EventCallback<TValue?> OnValueChanged { get; set; }
+
+    // todo freetyping then deleting shows no bound value but the deletion won't actually be sent to server
+    public string BoundValueForDisplay => SelectedValue != null ? TextField.Invoke(SelectedValue) : SelectedText;
+
     public void Close()
     {
         ShowDropdown = false;
@@ -56,23 +66,29 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         StateHasChanged();
     }
 
-    public async Task Focus(bool preventScroll)
+    public async Task Focus(bool preventScroll = false)
     {
         await InputRef.FocusAsync(preventScroll);
     }
 
-    public void Clear()
+    public async Task Clear(bool raiseValueChanged)
     {
-        CurrentText = "";
-        CurrentValue = default;
+        SelectedText = "";
+        SelectedValue = default;
         CurrentFocus = -1;
         CurrentSearchResults = Array.Empty<TValue>();
+        Answered = false;
         StateHasChanged();
+
+        if (raiseValueChanged)
+        {
+            await OnValueChanged.InvokeAsync(SelectedValue);
+        }
     }
 
     private async Task OnSetInputSearch(string value)
     {
-        CurrentText = value;
+        SelectedText = value;
         CurrentSearchResults = OnSearch.Invoke(value);
         CurrentFocus = Math.Clamp(CurrentFocus, -1,
             CurrentSearchResults.Length == 0 ? -1 : CurrentSearchResults.Length - 1);
@@ -105,7 +121,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
             case "NumpadEnter":
             case "Tab":
                 {
-                    SelectValue();
+                    await SelectValue();
                     break;
                 }
             case "Escape":
@@ -132,17 +148,25 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         await _jsRuntime.InvokeVoidAsync("scrollElementIntoView", elementId, true);
     }
 
-    private void SelectValue()
+    private async Task SelectValue()
     {
         TValue? value = CurrentSearchResults.ElementAtOrDefault(CurrentFocus);
         if (value != null)
         {
             string textField = TextField.Invoke(value);
-            CurrentText = textField;
-            CurrentValue = value;
-            ShowDropdown = false;
+            SelectedText = textField;
+            SelectedValue = value;
             CurrentSearchResults = OnSearch.Invoke(textField);
         }
+        else
+        {
+            SelectedValue = default;
+            CurrentSearchResults = OnSearch.Invoke(SelectedText);
+        }
+
+        await OnValueChanged.InvokeAsync(SelectedValue);
+        ShowDropdown = false;
+        Answered = true;
     }
 
     private void OnFocus(FocusEventArgs obj)
@@ -155,9 +179,9 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         Close();
     }
 
-    private async void Onclick_AutocompleteItem(MouseEventArgs obj, int index)
+    private async Task Onclick_AutocompleteItem(MouseEventArgs obj, int index)
     {
         CurrentFocus = index;
-        SelectValue();
+        await SelectValue();
     }
 }

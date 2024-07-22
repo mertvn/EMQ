@@ -43,56 +43,12 @@ public partial class Index
 
     private bool LoginInProgress { get; set; } = false;
 
-    public MyAutocompleteComponent<AutocompleteMst> a { get; set; }
-
-    public AutocompleteMst[] Data { get; set; }
-
-    private TValue[] OnSearch<TValue>(string value)
-    {
-        value = value.NormalizeForAutocomplete();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return Array.Empty<TValue>();
-        }
-
-        bool hasNonAscii = Encoding.UTF8.GetByteCount(value) != value.Length;
-        const int maxResults = 25; // todo
-        var dictLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteMst, ExtensionMethods.StringMatch>();
-        foreach (AutocompleteMst d in Data)
-        {
-            var matchLT = d.MSTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
-            if (matchLT > 0)
-            {
-                dictLT[d] = matchLT;
-            }
-
-            if (hasNonAscii)
-            {
-                var matchNLT = d.MSTNonLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
-                if (matchNLT > 0)
-                {
-                    dictNLT[d] = matchNLT;
-                }
-            }
-        }
-
-        return (TValue[])(object)dictLT.Concat(dictNLT)
-            .OrderByDescending(x => x.Value)
-            .DistinctBy(x=> x.Key.MSTLatinTitle)
-            .Take(maxResults)
-            .Select(x => x.Key)
-            .ToArray();
-    }
-
     protected override async Task OnInitializedAsync()
     {
         LoginInProgress = true;
         StateHasChanged();
         await _clientUtils.TryRestoreSession();
         LoginInProgress = false;
-        Data = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
-        await a.Focus(false);
         StateHasChanged();
     }
 
