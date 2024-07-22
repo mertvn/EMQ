@@ -524,7 +524,6 @@ else
             {
                 <AutocompletePlayerComponent @ref="AutocompletePlayerComponent"
                                      Placeholder="Enter player name here"
-                                     FreeTyping="true"
                                      IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                      IsQuizPage="true"
                                      @bind-Guess="@PageState.Guess.Rigger"

@@ -1,24 +1,11 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
-@using EMQ.Shared.Library.Entities.Concrete
-@inject HttpClient _client
+﻿@inject HttpClient _client
 
-<Autocomplete @ref="AutocompleteComponent"
-              @onkeypress="Onkeypress"
-              TItem="string"
-              TValue="string"
-              Data="@CurrentDataSource"
-              ReadData="@OnHandleReadData"
-              TextField="@((item) => item)"
-              ValueField="@((item) => item)"
-              Placeholder="@Placeholder"
-              FreeTyping="@FreeTyping"
-              MinLength="1"
-              Debounce="true"
-              DebounceInterval="5"
-              MaxMenuHeight="340px"
-              AutoPreSelect="false"
-              AutoSelectFirstItem="false"
-              CustomFilter="CustomFilter"
-              SelectedValueChanged="SelectedValueChanged"
-              Disabled="@IsDisabled">
-</Autocomplete>
+<MyAutocompleteComponent @ref="AutocompleteComponent"
+                         TValue="string"
+                         MaxMenuHeight="325px"
+                         Disabled="IsDisabled"
+                         Placeholder="@Placeholder"
+                         GuessStr="@Guess"
+                         TextField="@((item) => item)"
+                         OnSearch="@(x => OnSearch<string>(x))"
+                         OnValueChanged="OnValueChanged"/>
