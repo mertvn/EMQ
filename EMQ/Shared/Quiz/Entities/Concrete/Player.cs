@@ -163,4 +163,10 @@ public class PlayerPreferences
 
     [Required]
     public bool DebugMode { get; set; } = false;
+
+    [Required]
+    public bool AutocompleteHighlightMatch { get; set; } = true;
+
+    [Required]
+    public bool AutocompleteRequireConfirmation { get; set; } = false;
 }

@@ -100,6 +100,17 @@
                                         <br/>
                                     </div>
 
+                                    <div style="border: 1px black solid; margin: 2px; padding: 10px; width: 400px;">
+                                        <h5>Autocomplete</h5>
+                                        <InputCheckbox id="AutocompleteHighlightMatch" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteHighlightMatch" style="margin: 5px"></InputCheckbox>
+                                        <label for="AutocompleteHighlightMatch">Highlight matching text</label>
+                                        <br/>
+
+                                        <InputCheckbox id="AutocompleteRequireConfirmation" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteRequireConfirmation" style="margin: 5px"></InputCheckbox>
+                                        <label for="AutocompleteRequireConfirmation">Require confirmation before changing guess</label>
+                                        <br/>
+                                    </div>
+
                                 </Blazorise.TabPanel>
                                 <Blazorise.TabPanel Name="TabVNDB">
                                     <div>

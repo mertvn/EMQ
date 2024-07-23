@@ -3,7 +3,9 @@
 
 <MyAutocompleteComponent @ref="AutocompleteComponent"
                          TValue="SongSourceCategory"
-                         MaxMenuHeight="340px"
+                         MaxMenuHeight="325px"
+                         HighlightMatch="ClientState.Preferences.AutocompleteHighlightMatch"
+                         RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
                          Disabled="IsDisabled"
                          Placeholder="@Placeholder"
                          GuessStr="@(Guess == null ? "" : Guess.Name)"

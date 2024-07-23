@@ -40,9 +40,11 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public bool Disabled { get; set; }
 
-    // todo option
     [Parameter]
     public bool HighlightMatch { get; set; } = true;
+
+    [Parameter]
+    public bool RequireConfirmation { get; set; }
 
     [EditorRequired]
     [Parameter]
@@ -154,19 +156,26 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         if (value != null)
         {
             string textField = TextField.Invoke(value);
+            bool confirmed = !RequireConfirmation || SelectedText == textField;
             SelectedText = textField;
-            SelectedValue = value;
-            CurrentSearchResults = OnSearch.Invoke(textField);
+
+            if (confirmed)
+            {
+                SelectedValue = value;
+                CurrentSearchResults = OnSearch.Invoke(textField);
+                await OnValueChanged.InvokeAsync(SelectedValue);
+                Answered = true;
+            }
         }
         else
         {
             SelectedValue = default;
             CurrentSearchResults = OnSearch.Invoke(SelectedText);
+            await OnValueChanged.InvokeAsync(SelectedValue);
+            Answered = true;
         }
 
-        await OnValueChanged.InvokeAsync(SelectedValue);
         ShowDropdown = false;
-        Answered = true;
     }
 
     private void OnFocus(FocusEventArgs obj)
