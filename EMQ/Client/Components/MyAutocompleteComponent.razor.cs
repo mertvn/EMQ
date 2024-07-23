@@ -54,6 +54,9 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public Func<TValue, string> TextField { get; set; } = null!;
 
+    [Parameter]
+    public Func<TValue, string>? TextFieldForSelectedText { get; set; }
+
     [EditorRequired]
     [Parameter]
     public EventCallback<TValue?> OnValueChanged { get; set; }
@@ -156,8 +159,10 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         if (value != null)
         {
             string textField = TextField.Invoke(value);
-            bool confirmed = !RequireConfirmation || SelectedText == textField;
-            SelectedText = textField;
+            string textFieldForSelectedText =
+                TextFieldForSelectedText != null ? TextFieldForSelectedText.Invoke(value) : textField;
+            bool confirmed = !RequireConfirmation || SelectedText == textFieldForSelectedText;
+            SelectedText = textFieldForSelectedText;
 
             if (confirmed)
             {

@@ -8,7 +8,8 @@
                          RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
                          Disabled="IsDisabled"
                          Placeholder="@Placeholder"
-                         GuessStr="@(Guess == null ? "" : $"{Guess.AALatinAlias}{(!string.IsNullOrWhiteSpace(Guess.AANonLatinAlias) ? $" ({Guess.AANonLatinAlias})" : "")}")"
+                         GuessStr="@(Guess == null ? "" : $"{Guess.AALatinAlias}")"
                          TextField="@((item) => $"{item.AALatinAlias}{(!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : "")}")"
+                         TextFieldForSelectedText="@(item => item.AALatinAlias)"
                          OnSearch="@(x => OnSearch<AutocompleteA>(x))"
                          OnValueChanged="OnValueChanged"/>
