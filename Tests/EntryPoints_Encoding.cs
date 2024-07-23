@@ -1007,6 +1007,14 @@ public class EntryPoints_Encoding
                 Oma = new[] { "aa3", "adx", "genh" },
                 Two64 = new[] { "264", "m2v" }
             },
+            new()
+            {
+                Name = "xbox",
+                Cpk = "cpk",
+                Pmf = new[] { "sfd", },
+                Oma = new[] { "adx", },
+                Two64 = new[] { "m2v", }
+            },
         };
 
         foreach (Platform platform in platforms)
@@ -1067,6 +1075,8 @@ public class EntryPoints_Encoding
                                 pmfFile.Replace($".{possiblePmf}", $"_400001BD.{x}",
                                     StringComparison.OrdinalIgnoreCase),
                                 pmfFile.Replace($".{possiblePmf}", $"_A00001BD.{x}",
+                                    StringComparison.OrdinalIgnoreCase),
+                                pmfFile.Replace($".{possiblePmf}", $"_000001C0.{x}",
                                     StringComparison.OrdinalIgnoreCase)
                             };
                             return ret;
@@ -1186,6 +1196,19 @@ public class EntryPoints_Encoding
                                         {
                                             videoFile = possibleVideoFile4;
                                             break;
+                                        }
+                                        else
+                                        {
+                                            // ....
+                                            string searchStr5 = $"000001C0.{possibleOma}";
+                                            bool contains5 = omaFile.Contains(searchStr5);
+                                            string possibleVideoFile5 =
+                                                omaFile.Replace(searchStr5, $"000001E0.{possibleTwo64}");
+                                            if (contains5 && File.Exists(possibleVideoFile5))
+                                            {
+                                                videoFile = possibleVideoFile5;
+                                                break;
+                                            }
                                         }
                                     }
                                 }

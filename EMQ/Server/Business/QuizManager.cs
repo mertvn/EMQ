@@ -218,6 +218,11 @@ public class QuizManager
                 false);
         }
 
+        while (Quiz.QuizState.IsPaused)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;

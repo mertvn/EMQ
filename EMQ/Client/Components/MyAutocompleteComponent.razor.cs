@@ -167,7 +167,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
             if (confirmed)
             {
                 SelectedValue = value;
-                CurrentSearchResults = OnSearch.Invoke(textField);
+                CurrentSearchResults = OnSearch.Invoke(SelectedText);
                 await OnValueChanged.InvokeAsync(SelectedValue);
                 Answered = true;
             }

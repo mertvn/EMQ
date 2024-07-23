@@ -253,7 +253,7 @@ public static class MediaAnalyser
             throw new Exception("Audio codec in the source video is unprocessable.");
         }
 
-        bool requiresDownscale = result.Width > 1280 || result.Height > 768;
+        bool requiresDownscale = result.Width * result.Height > 1280 * 768;
         bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
         bool encodeAudioSeparately = !canCopyAudio && false;
         bool cropSilence = uploadOptions.ShouldCropSilence;
