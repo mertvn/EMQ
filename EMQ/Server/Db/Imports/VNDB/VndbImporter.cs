@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Shared.Core;
@@ -45,7 +46,16 @@ public static class VndbImporter
 
         PendingSongs.Clear();
         string date = dateTime.ToString("yyyy-MM-dd");
-        string folder = $"C:\\emq\\vndb\\{date}"; // todo paths
+        string folder;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            folder = $"C:\\emq\\vndb\\{date}";
+        }
+        else
+        {
+            folder = $"vndbimporter/{date}";
+            Console.WriteLine($"{Directory.GetCurrentDirectory()}/{folder}");
+        }
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
             await File.ReadAllTextAsync($"{folder}\\EMQ music_source.json"))!;
@@ -281,14 +291,14 @@ public static class VndbImporter
 
             bool artistAliasIsMain = (int)dynArtist.main == (int)dynArtistAlias.aid;
 
-            // Console.WriteLine((string)dynData.role);
-            SongArtistRole role = (string)dynData.role switch
+            // Console.WriteLine(dynData.role);
+            SongArtistRole role = dynData.role switch
             {
                 "songs" => SongArtistRole.Vocals,
                 "music" => SongArtistRole.Composer,
                 "staff" => SongArtistRole.Staff,
                 "translator" => SongArtistRole.Translator,
-                _ => throw new Exception("Invalid artist role")
+                _ => throw new Exception($"Invalid artist role: {dynArtist.role}")
             };
 
             // Console.WriteLine((string)dynArtist.gender);
@@ -296,8 +306,8 @@ public static class VndbImporter
             {
                 "f" => Sex.Female,
                 "m" => Sex.Male,
-                "unknown" => Sex.Unknown,
-                _ => throw new Exception("Invalid artist sex")
+                "" => Sex.Unknown,
+                _ => throw new Exception($"Invalid artist sex: {(string)dynArtist.gender}")
             };
 
             (string artistLatinTitle, string? artistNonLatinTitle) = VndbTitleToEmqTitle((string)dynArtistAlias.name,

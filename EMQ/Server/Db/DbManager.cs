@@ -63,9 +63,12 @@ public static class DbManager
                 .Select(x => x.ToVndbId()).ToArray();
         }
 
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+        bool hasVndbDb = true;
+        if (hasVndbDb)
         {
-            const string sql = @"
+            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+            {
+                const string sql = @"
 SELECT distinct v.id, p.name, p.latin FROM producers p
 join releases_producers rp ON rp.pid = p.id
 JOIN releases r ON r.id = rp.id
@@ -73,9 +76,11 @@ JOIN releases_vn rv ON rv.id = r.id
 JOIN vn v ON v.id = rv.vid
 WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
-            var vnDevelopers =
-                await connection.QueryAsync<(string id, string name, string? latin)>(sql, new { vnIds });
-            VnDevelopers = vnDevelopers.GroupBy(x => x.id).ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
+                var vnDevelopers =
+                    await connection.QueryAsync<(string id, string name, string? latin)>(sql, new { vnIds });
+                VnDevelopers = vnDevelopers.GroupBy(x => x.id)
+                    .ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
+            }
         }
 
         await RefreshMusicIdsRecordingGidsCache();
