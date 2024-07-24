@@ -49,7 +49,7 @@ public static class VndbImporter
         string folder;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            folder = $"C:\\emq\\vndb\\{date}";
+            folder = $"C:/emq/vndb/{date}";
         }
         else
         {
@@ -58,25 +58,25 @@ public static class VndbImporter
         }
 
         musicSourcesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ music_source.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ music_source.json"))!;
 
         musicSourcesTitlesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ music_source_title.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ music_source_title.json"))!;
 
         artistsJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ artist.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ artist.json"))!;
 
         artists_aliasesJson = JsonConvert.DeserializeObject<List<dynamic>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ artist_alias.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ artist_alias.json"))!;
 
         processedMusicsJson = JsonConvert.DeserializeObject<List<ProcessedMusic>>(
-            await File.ReadAllTextAsync($"{folder}\\processedMusics.json"))!;
+            await File.ReadAllTextAsync($"{folder}/processedMusics.json"))!;
 
         vnTagInfoJson = JsonConvert.DeserializeObject<List<VNTagInfo>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ vnTagInfo.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ vnTagInfo.json"))!;
 
         tagsJson = JsonConvert.DeserializeObject<List<Tag>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ tags.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ tags.json"))!;
 
         var hashSetAId = new HashSet<int>();
         foreach (dynamic dyn in artists_aliasesJson)
@@ -98,7 +98,7 @@ public static class VndbImporter
         }
 
         var incomingSongs = ImportVndbDataInner(processedMusicsJson);
-        await File.WriteAllTextAsync($"{folder}\\VndbImporter.json",
+        await File.WriteAllTextAsync($"{folder}/VndbImporter.json",
             System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
         List<Song> dbSongs;
@@ -198,7 +198,7 @@ public static class VndbImporter
             songSource.Categories = new List<SongSourceCategory>();
         }
 
-        await File.WriteAllTextAsync($"{folder}\\VndbImporter_no_categories.json",
+        await File.WriteAllTextAsync($"{folder}/VndbImporter_no_categories.json",
             System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
         Console.WriteLine("VndbImporter is done.");
