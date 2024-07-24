@@ -23,10 +23,16 @@ public static class RegexPatterns
 
     public static readonly Dictionary<string, string> AutocompleteStringReplacements = new()
     {
+        // only 1 appearance in the DB: Δ, κ, ν, ο, π, Σ, ψ, χ
         { " ", "" },
         { "　", "" },
-        { "Ω", "" },
         { "√", "root" },
+        { "α", "a" },
+        // { "β", "B" },
+        { "βίος", "Bios" },
+        { "Λ", "A" },
         { "μ", "myu" },
+        { "φ", "o" },
+        { "Ω", "" },
     };
 }
