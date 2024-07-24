@@ -3776,7 +3776,7 @@ group by a.id, a.vndb_id ORDER BY COUNT(DISTINCT m.id) desc";
             }
             catch (Exception)
             {
-                Console.WriteLine(JsonSerializer.Serialize(aliases, Utils.JsoIndented));
+                Console.WriteLine(libraryStatsAm.VndbId);
                 throw;
             }
         }
