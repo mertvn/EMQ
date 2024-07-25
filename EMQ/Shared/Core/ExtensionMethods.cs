@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -391,5 +392,12 @@ public static class ExtensionMethods
         }
 
         return result == 0 ? StringMatch.StartsWith : StringMatch.Contains;
+    }
+
+    public static T[] Shuffle<T>(this IEnumerable<T> input)
+    {
+        var arr = input.ToArray();
+        RandomNumberGenerator.Shuffle<T>(arr);
+        return arr;
     }
 }

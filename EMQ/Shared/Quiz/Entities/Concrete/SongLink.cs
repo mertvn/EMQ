@@ -91,7 +91,7 @@ public class SongLink
         }
 
         // we randomize links here to allow different video links to play, because NextSong just takes the first link it finds
-        res = res.OrderBy(x => Random.Shared.Next()).ToList();
+        res = res.Shuffle().ToList();
         return res;
     }
 }

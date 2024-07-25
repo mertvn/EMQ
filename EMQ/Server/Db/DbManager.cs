@@ -1949,7 +1949,7 @@ GROUP BY artist_id";
 
                     var resCategories =
                         (await connection.QueryAsync<(int, string)>(queryCategories.Sql, queryCategories.Parameters))
-                        .OrderBy(_ => rng.Next()).ToList();
+                        .Shuffle().ToList();
                     ids = resCategories;
                 }
 
@@ -2024,7 +2024,7 @@ GROUP BY artist_id";
 
                     var resArtist =
                         (await connection.QueryAsync<(int, string)>(queryArtists.Sql, queryArtists.Parameters))
-                        .OrderBy(_ => rng.Next()).ToList();
+                        .Shuffle().ToList();
 
                     if (ids.Any())
                     {
@@ -2270,7 +2270,7 @@ GROUP BY artist_id";
             }
 
             ids = (await connection.QueryAsync<(int, string)>(queryMusicIds.Sql, queryMusicIds.Parameters))
-                .OrderBy(_ => rng.Next()).ToList();
+                .Shuffle().ToList();
             // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
 
             if (!ids.Any())
@@ -2424,7 +2424,7 @@ GROUP BY artist_id";
         }
 
         // randomize again just in case
-        return ret.OrderBy(_ => rng.Next()).ToList();
+        return ret.Shuffle().ToList();
     }
 
     public static async Task<string> SelectAutocompleteMst()
@@ -4355,7 +4355,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
-                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                            .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
                             (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
@@ -4372,7 +4372,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
-                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                            .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
                             (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
@@ -4390,7 +4390,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
-                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                            .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
                             (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
@@ -4408,7 +4408,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
-                            .OrderBy(x => Random.Shared.Next()).FirstOrDefault();
+                            .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
                             (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);

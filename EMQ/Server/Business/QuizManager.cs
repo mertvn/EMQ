@@ -1206,8 +1206,7 @@ public class QuizManager
                 }
             }
 
-            randomIndexes = randomIndexes.OrderBy(_ => Random.Shared.Next())
-                .Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
+            randomIndexes = randomIndexes.Shuffle().Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
 
             List<Title> list = new() { correctAnswerTitle };
@@ -1216,7 +1215,7 @@ public class QuizManager
                 list.Add(allTitles[randomIndex]);
             }
 
-            list = list.OrderBy(_ => Random.Shared.Next()).ToList();
+            list = list.Shuffle().ToList();
             ret[index] = list;
 
             int count = 0;
@@ -1591,7 +1590,7 @@ public class QuizManager
                             dbSongs = new List<Song>();
 
                             // we randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount
-                            foreach ((int pId, _) in validSourcesDict.OrderBy(x => Random.Shared.Next()).ToArray())
+                            foreach ((int pId, _) in validSourcesDict.Shuffle())
                             {
                                 Console.WriteLine(
                                     $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
@@ -1599,7 +1598,7 @@ public class QuizManager
                                 dbSongs.AddRange(await DbManager.GetRandomSongs(
                                     targetNumSongsPerPlayer,
                                     Quiz.Room.QuizSettings.Duplicates,
-                                    validSourcesDict[pId].OrderBy(x => Random.Shared.Next()).ToList(),
+                                    validSourcesDict[pId].Shuffle().ToList(),
                                     filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
                                     ownerUserId: Quiz.Room.Owner.Id,
@@ -1636,7 +1635,7 @@ public class QuizManager
                             Quiz.Room.Log($"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
                                 writeToChat: true);
 
-                            dbSongs = dbSongs.OrderBy(_ => Random.Shared.Next()).ToList();
+                            dbSongs = dbSongs.Shuffle().ToList();
                             break;
                         }
                     default:
