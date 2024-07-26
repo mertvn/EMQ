@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Dapper;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
@@ -16,6 +17,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace EMQ.Server.Controllers;
 
@@ -293,5 +295,24 @@ public class LibraryController : ControllerBase
         int[] mIds = await DbManager.FindMusicIdsByLabels(vndbInfo.Labels, SongSourceSongTypeMode.Vocals);
         var res = await DbManager.GetLabelStats(mIds);
         return res;
+    }
+
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpGet]
+    [Route("GetVNCoverUrl")]
+    public async Task<ActionResult> GetVNCoverUrl([FromQuery] string id)
+    {
+        string? ret = null;
+        const string sql = "SELECT image from vn where id = @id";
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+        string? screenshot = await connection.QueryFirstOrDefaultAsync<string?>(sql, new { id });
+        if (!string.IsNullOrEmpty(screenshot))
+        {
+            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+            ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv/{modStr}/{number}.jpg"
+                .ReplaceSelfhostLink();
+        }
+
+        return ret != null ? File(await ServerUtils.Client.GetByteArrayAsync(ret), "image/jpg") : NotFound();
     }
 }
