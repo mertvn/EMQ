@@ -180,7 +180,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
             Answered = true;
         }
 
-        ShowDropdown = false;
+        Close();
     }
 
     private void OnFocus(FocusEventArgs obj)
