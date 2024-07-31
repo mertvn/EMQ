@@ -116,12 +116,13 @@ public partial class AutocompleteDeveloperComponent
 
     private async Task OnValueChanged(string? value)
     {
-        if (string.IsNullOrEmpty(Guess) && string.IsNullOrEmpty(value))
+        string s = value ?? AutocompleteComponent.SelectedText;
+        if (string.IsNullOrEmpty(Guess) && string.IsNullOrEmpty(s))
         {
             return;
         }
 
-        Guess = value;
+        Guess = s;
         // Console.WriteLine(Guess);
 
         if (IsQuizPage)
