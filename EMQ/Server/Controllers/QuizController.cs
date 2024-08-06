@@ -128,11 +128,6 @@ public class QuizController : ControllerBase
                         var song = room.Quiz.Songs[req.SongIndex];
 
                         string url = ClientUtils.GetPreferredSongLinkUrl(song, req.WantsVideo, req.Host)!;
-                        if (Constants.UseLocalSongFilesForDevelopment &&
-                            room.QuizSettings.SongSelectionKind != SongSelectionKind.LocalMusicLibrary)
-                        {
-                            url = url.Replace("https://files.catbox.moe/", "emqsongsbackup/");
-                        }
 
                         SongHint hint = new();
                         if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Msst, out bool msst) &&

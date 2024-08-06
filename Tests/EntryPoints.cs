@@ -367,71 +367,72 @@ public class EntryPoints
     }
 
     // todo change all other code that expects emqsongsbackup or partial revert
-    [Test, Explicit]
-    public async Task BackupSongFilesUsingBothSongLites()
-    {
-        const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
-        Directory.CreateDirectory(baseDownloadDir);
-
-        const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
-        var songLites =
-            JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath),
-                Utils.JsoIndented)!;
-
-        const string songLiteMbPath = "C:\\emq\\emqsongsmetadata\\SongLite_MB.json";
-        var songLiteMbs =
-            JsonSerializer.Deserialize<List<SongLite_MB>>(await File.ReadAllTextAsync(songLiteMbPath),
-                Utils.JsoIndented)!;
-
-        int dlCount = 0;
-        var allLinks = songLites.SelectMany(x => x.Links).Concat(songLiteMbs.SelectMany(y => y.Links));
-        foreach (var link in allLinks)
-        {
-            string filePath;
-            switch (link.Type)
-            {
-                case SongLinkType.Catbox:
-                    filePath = $"{baseDownloadDir}\\catbox\\{link.Url.LastSegment()}";
-                    break;
-                case SongLinkType.Self:
-                    link.Url = link.Url.ReplaceSelfhostLink();
-                    if (link.Url.Contains("catbox"))
-                    {
-                        // skip mirror links
-                        continue;
-                    }
-
-                    filePath = $"{baseDownloadDir}\\selfhoststorage\\{link.Url.LastSegment()}";
-                    break;
-                case SongLinkType.Unknown:
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            if (!File.Exists(filePath))
-            {
-                bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(link.Url));
-                if (success)
-                {
-                    dlCount += 1;
-                    if (link.Type is SongLinkType.Catbox)
-                    {
-                        await Task.Delay(10000);
-                    }
-                    else
-                    {
-                        await Task.Delay(1000);
-                    }
-                }
-                else
-                {
-                    return;
-                }
-            }
-        }
-
-        Console.WriteLine($"Downloaded {dlCount} files.");
-    }
+    // deprecated in favor of EMQBackupScript
+    // [Test, Explicit]
+    // public async Task BackupSongFilesUsingBothSongLites()
+    // {
+    //     const string baseDownloadDir = "K:\\emq\\emqsongsbackup";
+    //     Directory.CreateDirectory(baseDownloadDir);
+    //
+    //     const string songLitePath = "C:\\emq\\emqsongsmetadata\\SongLite.json";
+    //     var songLites =
+    //         JsonSerializer.Deserialize<List<SongLite>>(await File.ReadAllTextAsync(songLitePath),
+    //             Utils.JsoIndented)!;
+    //
+    //     const string songLiteMbPath = "C:\\emq\\emqsongsmetadata\\SongLite_MB.json";
+    //     var songLiteMbs =
+    //         JsonSerializer.Deserialize<List<SongLite_MB>>(await File.ReadAllTextAsync(songLiteMbPath),
+    //             Utils.JsoIndented)!;
+    //
+    //     int dlCount = 0;
+    //     var allLinks = songLites.SelectMany(x => x.Links).Concat(songLiteMbs.SelectMany(y => y.Links));
+    //     foreach (var link in allLinks)
+    //     {
+    //         string filePath;
+    //         switch (link.Type)
+    //         {
+    //             case SongLinkType.Catbox:
+    //                 filePath = $"{baseDownloadDir}\\catbox\\{link.Url.LastSegment()}";
+    //                 break;
+    //             case SongLinkType.Self:
+    //                 link.Url = link.Url.ReplaceSelfhostLink();
+    //                 if (link.Url.Contains("catbox"))
+    //                 {
+    //                     // skip mirror links
+    //                     continue;
+    //                 }
+    //
+    //                 filePath = $"{baseDownloadDir}\\selfhoststorage\\{link.Url.LastSegment()}";
+    //                 break;
+    //             case SongLinkType.Unknown:
+    //             default:
+    //                 throw new ArgumentOutOfRangeException();
+    //         }
+    //
+    //         if (!File.Exists(filePath))
+    //         {
+    //             bool success = await ServerUtils.Client.DownloadFile(filePath, new Uri(link.Url));
+    //             if (success)
+    //             {
+    //                 dlCount += 1;
+    //                 if (link.Type is SongLinkType.Catbox)
+    //                 {
+    //                     await Task.Delay(10000);
+    //                 }
+    //                 else
+    //                 {
+    //                     await Task.Delay(1000);
+    //                 }
+    //             }
+    //             else
+    //             {
+    //                 return;
+    //             }
+    //         }
+    //     }
+    //
+    //     Console.WriteLine($"Downloaded {dlCount} files.");
+    // }
 
     [Test, Explicit]
     public async Task InsertCatboxToSelfMirrorLinks()

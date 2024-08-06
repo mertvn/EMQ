@@ -11,7 +11,7 @@ public static class DotEnv
     {
         if (!File.Exists(filePath))
         {
-            Console.WriteLine(".env file not found, skipping");
+            Console.WriteLine($".env file not found at {filePath}, skipping");
             return;
         }
 

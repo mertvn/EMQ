@@ -4,9 +4,6 @@ namespace EMQ.Shared.Core;
 
 public static class Constants
 {
-    public static bool UseLocalSongFilesForDevelopment { get; set; } =
-        false && Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-
     public static string? SelfhostAddress { get; set; } = Environment.GetEnvironmentVariable("EMQ_SELFHOST_ADDRESS");
 
     public const string WebsiteName = "Eroge Music Quiz";

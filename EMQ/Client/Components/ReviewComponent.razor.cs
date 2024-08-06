@@ -50,15 +50,6 @@ public partial class ReviewComponent
             }
 
             string url = reviewingItem.url;
-
-            // todo
-            bool local = false;
-            if (local)
-            {
-                string localPath = $@"emqsongsbackup/{reviewingItem.id}-{reviewingItem.url.LastSegment()}";
-                url = localPath;
-            }
-
             return url;
         }
     }

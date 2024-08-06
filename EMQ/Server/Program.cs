@@ -288,28 +288,12 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-if (Constants.UseLocalSongFilesForDevelopment && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(@"K:\emq\emqsongsbackup"), RequestPath = "/emqsongsbackup"
-    });
-
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(@"C:\Users\Mert\AppData\Local\Temp"),
-        RequestPath = "/emqsongsbackup"
-    });
-
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(Constants.LocalMusicLibraryPath),
         RequestPath = "/emqlocalmusiclibrary"
-    });
-
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(@"M:\a\mb\selfhoststorage"), RequestPath = "/selfhoststorage"
     });
 }
 
