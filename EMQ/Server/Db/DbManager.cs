@@ -4688,7 +4688,7 @@ LEFT JOIN user_spaced_repetition usr ON usr.music_id = qsh.music_id AND usr.user
 where q.should_update_stats and qsh.user_id = @userId
 GROUP BY qsh.music_id, usr.interval_days
 ORDER BY count(*) DESC
-limit 100;
+limit 50;
 ";
 
         const string sqlCommonPlayers =
