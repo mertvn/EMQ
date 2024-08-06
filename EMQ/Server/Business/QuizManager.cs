@@ -178,6 +178,11 @@ public class QuizManager
                 TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
                     Quiz.Room, false);
             }
+
+            while (Quiz.QuizState.IsPaused)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
         }
 
         PreviousGuessPhaseStartedAt = DateTime.UtcNow;
@@ -216,11 +221,6 @@ public class QuizManager
 
             TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
                 false);
-        }
-
-        while (Quiz.QuizState.IsPaused)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
