@@ -178,11 +178,6 @@ public class QuizManager
                 TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
                     Quiz.Room, false);
             }
-
-            while (Quiz.QuizState.IsPaused)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
         }
 
         PreviousGuessPhaseStartedAt = DateTime.UtcNow;
@@ -223,11 +218,16 @@ public class QuizManager
                 false);
         }
 
+        Quiz.QuizState.ExtraInfo = "";
+        while (Quiz.QuizState.IsPaused)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
         Quiz.QuizState.Phase = QuizPhaseKind.Guess;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.GuessMs;
         Quiz.QuizState.sp += 1;
         Quiz.Songs[Quiz.QuizState.sp].PlayedAt = DateTime.UtcNow;
-        Quiz.QuizState.ExtraInfo = "";
         Quiz.QuizState.TeamGuessesHaveBeenDetermined = false;
 
         foreach (var player in Quiz.Room.Players)
