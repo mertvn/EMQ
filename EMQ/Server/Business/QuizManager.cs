@@ -1190,19 +1190,31 @@ public class QuizManager
         // Console.WriteLine(JsonSerializer.Serialize(addedSourceIds, Utils.Jso));
         // Console.WriteLine(JsonSerializer.Serialize(allTitles, Utils.Jso));
 
+        List<string> seenCorrectAnswerLatinTitles = new();
         for (int index = 0; index < songs.Count; index++)
         {
             Song dbSong = songs[index];
 
             var correctAnswer = dbSong.Sources.First();
             var correctAnswerTitle = Converters.GetSingleTitle(correctAnswer.Titles);
+            seenCorrectAnswerLatinTitles.Add(correctAnswerTitle.LatinTitle);
 
             List<int> randomIndexes = new();
             foreach ((int key, Title? value) in allTitles)
             {
-                if (value.LatinTitle != correctAnswerTitle.LatinTitle)
+                if (quizSettings.Duplicates)
                 {
-                    randomIndexes.Add(key);
+                    if (value.LatinTitle != correctAnswerTitle.LatinTitle)
+                    {
+                        randomIndexes.Add(key);
+                    }
+                }
+                else
+                {
+                    if (!seenCorrectAnswerLatinTitles.Contains(value.LatinTitle))
+                    {
+                        randomIndexes.Add(key);
+                    }
                 }
             }
 
