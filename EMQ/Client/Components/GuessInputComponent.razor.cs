@@ -42,8 +42,27 @@ public partial class GuessInputComponent
         }
     }
 
+    private AutocompleteMst? _guessT;
+
+    [Parameter]
+    public AutocompleteMst? GuessT
+    {
+        get => _guessT;
+        set
+        {
+            if (_guessT != value)
+            {
+                _guessT = value;
+                GuessTChanged.InvokeAsync(value);
+            }
+        }
+    }
+
     [Parameter]
     public EventCallback<string?> GuessChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<AutocompleteMst?> GuessTChanged { get; set; }
 
     [Parameter]
     public Func<Task>? Callback { get; set; }
@@ -67,6 +86,7 @@ public partial class GuessInputComponent
         // todo test if that is still true
 #pragma warning restore CS4014
         Guess = "";
+        GuessT = null;
         await Task.Delay(100);
         StateHasChanged();
     }
@@ -128,6 +148,7 @@ public partial class GuessInputComponent
         }
 
         Guess = s;
+        GuessT = value;
         // Console.WriteLine(Guess);
 
         if (IsQuizPage)

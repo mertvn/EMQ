@@ -13,12 +13,15 @@ public class AutocompleteA
     }
 
     [JsonConstructor]
-    public AutocompleteA(int aId, string vndbId, string aaLatinAlias, string aaNonLatinAlias = "")
+    public AutocompleteA(int aId, string vndbId, string aaLatinAlias,
+        // int aaId,
+        string aaNonLatinAlias = "")
     {
         AId = aId;
         VndbId = vndbId;
         AALatinAlias = aaLatinAlias;
         AANonLatinAlias = aaNonLatinAlias;
+        // AAId = aaId;
     }
 
     [ProtoMember(1)]
@@ -36,4 +39,8 @@ public class AutocompleteA
     [ProtoMember(4)]
     [JsonPropertyName("aaNLA")]
     public string AANonLatinAlias { get; set; } = null!;
+
+    // [ProtoMember(5)]
+    // [JsonPropertyName("aaId")]
+    // public int AAId { get; set; }
 }

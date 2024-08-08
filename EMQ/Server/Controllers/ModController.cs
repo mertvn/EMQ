@@ -83,7 +83,24 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
-        await DbManager.UpdateReviewQueueItem(req.RQId, req.ReviewQueueStatus, reason: req.Notes, analyserResult: null);
+        // todo use return value
+        bool success = await DbManager.UpdateReviewQueueItem(req.RQId, req.ReviewQueueStatus, reason: req.Notes,
+            analyserResult: null);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.ReviewSongLink)] // todo perm
+    [HttpPost]
+    [Route("UpdateEditQueueItem")]
+    public async Task<ActionResult> UpdateEditQueueItem([FromBody] ReqUpdateReviewQueueItem req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        // todo use return value
+        bool success = await DbManager.UpdateEditQueueItem(req.RQId, req.ReviewQueueStatus, reason: req.Notes);
         return Ok();
     }
 

@@ -190,6 +190,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         }
     }
 
+    // todo investigate artist only showing mb names
     private void OnFocus(FocusEventArgs obj)
     {
         ShowDropdown = true;

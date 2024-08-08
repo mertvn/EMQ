@@ -121,6 +121,22 @@
     </ul>
 </details>
 
+@* todo remove this check *@
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
+{
+    <details>
+        <summary>Add new song</summary>
+        @if (hasImportSongLinkPerms)
+        {
+            <EditSongComponent IsNew="true"></EditSongComponent>
+        }
+        else
+        {
+            <p>Insufficient permissions.</p>
+        }
+    </details>
+}
+
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
         <Items>
@@ -320,10 +336,27 @@
 </div>
 
 <br/>
-<div id="reviewQueueContainer" style="border: 1px solid #ddd; padding: 5px">
-    <h4 style="font-size: 1.2rem">Review Queue</h4>
-    <ReviewQueueComponent @ref="_reviewQueueComponent"></ReviewQueueComponent>
-</div>
+
+<Blazorise.Tabs SelectedTab="TabReviewQueue" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+    <Items>
+        <Blazorise.Tab Name="TabReviewQueue">Review Queue</Blazorise.Tab>
+        <Blazorise.Tab Name="TabEditQueue">Edit Queue</Blazorise.Tab>
+    </Items>
+    <Content>
+        <Blazorise.TabPanel Name="TabReviewQueue">
+            <div id="reviewQueueContainer" style="border: 1px solid #ddd; padding: 5px">
+                @* <h4 style="font-size: 1.2rem">Review Queue</h4> *@
+                <ReviewQueueComponent @ref="_reviewQueueComponent"></ReviewQueueComponent>
+            </div>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabEditQueue">
+            <div id="editQueueContainer" style="border: 1px solid #ddd; padding: 5px">
+                @* <h4 style="font-size: 1.2rem">Edit Queue</h4> *@
+                <EditQueueComponent></EditQueueComponent>
+            </div>
+        </Blazorise.TabPanel>
+    </Content>
+</Blazorise.Tabs>
 
 </CascadingValue>
 

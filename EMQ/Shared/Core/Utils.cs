@@ -30,6 +30,11 @@ public static class Utils
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    public static JsonSerializerOptions JsoCompact { get; } = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     public static string PercentageStr(int dividend, int divisor)
     {
         return $"{(((double)dividend / divisor) * 100):N2}%";

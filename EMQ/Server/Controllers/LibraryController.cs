@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
+using EMQ.Client.Components;
+using EMQ.Client.Pages;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -174,6 +180,24 @@ public class LibraryController : ControllerBase
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
+    [Route("FindEQs")]
+    public async Task<IEnumerable<EditQueue>> FindEQs([FromBody] ReqFindRQs req)
+    {
+        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate);
+        return eqs;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindEQ")]
+    public async Task<EditQueue> FindEQ([FromBody] int eqId)
+    {
+        var eq = await DbManager.FindEQ(eqId);
+        return eq;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
     [Route("FindSongReports")]
     public async Task<IEnumerable<SongReport>> FindRQs([FromBody] ReqFindSongReports req)
     {
@@ -188,7 +212,7 @@ public class LibraryController : ControllerBase
     {
         int[] mIds = await DbManager.FindMusicIdsByLabels(req.Labels, SongSourceSongTypeMode.Vocals);
         var songs = await DbManager.SelectSongsMIds(mIds, false);
-        return songs.OrderBy(x=> x.Id);
+        return songs.OrderBy(x => x.Id);
     }
 
     [CustomAuthorize(PermissionKind.ViewStats)]
@@ -266,6 +290,42 @@ public class LibraryController : ControllerBase
         }
     }
 
+    [CustomAuthorize(PermissionKind.UploadSongLink)]
+    [HttpPost]
+    [Route("DeleteEditQueueItem")]
+    public async Task<ActionResult<bool>> DeleteEditQueueItem([FromBody] int id)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        var eq = await DbManager.FindEQ(id);
+        if (AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+            string.Equals(eq.submitted_by, session.Player.Username, StringComparison.InvariantCultureIgnoreCase))
+        {
+            if (eq.status == ReviewQueueStatus.Pending)
+            {
+                Console.WriteLine($"{session.Player.Username} is deleting EQ {id} by {eq.submitted_by}");
+                return await DbManager.DeleteEntity(new EditQueue { id = eq.id });
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+        else
+        {
+            return Unauthorized();
+        }
+    }
+
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetSHSongStats")]
@@ -314,5 +374,87 @@ public class LibraryController : ControllerBase
         }
 
         return ret != null ? File(await ServerUtils.Client.GetByteArrayAsync(ret), "image/jpg") : NotFound();
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetSongSource")]
+    public async Task<ActionResult<ResGetSongSource>> GetSongSource([FromBody] int id)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        var res = await DbManager.GetSongSource(id, session);
+        return res;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetSongArtist")]
+    public async Task<ActionResult<ResGetSongArtist>> GetSongArtist(ReqGetSongArtist req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        var res = await DbManager.GetSongArtist(req.AId, session);
+        return res;
+    }
+
+    [CustomAuthorize(PermissionKind.UploadSongLink)] // todo
+    [HttpPost]
+    [Route("EditSong")]
+    public async Task<ActionResult> EditSong([FromBody] ReqEditSong req)
+    {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var comp = new EditSongComponent(); // todo move this method to somewhere better
+        bool isValid = comp.ValidateSong(req.Song, req.IsNew);
+        if (!isValid)
+        {
+            return BadRequest($"song object failed validation: {comp.ValidationMessages.First()}");
+        }
+
+        // todo important set unrequired stuff to null/empty for safety reasons
+        // todo? extra validation for safety reasons
+
+        req.Song.DataSource = DataSourceKind.EMQ;
+        string? oldEntityJson = null;
+        if (req.Song.Id <= 0)
+        {
+            int nextVal = await DbManager.SelectNextVal("public.music_id_seq");
+            req.Song.Id = nextVal;
+        }
+        else
+        {
+            var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
+            oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
+        }
+
+        const int entityVersion = 1; // todo?
+        const EntityKind entityKind = EntityKind.Song;
+        var editQueue = new EditQueue
+        {
+            submitted_by = session.Player.Username,
+            submitted_on = DateTime.UtcNow,
+            status = ReviewQueueStatus.Pending,
+            entity_kind = entityKind,
+            entity_json = JsonSerializer.Serialize(req.Song, Utils.JsoCompact),
+            entity_version = entityVersion,
+            old_entity_json = oldEntityJson,
+            note_user = req.NoteUser,
+        };
+
+        long eqId = await DbManager.InsertEntity(editQueue);
+        if (eqId > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} EditSong {req.Song}");
+        }
+
+        return eqId > 0 ? Ok() : StatusCode(500);
     }
 }

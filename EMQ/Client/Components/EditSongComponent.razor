@@ -1,0 +1,388 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Client.Pages
+@using System.Linq
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+
+<div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
+    @if (IsNew)
+    {
+        <details style="padding: 5px;">
+            <summary>Guidelines for adding songs</summary>
+            <h5>What can be added</h5>
+            <ol>
+                <li>Currently we're only accepting non-BGM Non-canon song submissions. Canon songs should be added to VNDB instead.</li>
+                <li>Currently it's possible to add songs only to sources and artists already existing in the database.</li>
+                <li>All Official submissions are accepted.</li>
+                <li>Unofficial submissions may be rejected if they are too obscure/low-quality.</li>
+
+                <br/>
+                <h6>Extra restrictions for Unofficial submissions:</h6>
+                <ol>
+                    <li>DO NOT SUBMIT AI OR VTUBER COVERS.</li>
+                    <li>DO NOT SUBMIT COVERS BY NON-JAPANESE PEOPLE (unless it's your own cover :basado:).</li>
+                    <li>DO NOT SUBMIT NON-ORIGINAL LANGUAGE COVERS (unless the target language is Japanese).</li>
+                </ol>
+            </ol>
+            <br/>
+
+            @* todo show this on edit page too? *@
+            <h5>Attributes</h5>
+            <ul>
+                @foreach (var attr in Enum.GetValues<SongAttributes>())
+                {
+                    @if (attr != SongAttributes.None)
+                    {
+                        <li>
+                            @attr.GetDescription():
+                            <br/>
+                            @attr.GetDisplayName()
+                        </li>
+                        <br/>
+                    }
+                }
+            </ul>
+
+            <h5>Examples</h5>
+            <ul>
+                <li>
+                    <a href="https://vgmdb.net/album/89086" target="_blank">https://vgmdb.net/album/89086</a>
+                    <br/>
+                    The first disc of this album contains covers of some popular VN songs.
+                    <br/>
+                    They can be added to their respective sources, with the artist as Denkishiki Karen Ongaku Shuudan and attributes as Non-canon and Unofficial.
+                </li>
+                <br/>
+                <li>
+                    <a href="https://vgmdb.net/album/17301" target="_blank">https://vgmdb.net/album/17301</a>
+                    <br/>
+                    The first track of this album "insensible ～ヒカル＆ナギ Ver.～" is a cover of "insensible" that plays in "Peace@Pieces".
+                    <br/>
+                    It does not play in the VN, so it should be marked as Non-canon, however it was released by the original developer of the VN, so it should NOT be marked as Unofficial.
+                </li>
+            </ul>
+            <br/>
+        </details>
+    }
+
+    <div style="display: flex; flex-wrap: wrap">
+        <div style="border: 1px black solid; padding: 10px; width: 970px;">
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>Sources</h5>
+                <GuessInputComponent @ref="_guessInputComponentRef"
+                                     Placeholder="Add source"
+                                     IsDisabled="false"
+                                     IsQuizPage="false"
+                                     @bind-GuessT="@SelectedMusicSourceTitle"
+                                     Callback="SelectedResultChangedMst">
+                </GuessInputComponent>
+                @foreach (var source in Song.Sources)
+                {
+                    <div style="border: 1px black solid; padding: 10px;">
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveSongSource(source.Id))">🗑</span>
+                        @source.ToString()
+                        <div>
+                            @foreach (var key in Enum.GetValues<SongSourceSongType>())
+                            {
+                                if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
+                                {
+                                    string id = $"checkbox-SSST-{source.Id}-{key}";
+                                    <input type="checkbox" id="@id" class="form-check-input" disabled
+                                           @bind:get="@source.SongTypes.Contains(key)"
+                                           @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
+                                           @bind:event="oninput"
+                                           style="margin: 5px"/>
+                                    <label for="@id">@key.ToString()</label>
+                                    <br/>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>Artists</h5>
+                <AutocompleteAComponent @ref="_autocompleteAComponentRef"
+                                        Placeholder="Add artist"
+                                        IsDisabled="false"
+                                        IsQuizPage="false"
+                                        @bind-Guess="@SelectedArtist"
+                                        Callback="SelectedResultChangedA">
+                </AutocompleteAComponent>
+                @foreach (var artist in Song.Artists)
+                {
+                    <div style="border: 1px black solid; padding: 10px;">
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveArtist(artist.Id))">🗑</span>
+                        @artist.ToString()
+                        @* todo? role *@
+                    </div>
+                }
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>Song title</h5>
+                <label style="padding: 4px;">
+                    <input type="text" @bind="Song.Titles.Single().LatinTitle"/>
+                    Latin title
+                </label>
+                <br/>
+                <label style="padding: 4px;">
+                    <input type="text" @bind="Song.Titles.Single().NonLatinTitle"/>
+                    Non-Latin title
+                </label>
+            </div>
+            <br/>
+
+            <textarea id="note_user"
+                      rows="2"
+                      cols="34"
+                      maxlength="780"
+                      placeholder="Enter anything else you want to add here"
+                      @bind="NoteUser">
+            </textarea>
+            <br/>
+
+            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+            <ul>
+                @foreach (string validationMessage in ValidationMessages)
+                {
+                    string color = validationMessage.StartsWith("Added") ? "green" : "red";
+                    <li style="color: @color;">@validationMessage</li>
+                }
+            </ul>
+            <br/>
+        </div>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <div style="margin: 16px; width: 330px; min-height:200px;">
+                <h4>Preview</h4>
+                <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent>
+            </div>
+            <br/>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public Song Song { get; set; } = null!;
+
+    [Parameter]
+    public bool IsNew { get; set; }
+
+    [Parameter]
+    public GenericModal editSongModalRef { get; set; } = null!;
+
+    private SongInfoCardComponent _songInfoCardComponentRef = null!;
+
+    private GuessInputComponent _guessInputComponentRef = null!;
+
+    private AutocompleteAComponent _autocompleteAComponentRef = null!;
+
+    public AutocompleteMst? SelectedMusicSourceTitle { get; set; }
+
+    public AutocompleteA? SelectedArtist { get; set; }
+
+    public List<string> ValidationMessages { get; } = new();
+
+    private static Song GetNewSong => new() { Type = SongType.Standard, Titles = new List<Title> { new() { Language = "ja", IsMainTitle = true } } }; // todo lang
+
+    public string NoteUser { get; set; } = "";
+
+    public bool Ready { get; set; } = true;
+
+    protected override void OnInitialized()
+    {
+        if (IsNew)
+        {
+            Song = GetNewSong;
+        }
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    // await _songInfoCardComponentRef.CallStateHasChanged();
+    }
+
+    private async Task SelectedResultChangedMst()
+    {
+        if (SelectedMusicSourceTitle is null)
+        {
+            return;
+        }
+
+        if (Song.Sources.Any(x => x.Id == SelectedMusicSourceTitle.MSId))
+        {
+            return;
+        }
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", SelectedMusicSourceTitle.MSId);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
+            content.SongSource.MusicIds.Clear();
+            content.SongSource.SongTypes = new List<SongSourceSongType> { SongSourceSongType.Other };
+            Song.Sources.Add(content.SongSource);
+        }
+
+        await _guessInputComponentRef.ClearInputField();
+        await CallStateHasChanged();
+    }
+
+    private async Task RemoveSongSource(int sourceId)
+    {
+        Song.Sources.RemoveAll(x => x.Id == sourceId);
+        await CallStateHasChanged();
+    }
+
+    private async Task OnSSSTCheckboxClick(bool value, SongSourceSongType key, SongSource songSource)
+    {
+        if (value)
+        {
+            songSource.SongTypes.Add(key);
+        }
+        else
+        {
+            songSource.SongTypes.Remove(key);
+        }
+
+        await CallStateHasChanged();
+    }
+
+    private async Task RemoveArtist(int artistId)
+    {
+        Song.Artists.RemoveAll(x => x.Id == artistId);
+        await CallStateHasChanged();
+    }
+
+    private async Task SelectedResultChangedA()
+    {
+        if (SelectedArtist is null)
+        {
+            return;
+        }
+
+        if (Song.Artists.Any(x => x.Id == SelectedArtist.AId))
+        {
+            return;
+        }
+
+        var req = new ReqGetSongArtist(SelectedArtist.AId);
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+            var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
+            artistAlias.MusicIds.Clear();
+            artistAlias.Role = SongArtistRole.Vocals; // todo?
+            Song.Artists.Add(artistAlias);
+        }
+
+        await _autocompleteAComponentRef.ClearInputField();
+        await CallStateHasChanged();
+    }
+
+    private async Task OnclickSubmit()
+    {
+        if (Ready)
+        {
+            Ready = false;
+            StateHasChanged();
+            bool isValid = ValidateSong(Song, IsNew);
+            if (isValid)
+            {
+                var req = new ReqEditSong(Song, IsNew, NoteUser);
+                var res = await _client.PostAsJsonAsync("Library/EditSong", req);
+                if (res.IsSuccessStatusCode)
+                {
+                    ValidationMessages.Add("Added to the edit queue.");
+                    if (IsNew)
+                    {
+                        Song = GetNewSong;
+                        NoteUser = "";
+                    }
+                    else
+                    {
+                        StateHasChanged();
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
+                        editSongModalRef.Hide();
+                    }
+                }
+                else
+                {
+                    ValidationMessages.Add($"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                }
+            }
+            Ready = true;
+        }
+    }
+
+    public bool ValidateSong(Song song, bool isNew)
+    {
+        ValidationMessages.Clear();
+        bool isValid = true;
+
+        if (!song.Sources.Any())
+        {
+            ValidationMessages.Add("There must be at least one source.");
+            isValid = false;
+        }
+        else
+        {
+            if (song.Sources.Any(x => !x.SongTypes.Any()))
+            {
+                ValidationMessages.Add("All sources must have at least one song source song type.");
+                isValid = false;
+            }
+            else
+            {
+                // if (isNew && song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+                // {
+                //     ValidationMessages.Add("It is not allowed to add new BGM at this time.");
+                //     isValid = false;
+                // }
+
+                if (!song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
+                {
+                    ValidationMessages.Add("It is only possible to add/edit Other songs at this time.");
+                    isValid = false;
+                }
+            }
+        }
+
+        if (!song.Artists.Any())
+        {
+            ValidationMessages.Add("There must be at least one artist.");
+            isValid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(song.Titles.Single().LatinTitle))
+        {
+            ValidationMessages.Add("Latin title must not be empty.");
+            isValid = false;
+        }
+
+        if (isNew && !song.Attributes.HasFlag(SongAttributes.NonCanon))
+        {
+            ValidationMessages.Add("If a song is Canon, it should be added to VNDB instead.");
+            isValid = false;
+        }
+
+        if (song.Attributes.HasFlag(SongAttributes.Unofficial) && !song.Attributes.HasFlag(SongAttributes.NonCanon))
+        {
+            ValidationMessages.Add("If a song is Unofficial, it must also be Non-canon.");
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+}

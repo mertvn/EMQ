@@ -1,0 +1,34 @@
+﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using EMQ.Client.Pages
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+@inject NavigationManager _navigation
+
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId + 1}"))">Next</button>
+
+<pre>
+@JsonSerializer.Serialize(ResGetSongSource, Utils.JsoIndented)
+</pre>
+
+@code {
+
+    [Parameter]
+    public int MusicSourceId { get; set; }
+
+    public ResGetSongSource? ResGetSongSource { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", MusicSourceId);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
+            ResGetSongSource = content;
+        }
+    }
+
+}

@@ -1,0 +1,20 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+
+<button type="button" class="btn btn-primary" @onclick="@(() => editSongModalRef.Show())">Edit song</button>
+<GenericModal @ref="@editSongModalRef"
+              Title="Edit song"
+              Size="@Blazorise.ModalSize.Fullscreen">
+    <EditSongComponent Song="Song" IsNew="IsNew" editSongModalRef="editSongModalRef"></EditSongComponent>
+</GenericModal>
+
+@code {
+
+    [Parameter]
+    public Song Song { get; set; } = null!;
+
+    [Parameter]
+    public bool IsNew { get; set; }
+
+    public GenericModal editSongModalRef { get; set; } = null!;
+
+}

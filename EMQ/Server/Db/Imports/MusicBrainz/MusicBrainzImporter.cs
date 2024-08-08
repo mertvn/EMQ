@@ -367,6 +367,7 @@ public static class MusicBrainzImporter
                 {
                     MusicBrainzRecordingGid = data.recording.gid,
                     Type = SongType.Standard, // todo? detect karaoke songs
+                    DataSource = DataSourceKind.MusicBrainz,
                     Titles =
                         new List<Title>()
                         {

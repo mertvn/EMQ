@@ -41,6 +41,8 @@ public partial class SongInfoCardWrapperComponent
 
     private IQueryable<RQ>? CurrentRQs { get; set; }
 
+    public EditSongComponent editSongModalRef { get; set; } = null!;
+
     private ReviewComponent _reviewComponent = null!;
 
     private async Task SubmitSongUrl(int mId, string url)

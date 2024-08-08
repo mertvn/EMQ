@@ -54,13 +54,15 @@ public partial class Song
 
     public int VoteCount { get; set; }
 
+    public DataSourceKind DataSource { get; set; }
+
     public override string ToString()
     {
         var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();
         var firstSource = Sources.FirstOrDefault(x => x.Titles.Any(y => y.Language == "ja" && y.IsMainTitle)) ??
                           Sources.First();
         return
-            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}" +
+            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.FirstOrDefault().ToString()} {first.LatinTitle}" +
             (!string.IsNullOrWhiteSpace(first.NonLatinTitle) && !string.Equals(first.NonLatinTitle, first.LatinTitle,
                 StringComparison.InvariantCultureIgnoreCase)
                 ? $" ({first.NonLatinTitle})"
@@ -79,8 +81,16 @@ public partial class Song
         }
 
         return
-            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.First().ToString()} {first.LatinTitle}";
+            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.FirstOrDefault().ToString()} {first.LatinTitle}";
     }
+}
+
+public enum DataSourceKind
+{
+    Unknown,
+    VNDB,
+    MusicBrainz,
+    EMQ,
 }
 
 public enum SongType

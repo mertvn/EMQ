@@ -155,6 +155,10 @@ public partial class AutocompleteAComponent
             await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", GuessLatin);
         }
 
-        Callback?.Invoke();
+        // todo important fix this everywhere
+        if (Callback != null)
+        {
+            await Callback.Invoke();
+        }
     }
 }

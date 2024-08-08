@@ -20,6 +20,9 @@ public partial class SongInfoCardComponent
     [Parameter]
     public bool IsModPage { get; set; }
 
+    [Parameter]
+    public bool IsEditing { get; set; }
+
     public SongReportComponent _songReportComponent { get; set; } = null!;
 
     private int _currentSongId;
@@ -38,7 +41,7 @@ public partial class SongInfoCardComponent
 
     protected override bool ShouldRender()
     {
-        if (ForceRender)
+        if (ForceRender || IsEditing)
         {
             ForceRender = false;
             return true;
@@ -81,6 +84,12 @@ public partial class SongInfoCardComponent
 
     private async Task OnSongAttributesCheckboxClick(bool value, SongAttributes attribute)
     {
+        // todo? move attribute setting to EditSongComponent
+        // if (!IsNew)
+        // {
+        //     return;
+        // }
+
         if (value)
         {
             Song!.Attributes |= attribute;
@@ -90,7 +99,16 @@ public partial class SongInfoCardComponent
             Song!.Attributes ^= attribute;
         }
 
-        await SetSongAttributes(Song);
+        // Unofficial implies NonCanon.
+        if (Song.Attributes.HasFlag(SongAttributes.Unofficial))
+        {
+            Song.Attributes |= SongAttributes.NonCanon;
+        }
+
+        if (!IsEditing)
+        {
+            await SetSongAttributes(Song);
+        }
     }
 
     private async Task SetSongAttributes(Song song)

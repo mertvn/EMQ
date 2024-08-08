@@ -1,0 +1,11 @@
+﻿@page "/ems{MsId:int}"
+@using EMQ.Client.Components
+
+<MusicSourceComponent MusicSourceId="MsId"></MusicSourceComponent>
+
+@code {
+
+    [Parameter]
+    public int MsId { get; set; }
+
+}

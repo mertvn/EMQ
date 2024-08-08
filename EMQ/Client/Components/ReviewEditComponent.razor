@@ -1,0 +1,123 @@
+﻿@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
+@using System.Collections.Generic
+@using EMQ.Client.Pages
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@using Microsoft.AspNetCore.Components
+@inject ILogger<SongReportComponent> _logger
+@inject ClientUtils _clientUtils
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+
+@{
+    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink);
+}
+
+@if (IsLibraryPage)
+{
+    <button type="button" class="btn btn-primary" style="margin-bottom: 5px;" @onclick="@(() => { _modalRef.Show(); })">Review</button>
+}
+
+@* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
+<Blazorise.Modal @ref="_modalRef" style="z-index: 4000" RenderMode="Blazorise.ModalRenderMode.LazyReload"
+                 Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Fullscreen">
+        <Blazorise.ModalHeader>
+            <Blazorise.ModalTitle>Review</Blazorise.ModalTitle>
+        </Blazorise.ModalHeader>
+        <Blazorise.ModalBody>
+            @if (IsLibraryPage)
+            {
+                <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentEQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
+
+                <span>ID: </span>
+                <input type="number" id="input_reviewingId" @bind="reviewingId"/>
+
+                <span>Status: </span>
+                <span style="color: @UiHelpers.Bools2Color(reviewingItem?.status == ReviewQueueStatus.Approved, reviewingItem?.status == ReviewQueueStatus.Rejected, "green", "red")">
+                    @reviewingItem?.status.ToString()
+                </span>
+            }
+
+            <br/>
+            @if ((CurrentEQs?.Any() ?? false) && IsOpen && reviewingItem != null)
+            {
+                @if (IsLibraryPage)
+                {
+                    <div style="margin: 5px;">
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))" @onclick="@(() => { reviewingId -= 1; })">←Previous</button>
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))" @onclick="@(() => { reviewingId += 1; })">Next→</button>
+                    </div>
+                }
+
+                <p>Notes (User): @reviewingItem.note_user</p>
+                <div style="display: flex; flex-wrap: wrap; margin: 5px;">
+                    @if (IsLibraryPage)
+                    {
+                        switch (reviewingItem.entity_kind)
+                        {
+                            case EntityKind.Song:
+                                {
+                                    // todo make attributes readonly here
+                                    if (OldEntity != null)
+                                    {
+                                        <SongInfoCardComponent Song="OldEntity" IsEditing="true"></SongInfoCardComponent>
+                                        <span style="align-self: center; margin: 10px;">=></span>
+                                    }
+
+                                    <SongInfoCardComponent Song="Entity" IsEditing="true"></SongInfoCardComponent>
+                                    break;
+                                }
+                            case EntityKind.SongSource:
+                                {
+                                    // todo
+                                    break;
+                                }
+                            case EntityKind.SongArtist:
+                                {
+                                    // todo
+                                    break;
+                                }
+                            case EntityKind.None:
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                    }
+                </div>
+
+                @if (isReviewModerator && IsLibraryPage)
+                {
+                    <textarea id="note_mod"
+                         rows="1" cols="35" maxlength="780" placeholder="Notes" disabled="@isReadonly"
+                         @bind="reviewingItem.note_mod" style="margin-right: 5px;"></textarea>
+
+                    if (isReadonly)
+                    {
+                        <p>This item can no longer be modified because there are newer edits for this entity.</p>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status is ReviewQueueStatus.Rejected)" @onclick="Onclick_Reject">Rejected</button>
+                        <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status is ReviewQueueStatus.Pending)" @onclick="Onclick_Pending">Pending</button>
+                        <button type="button" class="btn btn-success" disabled="@(reviewingItem.status is ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">Approved</button>
+                    }
+                }
+
+                @if (isReviewModerator)
+                {
+                    <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
+                }
+            }
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                Close
+            </button>
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>

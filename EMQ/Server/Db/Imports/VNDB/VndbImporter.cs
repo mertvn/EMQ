@@ -428,6 +428,7 @@ public static class VndbImporter
             var song = new Song()
             {
                 Type = SongType.Standard, // todo?
+                DataSource = DataSourceKind.VNDB,
                 Titles =
                     new List<Title>()
                     {

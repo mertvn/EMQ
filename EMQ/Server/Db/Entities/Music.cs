@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Dapper.Database.Attributes;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -13,7 +14,7 @@ public class Music
     public int id { get; set; }
 
     [Required]
-    public int type { get; set; }
+    public int type { get; set; } // todo enum
 
     [Required]
     public long stat_correct { get; set; }
@@ -43,5 +44,8 @@ public class Music
     public int stat_uniqueusers { get; set; }
 
     [Required]
-    public int attributes { get; set; }
+    public int attributes { get; set; } // todo enum
+
+    [Required]
+    public DataSourceKind data_source { get; set; }
 }

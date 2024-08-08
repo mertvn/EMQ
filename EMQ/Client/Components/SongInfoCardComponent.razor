@@ -68,6 +68,29 @@
     }
 
     <div class="songInfoCard card">
+        <span class="songInfoCardDataSourceKind"
+              style="position: absolute; right: 10px; bottom: 5px;"
+              title="Data source">
+            @if (true)
+            {
+                string src = Song.DataSource switch
+                {
+                    DataSourceKind.VNDB => "assets/favicon/vndb.ico",
+                    DataSourceKind.MusicBrainz => "assets/favicon/musicbrainz.png",
+                    DataSourceKind.EMQ => "favicon.ico",
+                    // _ => "assets/question-circle.svg"
+                    _ => ""
+                    };
+
+                @if (!string.IsNullOrEmpty(src))
+                {
+                    <img width="16px" height="16px"
+                         src="@src" alt="Data source"
+                         style="margin-left: 8px; scale: 1.2;">
+                }
+            }
+        </span>
+
         @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
         {
             <span class="songInfoCardReportButton link-danger"
@@ -142,7 +165,7 @@
 
                                     <span>@(final)</span>
 
-                                    @if (Song.Id > 0 || IsModPage) // don't show links when playing with Hints
+                                    @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                     {
                                         foreach (var link in songSource.Links.OrderBy(x => x.Type))
                                         {
@@ -217,7 +240,7 @@
                             <div>
                                 <span>@songArtistTitle.ToString()</span>
 
-                                @if (Song.Id > 0 || IsModPage) // don't show links when playing with Hints
+                                @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                 {
                                     @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
                                     @if (songArtist.VndbId!.StartsWith("s"))
@@ -260,7 +283,7 @@
                 }
 
             <br/>
-            @if (Song.Id > 0)
+            @if (Song.Id > 0 || IsEditing)
             {
                 @if (Song.VoteCount > 0)
                 {
@@ -269,10 +292,13 @@
                     </div>
                 }
 
-                _ = ClientState.MusicVotes.TryGetValue(Song.Id, out MusicVote? musicVote);
-                <MusicVoteComponent Song="Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
+                if (!IsEditing)
+                {
+                    _ = ClientState.MusicVotes.TryGetValue(Song.Id, out MusicVote? musicVote);
+                    <MusicVoteComponent Song="Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
+                }
 
-                bool open = Song.Attributes > 0;
+                bool open = Song.Attributes > 0 || IsEditing;
                 <br/>
                 <details open=@open>
                     <summary>Attributes</summary>
@@ -284,7 +310,7 @@
                         }
 
                         string id = $"SongAttribute-{Song.Id}-{key}";
-                        <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod)"
+                        <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod && !IsEditing)"
                                @bind:get="@Song.Attributes.HasFlag(key)"
                                @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
                                @bind:event="oninput"

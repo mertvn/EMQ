@@ -14,6 +14,7 @@ using Dapper;
 using Dapper.Database;
 using Dapper.Database.Extensions;
 using DapperQueryBuilder;
+using EMQ.Client.Pages;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
 using EMQ.Server.Db.Entities;
@@ -24,6 +25,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz;
+using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
 namespace EMQ.Server.Db;
@@ -194,6 +196,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         song.Id = music.id;
                         song.Type = (SongType)music.type;
                         song.Attributes = (SongAttributes)music.attributes;
+                        song.DataSource = music.data_source;
                         song.MusicBrainzRecordingGid = music.musicbrainz_recording_gid;
                         song.Stats = new SongStats()
                         {
@@ -419,6 +422,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         song.Id = music.id;
                         song.Type = (SongType)music.type;
                         song.Attributes = (SongAttributes)music.attributes;
+                        song.DataSource = music.data_source;
                         song.MusicBrainzRecordingGid = music.musicbrainz_recording_gid;
                         song.Stats = new SongStats()
                         {
@@ -1534,12 +1538,20 @@ GROUP BY artist_id";
             if (connection.ExecuteScalar<bool>("select 1 from music where id = @id", new { id = song.Id }))
             {
                 mId = song.Id;
+                // todo update stuff like attributes and datasource?
             }
             else
             {
                 mId = await connection.ExecuteScalarAsync<int>(
-                    "INSERT INTO music (id, type, musicbrainz_recording_gid) VALUES (@id, @type, @recgid) RETURNING id;",
-                    new { id = song.Id, type = (int)song.Type, recgid = song.MusicBrainzRecordingGid }, transaction);
+                    "INSERT INTO music (id, type, musicbrainz_recording_gid, attributes, data_source) VALUES (@id, @type, @recgid, @attributes, @datasource) RETURNING id;",
+                    new
+                    {
+                        id = song.Id,
+                        type = (int)song.Type,
+                        recgid = song.MusicBrainzRecordingGid,
+                        attributes = (int)song.Attributes,
+                        datasource = song.DataSource
+                    }, transaction);
                 if (mId != song.Id)
                 {
                     throw new Exception($"mId mismatch: expected {song.Id}, got {mId}");
@@ -1548,7 +1560,13 @@ GROUP BY artist_id";
         }
         else
         {
-            var music = new Music { type = (int)song.Type, musicbrainz_recording_gid = song.MusicBrainzRecordingGid };
+            var music = new Music
+            {
+                type = (int)song.Type,
+                musicbrainz_recording_gid = song.MusicBrainzRecordingGid,
+                attributes = (int)song.Attributes,
+                data_source = song.DataSource
+            };
             if (!await connection.InsertAsync(music, transaction))
             {
                 throw new Exception("Failed to insert m");
@@ -3314,6 +3332,37 @@ WHERE id = {mId};
         }
     }
 
+    public static async Task<EditQueue> FindEQ(int eqId)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            var editQueue = await connection.GetAsync<EditQueue>(eqId);
+            return editQueue;
+        }
+    }
+
+    public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate)
+    {
+        var rqs = new List<EditQueue>(777);
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            // todo proper date filter
+            var reviewQueues = (await connection.GetListAsync<EditQueue>()).ToList();
+
+            foreach (var reviewQueue in reviewQueues)
+            {
+                if (reviewQueue.submitted_on < startDate || reviewQueue.submitted_on > endDate)
+                {
+                    continue;
+                }
+
+                rqs.Add(reviewQueue);
+            }
+        }
+
+        return rqs.OrderBy(x => x.id);
+    }
+
     public static async Task<IEnumerable<SongReport>> FindSongReports(DateTime startDate, DateTime endDate)
     {
         var songReports = new List<SongReport>();
@@ -3446,6 +3495,108 @@ WHERE id = {mId};
             }
 
             await EvictFromSongsCache(rq.music_id);
+        }
+
+        return success;
+    }
+
+    public static async Task<bool> UpdateEditQueueItem(int eqId, ReviewQueueStatus requestedStatus,
+        string? reason = null)
+    {
+        bool success = false;
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        {
+            EditQueue? eq = await connection.GetAsync<EditQueue>(eqId);
+            if (eq is null)
+            {
+                throw new InvalidOperationException($"Could not find eqId {eqId}");
+            }
+
+            bool isNew = string.IsNullOrEmpty(eq.old_entity_json);
+            Song? entity = null; // todo other types
+            switch (eq.entity_kind)
+            {
+                case EntityKind.Song:
+                    entity = JsonSerializer.Deserialize<Song>(eq.entity_json)!;
+                    break;
+                case EntityKind.SongSource:
+                    break;
+                case EntityKind.SongArtist:
+                    break;
+                case EntityKind.None:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (entity == null)
+            {
+                return false;
+            }
+
+            switch (eq.status)
+            {
+                case ReviewQueueStatus.Pending:
+                case ReviewQueueStatus.Rejected:
+                    break;
+                case ReviewQueueStatus.Approved:
+                    if (requestedStatus is ReviewQueueStatus.Pending or ReviewQueueStatus.Rejected)
+                    {
+                        if (isNew)
+                        {
+                            var music = await DbManager.GetEntity<Music>(entity.Id);
+                            if (await DbManager.DeleteEntity(music!))
+                            {
+                                await DbManager.EvictFromSongsCache(entity.Id);
+                            }
+                            else
+                            {
+                                throw new Exception("failed to delete music");
+                            }
+                        }
+                        else
+                        {
+                            var oldEntity = JsonSerializer.Deserialize<Song>(eq.old_entity_json!)!;
+                            success = await OverwriteMusic(entity.Id, oldEntity);
+                        }
+                    }
+
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            switch (requestedStatus)
+            {
+                case ReviewQueueStatus.Pending:
+                case ReviewQueueStatus.Rejected:
+                    break;
+                case ReviewQueueStatus.Approved:
+                    if (isNew)
+                    {
+                        int newMid = await InsertSong(entity);
+                        success = newMid > 0 && newMid == entity.Id;
+                    }
+                    else
+                    {
+                        success = await OverwriteMusic(entity.Id, entity);
+                    }
+
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
+            }
+
+            eq.status = requestedStatus;
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                eq.note_mod = reason;
+            }
+
+            await connection.UpdateAsync(eq);
+            Console.WriteLine($"Updated EditQueue: " + JsonSerializer.Serialize(eq, Utils.Jso));
+
+            // todo if entity is song
+            await EvictFromSongsCache(entity.Id);
         }
 
         return success;
@@ -4930,5 +5081,50 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
 
         return new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes };
+    }
+
+    public static async Task<ResGetSongSource> GetSongSource(int id, Session? session)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var songSource = await SelectSongSourceBatch(connection,
+            new List<Song> { new() { Sources = new List<SongSource> { new() { Id = id } } } }, false);
+
+        // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
+        if (session != null)
+        {
+            // todo
+        }
+
+        var res = new ResGetSongSource()
+        {
+            SongSource = songSource.First().Value.Single(x => x.Key == id).Value,
+        };
+        return res;
+    }
+
+    public static async Task<ResGetSongArtist> GetSongArtist(int aId, Session? session)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var artist = await SelectArtistBatch(connection,
+            new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId } } } }, false);
+
+        // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
+        if (session != null)
+        {
+            // todo
+        }
+
+        // todo important distinct
+        var res = new ResGetSongArtist()
+        {
+            SongArtists = artist.SelectMany(x => x.Value.Values).ToList(),
+        };
+        return res;
+    }
+
+    public static async Task<int> SelectNextVal(string seq)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return await connection.ExecuteScalarAsync<int>("SELECT nextval(@seq)", new {seq});
     }
 }

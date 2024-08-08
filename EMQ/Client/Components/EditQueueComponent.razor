@@ -1,0 +1,98 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.Extensions.Logging
+@using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
+@using Blazorise
+@using Blazorise.DataGrid
+@using EMQ.Client.Pages
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using SortDirection = Microsoft.AspNetCore.Components.QuickGrid.SortDirection
+
+<CascadingValue Value="@this" IsFixed="true">
+    @* todo *@
+    <ReviewEditComponent CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewEditComponent>
+
+    <div class="page-size-chooser">
+        Items per page:
+        <select @bind="@_pagination.ItemsPerPage">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            <option>100</option>
+            <option>250</option>
+        </select>
+    </div>
+
+    <div>
+        <Paginator State="@_pagination"/>
+    </div>
+
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@CurrentEQs" Pagination="_pagination">
+            <TemplateColumn Title="ID" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.id))" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending">
+                @if (true)
+                {
+                    @if (ClientState.Session != null)
+                    {
+                        bool canDelete =
+                            AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+                            string.Equals(context.submitted_by, ClientState.Session.Player.Username, StringComparison.InvariantCultureIgnoreCase);
+
+                        @if (canDelete && context.status == ReviewQueueStatus.Pending)
+                        {
+                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteEditQueueItem(context.id))">🗑</span>
+                        }
+                    }
+
+                    <span>@context.id</span>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Entity" Sortable="false">
+                @if (true)
+                {
+                    string str = "";
+                    switch (context.entity_kind)
+                    {
+                        case EntityKind.Song:
+                            str = JsonSerializer.Deserialize<Song>(context.entity_json).ToString();
+                            break;
+                    }
+                    <span style="@CellStyleInlineBlock ">@(str)</span>
+                }
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>
+            <TemplateColumn Title="Status" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.status))">
+                @if (true)
+                {
+                    <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
+                        @context.status
+                    </span>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Notes (User)" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.note_user))">
+                @if (true)
+                {
+                    // todo get rid of the tooltip if we can because it slows things down by quite a lot
+                    <Blazorise.Tooltip Text="@context.note_user">
+                        <span style="@CellStyleInlineBlockShort">@(context.note_user)</span>
+                    </Blazorise.Tooltip>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Notes (Mod)" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.note_mod))">
+                @if (true)
+                {
+                    // todo get rid of the tooltip if we can because it slows things down by quite a lot
+                    <Blazorise.Tooltip Text="@context.note_mod">
+                        <span style="@CellStyleInlineBlockShort">@(context.note_mod)</span>
+                    </Blazorise.Tooltip>
+                }
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+</CascadingValue>

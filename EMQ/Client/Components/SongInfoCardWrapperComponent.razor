@@ -278,6 +278,15 @@
 
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
+
+                                    if (song.DataSource is DataSourceKind.EMQ)
+                                    {
+                                        // todo remove this check
+                                        if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
+                                        {
+                                            <EditSongWrapperComponent Song="song" IsNew="false"></EditSongWrapperComponent>
+                                        }
+                                    }
                                 }
 
                                 @if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(song.Id))

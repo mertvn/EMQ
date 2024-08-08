@@ -18,7 +18,7 @@ namespace EMQ.Client.Pages;
 
 public partial class LibraryPage
 {
-    private ReviewQueueComponent? _reviewQueueComponent { get; set; }
+    private ReviewQueueComponent? _reviewQueueComponent { get; set; } // todo? remove
 
     public string? selectedMusicSourceTitle { get; set; }
 
