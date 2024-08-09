@@ -3263,20 +3263,16 @@ WHERE id = {mId};
         var rqs = new List<RQ>(777);
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            // todo proper date filter
-            // var reviewQueues = (await connection.QueryAsync<ReviewQueue>("select * from review_queue where status = 0"))
-            //     .ToList();
-            var reviewQueues = (await connection.GetListAsync<ReviewQueue>()).ToList();
+            var reviewQueues =
+                (await connection.QueryAsync<ReviewQueue>(
+                    "select * from review_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                    new { startDate, endDate }))
+                .ToList();
             var songs = (await SelectSongsMIdsCached(reviewQueues.Select(x => x.music_id).Distinct().ToArray()))
                 .ToDictionary(x => x.Id, x => x);
 
             foreach (ReviewQueue reviewQueue in reviewQueues)
             {
-                if (reviewQueue.submitted_on < startDate || reviewQueue.submitted_on > endDate)
-                {
-                    continue;
-                }
-
                 var song = songs[reviewQueue.music_id];
                 var rq = new RQ
                 {
@@ -3300,7 +3296,7 @@ WHERE id = {mId};
             }
         }
 
-        return rqs.OrderBy(x => x.id);
+        return rqs;
     }
 
     public static async Task<RQ> FindRQ(int rqId)
@@ -3343,24 +3339,15 @@ WHERE id = {mId};
 
     public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate)
     {
-        var rqs = new List<EditQueue>(777);
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            // todo proper date filter
-            var reviewQueues = (await connection.GetListAsync<EditQueue>()).ToList();
-
-            foreach (var reviewQueue in reviewQueues)
-            {
-                if (reviewQueue.submitted_on < startDate || reviewQueue.submitted_on > endDate)
-                {
-                    continue;
-                }
-
-                rqs.Add(reviewQueue);
-            }
+            var eqs =
+                (await connection.QueryAsync<EditQueue>(
+                    "select * from edit_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                    new { startDate, endDate }))
+                .ToList();
+            return eqs;
         }
-
-        return rqs.OrderBy(x => x.id);
     }
 
     public static async Task<IEnumerable<SongReport>> FindSongReports(DateTime startDate, DateTime endDate)
