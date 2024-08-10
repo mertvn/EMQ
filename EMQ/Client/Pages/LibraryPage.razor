@@ -1,4 +1,4 @@
-﻿@page "/LibraryPage"
+@page "/LibraryPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
@@ -273,7 +273,7 @@
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
         <Blazorise.Tabs @ref="TabsComponentVndb" SelectedTab="@_selectedTabVndb" SelectedTabChanged="@OnSelectedTabChangedVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
-                <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>
+                <Blazorise.Tab Name="TabVNDB">VNDB & EMQ</Blazorise.Tab>
                 @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
                 @foreach ((string key, _) in tabs)
                 {

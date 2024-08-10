@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -282,11 +282,12 @@ public static class ExtensionMethods
         {
             SongSourceSongTypeMode.All => new[]
             {
-                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.BGM
+                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.BGM,
+                SongSourceSongType.Other
             },
             SongSourceSongTypeMode.Vocals => new[]
             {
-                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert
+                SongSourceSongType.OP, SongSourceSongType.ED, SongSourceSongType.Insert, SongSourceSongType.Other
             },
             SongSourceSongTypeMode.BGM => new[] { SongSourceSongType.BGM },
             _ => throw new InvalidOperationException()

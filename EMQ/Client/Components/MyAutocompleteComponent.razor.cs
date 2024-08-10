@@ -149,7 +149,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
             return;
         }
 
-        string elementId = $"autocomplete-item-{index}";
+        string elementId = $"autocomplete-item-{index}"; // todo important this is broken for non-mst
         await _jsRuntime.InvokeVoidAsync("scrollElementIntoView", elementId, true);
     }
 

@@ -297,12 +297,12 @@ public class EntryPoints_Encoding
                                 isValidVideoFile = false;
                             }
 
-                            if (fileFinal.Contains("demo", StringComparison.OrdinalIgnoreCase) ||
-                                fileFinal.Contains("デモ"))
-                            {
-                                Console.WriteLine("demo");
-                                isValidVideoFile = false;
-                            }
+                            // if (fileFinal.Contains("demo", StringComparison.OrdinalIgnoreCase) ||
+                            //     fileFinal.Contains("デモ"))
+                            // {
+                            //     Console.WriteLine("demo");
+                            //     isValidVideoFile = false;
+                            // }
                         }
                         catch (Exception e)
                         {
@@ -488,11 +488,11 @@ public class EntryPoints_Encoding
                         isValidVideoFile = false;
                     }
 
-                    if (fileFinal.Contains("demo", StringComparison.OrdinalIgnoreCase) || fileFinal.Contains("デモ"))
-                    {
-                        Console.WriteLine("demo");
-                        isValidVideoFile = false;
-                    }
+                    // if (fileFinal.Contains("demo", StringComparison.OrdinalIgnoreCase) || fileFinal.Contains("デモ"))
+                    // {
+                    //     Console.WriteLine("demo");
+                    //     isValidVideoFile = false;
+                    // }
                 }
                 catch (Exception e)
                 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -432,6 +432,11 @@ public class LibraryController : ControllerBase
         else
         {
             var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
+            if (song.DataSource != DataSourceKind.EMQ)
+            {
+                throw new Exception();
+            }
+
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }
 
