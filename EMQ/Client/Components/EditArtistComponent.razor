@@ -244,20 +244,22 @@
             ValidationMessages.Add("There must be at least one alias.");
             isValid = false;
         }
-
-        foreach (Title title in artist.Titles)
+        else
         {
-            if (string.IsNullOrWhiteSpace(title.LatinTitle))
+            foreach (Title title in artist.Titles)
             {
-                ValidationMessages.Add("Latin title must not be empty.");
+                if (string.IsNullOrWhiteSpace(title.LatinTitle))
+                {
+                    ValidationMessages.Add("Latin name must not be empty.");
+                    isValid = false;
+                }
+            }
+
+            if (artist.Titles.Count(x => x.IsMainTitle) != 1)
+            {
+                ValidationMessages.Add("There must be exactly one primary alias.");
                 isValid = false;
             }
-        }
-
-        if (artist.Titles.Count(x => x.IsMainTitle) != 1)
-        {
-            ValidationMessages.Add("There must be exactly one primary alias.");
-            isValid = false;
         }
 
         if (isNew && artist.PrimaryLanguage != "ja")
