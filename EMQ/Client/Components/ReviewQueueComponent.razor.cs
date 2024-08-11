@@ -103,6 +103,11 @@ public partial class ReviewQueueComponent
                 CurrentRQs = list.AsQueryable();
             }
         }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
 
         StateHasChanged();
     }
