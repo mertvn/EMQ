@@ -403,19 +403,9 @@ async Task Init()
         // var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
         // Environment.Exit(0);
 
-        string autocompleteFolder = $"{wwwrootFolder}/autocomplete";
-        Directory.CreateDirectory(autocompleteFolder);
-
-        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
-            await DbManager.SelectAutocompleteMst());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/c.json",
-            await DbManager.SelectAutocompleteC());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
-            await DbManager.SelectAutocompleteA());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/mt.json",
-            await DbManager.SelectAutocompleteMt());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json",
-            await DbManager.SelectAutocompleteDeveloper());
+        ServerState.AutocompleteFolder = $"{wwwrootFolder}/autocomplete";
+        Directory.CreateDirectory(ServerState.AutocompleteFolder);
+        await DbManager.RefreshAutocompleteFiles();
 
         if (precacheSongs)
         {

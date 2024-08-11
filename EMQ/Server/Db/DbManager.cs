@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -123,6 +124,21 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 await connection.QueryAsync<(int, Guid?)>("select id, musicbrainz_recording_gid from music");
             MusicIdsRecordingGids = musicIdsRecordingGids.ToDictionary(x => x.Item1, x => x.Item2);
         }
+    }
+
+    public static async Task RefreshAutocompleteFiles()
+    {
+        string autocompleteFolder = ServerState.AutocompleteFolder;
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
+            await DbManager.SelectAutocompleteMst());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/c.json",
+            await DbManager.SelectAutocompleteC());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
+            await DbManager.SelectAutocompleteA());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mt.json",
+            await DbManager.SelectAutocompleteMt());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json",
+            await DbManager.SelectAutocompleteDeveloper());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories)
@@ -3228,6 +3244,11 @@ WHERE id = {mId};
             {
                 await EvictFromSongsCache(((Song)entity).Id);
             }
+        }
+
+        if (success)
+        {
+            await RefreshAutocompleteFiles();
         }
 
         return success;

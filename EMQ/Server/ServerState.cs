@@ -75,6 +75,8 @@ public static class ServerState
         }
     }
 
+    public static string AutocompleteFolder { get; set; } = "";
+
     public static void RemoveRoom(Room room, string source)
     {
         Console.WriteLine($"Removing r{room.Id} {room.Name}. Source: {source}");
