@@ -259,10 +259,8 @@
                                             case SongArtistLinkType.MusicBrainzArtist:
                                                 iconSrc = "assets/favicon/musicbrainz.png";
                                                 break;
-                                            case SongArtistLinkType.Unknown:
-                                            case SongArtistLinkType.VGMdbArtist: // todo
                                             default:
-                                                throw new ArgumentOutOfRangeException();
+                                                continue;
                                         }
 
                                         <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
