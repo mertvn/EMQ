@@ -2199,7 +2199,7 @@ GROUP BY artist_id";
         // example: searching for Persona 4: The Ultimax Ultra Suplex Hold returns both
         // Persona 4: The Ultimax Ultra Suplex Hold and Persona 4: The Ultimate in Mayonaka Arena
         // and they share at least one song together
-        return songs.DistinctBy(x => x.Id);
+        return songs.DistinctBy(x => x.Id).OrderBy(x => x.Id);
     }
 
     /// Only searches by LatinTitle for now.
