@@ -95,10 +95,6 @@ public partial class ReviewEditComponent
                             JsonSerializer.Deserialize<SongArtist>(x.entity_json, Utils.JsoCompact)!.Id ==
                             Entity.Id);
                         break;
-                    case EntityKind.SongSource:
-                    case EntityKind.None:
-                    default:
-                        throw new ArgumentOutOfRangeException();
                 }
 
                 if (isReadonly && reviewingItem.status == ReviewQueueStatus.Pending)

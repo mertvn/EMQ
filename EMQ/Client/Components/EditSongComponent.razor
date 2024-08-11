@@ -282,6 +282,7 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
             var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
+            artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
             artistAlias.MusicIds.Clear();
             artistAlias.Role = SongArtistRole.Vocals; // todo?
             Song.Artists.Add(artistAlias);
