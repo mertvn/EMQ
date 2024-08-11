@@ -59,31 +59,31 @@
                 <div style="display: flex; flex-wrap: wrap; margin: 5px;">
                     @if (IsLibraryPage)
                     {
-                        switch (reviewingItem.entity_kind)
+                        switch (Entity)
                         {
-                            case EntityKind.Song:
+                            case Song song:
                                 {
                                     // todo make attributes readonly here
                                     if (OldEntity != null)
                                     {
-                                        <SongInfoCardComponent Song="OldEntity" IsEditing="true"></SongInfoCardComponent>
+                                        <SongInfoCardComponent Song="(Song)OldEntity" IsEditing="true"></SongInfoCardComponent>
                                         <span style="align-self: center; margin: 10px;">=></span>
                                     }
 
-                                    <SongInfoCardComponent Song="Entity" IsEditing="true"></SongInfoCardComponent>
+                                    <SongInfoCardComponent Song="@(song)" IsEditing="true"></SongInfoCardComponent>
                                     break;
                                 }
-                            case EntityKind.SongSource:
+                            case SongArtist songArtist:
                                 {
-                                    // todo
+                                    if (OldEntity != null)
+                                    {
+                                        <pre>@JsonSerializer.Serialize((SongArtist)OldEntity, Utils.JsoIndented)</pre>
+                                        <span style="align-self: center; margin: 10px;">=></span>
+                                    }
+
+                                    <pre>@JsonSerializer.Serialize(songArtist, Utils.JsoIndented)</pre>
                                     break;
                                 }
-                            case EntityKind.SongArtist:
-                                {
-                                    // todo
-                                    break;
-                                }
-                            case EntityKind.None:
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }

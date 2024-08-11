@@ -23,7 +23,6 @@
     <Folder Include="Library\Entities\Abstract" />
     <Folder Include="Quiz\Business" />
     <Folder Include="Quiz\Entities" />
-    <Folder Include="Quiz\Entities\Abstract" />
   </ItemGroup>
 
   <ItemGroup>

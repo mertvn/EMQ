@@ -24,7 +24,7 @@ public class ProtoBufTests
             ArtistFilters =
                 new List<ArtistFilter>
                 {
-                    new(new AutocompleteA(11111, "s22", "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
+                    new(new AutocompleteA(11111,"Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
                 },
             CategoryFilters = new List<CategoryFilter>
             {
@@ -58,7 +58,7 @@ public class ProtoBufTests
             ArtistFilters =
                 new List<ArtistFilter>
                 {
-                    new(new AutocompleteA(11111, "s22", "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
+                    new(new AutocompleteA(11111, "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
                 },
             CategoryFilters = new List<CategoryFilter>
             {
@@ -86,8 +86,6 @@ public class ProtoBufTests
         Assert.That(deserialized.Filters.VNOLangs[Language.en]);
 
         Assert.That(deserialized.Filters.ArtistFilters.First().Artist.AId == filters.ArtistFilters.First().Artist.AId);
-        Assert.That(deserialized.Filters.ArtistFilters.First().Artist.VndbId ==
-                    filters.ArtistFilters.First().Artist.VndbId);
         Assert.That(deserialized.Filters.ArtistFilters.First().Artist.AALatinAlias ==
                     filters.ArtistFilters.First().Artist.AALatinAlias);
         Assert.That(deserialized.Filters.ArtistFilters.First().Artist.AANonLatinAlias ==

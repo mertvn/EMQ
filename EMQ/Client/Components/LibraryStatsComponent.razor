@@ -225,9 +225,34 @@
                                 <td>@(i + 1)</td>
                                 <td>
                                     @* todo nonlatinalias *@
-                                    <a class="link-primary" href="@(item.VndbId.ToVndbUrl())" target="_blank">
+                                    @if (true)
+                                    {
+                                        // todo important componentize this
                                         <span>@item.AALatinAlias</span>
-                                    </a>
+                                        foreach (SongArtistLink songArtistLink in item.Links)
+                                        {
+                                            string iconSrc;
+                                            switch (songArtistLink.Type)
+                                            {
+                                                case SongArtistLinkType.VNDBStaff:
+                                                    iconSrc = "assets/favicon/vndb.ico";
+                                                    break;
+                                                case SongArtistLinkType.MusicBrainzArtist:
+                                                    iconSrc = "assets/favicon/musicbrainz.png";
+                                                    break;
+                                                case SongArtistLinkType.Unknown:
+                                                case SongArtistLinkType.VGMdbArtist: // todo
+                                                default:
+                                                    throw new ArgumentOutOfRangeException();
+                                            }
+
+                                            <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
+                                                <img width="16px" height="16px"
+                                                     src="@iconSrc" alt="link"
+                                                     style="margin-left: 6px; scale: 1.2;">
+                                            </a>
+                                        }
+                                    }
                                 </td>
                                 <td>
                                     <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.MusicCount</b>
@@ -255,13 +280,30 @@
                                     @* todo nonlatinalias *@
                                     @if (true)
                                     {
-                                @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                                        string href = item.VndbId.StartsWith("s")
-                                            ? item.VndbId.ToVndbUrl()
-                                            : $"https://musicbrainz.org/artist/{item.VndbId}";
-                                        <a class="link-primary" href="@(href)" target="_blank">
-                                            <span>@item.AALatinAlias</span>
-                                        </a>
+                                        <span>@item.AALatinAlias</span>
+                                        foreach (SongArtistLink songArtistLink in item.Links)
+                                        {
+                                            string iconSrc;
+                                            switch (songArtistLink.Type)
+                                            {
+                                                case SongArtistLinkType.VNDBStaff:
+                                                    iconSrc = "assets/favicon/vndb.ico";
+                                                    break;
+                                                case SongArtistLinkType.MusicBrainzArtist:
+                                                    iconSrc = "assets/favicon/musicbrainz.png";
+                                                    break;
+                                                case SongArtistLinkType.Unknown:
+                                                case SongArtistLinkType.VGMdbArtist: // todo
+                                                default:
+                                                    throw new ArgumentOutOfRangeException();
+                                            }
+
+                                            <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
+                                                <img width="16px" height="16px"
+                                                     src="@iconSrc" alt="link"
+                                                     style="margin-left: 6px; scale: 1.2;">
+                                            </a>
+                                        }
                                     }
                                 </td>
                                 <td>

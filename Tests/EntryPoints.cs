@@ -218,10 +218,11 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ImportSongLite()
     {
-        var deserialized =
-            JsonConvert.DeserializeObject<List<SongLite>>(
-                await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
-        await DbManager.ImportSongLite(deserialized!);
+        throw new Exception("broken");
+        // var deserialized =
+        //     JsonConvert.DeserializeObject<List<SongLite>>(
+        //         await File.ReadAllTextAsync("C:\\emq\\emqsongsmetadata\\SongLite.json"));
+        // await DbManager.ImportSongLite(deserialized!);
     }
 
     [Test]

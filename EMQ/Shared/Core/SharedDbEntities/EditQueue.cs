@@ -40,27 +40,12 @@ public class EditQueue
 
 public class ResGetSongSource
 {
-    public SongSource SongSource { get; set; }
+    public SongSource SongSource { get; set; } = new();
 }
 
 public class ResGetSongArtist
 {
-    public List<SongArtist> SongArtists { get; set; }
-}
-
-public class ReqGetSongArtist
-{
-    public ReqGetSongArtist(int aId
-        // ,int aaId
-    )
-    {
-        AId = aId;
-        // AAId = aaId;
-    }
-
-    public int AId { get; set; }
-
-    // public int AAId { get; set; }
+    public List<SongArtist> SongArtists { get; set; } = new();
 }
 
 public class ReqEditSong
@@ -89,9 +74,20 @@ public enum EntityKind
     SongArtist,
 }
 
-public class EditQueueContainer
+public class ReqEditArtist
 {
-    public EditQueue EditQueue { get; set; }
+    public ReqEditArtist(SongArtist artist, bool isNew, string? noteUser)
+    {
+        Artist = artist;
+        IsNew = isNew;
+        NoteUser = noteUser;
+    }
 
-    public string OldEntityJson { get; set; }
+    [Required]
+    public SongArtist Artist { get; }
+
+    [Required]
+    public bool IsNew { get; }
+
+    public string? NoteUser { get; }
 }

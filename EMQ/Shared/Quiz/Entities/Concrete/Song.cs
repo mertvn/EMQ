@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
+using EMQ.Shared.Quiz.Entities.Abstract;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 [Cloneable.Cloneable]
-public partial class Song
+public partial class Song : IEditQueueEntity
 {
     public int Id { get; set; }
 

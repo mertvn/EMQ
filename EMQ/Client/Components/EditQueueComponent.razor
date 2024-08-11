@@ -61,6 +61,9 @@
                         case EntityKind.Song:
                             str = JsonSerializer.Deserialize<Song>(context.entity_json).ToString();
                             break;
+                        case EntityKind.SongArtist:
+                            str = JsonSerializer.Deserialize<SongArtist>(context.entity_json).ToString();
+                            break;
                     }
                     <span style="@CellStyleInlineBlock ">@(str)</span>
                 }

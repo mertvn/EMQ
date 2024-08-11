@@ -238,24 +238,36 @@
                             Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
                             <div>
+                                @* @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.EditSongMetadata)) *@
+                                @* { *@
+                                @*     // todo should probably show up only on artist's page instead of on every song they've performed in *@
+                                @*     <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteArtist(songArtist))">🗑</span> *@
+                                @* } *@
+
                                 <span>@songArtistTitle.ToString()</span>
 
                                 @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                 {
-                                    @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                                    @if (songArtist.VndbId!.StartsWith("s"))
+                                    foreach (SongArtistLink songArtistLink in songArtist.Links)
                                     {
-                                        <a class="songArtistsTitle link-primary" href="@(songArtist.VndbId.ToVndbUrl())" target="_blank">
+                                        string iconSrc;
+                                        switch (songArtistLink.Type)
+                                        {
+                                            case SongArtistLinkType.VNDBStaff:
+                                                iconSrc = "assets/favicon/vndb.ico";
+                                                break;
+                                            case SongArtistLinkType.MusicBrainzArtist:
+                                                iconSrc = "assets/favicon/musicbrainz.png";
+                                                break;
+                                            case SongArtistLinkType.Unknown:
+                                            case SongArtistLinkType.VGMdbArtist: // todo
+                                            default:
+                                                throw new ArgumentOutOfRangeException();
+                                        }
+
+                                        <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
                                             <img width="16px" height="16px"
-                                                 src="assets/favicon/vndb.ico" alt="link"
-                                                 style="margin-left: 6px; scale: 1.2;">
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{songArtist.VndbId}")" target="_blank">
-                                            <img width="16px" height="16px"
-                                                 src="assets/favicon/musicbrainz.png" alt="link"
+                                                 src="@iconSrc" alt="link"
                                                  style="margin-left: 6px; scale: 1.2;">
                                         </a>
                                     }

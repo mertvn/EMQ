@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -12,7 +13,7 @@ public class AddTableArtist_Alias : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("artist_id").AsInt32().ForeignKey("artist", "id")
+            .WithColumn("artist_id").AsInt32().ForeignKey("artist", "id").OnDelete(Rule.Cascade)
             .WithColumn("latin_alias").AsString().NotNullable()
             .WithColumn("non_latin_alias").AsString().Nullable()
             .WithColumn("is_main_name").AsBoolean().NotNullable();

@@ -315,7 +315,6 @@ public static class VndbImporter
 
             SongArtist songArtist = new SongArtist()
             {
-                VndbId = dynArtist.id,
                 Role = role,
                 PrimaryLanguage = dynArtist.lang,
                 Titles =
@@ -331,6 +330,13 @@ public static class VndbImporter
                     },
                 Sex = sex
             };
+
+            songArtist.Links.Add(new SongArtistLink
+            {
+                Url = ((string)dynArtist.id).ToVndbUrl(),
+                Type = SongArtistLinkType.VNDBStaff,
+                Name = "",
+            });
 
             var existingSong = songs.LastOrDefault(x =>
                 x.Sources.Any(y =>

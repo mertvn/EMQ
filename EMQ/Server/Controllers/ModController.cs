@@ -195,6 +195,37 @@ public class ModController : ControllerBase
         return success ? Ok() : StatusCode(500);
     }
 
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("DeleteArtist")]
+    public async Task<ActionResult> DeleteArtist([FromBody] int aId)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var artist = await DbManager.GetEntity<Artist>(aId);
+        bool success = await DbManager.DeleteEntity(artist!);
+        if (success)
+        {
+            await DbManager.EvictFromSongsCache(aId);
+        }
+
+        if (success)
+        {
+            Console.WriteLine($"{session.Player.Username} DeleteArtist {aId}");
+        }
+
+        return success ? Ok() : StatusCode(500);
+    }
+
     [CustomAuthorize(PermissionKind.Moderator)] // todo db mod requirement, eventually
     [HttpPost]
     [Route("SetSongAttributes")]

@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -389,10 +390,10 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("GetSongArtist")]
-    public async Task<ActionResult<ResGetSongArtist>> GetSongArtist(ReqGetSongArtist req)
+    public async Task<ActionResult<ResGetSongArtist>> GetSongArtist(SongArtist req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
-        var res = await DbManager.GetSongArtist(req.AId, session);
+        var res = await DbManager.GetSongArtist(req, session);
         return res;
     }
 
@@ -458,6 +459,75 @@ public class LibraryController : ControllerBase
         if (eqId > 0)
         {
             Console.WriteLine($"{session.Player.Username} EditSong {req.Song}");
+        }
+
+        return eqId > 0 ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.UploadSongLink)] // todo
+    [HttpPost]
+    [Route("EditArtist")]
+    public async Task<ActionResult> EditArtist([FromBody] ReqEditArtist req)
+    {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var comp = new EditArtistComponent(); // todo move this method to somewhere better
+        bool isValid = await comp.ValidateArtist(req.Artist, req.IsNew,
+            new HttpClient() { BaseAddress = new Uri($"https://{Request.Host}") }); // todo idk if this is reliable
+        if (!isValid)
+        {
+            return BadRequest($"artist object failed validation: {comp.ValidationMessages.First()}");
+        }
+
+        // todo important set unrequired stuff to null/empty for safety reasons
+        // todo? extra validation for safety reasons
+
+        // req.Artist.DataSource = DataSourceKind.EMQ; // todo important
+        string? oldEntityJson = null;
+        if (req.Artist.Id <= 0)
+        {
+            int nextVal = await DbManager.SelectNextVal("public.artist_id_seq");
+            req.Artist.Id = nextVal;
+        }
+        else
+        {
+            throw new NotImplementedException();
+            // var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
+            // if (song.DataSource != DataSourceKind.EMQ)
+            // {
+            //     throw new Exception();
+            // }
+            //
+            // oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
+        }
+
+        const int entityVersion = 1; // todo?
+        const EntityKind entityKind = EntityKind.SongArtist;
+        var editQueue = new EditQueue
+        {
+            submitted_by = session.Player.Username,
+            submitted_on = DateTime.UtcNow,
+            status = ReviewQueueStatus.Pending,
+            entity_kind = entityKind,
+            entity_json = JsonSerializer.Serialize(req.Artist, Utils.JsoCompact),
+            entity_version = entityVersion,
+            old_entity_json = oldEntityJson,
+            note_user = req.NoteUser,
+        };
+
+        long eqId = await DbManager.InsertEntity(editQueue);
+        if (eqId > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} EditArtist {req.Artist}");
         }
 
         return eqId > 0 ? Ok() : StatusCode(500);

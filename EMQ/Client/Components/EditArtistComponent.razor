@@ -1,0 +1,349 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Client.Pages
+@using System.Linq
+@using System.Text.RegularExpressions
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+
+<div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
+    @if (IsNew)
+    {
+        <details style="padding: 5px;">
+            <summary>Guidelines for adding artists</summary>
+            <ul>
+                <li>Currently we're only accepting Japanese artists.</li>
+            </ul>
+            <br/>
+        </details>
+    }
+
+    <div style="display: flex; flex-wrap: wrap">
+        <div style="border: 1px black solid; padding: 10px; width: 970px;">
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>Aliases</h5>
+                <button type="button" class="btn btn-primary" @onclick="AddAlias">Add alias</button>
+                <br/>
+                <br/>
+
+                @for (int index = 0; index < Artist.Titles.Count; index++)
+                {
+                    var alias = Artist.Titles[index];
+                    int indexCopy = index;
+                    <div style="border: 1px black solid; padding: 10px;">
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))">🗑</span>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.LatinTitle"/>
+                            Latin name
+                        </label>
+                        <br/>
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.NonLatinTitle"/>
+                            Non-Latin name
+                        </label>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="radio" class="form-check-input" name="radioIsArtistAliasMainTitle"
+                                   checked="@alias.IsMainTitle" @onchange="@(() => OnChangeRadioIsArtistAliasMainTitle(indexCopy))"/>
+                            Primary alias
+                        </label>
+                        <br/>
+                    </div>
+                }
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>General info</h5>
+                <label style="padding: 4px;">
+                    <select id="AddTitleLang" style="margin: 5px" @bind="Artist.PrimaryLanguage" disabled>
+                        @foreach (var language in Enum.GetValues<Language>())
+                        {
+                            @if (language != Language.allLanguages)
+                            {
+                                // todo chinese binding is fucked? vndb uses only "zh" for staff while we have "zhHans" and "zhHant"
+                                <option value="@language">@language.GetDisplayName()</option>
+                            }
+                        }
+                    </select>
+                    Primary language
+                </label>
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>External links</h5>
+                <details>
+                    <summary>
+                        Allowed link types
+                    </summary>
+                    <ul>
+                        @foreach (var type in Enum.GetValues<SongArtistLinkType>())
+                        {
+                            if (type != SongArtistLinkType.Unknown)
+                            {
+                                <li>
+                                    @type.GetDescription(): @RegexPatterns.ArtistLinkRegex[type].ToString()
+                                </li>
+                            }
+                        }
+                    </ul>
+                </details>
+                <table>
+                    @foreach (var link in Artist.Links)
+                    {
+                        <tr>
+                            <td>
+                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(_ => Artist.Links.Remove(link))">🗑</span>
+                            </td>
+                            <td>
+                                <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
+                            </td>
+                            <td>
+                                @link.Url
+                            </td>
+                        </tr>
+                    }
+                </table>
+                <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
+            </div>
+            <br/>
+
+            <textarea id="note_user"
+                      rows="2"
+                      cols="34"
+                      maxlength="780"
+                      placeholder="Summarize the changes you have made, including links to source(s)."
+                      @bind="NoteUser">
+            </textarea>
+            <br/>
+
+            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+            <ul>
+                @foreach (string validationMessage in ValidationMessages)
+                {
+                    string color = validationMessage.StartsWith("Added") ? "green" : "red";
+                    <li style="color: @color;">@validationMessage</li>
+                }
+            </ul>
+            <br/>
+        </div>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <div style="margin: 16px; width: 330px; min-height:200px;">
+                <h4>Preview</h4>
+                @* todo? *@
+                <pre>@JsonSerializer.Serialize(Artist, Utils.JsoIndented)</pre>
+                @* <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent> *@
+            </div>
+            <br/>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public SongArtist Artist { get; set; } = null!;
+
+    [Parameter]
+    public bool IsNew { get; set; }
+
+    [Parameter]
+    public GenericModal modalRef { get; set; } = null!;
+
+    // private SongInfoCardComponent _songInfoCardComponentRef = null!;
+
+    public List<string> ValidationMessages { get; } = new();
+
+    private static SongArtist GetNewArtist => new() { PrimaryLanguage = "ja", Titles = new List<Title> { new() { IsMainTitle = true } } };
+
+    public string NoteUser { get; set; } = "";
+
+    public bool Ready { get; set; } = true;
+
+    public string ExternalLinksInputText { get; set; } = "";
+
+    protected override void OnInitialized()
+    {
+        if (IsNew)
+        {
+            Artist = GetNewArtist;
+        }
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    // await _songInfoCardComponentRef.CallStateHasChanged();
+    }
+
+    private void AddAlias()
+    {
+        Artist.Titles.Add(new Title());
+    }
+
+    private async Task RemoveAlias(int index)
+    {
+        if (Artist.Titles.Count <= 1)
+        {
+            return;
+        }
+
+        Artist.Titles.RemoveAt(index);
+        await CallStateHasChanged();
+    }
+
+    private async Task OnclickSubmit()
+    {
+        if (Ready)
+        {
+            Ready = false;
+            StateHasChanged();
+            bool isValid = await ValidateArtist(Artist, IsNew, _client);
+            if (isValid)
+            {
+                var req = new ReqEditArtist(Artist, IsNew, NoteUser);
+                var res = await _client.PostAsJsonAsync("Library/EditArtist", req);
+                if (res.IsSuccessStatusCode)
+                {
+                    ValidationMessages.Add("Added to the edit queue.");
+                    if (IsNew)
+                    {
+                        Artist = GetNewArtist;
+                        NoteUser = "";
+                    }
+                    else
+                    {
+                        StateHasChanged();
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
+                        modalRef.Hide();
+                    }
+                }
+                else
+                {
+                    ValidationMessages.Add($"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                }
+            }
+            Ready = true;
+        }
+    }
+
+    public async Task<bool> ValidateArtist(SongArtist artist, bool isNew, HttpClient client)
+    {
+        ValidationMessages.Clear();
+        bool isValid = true;
+
+        if (!artist.Titles.Any())
+        {
+            ValidationMessages.Add("There must be at least one alias.");
+            isValid = false;
+        }
+
+        foreach (Title title in artist.Titles)
+        {
+            if (string.IsNullOrWhiteSpace(title.LatinTitle))
+            {
+                ValidationMessages.Add("Latin title must not be empty.");
+                isValid = false;
+            }
+        }
+
+        if (artist.Titles.Count(x => x.IsMainTitle) != 1)
+        {
+            ValidationMessages.Add("There must be exactly one primary alias.");
+            isValid = false;
+        }
+
+        if (isNew && artist.PrimaryLanguage != "ja")
+        {
+            ValidationMessages.Add("Currently we're only accepting Japanese artists.");
+            isValid = false;
+        }
+
+        if (!artist.Links.Any())
+        {
+            ValidationMessages.Add("There must be at least one external link.");
+            isValid = false;
+        }
+        else
+        {
+    // todo validate link regex
+            if (artist.Links.GroupBy(x => x.Type).Any(y => y.Count() > 1))
+            {
+                ValidationMessages.Add("Only one external link of each type is allowed.");
+                isValid = false;
+            }
+        }
+
+        if (isNew && isValid)
+        {
+            var req = new SongArtist { Links = artist.Links };
+            HttpResponseMessage res1 = await client.PostAsJsonAsync("Library/GetSongArtist", req);
+            if (res1.IsSuccessStatusCode)
+            {
+                var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                if (content.SongArtists.Any())
+                {
+                    ValidationMessages.Add("An artist linked to at least one of the external links you've added already exists in the database.");
+                    isValid = false;
+                }
+            }
+        }
+
+        return isValid;
+    }
+
+    // todo convert all links in db to end with / (except anison.info)
+    private async Task AddNewExternalLink(string value)
+    {
+        ExternalLinksInputText = value;
+        if (Artist.Links.Any(x => x.Url == value))
+        {
+            return;
+        }
+
+        if (!value.EndsWith('/'))
+        {
+            value += '/';
+        }
+
+        foreach ((SongArtistLinkType key, Regex regex) in RegexPatterns.ArtistLinkRegex)
+        {
+            if (Artist.Links.Any(x => x.Type == key))
+            {
+                continue;
+            }
+
+            string str = value;
+            if (key == SongArtistLinkType.AnisonInfoPerson)
+            {
+    // anison.info links can't end with /
+                str = JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value))!.TrimEnd('/');
+            }
+
+            if (regex.IsMatch(str))
+            {
+                Artist.Links.Add(new SongArtistLink { Type = key, Url = value.TrimEnd('/') });
+                ExternalLinksInputText = "";
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnChangeRadioIsArtistAliasMainTitle(int selectedIndex)
+    {
+        for (int index = 0; index < Artist.Titles.Count; index++)
+        {
+            var title = Artist.Titles[index];
+            title.IsMainTitle = index == selectedIndex;
+        }
+    }
+
+}

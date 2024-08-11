@@ -12,6 +12,7 @@ public class AddTableArtist_Music : Migration
     public override void Up()
     {
         Create.Table(tableName)
+            // no cascade to require that artist is removed from all songs before deletion
             .WithColumn("artist_id").AsInt32().PrimaryKey().ForeignKey("artist", "id")
             .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("role").AsInt32().PrimaryKey()

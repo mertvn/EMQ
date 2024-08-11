@@ -66,7 +66,9 @@ public class LibraryStatsAm
 
     public string AALatinAlias { get; set; } = "";
 
-    public string VndbId { get; set; } = "";
+    public string? LinksJson { get; set; } = "";
+
+    public List<SongArtistLink> Links { get; set; } = new();
 
     public int MusicCount { get; set; }
 

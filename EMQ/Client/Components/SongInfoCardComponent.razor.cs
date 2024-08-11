@@ -82,6 +82,28 @@ public partial class SongInfoCardComponent
         }
     }
 
+    private async Task DeleteArtist(SongArtist songArtist)
+    {
+        // todo? generic confirm modal
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete {songArtist}?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var res = await _client.PostAsJsonAsync("Mod/DeleteArtist", songArtist.Id);
+        if (res.IsSuccessStatusCode)
+        {
+            // todo remove from (parent) view
+            // Song = null;
+            // StateHasChanged();
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {songArtist}");
+        }
+    }
+
     private async Task OnSongAttributesCheckboxClick(bool value, SongAttributes attribute)
     {
         // todo? move attribute setting to EditSongComponent

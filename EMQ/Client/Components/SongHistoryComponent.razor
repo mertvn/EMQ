@@ -186,21 +186,26 @@
                         @if (song.Artists.Count == 1)
                         {
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                            foreach (SongArtistLink songArtistLink in song.Artists.First().Links)
+                            {
+                                string iconSrc;
+                                switch (songArtistLink.Type)
+                                {
+                                    case SongArtistLinkType.VNDBStaff:
+                                        iconSrc = "assets/favicon/vndb.ico";
+                                        break;
+                                    case SongArtistLinkType.MusicBrainzArtist:
+                                        iconSrc = "assets/favicon/musicbrainz.png";
+                                        break;
+                                    case SongArtistLinkType.Unknown:
+                                    case SongArtistLinkType.VGMdbArtist: // todo
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
 
-                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                            @if (song.Artists.First().VndbId!.StartsWith("s"))
-                            {
-                                <a class="songArtistsTitle link-primary" href="@(song.Artists.First().VndbId.ToVndbUrl())" target="_blank">
+                                <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
                                     <img width="16px" height="16px"
-                                         src="assets/favicon/vndb.ico" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
-                            else
-                            {
-                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{song.Artists.First().VndbId}")" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="assets/favicon/musicbrainz.png" alt="link"
+                                         src="@iconSrc" alt="link"
                                          style="margin-left: 6px; scale: 1.2;">
                                 </a>
                             }
@@ -212,21 +217,26 @@
                             string tooltipText = $"<ul>{joined}</ul>";
 
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
+                            foreach (SongArtistLink songArtistLink in song.Artists.First().Links)
+                            {
+                                string iconSrc;
+                                switch (songArtistLink.Type)
+                                {
+                                    case SongArtistLinkType.VNDBStaff:
+                                        iconSrc = "assets/favicon/vndb.ico";
+                                        break;
+                                    case SongArtistLinkType.MusicBrainzArtist:
+                                        iconSrc = "assets/favicon/musicbrainz.png";
+                                        break;
+                                    case SongArtistLinkType.Unknown:
+                                    case SongArtistLinkType.VGMdbArtist: // todo
+                                    default:
+                                        throw new ArgumentOutOfRangeException();
+                                }
 
-                            @* TODO: this is a hack because we don't have dedicated musicbrainz artist links yet*@
-                            @if (song.Artists.First().VndbId!.StartsWith("s"))
-                            {
-                                <a class="songArtistsTitle link-primary" href="@(song.Artists.First().VndbId.ToVndbUrl())" target="_blank">
+                                <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
                                     <img width="16px" height="16px"
-                                         src="assets/favicon/vndb.ico" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
-                            else
-                            {
-                                <a class="songArtistsTitle link-primary" href="@($"https://musicbrainz.org/artist/{song.Artists.First().VndbId}")" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="assets/favicon/musicbrainz.png" alt="link"
+                                         src="@iconSrc" alt="link"
                                          style="margin-left: 6px; scale: 1.2;">
                                 </a>
                             }

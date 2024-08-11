@@ -15,7 +15,7 @@
             <h5>What can be added</h5>
             <ol>
                 <li>Currently we're only accepting non-BGM Non-canon song submissions. Canon songs should be added to VNDB instead.</li>
-                <li>Currently it's possible to add songs only to sources and artists already existing in the database.</li>
+                <li>Currently it's possible to add songs only to sources already existing in the database.</li>
                 <li>All Official submissions are accepted.</li>
                 <li>Unofficial submissions may be rejected if they are too obscure/low-quality.</li>
 
@@ -143,7 +143,7 @@
                       rows="2"
                       cols="34"
                       maxlength="780"
-                      placeholder="Enter anything else you want to add here"
+                      placeholder="Summarize the changes you have made, including links to source(s)."
                       @bind="NoteUser">
             </textarea>
             <br/>
@@ -275,7 +275,7 @@
             return;
         }
 
-        var req = new ReqGetSongArtist(SelectedArtist.AId);
+        var req = new SongArtist() { Id = SelectedArtist.AId };
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
         if (res1.IsSuccessStatusCode)
         {

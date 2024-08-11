@@ -251,6 +251,12 @@ public static class MusicBrainzImporter
     private static async Task<ResImportMusicBrainzDataInner> ImportMusicBrainzDataInner(
         IEnumerable<MusicBrainzJson> json)
     {
+        bool b = true;
+        if (b)
+        {
+            throw new Exception("i think i made the artist changes correctly but still be careful");
+        }
+
         var songs = new List<Song>();
         var musicBrainzReleaseRecordings = new List<MusicBrainzReleaseRecording>();
         var musicBrainzReleaseVgmdbAlbums = new List<MusicBrainzReleaseVgmdbAlbum>();
@@ -308,6 +314,8 @@ public static class MusicBrainzImporter
                 var songArtists = new List<SongArtist>();
                 foreach (artist artist in data.artist)
                 {
+                    // todo add both if we have them
+                    List<SongArtistLink> songArtistLinks = new();
                     string vndbid;
                     if (MusicBrainzVndbArtistDict.TryGetValue(artist.gid, out var o))
                     {
@@ -318,10 +326,21 @@ public static class MusicBrainzImporter
                             Console.WriteLine(
                                 $"artist has more than one vndb page linked: https://musicbrainz.org/artist/{artist.gid} {artist.name} {artist.sort_name}");
                         }
+
+                        songArtistLinks.Add(new SongArtistLink
+                        {
+                            Url = vndbid.ToVndbUrl(), Type = SongArtistLinkType.VNDBStaff, Name = "",
+                        });
                     }
                     else
                     {
                         vndbid = artist.gid.ToString();
+                        songArtistLinks.Add(new SongArtistLink
+                        {
+                            Url = $"https://musicbrainz.org/artist/{artist.gid}",
+                            Type = SongArtistLinkType.MusicBrainzArtist,
+                            Name = "",
+                        });
                         // Console.WriteLine(
                         //     $"artist not linked: https://musicbrainz.org/artist/{artist.gid} {artist.name} {artist.sort_name}");
                     }
@@ -339,7 +358,7 @@ public static class MusicBrainzImporter
 
                     SongArtist songArtist = new SongArtist()
                     {
-                        VndbId = vndbid,
+                        Links = songArtistLinks,
                         // Role = role, // todo?
                         PrimaryLanguage = artist.area.ToString(), // todo str
                         Titles =

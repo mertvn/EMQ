@@ -1,4 +1,4 @@
-@page "/LibraryPage"
+﻿@page "/LibraryPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
@@ -129,6 +129,17 @@
         @if (hasImportSongLinkPerms)
         {
             <EditSongComponent IsNew="true"></EditSongComponent>
+        }
+        else
+        {
+            <p>Insufficient permissions.</p>
+        }
+    </details>
+    <details>
+        <summary>Add new artist</summary>
+        @if (hasImportSongLinkPerms)
+        {
+            <EditArtistComponent IsNew="true"></EditArtistComponent>
         }
         else
         {
