@@ -55,7 +55,7 @@
                     @* todo link might be different from what's displayed *@
                     string title = Converters.GetSingleTitle(context.Song.Sources.First().Titles).LatinTitle;
                     <a href="@context.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
-                        <span style="@CellStyleInlineBlock">@(title)</span>
+                        <span style="@CellStyleInlineBlock" title="@title">@(title)</span>
                     </a>
                 }
             </TemplateColumn>
@@ -63,7 +63,7 @@
                 @if (true)
                 {
                     string title = Converters.GetSingleTitle(context.Song.Titles).LatinTitle;
-                    <span style="@CellStyleInlineBlock ">@(title)</span>
+                    <span style="@CellStyleInlineBlock" title="@title">@(title)</span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Url" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.url))">

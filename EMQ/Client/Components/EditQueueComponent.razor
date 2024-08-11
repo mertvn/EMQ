@@ -65,7 +65,7 @@
                             str = JsonSerializer.Deserialize<SongArtist>(context.entity_json).ToString();
                             break;
                     }
-                    <span style="@CellStyleInlineBlock ">@(str)</span>
+                    <span style="@CellStyleInlineBlock" title="@str">@(str)</span>
                 }
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true"/>
