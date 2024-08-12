@@ -140,6 +140,20 @@
             </div>
             <br/>
 
+            <details>
+                <summary>Persist after submitting</summary>
+                @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
+                {
+                    if (true)
+                    {
+                        string id = $"PersistAfterSubmittingDict-{key}";
+                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
+                        <label for="@id">@key</label>
+                        <br/>
+                    }
+                }
+            </details>
+
             <textarea id="note_user"
                       rows="2"
                       cols="34"
@@ -198,6 +212,19 @@
     public string NoteUser { get; set; } = "";
 
     public bool Ready { get; set; } = true;
+
+    public Dictionary<string, bool> PersistAfterSubmittingDict { get; } = new()
+    {
+        {
+            "Sources", false
+        },
+        {
+            "Artists", false
+        },
+        {
+            "Song title", false
+        },
+    };
 
     protected override void OnInitialized()
     {
@@ -308,7 +335,26 @@
                     ValidationMessages.Add("Added to the edit queue.");
                     if (IsNew)
                     {
+                        var oldSources = Song.Sources;
+                        var oldArtists = Song.Artists;
+                        var oldTitles = Song.Titles;
+
                         Song = GetNewSong;
+                        if (PersistAfterSubmittingDict["Sources"])
+                        {
+                            Song.Sources = oldSources;
+                        }
+
+                        if (PersistAfterSubmittingDict["Artists"])
+                        {
+                            Song.Artists = oldArtists;
+                        }
+
+                        if (PersistAfterSubmittingDict["Song title"])
+                        {
+                            Song.Titles = oldTitles;
+                        }
+
                         NoteUser = "";
                     }
                     else
