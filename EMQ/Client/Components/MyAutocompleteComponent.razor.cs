@@ -124,7 +124,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
                 }
             case "Enter":
             case "NumpadEnter":
-            case "Tab":
+            // case "Tab":
                 {
                     await SelectValue();
                     break;
