@@ -121,32 +121,28 @@
     </ul>
 </details>
 
-@* todo remove this check *@
-@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
-{
-    <details>
-        <summary>Add new song</summary>
-        @if (hasImportSongLinkPerms)
-        {
-            <EditSongComponent IsNew="true"></EditSongComponent>
-        }
-        else
-        {
-            <p>Insufficient permissions.</p>
-        }
-    </details>
-    <details>
-        <summary>Add new artist</summary>
-        @if (hasImportSongLinkPerms)
-        {
-            <EditArtistComponent IsNew="true"></EditArtistComponent>
-        }
-        else
-        {
-            <p>Insufficient permissions.</p>
-        }
-    </details>
-}
+<details>
+    <summary>Add new song</summary>
+    @if (hasImportSongLinkPerms)
+    {
+        <EditSongComponent IsNew="true"></EditSongComponent>
+    }
+    else
+    {
+        <p>Insufficient permissions.</p>
+    }
+</details>
+<details>
+    <summary>Add new artist</summary>
+    @if (hasImportSongLinkPerms)
+    {
+        <EditArtistComponent IsNew="true"></EditArtistComponent>
+    }
+    else
+    {
+        <p>Insufficient permissions.</p>
+    }
+</details>
 
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
