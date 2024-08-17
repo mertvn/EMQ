@@ -13,6 +13,7 @@ public class SongArtistLink
     public string Name { get; set; } = "";
 }
 
+// todo? MAL
 public enum SongArtistLinkType
 {
     Unknown,

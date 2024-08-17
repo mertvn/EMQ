@@ -296,6 +296,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
                 // todo? don't insert if latin title is the same after normalization
+                // todo important only update if data source is vndb
                 await connection.ExecuteAsync(
                     "UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle WHERE mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
                     new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId = innerResult.mIds.Single() });

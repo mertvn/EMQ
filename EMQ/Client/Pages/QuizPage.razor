@@ -581,7 +581,7 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (!string.IsNullOrWhiteSpace(playerGuess?.Mst) || !string.IsNullOrWhiteSpace(playerGuess?.A) || !string.IsNullOrWhiteSpace(playerGuess?.Mt) || !string.IsNullOrWhiteSpace(playerGuess?.Rigger) || !string.IsNullOrWhiteSpace(playerGuess?.Developer)));"
                          @onclick="@(() => SetGuess(playerGuess ?? new()))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block; z-index: 5; padding: 2px;
+                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block; z-index: 5; padding: 4px;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @* todo make text smaller as it gets longer *@
                                 @if (playerGuess != null)

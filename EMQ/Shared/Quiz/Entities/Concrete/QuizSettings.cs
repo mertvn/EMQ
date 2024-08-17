@@ -149,8 +149,8 @@ public class QuizSettings
     [ProtoMember(15)]
     [Required]
     [Range(5000, 250000)]
-    [DefaultValue(30000)]
-    public int TimeoutMs { get; set; } = 30000;
+    [DefaultValue(20000)]
+    public int TimeoutMs { get; set; } = 20000;
 
     [Required]
     [Range(5, 250)]
