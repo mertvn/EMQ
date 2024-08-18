@@ -161,6 +161,12 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        PublicUserInfo = null;
+        MostPlayedSongs = null;
+        CommonPlayers = null;
+        UserMusicVotes = null;
+        StateHasChanged();
+
         HttpResponseMessage res1 =
             await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", UserId);
         if (res1.IsSuccessStatusCode)
@@ -168,11 +174,8 @@
             var content = (await res1.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
             PublicUserInfo = content;
         }
-        else
-        {
-            PublicUserInfo = null;
-        }
 
+        StateHasChanged();
         HttpResponseMessage res2 =
             await _client.PostAsJsonAsync("Auth/GetPublicUserInfoSongs", UserId);
         if (res2.IsSuccessStatusCode)
@@ -181,12 +184,6 @@
             MostPlayedSongs = content.MostPlayedSongs.AsQueryable();
             CommonPlayers = content.CommonPlayers.AsQueryable();
             UserMusicVotes = content.UserMusicVotes.AsQueryable();
-        }
-        else
-        {
-            MostPlayedSongs = null;
-            CommonPlayers = null;
-            UserMusicVotes = null;
         }
     }
 
