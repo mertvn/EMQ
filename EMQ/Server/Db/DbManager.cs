@@ -67,6 +67,7 @@ public static class DbManager
                 .Select(x => x.ToVndbId()).ToArray();
         }
 
+        // todo automate setting this to false when running freshsetup
         bool hasVndbDb = true;
         if (hasVndbDb)
         {

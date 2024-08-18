@@ -39,6 +39,7 @@ public static class Blacklists
         ("v7221", "Yume Panorama Wide"),
         ("v8462", "Over The Distance"),
         ("v9409", "Key of Destiny"),
+        ("v9995", "Ashita e no Michi"),
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v10632", "Eternal Flower"),
         ("v11000", "Photograph Memory"),
