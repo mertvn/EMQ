@@ -4433,8 +4433,28 @@ where user_id = @userId
 group by user_id
 ";
 
+                const string sqlSSST = @"
+WITH counts AS (
+    SELECT type, COUNT(*) AS total, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS correct
+    FROM quiz_song_history qsh
+    JOIN music_source_music msm ON qsh.music_id = msm.music_id
+    WHERE user_id = @userId
+    GROUP BY TYPE
+),
+percentages AS (
+    SELECT type, total, correct, ROUND(100.0 * correct / total, 2) AS percentage
+    FROM counts
+)
+SELECT type, total, correct, percentage
+FROM percentages
+ORDER BY type";
+
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         (int count, float gr) = await connection.QuerySingleOrDefaultAsync<(int count, float gr)>(sql, new { userId });
+
+        Dictionary<SongSourceSongType, GetPublicUserInfoSSST> getPublicUserInfoSSST =
+            (await connection.QueryAsync<GetPublicUserInfoSSST>(sqlSSST, new { userId }))
+            .ToDictionary(x => x.Type, x => x);
 
         var res = new ResGetPublicUserInfo
         {
@@ -4445,6 +4465,7 @@ group by user_id
             Avatar = new Avatar(user.avatar, user.skin),
             UserRoleKind = (UserRoleKind)user.roles,
             CreatedAt = user.created_at,
+            SSST = getPublicUserInfoSSST,
         };
 
         return res;

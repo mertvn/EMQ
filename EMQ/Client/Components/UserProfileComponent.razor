@@ -3,6 +3,7 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using System.Globalization
+@using EMQ.Shared.Core
 @inject HttpClient _client
 @inject NavigationManager _navigation
 
@@ -24,8 +25,13 @@
     <br/>
 
     <ul>
-        <li>Song count: @PublicUserInfo.SongCount</li>
-        <li>Guess rate: @PublicUserInfo.GuessRate%</li>
+        <li>Song count: @PublicUserInfo.SongCount (GR: @PublicUserInfo.GuessRate%)</li>
+        <ul>
+            @foreach ((SongSourceSongType key, var value) in PublicUserInfo.SSST)
+            {
+                <li>@key: @value.Total (GR: @value.Percentage%)</li>
+            }
+        </ul>
     </ul>
     <br/>
 }
