@@ -4538,10 +4538,16 @@ limit 50;
 ";
 
         const string sqlCommonPlayers =
-            @"SELECT array_agg(DISTINCT user_id) AS arr, q.id FROM quiz q
-join quiz_song_history qsh on qsh.quiz_id = q.id
-GROUP BY q.id
-HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT user_id) @> @userId
+            @"WITH cte AS (
+SELECT DISTINCT qsh.quiz_id
+FROM quiz_song_history qsh
+WHERE qsh.user_id = @userId
+AND EXISTS (SELECT 1 FROM quiz_song_history qsh2 WHERE qsh2.quiz_id = qsh.quiz_id AND qsh2.user_id != @userId)
+)
+SELECT array_agg(DISTINCT user_id) AS arr, qsh.quiz_id AS id
+FROM quiz_song_history qsh
+JOIN cte ON cte.quiz_id = qsh.quiz_id
+GROUP BY qsh.quiz_id
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -4571,8 +4577,7 @@ HAVING (array_length(array_agg(DISTINCT user_id), 1) > 1) and array_agg(DISTINCT
         }
 
         var resCommonPlayers =
-            (await connection.QueryAsync<(int[] arr, Guid quizId)>(sqlCommonPlayers, new { userId = new[] { userId } }))
-            .ToArray();
+            (await connection.QueryAsync<(int[] arr, Guid quizId)>(sqlCommonPlayers, new { userId })).ToArray();
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
