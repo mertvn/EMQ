@@ -4563,9 +4563,18 @@ GROUP BY qsh.quiz_id
         }
 
         var songs =
-            (await SelectSongsMIds(
-                resMostPlayedSongs.Select(x => x.MusicId).Concat(musicVotes.Select(x => x.music_id)).ToArray(), false))
+            (await SelectSongsMIdsCached(
+                resMostPlayedSongs.Select(x => x.MusicId).Concat(musicVotes.Select(x => x.music_id)).Distinct()
+                    .ToArray()))
             .ToDictionary(x => x.Id, x => x);
+        foreach ((_, Song value) in songs)
+        {
+            foreach (SongLink link in value.Links)
+            {
+                link.AnalysisRaw = null;
+            }
+        }
+
         foreach (ResMostPlayedSongs resMostPlayedSong in resMostPlayedSongs)
         {
             resMostPlayedSong.Song = songs[resMostPlayedSong.MusicId];

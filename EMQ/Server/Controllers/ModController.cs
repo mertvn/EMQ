@@ -215,6 +215,7 @@ public class ModController : ControllerBase
         bool success = await DbManager.DeleteEntity(artist!);
         if (success)
         {
+            // todo evict all songs with this artist
             await DbManager.EvictFromSongsCache(aId);
         }
 

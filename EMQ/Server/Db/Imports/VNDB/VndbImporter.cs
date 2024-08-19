@@ -101,6 +101,7 @@ public static class VndbImporter
         await File.WriteAllTextAsync($"{folder}/VndbImporter.json",
             System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
+        // todo only select songs with data source vndb
         List<Song> dbSongs;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
