@@ -731,6 +731,43 @@ public class QuizController : ControllerBase
         return Unauthorized();
     }
 
+    // todo don't allow people to do this while playing a quiz
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("SetAnsweringKind")]
+    public async Task<ActionResult> SetAnsweringKind([FromBody] AnsweringKind answeringKind)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var player = session.Player;
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        if (room is not null)
+        {
+            if (room.QuizSettings.AnsweringKind == AnsweringKind.Mixed)
+            {
+                player.AnsweringKind = answeringKind;
+                TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+                return Ok();
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Attempt to SetAnsweringKind in r{room.Id} that is not set to Mixed mode by p{req.playerId}",
+                    room.Id, player.Id);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Attempt to SetAnsweringKind in r{req.RoomId} that is null", "");
+        }
+
+        return Unauthorized();
+    }
+
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("NGMCBurnPlayer")]

@@ -162,6 +162,10 @@ public partial class QuizPage
 
     private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
+    private bool IsMultipleChoice => ClientState.Session != null &&
+                                     Room?.Players.FirstOrDefault(x => x.Id == ClientState.Session.Player.Id)
+                                         ?.AnsweringKind is AnsweringKind.MultipleChoice;
+
     private bool _isDisposed;
 
     private IDisposable? _locationChangingRegistration;
@@ -1043,7 +1047,7 @@ public partial class QuizPage
                     !string.IsNullOrWhiteSpace(guess.Developer))
                 {
                     PageState.Guess = guess;
-                    if (_guessInputComponent != null || Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+                    if (_guessInputComponent != null || Room.Quiz.MultipleChoiceOptions.Any())
                     {
                         await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMst", PageState.Guess.Mst);
                     }

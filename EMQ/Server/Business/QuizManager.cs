@@ -620,6 +620,9 @@ public class QuizManager
                 {
                     player.Lives = Quiz.Room.QuizSettings.MaxLives;
                     player.Score = 0;
+                    player.AnsweringKind = Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Mixed
+                        ? player.AnsweringKind
+                        : Quiz.Room.QuizSettings.AnsweringKind;
                     player.Guess = null;
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
@@ -1254,8 +1257,10 @@ public class QuizManager
         switch (Quiz.Room.QuizSettings.AnsweringKind)
         {
             case AnsweringKind.Typing:
+                Quiz.MultipleChoiceOptions.Clear();
                 break;
             case AnsweringKind.MultipleChoice:
+            case AnsweringKind.Mixed:
                 var playerSessions =
                     ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
                 Quiz.MultipleChoiceOptions =
@@ -1361,7 +1366,7 @@ public class QuizManager
 
         if (!Quiz.Room.QuizSettings.IsOnlyMstGuessTypeEnabled)
         {
-            if (Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+            if (Quiz.Room.QuizSettings.AnsweringKind is AnsweringKind.MultipleChoice or AnsweringKind.Mixed)
             {
                 Quiz.Room.Log(
                     $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled for the \"{AnsweringKind.MultipleChoice.GetDescription()}\" Answering method.",
@@ -1399,6 +1404,9 @@ public class QuizManager
         {
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
+            player.AnsweringKind = Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Mixed
+                ? player.AnsweringKind
+                : Quiz.Room.QuizSettings.AnsweringKind;
             player.Guess = null;
             player.IsGuessKindCorrectDict = null;
             player.FirstGuessMs = 0;
@@ -1858,6 +1866,9 @@ public class QuizManager
 
             player.Lives = Quiz.Room.QuizSettings.MaxLives;
             player.Score = 0;
+            player.AnsweringKind = Quiz.Room.QuizSettings.AnsweringKind == AnsweringKind.Mixed
+                ? player.AnsweringKind
+                : Quiz.Room.QuizSettings.AnsweringKind;
             player.Guess = null;
             player.IsGuessKindCorrectDict = null;
             player.FirstGuessMs = 0;

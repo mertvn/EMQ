@@ -8,4 +8,6 @@ public enum AnsweringKind
 
     [Description("Multiple Choice")]
     MultipleChoice,
+
+    Mixed,
 }

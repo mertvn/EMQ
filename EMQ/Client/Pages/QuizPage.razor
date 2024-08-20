@@ -413,7 +413,7 @@
     <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
 </div>
 
-@if (Room?.QuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+@if (IsMultipleChoice || (IsSpectator && Room != null && Room.Quiz != null && Room.Quiz.MultipleChoiceOptions.Any()))
 {
     <div id="GuessInput" style="max-width:720px; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">

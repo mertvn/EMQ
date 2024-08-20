@@ -215,6 +215,25 @@ else
                     }
                 }
 
+                @if (Room != null && Room.QuizSettings.AnsweringKind == AnsweringKind.Mixed)
+                {
+                    @if (player.Id == ClientState.Session?.Player.Id)
+                    {
+                        <select @bind:get="@((int)player.AnsweringKind)" @bind:set="@SetAnsweringKindAsync" @bind:event="oninput">
+                            @foreach (var value in Enum.GetValues<AnsweringKind>().Where(x => x != AnsweringKind.Mixed))
+                            {
+                                <option value="@((int)value)">@value.GetDescription()</option>
+                            }
+                        </select>
+                        <br/>
+                    }
+                    else
+                    {
+                        <span>@player.AnsweringKind.GetDescription()</span>
+                        <br/>
+                    }
+                }
+
                 @{
                     Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : player.Avatar;
                 }

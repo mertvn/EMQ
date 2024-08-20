@@ -89,6 +89,16 @@ public partial class RoomPage
         }
     }
 
+    private async Task SetAnsweringKindAsync(int value)
+    {
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetAnsweringKind", value);
+        if (res1.IsSuccessStatusCode)
+        {
+            Room = await _clientUtils.SyncRoom();
+            StateHasChanged();
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
