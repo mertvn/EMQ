@@ -197,7 +197,7 @@
 
     @if (_correctAnswer != null || _currentSong != null) // necessary for hints to show up on the first song because of SongInfoCardComponent.ShouldRender()
     {
-        <SongInfoCardComponent Song="@(_correctAnswer ?? _currentSong)"/>
+        <SongInfoCardComponent Song="@(_correctAnswer ?? _currentSong)" ShowDevelopers="@(Room != null && Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Developer, out var d) && d)"/>
     }
 
     @if (ClientState.Session != null && Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))

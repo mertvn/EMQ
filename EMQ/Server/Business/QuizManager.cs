@@ -499,13 +499,12 @@ public class QuizManager
             if (!CorrectAnswersDictDeveloper.TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
             {
                 correctAnswers = new List<string>();
-                foreach (string vndbId in Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x =>
-                             x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(z => z.Url.ToVndbId())))
+                foreach (var developer in Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Developers))
                 {
-                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                    correctAnswers.Add(developer.Title.LatinTitle);
+                    if (developer.Title.NonLatinTitle != null)
                     {
-                        correctAnswers.AddRange(developers.Select(x => x.latin)
-                            .Concat(developers.Select(x => x.name)).Where(x => x != null)!);
+                        correctAnswers.Add(developer.Title.NonLatinTitle);
                     }
                 }
 

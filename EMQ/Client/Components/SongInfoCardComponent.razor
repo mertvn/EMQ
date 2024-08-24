@@ -276,6 +276,23 @@
                         }
                     }
                 </div>
+                <div>
+                    @if (ShowDevelopers)
+                    {
+                        var developers = Song.Sources.SelectMany(x => x.Developers).ToArray();
+                        if (developers.Any())
+                        {
+                            <br/>
+                            <span>Developers:</span>
+                            <br/>
+                            @foreach (var developer in developers)
+                            {
+                                <span>@developer.Title.LatinTitle</span>
+                                <br/>
+                            }
+                        }
+                    }
+                </div>
                 @if (Song.Stats.TimesPlayed > 0)
                 {
                     <br/>

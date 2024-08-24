@@ -36,6 +36,8 @@ public class SongSource
     // todo? the hashset might need sorting
     public Dictionary<int, HashSet<SongSourceSongType>> MusicIds { get; set; } = new();
 
+    public List<SongSourceDeveloper> Developers { get; set; } = new();
+
     public override string ToString()
     {
         var first = Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ?? Titles.First();
@@ -70,4 +72,11 @@ public enum SongSourceType
     Unknown,
     VN,
     Other
+}
+
+public class SongSourceDeveloper
+{
+    public string VndbId { get; set; } = "";
+
+    public Title Title { get; set; } = new();
 }

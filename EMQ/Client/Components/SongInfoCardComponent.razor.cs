@@ -23,6 +23,9 @@ public partial class SongInfoCardComponent
     [Parameter]
     public bool IsEditing { get; set; }
 
+    [Parameter]
+    public bool ShowDevelopers { get; set; }
+
     public SongReportComponent _songReportComponent { get; set; } = null!;
 
     private int _currentSongId;

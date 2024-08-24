@@ -74,7 +74,7 @@ public static class DbManager
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
             {
                 const string sql = @"
-SELECT distinct v.id, p.name, p.latin FROM producers p
+SELECT distinct v.id, p.id, p.name, p.latin FROM producers p
 join releases_producers rp ON rp.pid = p.id
 JOIN releases r ON r.id = rp.id
 JOIN releases_vn rv ON rv.id = r.id
@@ -82,8 +82,8 @@ JOIN vn v ON v.id = rv.vid
 WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
                 var vnDevelopers =
-                    await connection.QueryAsync<(string id, string name, string? latin)>(sql, new { vnIds });
-                VnDevelopers = vnDevelopers.GroupBy(x => x.id)
+                    await connection.QueryAsync<(string vId, string pId, string name, string? latin)>(sql, new { vnIds });
+                VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
             }
         }
@@ -113,7 +113,8 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
     // public static Dictionary<int, List<SongSourceSongType>> MusicIdsSongSourceSongTypes { get; set; }
 
-    public static Dictionary<string, (string id, string name, string? latin)[]> VnDevelopers { get; set; } = new();
+    public static Dictionary<string, (string vId, string pId, string name, string? latin)[]>
+        VnDevelopers { get; set; } = new();
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 
@@ -702,12 +703,36 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             }
         }
 
-        // fix SongTypes for mIds
         foreach ((int mId, Dictionary<int, SongSource>? value) in mIdSongSources)
         {
             foreach ((int msId, SongSource? songSource) in value)
             {
+                // fix SongTypes for mIds
                 mIdSongSources[mId][msId].SongTypes = songSource.MusicIds[mId].ToList();
+
+                // fill developers
+                var songSourceDevelopers = new List<SongSourceDeveloper>();
+                foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
+                             .Select(z => z.Url.ToVndbId()))
+                {
+                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                    {
+                        foreach ((string? _, string? pId, string? name, string? latin) in developers)
+                        {
+                            (string? latinTitle, string? nonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(name, latin);
+                            songSourceDevelopers.Add(new SongSourceDeveloper
+                            {
+                                VndbId = pId,
+                                Title = new Title
+                                {
+                                    LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                }
+                            });
+                        }
+                    }
+                }
+
+                mIdSongSources[mId][msId].Developers = songSourceDevelopers;
             }
         }
 
