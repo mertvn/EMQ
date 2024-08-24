@@ -397,31 +397,13 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         bool selectCategories)
     {
         var mIdSongSources = new Dictionary<int, Dictionary<int, SongSource>>();
-        QueryBuilder queryMusicSource;
-        if (selectCategories)
-        {
-            queryMusicSource = connection
-                .QueryBuilder($@"SELECT *
-            FROM music_source_music msm
-            LEFT JOIN music_source ms ON ms.id = msm.music_source_id
-            LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
-            LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
-            LEFT JOIN music_source_category msc ON msc.music_source_id = ms.id
-            LEFT JOIN category c ON c.id = msc.category_id
-            /**where**/
-    ");
-        }
-        else
-        {
-            queryMusicSource = connection
-                .QueryBuilder($@"SELECT *
+        QueryBuilder queryMusicSource = connection.QueryBuilder($@"SELECT *
             FROM music_source_music msm
             LEFT JOIN music_source ms ON ms.id = msm.music_source_id
             LEFT JOIN music_source_title mst ON mst.music_source_id = ms.id
             LEFT JOIN music_source_external_link msel ON msel.music_source_id = ms.id
             /**where**/
     ");
-        }
 
         int[] mIds = songs.Select(a => a.Id).Where(x => x != 0).ToArray();
         if (mIds.Any())
@@ -471,7 +453,11 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                     nameof(selectCategories));
             }
 
-            queryMusicSource.Where($"c.vndb_id = ANY({categories})");
+            int[] msIdsWithCategories = (await connection.QueryAsync<int>(@"select music_source_id from
+            music_source_category msc
+            LEFT JOIN category c ON c.id = msc.category_id
+            WHERE c.vndb_id = ANY(@categories)", new {categories})).ToArray();
+            queryMusicSource.Where($"ms.id = ANY({msIdsWithCategories})");
         }
 
         if (queryMusicSource.GetFilters() is null)
@@ -480,38 +466,18 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         }
 
         // Console.WriteLine(queryMusicSource.Sql);
-        var types = selectCategories
-            ? new[]
-            {
-                typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
-                typeof(MusicSourceExternalLink), typeof(MusicSourceCategory), typeof(Category)
-            }
-            : new[]
+        await connection.QueryAsync(queryMusicSource.Sql,
+            new[]
             {
                 typeof(MusicSourceMusic), typeof(MusicSource), typeof(MusicSourceTitle),
                 typeof(MusicSourceExternalLink)
-            };
-
-        string splitOn = selectCategories
-            ? "id,music_source_id,music_source_id,music_source_id,id"
-            : "id,music_source_id,music_source_id";
-
-        await connection.QueryAsync(queryMusicSource.Sql,
-            types, (objects) =>
+            }, (objects) =>
             {
                 // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
                 var musicSourceMusic = (MusicSourceMusic)objects[0];
                 var musicSource = (MusicSource)objects[1];
                 var musicSourceTitle = (MusicSourceTitle)objects[2];
                 var musicSourceExternalLink = (MusicSourceExternalLink?)objects[3];
-
-                MusicSourceCategory? musicSourceCategory = null;
-                Category? category = null;
-                if (selectCategories)
-                {
-                    musicSourceCategory = (MusicSourceCategory?)objects[4];
-                    category = (Category?)objects[5];
-                }
 
                 List<Guid> musicBrainzReleases = new();
                 if (MusicIdsRecordingGids.TryGetValue(musicSourceMusic.music_id, out var recording))
@@ -621,24 +587,6 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                 }
                         }
                     }
-
-                    if (category is not null)
-                    {
-                        songSources[musicSource.id].Categories.Add(new SongSourceCategory()
-                        {
-                            Id = category.id,
-                            Name = category.name,
-                            VndbId = category.vndb_id,
-                            Type = (SongSourceCategoryType)category.type,
-                            Rating = musicSourceCategory!.rating,
-                        });
-
-                        if (musicSourceCategory.spoiler_level.HasValue)
-                        {
-                            songSources[musicSource.id].Categories.Last().SpoilerLevel =
-                                (SpoilerLevel)musicSourceCategory.spoiler_level.Value;
-                        }
-                    }
                 }
                 else
                 {
@@ -706,27 +654,6 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         }
                     }
 
-                    if (category is not null)
-                    {
-                        if (!existingSongSource.Categories.Any(x => x.Name == category.name))
-                        {
-                            existingSongSource.Categories.Add(new SongSourceCategory()
-                            {
-                                Id = category.id,
-                                Name = category.name,
-                                VndbId = category.vndb_id,
-                                Type = (SongSourceCategoryType)category.type,
-                                Rating = musicSourceCategory!.rating,
-                            });
-
-                            if (musicSourceCategory.spoiler_level.HasValue)
-                            {
-                                existingSongSource.Categories.Last().SpoilerLevel =
-                                    (SpoilerLevel)musicSourceCategory.spoiler_level.Value;
-                            }
-                        }
-                    }
-
                     var songSourceSongType = (SongSourceSongType)musicSourceMusic.type;
                     if (existingSongSource.MusicIds.TryGetValue(musicSourceMusic.music_id, out var songSourceSongTypes))
                     {
@@ -740,8 +667,40 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
                 return 0;
             },
-            splitOn: splitOn,
+            splitOn: "id,music_source_id,music_source_id",
             param: queryMusicSource.Parameters);
+
+        if (selectCategories && mIdSongSources.Any())
+        {
+            const string sqlCategories = @"SELECT * FROM music_source_category msc
+            LEFT JOIN category c ON c.id = msc.category_id
+            WHERE msc.music_source_id = ANY(@msIds)";
+
+            int[] msIds = mIdSongSources.SelectMany(x => x.Value.Select(y => y.Key)).ToArray();
+            var res = (await connection.QueryAsync<MusicSourceCategory, Category, (int, SongSourceCategory)>(
+                    sqlCategories, (msc, c) =>
+                    {
+                        var songSourceCategory = new SongSourceCategory
+                        {
+                            Id = c.id,
+                            Name = c.name,
+                            VndbId = c.vndb_id,
+                            Type = (SongSourceCategoryType)c.type,
+                            Rating = msc.rating,
+                            SpoilerLevel = (SpoilerLevel?)msc.spoiler_level,
+                        };
+                        return (msc.music_source_id, songSourceCategory);
+                    }, new { msIds }, splitOn: "id")).ToArray();
+
+            foreach ((int mId, Dictionary<int, SongSource>? value) in mIdSongSources)
+            {
+                foreach ((int msId, SongSource? _) in value)
+                {
+                    var msCategories = res.Where(x => x.Item1 == msId).Select(x => x.Item2).ToList();
+                    mIdSongSources[mId][msId].Categories = msCategories;
+                }
+            }
+        }
 
         // fix SongTypes for mIds
         foreach ((int mId, Dictionary<int, SongSource>? value) in mIdSongSources)
@@ -4434,7 +4393,7 @@ where user_id = @userId
 group by user_id
 ";
 
-                const string sqlSSST = @"
+        const string sqlSSST = @"
 WITH counts AS (
     SELECT type, COUNT(*) AS total, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS correct
     FROM quiz_song_history qsh
