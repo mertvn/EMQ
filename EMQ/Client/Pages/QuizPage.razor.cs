@@ -1217,4 +1217,13 @@ public partial class QuizPage
             }
         }
     }
+
+    private async Task SetAnsweringKindAsync(int value)
+    {
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetAnsweringKind", value);
+        if (res1.IsSuccessStatusCode)
+        {
+            await SyncWithServer();
+        }
+    }
 }

@@ -731,7 +731,6 @@ public class QuizController : ControllerBase
         return Unauthorized();
     }
 
-    // todo don't allow people to do this while playing a quiz
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SetAnsweringKind")]
@@ -744,9 +743,22 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x =>
+            x.Players.Any(y => y.Id == player.Id) || x.Spectators.Any(y => y.Id == player.Id));
         if (room is not null)
         {
+            if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+            {
+                bool isSpectator = room.Spectators.Any(x => x.Id == player.Id);
+                if (!isSpectator)
+                {
+                    _logger.LogWarning(
+                        "Attempt to SetAnsweringKind in r{room.Id} that has a quiz active by p{req.playerId}",
+                        room.Id, player.Id);
+                    return StatusCode(409);
+                }
+            }
+
             if (room.QuizSettings.AnsweringKind == AnsweringKind.Mixed)
             {
                 player.AnsweringKind = answeringKind;
