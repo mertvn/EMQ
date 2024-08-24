@@ -1681,7 +1681,7 @@ public class QuizManager
 
                 // todo lots of selects are performed when NumSongs is really small
                 int songsLeft =
-                    Math.Max((int)((Quiz.Room.QuizSettings.NumSongs / 2f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
+                    Math.Max((int)((Quiz.Room.QuizSettings.NumSongs / 1.5f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
                         100);
                 while (songsLeft > 0 && !cancellationTokenSource.IsCancellationRequested)
                 {

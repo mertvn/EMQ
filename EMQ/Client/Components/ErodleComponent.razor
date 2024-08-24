@@ -9,7 +9,7 @@
 
 <button type="button" class="btn btn-success" disabled="@(!Ended)" @onclick="StartNewGame" style="margin: 4px;">New game (random)</button>
 <br/>
-<button type="button" class="btn btn-danger" disabled="@(Ended)" @onclick="ShowAnswer" style="margin: 4px;">Show correct answer</button>
+<button type="button" class="btn btn-danger" disabled="@(Ended || CorrectAnswer == null)" @onclick="ShowAnswer" style="margin: 4px;">Show correct answer</button>
 <br/>
 
 @if (!Ended)
@@ -162,7 +162,6 @@
 
     public AutocompleteMst? SelectedMusicSourceTitle { get; set; }
 
-
     public List<ErodleAnswer> PreviousAnswers { get; set; } = new();
 
     public ErodleAnswer? CorrectAnswer { get; set; }
@@ -198,7 +197,7 @@
                 GuessNumber = PreviousAnswers.Count + 1,
                 AutocompleteMst = SelectedMusicSourceTitle,
                 Date = content.SongSource.AirDateStart,
-                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList(), // todo
+                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList(),
                 Developers = content.SongSource.Developers,
                 Rating = content.SongSource.RatingAverage,
                 VoteCount = content.SongSource.VoteCount
@@ -250,7 +249,7 @@
         Ended = true;
         CorrectAnswer!.Tags = CorrectAnswer.Tags.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList();
         CorrectAnswer.GuessNumber = PreviousAnswers.Count + 1;
-        PreviousAnswers.Add(CorrectAnswer!);
+        PreviousAnswers.Add(CorrectAnswer);
     }
 
     private async Task OnWin()
