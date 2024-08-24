@@ -1158,6 +1158,28 @@ order by ms.id
     }
 
     [Test]
+    public async Task Test_GetSongSourceWithCategoriesPerformance()
+    {
+        const int msId = 7;
+        var res = await DbManager.GetSongSource(
+            new SongSource { Id = msId, Categories = new List<SongSourceCategory> { new() } }, null);
+
+        Console.WriteLine(res.SongSource.Categories.Count);
+        var hashset = new HashSet<int>();
+        foreach (SongSourceCategory songSourceCategory in res.SongSource.Categories)
+        {
+            Console.WriteLine(songSourceCategory.Name);
+            if (!hashset.Add(songSourceCategory.Id))
+            {
+                throw new Exception();
+            }
+        }
+
+        Assert.That(hashset.Count > 10);
+        Assert.That(hashset.Count < 500);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_TooManyBGM()
     {
         var code =

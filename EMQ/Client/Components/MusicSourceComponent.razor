@@ -23,7 +23,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", MusicSourceId);
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = MusicSourceId });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;

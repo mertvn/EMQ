@@ -1,0 +1,26 @@
+﻿* {
+    box-sizing: border-box;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 5px;
+    max-width: 400px;
+}
+
+th {
+    text-align: center;
+}
+
+td {
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.10);
+}

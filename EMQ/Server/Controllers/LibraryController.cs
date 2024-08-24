@@ -380,10 +380,10 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("GetSongSource")]
-    public async Task<ActionResult<ResGetSongSource>> GetSongSource([FromBody] int id)
+    public async Task<ActionResult<ResGetSongSource>> GetSongSource(SongSource req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
-        var res = await DbManager.GetSongSource(id, session);
+        var res = await DbManager.GetSongSource(req, session);
         return res;
     }
 

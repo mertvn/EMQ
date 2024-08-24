@@ -1,0 +1,262 @@
+﻿@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@using System.Globalization
+@inject HttpClient _client
+
+@* todo? hints *@
+<h3>Erodle</h3>
+
+<button type="button" class="btn btn-success" disabled="@(!Ended)" @onclick="StartNewGame" style="margin: 4px;">New game (random)</button>
+<br/>
+<button type="button" class="btn btn-danger" disabled="@(Ended)" @onclick="ShowAnswer" style="margin: 4px;">Show correct answer</button>
+<br/>
+
+@if (!Ended)
+{
+    <p>Guess @(PreviousAnswers.Count + 1)/@MaxGuesses</p>
+}
+
+<div style="width: 1070px;">
+    <GuessInputComponent @ref="_guessInputComponentRef"
+                         Placeholder="Enter your guess here"
+                         IsDisabled="Ended"
+                         IsQuizPage="false"
+                         @bind-GuessT="@SelectedMusicSourceTitle"
+                         Callback="SelectedResultChangedMst">
+    </GuessInputComponent>
+
+    <table style="width: 1070px; margin: 4px;">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Year</th>
+            <th>Tags</th>
+            <th>Developers</th>
+            <th>Rating</th>
+            <th>Vote count</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var previousAnswer in PreviousAnswers.OrderByDescending(x => x.GuessNumber))
+        {
+            @if (CorrectAnswer == null)
+            {
+                continue;
+            }
+
+            <tr>
+                <td>
+                    @previousAnswer.GuessNumber
+                </td>
+                <td>
+                    @if (true)
+                    {
+                        bool isCorrect = previousAnswer.AutocompleteMst.MSId == CorrectAnswer.AutocompleteMst.MSId;
+                        string color = isCorrect ? "green" : "red";
+                        <span style="color: @color">
+                            @previousAnswer.AutocompleteMst.MSTLatinTitle
+                        </span>
+                    }
+                </td>
+                <td>
+                    @if (true)
+                    {
+                        bool isCorrect = previousAnswer.Date.Year == CorrectAnswer.Date.Year;
+                        bool isUnder = previousAnswer.Date.Year > CorrectAnswer.Date.Year;
+                        string color = isCorrect ? "green" : "red";
+                        <span style="color: @color">
+                            @(isCorrect ? "" : isUnder ? "↓" : "↑") @previousAnswer.Date.Year
+                        </span>
+                    }
+                </td>
+                <td>
+                    <ul>
+                        @foreach (var tag in previousAnswer.Tags)
+                        {
+                            bool isCorrect = CorrectAnswer.Tags.Any(x => x.Id == tag.Id);
+                            string color = isCorrect ? "green" : "red";
+                            <li style="color: @color">
+                                @tag.Name
+                            </li>
+                        }
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        @foreach (var developer in previousAnswer.Developers)
+                        {
+                            bool isCorrect = CorrectAnswer.Developers.Any(x => x.VndbId == developer.VndbId);
+                            string color = isCorrect ? "green" : "red";
+                            <li style="color: @color">
+                                @developer.Title.LatinTitle
+                            </li>
+                        }
+                    </ul>
+                </td>
+                <td>
+                    @if (true)
+                    {
+                        bool isCorrect = previousAnswer.Rating == CorrectAnswer.Rating;
+                        bool isUnder = previousAnswer.Rating > CorrectAnswer.Rating;
+                        string color = isCorrect ? "green" : "red";
+                        <span style="color: @color">
+                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
+                            @if (previousAnswer.Rating != null)
+                            {
+                                @((previousAnswer.Rating.Value / 100f).ToString("N2", CultureInfo.InvariantCulture))
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    }
+                </td>
+                <td>
+                    @if (true)
+                    {
+                        bool isCorrect = previousAnswer.VoteCount == CorrectAnswer.VoteCount;
+                        bool isUnder = previousAnswer.VoteCount > CorrectAnswer.VoteCount;
+                        string color = isCorrect ? "green" : "red";
+                        <span style="color: @color">
+                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
+                            @if (previousAnswer.VoteCount != null)
+                            {
+                                @previousAnswer.VoteCount.Value
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </span>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@code {
+
+    public class ErodleAnswer
+    {
+        public int GuessNumber { get; set; }
+
+        public AutocompleteMst AutocompleteMst { get; set; } = new(-1, "");
+
+        public DateTime Date { get; set; }
+
+        public List<SongSourceCategory> Tags { get; set; } = new();
+
+        public List<SongSourceDeveloper> Developers { get; set; } = new();
+
+        public int? Rating { get; set; }
+
+        public int? VoteCount { get; set; }
+    }
+
+    private GuessInputComponent _guessInputComponentRef = null!;
+
+    public AutocompleteMst? SelectedMusicSourceTitle { get; set; }
+
+
+    public List<ErodleAnswer> PreviousAnswers { get; set; } = new();
+
+    public ErodleAnswer? CorrectAnswer { get; set; }
+
+    public bool Ended { get; set; }
+
+        public const int MaxGuesses = 17;
+
+    protected override async Task OnParametersSetAsync()
+    {
+    // todo fetch correct ErodleAnswer from server
+        await StartNewGame();
+    }
+
+    private async Task SelectedResultChangedMst()
+    {
+        if (SelectedMusicSourceTitle is null)
+        {
+            return;
+        }
+
+        if (PreviousAnswers.Any(x => x.AutocompleteMst.MSId == SelectedMusicSourceTitle.MSId))
+        {
+            return;
+        }
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = SelectedMusicSourceTitle.MSId, Categories = new List<SongSourceCategory> { new() } });
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
+            var previousAnswer = new ErodleAnswer
+            {
+                GuessNumber = PreviousAnswers.Count + 1,
+                AutocompleteMst = SelectedMusicSourceTitle,
+                Date = content.SongSource.AirDateStart,
+                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList(), // todo
+                Developers = content.SongSource.Developers,
+                Rating = content.SongSource.RatingAverage,
+                VoteCount = content.SongSource.VoteCount
+            };
+            PreviousAnswers.Add(previousAnswer);
+
+            if (previousAnswer.AutocompleteMst.MSId == CorrectAnswer!.AutocompleteMst.MSId)
+            {
+                await OnWin();
+            }
+            else if ((previousAnswer.GuessNumber + 1) > MaxGuesses)
+            {
+                await ShowAnswer();
+            }
+        }
+
+        await _guessInputComponentRef.ClearInputField();
+        StateHasChanged();
+    }
+
+    private async Task StartNewGame()
+    {
+        PreviousAnswers.Clear();
+        CorrectAnswer = null;
+        Ended = false;
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = Random.Shared.Next(1, 777), Categories = new List<SongSourceCategory> { new() } });
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
+            var title = content.SongSource.Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ?? content.SongSource.Titles.First();
+            var correctAnswer = new ErodleAnswer
+            {
+                AutocompleteMst = new AutocompleteMst(content.SongSource.Id, title.LatinTitle),
+                Date = content.SongSource.AirDateStart,
+                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).ToList(), // todo
+                Developers = content.SongSource.Developers,
+                Rating = content.SongSource.RatingAverage,
+                VoteCount = content.SongSource.VoteCount,
+            };
+
+            Console.WriteLine(correctAnswer.AutocompleteMst.MSTLatinTitle); // todo remove
+            CorrectAnswer = correctAnswer;
+        }
+    }
+
+    private async Task ShowAnswer()
+    {
+        Ended = true;
+        CorrectAnswer!.Tags = CorrectAnswer.Tags.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList();
+        CorrectAnswer.GuessNumber = PreviousAnswers.Count + 1;
+        PreviousAnswers.Add(CorrectAnswer!);
+    }
+
+    private async Task OnWin()
+    {
+        Ended = true;
+    // todo other stuff
+    }
+
+}

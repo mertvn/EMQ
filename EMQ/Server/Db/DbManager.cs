@@ -4776,11 +4776,12 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
         return new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes };
     }
 
-    public static async Task<ResGetSongSource> GetSongSource(int id, Session? session)
+    public static async Task<ResGetSongSource> GetSongSource(SongSource req, Session? session)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var songSource = await SelectSongSourceBatch(connection,
-            new List<Song> { new() { Sources = new List<SongSource> { new() { Id = id } } } }, false);
+            new List<Song> { new() { Sources = new List<SongSource> { new() { Id = req.Id } } } },
+            req.Categories.Any());
 
         // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
         if (session != null)
@@ -4788,7 +4789,7 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             // todo
         }
 
-        var res = new ResGetSongSource() { SongSource = songSource.First().Value.Single(x => x.Key == id).Value, };
+        var res = new ResGetSongSource() { SongSource = songSource.First().Value.Single(x => x.Key == req.Id).Value, };
         return res;
     }
 

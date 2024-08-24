@@ -252,7 +252,7 @@
             return;
         }
 
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", SelectedMusicSourceTitle.MSId);
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = SelectedMusicSourceTitle.MSId });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
