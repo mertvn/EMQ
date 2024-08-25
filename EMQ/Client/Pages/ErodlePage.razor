@@ -1,5 +1,6 @@
 ﻿@page "/ErodlePage"
 @using EMQ.Client.Components
+@inject ClientUtils _clientUtils
 
 @if (ClientState.Session != null)
 {
@@ -12,3 +13,12 @@ else
 
 <br/>
 <br/>
+
+@code{
+
+    protected override async Task OnInitializedAsync()
+    {
+        await _clientUtils.TryRestoreSession();
+    }
+
+}

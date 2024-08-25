@@ -7,7 +7,6 @@
 @using EMQ.Shared.Erodle.Entities.Concrete.Dto.Request
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
-@inject ClientUtils _clientUtils
 
 @* todo? hints *@
 @if (CorrectAnswer != null)
@@ -199,7 +198,6 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await _clientUtils.TryRestoreSession();
         await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
     }
 
