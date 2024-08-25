@@ -11,14 +11,7 @@ table {
 th, td {
     padding: 5px;
     max-width: 400px;
-}
-
-th {
     text-align: center;
-}
-
-td {
-    text-align: left;
 }
 
 tr:nth-child(even) {
