@@ -1,6 +1,14 @@
 ﻿@page "/ErodlePage"
 @using EMQ.Client.Components
 
-<ErodleComponent></ErodleComponent>
+@if (ClientState.Session != null)
+{
+    <ErodleComponent></ErodleComponent>
+}
+else
+{
+    <p>Please login in order to play Erodle.</p>
+}
+
 <br/>
 <br/>

@@ -257,7 +257,7 @@ else
         CorrectAnswer = null;
         Status = ErodleStatus.Playing;
 
-        int msId = -1;
+        int msId;
         int erodleId = -1;
         if (date is null)
         {
@@ -277,6 +277,7 @@ else
             else
             {
                 await _jsRuntime.InvokeVoidAsync("alert", "Game not found.");
+                return;
             }
         }
 
@@ -311,10 +312,6 @@ else
                 if (res.IsSuccessStatusCode)
                 {
                     PreviousAnswers = (await res.Content.ReadFromJsonAsync<List<ErodleAnswer>>())!;
-                }
-                else
-                {
-                    await _jsRuntime.InvokeVoidAsync("alert", "Failed to fetch previous answers.");
                 }
             }
 
