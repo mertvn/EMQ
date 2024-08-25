@@ -85,8 +85,9 @@ public class ErodleController : ControllerBase
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var erodleHistories =
-            (await connection.QueryAsync<ErodleHistory>("select * from erodle_history where erodle_id = @erodleId",
-                new { erodleId })).ToArray();
+            (await connection.QueryAsync<ErodleHistory>(
+                "select * from erodle_history where erodle_id = @erodleId and user_id = @userId",
+                new { erodleId, userId = session.Player.Id })).ToArray();
         if (erodleHistories.Any())
         {
             var mIdSongSources = await DbManager.SelectSongSourceBatch(connection,

@@ -196,7 +196,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await StartNewGame(DateOnly.FromDateTime(DateTime.UtcNow), ErodleKind.Mst);
+        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
     }
 
     private async Task SelectedResultChangedMst()
