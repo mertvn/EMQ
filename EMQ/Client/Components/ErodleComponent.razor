@@ -7,6 +7,7 @@
 @using EMQ.Shared.Erodle.Entities.Concrete.Dto.Request
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
+@inject ClientUtils _clientUtils
 
 @* todo? hints *@
 @if (CorrectAnswer != null)
@@ -25,6 +26,8 @@ else
     <h3>Erodle</h3>
 }
 
+<p>Erodle is a game where you try to find the correct VN using the information given in @Constants.ErodleMaxGuesses guesses or less. Type a VN name below to start.</p>
+
 <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
     <div id="SelectedDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
         <Blazorise.DatePicker TValue="DateTime"
@@ -42,7 +45,7 @@ else
 <button type="button" class="btn btn-success" disabled="@(Status is ErodleStatus.Playing)" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
 <br/>
 
-<button type="button" class="btn btn-danger" disabled="@(Status > ErodleStatus.Playing || CorrectAnswer == null)" @onclick="OnLoss" style="margin: 4px;">Show correct answer</button>
+<button type="button" class="btn btn-danger" disabled="@(Status > ErodleStatus.Playing || CorrectAnswer == null)" @onclick="OnLoss" style="margin: 4px;">Give up</button>
 <br/>
 
 @if (Status is ErodleStatus.Playing)
@@ -196,6 +199,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        await _clientUtils.TryRestoreSession();
         await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
     }
 
