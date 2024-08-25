@@ -6,6 +6,8 @@ using Dapper;
 using Dapper.Database.Extensions;
 using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
+using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Erodle.Entities.Concrete;
 using EMQ.Shared.Erodle.Entities.Concrete.Dto.Request;
@@ -48,6 +50,7 @@ public class ErodleController : ControllerBase
         return NotFound();
     }
 
+    // todo? don't allow submissions if status is not Playing
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SubmitAnswer")]
@@ -166,5 +169,38 @@ public class ErodleController : ControllerBase
             erodle_id = req.ErodleId, user_id = session.Player.Id, status = req.Status
         });
         return success ? Ok() : StatusCode(520);
+    }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("GetLeaderboards")]
+    public async Task<ActionResult<ErodlePlayerInfo[]>> GetLeaderboards()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+
+        var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+        const string sql = @"WITH totals AS (
+SELECT user_id, COUNT(CASE WHEN status = 2 THEN 1 END) AS Wins, COUNT(CASE WHEN status = 1 THEN 1 END) AS Losses, COUNT(status) AS Plays
+FROM erodle_users
+GROUP BY user_id
+),
+g AS (
+SELECT user_id, COUNT(*) AS guesses FROM erodle_history GROUP BY user_id
+)
+SELECT totals.user_id as UserId, Wins, Losses, Plays,
+COALESCE(guesses, 0) AS Guesses, COALESCE(guesses::real/plays, 0) AS AvgGuesses
+FROM totals LEFT JOIN g ON totals.user_id = g.user_id
+ORDER BY wins desc, avgguesses";
+
+        var res = (await connection.QueryAsync<ErodlePlayerInfo>(sql)).ToArray();
+        foreach (ErodlePlayerInfo erodlePlayerInfo in res)
+        {
+            erodlePlayerInfo.Username = Utils.UserIdToUsername(usernamesDict, erodlePlayerInfo.UserId);
+        }
+
+        return res;
     }
 }
