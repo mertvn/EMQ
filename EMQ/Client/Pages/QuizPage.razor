@@ -13,6 +13,8 @@
 @inject ClientConnectionManager _clientConnectionManager
 @implements IAsyncDisposable
 
+<div id="quizPageDiv">
+
 <QuizSettingsComponent @ref="_quizSettingsComponent" Room="@Room" IsReadOnly="true" IsQuizPage="true"/>
 
 <GenericModal @ref="@_leaveModalRef"
@@ -792,4 +794,5 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
         }
 
     </div>
+</div>
 </div>

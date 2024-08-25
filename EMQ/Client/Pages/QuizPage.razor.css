@@ -1,41 +1,41 @@
 ﻿@media only screen and (max-width: 5000px) {
-    #quizGrid {
-        transform: scale(1.5);
+    #quizPageDiv {
+        transform: scale(1.1);
     }
 }
 
 @media only screen and (max-width: 3000px) {
-    #quizGrid {
-        transform: scale(1.2);
+    #quizPageDiv {
+        transform: scale(1.05);
     }
 }
 
 @media only screen and (max-width: 2400px) {
-    #quizGrid {
+    #quizPageDiv {
         transform: scale(1);
     }
 }
 
 @media only screen and (max-width: 1600px) {
-    #quizGrid {
-        transform: scale(0.9);
+    #quizPageDiv {
+        transform: scale(0.85);
     }
 }
 
 @media only screen and (max-width: 1300px) {
-    #quizGrid {
-        transform: scale(0.8);
-    }
-}
-
-@media only screen and (max-width: 1000px) {
-    #quizGrid {
+    #quizPageDiv {
         transform: scale(0.7);
     }
 }
 
-@media only screen and (max-width: 700px) {
-    #quizGrid {
+@media only screen and (max-width: 1000px) {
+    #quizPageDiv {
         transform: scale(0.6);
+    }
+}
+
+@media only screen and (max-width: 700px) {
+    #quizPageDiv {
+        transform: scale(0.5);
     }
 }
