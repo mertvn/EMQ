@@ -500,7 +500,8 @@ public class QuizController : ControllerBase
                     var qm = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                     if (qm != null)
                     {
-                        if (room.Quiz.QuizState.sp >= 0 && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+                        if (room.Quiz.QuizState.sp >= 0 && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing &&
+                            room.Quiz.QuizState.Phase == QuizPhaseKind.Results)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
                             TypedQuizHub.ReceiveUpdateRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room,

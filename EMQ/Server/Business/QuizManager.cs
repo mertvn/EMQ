@@ -1088,9 +1088,6 @@ public class QuizManager
         {
             try
             {
-                // If we don't create a new dictionary,
-                // when a player uses 'Return to room' right before the correct answer is revealed, we can get a Collection was modified exception
-                // might be better to just disallow returning to room except on results phase
                 await DbManager.RecalculateSongStats(Quiz.SongsHistory.Select(x => x.Value.Song.Id).ToHashSet());
             }
             catch (Exception e)
