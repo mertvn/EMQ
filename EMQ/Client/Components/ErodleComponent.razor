@@ -28,6 +28,16 @@ else
 
 <p>Erodle is a game where you try to find the correct VN using the information given in @Constants.ErodleMaxGuesses guesses or less. Type a VN name below to start.</p>
 
+<div id="SelectedDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+    <Blazorise.DatePicker TValue="DateTime"
+                          Date="SelectedDate"
+                          DateChanged="DateChanged"
+                          Min="@DateTimeOffset.Parse(Constants.ErodleDateMin, CultureInfo.InvariantCulture)"
+                          Max="@DateTimeOffset.UtcNow"/>
+</div>
+<label for="SelectedDateFilter">Date</label>
+<br/>
+
 <details>
     <summary>Leaderboards</summary>
     <label>
@@ -55,17 +65,6 @@ else
         <br/>
     }
 </details>
-
-
-<div id="SelectedDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
-    <Blazorise.DatePicker TValue="DateTime"
-                          Date="SelectedDate"
-                          DateChanged="DateChanged"
-                          Min="@DateTimeOffset.Parse(Constants.ErodleDateMin, CultureInfo.InvariantCulture)"
-                          Max="@DateTimeOffset.UtcNow"/>
-</div>
-<label for="SelectedDateFilter">Date</label>
-<br/>
 <br/>
 
 <button type="button" class="btn btn-success" disabled="@(Status is ErodleStatus.Playing)" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
@@ -225,7 +224,7 @@ else
 
     private IQueryable<ErodlePlayerInfo>? ErodlePlayerInfos { get; set; }
 
-    private readonly PaginationState _paginationErodlePlayerInfos = new() { ItemsPerPage = 25 };
+    private readonly PaginationState _paginationErodlePlayerInfos = new() { ItemsPerPage = 20 };
 
     public bool ShowAllTimeLeaderboards { get; set; }
 
