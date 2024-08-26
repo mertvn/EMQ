@@ -1,40 +1,12 @@
 ﻿@page "/ErodlePage"
 @using EMQ.Client.Components
-@using EMQ.Shared.Erodle.Entities.Concrete
-@using Microsoft.AspNetCore.Components.QuickGrid
 @inject ClientUtils _clientUtils
-@inject HttpClient _client
-@inject IJSRuntime _jsRuntime
 
 @if (ClientState.Session != null)
 {
     <ErodleComponent></ErodleComponent>
     <br/>
     <br/>
-
-    // todo daily leaderboards
-    <details style="margin-bottom: 400px;">
-        <summary>Leaderboards (all-time)</summary>
-        @if (ErodlePlayerInfos != null)
-        {
-            <div>
-                <Paginator State="@_paginationErodlePlayerInfos"/>
-            </div>
-            <div class="grid" tabindex="-1">
-                <QuickGrid Items="@ErodlePlayerInfos" Pagination="@_paginationErodlePlayerInfos">
-                    <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ErodlePlayerInfo>.ByAscending(x => x.Username))">
-                        @context.Username
-                    </TemplateColumn>
-                    <PropertyColumn Property="@(x => x.Wins)" Title="Wins" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-                    <PropertyColumn Property="@(x => x.Losses)" Title="Losses" Sortable="true"/>
-                    <PropertyColumn Property="@(x => x.Plays)" Title="Plays" Sortable="true"/>
-                    <PropertyColumn Property="@(x => x.Guesses)" Title="Guesses" Sortable="true"/>
-                    <PropertyColumn Property="@(x => x.AvgGuesses)" Title="Avg. guesses per play" Sortable="true"/>
-                </QuickGrid>
-            </div>
-            <br/>
-        }
-    </details>
 }
 else
 {
@@ -43,29 +15,13 @@ else
 
 <br/>
 <br/>
+<div style="margin-bottom: 400px;"></div>
 
 @code{
-
-    private IQueryable<ErodlePlayerInfo>? ErodlePlayerInfos { get; set; }
-
-    private readonly PaginationState _paginationErodlePlayerInfos = new() { ItemsPerPage = 25 };
 
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        ErodlePlayerInfos = null;
-        StateHasChanged();
-
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Erodle/GetLeaderboards", "");
-        if (res1.IsSuccessStatusCode)
-        {
-            var content = (await res1.Content.ReadFromJsonAsync<ErodlePlayerInfo[]>())!;
-            ErodlePlayerInfos = content.AsQueryable();
-        }
     }
 
 }

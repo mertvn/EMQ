@@ -174,7 +174,7 @@ public class ErodleController : ControllerBase
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("GetLeaderboards")]
-    public async Task<ActionResult<ErodlePlayerInfo[]>> GetLeaderboards()
+    public async Task<ActionResult<ErodlePlayerInfo[]>> GetLeaderboards(ReqGetErodle? req)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
@@ -184,18 +184,20 @@ public class ErodleController : ControllerBase
 
         const string sql = @"WITH totals AS (
 SELECT user_id, COUNT(CASE WHEN status = 2 THEN 1 END) AS Wins, COUNT(CASE WHEN status = 1 THEN 1 END) AS Losses, COUNT(status) AS Plays
-FROM erodle_users
+FROM erodle_users eu
+JOIN erodle e ON e.id = eu.erodle_id
+WHERE ((@date::date IS NULL) or e.date = @date::date)
 GROUP BY user_id
 ),
 g AS (
-SELECT user_id, COUNT(*) AS guesses FROM erodle_history GROUP BY user_id
+SELECT user_id, COUNT(*) AS guesses FROM erodle_history eh JOIN erodle e ON e.id = eh.erodle_id WHERE ((@date::date IS NULL) or e.date = @date::date) GROUP BY user_id
 )
 SELECT totals.user_id as UserId, Wins, Losses, Plays,
 COALESCE(guesses, 0) AS Guesses, COALESCE(guesses::real/plays, 0) AS AvgGuesses
 FROM totals LEFT JOIN g ON totals.user_id = g.user_id
 ORDER BY wins desc, avgguesses";
 
-        var res = (await connection.QueryAsync<ErodlePlayerInfo>(sql)).ToArray();
+        var res = (await connection.QueryAsync<ErodlePlayerInfo>(sql, new { date = req?.Date })).ToArray();
         foreach (ErodlePlayerInfo erodlePlayerInfo in res)
         {
             erodlePlayerInfo.Username = Utils.UserIdToUsername(usernamesDict, erodlePlayerInfo.UserId);

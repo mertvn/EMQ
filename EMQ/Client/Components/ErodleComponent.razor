@@ -5,6 +5,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Erodle.Entities.Concrete
 @using EMQ.Shared.Erodle.Entities.Concrete.Dto.Request
+@using Microsoft.AspNetCore.Components.QuickGrid
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 
@@ -27,18 +28,44 @@ else
 
 <p>Erodle is a game where you try to find the correct VN using the information given in @Constants.ErodleMaxGuesses guesses or less. Type a VN name below to start.</p>
 
-<div style="border: 1px black solid; margin: 10px; padding: 10px; width: 250px;">
-    <div id="SelectedDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
-        <Blazorise.DatePicker TValue="DateTime"
-                              @bind-Date="@SelectedDate"
-                              Min="@DateTimeOffset.Parse(Constants.ErodleDateMin, CultureInfo.InvariantCulture)"
-                              Max="@DateTimeOffset.UtcNow"/>
-    </div>
-    <label for="SelectedDateFilter">Date</label>
-    <br/>
-    <br/>
-    <button type="button" class="btn btn-success" disabled="@(Status is ErodleStatus.Playing)" @onclick="@(() => StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst))" style="margin: 4px;">New game (selected date)</button>
+<details>
+    <summary>Leaderboards</summary>
+    <label>
+        <input type="checkbox" value="@ShowAllTimeLeaderboards" @onchange="OnChange_Checkbox"/>
+        All-time
+    </label>
+
+    @if (ErodlePlayerInfos != null)
+    {
+        <div>
+            <Paginator State="@_paginationErodlePlayerInfos"/>
+        </div>
+        <div class="grid" tabindex="-1">
+            <QuickGrid Items="@ErodlePlayerInfos" Pagination="@_paginationErodlePlayerInfos">
+                <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ErodlePlayerInfo>.ByAscending(x => x.Username))">
+                    @context.Username
+                </TemplateColumn>
+                <PropertyColumn Property="@(x => x.Wins)" Title="Wins" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                <PropertyColumn Property="@(x => x.Losses)" Title="Losses" Sortable="true"/>
+                <PropertyColumn Property="@(x => x.Plays)" Title="Plays" Sortable="true"/>
+                <PropertyColumn Property="@(x => x.Guesses)" Title="Guesses" Sortable="true"/>
+                <PropertyColumn Property="@(x => x.AvgGuesses)" Title="Avg. guesses per play" Sortable="true"/>
+            </QuickGrid>
+        </div>
+        <br/>
+    }
+</details>
+
+
+<div id="SelectedDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+    <Blazorise.DatePicker TValue="DateTime"
+                          Date="SelectedDate"
+                          DateChanged="DateChanged"
+                          Min="@DateTimeOffset.Parse(Constants.ErodleDateMin, CultureInfo.InvariantCulture)"
+                          Max="@DateTimeOffset.UtcNow"/>
 </div>
+<label for="SelectedDateFilter">Date</label>
+<br/>
 <br/>
 
 <button type="button" class="btn btn-success" disabled="@(Status is ErodleStatus.Playing)" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
@@ -63,7 +90,7 @@ else
     }
 }
 
-<div style="width: 1070px;">
+<div style="width: 1170px;">
     <GuessInputComponent @ref="_guessInputComponentRef"
                          Placeholder="Enter your guess here"
                          IsDisabled="@(Status > ErodleStatus.Playing)"
@@ -72,7 +99,7 @@ else
                          Callback="SelectedResultChangedMst">
     </GuessInputComponent>
 
-    <table style="width: 1070px; margin: 4px;">
+    <table style="width: 1170px; margin: 4px;">
         <thead>
         <tr>
             <th>#</th>
@@ -196,9 +223,34 @@ else
 
     public DateTime SelectedDate { get; set; } = DateTime.UtcNow;
 
+    private IQueryable<ErodlePlayerInfo>? ErodlePlayerInfos { get; set; }
+
+    private readonly PaginationState _paginationErodlePlayerInfos = new() { ItemsPerPage = 25 };
+
+    public bool ShowAllTimeLeaderboards { get; set; }
+
     protected override async Task OnParametersSetAsync()
     {
         await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
+        StateHasChanged();
+        await FetchLeaderboards();
+    }
+
+    public async Task OnChange_Checkbox(ChangeEventArgs args)
+    {
+        ShowAllTimeLeaderboards = (bool)args.Value!;
+        await FetchLeaderboards();
+    }
+
+    private async Task FetchLeaderboards()
+    {
+        var req = ShowAllTimeLeaderboards ? null : new ReqGetErodle { Date = DateOnly.FromDateTime(SelectedDate) };
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Erodle/GetLeaderboards", req);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ErodlePlayerInfo[]>())!;
+            ErodlePlayerInfos = content.AsQueryable();
+        }
     }
 
     private async Task SelectedResultChangedMst()
@@ -359,6 +411,16 @@ else
             {
                 await _jsRuntime.InvokeVoidAsync("alert", "Failed to update game status.");
             }
+        }
+    }
+
+    private async Task DateChanged(DateTime arg)
+    {
+        SelectedDate = arg;
+        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
+        if (!ShowAllTimeLeaderboards)
+        {
+            await FetchLeaderboards();
         }
     }
 
