@@ -67,7 +67,7 @@ else
 </details>
 <br/>
 
-<button type="button" class="btn btn-success" disabled="@(Status is ErodleStatus.Playing)" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
+<button type="button" class="btn btn-success" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
 <br/>
 
 <button type="button" class="btn btn-danger" disabled="@(Status > ErodleStatus.Playing || CorrectAnswer == null)" @onclick="OnLoss" style="margin: 4px;">Give up</button>
