@@ -28,6 +28,9 @@ dotnet_diagnostic.CS1998.severity = suggestion
 # CS8981: The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 dotnet_diagnostic.CS8981.severity = suggestion
 
+# BL0007: Component parameter should be auto property
+dotnet_diagnostic.BL0007.severity = suggestion
+
 # New line preferences
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
