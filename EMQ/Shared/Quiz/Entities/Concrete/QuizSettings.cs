@@ -201,7 +201,7 @@ public class QuizSettings
 
     [ProtoMember(23)]
     [Required]
-    [Range(4, 16)]
+    [Range(4, 12)]
     [DefaultValue(4)]
     public int NumMultipleChoiceOptions { get; set; } = 4;
 

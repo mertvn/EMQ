@@ -426,41 +426,46 @@
 
 @if (IsMultipleChoice || (IsSpectator && Room != null && Room.Quiz != null && Room.Quiz.MultipleChoiceOptions.Any()))
 {
-    <div id="GuessInput" style="max-width:37.5vw; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+    <div id="GuessInput" style="padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
+        @{
+            int div = Math.Min((Room?.QuizSettings.NumMultipleChoiceOptions / 4) ?? 1, 4);
+            int vw = (16 / div) + 5;
+        }
 
-        <div id="MultipleChoiceContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(0, min(100%/1, max(320px, 100%/2)))); row-gap: 5px; justify-items: center;">
+        <div id="MultipleChoiceContainer"
+             style="width: 50vw; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, min(100%/1, max(@(vw)vw, 100%/@(div + 1))))); row-gap: 5px; justify-items: center;">
             @if (Room.Quiz?.MultipleChoiceOptions != null && Room.Quiz.QuizState.sp >= 0)
             {
                 if (Room.Quiz.MultipleChoiceOptions.TryGetValue(Room.Quiz.QuizState.sp, out var current))
                 {
                     foreach (var title in current)
                     {
-                        string tooltipText = title.ToString();
                         bool selected = PageState.Guess?.Mst == title.LatinTitle;
-                        <Blazorise.Tooltip
-                            Inline="false"
-                            Text="@tooltipText">
-                            <div
-                                class="MultipleChoiceOption"
-                                @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Mst = title.LatinTitle }); })"
-                                style="
+                        <div class="MultipleChoiceOption" title="@(title.ToString())"
+                             @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Mst = title.LatinTitle }); })"
+                             style="
 cursor: @UiHelpers.Bool2CursorPointer(!IsSpectator);
 color: @UiHelpers.Bool2Color(selected, "deepskyblue", "white");
-width: 320px;
-height: 26px;
+width: @(vw)vw;
+/*height: 26px;*/
+max-height: 100px;
 max-width: 100%;
 overflow: hidden;
 text-overflow: ellipsis;
-white-space: nowrap;
+/*white-space: nowrap;*/
 background-color: black;
 border-radius: 10px;
 padding: 1px 5px 1px 5px;
 text-align: center;
+/*causes issues when overflow is hidden*/
+/*display: flex;*/
+/*justify-content: center;*/
+/*align-items: center;*/
+word-wrap: break-word;
 ">
-                                @title.LatinTitle
-                            </div>
-                        </Blazorise.Tooltip>
+                            @title.LatinTitle
+                        </div>
                     }
                 }
             }
