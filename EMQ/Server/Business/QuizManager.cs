@@ -1589,7 +1589,8 @@ public class QuizManager
                                 Quiz.Room.Log(
                                     $"Balanced mode requires there to be at least two players with a list active.",
                                     writeToChat: true);
-                                return false;
+                                // #BlameAkaze
+                                goto case ListDistributionKind.Random;
                             }
 
                             var songTypesLeft = Quiz.Room.QuizSettings.Filters.SongSourceSongTypeFilters
