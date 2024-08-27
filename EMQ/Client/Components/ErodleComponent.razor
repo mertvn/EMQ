@@ -53,7 +53,16 @@ else
         <div class="grid" tabindex="-1">
             <QuickGrid Items="@ErodlePlayerInfos" Pagination="@_paginationErodlePlayerInfos">
                 <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ErodlePlayerInfo>.ByAscending(x => x.Username))">
-                    @context.Username
+                    @if (ShowAllTimeLeaderboards)
+                    {
+                        @context.Username
+                    }
+                    else
+                    {
+                        <span onclick="@(() => StartNewGame(DateOnly.FromDateTime(SelectedDate),  ErodleKind.Mst, context.UserId))" style="cursor: pointer;">
+                            @context.Username
+                        </span>
+                    }
                 </TemplateColumn>
                 <PropertyColumn Property="@(x => x.Wins)" Title="Wins" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
                 <PropertyColumn Property="@(x => x.Losses)" Title="Losses" Sortable="true"/>
@@ -67,7 +76,7 @@ else
 </details>
 <br/>
 
-<button type="button" class="btn btn-success" @onclick="@(() => StartNewGame(null, ErodleKind.Mst))" style="margin: 4px;">New game (local)</button>
+<button type="button" class="btn btn-success" @onclick="@(() => StartNewGame(null, ErodleKind.Mst, ClientState.Session!.Player.Id))" style="margin: 4px;">New game (local)</button>
 <br/>
 
 <button type="button" class="btn btn-danger" disabled="@(Status > ErodleStatus.Playing || CorrectAnswer == null)" @onclick="OnLoss" style="margin: 4px;">Give up</button>
@@ -144,7 +153,7 @@ else
                     }
                 </td>
                 <td>
-                    @foreach (var tag in previousAnswer.Tags)
+                    @foreach (var tag in previousAnswer.Tags.Take(5))
                     {
                         bool isCorrect = CorrectAnswer.Tags.Any(x => x.Id == tag.Id);
                         string color = isCorrect ? "green" : "red";
@@ -230,9 +239,9 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
-        StateHasChanged();
+        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst, ClientState.Session!.Player.Id);
         await FetchLeaderboards();
+        StateHasChanged();
     }
 
     public async Task OnChange_Checkbox(ChangeEventArgs args)
@@ -274,7 +283,7 @@ else
                 GuessNumber = PreviousAnswers.Count + 1,
                 AutocompleteMst = SelectedMusicSourceTitle,
                 Date = content.SongSource.AirDateStart.Date,
-                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList(),
+                Tags = content.SongSource.Categories.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).ToList(),
                 Developers = content.SongSource.Developers,
                 Rating = content.SongSource.RatingAverage,
                 VoteCount = content.SongSource.VoteCount
@@ -304,7 +313,7 @@ else
         StateHasChanged();
     }
 
-    private async Task StartNewGame(DateOnly? date, ErodleKind kind)
+    private async Task StartNewGame(DateOnly? date, ErodleKind kind, int userId)
     {
         PreviousAnswers.Clear();
         CorrectAnswer = null;
@@ -318,14 +327,13 @@ else
         }
         else
         {
-            var req = new ReqGetErodle { Date = date.Value, Kind = kind };
-            var res = await _client.PostAsJsonAsync("Erodle/GetErodleContainer", req);
-            if (res.IsSuccessStatusCode)
+            var erodleContainer = await GetErodleContainer(date.Value, kind, userId);
+            if (erodleContainer != null)
             {
-                var erodleContainer = await res.Content.ReadFromJsonAsync<ErodleContainer>();
                 msId = int.Parse(erodleContainer!.Erodle.correct_answer);
                 erodleId = erodleContainer.Erodle.id;
                 Status = erodleContainer.Status;
+                PreviousAnswers = erodleContainer.PreviousAnswers;
             }
             else
             {
@@ -357,21 +365,29 @@ else
             await _jsRuntime.InvokeVoidAsync("alert", "Failed to initialize game.");
         }
 
-        if (CorrectAnswer != null)
+        if (CorrectAnswer != null && CorrectAnswer.ErodleId > 0)
         {
-            if (CorrectAnswer.ErodleId > 0)
-            {
-                var res = await _client.PostAsJsonAsync("Erodle/GetPreviousAnswers", CorrectAnswer.ErodleId);
-                if (res.IsSuccessStatusCode)
-                {
-                    PreviousAnswers = (await res.Content.ReadFromJsonAsync<List<ErodleAnswer>>())!;
-                }
-            }
-
             if (Status == ErodleStatus.Lost)
             {
                 AddCorrectAnswerToPreviousAnswers(CorrectAnswer);
             }
+        }
+
+        StateHasChanged();
+    }
+
+    public async Task<ErodleContainer?> GetErodleContainer(DateOnly date, ErodleKind kind, int? userId)
+    {
+        var req = new ReqGetErodle { Date = date, Kind = kind, UserId = userId.Value };
+        var res = await _client.PostAsJsonAsync("Erodle/GetErodleContainer", req);
+        if (res.IsSuccessStatusCode)
+        {
+            var erodleContainer = await res.Content.ReadFromJsonAsync<ErodleContainer>();
+            return erodleContainer;
+        }
+        else
+        {
+            return null;
         }
     }
 
@@ -394,7 +410,7 @@ else
 
     private void AddCorrectAnswerToPreviousAnswers(ErodleAnswer correctAnswer)
     {
-        correctAnswer.Tags = correctAnswer.Tags.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).Take(5).ToList();
+        correctAnswer.Tags = correctAnswer.Tags.Where(x => x.SpoilerLevel == SpoilerLevel.None).OrderByDescending(x => x.Rating).ToList();
         correctAnswer.GuessNumber = PreviousAnswers.Count + 1;
         PreviousAnswers.Add(correctAnswer);
     }
@@ -416,7 +432,7 @@ else
     private async Task DateChanged(DateTime arg)
     {
         SelectedDate = arg;
-        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst);
+        await StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst, ClientState.Session!.Player.Id);
         if (!ShowAllTimeLeaderboards)
         {
             await FetchLeaderboards();

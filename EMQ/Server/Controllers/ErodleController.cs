@@ -28,12 +28,6 @@ public class ErodleController : ControllerBase
     [Route("GetErodleContainer")]
     public async Task<ActionResult<ErodleContainer>> GetErodleContainer(ReqGetErodle req)
     {
-        var session = AuthStuff.GetSession(HttpContext.Items);
-        if (session is null)
-        {
-            return Unauthorized();
-        }
-
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var erodle =
             await connection.QuerySingleOrDefaultAsync<Erodle>(
@@ -42,9 +36,56 @@ public class ErodleController : ControllerBase
         {
             // todo? join
             var status = await connection.QuerySingleOrDefaultAsync<ErodleStatus?>(
-                @"select status from erodle_users where erodle_id = @erodleId and user_id = @userId",
-                new { erodleId = erodle.id, userId = session.Player.Id });
-            return new ErodleContainer() { Erodle = erodle, Status = status ?? ErodleStatus.Playing };
+                @"select status from erodle_users where erodle_id = @erodleId and user_id = @UserId",
+                new { erodleId = erodle.id, req.UserId });
+
+            var erodleContainer = new ErodleContainer { Erodle = erodle, Status = status ?? ErodleStatus.Playing };
+
+            var erodleHistories =
+                (await connection.QueryAsync<ErodleHistory>(
+                    "select * from erodle_history where erodle_id = @id and user_id = @UserId",
+                    new { erodle.id, req.UserId })).ToArray();
+            if (erodleHistories.Any())
+            {
+                var mIdSongSources = await DbManager.SelectSongSourceBatch(connection,
+                    erodleHistories
+                        .Select(x => new Song { Sources = new List<SongSource> { new() { Id = int.Parse(x.guess) } } })
+                        .ToList(), true);
+
+                var songSourcesDict = new Dictionary<int, SongSource>();
+                foreach ((_, Dictionary<int, SongSource> value) in mIdSongSources)
+                {
+                    foreach ((int key, var songSource) in value)
+                    {
+                        if (!songSourcesDict.TryGetValue(key, out _))
+                        {
+                            songSourcesDict.Add(key, songSource);
+                        }
+                    }
+                }
+
+                var previousAnswers = erodleHistories.Select(x =>
+                {
+                    var songSource = songSourcesDict[int.Parse(x.guess)]; // todo? tryget
+                    var title = songSource.Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ??
+                                songSource.Titles.First();
+                    return new ErodleAnswer
+                    {
+                        ErodleId = x.erodle_id,
+                        GuessNumber = x.sp,
+                        AutocompleteMst = new AutocompleteMst(songSource.Id, title.LatinTitle),
+                        Date = songSource.AirDateStart.Date,
+                        Tags = songSource.Categories.Where(y => y.SpoilerLevel == SpoilerLevel.None)
+                            .OrderByDescending(y => y.Rating).ToList(),
+                        Developers = songSource.Developers,
+                        Rating = songSource.RatingAverage,
+                        VoteCount = songSource.VoteCount
+                    };
+                });
+                erodleContainer.PreviousAnswers = previousAnswers.ToList();
+            }
+
+            return erodleContainer;
         }
 
         return NotFound();
@@ -73,84 +114,6 @@ public class ErodleController : ControllerBase
         bool success = await connection.InsertAsync(erodleHistory);
         return success ? Ok() : StatusCode(520);
     }
-
-    // todo? merge with GetErodleContainer
-    [CustomAuthorize(PermissionKind.PlayQuiz)]
-    [HttpPost]
-    [Route("GetPreviousAnswers")]
-    public async Task<ActionResult<List<ErodleAnswer>>> GetPreviousAnswers([FromBody] int erodleId)
-    {
-        var session = AuthStuff.GetSession(HttpContext.Items);
-        if (session is null)
-        {
-            return Unauthorized();
-        }
-
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        var erodleHistories =
-            (await connection.QueryAsync<ErodleHistory>(
-                "select * from erodle_history where erodle_id = @erodleId and user_id = @userId",
-                new { erodleId, userId = session.Player.Id })).ToArray();
-        if (erodleHistories.Any())
-        {
-            var mIdSongSources = await DbManager.SelectSongSourceBatch(connection,
-                erodleHistories
-                    .Select(x => new Song { Sources = new List<SongSource> { new() { Id = int.Parse(x.guess) } } })
-                    .ToList(), true);
-
-            var songSourcesDict = new Dictionary<int, SongSource>();
-            foreach ((_, Dictionary<int, SongSource> value) in mIdSongSources)
-            {
-                foreach ((int key, var songSource) in value)
-                {
-                    if (!songSourcesDict.TryGetValue(key, out _))
-                    {
-                        songSourcesDict.Add(key, songSource);
-                    }
-                }
-            }
-
-            var previousAnswers = erodleHistories.Select(x =>
-            {
-                var songSource = songSourcesDict[int.Parse(x.guess)]; // todo? tryget
-                var title = songSource.Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ??
-                            songSource.Titles.First();
-                return new ErodleAnswer
-                {
-                    ErodleId = x.erodle_id,
-                    GuessNumber = x.sp,
-                    AutocompleteMst = new AutocompleteMst(songSource.Id, title.LatinTitle),
-                    Date = songSource.AirDateStart.Date,
-                    Tags = songSource.Categories.Where(y => y.SpoilerLevel == SpoilerLevel.None)
-                        .OrderByDescending(y => y.Rating).Take(5).ToList(),
-                    Developers = songSource.Developers,
-                    Rating = songSource.RatingAverage,
-                    VoteCount = songSource.VoteCount
-                };
-            });
-            return previousAnswers.ToList();
-        }
-
-        return NotFound();
-    }
-
-    // [CustomAuthorize(PermissionKind.PlayQuiz)]
-    // [HttpPost]
-    // [Route("GetStatus")]
-    // public async Task<ActionResult<ErodleStatus?>> GetStatus(int erodleId)
-    // {
-    //     var session = AuthStuff.GetSession(HttpContext.Items);
-    //     if (session is null)
-    //     {
-    //         return Unauthorized();
-    //     }
-    //
-    //     await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-    //     var status = await connection.QuerySingleOrDefaultAsync<ErodleStatus?>(
-    //         @"select status from erodle_users where erodle_id = @erodleId and user_id = @userId",
-    //         new { erodleId, userId = session.Player.Id });
-    //     return status;
-    // }
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
