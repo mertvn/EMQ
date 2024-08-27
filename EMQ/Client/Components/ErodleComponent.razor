@@ -1,4 +1,4 @@
-@using EMQ.Shared.Library.Entities.Concrete
+﻿@using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.SharedDbEntities
 @using System.Globalization
@@ -98,7 +98,7 @@ else
     }
 }
 
-<div style="width: 1170px;">
+<div style="width: 1270px;">
     <GuessInputComponent @ref="_guessInputComponentRef"
                          Placeholder="Enter your guess here"
                          IsDisabled="@(Status > ErodleStatus.Playing)"
@@ -107,7 +107,7 @@ else
                          Callback="SelectedResultChangedMst">
     </GuessInputComponent>
 
-    <table style="width: 1170px; margin: 4px;">
+    <table style="width: 1270px; margin: 4px;">
         <thead>
         <tr>
             <th>#</th>
@@ -148,17 +148,21 @@ else
                         bool isUnder = previousAnswer.Date.Year > CorrectAnswer.Date.Year;
                         string color = isCorrect ? "green" : "red";
                         <span style="color: @color">
-                            @(isCorrect ? "" : isUnder ? "↓" : "↑") @previousAnswer.Date.Year
+                            @previousAnswer.Date.Year @(isCorrect ? "" : isUnder ? "↓" : "↑")
                         </span>
                     }
                 </td>
                 <td>
                     @foreach (var tag in previousAnswer.Tags.Take(5))
                     {
-                        bool isCorrect = CorrectAnswer.Tags.Any(x => x.Id == tag.Id);
+                        var correctAnswerTag = CorrectAnswer.Tags.FirstOrDefault(x => x.Id == tag.Id);
+                        bool isCorrect = correctAnswerTag != null;
+                        bool isUnder = tag.Rating > (correctAnswerTag?.Rating ?? 0);
+                        float? diff = tag.Rating - (correctAnswerTag?.Rating ?? 0);
+                        bool isExact = Math.Abs(diff ?? 1) < 0.001;
                         string color = isCorrect ? "green" : "red";
                         <span style="color: @color">
-                            @tag.Name
+                            @tag.Name | <span style="font-size: small">@(tag.Rating == null ? "-" : tag.Rating.Value.ToString("N2", CultureInfo.InvariantCulture))</span> @(!isCorrect || isExact ? "" : isUnder ? "↓" : "↑")
                         </span>
                         <br/>
                     }
@@ -181,7 +185,6 @@ else
                         bool isUnder = previousAnswer.Rating > CorrectAnswer.Rating;
                         string color = isCorrect ? "green" : "red";
                         <span style="color: @color">
-                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
                             @if (previousAnswer.Rating != null)
                             {
                                 @((previousAnswer.Rating.Value / 100f).ToString("N2", CultureInfo.InvariantCulture))
@@ -190,6 +193,7 @@ else
                             {
                                 <span>-</span>
                             }
+                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
                         </span>
                     }
                 </td>
@@ -200,7 +204,6 @@ else
                         bool isUnder = previousAnswer.VoteCount > CorrectAnswer.VoteCount;
                         string color = isCorrect ? "green" : "red";
                         <span style="color: @color">
-                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
                             @if (previousAnswer.VoteCount != null)
                             {
                                 @previousAnswer.VoteCount.Value
@@ -209,6 +212,7 @@ else
                             {
                                 <span>-</span>
                             }
+                            @(isCorrect ? "" : isUnder ? "↓" : "↑")
                         </span>
                     }
                 </td>
