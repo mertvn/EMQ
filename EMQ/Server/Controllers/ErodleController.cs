@@ -193,7 +193,7 @@ g AS (
 SELECT user_id, COUNT(*) AS guesses FROM erodle_history eh JOIN erodle e ON e.id = eh.erodle_id WHERE ((@date::date IS NULL) or e.date = @date::date) GROUP BY user_id
 )
 SELECT totals.user_id as UserId, Wins, Losses, Plays,
-COALESCE(guesses, 0) AS Guesses, COALESCE(guesses::real/plays, 0) AS AvgGuesses
+COALESCE(guesses, 0) AS Guesses, ROUND(COALESCE(((1.0 * guesses)/plays), 0), 2) AS AvgGuesses
 FROM totals LEFT JOIN g ON totals.user_id = g.user_id
 ORDER BY wins desc, avgguesses";
 
