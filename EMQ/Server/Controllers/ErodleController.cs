@@ -28,7 +28,25 @@ public class ErodleController : ControllerBase
     [Route("GetErodleContainer")]
     public async Task<ActionResult<ErodleContainer>> GetErodleContainer(ReqGetErodle req)
     {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        if (req.UserId != session.Player.Id)
+        {
+            var status =
+                await connection.QuerySingleOrDefaultAsync<ErodleStatus?>(
+                    "select status from erodle e left join erodle_users eu on eu.erodle_id = e.id where date = @Date and kind = @Kind and user_id = @userId",
+                    new { req.Date, req.Kind, userId = session.Player.Id });
+            if (status is null or <= 0)
+            {
+                return Unauthorized();
+            }
+        }
+
         var erodle =
             await connection.QuerySingleOrDefaultAsync<Erodle>(
                 "select * from erodle where date = @Date and kind = @Kind", new { req.Date, req.Kind });

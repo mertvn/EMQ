@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.SharedDbEntities
 @using System.Globalization
@@ -53,13 +53,13 @@ else
         <div class="grid" tabindex="-1">
             <QuickGrid Items="@ErodlePlayerInfos" Pagination="@_paginationErodlePlayerInfos">
                 <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<ErodlePlayerInfo>.ByAscending(x => x.Username))">
-                    @if (ShowAllTimeLeaderboards)
+                    @if (ShowAllTimeLeaderboards || Status <= ErodleStatus.Playing)
                     {
                         @context.Username
                     }
                     else
                     {
-                        <span onclick="@(() => StartNewGame(DateOnly.FromDateTime(SelectedDate),  ErodleKind.Mst, context.UserId))" style="cursor: pointer;">
+                        <span onclick="@(() => StartNewGame(DateOnly.FromDateTime(SelectedDate), ErodleKind.Mst, context.UserId))" style="cursor: pointer;">
                             @context.Username
                         </span>
                     }
