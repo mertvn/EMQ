@@ -153,7 +153,21 @@ else
                     }
                 </td>
                 <td>
-                    @foreach (var tag in previousAnswer.Tags.Take(5))
+                    @{
+                        const int tags3Take = 5;
+                        const int tags2Take = 1;
+                        const int tags1Take = 1;
+                        var tags3 = previousAnswer.Tags.Where(x => x.Rating is >= 2.9f)
+                            .Take(tags3Take).ToArray();
+
+                        var tags2 = previousAnswer.Tags.Where(x => x.Rating is >= 1.9f and <= 2.5f)
+                            .Take((tags3Take - tags3.Length) + tags2Take).ToArray();
+
+                        var tags1 = previousAnswer.Tags.Where(x => x.Rating is >= 1 and <= 1.6f)
+                            .Take(((tags3Take + tags2Take) - (tags3.Length + tags2.Length)) + tags1Take);
+                    }
+
+                    @foreach (var tag in tags3.Concat(tags2).Concat(tags1).DistinctBy(x => x.Name))
                     {
                         var correctAnswerTag = CorrectAnswer.Tags.FirstOrDefault(x => x.Id == tag.Id);
                         bool isCorrect = correctAnswerTag != null;
