@@ -42,7 +42,7 @@ public static class Constants
 
     public const int ErodleMaxGuesses = 17;
 
-    public const int ErodleMinVotes = 100;
+    public const int ErodleMinVotes = 250;
 
     public const int SHUseLastNPlaysPerPlayer = 3;
 
