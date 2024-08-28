@@ -63,12 +63,7 @@ public class AuthController : ControllerBase
 
             do
             {
-                int random;
-                do
-                {
-                    random = Random.Shared.Next();
-                } while (random < 1_000_000);
-
+                int random = Random.Shared.Next(1_000_000, int.MaxValue);
                 playerId = Convert.ToInt32(random.ToString()[..7]);
             } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 

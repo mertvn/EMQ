@@ -167,7 +167,7 @@ public class ErodleController : ControllerBase
 SELECT user_id, COUNT(CASE WHEN status = 2 THEN 1 END) AS Wins, COUNT(CASE WHEN status = 1 THEN 1 END) AS Losses, COUNT(status) AS Plays
 FROM erodle_users eu
 JOIN erodle e ON e.id = eu.erodle_id
-WHERE ((@date::date IS NULL) or e.date = @date::date)
+WHERE ((@date::date IS NULL) or e.date = @date::date) AND user_id < 1000000
 GROUP BY user_id
 ),
 g AS (
