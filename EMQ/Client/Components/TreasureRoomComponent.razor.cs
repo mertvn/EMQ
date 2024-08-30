@@ -21,7 +21,9 @@ public partial class TreasureRoomComponent
 
     private ElementReference _treasureRoomMainDivRef;
 
-    private Timer _movementTimer = new() { Interval = 17 };
+    private Timer _movementTimer = new() { Interval = Quiz.TickRate };
+
+    private DateTime LastReport { get; set; }
 
     private bool IsSpectator => Room?.Spectators.Any(x => x.Id == ClientState.Session?.Player.Id) ?? false;
 
@@ -90,10 +92,14 @@ public partial class TreasureRoomComponent
 
             StateHasChanged();
 
-            // can't afford to wait for this call
+            if ((DateTime.UtcNow - LastReport) > TimeSpan.FromMilliseconds(Quiz.TickRateClient))
+            {
+                LastReport = DateTime.UtcNow;
+                // can't afford to wait for this call
 #pragma warning disable CS4014
-            ReportPositionToServer(newX, newY);
+                ReportPositionToServer(newX, newY);
 #pragma warning restore CS4014
+            }
         }
     }
 
