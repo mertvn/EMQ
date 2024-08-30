@@ -1,4 +1,4 @@
-SELECT v.id, min(r.released) AS "air_date_start", v.alias, v.olang, v.l_wikidata, v.c_votecount,
+SELECT v.id, COALESCE(min(r.released) FILTER (WHERE rv.rtype != 'trial'), min(r.released)) AS "air_date_start", v.alias, v.olang, v.l_wikidata, v.c_votecount,
 --        v.c_popularity,
        v.c_rating, v.c_average
 FROM vn v

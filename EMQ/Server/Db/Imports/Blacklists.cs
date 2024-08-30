@@ -9,6 +9,8 @@ public static class Blacklists
     public static List<(string, string)> VndbImporterExistingSongBlacklist { get; } = new()
     {
         ("v236", "POWDER SNOW"),
+        ("v236", "SOUND OF DESTINY"),
+        ("v236", "WHITE ALBUM"),
         ("v12984", "Yuki no Elfin Lied"),
         ("v21901", "Ohime-sama datte XXX Shitai!!"),
         ("v17823", "Houkago Amazing Kiss"),
