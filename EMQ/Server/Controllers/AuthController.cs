@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -381,7 +381,7 @@ public class AuthController : ControllerBase
     [Route("GetServerActivityStats")]
     public async Task<ServerActivityStats> GetServerActivityStats(ReqGetServerActivityStats req)
     {
-        return await DbManager.GetServerActivityStats(req.StartDate, req.EndDate, req.IncludeGuests);
+        return await DbManager.GetServerActivityStats(req.StartDate, req.EndDate);
     }
 
     [CustomAuthorize(PermissionKind.Visitor)]

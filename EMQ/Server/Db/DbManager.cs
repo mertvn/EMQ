@@ -4730,8 +4730,7 @@ where music_id = ANY(@mIds)
         }
     }
 
-    public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate,
-        bool includeGuests)
+    public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate)
     {
         const string sqlDailyPlayers = @"
 SELECT to_char(played_at, 'yyyy-mm-dd'), count(DISTINCT user_id) FILTER(WHERE user_id < 1000000) AS users, count(DISTINCT user_id) FILTER(WHERE user_id >= 1000000) AS guests
@@ -4741,7 +4740,6 @@ WHERE played_at >= @startDate AND played_at <= @endDate
 GROUP BY to_char(played_at, 'yyyy-mm-dd')
 ";
 
-        // int maxUserId = includeGuests ? int.MaxValue : 1_000_000;
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var resDailyPlayers =
             (await connection.QueryAsync<(string date, int users, int guests)>(sqlDailyPlayers,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -395,6 +396,7 @@ public static class ExtensionMethods
         return result == 0 ? StringMatch.StartsWith : StringMatch.Contains;
     }
 
+    [Pure]
     public static T[] Shuffle<T>(this IEnumerable<T> input)
     {
         var arr = input.ToArray();

@@ -7,9 +7,6 @@
 
 @* <button type="button" class="btn btn-primary" @onclick="@(async () => await HandleRedraw())">Fetch</button> *@
 
-@* <input id="InputIncludeGuests" type="checkbox" @bind="IncludeGuests" style="margin: 5px;"/> *@
-@* <label for="InputIncludeGuests">Include guests?</label> *@
-
 <h4>Daily players (at least one song played)</h4>
 <Chart @ref="_barChart" Type="ChartType.Bar" TItem="int" Options="@Options"/>
 
@@ -17,8 +14,6 @@
     private Chart<int> _barChart = null!;
 
     private ServerActivityStats ServerActivityStats { get; set; } = new();
-
-    private bool IncludeGuests { get; set; } = true;
 
     private List<string> _backgroundColors = new() { ChartColor.FromRgba(54, 162, 235, 0.2f), ChartColor.FromRgba(255, 99, 132, 0.2f), };
 
@@ -45,7 +40,7 @@
     {
         await _barChart.Clear();
 
-        var req = new ReqGetServerActivityStats(DateTime.UtcNow.AddDays(-90), DateTime.UtcNow.AddDays(1), IncludeGuests);
+        var req = new ReqGetServerActivityStats(DateTime.UtcNow.AddDays(-90), DateTime.UtcNow.AddDays(1));
         var res = await _client.PostAsJsonAsync("Auth/GetServerActivityStats", req);
         if (res.IsSuccessStatusCode)
         {
