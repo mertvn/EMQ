@@ -394,9 +394,9 @@ else
         StateHasChanged();
     }
 
-    public async Task<ErodleContainer?> GetErodleContainer(DateOnly date, ErodleKind kind, int? userId)
+    public async Task<ErodleContainer?> GetErodleContainer(DateOnly date, ErodleKind kind, int userId)
     {
-        var req = new ReqGetErodle { Date = date, Kind = kind, UserId = userId.Value };
+        var req = new ReqGetErodle { Date = date, Kind = kind, UserId = userId };
         var res = await _client.PostAsJsonAsync("Erodle/GetErodleContainer", req);
         if (res.IsSuccessStatusCode)
         {
