@@ -9,7 +9,7 @@
 <GenericModal @ref="@editBotPlayerModalRef"
               Title="Bot details"
               Size="@Blazorise.ModalSize.Large"
-              OkAction="SendEditBotReq">
+              OkAction="@(IsReadOnly ? null : SendEditBotReq)">
     <EditBotPlayerComponent Model="Model" IsReadOnly="IsReadOnly"></EditBotPlayerComponent>
 </GenericModal>
 
@@ -25,12 +25,6 @@
 
     private async Task SendEditBotReq()
     {
-        if (IsReadOnly)
-        {
-            editBotPlayerModalRef.Hide();
-            return;
-        }
-
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/EditBotPlayer", Model);
         if (res.IsSuccessStatusCode)
         {
