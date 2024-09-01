@@ -1075,13 +1075,6 @@ GRANT ALL ON SCHEMA public TO public;";
             {
                 foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
                 {
-                    // todo?
-                    // bool isGuest = userId >= 1_000_000;
-                    // if (isGuest)
-                    // {
-                    //     continue;
-                    // }
-
                     var quizSongHistory = new QuizSongHistory
                     {
                         quiz_id = quizId,
@@ -1131,10 +1124,10 @@ GRANT ALL ON SCHEMA public TO public;";
         List<int> userIds = new() {2,4,5,9,10,11,16,18,20,21,22,25,27,30,31,32,33,35,38,39,40,42,51,52,54,55,63,66,72,82,92,94,104,111,113,117,123,124,126,134,136,138,147,185,187,};
         // @formatter:on
 
-        string sql = @"select user_id, json_agg(ulv.vnid) from users_label_vn ulv
+        string sql = @$"select user_id, json_agg(ulv.vnid) from users_label_vn ulv
 join users_label ul on ul.id = ulv.users_label_id
 where ul.kind = 1
-and user_id < 1000000
+and user_id < {Constants.PlayerIdGuestMin}
 and user_id = ANY(@userIds)
 group by user_id
 order by user_id";

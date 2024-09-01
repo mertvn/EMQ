@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Protocol;
 
@@ -10,6 +11,11 @@ public static class TypedQuizHub
 {
     private static void EnqueuePumpMessage(int playerId, string target, object?[] arguments)
     {
+        if (playerId > Constants.PlayerIdBotMin)
+        {
+            return;
+        }
+
         const int maxQueueSizePerPlayer = 200;
 
         if (!ServerState.PumpMessages.TryGetValue(playerId, out var queue))

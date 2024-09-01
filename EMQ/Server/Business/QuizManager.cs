@@ -238,7 +238,7 @@ public class QuizManager
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
             player.IsSkipping = false;
-            player.IsReadiedUp = false;
+            player.IsReadiedUp = player.IsBot;
         }
 
         // reset the guesses
@@ -254,6 +254,8 @@ public class QuizManager
         Quiz.QuizState.Phase = QuizPhaseKind.Judgement;
         Quiz.QuizState.ExtraInfo = "";
 
+        await DetermineBotGuesses();
+
         TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
             true);
 
@@ -268,6 +270,51 @@ public class QuizManager
             Quiz.Room.PlayerGuesses);
 
         await JudgeGuesses();
+    }
+
+    private async Task DetermineBotGuesses()
+    {
+        var song = Quiz.Songs[Quiz.QuizState.sp];
+        foreach (var bot in Quiz.Room.Players.Where(x => x.IsBot))
+        {
+            float hitChance = song.Stats.CorrectPercentage;
+            switch (bot.BotInfo!.Difficulty)
+            {
+                case SongDifficultyLevel.VeryEasy:
+                    hitChance *= 0.2f;
+                    break;
+                case SongDifficultyLevel.Easy:
+                    hitChance *= 0.5f;
+                    break;
+                case SongDifficultyLevel.Medium:
+                    break;
+                case SongDifficultyLevel.Hard:
+                    hitChance *= 1.5f;
+                    break;
+                case SongDifficultyLevel.VeryHard:
+                    hitChance *= 2f;
+                    break;
+                case SongDifficultyLevel.Impossible:
+                    hitChance = 100;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            hitChance = Math.Clamp(hitChance, 0, 100);
+            bot.BotInfo.LastSongHitChance = hitChance;
+            bool isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
+            if (isCorrect)
+            {
+                // todo? non-mst
+                var guess = Converters.GetSingleTitle(song.Sources.First().Titles);
+                await OnSendGuessChanged(bot.Id, guess.LatinTitle, GuessKind.Mst);
+            }
+            else
+            {
+                // todo? set guess to something random
+            }
+        }
     }
 
     private void DetermineTeamGuesses()
@@ -1046,12 +1093,12 @@ public class QuizManager
         {
             foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
             {
-                // todo?
-                // bool isGuest = userId >= 1_000_000;
-                // if (isGuest)
-                // {
-                //     continue;
-                // }
+                // todo? guests
+                bool isBot = userId >= Constants.PlayerIdBotMin;
+                if (isBot)
+                {
+                    continue;
+                }
 
                 var quizSongHistory = new QuizSongHistory
                 {
@@ -1422,7 +1469,11 @@ public class QuizManager
                 // var stopWatch = new Stopwatch();
                 // stopWatch.Start();
 
-                var session = playerSessions[player.Id];
+                if (!playerSessions.TryGetValue(player.Id, out Session? session)) // Bot player
+                {
+                    continue;
+                }
+
                 var vndbInfo = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
                 if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
                     string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
@@ -1679,7 +1730,8 @@ public class QuizManager
 
                 // todo lots of selects are performed when NumSongs is really small
                 int songsLeft =
-                    Math.Max((int)((Quiz.Room.QuizSettings.NumSongs / 1.5f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
+                    Math.Max(
+                        (int)((Quiz.Room.QuizSettings.NumSongs / 1.5f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
                         100);
                 while (songsLeft > 0 && !cancellationTokenSource.IsCancellationRequested)
                 {
@@ -1871,7 +1923,7 @@ public class QuizManager
             player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
-            player.IsReadiedUp = false;
+            player.IsReadiedUp = player.IsBot;
             player.PlayerStatus = PlayerStatus.Default;
             player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
             player.NGMCCanBurn = false;
@@ -2379,6 +2431,11 @@ public class QuizManager
 
     private async Task TriggerSkipIfNecessary()
     {
+        if (Quiz.QuizState.RemainingMs <= 500)
+        {
+            return;
+        }
+
         var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
             .Where(x => x.Player.HasActiveConnection).ToList();
         int isSkippingCount = activeSessions.Count(x => x.Player.IsSkipping);

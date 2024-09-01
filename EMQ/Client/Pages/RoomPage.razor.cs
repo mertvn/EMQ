@@ -63,12 +63,10 @@ public partial class RoomPage
 
     private Dictionary<int, SongHistory> ClientSongsHistory { get; set; } = new();
 
-    private int SelectedTeamId =>
-        Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.TeamId ?? 1;
-
-    private async Task SetSelectedTeamIdAsync(int value)
+    private async Task SetSelectedTeamIdAsync(int value, int userId)
     {
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetTeamId", value);
+        var req = new ReqSetTeamId(value, userId);
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetTeamId", req);
         if (res1.IsSuccessStatusCode)
         {
             Room = await _clientUtils.SyncRoom();
@@ -76,12 +74,10 @@ public partial class RoomPage
         }
     }
 
-    private int SelectedNGMCGuessesInitial =>
-        Room?.Players.SingleOrDefault(x => x.Id == ClientState.Session?.Player.Id)?.NGMCGuessesInitial ?? 0;
-
-    private async Task SetSelectedNGMCGuessesInitialAsync(int value)
+    private async Task SetSelectedNGMCGuessesInitialAsync(int value, int userId)
     {
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetNGMCGuessesInitial", value);
+        var req = new ReqSetTeamId(value, userId);
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetNGMCGuessesInitial", req);
         if (res1.IsSuccessStatusCode)
         {
             Room = await _clientUtils.SyncRoom();
@@ -349,5 +345,13 @@ public partial class RoomPage
         }
 
         await _songHistoryWrapperComponent!.Show();
+    }
+
+    private async Task Onclick_AddBotPlayer()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/AddBotPlayer", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
     }
 }

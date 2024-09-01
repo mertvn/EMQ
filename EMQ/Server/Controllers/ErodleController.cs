@@ -163,11 +163,11 @@ public class ErodleController : ControllerBase
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
             .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
 
-        const string sql = @"WITH totals AS (
+        string sql = @$"WITH totals AS (
 SELECT user_id, COUNT(CASE WHEN status = 2 THEN 1 END) AS Wins, COUNT(CASE WHEN status = 1 THEN 1 END) AS Losses, COUNT(status) AS Plays
 FROM erodle_users eu
 JOIN erodle e ON e.id = eu.erodle_id
-WHERE ((@date::date IS NULL) or e.date = @date::date) AND user_id < 1000000
+WHERE ((@date::date IS NULL) or e.date = @date::date) AND user_id < {Constants.PlayerIdGuestMin}
 GROUP BY user_id
 ),
 g AS (

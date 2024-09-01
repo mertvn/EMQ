@@ -299,7 +299,7 @@ public class QuizHub : Hub
                         }
                     }
 
-                    if (!room.Players.Any())
+                    if (!room.Players.Any(x => !x.IsBot))
                     {
                         if (room.Quiz != null)
                         {
@@ -317,7 +317,7 @@ public class QuizHub : Hub
                     {
                         if (room.Owner.Id == player.Id)
                         {
-                            var newOwner = room.Players.First();
+                            var newOwner = room.Players.First(x => !x.IsBot);
                             room.Owner = newOwner;
                             room.Log($"{newOwner.Username} is the new owner.", -1, true);
                         }

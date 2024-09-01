@@ -95,7 +95,7 @@ public partial class HotelPage
             await _clientUtils.SaveSessionToLocalStorage(); // todo why do we need to do this?
 
             var quizStatus = ((await res1.Content.ReadFromJsonAsync<ResJoinRoom>())!).QuizStatus;
-            if (quizStatus == QuizStatus.Playing)
+            if (quizStatus == QuizStatus.Playing) // todo? pyramid
             {
                 _navigation.NavigateTo("/QuizPage");
             }

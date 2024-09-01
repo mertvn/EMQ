@@ -63,8 +63,16 @@
                         <h5 class="roomName card-title">@room.Name</h5>
                     </div>
                     <div>
+                        @{
+                            int botCount = room.Players.Count(x => x.IsBot);
+                        }
                         <p> Owner: @room.Owner.Username</p>
-                        <p> Players: @room.Players.Count</p>
+                        <p> Players: @(room.Players.Count - botCount)</p>
+                        @if (botCount > 0)
+                        {
+                            <p> Bots: @botCount</p>
+                        }
+
                         @if (room.Quiz != null)
                         {
                             <p> Status: @room.Quiz?.QuizState.QuizStatus</p>

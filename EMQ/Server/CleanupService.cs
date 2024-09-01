@@ -69,7 +69,7 @@ public sealed class CleanupService : BackgroundService
                     else
                     {
                         room.RemovePlayer(inactiveSession.Player);
-                        if (!room.Players.Any())
+                        if (!room.Players.Any(x => !x.IsBot))
                         {
                             ServerState.RemoveRoom(room, "CleanupService2");
                         }
@@ -77,7 +77,7 @@ public sealed class CleanupService : BackgroundService
                         {
                             if (room.Owner.Id == inactiveSession.Player.Id)
                             {
-                                var newOwner = room.Players.First();
+                                var newOwner = room.Players.First(x => !x.IsBot);
                                 room.Owner = newOwner;
                                 room.Log($"{newOwner.Username} is the new owner.", -1, true);
                             }

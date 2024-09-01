@@ -152,6 +152,10 @@ public partial class QuizPage
 
     private SongHistoryWrapperComponent? _songHistoryWrapperComponent;
 
+    private EditBotPlayerWrapperComponent? _editBotPlayerWrapperComponent;
+
+    private Player? _editBotPlayerModel;
+
     private GenericModal? _inventoryModalRef;
 
     private DateTime LastSync { get; set; }
@@ -1208,12 +1212,20 @@ public partial class QuizPage
         }
         else
         {
-            HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", userId);
-            if (res.IsSuccessStatusCode)
+            if (userId >= Constants.PlayerIdBotMin)
             {
-                var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
-                UserDetailsDict[userId] = content;
-                StateHasChanged();
+                _editBotPlayerModel = Room!.Players.Single(x => x.Id == userId);
+                _editBotPlayerWrapperComponent!.Show();
+            }
+            else
+            {
+                HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", userId);
+                if (res.IsSuccessStatusCode)
+                {
+                    var content = (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!;
+                    UserDetailsDict[userId] = content;
+                    StateHasChanged();
+                }
             }
         }
     }

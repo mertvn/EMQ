@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Dapper;
 using EMQ.Client;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
@@ -17,6 +18,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace EMQ.Server.Controllers;
 
@@ -658,7 +660,7 @@ public class QuizController : ControllerBase
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SetTeamId")]
-    public async Task<ActionResult> SetTeamId([FromBody] int requestedTeamId)
+    public async Task<ActionResult> SetTeamId(ReqSetTeamId req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
@@ -666,30 +668,35 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
-        var player = session.Player;
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is not null)
         {
+            if (room.Owner.Id != session.Player.Id && req.UserId != session.Player.Id)
+            {
+                return Unauthorized();
+            }
+
+            var player = room.Players.SingleOrDefault(x => x.Id == req.UserId);
+            if (player == null)
+            {
+                return Unauthorized();
+            }
+
+            if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+            {
+                return StatusCode(409);
+            }
+
             if (room.QuizSettings.TeamSize > 1)
             {
-                int currentTeamSize = room.Players.Count(x => x.TeamId == requestedTeamId);
+                int currentTeamSize = room.Players.Count(x => x.TeamId == req.Value);
                 if ((currentTeamSize + 1) <= room.QuizSettings.TeamSize)
                 {
-                    player.TeamId = requestedTeamId;
+                    player.TeamId = req.Value;
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                     return Ok();
                 }
             }
-            else
-            {
-                _logger.LogWarning(
-                    "Attempt to set team id in r{room.Id} that is not set to teams mode by p{req.playerId}",
-                    room.Id, player.Id);
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Attempt to set team id in r{req.RoomId} that is null", "");
         }
 
         return Unauthorized();
@@ -699,7 +706,7 @@ public class QuizController : ControllerBase
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SetNGMCGuessesInitial")]
-    public async Task<ActionResult> SetNGMCGuessesInitial([FromBody] int requestedGuesses)
+    public async Task<ActionResult> SetNGMCGuessesInitial(ReqSetTeamId req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
@@ -707,26 +714,31 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
-        var player = session.Player;
-        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == player.Id));
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
         if (room is not null)
         {
+            if (room.Owner.Id != session.Player.Id && req.UserId != session.Player.Id)
+            {
+                return Unauthorized();
+            }
+
+            var player = room.Players.SingleOrDefault(x => x.Id == req.UserId);
+            if (player == null)
+            {
+                return Unauthorized();
+            }
+
+            if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+            {
+                return StatusCode(409);
+            }
+
             if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
             {
-                player.NGMCGuessesInitial = requestedGuesses;
+                player.NGMCGuessesInitial = req.Value;
                 TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 return Ok();
             }
-            else
-            {
-                _logger.LogWarning(
-                    "Attempt to set ngmc guesses in r{room.Id} that is not set to ngmc mode by p{req.playerId}",
-                    room.Id, player.Id);
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Attempt to set ngmc guesses in r{req.RoomId} that is null", "");
         }
 
         return Unauthorized();
@@ -922,5 +934,116 @@ public class QuizController : ControllerBase
 
         var shRoomContainers = await DbManager.GetSHRoomContainers(req.UserId, req.StartDate, req.EndDate);
         return shRoomContainers;
+    }
+
+    // todo mimics
+    // todo? personalities/specialties
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("AddBotPlayer")]
+    public async Task<ActionResult> AddBotPlayer([FromBody] string chId)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Owner.Id != session.Player.Id)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            return StatusCode(409);
+        }
+
+        const string sql = @"select distinct c.id, c.image, COALESCE(c.latin, c.name) as latin
+from chars c
+join chars_traits ct on ct.id = c.id
+join chars_vns cv on cv.id = c.id
+join vn v on v.id = cv.vid
+where ct.tid = 'i458' -- Robot
+and c.main_spoil <= 0
+and ct.spoil <= 0
+and c.image is not null
+and v.olang = 'ja'
+and (SPLIT_PART(c.id::text, 'c', 2)::int) <= 131575 -- don't have images for newer chars
+";
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+        var chars = (await connection.QueryAsync<(string id, string image, string latin)>(sql)).ToArray();
+        (string id, string image, string latin) = chars.Shuffle().First();
+
+        int playerId;
+        do
+        {
+            int random = Random.Shared.Next(Constants.PlayerIdBotMin, int.MaxValue);
+            playerId = Convert.ToInt32(random.ToString()[..10]);
+        } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
+
+        string usernameLatter = latin.Length > 12 ? latin.Split(' ', '-').First() : latin;
+        string username = $"Bot-{usernameLatter[..Math.Min(usernameLatter.Length, 12)]}";
+        var avatar = new Avatar(AvatarCharacter.VNDBCharacterImage, image);
+        var player = new Player(playerId, username, avatar)
+        {
+            BotInfo = new PlayerBotInfo { VndbId = id, }, IsReadiedUp = true
+        };
+
+        // not doing this saves us from editing a lot of code
+        // ServerState.AddSession(new Session(player, token, userRoleKind, activeUserLabelPresetName));
+
+        room.Players.Enqueue(player);
+        room.Log($"{player.Username} joined the room.", -1, true);
+        TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("EditBotPlayer")]
+    public async Task<ActionResult> EditBotPlayer([FromBody] Player newBot)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Owner.Id != session.Player.Id)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            return StatusCode(409);
+        }
+
+        var oldBot = room.Players.SingleOrDefault(x => x.IsBot && x.Id == newBot.Id);
+        if (oldBot == null)
+        {
+            return Unauthorized();
+        }
+
+        oldBot.Avatar.Skin = await DbManager.GetCharacterImageId(newBot.BotInfo!.VndbId);
+        oldBot.Username = newBot.Username; // todo? force to start with Bot
+        oldBot.BotInfo = newBot.BotInfo;
+
+        TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+        return Ok();
     }
 }

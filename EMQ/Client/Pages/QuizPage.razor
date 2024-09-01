@@ -55,6 +55,8 @@
 
 <SongHistoryWrapperComponent @ref="_songHistoryWrapperComponent" SongsHistory="@ClientSongsHistory"></SongHistoryWrapperComponent>
 
+<EditBotPlayerWrapperComponent @ref="_editBotPlayerWrapperComponent" Model="_editBotPlayerModel" IsReadOnly="true"/>
+
 <div id="quizPageDiv">
 @if (!_clientConnectionManager.IsConnected)
 {
@@ -97,8 +99,8 @@
     }
     else
     {
-        int isSkippingCount = Room!.Players.Count(x => x.IsSkipping);
-        int skipNumber = (int)Math.Round((float)Room.Players.Count * 0.8, MidpointRounding.AwayFromZero);
+        int isSkippingCount = Room!.Players.Count(x => !x.IsBot && x.IsSkipping);
+        int skipNumber = (int)Math.Round((float)Room.Players.Count(x => !x.IsBot) * 0.8, MidpointRounding.AwayFromZero);
         <button type="button" class="btn btn-primary"
                 disabled="@(Room?.Quiz?.QuizState.QuizStatus != QuizStatus.Playing || Room?.Quiz?.QuizState.sp < 0 || (Room?.Quiz?.QuizState.IsPaused ?? false) || (Room?.QuizSettings.GamemodeKind != GamemodeKind.Radio && !(Room?.Quiz?.QuizState.RemainingMs > 2000 && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results)))"
                 @onclick="SendToggleSkip"
@@ -387,7 +389,7 @@
                 @if (Room.Quiz.QuizState.RemainingMs <= 0)
                 {
                     List<Player> buffered = Room.Players.Where(x => x.IsBuffered).ToList();
-                    List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered).ToList();
+                    List<Player> notBuffered = Room.Players.Where(x => !x.IsBuffered && !x.IsBot).ToList();
                     @if (buffered.Count > 0 && notBuffered.Count < 5)
                     {
                         // TODO: this says that we are waiting on inactive players even though we actually aren't

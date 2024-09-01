@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -63,7 +63,7 @@ public class AuthController : ControllerBase
 
             do
             {
-                int random = Random.Shared.Next(1_000_000, int.MaxValue);
+                int random = Random.Shared.Next(Constants.PlayerIdGuestMin, Constants.PlayerIdBotMin);
                 playerId = Convert.ToInt32(random.ToString()[..7]);
             } while (ServerState.Sessions.Any(x => x.Player.Id == playerId));
 

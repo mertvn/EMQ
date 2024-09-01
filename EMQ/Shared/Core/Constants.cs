@@ -46,6 +46,10 @@ public static class Constants
 
     public const int SHUseLastNPlaysPerPlayer = 3;
 
+    public const int PlayerIdGuestMin = 1_000_000;
+
+    public const int PlayerIdBotMin = 2_000_000_000;
+
     public const string QFDateMin = "1988-01-01";
 
     public const string QFDateMax = "2030-01-01";

@@ -177,10 +177,10 @@ else
 
                 @if (Room?.QuizSettings.TeamSize > 1)
                 {
-                    @if (player.Id == ClientState.Session?.Player.Id)
+                    @if (player.Id == ClientState.Session?.Player.Id || Room?.Owner.Id == ClientState.Session?.Player.Id)
                     {
                         <span>Team: </span>
-                        <select @bind:get="@SelectedTeamId" @bind:set="@SetSelectedTeamIdAsync" @bind:event="oninput">
+                        <select @bind:get="@player.TeamId" @bind:set="@(async (int value) => await SetSelectedTeamIdAsync(value, player.Id))" @bind:event="oninput">
                             @foreach (int num in Enumerable.Range(1, 8))
                             {
                                 <option value="@num">@num</option>
@@ -197,10 +197,10 @@ else
 
                 @if (Room != null && Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
                 {
-                    @if (player.Id == ClientState.Session?.Player.Id)
+                    @if (player.Id == ClientState.Session?.Player.Id || Room?.Owner.Id == ClientState.Session?.Player.Id)
                     {
                         <span>Guesses: </span>
-                        <select @bind:get="@SelectedNGMCGuessesInitial" @bind:set="@SetSelectedNGMCGuessesInitialAsync" @bind:event="oninput">
+                        <select @bind:get="@player.NGMCGuessesInitial" @bind:set="@(async (int value) => await SetSelectedNGMCGuessesInitialAsync(value, player.Id))" @bind:event="oninput">
                             @foreach (int num in Enumerable.Range(0, 10))
                             {
                                 <option value="@num">@num</option>
@@ -248,11 +248,19 @@ else
                 @if (Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id)
                 {
                     <div style="display: flex; justify-content:center; align-items:center;">
-                        <button type="button" class="btn btn-primary"
-                                disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
-                                @onclick="@(() => OnclickTransferRoomOwnership(player.Id))" style="margin:5px; padding: 5px;">
-                            Transfer ownership
-                        </button>
+                        @if (player.IsBot)
+                        {
+                            <EditBotPlayerWrapperComponent Model="player" IsReadOnly="false"/>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-primary"
+                                    disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+                                    @onclick="@(() => OnclickTransferRoomOwnership(player.Id))" style="margin:5px; padding: 5px;">
+                                Transfer ownership
+                            </button>
+                        }
+
                         <button type="button" class="btn btn-primary"
                                 disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
                                 @onclick="@(() => OnclickKickFromRoom(player.Id))" style="margin:5px; padding: 5px;">
@@ -261,6 +269,11 @@ else
                     </div>
                 }
             </div>
+        }
+
+        @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+        {
+            <button type="button" class="btn btn-success" @onclick="Onclick_AddBotPlayer">Add bot</button>
         }
     }
 

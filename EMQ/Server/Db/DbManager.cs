@@ -4732,8 +4732,8 @@ where music_id = ANY(@mIds)
 
     public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate)
     {
-        const string sqlDailyPlayers = @"
-SELECT to_char(played_at, 'yyyy-mm-dd'), count(DISTINCT user_id) FILTER(WHERE user_id < 1000000) AS users, count(DISTINCT user_id) FILTER(WHERE user_id >= 1000000) AS guests
+        string sqlDailyPlayers = $@"
+SELECT to_char(played_at, 'yyyy-mm-dd'), count(DISTINCT user_id) FILTER(WHERE user_id < {Constants.PlayerIdGuestMin}) AS users, count(DISTINCT user_id) FILTER(WHERE user_id >= {Constants.PlayerIdGuestMin}) AS guests
 FROM quiz_song_history qsh
 WHERE played_at >= @startDate AND played_at <= @endDate
 --AND user_id < @maxUserId

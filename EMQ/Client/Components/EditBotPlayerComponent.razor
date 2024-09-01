@@ -1,0 +1,60 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components
+@using EMQ.Shared.Core
+@using System.Globalization
+@inject HttpClient _client
+
+@if (Model != null)
+{
+    <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
+        <label>
+            <input type="text" @bind="Model.Username" disabled="@IsReadOnly"/>
+            Name
+        </label>
+        <br/>
+        <br/>
+
+        <label>
+            <input type="text" @bind="Model.BotInfo!.VndbId" disabled="@IsReadOnly"/>
+            VNDB Id
+        </label>
+        <br/>
+        <br/>
+
+        <label>
+            <select @bind="Model.BotInfo.BotKind" disabled>
+                @foreach (var kind in Enum.GetValues<PlayerBotKind>())
+                {
+                    <option value="@kind">@kind.GetDisplayName()</option>
+                }
+            </select>
+            Type
+        </label>
+        <br/>
+        <br/>
+
+        <label>
+            <select @bind="Model.BotInfo.Difficulty" disabled="@IsReadOnly">
+                @foreach (var difficultyLevel in Enum.GetValues<SongDifficultyLevel>())
+                {
+                    <option value="@difficultyLevel">@difficultyLevel.GetDisplayName()</option>
+                }
+            </select>
+            Difficulty
+        </label>
+        <br/>
+        <br/>
+
+        <p>Hit chance for the last song: @Model.BotInfo.LastSongHitChance.ToString("N2", CultureInfo.InvariantCulture)%</p>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public Player? Model { get; set; }
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
+
+}

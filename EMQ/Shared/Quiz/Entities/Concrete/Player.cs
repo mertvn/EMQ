@@ -16,7 +16,7 @@ public class Player
 
     public int Id { get; }
 
-    public string Username { get; }
+    public string Username { get; set; }
 
     // public string DisplayName { get; }
 
@@ -47,7 +47,7 @@ public class Player
 
     public DateTime LastHeartbeatTimestamp { get; set; }
 
-    public bool HasActiveConnection => (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
+    public bool HasActiveConnection => IsBot || (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
 
     public int NGMCGuessesInitial { get; set; }
 
@@ -64,6 +64,29 @@ public class Player
     public Dictionary<GuessKind, bool?>? IsGuessKindCorrectDict { get; set; }
 
     public AnsweringKind AnsweringKind { get; set; }
+
+    public PlayerBotInfo? BotInfo { get; set; }
+
+    public bool IsBot => BotInfo != null;
+}
+
+public class PlayerBotInfo
+{
+    public string VndbId { get; set; } = "";
+
+    public SongDifficultyLevel Difficulty { get; set; } = SongDifficultyLevel.Medium; // todo? different difficulty type
+
+    public PlayerBotKind BotKind { get; set; }
+
+    public string MimickedUsername { get; set; } = "";
+
+    public float LastSongHitChance { get; set; } // todo actually this can just be calculated client side probably
+}
+
+public enum PlayerBotKind
+{
+    Default,
+    Mimic, // todo
 }
 
 public class PlayerGuess
