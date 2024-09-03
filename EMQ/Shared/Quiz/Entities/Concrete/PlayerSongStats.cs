@@ -6,6 +6,8 @@ public class PlayerSongStats
 {
     public int UserId { get; set; }
 
+    public int MusicId { get; set; }
+
     public long TimesCorrect { get; set; }
 
     public long TimesPlayed { get; set; }

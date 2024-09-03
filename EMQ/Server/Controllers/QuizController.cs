@@ -936,7 +936,6 @@ public class QuizController : ControllerBase
         return shRoomContainers;
     }
 
-    // todo mimics
     // todo? personalities/specialties
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]

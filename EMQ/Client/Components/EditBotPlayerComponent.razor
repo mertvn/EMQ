@@ -22,7 +22,7 @@
         <br/>
 
         <label>
-            <select @bind="Model.BotInfo.BotKind" disabled>
+            <select @bind="Model.BotInfo.BotKind" disabled="@IsReadOnly">
                 @foreach (var kind in Enum.GetValues<PlayerBotKind>())
                 {
                     <option value="@kind">@kind.GetDisplayName()</option>
@@ -33,17 +33,29 @@
         <br/>
         <br/>
 
-        <label>
-            <select @bind="Model.BotInfo.Difficulty" disabled="@IsReadOnly">
-                @foreach (var difficultyLevel in Enum.GetValues<SongDifficultyLevel>())
-                {
-                    <option value="@difficultyLevel">@difficultyLevel.GetDisplayName()</option>
-                }
-            </select>
-            Difficulty
-        </label>
-        <br/>
-        <br/>
+        @if (Model.BotInfo.BotKind == PlayerBotKind.Mimic)
+        {
+            <label>
+                <input type="text" @bind="Model.BotInfo!.MimickedUsername" disabled="@IsReadOnly"/>
+                Mimicked username
+            </label>
+            <br/>
+            <br/>
+        }
+        else
+        {
+            <label>
+                <select @bind="Model.BotInfo.Difficulty" disabled="@IsReadOnly">
+                    @foreach (var difficultyLevel in Enum.GetValues<SongDifficultyLevel>())
+                    {
+                        <option value="@difficultyLevel">@difficultyLevel.GetDisplayName()</option>
+                    }
+                </select>
+                Difficulty
+            </label>
+            <br/>
+            <br/>
+        }
 
         <p>Hit chance for the last song: @Model.BotInfo.LastSongHitChance.ToString("N2", CultureInfo.InvariantCulture)%</p>
     </div>

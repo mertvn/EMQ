@@ -80,13 +80,15 @@ public class PlayerBotInfo
 
     public string MimickedUsername { get; set; } = "";
 
-    public float LastSongHitChance { get; set; } // todo actually this can just be calculated client side probably
+    public float LastSongHitChance { get; set; }
+
+    public Dictionary<int, float> SongHitChanceDict { get; } = new();
 }
 
 public enum PlayerBotKind
 {
     Default,
-    Mimic, // todo
+    Mimic,
 }
 
 public class PlayerGuess

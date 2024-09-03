@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Dapper;
 using EMQ.Client;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
@@ -18,6 +19,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.SignalR;
+using Npgsql;
 
 namespace EMQ.Server.Business;
 
@@ -277,33 +279,53 @@ public class QuizManager
         var song = Quiz.Songs[Quiz.QuizState.sp];
         foreach (var bot in Quiz.Room.Players.Where(x => x.IsBot))
         {
-            float hitChance = song.Stats.CorrectPercentage;
-            switch (bot.BotInfo!.Difficulty)
+            bool isCorrect;
+            switch (bot.BotInfo!.BotKind)
             {
-                case SongDifficultyLevel.VeryEasy:
-                    hitChance *= 0.2f;
-                    break;
-                case SongDifficultyLevel.Easy:
-                    hitChance *= 0.5f;
-                    break;
-                case SongDifficultyLevel.Medium:
-                    break;
-                case SongDifficultyLevel.Hard:
-                    hitChance *= 1.5f;
-                    break;
-                case SongDifficultyLevel.VeryHard:
-                    hitChance *= 2f;
-                    break;
-                case SongDifficultyLevel.Impossible:
-                    hitChance = 100;
-                    break;
+                case PlayerBotKind.Default:
+                    {
+                        float hitChance = song.Stats.CorrectPercentage;
+                        switch (bot.BotInfo!.Difficulty)
+                        {
+                            case SongDifficultyLevel.VeryEasy:
+                                hitChance *= 0.2f;
+                                break;
+                            case SongDifficultyLevel.Easy:
+                                hitChance *= 0.5f;
+                                break;
+                            case SongDifficultyLevel.Medium:
+                                break;
+                            case SongDifficultyLevel.Hard:
+                                hitChance *= 1.5f;
+                                break;
+                            case SongDifficultyLevel.VeryHard:
+                                hitChance *= 2f;
+                                break;
+                            case SongDifficultyLevel.Impossible:
+                                hitChance = 100;
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+
+                        hitChance = Math.Clamp(hitChance, 0, 100);
+                        bot.BotInfo.LastSongHitChance = hitChance;
+                        // bot.BotInfo.SongHitChanceDict[song.Id] = hitChance;
+                        isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
+                        break;
+                    }
+                case PlayerBotKind.Mimic:
+                    {
+                        float hitChance = bot.BotInfo.SongHitChanceDict[song.Id];
+                        hitChance = Math.Clamp(hitChance, 0, 100);
+                        bot.BotInfo.LastSongHitChance = hitChance;
+                        isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            hitChance = Math.Clamp(hitChance, 0, 100);
-            bot.BotInfo.LastSongHitChance = hitChance;
-            bool isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
             if (isCorrect)
             {
                 // todo? non-mst
@@ -688,8 +710,9 @@ public class QuizManager
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
-        var userSongStatsDict =
-            await DbManager.GetSHPlayerSongStats(song.Id, Quiz.Room.Players.Select(x => x.Id).ToList());
+        var userSongStatsLookup =
+            await DbManager.GetSHPlayerSongStats(new List<int> { song.Id },
+                Quiz.Room.Players.Select(x => x.Id).ToList());
 
         foreach (var player in Quiz.Room.Players)
         {
@@ -782,7 +805,13 @@ public class QuizManager
                 }
 
                 _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
-                _ = userSongStatsDict.TryGetValue(player.Id, out var userSongStats);
+
+                PlayerSongStats? userSongStats = null;
+                if (userSongStatsLookup.Contains(player.Id))
+                {
+                    userSongStats = userSongStatsLookup[player.Id].Single();
+                }
+
                 var guessInfo = new GuessInfo
                 {
                     Username = player.Username,
@@ -1333,6 +1362,33 @@ public class QuizManager
             }
         }
 
+        var mimics = Quiz.Room.Players.Where(x => x.BotInfo is { BotKind: PlayerBotKind.Mimic }).ToArray();
+        if (mimics.Any())
+        {
+            await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            var usernamesDict =
+                (await connectionAuth.QueryAsync<(int, string)>(
+                    "select id, username from users where lower(username) = ANY(lower(@usernames::text)::text[])",
+                    new { usernames = mimics.Select(x => x.BotInfo!.MimickedUsername).ToArray() }))
+                .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+            var userSongStatsLookup =
+                await DbManager.GetSHPlayerSongStats(Quiz.Songs.Select(x => x.Id).ToList(),
+                    usernamesDict.Select(x => x.Key).ToList());
+
+            foreach (Player mimic in mimics)
+            {
+                int mimickedUserId = usernamesDict.First(x => string.Equals(x.Value, mimic.BotInfo!.MimickedUsername,
+                    StringComparison.InvariantCultureIgnoreCase)).Key;
+                var userSongStats = userSongStatsLookup[mimickedUserId].ToArray();
+                foreach (Song song in Quiz.Songs)
+                {
+                    mimic.BotInfo!.SongHitChanceDict[song.Id] =
+                        userSongStats.SingleOrDefault(x => x.MusicId == song.Id)?.CorrectPercentage ?? 0;
+                }
+            }
+        }
+
         TypedQuizHub.ReceiveQuizEntered(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id));
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
@@ -1463,6 +1519,7 @@ public class QuizManager
             player.NGMCMustPick = false;
             player.NGMCCanBePicked = false;
             player.NGMCMustBurn = false;
+            player.BotInfo?.SongHitChanceDict.Clear();
 
             if (Quiz.Room.QuizSettings.OnlyFromLists)
             {
