@@ -1378,13 +1378,17 @@ public class QuizManager
 
             foreach (Player mimic in mimics)
             {
-                int mimickedUserId = usernamesDict.First(x => string.Equals(x.Value, mimic.BotInfo!.MimickedUsername,
+                int mimickedUserId = usernamesDict.FirstOrDefault(x => string.Equals(x.Value,
+                    mimic.BotInfo!.MimickedUsername,
                     StringComparison.InvariantCultureIgnoreCase)).Key;
-                var userSongStats = userSongStatsLookup[mimickedUserId].ToArray();
-                foreach (Song song in Quiz.Songs)
+                if (mimickedUserId > 0)
                 {
-                    mimic.BotInfo!.SongHitChanceDict[song.Id] =
-                        userSongStats.SingleOrDefault(x => x.MusicId == song.Id)?.CorrectPercentage ?? 0;
+                    var userSongStats = userSongStatsLookup[mimickedUserId].ToArray();
+                    foreach (Song song in Quiz.Songs)
+                    {
+                        mimic.BotInfo!.SongHitChanceDict[song.Id] =
+                            userSongStats.SingleOrDefault(x => x.MusicId == song.Id)?.CorrectPercentage ?? 0;
+                    }
                 }
             }
         }
