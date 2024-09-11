@@ -107,8 +107,7 @@ public partial class AutocompleteAComponent
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
         {
-            var matchLT = d.AALatinAlias.NormalizeForAutocomplete()
-                .StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.AALatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;
@@ -116,8 +115,7 @@ public partial class AutocompleteAComponent
 
             if (hasNonAscii)
             {
-                var matchNLT = d.AANonLatinAlias.NormalizeForAutocomplete()
-                    .StartsWithContains(value, StringComparison.Ordinal);
+                var matchNLT = d.AANonLatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
                 if (matchNLT > 0)
                 {
                     dictNLT[d] = matchNLT;

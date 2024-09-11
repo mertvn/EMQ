@@ -2082,9 +2082,15 @@ GROUP BY artist_id";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var res = (await connection.QueryAsync<(int, string, string?)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? ""));
-            string autocomplete =
-                JsonSerializer.Serialize(res, Utils.Jso);
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "")).ToArray();
+
+            foreach (var re in res)
+            {
+                re.AALatinAliasNormalized = re.AALatinAlias.NormalizeForAutocomplete();
+                re.AANonLatinAliasNormalized = re.AANonLatinAlias.NormalizeForAutocomplete();
+            }
+
+            string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
             return autocomplete;
         }
     }
