@@ -403,4 +403,61 @@ public static class ExtensionMethods
         RandomNumberGenerator.Shuffle<T>(arr);
         return arr;
     }
+
+    public static int FirstInvalidUnicodeSequenceIndex(this string text)
+    {
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c >= '\uD800')
+            {
+                if (c is '\uFFFD' or '\uFFFE' or '\uFFFF' || char.IsLowSurrogate(c))
+                {
+                    return i;
+                }
+
+                if (char.IsHighSurrogate(c))
+                {
+                    if (i + 1 >= text.Length || !char.IsLowSurrogate(text[i + 1]))
+                    {
+                        return i;
+                    }
+
+                    ++i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public static string RemoveInvalidUnicodeSequences(this string text, int index)
+    {
+        StringBuilder sb = new(text[..index], text.Length - 1);
+        for (int i = index + 1; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c < '\uD800')
+            {
+                _ = sb.Append(c);
+            }
+            else if (c is not '\uFFFD' and not '\uFFFE' and not '\uFFFF' && !char.IsLowSurrogate(c))
+            {
+                if (char.IsHighSurrogate(c))
+                {
+                    if (i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                    {
+                        _ = sb.Append(c).Append(text[i + 1]);
+                        ++i;
+                    }
+                }
+                else
+                {
+                    _ = sb.Append(c);
+                }
+            }
+        }
+
+        return sb.ToString();
+    }
 }

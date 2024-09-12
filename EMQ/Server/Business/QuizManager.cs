@@ -2030,6 +2030,14 @@ public class QuizManager
                 }
 
                 guess = guess == null ? "" : guess[..Math.Min(guess.Length, Constants.MaxGuessLength)];
+
+                // MUST BE DONE AFTER THE SUBSTRING IN ORDER TO AVOID SLICING SURROGATE PAIRS IN HALF
+                int firstInvalidUnicodeCharIndex = guess.FirstInvalidUnicodeSequenceIndex();
+                if (firstInvalidUnicodeCharIndex >= 0)
+                {
+                    guess = guess.RemoveInvalidUnicodeSequences(firstInvalidUnicodeCharIndex);
+                }
+
                 player.Guess ??= new PlayerGuess();
                 player.PlayerStatus = PlayerStatus.Guessed;
 
