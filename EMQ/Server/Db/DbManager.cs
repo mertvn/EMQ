@@ -3455,9 +3455,9 @@ GROUP BY music_id
 ORDER BY count(*) DESC
 LIMIT 25", new { validMids }));
 
-            var highlyRatedSongs = (await SelectSongsBatch(mvAvg.Select(x => new Song { Id = x }).ToList(), false))
+            var highlyRatedSongs = (await SelectSongsMIds(mvAvg.ToArray(), false))
                 .OrderByDescending(x => x.VoteAverage).ToArray();
-            var mostVotedSongs = (await SelectSongsBatch(mvCount.Select(x => new Song { Id = x }).ToList(), false))
+            var mostVotedSongs = (await SelectSongsMIds(mvCount.ToArray(), false))
                 .OrderByDescending(x => x.VoteCount).ToArray();
 
             var libraryStats = new LibraryStats
