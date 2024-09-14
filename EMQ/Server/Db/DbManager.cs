@@ -3445,7 +3445,7 @@ order by count(music_id) desc
 WHERE music_id = ANY(@validMids)
 GROUP BY music_id
 HAVING count(*) >= 3
-ORDER BY avg(vote) desc
+ORDER BY avg(vote) DESC
 LIMIT 25", new { validMids }));
 
             var mvCount = (await connection.QueryAsync<int>(
@@ -3456,9 +3456,9 @@ ORDER BY count(*) DESC
 LIMIT 25", new { validMids }));
 
             var highlyRatedSongs = (await SelectSongsMIds(mvAvg.ToArray(), false))
-                .OrderByDescending(x => x.VoteAverage).ToArray();
+                .OrderByDescending(x => x.VoteAverage).ThenByDescending(x => x.VoteCount).ToArray();
             var mostVotedSongs = (await SelectSongsMIds(mvCount.ToArray(), false))
-                .OrderByDescending(x => x.VoteCount).ToArray();
+                .OrderByDescending(x => x.VoteCount).ThenByDescending(x => x.VoteAverage).ToArray();
 
             var libraryStats = new LibraryStats
             {
