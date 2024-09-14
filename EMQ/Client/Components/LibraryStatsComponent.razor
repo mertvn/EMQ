@@ -2,6 +2,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using System.Globalization
 @inject HttpClient _client
 
 @if (LibraryStats is { } libraryStats)
@@ -12,6 +13,7 @@
         <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
         <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
         <Blazorise.Tab Name="TabSongDifficulty">Song difficulty</Blazorise.Tab>
+        <Blazorise.Tab Name="TabSongRating">Song rating</Blazorise.Tab>
         <Blazorise.Tab Name="TabVNYear">VN year</Blazorise.Tab>
         <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
         <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
@@ -122,6 +124,42 @@
             </table>
         </Blazorise.TabPanel>
 
+        <Blazorise.TabPanel Name="TabSongRating">
+            <h5 style="margin-top: 5px;">Highly rated songs (at least 3 votes)</h5>
+            <table style="max-width: 900px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">Song</th>
+                    <th class="libraryStatsHeader">Rating</th>
+                    <th class="libraryStatsHeader">Vote count</th>
+                </tr>
+                @foreach (var song in libraryStats.HighlyRatedSongs)
+                {
+                    <tr class="libraryStatsRow">
+                        <td>@song.ToStringLatin()</td>
+                        <td>@song.VoteAverage.ToString("F2", CultureInfo.InvariantCulture)</td>
+                        <td>@song.VoteCount</td>
+                    </tr>
+                }
+            </table>
+
+            <br/>
+            <h5 style="margin-top: 5px;">Most voted songs</h5>
+            <table style="max-width: 900px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">Song</th>
+                    <th class="libraryStatsHeader">Rating</th>
+                    <th class="libraryStatsHeader">Vote count</th>
+                </tr>
+                @foreach (var song in libraryStats.MostVotedSongs)
+                {
+                    <tr class="libraryStatsRow">
+                        <td>@song.ToStringLatin()</td>
+                        <td>@song.VoteAverage.ToString("F2", CultureInfo.InvariantCulture)</td>
+                        <td>@song.VoteCount</td>
+                    </tr>
+                }
+            </table>
+        </Blazorise.TabPanel>
 
         <Blazorise.TabPanel Name="TabVNYear">
             <table style="max-width: 400px">

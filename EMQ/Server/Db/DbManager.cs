@@ -3440,6 +3440,26 @@ order by count(music_id) desc
                     (await FindSongsByWarnings(new[] { warningKind }, songSourceSongTypes)).Count();
             }
 
+            var mvCount = (await connection.QueryAsync<int>(
+                @"SELECT music_id FROM music_vote mv
+WHERE music_id = ANY(@validMids)
+GROUP BY music_id
+ORDER BY count(*) DESC
+LIMIT 25", new { validMids }));
+
+            var mvAvg = (await connection.QueryAsync<int>(
+                @"SELECT music_id FROM music_vote mv
+WHERE music_id = ANY(@validMids)
+GROUP BY music_id
+HAVING count(*) > 2
+ORDER BY avg(vote) desc
+LIMIT 25", new { validMids }));
+
+            var highlyRatedSongs = (await SelectSongsBatch(mvAvg.Select(x => new Song { Id = x }).ToList(), false))
+                .OrderByDescending(x => x.VoteAverage).ToArray();
+            var mostVotedSongs = (await SelectSongsBatch(mvCount.Select(x => new Song { Id = x }).ToList(), false))
+                .OrderByDescending(x => x.VoteCount).ToArray();
+
             var libraryStats = new LibraryStats
             {
                 // General
@@ -3477,6 +3497,10 @@ order by count(music_id) desc
 
                 // Warnings
                 Warnings = warningsDict,
+
+                // Song rating
+                HighlyRatedSongs = highlyRatedSongs,
+                MostVotedSongs = mostVotedSongs,
             };
 
             // stopWatch.Stop();

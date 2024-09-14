@@ -45,6 +45,10 @@ public struct LibraryStats
     public Dictionary<SongDifficultyLevel, int> SongDifficultyLevels { get; set; }
 
     public Dictionary<MediaAnalyserWarningKind, int> Warnings { get; set; }
+
+    public Song[] HighlyRatedSongs { get; set; }
+
+    public Song[] MostVotedSongs { get; set; }
 }
 
 public class LibraryStatsMsm
