@@ -3440,19 +3440,19 @@ order by count(music_id) desc
                     (await FindSongsByWarnings(new[] { warningKind }, songSourceSongTypes)).Count();
             }
 
+            var mvAvg = (await connection.QueryAsync<int>(
+                @"SELECT music_id FROM music_vote mv
+WHERE music_id = ANY(@validMids)
+GROUP BY music_id
+HAVING count(*) >= 3
+ORDER BY avg(vote) desc
+LIMIT 25", new { validMids }));
+
             var mvCount = (await connection.QueryAsync<int>(
                 @"SELECT music_id FROM music_vote mv
 WHERE music_id = ANY(@validMids)
 GROUP BY music_id
 ORDER BY count(*) DESC
-LIMIT 25", new { validMids }));
-
-            var mvAvg = (await connection.QueryAsync<int>(
-                @"SELECT music_id FROM music_vote mv
-WHERE music_id = ANY(@validMids)
-GROUP BY music_id
-HAVING count(*) > 2
-ORDER BY avg(vote) desc
 LIMIT 25", new { validMids }));
 
             var highlyRatedSongs = (await SelectSongsBatch(mvAvg.Select(x => new Song { Id = x }).ToList(), false))
