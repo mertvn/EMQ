@@ -716,6 +716,20 @@ public class QuizManager
 
         foreach (var player in Quiz.Room.Players)
         {
+            if (Quiz.Room.QuizSettings.IsPreventSameSongSpam)
+            {
+                player.SongLastPlayedAtDict[song.Id] = DateTime.UtcNow;
+            }
+
+            if (Quiz.Room.QuizSettings.IsPreventSameVNSpam)
+            {
+                foreach (SongSource source in song.Sources)
+                {
+                    player.VNLastPlayedAtDict[source.Links.Single(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                        DateTime.UtcNow;
+                }
+            }
+
             if (player.PlayerStatus == PlayerStatus.Dead)
             {
                 continue;
@@ -1721,8 +1735,28 @@ public class QuizManager
                             // we randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount
                             foreach ((int pId, _) in validSourcesDict.Shuffle())
                             {
+                                var player = Quiz.Room.Players.Single(x => x.Id == pId);
                                 Console.WriteLine(
-                                    $"selecting {targetNumSongsPerPlayer} songs for p{pId} {Quiz.Room.Players.Single(x => x.Id == pId).Username}");
+                                    $"selecting {targetNumSongsPerPlayer} songs for p{pId} {player.Username}");
+
+                                if (Quiz.Room.QuizSettings.IsPreventSameSongSpam)
+                                {
+                                    var playedInTheLastXMinutes = player.SongLastPlayedAtDict.Where(x =>
+                                            (DateTime.UtcNow - x.Value) <
+                                            TimeSpan.FromMinutes(Quiz.Room.QuizSettings.PreventSameSongSpamMinutes))
+                                        .Select(x => x.Key);
+                                    invalidMids ??= new List<int>();
+                                    invalidMids.AddRange(playedInTheLastXMinutes);
+                                }
+
+                                if (Quiz.Room.QuizSettings.IsPreventSameVNSpam)
+                                {
+                                    var playedInTheLastXMinutes = player.VNLastPlayedAtDict.Where(x =>
+                                            (DateTime.UtcNow - x.Value) <
+                                            TimeSpan.FromMinutes(Quiz.Room.QuizSettings.PreventSameVNSpamMinutes))
+                                        .Select(x => x.Key);
+                                    validSourcesDict[pId].RemoveAll(x => playedInTheLastXMinutes.Contains(x));
+                                }
 
                                 dbSongs.AddRange(await DbManager.GetRandomSongs(
                                     targetNumSongsPerPlayer,

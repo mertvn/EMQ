@@ -250,6 +250,28 @@ public class QuizSettings
     [DefaultValue(true)]
     public bool IsMergeArtistAliases { get; set; } = true;
 
+    [ProtoMember(29)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsPreventSameSongSpam { get; set; } = true;
+
+    [ProtoMember(30)]
+    [Required]
+    [Range(1, 777)]
+    [DefaultValue(120)]
+    public int PreventSameSongSpamMinutes { get; set; } = 120;
+
+    [ProtoMember(31)]
+    [Required]
+    [DefaultValue(false)]
+    public bool IsPreventSameVNSpam { get; set; } = false;
+
+    [ProtoMember(32)]
+    [Required]
+    [Range(1, 777)]
+    [DefaultValue(60)]
+    public int PreventSameVNSpamMinutes { get; set; } = 60;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -570,6 +592,30 @@ public class QuizSettings
         {
             diff.Add(
                 $"Owner's song rating: {o.Filters.OwnersSongRatingAverageStart / 100f:N2} - {o.Filters.OwnersSongRatingAverageEnd / 100f:N2} → {n.Filters.OwnersSongRatingAverageStart / 100f:N2} - {n.Filters.OwnersSongRatingAverageEnd / 100f:N2}");
+        }
+
+        if (o.IsPreventSameSongSpam != n.IsPreventSameSongSpam)
+        {
+            diff.Add(
+                $"Prevent same song spam: {o.IsPreventSameSongSpam} → {n.IsPreventSameSongSpam}");
+        }
+
+        if (o.PreventSameSongSpamMinutes != n.PreventSameSongSpamMinutes)
+        {
+            diff.Add(
+                $"Prevent same song spam minutes: {o.PreventSameSongSpamMinutes} → {n.PreventSameSongSpamMinutes}");
+        }
+
+        if (o.IsPreventSameVNSpam != n.IsPreventSameVNSpam)
+        {
+            diff.Add(
+                $"Prevent same VN spam: {o.IsPreventSameVNSpam} → {n.IsPreventSameVNSpam}");
+        }
+
+        if (o.PreventSameVNSpamMinutes != n.PreventSameVNSpamMinutes)
+        {
+            diff.Add(
+                $"Prevent same VN spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
         }
 
         return diff;

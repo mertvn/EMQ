@@ -68,6 +68,12 @@ public class Player
     public PlayerBotInfo? BotInfo { get; set; }
 
     public bool IsBot => BotInfo != null;
+
+    [JsonIgnore]
+    public Dictionary<int, DateTime> SongLastPlayedAtDict { get; } = new();
+
+    [JsonIgnore]
+    public Dictionary<string, DateTime> VNLastPlayedAtDict { get; } = new();
 }
 
 public class PlayerBotInfo
