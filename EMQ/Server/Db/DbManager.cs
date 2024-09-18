@@ -2088,6 +2088,13 @@ GROUP BY artist_id";
             {
                 re.AALatinAliasNormalized = re.AALatinAlias.NormalizeForAutocomplete();
                 re.AANonLatinAliasNormalized = re.AANonLatinAlias.NormalizeForAutocomplete();
+
+                re.AALatinAliasNormalizedReversed = string.Join("", re.AALatinAlias
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Reverse()).NormalizeForAutocomplete();
+                re.AANonLatinAliasNormalizedReversed = string.Join("", re.AANonLatinAlias
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Reverse()).NormalizeForAutocomplete();
             }
 
             string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);

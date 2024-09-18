@@ -112,11 +112,19 @@ public partial class AutocompleteAComponent
             {
                 dictLT[d] = matchLT;
             }
+            else if (d.AALatinAliasNormalizedReversed.StartsWithContains(value, StringComparison.Ordinal) > 0)
+            {
+                dictLT[d] = matchLT;
+            }
 
             if (hasNonAscii)
             {
                 var matchNLT = d.AANonLatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
                 if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+                else if (d.AANonLatinAliasNormalizedReversed.StartsWithContains(value, StringComparison.Ordinal) > 0)
                 {
                     dictNLT[d] = matchNLT;
                 }

@@ -53,4 +53,12 @@ public class AutocompleteA
     [ProtoMember(7)]
     [JsonPropertyName("aaNLANorm")]
     public string AANonLatinAliasNormalized { get; set; } = null!;
+
+    [ProtoMember(8)]
+    [JsonPropertyName("aaLANormR")]
+    public string AALatinAliasNormalizedReversed { get; set; } = null!;
+
+    [ProtoMember(9)]
+    [JsonPropertyName("aaNLANormR")]
+    public string AANonLatinAliasNormalizedReversed { get; set; } = null!;
 }
