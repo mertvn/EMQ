@@ -7,6 +7,6 @@ public enum PlayerStatus
     Guessed,
     Correct,
     Wrong,
-    Dead,
+    Dead, // todo this should be a completely different property on Player
     Looting
 }

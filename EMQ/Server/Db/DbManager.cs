@@ -4848,11 +4848,11 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             }
 
             int artistId = artist.First().Value.First().Key; // todo?
-            const string sqlA =
-                @"SELECT user_id as UserId, COUNT(*) AS TimesPlayed, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS TimesCorrect
+            string sqlA =
+                $@"SELECT user_id as UserId, COUNT(*) AS TimesPlayed, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS TimesCorrect
 FROM quiz_song_history qsh
 JOIN artist_music am ON am.music_id = qsh.music_id
-WHERE am.artist_id = @artistId
+WHERE am.artist_id = @artistId and user_id < {Constants.PlayerIdGuestMin}
 GROUP BY user_id
 ORDER BY TimesPlayed DESC
 ";

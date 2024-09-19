@@ -4,6 +4,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using EMQ.Server;
 using EMQ.Server.Db;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Benchmarks;
@@ -15,12 +16,28 @@ public class Md5VsSha256
 
     public Md5VsSha256()
     {
-        Console.WriteLine(Directory.GetCurrentDirectory());
-        DotEnv.Load(@"todo");
-        DbManager.Init();
-        mids = (DbManager.FindRQs(DateTime.UtcNow.AddDays(-17), DateTime.UtcNow.AddDays(1))).GetAwaiter().GetResult()
-            .Select(x => x.music_id).ToArray();
+        // Console.WriteLine(Directory.GetCurrentDirectory());
+        // DotEnv.Load(@"todo");
+        // DbManager.Init();
+        // mids = (DbManager.FindRQs(DateTime.UtcNow.AddDays(-17), DateTime.UtcNow.AddDays(1))).GetAwaiter().GetResult()
+        //     .Select(x => x.music_id).ToArray();
     }
+
+    // [Benchmark]
+    // public void If()
+    // {
+    //     var input = "hashi";
+    //     var str = "hashimoto miyuki";
+    //     _ = str.StartsWithContains(input, StringComparison.Ordinal);
+    // }
+    //
+    // [Benchmark]
+    // public void Switch()
+    // {
+    //     var input = "hashi";
+    //     var str = "hashimoto miyuki";
+    //     _ = str.StartsWithContainsSw(input, StringComparison.Ordinal);
+    // }
 
     // [Benchmark]
     // public async Task<List<Song>> LinqDelegate() => await DbManager.SelectSongsMIdsCachedLinqDelegate(mids, false);
