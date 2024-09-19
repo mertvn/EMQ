@@ -105,7 +105,7 @@
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
             <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.CorrectPercentage))">
-                @(Math.Round((double)context.CorrectPercentage, 2))% (@(context.Correct)/@(context.Played))
+                @(Math.Round((double)context.CorrectPercentage, 2))%
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.IntervalDays)" Title="Interval (days)" Sortable="true"/>
         </QuickGrid>

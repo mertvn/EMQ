@@ -14,12 +14,38 @@
 
 @if (ResGetSongArtist != null)
 {
-    <h3>@Converters.GetSingleTitle(ResGetSongArtist.SongArtists.First().Titles).ToString()</h3>
+    var artist = ResGetSongArtist.SongArtists.First();
+    <span style="font-size: x-large">@Converters.GetSingleTitle(artist.Titles).ToString()</span>
+
+    // todo important componentize this
+    foreach (SongArtistLink songArtistLink in artist.Links)
+    {
+        string iconSrc;
+        switch (songArtistLink.Type)
+        {
+            case SongArtistLinkType.VNDBStaff:
+                iconSrc = "assets/favicon/vndb.ico";
+                break;
+            case SongArtistLinkType.MusicBrainzArtist:
+                iconSrc = "assets/favicon/musicbrainz.png";
+                break;
+            default:
+                continue;
+        }
+
+        <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
+            <img width="16px" height="16px"
+                 src="@iconSrc" alt="link"
+                 style="margin-left: 6px; scale: 1.2;">
+        </a>
+    }
+    <br/>
+    <br/>
 }
 
 @if (PlayerSongStats != null)
 {
-    <h4>Stats</h4>
+    <h5>Stats</h5>
     <div class="page-size-chooser">
         Items per page:
         <select @bind="@_paginationPlayerSongStats.ItemsPerPage">
@@ -38,7 +64,7 @@
             <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
             <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
             <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
-                @(Math.Round((double)context.CorrectPercentage, 2))% (@(context.TimesCorrect)/@(context.TimesPlayed))
+                @(Math.Round((double)context.CorrectPercentage, 2))%
             </TemplateColumn>
         </QuickGrid>
     </div>
