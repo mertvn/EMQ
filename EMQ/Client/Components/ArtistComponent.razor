@@ -1,0 +1,78 @@
+﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using EMQ.Client.Pages
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId + 1}"))">Next</button>
+<br/>
+
+@if (ResGetSongArtist != null)
+{
+    <h3>@Converters.GetSingleTitle(ResGetSongArtist.SongArtists.First().Titles).ToString()</h3>
+}
+
+@if (PlayerSongStats != null)
+{
+    <h4>Stats</h4>
+    <div class="page-size-chooser">
+        Items per page:
+        <select @bind="@_paginationPlayerSongStats.ItemsPerPage">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            <option>100</option>
+            <option>250</option>
+        </select>
+    </div>
+    <div>
+        <Paginator State="@_paginationPlayerSongStats"/>
+    </div>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@PlayerSongStats" Pagination="@_paginationPlayerSongStats">
+            <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+            <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
+                @(Math.Round((double)context.CorrectPercentage, 2))% (@(context.TimesCorrect)/@(context.TimesPlayed))
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+    <br/>
+}
+
+<pre>
+@JsonSerializer.Serialize(ResGetSongArtist?.SongArtists, Utils.JsoIndented)
+</pre>
+
+@code {
+
+    [Parameter]
+    public int ArtistId { get; set; }
+
+    private ResGetSongArtist? ResGetSongArtist { get; set; }
+
+    private IQueryable<PlayerSongStats>? PlayerSongStats { get; set; }
+
+    private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
+        PlayerSongStats = null;
+    // StateHasChanged(); // fetched fast enough to make the flickering not worth it
+
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", new SongArtist { Id = ArtistId });
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+            ResGetSongArtist = content;
+            PlayerSongStats = content.PlayerSongStats.AsQueryable();
+        }
+    }
+
+}

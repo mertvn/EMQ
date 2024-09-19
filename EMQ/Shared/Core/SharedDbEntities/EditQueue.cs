@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Core.SharedDbEntities;
@@ -46,6 +47,8 @@ public class ResGetSongSource
 public class ResGetSongArtist
 {
     public List<SongArtist> SongArtists { get; set; } = new();
+
+    public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ReqEditSong

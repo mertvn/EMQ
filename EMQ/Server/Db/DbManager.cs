@@ -82,7 +82,8 @@ JOIN vn v ON v.id = rv.vid
 WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
                 var vnDevelopers =
-                    await connection.QueryAsync<(string vId, string pId, string name, string? latin)>(sql, new { vnIds });
+                    await connection.QueryAsync<(string vId, string pId, string name, string? latin)>(sql,
+                        new { vnIds });
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
             }
@@ -192,7 +193,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
     /// </summary>
     public static async Task<List<Song>> SelectSongsBatch(List<Song> input, bool selectCategories)
     {
-        var mIds = input.Select(x => x.Id).Where(x => x != 0).ToArray();
+        var mIds = input.Select(x => x.Id).Where(x => x > 0).ToArray();
         var latinTitles = input.SelectMany(y => y.Titles.Select(x => x.LatinTitle)).ToList();
         var links = input.SelectMany(y => y.Links.Select(x => x.Url)).ToList();
 
@@ -233,6 +234,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
             if (queryMusic.GetFilters() is null)
             {
+                return new List<Song>();
                 throw new Exception("At least one filter must be applied");
             }
 
@@ -406,13 +408,13 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             /**where**/
     ");
 
-        int[] mIds = songs.Select(a => a.Id).Where(x => x != 0).ToArray();
+        int[] mIds = songs.Select(a => a.Id).Where(x => x > 0).ToArray();
         if (mIds.Any())
         {
             queryMusicSource.Where($"msm.music_id = ANY({mIds})");
         }
 
-        int?[] sourceIds = songs.Select(a => a.Sources.FirstOrDefault()?.Id).Where(x => x != null && x != 0).ToArray();
+        int?[] sourceIds = songs.Select(a => a.Sources.FirstOrDefault()?.Id).Where(x => x is > 0).ToArray();
         if (sourceIds.Any())
         {
             queryMusicSource.Where($"ms.id = ANY({sourceIds})");
@@ -457,12 +459,13 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             int[] msIdsWithCategories = (await connection.QueryAsync<int>(@"select music_source_id from
             music_source_category msc
             LEFT JOIN category c ON c.id = msc.category_id
-            WHERE c.vndb_id = ANY(@categories)", new {categories})).ToArray();
+            WHERE c.vndb_id = ANY(@categories)", new { categories })).ToArray();
             queryMusicSource.Where($"ms.id = ANY({msIdsWithCategories})");
         }
 
         if (queryMusicSource.GetFilters() is null)
         {
+            return mIdSongSources;
             throw new Exception("At least one filter must be applied");
         }
 
@@ -679,19 +682,19 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
             int[] msIds = mIdSongSources.SelectMany(x => x.Value.Select(y => y.Key)).ToArray();
             var res = (await connection.QueryAsync<MusicSourceCategory, Category, (int, SongSourceCategory)>(
-                    sqlCategories, (msc, c) =>
+                sqlCategories, (msc, c) =>
+                {
+                    var songSourceCategory = new SongSourceCategory
                     {
-                        var songSourceCategory = new SongSourceCategory
-                        {
-                            Id = c.id,
-                            Name = c.name,
-                            VndbId = c.vndb_id,
-                            Type = (SongSourceCategoryType)c.type,
-                            Rating = msc.rating,
-                            SpoilerLevel = (SpoilerLevel?)msc.spoiler_level,
-                        };
-                        return (msc.music_source_id, songSourceCategory);
-                    }, new { msIds }, splitOn: "id")).ToArray();
+                        Id = c.id,
+                        Name = c.name,
+                        VndbId = c.vndb_id,
+                        Type = (SongSourceCategoryType)c.type,
+                        Rating = msc.rating,
+                        SpoilerLevel = (SpoilerLevel?)msc.spoiler_level,
+                    };
+                    return (msc.music_source_id, songSourceCategory);
+                }, new { msIds }, splitOn: "id")).ToArray();
 
             foreach ((int mId, Dictionary<int, SongSource>? value) in mIdSongSources)
             {
@@ -760,13 +763,13 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             /**where**/
     ");
 
-        int[] mIds = songs.Select(x => x.Id).Where(x => x != 0).ToArray();
+        int[] mIds = songs.Select(x => x.Id).Where(x => x > 0).ToArray();
         if (mIds.Any())
         {
             queryArtist.Where($"am.music_id = ANY({mIds})");
         }
 
-        int?[] artistIds = songs.Select(a => a.Artists.FirstOrDefault()?.Id).Where(x => x != null && x != 0).ToArray();
+        int?[] artistIds = songs.Select(a => a.Artists.FirstOrDefault()?.Id).Where(x => x is > 0).ToArray();
         if (artistIds.Any())
         {
             queryArtist.Where($"a.id = ANY({artistIds})");
@@ -797,6 +800,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
         if (queryArtist.GetFilters() is null)
         {
+            return mIdSongArtists;
             throw new Exception("At least one filter must be applied");
         }
 
@@ -915,7 +919,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             /**where**/
     ");
 
-        int?[] artistIds = songs.Select(a => a.Artists.FirstOrDefault()?.Id).Where(x => x != null && x != 0).ToArray();
+        int?[] artistIds = songs.Select(a => a.Artists.FirstOrDefault()?.Id).Where(x => x is > 0).ToArray();
         if (artistIds.Any())
         {
             queryArtist.Where($"a.id = ANY({artistIds})");
@@ -946,6 +950,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
         if (queryArtist.GetFilters() is null)
         {
+            return mIdSongArtists;
             throw new Exception("At least one filter must be applied");
         }
 
@@ -4834,13 +4839,43 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             new List<Song> { new() { Artists = new List<SongArtist> { songArtist } } }, false);
 
         // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
-        if (session != null)
+        PlayerSongStats[] playerSongStats = Array.Empty<PlayerSongStats>();
+        if (true) // todo require extra param to fetch this
         {
-            // todo
+            if (session != null)
+            {
+                // todo fetch player-specific information
+            }
+
+            int artistId = artist.First().Value.First().Key; // todo?
+            const string sqlA =
+                @"SELECT user_id as UserId, COUNT(*) AS TimesPlayed, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS TimesCorrect
+FROM quiz_song_history qsh
+JOIN artist_music am ON am.music_id = qsh.music_id
+WHERE am.artist_id = @artistId
+GROUP BY user_id
+ORDER BY TimesPlayed DESC
+";
+            playerSongStats = (await connection.QueryAsync<PlayerSongStats>(sqlA, new { artistId })).ToArray();
+
+            await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            var usernamesDict =
+                (await connectionAuth.QueryAsync<(int, string)>(
+                    "select id, username from users where id = ANY(@userIds)",
+                    new { userIds = playerSongStats.Select(x => x.UserId).ToArray() }))
+                .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+            foreach (PlayerSongStats playerSongStat in playerSongStats)
+            {
+                playerSongStat.Username = Utils.UserIdToUsername(usernamesDict, playerSongStat.UserId);
+            }
         }
 
-        // todo important distinct
-        var res = new ResGetSongArtist() { SongArtists = artist.SelectMany(x => x.Value.Values).ToList(), };
+        var res = new ResGetSongArtist
+        {
+            SongArtists = artist.SelectMany(x => x.Value.Values).ToList(), // todo important distinct
+            PlayerSongStats = playerSongStats,
+        };
         return res;
     }
 

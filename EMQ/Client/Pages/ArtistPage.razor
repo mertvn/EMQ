@@ -1,0 +1,12 @@
+﻿@page "/ea{AId:int}"
+@using EMQ.Client.Components
+@inject ClientUtils _clientUtils
+
+<ArtistComponent ArtistId="AId"></ArtistComponent>
+
+@code {
+
+    [Parameter]
+    public int AId { get; set; }
+
+}

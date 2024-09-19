@@ -6,6 +6,7 @@
 @using EMQ.Shared.Core.SharedDbEntities
 @inject HttpClient _client
 @inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
 
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId + 1}"))">Next</button>
@@ -23,6 +24,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = MusicSourceId });
         if (res1.IsSuccessStatusCode)
         {

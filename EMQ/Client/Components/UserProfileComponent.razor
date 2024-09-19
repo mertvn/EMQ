@@ -6,6 +6,7 @@
 @using EMQ.Shared.Core
 @inject HttpClient _client
 @inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
 
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId + 1}"))">Next</button>
@@ -161,6 +162,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
         PublicUserInfo = null;
         MostPlayedSongs = null;
         CommonPlayers = null;
