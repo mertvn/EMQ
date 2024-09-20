@@ -41,7 +41,10 @@
         </ul>
     </div>
 
-    @if (SidebarPages.Contains(new Uri(_navigation.Uri).Segments.Last()) || _navigation.Uri.StartsWith($"{Constants.WebsiteDomain}/e"))
+    @{
+        string lastSegment = new Uri(_navigation.Uri).Segments.Last();
+    }
+    @if (SidebarPages.Contains(lastSegment) || lastSegment.StartsWith("e"))
     {
         <div class="sidebar" style="z-index: 30">
             <NavMenu/>
