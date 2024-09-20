@@ -1902,8 +1902,8 @@ GROUP BY artist_id";
         Console.WriteLine(
             $"enabledSongTypesForRandom: {JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.Jso)}");
 
-        var songsDict =
-            (await SelectSongsMIds(ids.Select(x => x.Item1).ToArray(), false)).ToDictionary(x => x.Id, x => x);
+        int lastIndex = 0;
+        var songsDict = new Dictionary<int, Song>();
         int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
         {
@@ -1921,13 +1921,25 @@ GROUP BY artist_id";
 
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
             {
-                var song = songsDict[mId];
-                totalSelected += 1;
+                bool exists = songsDict.TryGetValue(mId, out Song? song);
+                while (!exists)
+                {
+                    const int chunkSize = 1024;
+                    int index = lastIndex * chunkSize;
+                    var chunk = ids.GetRange(index, Math.Min(chunkSize, ids.Count - index));
+                    var d = (await SelectSongsMIds(chunk.Select(x => x.Item1).ToArray(), false))
+                        .ToDictionary(x => x.Id, x => x);
+                    songsDict = songsDict.Concat(d).ToDictionary(x => x.Key, x => x.Value);
+                    exists = songsDict.TryGetValue(mId, out song);
+                    lastIndex += 1;
+                    // Console.WriteLine($"lastIndex: {lastIndex}");
+                }
 
+                totalSelected += 1;
                 bool canAdd = true;
                 if (doSongSourceSongTypeFiltersCheck)
                 {
-                    List<SongSourceSongType> songTypes = song.Sources.SelectMany(x => x.SongTypes).ToList();
+                    List<SongSourceSongType> songTypes = song!.Sources.SelectMany(x => x.SongTypes).ToList();
                     foreach ((SongSourceSongType key, int value) in songTypesLeft!)
                     {
                         if (key == SongSourceSongType.Random || songTypes.Contains(key))
