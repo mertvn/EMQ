@@ -32,9 +32,11 @@ public static class RegexPatterns
         // { "β", "B" },
         { "βίος", "Bios" },
         { "Λ", "A" },
+        { "∀", "A" },
         { "μ", "myu" },
         { "φ", "o" },
         { "Ω", "" },
+        { "Я", "R" },
     };
 
     public static readonly Dictionary<SongArtistLinkType, Regex> ArtistLinkRegex = new()
