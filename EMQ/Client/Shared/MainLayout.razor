@@ -1,4 +1,5 @@
 ﻿@using EMQ.Client.Components
+@using EMQ.Shared.Core
 @inherits LayoutComponentBase
 @inject NavigationManager _navigation
 
@@ -40,7 +41,7 @@
         </ul>
     </div>
 
-    @if (SidebarPages.Contains(new Uri(_navigation.Uri).Segments.Last()) || _navigation.Uri.Contains("/e"))
+    @if (SidebarPages.Contains(new Uri(_navigation.Uri).Segments.Last()) || _navigation.Uri.StartsWith($"{Constants.WebsiteDomain}/e"))
     {
         <div class="sidebar" style="z-index: 30">
             <NavMenu/>
