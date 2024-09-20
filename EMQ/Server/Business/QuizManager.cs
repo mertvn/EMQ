@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -44,7 +45,7 @@ public class QuizManager
 
     private Dictionary<int, List<string>> CorrectAnswersDictDeveloper { get; set; } = new();
 
-    private Dictionary<int, string[]>? ArtistAliasesDict { get; set; }
+    private FrozenDictionary<int, string[]>? ArtistAliasesDict { get; set; }
 
     private DateTime PreviousGuessPhaseStartedAt { get; set; }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -42,21 +43,21 @@ public static class DbManager
         {
             var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
             MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
-                .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
+                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
         }
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var musicBrainzReleaseVgmdbAlbums = await connection.GetListAsync<MusicBrainzReleaseVgmdbAlbum>();
             MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
-                .ToDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
+                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
         }
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
             MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
-                .ToDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
+                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
         }
 
         string[] vnIds;
@@ -85,7 +86,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                     await connection.QueryAsync<(string vId, string pId, string name, string? latin)>(sql,
                         new { vnIds });
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
-                    .ToDictionary(y => y.Key, y => y.Select(z => z).ToArray());
+                    .ToFrozenDictionary(y => y.Key, y => y.Select(z => z).ToArray());
             }
         }
 
@@ -104,18 +105,23 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
     private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
 
-    public static Dictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } = new();
+    public static FrozenDictionary<Guid, List<Guid>> MusicBrainzRecordingReleases { get; set; } =
+        FrozenDictionary<Guid, List<Guid>>.Empty;
 
-    private static Dictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } = new();
+    private static FrozenDictionary<Guid, List<int>> MusicBrainzReleaseVgmdbAlbums { get; set; } =
+        FrozenDictionary<Guid, List<int>>.Empty;
 
-    public static Dictionary<Guid, List<Guid>> MusicBrainzRecordingTracks { get; set; } = new();
+    public static FrozenDictionary<Guid, List<Guid>> MusicBrainzRecordingTracks { get; set; } =
+        FrozenDictionary<Guid, List<Guid>>.Empty;
 
-    private static Dictionary<int, Guid?> MusicIdsRecordingGids { get; set; } = new();
+    private static FrozenDictionary<int, Guid?> MusicIdsRecordingGids { get; set; } =
+        FrozenDictionary<int, Guid?>.Empty;
 
     // public static Dictionary<int, List<SongSourceSongType>> MusicIdsSongSourceSongTypes { get; set; }
 
-    public static Dictionary<string, (string vId, string pId, string name, string? latin)[]>
-        VnDevelopers { get; set; } = new();
+    public static FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>
+        VnDevelopers { get; set; } =
+        FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 
@@ -125,7 +131,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         {
             var musicIdsRecordingGids =
                 await connection.QueryAsync<(int, Guid?)>("select id, musicbrainz_recording_gid from music");
-            MusicIdsRecordingGids = musicIdsRecordingGids.ToDictionary(x => x.Item1, x => x.Item2);
+            MusicIdsRecordingGids = musicIdsRecordingGids.ToFrozenDictionary(x => x.Item1, x => x.Item2);
         }
     }
 
@@ -1041,7 +1047,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         return mIdSongArtists;
     }
 
-    public static async Task<Dictionary<int, string[]>> SelectArtistAliases(int[] aIds)
+    public static async Task<FrozenDictionary<int, string[]>> SelectArtistAliases(int[] aIds)
     {
         string sql =
             @"SELECT artist_id, array_remove(array_cat(array_agg(latin_alias), array_agg(non_latin_alias)), NULL) AS aliases
@@ -1051,7 +1057,7 @@ GROUP BY artist_id";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var res = await connection.QueryAsync<(int aId, string[] aliases)>(sql, new { aIds });
-        var dict = res.ToDictionary(x => x.aId, x => x.aliases.Distinct().ToArray());
+        var dict = res.ToFrozenDictionary(x => x.aId, x => x.aliases.Distinct().ToArray());
         return dict;
     }
 
