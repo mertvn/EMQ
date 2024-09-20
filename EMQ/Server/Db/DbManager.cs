@@ -4852,7 +4852,7 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
 
         // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
         PlayerSongStats[] playerSongStats = Array.Empty<PlayerSongStats>();
-        if (true) // todo require extra param to fetch this
+        if (artist.Any() && true) // todo require extra param to fetch this
         {
             if (session != null)
             {
