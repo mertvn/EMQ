@@ -1981,7 +1981,7 @@ GROUP BY artist_id";
                 {
                     if (filters != null)
                     {
-                        var songSource = song.Sources.First();
+                        var songSource = song!.Sources.First();
                         if (filters.ScreenshotKind != ScreenshotKind.None)
                         {
                             song.ScreenshotUrl = await GetRandomScreenshotUrl(songSource, filters.ScreenshotKind);
@@ -1990,7 +1990,7 @@ GROUP BY artist_id";
                         song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
                     }
 
-                    song.StartTime = gamemodeKind == GamemodeKind.Radio ? 0 : song.DetermineSongStartTime(filters);
+                    song!.StartTime = gamemodeKind == GamemodeKind.Radio ? 0 : song.DetermineSongStartTime(filters);
                     ret.Add(song);
                     addedMselUrls.Add(mselUrl);
                 }
