@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
+using Dapper.Database.Extensions;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
@@ -1317,4 +1318,81 @@ order by user_id";
             }
         }
     }
+
+    // [Test, Explicit]
+    // public static async Task MigrateUserQuizSettings_OnlyFromListsAndBalancedStrictAndSongSourceSongTypeFiltersSumAndStartDateFilter()
+    // {
+    //     await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+    //     await connection.OpenAsync();
+    //     await using var transaction = await connection.BeginTransactionAsync();
+    //
+    //     var userQuizSettings =
+    //         (await connection.QueryAsync<UserQuizSettings>("select * from users_quiz_settings", transaction)).ToArray();
+    //     foreach (UserQuizSettings uqs in userQuizSettings)
+    //     {
+    //         var deser = uqs.b64.DeserializeFromBase64String_PB<QuizSettings>();
+    //         Console.Write($"{uqs.name.PadRight(32)} {uqs.b64.Length}");
+    //
+    //         int action = deser.OnlyFromLists ? deser.ListDistributionKind == ListDistributionKind.Unread ? 2 : 1 : 0;
+    //         deser.Filters.ListReadKindFilters = action switch
+    //         {
+    //             0 => // !OnlyFromLists
+    //                 new Dictionary<ListReadKind, IntWrapper>
+    //                 {
+    //                     { ListReadKind.Read, new IntWrapper(0) },
+    //                     { ListReadKind.Unread, new IntWrapper(0) },
+    //                     { ListReadKind.Random, new IntWrapper(deser.NumSongs) },
+    //                 },
+    //             1 => // OnlyFromLists
+    //                 new Dictionary<ListReadKind, IntWrapper>
+    //                 {
+    //                     { ListReadKind.Read, new IntWrapper(deser.NumSongs) },
+    //                     { ListReadKind.Unread, new IntWrapper(0) },
+    //                     { ListReadKind.Random, new IntWrapper(0) },
+    //                 },
+    //             2 => // OnlyFromLists + Unread
+    //                 new Dictionary<ListReadKind, IntWrapper>
+    //                 {
+    //                     { ListReadKind.Read, new IntWrapper(0) },
+    //                     { ListReadKind.Unread, new IntWrapper(deser.NumSongs) },
+    //                     { ListReadKind.Random, new IntWrapper(0) },
+    //                 },
+    //             _ => throw new UnreachableException()
+    //         };
+    //
+    //         if (deser.SongSourceSongTypeFiltersSum != deser.NumSongs)
+    //         {
+    //             (SongSourceSongType key, IntWrapper? value) =
+    //                 deser.Filters.SongSourceSongTypeFilters.MaxBy(x => x.Value.Value);
+    //             deser.Filters.SongSourceSongTypeFilters[key].Value +=
+    //                 deser.NumSongs - deser.SongSourceSongTypeFiltersSum;
+    //         }
+    //
+    //         if (deser.ListDistributionKind == ListDistributionKind.BalancedStrict)
+    //         {
+    //             deser.ListDistributionKind = ListDistributionKind.Balanced;
+    //         }
+    //
+    //         if (deser.Filters.StartDateFilter ==
+    //             DateTime.ParseExact("1988-01-01", "yyyy-MM-dd", CultureInfo.InvariantCulture))
+    //         {
+    //             deser.Filters.StartDateFilter =
+    //                 DateTime.ParseExact("1987-01-01", "yyyy-MM-dd", CultureInfo.InvariantCulture);
+    //         }
+    //
+    //         Console.Write(" => ");
+    //         uqs.b64 = deser.SerializeToBase64String_PB();
+    //         Console.WriteLine(uqs.b64.Length);
+    //     }
+    //
+    //     bool success = await connection.UpdateListAsync(userQuizSettings, transaction);
+    //     if (success)
+    //     {
+    //         await transaction.CommitAsync();
+    //     }
+    //     else
+    //     {
+    //         throw new Exception();
+    //     }
+    // }
 }
