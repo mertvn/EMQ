@@ -120,7 +120,9 @@ public partial class QuizSettingsComponent
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)
     {
         RecalculateNumSongsAndSongTypeFilters();
+        RecalculateListReadKindFilters();
 
+        // todo this returns the wrong result after loading a preset that's invalid
         bool isValid = EditContext.Validate();
         if (!isValid)
         {
@@ -129,16 +131,21 @@ public partial class QuizSettingsComponent
 
         if (Room!.Owner.Id == ClientState.Session!.Player.Id)
         {
-            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
+            HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ChangeRoomSettings",
                 new ReqChangeRoomSettings(
                     ClientState.Session.Token, Room.Id, clientQuizSettings));
 
-            if (res1.IsSuccessStatusCode)
+            if (res.IsSuccessStatusCode)
             {
                 await _modalRef.Hide();
                 Room = await _clientUtils.SyncRoom();
                 StateHasChanged();
                 ParentStateHasChangedCallback?.Invoke();
+            }
+            else
+            {
+                await _jsRuntime.InvokeVoidAsync("alert",
+                    $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
             }
         }
     }
@@ -320,6 +327,25 @@ public partial class QuizSettingsComponent
 
             ClientQuizSettings.Filters.SongSourceSongTypeFilters[key] = new IntWrapper(Math.Max(0,
                 value.Value - (ClientQuizSettings.SongSourceSongTypeFiltersSum - ClientQuizSettings.NumSongs)));
+        }
+
+        // StateHasChanged();
+    }
+
+    private void RecalculateListReadKindFilters()
+    {
+        foreach ((ListReadKind key, IntWrapper? value) in ClientQuizSettings.Filters.ListReadKindFilters)
+        {
+            ClientQuizSettings.Filters.ListReadKindFilters[key] = new IntWrapper(Math.Clamp(value.Value, 0, 100));
+        }
+
+        while (ClientQuizSettings.ListReadKindFiltersSum > ClientQuizSettings.NumSongs)
+        {
+            (ListReadKind key, IntWrapper? value) =
+                ClientQuizSettings.Filters.ListReadKindFilters.Last(x => x.Value.Value > 0);
+
+            ClientQuizSettings.Filters.ListReadKindFilters[key] = new IntWrapper(Math.Max(0,
+                value.Value - (ClientQuizSettings.ListReadKindFiltersSum - ClientQuizSettings.NumSongs)));
         }
 
         // StateHasChanged();

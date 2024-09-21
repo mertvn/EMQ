@@ -18,6 +18,9 @@
     [Parameter]
     public EventCallback<int> ValueChanged { get; set; }
 
+    [Parameter]
+    public int Sum { get; set; }
+
     public int MinValue { get; set; } = 0;
 
     public int MaxValue
@@ -29,7 +32,7 @@
                 return 100;
             }
 
-            int leeway = Math.Max(0, Model.NumSongs - Model.SongSourceSongTypeFiltersSum);
+            int leeway = Math.Max(0, Model.NumSongs - Sum);
             int newMax = Math.Clamp(Value + leeway, 0, Math.Max(0, Math.Min(Value + leeway, Model.NumSongs)));
 
     // Console.WriteLine($"value: {Value}");

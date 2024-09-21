@@ -1207,11 +1207,12 @@ public class QuizManager
             case SongSelectionKind.SpacedRepetition:
             case SongSelectionKind.LocalMusicLibrary:
                 var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-                if (quizSettings.OnlyFromLists &&
+                if (!quizSettings.Filters.ListReadKindFiltersIsAllRandom &&
                     allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
                 {
                     // generate wrong multiple choice options from player vndb lists if there are any,
-                    // and OnlyFromLists is enabled
+                    // and at least one Read or Unread is requested
+                    // todo add a few completely random songs here as well
                     int[] mIds = await DbManager.FindMusicIdsByLabels(allVndbInfos
                         .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
                     var allPlayerVnTitles = await DbManager.SelectSongsMIds(mIds, false);
@@ -1514,6 +1515,7 @@ public class QuizManager
         CorrectAnswersDictA = new Dictionary<int, List<string>>();
         CorrectAnswersDictMt = new Dictionary<int, List<string>>();
         CorrectAnswersDictRigger = new Dictionary<int, List<string>>();
+        CorrectAnswersDictDeveloper = new Dictionary<int, List<string>>();
         ArtistAliasesDict = null;
         Dictionary<int, List<string>> validSourcesDict = new();
 
@@ -1541,11 +1543,8 @@ public class QuizManager
             player.NGMCMustBurn = false;
             player.BotInfo?.SongHitChanceDict.Clear();
 
-            if (Quiz.Room.QuizSettings.OnlyFromLists)
+            if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsAllRandom)
             {
-                // var stopWatch = new Stopwatch();
-                // stopWatch.Start();
-
                 if (!playerSessions.TryGetValue(player.Id, out Session? session)) // Bot player
                 {
                     continue;
@@ -1592,14 +1591,8 @@ public class QuizManager
                         validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
                     }
                 }
-
-                // stopWatch.Stop();
-                // Console.WriteLine(
-                //     $"OnlyFromLists took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             }
         }
-
-        List<string> validSources = validSourcesDict.SelectMany(x => x.Value).Distinct().ToList();
 
         Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter =
             Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter.SanitizeVndbAdvsearchStr();
@@ -1623,10 +1616,12 @@ public class QuizManager
                     return;
                 }
 
-                validSources = vndbUrls.Distinct().ToList();
-                Quiz.Room.Log($"VNDB search filter returned {validSources.Count} results.", -1, true);
+                validSourcesDict.Clear();
+                validSourcesDict[-1] = vndbUrls.Distinct().ToList();
+                Quiz.Room.Log($"VNDB search filter returned {validSourcesDict.Single().Value.Count} results.", -1,
+                    true);
                 Quiz.Room.Log("validSources overridden by VndbAdvsearchFilter: " +
-                              JsonSerializer.Serialize(validSources, Utils.Jso));
+                              JsonSerializer.Serialize(validSourcesDict, Utils.Jso));
 
                 success = true;
             }, cancellationTokenSource.Token);
@@ -1647,10 +1642,11 @@ public class QuizManager
         }
         else
         {
-            Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSources, Utils.Jso), writeToConsole: false);
+            Quiz.Room.Log("validSources: " + JsonSerializer.Serialize(validSourcesDict, Utils.Jso),
+                writeToConsole: false);
         }
 
-        Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
+        // Quiz.Room.Log($"validSourcesCount: {validSources.Count}");
 
         // var validCategories = Quiz.Room.QuizSettings.Filters.CategoryFilters;
         // Quiz.Room.Log("validCategories: " + JsonSerializer.Serialize(validCategories, Utils.Jso));
@@ -1699,10 +1695,10 @@ public class QuizManager
                 switch (Quiz.Room.QuizSettings.ListDistributionKind)
                 {
                     case ListDistributionKind.Random:
-                    case ListDistributionKind.Unread:
                         {
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
-                                Quiz.Room.QuizSettings.Duplicates, validSources,
+                                Quiz.Room.QuizSettings.Duplicates,
+                                validSourcesDict.SelectMany(x => x.Value).Distinct().ToList(),
                                 filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                 listDistributionKind: Quiz.Room.QuizSettings.ListDistributionKind,
                                 validMids: validMids, invalidMids: invalidMids, ownerUserId: Quiz.Room.Owner.Id,
@@ -1715,7 +1711,7 @@ public class QuizManager
                             if (validSourcesDict.Count < 2)
                             {
                                 Quiz.Room.Log(
-                                    $"Balanced mode requires there to be at least two players with a list active.",
+                                    $"Balanced mode requires there to be at least two players with a list active; falling back to {ListDistributionKind.Random.ToString()}.",
                                     writeToChat: true);
                                 // #BlameAkaze
                                 goto case ListDistributionKind.Random;
@@ -1829,11 +1825,12 @@ public class QuizManager
                 int songsLeft =
                     Math.Max(
                         (int)((Quiz.Room.QuizSettings.NumSongs / 1.5f) * (((float)Quiz.Room.Players.Count + 3) / 2)),
-                        100);
+                        120);
                 while (songsLeft > 0 && !cancellationTokenSource.IsCancellationRequested)
                 {
                     var selectedSongs = await DbManager.GetRandomSongs(songsLeft,
-                        Quiz.Room.QuizSettings.Duplicates, validSources,
+                        Quiz.Room.QuizSettings.Duplicates,
+                        validSourcesDict.SelectMany(x => x.Value).Distinct().ToList(),
                         filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                         ownerUserId: Quiz.Room.Owner.Id, gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
 

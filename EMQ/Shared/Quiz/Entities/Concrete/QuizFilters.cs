@@ -9,6 +9,7 @@ using ProtoBuf;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
+// todo move all applicable filters here
 [ProtoContract]
 public class QuizFilters
 {
@@ -143,7 +144,29 @@ public class QuizFilters
     [Range(Constants.QFSongRatingAverageMin, Constants.QFSongRatingAverageMax)]
     public int OwnersSongRatingAverageEnd { get; set; } = Constants.QFSongRatingAverageMax;
 
-    // todo move all applicable filters here
+    [ProtoMember(24)]
+    public Dictionary<ListReadKind, IntWrapper> ListReadKindFilters { get; set; } =
+        new()
+        {
+            { ListReadKind.Read, new IntWrapper(40) },
+            { ListReadKind.Unread, new IntWrapper(0) },
+            { ListReadKind.Random, new IntWrapper(0) },
+        };
+
+    public bool ListReadKindFiltersIsOnlyRead =>
+        ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
+        !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);
+
+    public bool ListReadKindFiltersIsAllRandom =>
+        ListReadKindFilters.TryGetValue(ListReadKind.Random, out var val) && val.Value > 0 &&
+        !ListReadKindFilters.Where(x => x.Key != ListReadKind.Random).Any(x => x.Value.Value > 0);
+}
+
+public enum ListReadKind // todo? find a better name
+{
+    Read,
+    Unread,
+    Random,
 }
 
 [ProtoContract]

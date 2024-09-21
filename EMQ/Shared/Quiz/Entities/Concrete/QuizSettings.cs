@@ -103,10 +103,10 @@ public class QuizSettings
     [DefaultValue(0)]
     public int MaxLives { get; set; } = 0;
 
-    [ProtoMember(9)]
-    [Required]
-    [DefaultValue(true)]
-    public bool OnlyFromLists { get; set; } = true;
+    // [ProtoMember(9)]
+    // [Required]
+    // [DefaultValue(true)]
+    // public bool OnlyFromLists { get; set; } = true;
 
     [ProtoMember(10)]
     [Required]
@@ -164,6 +164,9 @@ public class QuizSettings
 
     [CustomValidation(typeof(QuizSettings), nameof(ValidateSongSourceSongTypeFiltersSum))]
     public int SongSourceSongTypeFiltersSum => Filters.SongSourceSongTypeFilters.Sum(x => x.Value.Value);
+
+    [CustomValidation(typeof(QuizSettings), nameof(ValidateListReadKindFiltersSum))]
+    public int ListReadKindFiltersSum => Filters.ListReadKindFilters.Sum(x => x.Value.Value);
 
     [ProtoMember(16)]
     [Required]
@@ -283,9 +286,29 @@ public class QuizSettings
         PropertyInfo numSongsProperty = validationContext.ObjectType.GetProperty(nameof(NumSongs))!;
         int numSongsPropertyValue = (int)numSongsProperty.GetValue(validationContext.ObjectInstance, null)!;
 
-        if (sum > numSongsPropertyValue)
+        if (sum != numSongsPropertyValue)
         {
-            return new ValidationResult("The sum of selected song types cannot be greater than the number of songs.",
+            return new ValidationResult("The sum of selected song types must be equal to the number of songs.",
+                new[] { validationContext.MemberName! });
+        }
+
+        return ValidationResult.Success!;
+    }
+
+    public static ValidationResult ValidateListReadKindFiltersSum(int sum, ValidationContext validationContext)
+    {
+        if (sum == 0)
+        {
+            return new ValidationResult("The sum of selected list status must be greater than 0.",
+                new[] { validationContext.MemberName! });
+        }
+
+        PropertyInfo numSongsProperty = validationContext.ObjectType.GetProperty(nameof(NumSongs))!;
+        int numSongsPropertyValue = (int)numSongsProperty.GetValue(validationContext.ObjectInstance, null)!;
+
+        if (sum != numSongsPropertyValue)
+        {
+            return new ValidationResult("The sum of selected list status must be equal to the number of songs.",
                 new[] { validationContext.MemberName! });
         }
 
@@ -358,9 +381,17 @@ public class QuizSettings
             diff.Add($"Lives: {o.MaxLives} → {n.MaxLives}");
         }
 
-        if (o.OnlyFromLists != n.OnlyFromLists)
+        if (JsonSerializer.Serialize(o.Filters.ListReadKindFilters) !=
+            JsonSerializer.Serialize(n.Filters.ListReadKindFilters))
         {
-            diff.Add($"Only from lists: {o.OnlyFromLists} → {n.OnlyFromLists}");
+            foreach ((ListReadKind key, IntWrapper? oldValue) in o.Filters.ListReadKindFilters)
+            {
+                var newValue = n.Filters.ListReadKindFilters[key];
+                if (oldValue.Value != newValue.Value)
+                {
+                    diff.Add($"{key}: {oldValue.Value} → {newValue.Value}");
+                }
+            }
         }
 
         if (o.SongSelectionKind != n.SongSelectionKind)
@@ -428,14 +459,12 @@ public class QuizSettings
         if (JsonSerializer.Serialize(o.Filters.SongSourceSongTypeFilters) !=
             JsonSerializer.Serialize(n.Filters.SongSourceSongTypeFilters))
         {
-            // string d = "";
             foreach ((SongSourceSongType key, IntWrapper? oldValue) in o.Filters.SongSourceSongTypeFilters)
             {
                 var newValue = n.Filters.SongSourceSongTypeFilters[key];
                 if (oldValue.Value != newValue.Value)
                 {
                     diff.Add($"{key}: {oldValue.Value} → {newValue.Value}");
-                    // d += $"{key}: {oldValue.Value} → {newValue.Value}";
                 }
             }
         }

@@ -286,12 +286,45 @@
                         <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
                             <h5>Filters</h5>
 
-                            <div style="border: 1px black solid;">
-                                <InputCheckbox id="OnlyFromLists" class="form-check-input" @bind-Value="ClientQuizSettings.OnlyFromLists" style="margin: 5px"></InputCheckbox>
-                                <label for="OnlyFromLists">Only from VNDB lists</label>
-                                <br/>
+                            <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
+                            <Blazorise.Tooltip Text="Allow multiple songs from one VN" Inline="true">
+                                <label for="Duplicates">Duplicate VNs</label>
+                            </Blazorise.Tooltip>
+                            <br/>
 
-                                <InputSelect id="ListDistributionKind" @bind-Value="ClientQuizSettings.ListDistributionKind" style="margin: 5px" disabled="@(!ClientQuizSettings.OnlyFromLists)">
+                            <InputCheckbox id="OnlyOwnUploads" class="form-check-input" @bind-Value="ClientQuizSettings.Filters.OnlyOwnUploads" style="margin: 5px"></InputCheckbox>
+                            <label for="OnlyOwnUploads">Only own uploads</label>
+                            <br/>
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
+                            <h5>List status</h5>
+
+                            @foreach (var key in ClientQuizSettings.Filters.ListReadKindFilters.Keys.ToList())
+                            {
+                                if (true)
+                                {
+                                    string id = $"ListReadKindFilters-{key}";
+                                    <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+                                        <SongTypeSliderComponent style="max-width: 100px;" id="@id"
+                                                                 @bind-Value="@(ClientQuizSettings.Filters.ListReadKindFilters[key].Value)"
+                                                                 Model="ClientQuizSettings"
+                                                                 Sum="ClientQuizSettings.ListReadKindFiltersSum">
+                                        </SongTypeSliderComponent>
+
+                                        <div style="display: inline-block">
+                                            <InputNumber @bind-Value="@(ClientQuizSettings.Filters.ListReadKindFilters[key].Value)" @bind-Value:after="@RecalculateListReadKindFilters" style="width: 55px; margin: 5px;"></InputNumber>
+                                        </div>
+                                        <label for="@id" style="margin-left: 5px;">@key.ToString()</label>
+
+                                        <br/>
+                                    </div>
+                                }
+                            }
+
+                            <br/>
+                            <div style="border: 1px black solid;">
+                                <InputSelect id="ListDistributionKind" @bind-Value="ClientQuizSettings.ListDistributionKind" style="margin: 5px" disabled="@(!ClientQuizSettings.Filters.ListReadKindFiltersIsOnlyRead)">
                                     @foreach (ListDistributionKind listDistributionKind in Enum.GetValues<ListDistributionKind>())
                                     {
                                         <option value="@listDistributionKind">
@@ -306,9 +339,10 @@
                                         </option>
                                     }
                                 </InputSelect>
+                                <label for="ListDistributionKind">List distribution</label>
                                 <br/>
 
-                                @if (ClientQuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
+                                @if (ClientQuizSettings.Filters.ListReadKindFiltersIsOnlyRead && ClientQuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
                                 {
                                     <div style="border: 1px black solid;">
                                         <InputCheckbox id="IsPreventSameSongSpam" class="form-check-input" @bind-Value="ClientQuizSettings.IsPreventSameSongSpam" style="margin: 5px;"></InputCheckbox>
@@ -329,16 +363,6 @@
                                     </div>
                                 }
                             </div>
-
-                            <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
-                            <Blazorise.Tooltip Text="Allow multiple songs from one VN" Inline="true">
-                                <label for="Duplicates">Duplicate VNs</label>
-                            </Blazorise.Tooltip>
-                            <br/>
-
-                            <InputCheckbox id="OnlyOwnUploads" class="form-check-input" @bind-Value="ClientQuizSettings.Filters.OnlyOwnUploads" style="margin: 5px"></InputCheckbox>
-                            <label for="OnlyOwnUploads">Only own uploads</label>
-                            <br/>
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
@@ -352,7 +376,8 @@
                                     <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
                                         <SongTypeSliderComponent style="max-width: 100px;" id="@id"
                                                                  @bind-Value="@(ClientQuizSettings.Filters.SongSourceSongTypeFilters[key].Value)"
-                                                                 Model="ClientQuizSettings">
+                                                                 Model="ClientQuizSettings"
+                                                                 Sum="ClientQuizSettings.SongSourceSongTypeFiltersSum">
                                         </SongTypeSliderComponent>
 
                                         <div style="display: inline-block">

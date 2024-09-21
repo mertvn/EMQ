@@ -1662,7 +1662,10 @@ GROUP BY artist_id";
                 }
 
                 var validSongDifficultyLevels = filters.SongDifficultyLevelFilters.Where(x => x.Value).ToList();
-                if (validSongDifficultyLevels.Any())
+                if (validSongDifficultyLevels.Any() &&
+                    // non-default check
+                    (validSongDifficultyLevels.Count != 6 ||
+                     validSongDifficultyLevels.Any(x => !x.Value)))
                 {
                     queryMusicIds.Append($"\n");
                     for (int index = 0; index < validSongDifficultyLevels.Count; index++)
@@ -1823,15 +1826,20 @@ GROUP BY artist_id";
                 }
             }
 
-            if (validSources != null && validSources.Any())
+            if (filters != null && validSources != null && validSources.Any())
             {
-                if (listDistributionKind is ListDistributionKind.Unread)
-                {
-                    queryMusicIds.Append($@" AND NOT msel.url = ANY({validSources})");
-                }
-                else
+                if (filters.ListReadKindFiltersIsOnlyRead)
                 {
                     queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
+                }
+                else if (filters.ListReadKindFilters.TryGetValue(ListReadKind.Unread, out var ur) && ur.Value > 0)
+                {
+                    bool onlyUnread = !filters.ListReadKindFilters.Where(x => x.Key != ListReadKind.Unread)
+                        .Any(x => x.Value.Value > 0);
+                    if (onlyUnread)
+                    {
+                        queryMusicIds.Append($@" AND NOT msel.url = ANY({validSources})");
+                    }
                 }
             }
 
@@ -1894,8 +1902,15 @@ GROUP BY artist_id";
         var addedMselUrls = new List<string>();
 
         bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
+        bool doListReadKindFiltersCheck = filters?.ListReadKindFilters.Any(x => x.Value.Value > 0) ?? false;
 
         songTypesLeft ??= filters?.SongSourceSongTypeFilters
+            .OrderByDescending(x => x.Key) // Random must be selected first
+            .Where(x => x.Value.Value > 0)
+            .ToDictionary(x => x.Key, x => x.Value.Value);
+
+        // todo? param
+        Dictionary<ListReadKind, int>? listReadKindLeft = filters?.ListReadKindFilters
             .OrderByDescending(x => x.Key) // Random must be selected first
             .Where(x => x.Value.Value > 0)
             .ToDictionary(x => x.Key, x => x.Value.Value);
@@ -1943,9 +1958,38 @@ GROUP BY artist_id";
 
                 totalSelected += 1;
                 bool canAdd = true;
+                if (doListReadKindFiltersCheck)
+                {
+                    string[] songSourceVndbUrls = song!.Sources
+                        .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
+                        .Select(x => x.Url).ToArray();
+                    bool isRead = validSources != null && songSourceVndbUrls.Any(x => validSources.Contains(x));
+                    foreach ((ListReadKind key, int value) in listReadKindLeft!)
+                    {
+                        if (key == ListReadKind.Random || ((key == ListReadKind.Read && isRead) ||
+                                                           (key == ListReadKind.Unread && !isRead)))
+                        {
+                            if (value <= 0)
+                            {
+                                canAdd = false;
+                                continue;
+                            }
+
+                            canAdd = true;
+                            listReadKindLeft[key] -= 1;
+                            break;
+                        }
+                    }
+                }
+
+                if (!canAdd)
+                {
+                    continue;
+                }
+
                 if (doSongSourceSongTypeFiltersCheck)
                 {
-                    List<SongSourceSongType> songTypes = song!.Sources.SelectMany(x => x.SongTypes).ToList();
+                    SongSourceSongType[] songTypes = song!.Sources.SelectMany(x => x.SongTypes).ToArray();
                     foreach ((SongSourceSongType key, int value) in songTypesLeft!)
                     {
                         if (key == SongSourceSongType.Random || songTypes.Contains(key))
@@ -2037,10 +2081,14 @@ GROUP BY artist_id";
             int bgmCount = ret.Count(song =>
                 song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
 
+            int otherCount = ret.Count(song =>
+                song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.Other));
+
             Console.WriteLine($"    opCount: {opCount}");
             Console.WriteLine($"    edCount: {edCount}");
             Console.WriteLine($"    insCount: {insCount}");
             Console.WriteLine($"    bgmCount: {bgmCount}");
+            Console.WriteLine($"    otherCount: {otherCount}");
         }
 
         // randomize again just in case

@@ -128,7 +128,6 @@ public class IntegrationTests
                         TeamSize = 1,
                         Duplicates = true,
                         MaxLives = 0,
-                        OnlyFromLists = false,
                         SongSelectionKind = SongSelectionKind.Random,
                         AnsweringKind = AnsweringKind.Typing,
                         LootingMs = 120000,
