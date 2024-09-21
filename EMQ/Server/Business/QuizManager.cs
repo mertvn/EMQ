@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1509,6 +1509,14 @@ public class QuizManager
         if (Quiz.Room.QuizSettings.IsNoSoundMode)
         {
             Quiz.Room.QuizSettings.TimeoutMs = 5000;
+        }
+
+        if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
+        {
+            if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsOnlyRead)
+            {
+                Quiz.Room.QuizSettings.ListDistributionKind = ListDistributionKind.Random;
+            }
         }
 
         CorrectAnswersDictMst = new Dictionary<int, List<string>>();
