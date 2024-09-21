@@ -1447,13 +1447,13 @@ GROUP BY artist_id";
         return (aId, aaIds);
     }
 
-    // todo make Filters required
+    // todo take QuizSettings as a required param instead of all this crap
     public static async Task<List<Song>> GetRandomSongs(int numSongs, bool duplicates,
         List<string>? validSources = null, QuizFilters? filters = null, bool printSql = false,
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
         List<int>? validMids = null, List<int>? invalidMids = null,
         Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null,
-        GamemodeKind? gamemodeKind = null)
+        GamemodeKind? gamemodeKind = null, SongSelectionKind? songSelectionKind = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -1828,8 +1828,9 @@ GROUP BY artist_id";
 
             if (filters != null && validSources != null && validSources.Any())
             {
-                if (filters.ListReadKindFiltersIsOnlyRead)
+                if (songSelectionKind == SongSelectionKind.Looting || filters.ListReadKindFiltersIsOnlyRead)
                 {
+                    Console.WriteLine("onlyRead");
                     queryMusicIds.Append($@" AND msel.url = ANY({validSources})");
                 }
                 else if (filters.ListReadKindFilters.TryGetValue(ListReadKind.Unread, out var ur) && ur.Value > 0)
@@ -1838,6 +1839,7 @@ GROUP BY artist_id";
                         .Any(x => x.Value.Value > 0);
                     if (onlyUnread)
                     {
+                        Console.WriteLine("onlyUnread");
                         queryMusicIds.Append($@" AND NOT msel.url = ANY({validSources})");
                     }
                 }
@@ -1902,7 +1904,8 @@ GROUP BY artist_id";
         var addedMselUrls = new List<string>();
 
         bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
-        bool doListReadKindFiltersCheck = filters?.ListReadKindFilters.Any(x => x.Value.Value > 0) ?? false;
+        bool doListReadKindFiltersCheck = songSelectionKind != SongSelectionKind.Looting &&
+                                          (filters?.ListReadKindFilters.Any(x => x.Value.Value > 0) ?? false);
 
         songTypesLeft ??= filters?.SongSourceSongTypeFilters
             .OrderByDescending(x => x.Key) // Random must be selected first
@@ -1969,17 +1972,23 @@ GROUP BY artist_id";
                         if (key == ListReadKind.Random || ((key == ListReadKind.Read && isRead) ||
                                                            (key == ListReadKind.Unread && !isRead)))
                         {
+                            // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
                             if (value <= 0)
                             {
+                                // Console.WriteLine("canAdd = false");
                                 canAdd = false;
                                 continue;
                             }
 
+                            // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
+                            // Console.WriteLine("canAdd = true");
                             canAdd = true;
                             listReadKindLeft[key] -= 1;
                             break;
                         }
                     }
+
+                    // Console.WriteLine("foreach end");
                 }
 
                 if (!canAdd)
@@ -4913,6 +4922,7 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
                 // todo fetch player-specific information
             }
 
+            // todo should_update_stats filter
             int artistId = artist.First().Value.First().Key; // todo?
             string sqlA =
                 $@"SELECT user_id as UserId, COUNT(*) AS TimesPlayed, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS TimesCorrect

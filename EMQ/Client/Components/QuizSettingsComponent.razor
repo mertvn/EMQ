@@ -283,7 +283,7 @@
                 <Blazorise.TabPanel Name="TabFilters">
                     @* https://stackoverflow.com/a/63384981 *@
                     <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
-                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 200px;">
                             <h5>Filters</h5>
 
                             <InputCheckbox id="Duplicates" class="form-check-input" @bind-Value="ClientQuizSettings.Duplicates" style="margin: 5px"></InputCheckbox>
@@ -297,6 +297,8 @@
                             <br/>
                         </div>
 
+                    @if (ClientQuizSettings.SongSelectionKind != SongSelectionKind.Looting)
+                    {
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
                             <h5>List status</h5>
 
@@ -364,6 +366,7 @@
                                 }
                             </div>
                         </div>
+                    }
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
                             <h5>Song types</h5>

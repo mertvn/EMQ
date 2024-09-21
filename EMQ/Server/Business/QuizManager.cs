@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1840,7 +1840,8 @@ public class QuizManager
                         Quiz.Room.QuizSettings.Duplicates,
                         validSourcesDict.SelectMany(x => x.Value).Distinct().ToList(),
                         filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                        ownerUserId: Quiz.Room.Owner.Id, gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
+                        ownerUserId: Quiz.Room.Owner.Id, gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
+                        songSelectionKind: Quiz.Room.QuizSettings.SongSelectionKind);
 
                     if (!selectedSongs.Any())
                     {
@@ -2292,7 +2293,8 @@ public class QuizManager
             Quiz.Room.QuizSettings.Filters,
             players: Quiz.Room.Players.ToList(),
             ownerUserId: Quiz.Room.Owner.Id,
-            gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind);
+            gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
+            songSelectionKind: Quiz.Room.QuizSettings.SongSelectionKind);
 
         if (!dbSongs.Any())
         {
