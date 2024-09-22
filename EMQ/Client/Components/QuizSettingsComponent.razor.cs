@@ -122,7 +122,6 @@ public partial class QuizSettingsComponent
         RecalculateNumSongsAndSongTypeFilters();
         RecalculateListReadKindFilters();
 
-        // todo this returns the wrong result after loading a preset that's invalid
         bool isValid = EditContext.Validate();
         if (!isValid)
         {
@@ -418,6 +417,7 @@ public partial class QuizSettingsComponent
                 ClientQuizSettings = preset.B64.DeserializeFromBase64String_PB<QuizSettings>();
                 LoadFromCodeB64 = "";
                 _loadPresetModalRef.Hide();
+                SetNewEditContext(ClientQuizSettings);
                 StateHasChanged();
                 ParentStateHasChangedCallback?.Invoke();
             }
@@ -438,6 +438,7 @@ public partial class QuizSettingsComponent
                 ClientQuizSettings = b64.DeserializeFromBase64String_PB<QuizSettings>();
                 LoadFromCodeB64 = "";
                 _loadPresetModalRef.Hide();
+                SetNewEditContext(ClientQuizSettings);
                 StateHasChanged();
                 ParentStateHasChangedCallback?.Invoke();
             }
