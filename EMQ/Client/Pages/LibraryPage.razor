@@ -144,6 +144,13 @@
     }
 </details>
 
+<QuizSettingsComponent @ref="_quizSettingsComponent"
+                       Room="@Room"
+                       ParentStateHasChangedCallback="@StateHasChangedAsync"
+                       IsQuizPage="false"
+                       IsReadOnly="false"
+                       IsLibraryPage="true"/>
+
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
         <Items>
@@ -151,6 +158,7 @@
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteMt">Search by song title</Blazorise.Tab>
             <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
+            <Blazorise.Tab Name="TabQuizSettings">Search by room settings</Blazorise.Tab>
             <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
             <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
         </Items>
@@ -187,6 +195,21 @@
                 <button type="button" id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr">
                     Fetch songs
                 </button>
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabQuizSettings">
+                @if (ClientState.Session != null)
+                {
+                    <button type="button" id="buttonQuizSettings" class="btn btn-secondary" style="padding: 5px; margin: 2px; width: 120px; height: 35px"
+                            @onclick="@(() => _quizSettingsComponent!.OnclickShowQuizSettings())">
+                        Room Settings
+                    </button>
+                    <br/>
+                    <button type="button" class="btn btn-primary" @onclick="Onclick_SearchByQuizSettings" style="margin-bottom: 5px;">Search</button>
+                }
+                else
+                {
+                    <p>You must be logged in to use this.</p>
+                }
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabMyList">
                 @if (ClientState.VndbInfo.Labels != null)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -32,9 +32,12 @@ public partial class QuizSettingsComponent
     [Parameter]
     public bool IsQuizPage { get; set; }
 
+    [Parameter]
+    public bool IsLibraryPage { get; set; }
+
     // we keep a separate copy of the quiz settings instead of using the one in Room
     // because we don't want the settings to get reset while someone is editing them
-    private QuizSettings ClientQuizSettings { get; set; } = new();
+    public QuizSettings ClientQuizSettings { get; set; } = new();
 
     private SongSourceCategory? SelectedTag { get; set; }
 
@@ -141,6 +144,13 @@ public partial class QuizSettingsComponent
         bool isValid = EditContext.Validate();
         if (!isValid)
         {
+            return;
+        }
+
+        if (IsLibraryPage)
+        {
+            await _modalRef.Hide();
+            ParentStateHasChangedCallback?.Invoke();
             return;
         }
 

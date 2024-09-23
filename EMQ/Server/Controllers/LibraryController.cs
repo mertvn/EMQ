@@ -532,4 +532,24 @@ public class LibraryController : ControllerBase
 
         return eqId > 0 ? Ok() : StatusCode(500);
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByQuizSettings")]
+    public async Task<ActionResult<List<Song>>> FindSongsByQuizSettings([FromBody] QuizSettings req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        req.SongSelectionKind = SongSelectionKind.Random;
+        var room = new Room(Guid.Empty, "", session.Player) { Password = "", QuizSettings = req };
+        room.Players.Enqueue(session.Player);
+        var quiz = new Quiz(room, Guid.Empty);
+        room.Quiz = quiz;
+        var quizManager = new QuizManager(quiz);
+        return await quizManager.PrimeQuiz() ? quiz.Songs.OrderBy(x => x.Id).ToList() : StatusCode(409);
+    }
 }

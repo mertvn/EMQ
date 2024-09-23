@@ -47,6 +47,11 @@ public partial class LibraryPage
     // https://github.com/dotnet/aspnetcore/issues/22159#issuecomment-635427175
     private TaskCompletionSource<bool>? _scheduledRenderTcs;
 
+    // Only for Search by room settings tab
+    private Room Room { get; } = new(Guid.Empty, "", new Player(-1, "", Avatar.DefaultAvatar));
+
+    private QuizSettingsComponent? _quizSettingsComponent;
+
     private async Task StateHasChangedAsync()
     {
         if (_scheduledRenderTcs == null)
@@ -318,6 +323,26 @@ public partial class LibraryPage
                         CurrentSongs = content;
                     }
                 }
+            }
+
+            NoSongsText = "No results.";
+
+            await StateHasChangedAsync();
+            await TabsComponentVndb!.SelectTab("TabVNDB");
+        }
+    }
+
+    private async Task Onclick_SearchByQuizSettings()
+    {
+        var res = await _client.PostAsJsonAsync("Library/FindSongsByQuizSettings",
+            _quizSettingsComponent!.ClientQuizSettings);
+        if (res.IsSuccessStatusCode)
+        {
+            List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+            if (songs != null && songs.Any())
+            {
+                CurrentSongs = songs;
+                selectedMusicSourceTitle = null;
             }
 
             NoSongsText = "No results.";
