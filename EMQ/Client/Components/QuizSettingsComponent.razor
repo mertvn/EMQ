@@ -297,9 +297,8 @@
                             <br/>
                         </div>
 
-                    @if (ClientQuizSettings.SongSelectionKind != SongSelectionKind.Looting)
-                    {
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
+                            @* <ValidationMessage For="@(() => ClientQuizSettings!.Filters.ListReadKindFilters)" /> *@
                             <h5>List status</h5>
 
                             @foreach (var key in ClientQuizSettings.Filters.ListReadKindFilters.Keys.ToList())
@@ -366,7 +365,6 @@
                                 }
                             </div>
                         </div>
-                    }
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
                             <h5>Song types</h5>

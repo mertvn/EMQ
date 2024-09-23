@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -50,6 +50,8 @@ public partial class QuizSettingsComponent
 
     private EditContext EditContext = null!;
 
+    private ValidationMessageStore ValidationMessageStore = null!;
+
     private GenericModal _loadPresetModalRef = null!;
 
     private GenericModal _savePresetModalRef = null!;
@@ -100,6 +102,7 @@ public partial class QuizSettingsComponent
 
         EditContext = new EditContext(quizSettings);
         EditContext.OnFieldChanged += EditContext_OnFieldChanged;
+        ValidationMessageStore = new ValidationMessageStore(EditContext);
     }
 
     private void EditContext_OnFieldChanged(object? sender, FieldChangedEventArgs e)
@@ -121,6 +124,19 @@ public partial class QuizSettingsComponent
     {
         RecalculateNumSongsAndSongTypeFilters();
         RecalculateListReadKindFilters();
+
+        ValidationMessageStore.Clear();
+        if (ClientQuizSettings.SongSelectionKind == SongSelectionKind.Looting)
+        {
+            if (!(ClientQuizSettings.Filters.ListReadKindFiltersIsAllRandom ||
+                  ClientQuizSettings.Filters.ListReadKindFiltersIsOnlyRead))
+            {
+                ValidationMessageStore.Add(() => ClientQuizSettings.Filters.ListReadKindFilters,
+                    "Looting mode requires either only Read or only Random list status settings.");
+            }
+
+            EditContext.NotifyValidationStateChanged();
+        }
 
         bool isValid = EditContext.Validate();
         if (!isValid)
