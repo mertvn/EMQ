@@ -1961,6 +1961,8 @@ GROUP BY artist_id";
 
                 totalSelected += 1;
                 bool canAdd = true;
+                ListReadKind? listReadKindKey = null;
+                SongSourceSongType? songSourceSongTypeKey = null;
                 if (doListReadKindFiltersCheck)
                 {
                     string[] songSourceVndbUrls = song!.Sources
@@ -1983,7 +1985,7 @@ GROUP BY artist_id";
                             // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
                             // Console.WriteLine("canAdd = true");
                             canAdd = true;
-                            listReadKindLeft[key] -= 1;
+                            listReadKindKey = key;
                             break;
                         }
                     }
@@ -2028,7 +2030,7 @@ GROUP BY artist_id";
                             }
 
                             canAdd = true;
-                            songTypesLeft[key] -= 1;
+                            songSourceSongTypeKey = key;
                             break;
                         }
                     }
@@ -2038,6 +2040,16 @@ GROUP BY artist_id";
                 canAdd &= !isDuplicate || duplicates;
                 if (canAdd)
                 {
+                    if (listReadKindKey != null)
+                    {
+                        listReadKindLeft![listReadKindKey.Value] -= 1;
+                    }
+
+                    if (songSourceSongTypeKey != null)
+                    {
+                        songTypesLeft![songSourceSongTypeKey.Value] -= 1;
+                    }
+
                     if (filters != null)
                     {
                         var songSource = song!.Sources.First();
