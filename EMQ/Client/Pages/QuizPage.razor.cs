@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -598,7 +598,11 @@ public partial class QuizPage
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
-                PageState.Guess = new PlayerGuess();
+                foreach ((GuessKind key, string? _) in PageState.Guess.Dict)
+                {
+                    PageState.Guess.Dict[key] = null;
+                }
+
                 foreach ((GuessKind _, IAutocompleteComponent? value) in AutocompleteComponentDict)
                 {
                     if (value != null)
