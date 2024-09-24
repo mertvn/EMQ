@@ -8,6 +8,7 @@ using Blazorise.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Abstract;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -69,6 +70,9 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
 
     [Parameter]
     public Func<Task>? Callback { get; set; }
+
+    [Parameter]
+    public GuessKind GuessKind { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -161,7 +165,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         if (IsQuizPage)
         {
             // todo do this with callback
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedA", GuessLatin);
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", GuessLatin, GuessKind);
         }
 
         // todo important fix this everywhere

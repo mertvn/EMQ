@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Dapper;
@@ -367,7 +368,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             foreach ((int _, Song? song) in songs)
             {
                 song.Sources = sourcesDict[song.Id].Values.ToList();
-                song.Artists = artistsDict[song.Id].Values.ToList();
+                song.Artists = artistsDict[song.Id].Values.OrderBy(x => x.Roles.Min()).ToList();
 
                 // if (!song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM))
                 // {
@@ -842,7 +843,6 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         Id = artist.id,
                         PrimaryLanguage = artist.primary_language,
                         Titles = new List<Title> { title },
-                        MusicIds = new() { artistMusic.music_id }
                     };
                     songArtists[artist.id] = songArtist;
 
@@ -851,7 +851,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         songArtist.Sex = (Sex)artist.sex.Value;
                     }
 
-                    songArtist.Role = (SongArtistRole)artistMusic.role;
+                    songArtist.Roles = new List<SongArtistRole> { (SongArtistRole)artistMusic.role };
 
                     if (artistExternalLink is not null)
                     {
@@ -870,7 +870,11 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         existingArtist.Titles.Add(title);
                     }
 
-                    existingArtist.MusicIds.Add(artistMusic.music_id);
+                    if (!existingArtist.Roles.Contains((SongArtistRole)artistMusic.role))
+                    {
+                        existingArtist.Roles.Add((SongArtistRole)artistMusic.role);
+                        existingArtist.Roles.Sort(); // todo? only do this once at the end
+                    }
 
                     if (artistExternalLink is not null)
                     {
@@ -1313,13 +1317,16 @@ GROUP BY artist_id";
             (int aId, List<int> aaIds) = await InsertArtist(songArtist, transaction!);
             int aaId = aaIds.Single();
 
-            if (!await connection.InsertAsync(
-                    new ArtistMusic()
-                    {
-                        music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtist.Role
-                    }, transaction))
+            foreach (SongArtistRole songArtistRole in songArtist.Roles)
             {
-                throw new Exception();
+                if (!await connection.InsertAsync(
+                        new ArtistMusic()
+                        {
+                            music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtistRole
+                        }, transaction))
+                {
+                    throw new Exception();
+                }
             }
 
             if (mId < 1)
@@ -4381,6 +4388,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
+            var oldSong = (await SelectSongsMIds(new[] { oldMid }, false)).Single();
             int rowsDeletedMt = await connection.ExecuteAsync("DELETE FROM music_title where music_id = @mId",
                 new { mId = oldMid }, transaction);
 
@@ -4405,11 +4413,28 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 throw new Exception("Failed to delete a");
             }
 
+            int rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
+                new { mId = oldMid }, transaction);
+
             newSong.Id = oldMid;
             int mId = await InsertSong(newSong, connection, transaction);
             if (mId <= 0 || mId != oldMid)
             {
                 throw new Exception($"Failed to insert song: {newSong}");
+            }
+
+            if (rowsDeletedMel > 0)
+            {
+                Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
+                // extra check to make sure we don't lose any links
+                var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single();
+                var o = JsonSerializer.SerializeToNode(oldSong.Links);
+                var n = JsonSerializer.SerializeToNode(insertedSong.Links);
+                if (!JsonNode.DeepEquals(o, n))
+                {
+                    throw new Exception(
+                        $"Links differ: {JsonSerializer.Serialize(o)} versus {JsonSerializer.Serialize(n)}");
+                }
             }
 
             await transaction.CommitAsync();

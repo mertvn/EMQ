@@ -1,4 +1,6 @@
-﻿namespace EMQ.Shared.Core.UI;
+﻿using EMQ.Shared.Quiz.Entities.Concrete;
+
+namespace EMQ.Shared.Core.UI;
 
 public static class UiHelpers
 {
@@ -50,5 +52,31 @@ public static class UiHelpers
         {
             return (bool)b ? trueValue : falseValue;
         }
+    }
+
+    public static string ArtistRole2Color(SongArtistRole role)
+    {
+        return role switch
+        {
+            SongArtistRole.Unknown => "gray",
+            SongArtistRole.Vocals => "lightgreen",
+            SongArtistRole.Composer => "red",
+            SongArtistRole.Arranger => "turquoise",
+            SongArtistRole.Lyricist => "orange",
+            _ => "inherit"
+        };
+    }
+
+    public static string ArtistRole2Str(SongArtistRole role)
+    {
+        return role switch
+        {
+            SongArtistRole.Unknown => "U",
+            SongArtistRole.Vocals => "V",
+            SongArtistRole.Composer => "C",
+            SongArtistRole.Arranger => "A",
+            SongArtistRole.Lyricist => "L",
+            _ => "?"
+        };
     }
 }

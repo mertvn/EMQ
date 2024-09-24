@@ -108,6 +108,9 @@ public class PlayerGuess
         { GuessKind.Mt, null },
         { GuessKind.Rigger, null },
         { GuessKind.Developer, null },
+        { GuessKind.Composer, null },
+        { GuessKind.Arranger, null },
+        { GuessKind.Lyricist, null },
     };
 
     public override string ToString()

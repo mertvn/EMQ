@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -143,6 +143,9 @@ public partial class QuizPage
             { GuessKind.Mt, null },
             { GuessKind.Rigger, null },
             { GuessKind.Developer, null },
+            { GuessKind.Composer, null },
+            { GuessKind.Arranger, null },
+            { GuessKind.Lyricist, null },
         };
 
     private ChatComponent? _chatComponent;
@@ -657,17 +660,18 @@ public partial class QuizPage
                 {
                     if (string.IsNullOrEmpty(value))
                     {
-                        string? str = key == GuessKind.A
-                            ? Unsafe.As<AutocompleteAComponent>(
-                                AutocompleteComponentDict[key])?.MapValue(null)?.AALatinAlias
-                            : AutocompleteComponentDict[key]?.GetSelectedText();
+                        string? str =
+                            key is (GuessKind.A or GuessKind.Composer or GuessKind.Arranger or GuessKind.Lyricist)
+                                ? Unsafe.As<AutocompleteAComponent>(
+                                    AutocompleteComponentDict[key])?.MapValue(null)?.AALatinAlias
+                                : AutocompleteComponentDict[key]?.GetSelectedText();
                         PageState.Guess.Dict[key] = str;
                     }
 
                     if (!string.IsNullOrEmpty(PageState.Guess.Dict[key]))
                     {
-                        await ClientState.Session!.hubConnection!.SendAsync($"SendGuessChanged{key.ToString()}",
-                            PageState.Guess.Dict[key]);
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged",
+                            PageState.Guess.Dict[key], key);
                     }
                 }
 
@@ -955,8 +959,8 @@ public partial class QuizPage
                     PageState.Guess = guess;
                     if (Room.Quiz.MultipleChoiceOptions.Any())
                     {
-                        await ClientState.Session!.hubConnection!.SendAsync(
-                            $"SendGuessChanged{GuessKind.Mst.ToString()}", PageState.Guess.Dict[GuessKind.Mst]);
+                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged",
+                            PageState.Guess.Dict[GuessKind.Mst], GuessKind.Mst);
                     }
                     else
                     {
@@ -964,8 +968,8 @@ public partial class QuizPage
                         {
                             if (value != null)
                             {
-                                await ClientState.Session!.hubConnection!.SendAsync($"SendGuessChanged{key.ToString()}",
-                                    PageState.Guess.Dict[key]);
+                                await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged",
+                                    PageState.Guess.Dict[key], key);
                             }
                         }
                     }

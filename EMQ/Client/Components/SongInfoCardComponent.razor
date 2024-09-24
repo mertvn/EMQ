@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using System.Globalization
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Core.UI
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
 
@@ -253,7 +254,16 @@
                                     </a>
                                 }
 
-                                <span>@songArtistTitle.ToString()</span>
+                                @for (int index = 0; index < songArtist.Roles.Count; index++)
+                                {
+                                    var role = songArtist.Roles[index];
+                                    <span style="color: @UiHelpers.ArtistRole2Color(role)">@UiHelpers.ArtistRole2Str(role)</span>
+                                    if (index != songArtist.Roles.Count - 1)
+                                    {
+                                        <span>, </span>
+                                    }
+                                }
+                                <span style="margin-left: 4px;">@songArtistTitle.ToString()</span>
 
                                 @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                 {
@@ -285,7 +295,7 @@
                     }
                 </div>
                 <div>
-                    @if (ShowDevelopers)
+                    @if (ShowDevelopers) // todo this is shown when playing with hints during guess phase when it shouldn't be
                     {
                         var developers = Song.Sources.SelectMany(x => x.Developers).ToArray();
                         if (developers.Any())

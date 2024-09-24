@@ -212,8 +212,8 @@ public class IntegrationTests
         {
             foreach (KeyValuePair<string, HubConnection> hubConnection in dict)
             {
-                await hubConnection.Value.SendAsync("SendGuessChangedMst",
-                    new PlayerGuess { Dict = { [GuessKind.Mst] = Guid.NewGuid().ToString() } });
+                await hubConnection.Value.SendAsync("SendGuessChanged",
+                    new PlayerGuess { Dict = { [GuessKind.Mst] = Guid.NewGuid().ToString() } }, GuessKind.Mst);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1));

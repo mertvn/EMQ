@@ -21,9 +21,7 @@ public class SongArtist : IEditQueueEntity
 
     public List<Title> Titles { get; set; } = new(); // todo should be singular
 
-    public SongArtistRole Role { get; set; } = SongArtistRole.Unknown; // todo needs to be list
-
-    public HashSet<int> MusicIds { get; set; } = new(); // todo? remove
+    public List<SongArtistRole> Roles { get; set; } = new();
 
     public List<SongArtistLink> Links { get; set; } = new();
 
@@ -47,9 +45,12 @@ public enum Sex
 
 public enum SongArtistRole
 {
-    Unknown,
-    Vocals,
-    Composer,
-    Staff, // not sure what this role actually entails
-    Translator,
+    Unknown = 0,
+    Vocals = 1,
+    Composer = 2,
+
+    // Staff = 3, // not sure what this role actually entails
+    // Translator = 4,
+    Arranger = 5,
+    Lyricist = 6,
 }

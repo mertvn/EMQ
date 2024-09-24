@@ -129,11 +129,11 @@ public partial class AutocompleteCComponent
         Guess = MapValue(value);
         // Console.WriteLine(Guess);
 
-        if (IsQuizPage)
-        {
-            // todo do this with callback
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedC", Guess);
-        }
+        // if (IsQuizPage)
+        // {
+        //     // todo do this with callback
+        //     await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedC", Guess);
+        // }
 
         Callback?.Invoke();
     }

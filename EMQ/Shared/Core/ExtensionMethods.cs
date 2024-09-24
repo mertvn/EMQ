@@ -202,7 +202,7 @@ public static class ExtensionMethods
             song.Titles,
             song.Links,
             sourcesDict,
-            song.Artists.Select(artist => artist.VndbId ?? "").ToList(),
+            song.Artists,
             song.Id,
             song.Stats);
         return songLite;

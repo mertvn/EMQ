@@ -296,9 +296,9 @@ public static class VndbImporter
             SongArtistRole role = dynData.role switch
             {
                 "songs" => SongArtistRole.Vocals,
-                "music" => SongArtistRole.Composer,
-                "staff" => SongArtistRole.Staff,
-                "translator" => SongArtistRole.Translator,
+                // "music" => SongArtistRole.Composer,
+                // "staff" => SongArtistRole.Staff,
+                // "translator" => SongArtistRole.Translator,
                 _ => throw new Exception($"Invalid artist role: {dynArtist.role}")
             };
 
@@ -316,7 +316,7 @@ public static class VndbImporter
 
             SongArtist songArtist = new SongArtist()
             {
-                Role = role,
+                Roles = new List<SongArtistRole> { role },
                 PrimaryLanguage = dynArtist.lang,
                 Titles =
                     new List<Title>()

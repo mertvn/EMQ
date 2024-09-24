@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Abstract;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -155,7 +156,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
         if (IsQuizPage)
         {
             // todo do this with callback
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedMst", Guess);
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess, GuessKind.Mst);
             if (ClientState.Preferences.AutoSkipGuessPhase)
             {
                 // todo dedup

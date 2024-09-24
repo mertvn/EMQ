@@ -211,12 +211,22 @@
 
                                     @if (key == GuessKind.A)
                                     {
-                                        <span style="margin-left: 15px;">(</span>
-                                        <InputCheckbox id="IsMergeArtistAliases" class="form-check-input" @bind-Value="ClientQuizSettings.IsMergeArtistAliases"
-                                                       disabled="@(!ClientQuizSettings.EnabledGuessKinds[GuessKind.A])">
-                                        </InputCheckbox>
-                                        <label for="IsMergeArtistAliases">Merge artist aliases</label>
-                                        <span style=" margin-right: 5px;">)</span>
+                                        <br/>
+
+                                        <label for="IsMergeArtistAliases" style="padding-left: 16px;">
+                                            <InputCheckbox id="IsMergeArtistAliases" class="form-check-input" @bind-Value="ClientQuizSettings.IsMergeArtistAliases"
+                                                           disabled="@(!(ClientQuizSettings.EnabledGuessKinds[GuessKind.A] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Composer] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Arranger] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Lyricist]))">
+                                            </InputCheckbox>
+                                            Merge artist aliases
+                                        </label>
+                                        <br/>
+
+                                        <label for="IsTreatNonVocalsAsCorrect" style="padding-left: 16px;">
+                                            <InputCheckbox id="IsTreatNonVocalsAsCorrect" class="form-check-input" @bind-Value="ClientQuizSettings.IsTreatNonVocalsAsCorrect"
+                                                           disabled="@(!ClientQuizSettings.EnabledGuessKinds[GuessKind.A])">
+                                            </InputCheckbox>
+                                            Treat non-vocalists as correct
+                                        </label>
                                     }
 
                                     <br/>

@@ -81,6 +81,7 @@ public class DbTests
             {
                 Assert.That(songArtist.Id > 0);
                 Assert.That(songArtist.Titles.First().LatinTitle.Any());
+                Assert.That(songArtist.Roles.Any());
             }
         }
     }
@@ -889,7 +890,7 @@ public class DbTests
             {
                 new SongArtist()
                 {
-                    Role = SongArtistRole.Vocals,
+                    Roles = new List<SongArtistRole> { SongArtistRole.Vocals },
                     PrimaryLanguage = "ja",
                     Titles =
                         new List<Title>()

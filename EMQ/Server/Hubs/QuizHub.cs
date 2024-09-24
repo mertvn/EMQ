@@ -114,7 +114,7 @@ public class QuizHub : Hub
     }
 
     // [Authorize]
-    public async Task SendGuessChangedMst(string? guess)
+    public async Task SendGuessChanged(string? guess, GuessKind guessKind)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
         if (session != null)
@@ -125,75 +125,7 @@ public class QuizHub : Hub
                 var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                 if (quizManager != null)
                 {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.Mst);
-                }
-            }
-        }
-    }
-
-    public async Task SendGuessChangedA(string? guess)
-    {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-        if (session != null)
-        {
-            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Quiz != null)
-            {
-                var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                if (quizManager != null)
-                {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.A);
-                }
-            }
-        }
-    }
-
-    public async Task SendGuessChangedMt(string? guess)
-    {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-        if (session != null)
-        {
-            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Quiz != null)
-            {
-                var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                if (quizManager != null)
-                {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.Mt);
-                }
-            }
-        }
-    }
-
-    public async Task SendGuessChangedRigger(string? guess)
-    {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-        if (session != null)
-        {
-            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Quiz != null)
-            {
-                var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                if (quizManager != null)
-                {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.Rigger);
-                }
-            }
-        }
-    }
-
-    public async Task SendGuessChangedDeveloper(string? guess)
-    {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
-        if (session != null)
-        {
-            var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Quiz != null)
-            {
-                var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                if (quizManager != null)
-                {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, GuessKind.Developer);
+                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, guessKind);
                 }
             }
         }

@@ -10,13 +10,13 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 public class SongLite
 {
     public SongLite(List<Title> titles, List<SongLink> links,
-        Dictionary<string, List<SongSourceSongType>> sourceVndbIds, List<string> artistVndbIds, int musicId,
+        Dictionary<string, List<SongSourceSongType>> sourceVndbIds, List<SongArtist> artists, int musicId,
         SongStats? songStats = null)
     {
         Titles = titles;
         Links = links;
         SourceVndbIds = sourceVndbIds;
-        ArtistVndbIds = artistVndbIds;
+        Artists = artists;
         MusicId = musicId;
         SongStats = songStats;
     }
@@ -27,7 +27,7 @@ public class SongLite
 
     public Dictionary<string, List<SongSourceSongType>> SourceVndbIds { get; set; }
 
-    public List<string> ArtistVndbIds { get; set; }
+    public List<SongArtist> Artists { get; set; }
 
     public int MusicId { get; set; }
 
@@ -47,7 +47,7 @@ public class SongLite
                 throw new Exception();
             }
 
-            if (ArtistVndbIds.Count < 1)
+            if (Artists.Count < 1)
             {
                 throw new Exception();
             }
@@ -60,7 +60,9 @@ public class SongLite
             string titles = Titles.Single().LatinTitle.ToLowerInvariant();
             string sources =
                 JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => Convert.ToInt32(x.Key.Replace("v", ""))));
-            string artists = JsonSerializer.Serialize(ArtistVndbIds.OrderBy(x => x));
+            string artists =
+                JsonSerializer.Serialize(Artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals))
+                    .Select(artist => artist.VndbId ?? "").OrderBy(x => x).ToList());
 
             string str = $"{titles};|;{sources};|;{artists}";
             return str;

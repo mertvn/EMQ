@@ -279,7 +279,7 @@
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
 
-                                    if (song.DataSource is DataSourceKind.EMQ)
+                                    if (song.DataSource is DataSourceKind.EMQ or DataSourceKind.VNDB)
                                     {
                                         // todo perms
                                         if (hasImportSongLinkPerms)

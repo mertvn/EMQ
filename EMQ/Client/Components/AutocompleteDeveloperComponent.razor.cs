@@ -8,6 +8,7 @@ using Blazorise.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Abstract;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -129,7 +130,7 @@ public partial class AutocompleteDeveloperComponent : IAutocompleteComponent
         if (IsQuizPage)
         {
             // todo do this with callback
-            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChangedDeveloper", Guess);
+            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged", Guess, GuessKind.Developer);
         }
 
         Callback?.Invoke();

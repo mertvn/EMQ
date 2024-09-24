@@ -75,7 +75,7 @@
                 <h5>Sources</h5>
                 <GuessInputComponent @ref="_guessInputComponentRef"
                                      Placeholder="Add source"
-                                     IsDisabled="false"
+                                     IsDisabled="@(Song.DataSource != DataSourceKind.EMQ)"
                                      IsQuizPage="false"
                                      @bind-GuessT="@SelectedMusicSourceTitle"
                                      Callback="SelectedResultChangedMst">
@@ -83,7 +83,9 @@
                 @foreach (var source in Song.Sources)
                 {
                     <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveSongSource(source.Id))">🗑</span>
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source.Id); } })">
+                            🗑
+                        </span>
                         @source.ToString()
                         <div>
                             @foreach (var key in Enum.GetValues<SongSourceSongType>())
@@ -118,9 +120,27 @@
                 @foreach (var artist in Song.Artists)
                 {
                     <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveArtist(artist.Id))">🗑</span>
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ || !(artist.Roles.Contains(SongArtistRole.Unknown) || artist.Roles.Contains(SongArtistRole.Vocals))) { await RemoveArtist(artist.Id); } })">
+                            🗑
+                        </span>
                         @artist.ToString()
-                        @* todo? role *@
+
+                        <div>
+                            @foreach (var key in Enum.GetValues<SongArtistRole>())
+                            {
+                                @if (key != SongArtistRole.Unknown)
+                                {
+                                    string id = $"checkbox-ArtistRole-{artist.Id}-{key}";
+                                    <input type="checkbox" id="@id" class="form-check-input" disabled="@(Song.DataSource != DataSourceKind.EMQ && key is (SongArtistRole.Unknown or SongArtistRole.Vocals))"
+                                           @bind:get="@artist.Roles.Contains(key)"
+                                           @bind:set="@(new Func<bool, Task>(async value => await OnArtistRoleCheckboxClick(value, key, artist)))"
+                                           @bind:event="oninput"
+                                           style="margin: 5px"/>
+                                    <label for="@id">@key.ToString()</label>
+                                    <br/>
+                                }
+                            }
+                        </div>
                     </div>
                 }
             </div>
@@ -129,12 +149,12 @@
             <div style="border: 1px black solid; padding: 10px;">
                 <h5>Song title</h5>
                 <label style="padding: 4px;">
-                    <input type="text" @bind="Song.Titles.Single().LatinTitle" style="width: 700px;"/>
+                    <input type="text" @bind="Song.Titles.Single().LatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
                     Latin title
                 </label>
                 <br/>
                 <label style="padding: 4px;">
-                    <input type="text" @bind="Song.Titles.Single().NonLatinTitle" style="width: 700px;"/>
+                    <input type="text" @bind="Song.Titles.Single().NonLatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
                     Non-Latin title
                 </label>
             </div>
@@ -207,7 +227,7 @@
 
     public List<string> ValidationMessages { get; } = new();
 
-    private static Song GetNewSong => new() { Type = SongType.Standard, Titles = new List<Title> { new() { Language = "ja", IsMainTitle = true } } }; // todo lang
+    private static Song GetNewSong => new() { DataSource = DataSourceKind.EMQ, Type = SongType.Standard, Titles = new List<Title> { new() { Language = "ja", IsMainTitle = true } } }; // todo lang
 
     public string NoteUser { get; set; } = "";
 
@@ -285,6 +305,20 @@
         await CallStateHasChanged();
     }
 
+    private async Task OnArtistRoleCheckboxClick(bool value, SongArtistRole key, SongArtist songArtist)
+    {
+        if (value)
+        {
+            songArtist.Roles.Add(key);
+        }
+        else
+        {
+            songArtist.Roles.Remove(key);
+        }
+
+        await CallStateHasChanged();
+    }
+
     private async Task RemoveArtist(int artistId)
     {
         Song.Artists.RemoveAll(x => x.Id == artistId);
@@ -310,8 +344,6 @@
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
             var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
             artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
-            artistAlias.MusicIds.Clear();
-            artistAlias.Role = SongArtistRole.Vocals; // todo?
             Song.Artists.Add(artistAlias);
         }
 
@@ -398,9 +430,9 @@
                 //     isValid = false;
                 // }
 
-                if (!song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
+                if (IsNew && !song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
                 {
-                    ValidationMessages.Add("It is only possible to add/edit Other songs at this time.");
+                    ValidationMessages.Add("It is only possible to add Other songs at this time.");
                     isValid = false;
                 }
             }
@@ -410,6 +442,22 @@
         {
             ValidationMessages.Add("There must be at least one artist.");
             isValid = false;
+        }
+        else
+        {
+            if (song.Artists.Any(x => !x.Roles.Any()))
+            {
+                ValidationMessages.Add("All artists must have at least one role.");
+                isValid = false;
+            }
+            else
+            {
+                if (IsNew && !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+                {
+                    ValidationMessages.Add("At least one artist must have the Vocals role.");
+                    isValid = false;
+                }
+            }
         }
 
         if (string.IsNullOrWhiteSpace(song.Titles.Single().LatinTitle))

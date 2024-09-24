@@ -511,6 +511,7 @@ else
                                             Placeholder="Enter artist name here"
                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                             IsQuizPage="true"
+                                            GuessKind="GuessKind.A"
                                             @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.A]">
                     </AutocompleteAComponent>
                 }
@@ -523,6 +524,7 @@ else
                                             Placeholder="Enter artist name here"
                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                             IsQuizPage="true"
+                                            GuessKind="GuessKind.A"
                                             @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.A]">
                     </AutocompleteAComponent>
                 }
@@ -557,6 +559,39 @@ else
                                              IsQuizPage="true"
                                              @bind-Guess="@PageState.Guess.Dict[GuessKind.Developer]">
                 </AutocompleteDeveloperComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Composer, out bool c) && c)
+            {
+                <AutocompleteAComponent @ref="AutocompleteComponentDict[GuessKind.Composer]"
+                                        Placeholder="Enter composer name here"
+                                        IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                        IsQuizPage="true"
+                                        GuessKind="GuessKind.Composer"
+                                        @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.Composer]">
+                </AutocompleteAComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Arranger, out bool arr) && arr)
+            {
+                <AutocompleteAComponent @ref="AutocompleteComponentDict[GuessKind.Arranger]"
+                                        Placeholder="Enter arranger name here"
+                                        IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                        IsQuizPage="true"
+                                        GuessKind="GuessKind.Arranger"
+                                        @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.Arranger]">
+                </AutocompleteAComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Lyricist, out bool l) && l)
+            {
+                <AutocompleteAComponent @ref="AutocompleteComponentDict[GuessKind.Lyricist]"
+                                        Placeholder="Enter lyricist name here"
+                                        IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                        IsQuizPage="true"
+                                        GuessKind="GuessKind.Lyricist"
+                                        @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.Lyricist]">
+                </AutocompleteAComponent>
             }
         }
 

@@ -219,6 +219,9 @@ public class QuizSettings
             { GuessKind.Mt, false },
             { GuessKind.Rigger, false },
             { GuessKind.Developer, false },
+            { GuessKind.Composer, false },
+            { GuessKind.Arranger, false },
+            { GuessKind.Lyricist, false },
         };
 
     [ProtoMember(25)]
@@ -274,6 +277,12 @@ public class QuizSettings
     [Range(1, 777)]
     [DefaultValue(60)]
     public int PreventSameVNSpamMinutes { get; set; } = 60;
+
+    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
+    [ProtoMember(33)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsTreatNonVocalsAsCorrect { get; set; } = true;
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
@@ -607,6 +616,12 @@ public class QuizSettings
         {
             diff.Add(
                 $"Merge artist aliases: {o.IsMergeArtistAliases} → {n.IsMergeArtistAliases}");
+        }
+
+        if (o.IsTreatNonVocalsAsCorrect != n.IsTreatNonVocalsAsCorrect)
+        {
+            diff.Add(
+                $"Treat non-vocalists as correct: {o.IsTreatNonVocalsAsCorrect} → {n.IsTreatNonVocalsAsCorrect}");
         }
 
         if (o.Filters.SongRatingAverageStart != n.Filters.SongRatingAverageStart ||

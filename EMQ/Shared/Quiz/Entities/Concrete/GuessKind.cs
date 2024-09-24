@@ -18,4 +18,13 @@ public enum GuessKind
 
     [Description("Developer Name")]
     Developer,
+
+    [Description("Composer Name")]
+    Composer,
+
+    [Description("Arranger Name")]
+    Arranger,
+
+    [Description("Lyricist Name")]
+    Lyricist,
 }

@@ -423,7 +423,6 @@ public class LibraryController : ControllerBase
         // todo important set unrequired stuff to null/empty for safety reasons
         // todo? extra validation for safety reasons
 
-        req.Song.DataSource = DataSourceKind.EMQ;
         string? oldEntityJson = null;
         if (req.Song.Id <= 0)
         {
@@ -433,11 +432,6 @@ public class LibraryController : ControllerBase
         else
         {
             var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
-            if (song.DataSource != DataSourceKind.EMQ)
-            {
-                throw new Exception();
-            }
-
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }
 

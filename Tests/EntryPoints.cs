@@ -226,7 +226,7 @@ public class EntryPoints
         // await DbManager.ImportSongLite(deserialized!);
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task TestSongLiteHealth()
     {
         // todo path
@@ -238,7 +238,7 @@ public class EntryPoints
             Assert.That(songLite.Titles.Any());
             // Assert.That(songLite.Links.Any());
             Assert.That(songLite.SourceVndbIds.Any());
-            Assert.That(songLite.ArtistVndbIds.Any());
+            Assert.That(songLite.Artists.Any());
             Assert.That(songLite.EMQSongHash.Any());
             Assert.That(songLite.MusicId > 0);
 

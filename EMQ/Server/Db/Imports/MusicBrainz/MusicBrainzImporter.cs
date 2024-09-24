@@ -356,10 +356,11 @@ public static class MusicBrainzImporter
                         continue;
                     }
 
+                    const SongArtistRole role = SongArtistRole.Unknown; // todo?
                     SongArtist songArtist = new SongArtist()
                     {
                         Links = songArtistLinks,
-                        // Role = role, // todo?
+                        Roles = new List<SongArtistRole> { role },
                         PrimaryLanguage = artist.area.ToString(), // todo str
                         Titles =
                             new List<Title>()
