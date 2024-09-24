@@ -1329,22 +1329,26 @@ GROUP BY artist_id";
                 }
             }
 
-            if (mId < 1)
-            {
-                throw new Exception("mId is invalid");
-            }
-
-            if (msId < 1)
-            {
-                throw new Exception("msId is invalid");
-            }
-
             if (aaId < 1)
             {
                 throw new Exception("aaId is invalid");
             }
         }
 
+        if (!song.Artists.Any())
+        {
+            throw new Exception("no artists");
+        }
+
+        if (mId < 1)
+        {
+            throw new Exception("mId is invalid");
+        }
+
+        if (msId < 1)
+        {
+            throw new Exception("msId is invalid");
+        }
 
         if (ownConnection)
         {
