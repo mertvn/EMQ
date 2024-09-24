@@ -3264,6 +3264,7 @@ WHERE id = {mId};
                             {
                                 var oldEntity = JsonSerializer.Deserialize<Song>(eq.old_entity_json!)!;
                                 success = await OverwriteMusic(entity.Id, oldEntity);
+                                await EvictFromSongsCache(oldEntity.Id);
                             }
                             else
                             {
