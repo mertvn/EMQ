@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Blazorise.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Abstract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace EMQ.Client.Components;
 
-public partial class AutocompleteAComponent
+public partial class AutocompleteAComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteA> AutocompleteComponent { get; set; } = null!;
 
@@ -78,6 +79,8 @@ public partial class AutocompleteAComponent
     {
         StateHasChanged();
     }
+
+    public string? GetSelectedText() => throw new NotImplementedException();
 
     public async Task ClearInputField()
     {

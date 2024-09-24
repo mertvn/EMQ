@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Abstract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace EMQ.Client.Components;
 
-public partial class GuessInputComponent
+public partial class GuessInputComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteMst> AutocompleteComponent { get; set; } = null!;
 

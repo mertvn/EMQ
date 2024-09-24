@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Blazorise.Components;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Abstract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace EMQ.Client.Components;
 
-public partial class AutocompleteMtComponent
+public partial class AutocompleteMtComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 

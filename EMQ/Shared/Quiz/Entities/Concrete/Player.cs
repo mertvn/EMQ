@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -99,38 +100,32 @@ public enum PlayerBotKind
 
 public class PlayerGuess
 {
-    public string? Mst { get; set; }
-
-    public string? A { get; set; }
-
-    public string? Mt { get; set; }
-
-    public string? Rigger { get; set; }
-
-    public string? Developer { get; set; }
+    // ReSharper disable once AutoPropertyCanBeMadeGetOnly.Global
+    public Dictionary<GuessKind, string?> Dict { get; set; } = new()
+    {
+        { GuessKind.Mst, null },
+        { GuessKind.A, null },
+        { GuessKind.Mt, null },
+        { GuessKind.Rigger, null },
+        { GuessKind.Developer, null },
+    };
 
     public override string ToString()
     {
-        string ret = Mst ?? "";
-
-        if (A is not null)
+        string ret = "";
+        foreach ((GuessKind key, string? value) in Dict)
         {
-            ret += $" A: {A}";
-        }
-
-        if (Mt is not null)
-        {
-            ret += $" S: {Mt}";
-        }
-
-        if (Rigger is not null)
-        {
-            ret += $" P: {Rigger}";
-        }
-
-        if (Developer is not null)
-        {
-            ret += $" D: {Developer}";
+            if (key == GuessKind.Mst)
+            {
+                ret = value ?? "";
+            }
+            else
+            {
+                if (value != null)
+                {
+                    ret += $" {key.ToString()}: {value}";
+                }
+            }
         }
 
         return ret;
