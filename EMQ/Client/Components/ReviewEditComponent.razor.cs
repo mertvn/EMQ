@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +41,7 @@ public partial class ReviewEditComponent
 
     private int oldReviewingId;
 
-    private EditQueue? reviewingItem => CurrentEQs?.SingleOrDefault(x => x.id == reviewingId);
+    private EditQueue? reviewingItem => CurrentEQs?.FirstOrDefault(x => x.id == reviewingId);
 
     private bool IsOpen;
 

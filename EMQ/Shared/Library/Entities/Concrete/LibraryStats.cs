@@ -28,6 +28,12 @@ public struct LibraryStats
 
     public int BothLinkCount { get; set; }
 
+    public int AvailableComposerCount { get; set; }
+
+    public int AvailableArrangerCount { get; set; }
+
+    public int AvailableLyricistCount { get; set; }
+
     public List<LibraryStatsMsm> msm { get; set; }
 
     public List<LibraryStatsMsm> msmAvailable { get; set; }

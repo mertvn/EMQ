@@ -102,6 +102,15 @@
                 }
             </table>
 
+            <div>
+                <p>Available:</p>
+                <ul>
+                    <li>Composers: @libraryStats.AvailableComposerCount (@(Utils.PercentageStr(libraryStats.AvailableComposerCount, libraryStats.TotalMusicCount)))</li>
+                    <li>Arrangers: @libraryStats.AvailableArrangerCount (@(Utils.PercentageStr(libraryStats.AvailableArrangerCount, libraryStats.TotalMusicCount)))</li>
+                    <li>Lyricists: @libraryStats.AvailableLyricistCount (@(Utils.PercentageStr(libraryStats.AvailableLyricistCount, libraryStats.TotalMusicCount)))</li>
+                </ul>
+            </div>
+
         </Blazorise.TabPanel>
 
 

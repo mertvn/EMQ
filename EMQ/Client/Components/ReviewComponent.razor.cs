@@ -38,7 +38,7 @@ public partial class ReviewComponent
 
     private int reviewingId = 1;
 
-    private RQ? reviewingItem => CurrentRQs?.SingleOrDefault(x => x.id == reviewingId);
+    private RQ? reviewingItem => CurrentRQs?.FirstOrDefault(x => x.id == reviewingId);
 
     private string? videoSrc
     {

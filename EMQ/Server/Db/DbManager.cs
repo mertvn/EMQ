@@ -3446,6 +3446,15 @@ order by type";
                 "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video) and music_id = ANY(@validMids)",
                 new { validMids }));
 
+            int composerCount = (await connection.ExecuteScalarAsync<int>(
+                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Composer} and music_id = ANY(@validMids)",
+                new { validMids }));
+            int arrangerCount = (await connection.ExecuteScalarAsync<int>(
+                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Arranger} and music_id = ANY(@validMids)",
+                new { validMids }));
+            int lyricistCount = (await connection.ExecuteScalarAsync<int>(
+                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Lyricist} and music_id = ANY(@validMids)",
+                new { validMids }));
 
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
                 await SelectLibraryStats_VN(connection, limit, songSourceSongTypes);
@@ -3587,6 +3596,9 @@ LIMIT 25", new { validMids }));
                 VideoLinkCount = videoLinkCount,
                 SoundLinkCount = soundLinkCount,
                 BothLinkCount = bothLinkCount,
+                AvailableComposerCount = composerCount,
+                AvailableArrangerCount = arrangerCount,
+                AvailableLyricistCount = lyricistCount,
 
                 // VN
                 msm = msm.Take(limit).ToList(),

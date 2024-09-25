@@ -257,7 +257,7 @@
                                 @for (int index = 0; index < songArtist.Roles.Count; index++)
                                 {
                                     var role = songArtist.Roles[index];
-                                    <span style="color: @UiHelpers.ArtistRole2Color(role)">@UiHelpers.ArtistRole2Str(role)</span>
+                                    <span style="color: @UiHelpers.ArtistRole2Color(role);" title="@role.ToString()">@UiHelpers.ArtistRole2Str(role)</span>
                                     if (index != songArtist.Roles.Count - 1)
                                     {
                                         <span>, </span>
