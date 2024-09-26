@@ -3341,10 +3341,14 @@ WHERE id = {mId};
 
             await connection.UpdateAsync(eq);
             Console.WriteLine($"Updated EditQueue: " + JsonSerializer.Serialize(eq, Utils.Jso));
-
             if (eq.entity_kind == EntityKind.Song)
             {
                 await EvictFromSongsCache(((Song)entity).Id);
+            }
+
+            foreach ((string key, LibraryStats? _) in CachedLibraryStats)
+            {
+                CachedLibraryStats[key] = null;
             }
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,7 +78,8 @@ public partial class ReviewEditComponent
                             OldEntity = JsonSerializer.Deserialize<Song>(reviewingItem.old_entity_json)!;
                         }
 
-                        isReadonly = CurrentEQs!.Any(x =>
+                        // todo
+                        isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
                             x.id > reviewingItem.id &&
                             JsonSerializer.Deserialize<Song>(x.entity_json, Utils.JsoCompact)!.Id ==
                             Entity.Id);
@@ -90,7 +91,8 @@ public partial class ReviewEditComponent
                             OldEntity = JsonSerializer.Deserialize<SongArtist>(reviewingItem.old_entity_json)!;
                         }
 
-                        isReadonly = CurrentEQs!.Any(x =>
+                        // todo
+                        isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
                             x.id > reviewingItem.id &&
                             JsonSerializer.Deserialize<SongArtist>(x.entity_json, Utils.JsoCompact)!.Id ==
                             Entity.Id);
