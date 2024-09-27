@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -161,7 +161,20 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
-        return await DbManager.DeleteMusicExternalLink(req.MId, req.Url.UnReplaceSelfhostLink());
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        int rows = await DbManager.DeleteMusicExternalLink(req.MId, req.Url);
+        rows += await DbManager.DeleteMusicExternalLink(req.MId, req.Url.UnReplaceSelfhostLink());
+        if (rows > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} DeleteSongLink {req.MId} {req.Url}");
+        }
+
+        return rows;
     }
 
     [CustomAuthorize(PermissionKind.Admin)]
