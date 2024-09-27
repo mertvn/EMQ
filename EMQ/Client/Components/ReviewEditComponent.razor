@@ -113,6 +113,13 @@
                         <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status is ReviewQueueStatus.Pending)" @onclick="Onclick_Pending">Pending</button>
                         <button type="button" class="btn btn-success" disabled="@(reviewingItem.status is ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">Approved</button>
                     }
+
+                    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+                    {
+                        <br/>
+                        <input type="checkbox" id="checkbox-ApplyToNext500Batch" class="form-check-input" @bind="@ApplyToNext500Batch"/>
+                        <label for="checkbox-ApplyToNext500Batch">Apply to next 500 batch</label>
+                    }
                 }
 
                 @if (isReviewModerator)

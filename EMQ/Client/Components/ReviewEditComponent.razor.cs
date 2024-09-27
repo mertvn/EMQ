@@ -51,6 +51,8 @@ public partial class ReviewEditComponent
 
     private bool isReadonly;
 
+    private bool ApplyToNext500Batch { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -116,18 +118,39 @@ public partial class ReviewEditComponent
     {
         await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!, reviewingItem!.note_mod,
             ReviewQueueStatus.Rejected);
+        if (ApplyToNext500Batch)
+        {
+            foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
+            {
+                await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Rejected);
+            }
+        }
     }
 
     public async Task Onclick_Pending()
     {
         await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!, reviewingItem!.note_mod,
             ReviewQueueStatus.Pending);
+        if (ApplyToNext500Batch)
+        {
+            foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
+            {
+                await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Pending);
+            }
+        }
     }
 
     public async Task Onclick_Approve()
     {
         await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!, reviewingItem!.note_mod,
             ReviewQueueStatus.Approved);
+        if (ApplyToNext500Batch)
+        {
+            foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
+            {
+                await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Approved);
+            }
+        }
     }
 
     private async Task OnOpened()
