@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @using EMQ.Shared.Auth.Entities.Concrete
@@ -107,6 +107,9 @@
                 LibrarySongFilterKind.MissingVideo => !hasVideo,
                 LibrarySongFilterKind.MissingSound => !hasSound,
                 LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
+                LibrarySongFilterKind.MissingComposer => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer)),
+                LibrarySongFilterKind.MissingArranger => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger)),
+                LibrarySongFilterKind.MissingLyricist => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist)),
                 _ => throw new ArgumentOutOfRangeException()
                 };
 

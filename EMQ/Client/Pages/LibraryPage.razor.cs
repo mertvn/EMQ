@@ -371,5 +371,14 @@ public enum LibrarySongFilterKind
     MissingSound,
 
     [Description("Missing both links")]
-    MissingBoth
+    MissingBoth,
+
+    [Description("Missing composer info")]
+    MissingComposer,
+
+    [Description("Missing arranger info")]
+    MissingArranger,
+
+    [Description("Missing lyricist info")]
+    MissingLyricist,
 }
