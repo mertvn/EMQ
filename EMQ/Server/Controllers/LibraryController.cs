@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -397,6 +397,17 @@ public class LibraryController : ControllerBase
             return Unauthorized();
         }
 
+        foreach (var title in req.Song.Titles)
+        {
+            title.LatinTitle = title.LatinTitle.Trim();
+            title.NonLatinTitle = title.NonLatinTitle?.Trim();
+        }
+
+        foreach (var link in req.Song.Links)
+        {
+            link.Url = link.Url.Trim();
+        }
+
         var comp = new EditSongComponent(); // todo move this method to somewhere better
         bool isValid = comp.ValidateSong(req.Song, req.IsNew);
         if (!isValid)
@@ -415,7 +426,8 @@ public class LibraryController : ControllerBase
         }
         else
         {
-            var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
+            var res = await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false);
+            Song song = res.Single();
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }
 
@@ -458,9 +470,30 @@ public class LibraryController : ControllerBase
             return Unauthorized();
         }
 
+        foreach (var title in req.Artist.Titles)
+        {
+            title.LatinTitle = title.LatinTitle.Trim();
+            title.NonLatinTitle = title.NonLatinTitle?.Trim();
+        }
+
+        foreach (var link in req.Artist.Links)
+        {
+            link.Url = link.Url.Trim();
+        }
+
+        SongArtist? artist = null;
+        if (!req.IsNew)
+        {
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            var song = new Song { Artists = new List<SongArtist> { new() { Id = req.Artist.Id } } };
+            var res = await DbManager.SelectArtistBatchNoAM(connection, new List<Song> { song }, false);
+            artist = res.Single().Value.Single().Value;
+        }
+
         var comp = new EditArtistComponent(); // todo move this method to somewhere better
         bool isValid = await comp.ValidateArtist(req.Artist, req.IsNew,
-            new HttpClient() { BaseAddress = new Uri($"https://{Request.Host}") }); // todo idk if this is reliable
+            new HttpClient() { BaseAddress = new Uri($"https://{Request.Host}") }, // todo idk if this is reliable
+            artist?.Links.ToArray() ?? Array.Empty<SongArtistLink>());
         if (!isValid)
         {
             return BadRequest($"artist object failed validation: {comp.ValidationMessages.First()}");
@@ -469,7 +502,6 @@ public class LibraryController : ControllerBase
         // todo important set unrequired stuff to null/empty for safety reasons
         // todo? extra validation for safety reasons
 
-        // req.Artist.DataSource = DataSourceKind.EMQ; // todo important
         string? oldEntityJson = null;
         if (req.Artist.Id <= 0)
         {
@@ -478,14 +510,7 @@ public class LibraryController : ControllerBase
         }
         else
         {
-            throw new NotImplementedException();
-            // var song = (await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false)).Single();
-            // if (song.DataSource != DataSourceKind.EMQ)
-            // {
-            //     throw new Exception();
-            // }
-            //
-            // oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
+            oldEntityJson = JsonSerializer.Serialize(artist, Utils.JsoCompact);
         }
 
         const int entityVersion = 1; // todo?

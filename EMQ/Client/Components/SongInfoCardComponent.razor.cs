@@ -26,6 +26,9 @@ public partial class SongInfoCardComponent
     [Parameter]
     public bool ShowDevelopers { get; set; }
 
+    [Parameter]
+    public bool IsQuizPage { get; set; }
+
     public SongReportComponent _songReportComponent { get; set; } = null!;
 
     private int _currentSongId;

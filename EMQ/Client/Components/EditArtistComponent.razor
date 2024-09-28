@@ -16,7 +16,17 @@
             <ul>
                 <li>Follow VNDB's guidelines on name order and romanization.</li>
                 <li>Currently we're only accepting Japanese artists.</li>
-                <li>Try not to make any mistakes when creating the artist, because it's not possible to edit artists yet.</li>
+            </ul>
+            <br/>
+        </details>
+    }
+    else
+    {
+        <details style="padding: 5px;">
+            <summary>Guidelines for editing artists</summary>
+            <ul>
+                <li>Follow VNDB's guidelines on name order and romanization.</li>
+                <li>Deleting aliases is currently not supported.</li>
             </ul>
             <br/>
         </details>
@@ -156,11 +166,6 @@
     [Parameter]
     public bool IsNew { get; set; }
 
-    [Parameter]
-    public GenericModal modalRef { get; set; } = null!;
-
-    // private SongInfoCardComponent _songInfoCardComponentRef = null!;
-
     public List<string> ValidationMessages { get; } = new();
 
     private static SongArtist GetNewArtist => new() { PrimaryLanguage = "ja", Titles = new List<Title> { new() { IsMainTitle = true } } };
@@ -171,18 +176,25 @@
 
     public string ExternalLinksInputText { get; set; } = "";
 
-    protected override void OnInitialized()
+    public IEnumerable<SongArtistLink>? InitialLinks { get; set; }
+
+    protected override void OnParametersSet()
     {
         if (IsNew)
         {
             Artist = GetNewArtist;
         }
+        else
+        {
+            InitialLinks = Artist.Links.ToList();
+        }
+
+        Ready = true;
     }
 
     private async Task CallStateHasChanged()
     {
         StateHasChanged();
-    // await _songInfoCardComponentRef.CallStateHasChanged();
     }
 
     private void AddAlias()
@@ -192,6 +204,11 @@
 
     private async Task RemoveAlias(int index)
     {
+        // if (!IsNew)
+        // {
+        //     return;
+        // }
+
         if (Artist.Titles.Count <= 1)
         {
             return;
@@ -207,7 +224,7 @@
         {
             Ready = false;
             StateHasChanged();
-            bool isValid = await ValidateArtist(Artist, IsNew, _client);
+            bool isValid = await ValidateArtist(Artist, IsNew, _client, InitialLinks ?? Array.Empty<SongArtistLink>());
             if (isValid)
             {
                 var req = new ReqEditArtist(Artist, IsNew, NoteUser);
@@ -222,9 +239,9 @@
                     }
                     else
                     {
+                        Ready = false;
                         StateHasChanged();
-                        await Task.Delay(TimeSpan.FromMilliseconds(500));
-                        modalRef.Hide();
+                        return; // prevent submitting more than one edit at a time
                     }
                 }
                 else
@@ -236,7 +253,7 @@
         }
     }
 
-    public async Task<bool> ValidateArtist(SongArtist artist, bool isNew, HttpClient client)
+    public async Task<bool> ValidateArtist(SongArtist artist, bool isNew, HttpClient client, IEnumerable<SongArtistLink> initialLinks)
     {
         ValidationMessages.Clear();
         bool isValid = true;
@@ -285,9 +302,9 @@
             }
         }
 
-        if (isNew && isValid)
+        if (isValid)
         {
-            var req = new SongArtist { Links = artist.Links };
+            var req = new SongArtist { Links = artist.Links.ExceptBy(initialLinks.Select(x => x.Url), x => x.Url).ToList() };
             HttpResponseMessage res1 = await client.PostAsJsonAsync("Library/GetSongArtist", req);
             if (res1.IsSuccessStatusCode)
             {

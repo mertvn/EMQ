@@ -246,14 +246,6 @@
                                 @*     <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteArtist(songArtist))">🗑</span> *@
                                 @* } *@
 
-                                @if (isDebugMode)
-                                {
-                                    string href = $"ea{songArtist.Id}";
-                                    <a class="link-primary" href="@href" target="_blank">
-                                        @href
-                                    </a>
-                                }
-
                                 @for (int index = 0; index < songArtist.Roles.Count; index++)
                                 {
                                     var role = songArtist.Roles[index];
@@ -263,7 +255,18 @@
                                         <span>, </span>
                                     }
                                 }
-                                <span style="margin-left: 4px;">@songArtistTitle.ToString()</span>
+
+                                @if (IsQuizPage)
+                                {
+                                    <span style="margin-left: 4px;">@songArtistTitle.ToString()</span>
+                                }
+                                else
+                                {
+                                    string href = $"ea{songArtist.Id}";
+                                    <a href="@href" target="_blank" style="margin-left: 4px;">
+                                        @songArtistTitle.ToString()
+                                    </a>
+                                }
 
                                 @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                 {

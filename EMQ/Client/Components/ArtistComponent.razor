@@ -40,6 +40,11 @@
         </a>
     }
     <br/>
+
+    <details>
+        <summary>Edit artist</summary>
+        <EditArtistComponent Artist="artist" IsNew="false"></EditArtistComponent>
+    </details>
     <br/>
 }
 
@@ -70,10 +75,6 @@
     </div>
     <br/>
 }
-
-<pre>
-@JsonSerializer.Serialize(ResGetSongArtist?.SongArtists, Utils.JsoIndented)
-</pre>
 
 @code {
 

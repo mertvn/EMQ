@@ -24,6 +24,10 @@ public class AddTableArtist_Alias : Migration
 
         Execute.Sql("CREATE INDEX idx_artist_alias_latin_alias_lower ON artist_alias(lower(latin_alias))");
         // Create.Index().OnTable(tableName).InSchema("public").OnColumn("lower(latin_alias)");
+
+        // Artists may only have a single main name
+        Execute.Sql(
+            $@"CREATE UNIQUE INDEX UC_{tableName}_artist_id_is_main_name ON {tableName}(artist_id, is_main_name) where (is_main_name);");
     }
 
     public override void Down()

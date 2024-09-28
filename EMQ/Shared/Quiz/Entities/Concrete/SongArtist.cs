@@ -19,7 +19,7 @@ public class SongArtist : IEditQueueEntity
                              ?? Links.SingleOrDefault(x => x.Type == SongArtistLinkType.MusicBrainzArtist)?.Url
                                  .Replace("https://musicbrainz.org/artist/", "");
 
-    public List<Title> Titles { get; set; } = new(); // todo should be singular
+    public List<Title> Titles { get; set; } = new();
 
     public List<SongArtistRole> Roles { get; set; } = new();
 
