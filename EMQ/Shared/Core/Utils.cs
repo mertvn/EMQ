@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -72,5 +74,47 @@ public static class Utils
     public static string UserIdToUsername(Dictionary<int, string> dict, int userId)
     {
         return dict.TryGetValue(userId, out string? username) ? username : $"Guest-{userId}";
+    }
+
+    public class MyStopwatchSection
+    {
+        public string Name { get; set; } = "";
+
+        public TimeSpan Elapsed { get; set; }
+    }
+
+    public class MyStopwatch
+    {
+        public Stopwatch Stopwatch { get; set; } = new();
+
+        public List<MyStopwatchSection> Sections { get; set; } = new();
+
+        public void StartSection(string name)
+        {
+            Sections.Add(new MyStopwatchSection { Name = name, Elapsed = Stopwatch.Elapsed });
+        }
+
+        public void Start()
+        {
+            Stopwatch.Start();
+        }
+
+        public void Stop()
+        {
+            StartSection("end");
+            Stopwatch.Stop();
+
+            for (int index = 0; index < Sections.Count; index++)
+            {
+                MyStopwatchSection current = Sections[index];
+                MyStopwatchSection? next = Sections.ElementAtOrDefault(index + 1);
+                if (next is null)
+                {
+                    continue;
+                }
+
+                Console.WriteLine($"{current.Name}: {(next.Elapsed - current.Elapsed).TotalMilliseconds}ms");
+            }
+        }
     }
 }
