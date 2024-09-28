@@ -14,16 +14,20 @@ using Dapper;
 using Dapper.Database.Extensions;
 using EMQ.Server;
 using EMQ.Server.Business;
+using EMQ.Server.Controllers;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.MusicBrainz;
 using EMQ.Server.Db.Imports.VNDB;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Npgsql;
@@ -31,6 +35,7 @@ using NUnit.Framework;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
 namespace Tests;
 
@@ -121,6 +126,296 @@ public class EntryPoints
     public async Task ImportEgsData()
     {
         await EgsImporter.ImportEgsData();
+    }
+
+    // todo find more ways to match (try removing parentheses or manual stuff)
+    // todo import all staff from vndb
+    [Test, Explicit]
+    public async Task InsertCALFromEgs()
+    {
+        bool artistCheckMode = false;
+        string date = Constants.ImportDateEgs;
+        string folder = $"C:\\emq\\egs\\{date}";
+        var json = JsonSerializer.Deserialize<EgsImporterInnerResult[]>(
+            await File.ReadAllTextAsync($"{folder}\\matched.json"), Utils.JsoIndented)!;
+
+        var egsDataCreaterDict = new Dictionary<string, EgsDataCreater>();
+        string[] createrlistRows = await File.ReadAllLinesAsync($"{folder}\\createrlist.tsv");
+        for (int i = 1; i < createrlistRows.Length; i++)
+        {
+            string createrlistRow = createrlistRows[i];
+            string[] split = createrlistRow.Split("\t");
+            var egsDataCreater = new EgsDataCreater { Id = split[0], Name = split[1], Furigana = split[2] };
+            egsDataCreaterDict[egsDataCreater.Id] = egsDataCreater;
+        }
+
+        var xRefs = new List<XRef>();
+        string[] xRefsRows = await File.ReadAllLinesAsync($"{folder}\\xrefs.csv");
+        for (int i = 1; i < xRefsRows.Length; i++)
+        {
+            string xRefRow = xRefsRows[i];
+            string[] split = xRefRow.Split(',');
+            var xRef = new XRef { Vndb = split[0], Vgmdb = split[1], Anison = split[2], Egs = split[3] };
+            xRefs.Add(xRef);
+        }
+
+        string[] blacklistedCreaterNames =
+        {
+            "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO",
+            "rian", "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki",
+            "Antistar", "anporin", "mio", "ちづ", "SAORI",
+        };
+        blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
+        SongArtistRole[] songArtistRoles =
+        {
+            SongArtistRole.Composer, SongArtistRole.Arranger, SongArtistRole.Lyricist
+        };
+
+        // todo handle multiple vocalists thing
+        var calDict = new ConcurrentDictionary<string, List<(int, int)>>();
+        var xRefCacheDict = new ConcurrentDictionary<string, Dictionary<int, Dictionary<int, SongArtist>>>();
+        await Parallel.ForEachAsync(json, new ParallelOptions() { MaxDegreeOfParallelism = 4 },
+            async (egsImporterInnerResult, _) =>
+            {
+                await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                foreach (SongArtistRole songArtistRole in songArtistRoles)
+                {
+                    int?[] arr = songArtistRole switch
+                    {
+                        SongArtistRole.Composer => egsImporterInnerResult.EgsData.Composer,
+                        SongArtistRole.Arranger => egsImporterInnerResult.EgsData.Arranger,
+                        SongArtistRole.Lyricist => egsImporterInnerResult.EgsData.Lyricist,
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    foreach (int? id in arr)
+                    {
+                        if (id == null)
+                        {
+                            continue;
+                        }
+
+                        var egsDataCreater = egsDataCreaterDict[id.Value.ToString()];
+                        if (!calDict.TryGetValue(egsDataCreater.Id, out var aIds))
+                        {
+                            // Console.WriteLine(egsDataCreater.Id);
+                            var xRef = xRefs.Where(x => x.Egs == egsDataCreater.Id).ToArray();
+                            var first = xRef.FirstOrDefault();
+                            int distinctCount = xRef.DistinctBy(x => x.Vndb).Count();
+                            if (!xRef.Any() || distinctCount != 1)
+                            {
+                                if (distinctCount > 0)
+                                {
+                                    Console.WriteLine($"xRef Count isn't 1: {egsDataCreater.Id}");
+                                    continue;
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(first.Vndb))
+                            {
+                                bool cached = xRefCacheDict.TryGetValue(first.Vndb, out var artists);
+                                if (!cached)
+                                {
+                                    artists = await DbManager.SelectArtistBatchNoAM(connection,
+                                        new List<Song>()
+                                        {
+                                            new()
+                                            {
+                                                Artists = new List<SongArtist>
+                                                {
+                                                    new()
+                                                    {
+                                                        Links = new List<SongArtistLink>
+                                                        {
+                                                            // todo? search with other xRef as well
+                                                            new()
+                                                            {
+                                                                Url = first.Vndb.ToVndbUrl(),
+                                                                Type = SongArtistLinkType.VNDBStaff,
+                                                            },
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }, true);
+                                    xRefCacheDict[first.Vndb] = artists;
+                                }
+
+                                if (artists!.Any())
+                                {
+                                    // todo try to find actual credited name on egs
+                                    var single = artists!.Single().Value.Single();
+                                    aIds = new List<(int, int)>
+                                    {
+                                        (single.Key,
+                                            (single.Value.Titles.FirstOrDefault(x => x.IsMainTitle) ??
+                                             single.Value.Titles.First()).ArtistAliasId)
+                                    };
+                                }
+                                else if (!cached)
+                                {
+                                    Console.WriteLine($"xRef doesn't exist in EMQ db: {first.Vndb}");
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                if (!blacklistedCreaterNames.Any(x =>
+                                        x == egsDataCreater.Name.NormalizeForAutocomplete() ||
+                                        x == egsDataCreater.Furigana.NormalizeForAutocomplete()))
+                                {
+                                    aIds = await DbManager.FindArtistIdsByArtistNames(
+                                        new List<string> { egsDataCreater.Name });
+                                }
+                            }
+
+                            if (aIds != null && aIds.Any())
+                            {
+                                calDict[egsDataCreater.Id] = aIds;
+                            }
+                        }
+                    }
+                }
+            });
+
+        Console.WriteLine($"{calDict.Count(x => x.Value.Count == 1)}/{calDict.Count}");
+        foreach ((string? key, _) in calDict.Where(x => x.Value.Count > 1))
+        {
+            Console.WriteLine(
+                $"aIds.Count > 1: https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/creater.php?creater={key}");
+        }
+
+        // return;
+        var artistAliasDict = new Dictionary<int, SongArtist>();
+        var songsDict =
+            (await DbManager.SelectSongsMIds(json.SelectMany(x => x.mIds).ToArray(), false))
+            .ToDictionary(x => x.Id, x => x);
+
+        HashSet<int> editedSongIds = new();
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        foreach (EgsImporterInnerResult egsImporterInnerResult in json)
+        {
+            bool addedSomething = false;
+            int mId = egsImporterInnerResult.mIds.Single();
+            var song = songsDict[mId];
+
+            // if (egsImporterInnerResult.EgsData.MusicId != 2887)
+            // {
+            //     continue;
+            // }
+
+            // if (song.Id != 1049)
+            // {
+            //     continue;
+            // }
+
+            foreach (SongArtistRole songArtistRole in songArtistRoles)
+            {
+                int?[] arr = songArtistRole switch
+                {
+                    SongArtistRole.Composer => egsImporterInnerResult.EgsData.Composer,
+                    SongArtistRole.Arranger => egsImporterInnerResult.EgsData.Arranger,
+                    SongArtistRole.Lyricist => egsImporterInnerResult.EgsData.Lyricist,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                foreach (int? id in arr)
+                {
+                    if (id == null)
+                    {
+                        continue;
+                    }
+
+                    if (calDict.TryGetValue(id.Value.ToString(), out List<(int, int)>? aIds) && aIds.Count == 1)
+                    {
+                        (int aId, int aaId) = aIds.First();
+
+                        // check if song already has that artist and ignore alias if so
+                        var artist = song.Artists.SingleOrDefault(x => x.Id == aId);
+                        bool artistWasAlreadyAdded = artist != null;
+                        if (!artistWasAlreadyAdded)
+                        {
+                            if (!artistAliasDict.TryGetValue(aaId, out artist))
+                            {
+                                artist = (await DbManager.SelectArtistBatchNoAM(connection,
+                                    new List<Song>()
+                                    {
+                                        new Song
+                                        {
+                                            Artists = new List<SongArtist>()
+                                            {
+                                                new()
+                                                {
+                                                    Id = aId,
+                                                    Titles = new List<Title>()
+                                                    {
+                                                        new() { ArtistAliasId = aaId }
+                                                    }
+                                                },
+                                            }
+                                        }
+                                    }, false)).Single().Value.Single().Value;
+                                artistAliasDict[aaId] = artist;
+                            }
+                            else if (artistCheckMode)
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (!artistWasAlreadyAdded)
+                        {
+                            song.Artists.Add(artist!);
+                        }
+                        else
+                        {
+                            if (artistCheckMode)
+                            {
+                                continue;
+                            }
+                        }
+
+                        if (!artist!.Roles.Contains(songArtistRole))
+                        {
+                            artist.Roles.Add(songArtistRole);
+                            addedSomething = true;
+                        }
+                    }
+                }
+            }
+
+            if (addedSomething)
+            {
+                if (editedSongIds.Contains(song.Id))
+                {
+                    Console.WriteLine($"skipping duplicate edit for mId {song.Id}");
+                    continue;
+                }
+
+                if (song.Artists.Any(x => x.Titles.Count != 1))
+                {
+                    throw new Exception($"artists must have exactly one title per song: {song}");
+                }
+
+                editedSongIds.Add(song.Id);
+                // Console.WriteLine(song);
+                await controller.EditSong(new ReqEditSong(song, false,
+                    $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={egsImporterInnerResult.EgsData.MusicId}"));
+            }
+
+            foreach (SongArtist songArtist in song.Artists)
+            {
+                songArtist.Roles =
+                    songArtist.Roles.Where(x => x is SongArtistRole.Unknown or SongArtistRole.Vocals).ToList();
+            }
+        }
     }
 
     [Test, Explicit]
@@ -305,6 +600,28 @@ public class EntryPoints
         {
             await DbManager.UpdateReviewQueueItem(i, ReviewQueueStatus.Rejected, "");
         }
+    }
+
+    [Test, Explicit]
+    public async Task UpdateEditQueueItem()
+    {
+        const int s = 5689;
+        const int e = 8278;
+        const ReviewQueueStatus status = ReviewQueueStatus.Approved;
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        for (int i = s; i <= e; i++)
+        {
+            bool success = await DbManager.UpdateEditQueueItem(transaction, i, status, "");
+            if (!success)
+            {
+                throw new Exception();
+            }
+        }
+
+        await transaction.CommitAsync();
     }
 
     [Test, Explicit]

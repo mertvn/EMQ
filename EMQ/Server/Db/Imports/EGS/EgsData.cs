@@ -28,4 +28,30 @@ public readonly struct EgsData
     public List<string> CreaterNames { get; init; }
 
     public string CreaterFurigana { get; init; }
+
+    public int?[] Composer { get; init; }
+
+    public int?[] Arranger { get; init; }
+
+    public int?[] Lyricist { get; init; }
+}
+
+public readonly struct EgsDataCreater
+{
+    public string Id { get; init; }
+
+    public string Name { get; init; }
+
+    public string Furigana { get; init; }
+}
+
+public readonly struct XRef
+{
+    public string Vndb { get; init; }
+
+    public string Vgmdb { get; init; }
+
+    public string Anison { get; init; }
+
+    public string Egs { get; init; }
 }

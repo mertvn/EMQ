@@ -753,8 +753,10 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
     /// Available filters: <br/>
     /// Song.Id <br/>
     /// Song.Artists.Id <br/>
+    /// Song.Artists.Titles.ArtistAliasId <br/>
     /// Song.Artists.Titles.LatinTitle <br/>
     /// Song.Artists.Titles.NonLatinTitle <br/>
+    /// Song.Artists.Links.Url <br/>
     /// </summary>
     public static async Task<Dictionary<int, Dictionary<int, SongArtist>>> SelectArtistBatch(IDbConnection connection,
         List<Song> songs,
@@ -780,6 +782,14 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         if (artistIds.Any())
         {
             queryArtist.Where($"a.id = ANY({artistIds})");
+        }
+
+        int[] artistAliasIds = songs.SelectMany(a =>
+                a.Artists.FirstOrDefault()?.Titles.Select(x => x.ArtistAliasId) ?? Array.Empty<int>())
+            .Where(x => x > 0).ToArray();
+        if (artistAliasIds.Any())
+        {
+            queryArtist.Where($"aa.id = ANY({artistAliasIds})");
         }
 
         List<string> latinTitles = songs.SelectMany(a => a.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)))
@@ -827,6 +837,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                     NonLatinTitle = artistAlias.non_latin_alias,
                     IsMainTitle = artistAlias.is_main_name,
                     Language = artist.primary_language ?? "",
+                    ArtistAliasId = artistAlias.id,
                 };
 
                 if (!mIdSongArtists.TryGetValue(artistMusic.music_id, out var songArtists))
@@ -912,8 +923,10 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
     /// Available filters: <br/>
     /// Song.Id <br/>
     /// Song.Artists.Id <br/>
+    /// Song.Artists.Titles.ArtistAliasId <br/>
     /// Song.Artists.Titles.LatinTitle <br/>
     /// Song.Artists.Titles.NonLatinTitle <br/>
+    /// Song.Artists.Links.Url <br/>
     /// </summary>
     public static async Task<Dictionary<int, Dictionary<int, SongArtist>>> SelectArtistBatchNoAM(
         IDbConnection connection,
@@ -933,6 +946,14 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         if (artistIds.Any())
         {
             queryArtist.Where($"a.id = ANY({artistIds})");
+        }
+
+        int[] artistAliasIds = songs.SelectMany(a =>
+                a.Artists.FirstOrDefault()?.Titles.Select(x => x.ArtistAliasId) ?? Array.Empty<int>())
+            .Where(x => x > 0).ToArray();
+        if (artistAliasIds.Any())
+        {
+            queryArtist.Where($"aa.id = ANY({artistAliasIds})");
         }
 
         List<string> latinTitles = songs.SelectMany(a => a.Artists.SelectMany(x => x.Titles.Select(y => y.LatinTitle)))
@@ -979,6 +1000,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                     NonLatinTitle = artistAlias.non_latin_alias,
                     IsMainTitle = artistAlias.is_main_name,
                     Language = artist.primary_language ?? "",
+                    ArtistAliasId = artistAlias.id,
                 };
 
                 if (!mIdSongArtists.TryGetValue(-1, out var songArtists))
@@ -3183,130 +3205,76 @@ WHERE id = {mId};
         return success;
     }
 
-    // todo important transaction
-    public static async Task<bool> UpdateEditQueueItem(int eqId, ReviewQueueStatus requestedStatus,
+    public static async Task<bool> UpdateEditQueueItem(NpgsqlTransaction transaction, int eqId,
+        ReviewQueueStatus requestedStatus,
         string? reason = null)
     {
         bool success = false;
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        var connection = transaction.Connection;
+
+        EditQueue? eq = await connection.GetAsync<EditQueue>(eqId, transaction);
+        if (eq is null)
         {
-            EditQueue? eq = await connection.GetAsync<EditQueue>(eqId);
-            if (eq is null)
-            {
-                throw new InvalidOperationException($"Could not find eqId {eqId}");
-            }
+            throw new InvalidOperationException($"Could not find eqId {eqId}");
+        }
 
-            // todo abstraction
-            bool isNew = string.IsNullOrEmpty(eq.old_entity_json);
-            IEditQueueEntity? entity;
-            switch (eq.entity_kind)
-            {
-                case EntityKind.Song:
-                    entity = JsonSerializer.Deserialize<Song>(eq.entity_json)!;
-                    break;
-                case EntityKind.SongArtist:
-                    entity = JsonSerializer.Deserialize<SongArtist>(eq.entity_json)!;
-                    break;
-                case EntityKind.SongSource:
-                case EntityKind.None:
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+        // todo abstraction
+        bool isNew = string.IsNullOrEmpty(eq.old_entity_json);
+        IEditQueueEntity? entity;
+        switch (eq.entity_kind)
+        {
+            case EntityKind.Song:
+                entity = JsonSerializer.Deserialize<Song>(eq.entity_json)!;
+                break;
+            case EntityKind.SongArtist:
+                entity = JsonSerializer.Deserialize<SongArtist>(eq.entity_json)!;
+                break;
+            case EntityKind.SongSource:
+            case EntityKind.None:
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
 
-            switch (eq.status)
-            {
-                case ReviewQueueStatus.Pending:
-                case ReviewQueueStatus.Rejected:
-                    break;
-                case ReviewQueueStatus.Approved:
-                    if (requestedStatus is ReviewQueueStatus.Pending or ReviewQueueStatus.Rejected)
-                    {
-                        if (isNew)
-                        {
-                            switch (eq.entity_kind)
-                            {
-                                case EntityKind.Song:
-                                    {
-                                        var music = await DbManager.GetEntity<Music>(entity.Id);
-                                        if (await DbManager.DeleteEntity(music!))
-                                        {
-                                            Console.WriteLine($"deleted music {JsonSerializer.Serialize(music)}");
-                                            await DbManager.EvictFromSongsCache(entity.Id);
-                                        }
-                                        else
-                                        {
-                                            throw new Exception("failed to delete music");
-                                        }
-
-                                        break;
-                                    }
-                                case EntityKind.SongSource:
-                                    break;
-                                case EntityKind.SongArtist:
-                                    {
-                                        var artist = await DbManager.GetEntity<Artist>(entity.Id);
-                                        if (await DbManager.DeleteEntity(artist!))
-                                        {
-                                            Console.WriteLine($"deleted artist {JsonSerializer.Serialize(artist)}");
-                                            await DbManager.EvictFromSongsCache(entity.Id);
-                                        }
-                                        else
-                                        {
-                                            throw new Exception("failed to delete artist");
-                                        }
-
-                                        break;
-                                    }
-                                case EntityKind.None:
-                                default:
-                                    throw new ArgumentOutOfRangeException();
-                            }
-                        }
-                        else
-                        {
-                            if (eq.entity_kind == EntityKind.Song)
-                            {
-                                var oldEntity = JsonSerializer.Deserialize<Song>(eq.old_entity_json!)!;
-                                success = await OverwriteMusic(entity.Id, oldEntity);
-                                await EvictFromSongsCache(oldEntity.Id);
-                            }
-                            else
-                            {
-                                throw new NotImplementedException();
-                            }
-                        }
-                    }
-
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            switch (requestedStatus)
-            {
-                case ReviewQueueStatus.Pending:
-                case ReviewQueueStatus.Rejected:
-                    break;
-                case ReviewQueueStatus.Approved:
+        switch (eq.status)
+        {
+            case ReviewQueueStatus.Pending:
+            case ReviewQueueStatus.Rejected:
+                break;
+            case ReviewQueueStatus.Approved:
+                if (requestedStatus is ReviewQueueStatus.Pending or ReviewQueueStatus.Rejected)
+                {
                     if (isNew)
                     {
                         switch (eq.entity_kind)
                         {
                             case EntityKind.Song:
-                                int newMid = await InsertSong((Song)entity);
-                                success = newMid > 0 && newMid == entity.Id;
-                                break;
+                                {
+                                    var music = await connection.GetAsync<Music>(entity.Id, transaction);
+                                    if (await connection.DeleteAsync(music!, transaction))
+                                    {
+                                        Console.WriteLine($"deleted music {JsonSerializer.Serialize(music)}");
+                                        await DbManager.EvictFromSongsCache(entity.Id);
+                                    }
+                                    else
+                                    {
+                                        throw new Exception("failed to delete music");
+                                    }
+
+                                    break;
+                                }
                             case EntityKind.SongSource:
                                 break;
                             case EntityKind.SongArtist:
                                 {
-                                    await connection.OpenAsync();
-                                    await using var transaction = await connection.BeginTransactionAsync();
-                                    (int aId, _) = await InsertArtist((SongArtist)entity, transaction);
-                                    success = aId > 0 && aId == entity.Id;
-                                    if (success)
+                                    var artist = await connection.GetAsync<Artist>(entity.Id, transaction);
+                                    if (await connection.DeleteAsync(artist!, transaction))
                                     {
-                                        await transaction.CommitAsync();
+                                        Console.WriteLine($"deleted artist {JsonSerializer.Serialize(artist)}");
+                                        await DbManager.EvictFromSongsCache(entity.Id);
+                                    }
+                                    else
+                                    {
+                                        throw new Exception("failed to delete artist");
                                     }
 
                                     break;
@@ -3320,36 +3288,82 @@ WHERE id = {mId};
                     {
                         if (eq.entity_kind == EntityKind.Song)
                         {
-                            success = await OverwriteMusic(entity.Id, (Song)entity);
+                            var oldEntity = JsonSerializer.Deserialize<Song>(eq.old_entity_json!)!;
+                            success = await OverwriteMusic(entity.Id, oldEntity, false, transaction);
+                            await EvictFromSongsCache(oldEntity.Id);
                         }
                         else
                         {
                             throw new NotImplementedException();
                         }
                     }
+                }
 
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
-            }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
 
-            eq.status = requestedStatus;
-            if (!string.IsNullOrWhiteSpace(reason))
-            {
-                eq.note_mod = reason;
-            }
+        switch (requestedStatus)
+        {
+            case ReviewQueueStatus.Pending:
+            case ReviewQueueStatus.Rejected:
+                break;
+            case ReviewQueueStatus.Approved:
+                if (isNew)
+                {
+                    switch (eq.entity_kind)
+                    {
+                        case EntityKind.Song:
+                            int newMid = await InsertSong((Song)entity, connection, transaction);
+                            success = newMid > 0 && newMid == entity.Id;
+                            break;
+                        case EntityKind.SongSource:
+                            break;
+                        case EntityKind.SongArtist:
+                            {
+                                (int aId, _) = await InsertArtist((SongArtist)entity, transaction);
+                                success = aId > 0 && aId == entity.Id;
+                                break;
+                            }
+                        case EntityKind.None:
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+                else
+                {
+                    if (eq.entity_kind == EntityKind.Song)
+                    {
+                        success = await OverwriteMusic(entity.Id, (Song)entity, false, transaction);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
 
-            await connection.UpdateAsync(eq);
-            Console.WriteLine($"Updated EditQueue: " + JsonSerializer.Serialize(eq, Utils.Jso));
-            if (eq.entity_kind == EntityKind.Song)
-            {
-                await EvictFromSongsCache(((Song)entity).Id);
-            }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
+        }
 
-            foreach ((string key, LibraryStats? _) in CachedLibraryStats)
-            {
-                CachedLibraryStats[key] = null;
-            }
+        eq.status = requestedStatus;
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            eq.note_mod = reason;
+        }
+
+        await connection.UpdateAsync(eq, transaction);
+        Console.WriteLine($"Updated EditQueue: " + JsonSerializer.Serialize(eq, Utils.Jso));
+        if (eq.entity_kind == EntityKind.Song)
+        {
+            await EvictFromSongsCache(((Song)entity).Id);
+        }
+
+        foreach ((string key, LibraryStats? _) in CachedLibraryStats)
+        {
+            CachedLibraryStats[key] = null;
         }
 
         if (success)
@@ -3808,7 +3822,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     // todo tests
-    public static async Task<List<int>> FindArtistIdsByArtistNames(List<string> artistNames)
+    public static async Task<List<(int, int)>> FindArtistIdsByArtistNames(List<string> artistNames)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -3823,7 +3837,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
                 }
             }
 
-            HashSet<int> aIds = new();
+            HashSet<(int, int)> aIds = new();
             foreach (string createrName in createrNames)
             {
                 var song = new Song
@@ -3838,7 +3852,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
                 {
                     foreach ((int _, SongArtist? songArtist) in value)
                     {
-                        aIds.Add(songArtist.Id);
+                        aIds.Add((songArtist.Id, songArtist.Titles.Single().ArtistAliasId));
                     }
                 }
 
@@ -3850,7 +3864,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
                 {
                     foreach ((int _, SongArtist? songArtist) in value)
                     {
-                        aIds.Add(songArtist.Id);
+                        aIds.Add((songArtist.Id, songArtist.Titles.Single().ArtistAliasId));
                     }
                 }
             }
@@ -4207,7 +4221,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
-            var aIds = await FindArtistIdsByArtistNames(artists);
+            int[] aIds = (await FindArtistIdsByArtistNames(artists)).Select(x => x.Item1).ToArray();
             if (!aIds.Any())
             {
                 return ret;
@@ -4396,7 +4410,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         return ret;
     }
 
-    public static async Task<bool> OverwriteMusic(int oldMid, Song newSong)
+    public static async Task<bool> OverwriteMusic(int oldMid, Song newSong, bool isImport,
+        NpgsqlTransaction? transaction = null)
     {
         if (newSong.MusicBrainzRecordingGid != null)
         {
@@ -4404,63 +4419,77 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             throw new NotImplementedException();
         }
 
-        // todo cleanup of music_source and artist?
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.OpenAsync();
-        await using (var transaction = await connection.BeginTransactionAsync())
+        NpgsqlConnection? connection = transaction?.Connection;
+        bool ownConnection = false;
+        if (connection is null)
         {
-            var oldSong = (await SelectSongsMIds(new[] { oldMid }, false)).Single();
-            int rowsDeletedMt = await connection.ExecuteAsync("DELETE FROM music_title where music_id = @mId",
-                new { mId = oldMid }, transaction);
-
-            if (rowsDeletedMt <= 0)
-            {
-                throw new Exception("Failed to delete mt");
-            }
-
-            int rowsDeletedMsm = await connection.ExecuteAsync("DELETE FROM music_source_music where music_id = @mId",
-                new { mId = oldMid }, transaction);
-
-            if (rowsDeletedMsm <= 0)
-            {
-                throw new Exception("Failed to delete msm");
-            }
-
-            int rowsDeletedA = await connection.ExecuteAsync("DELETE FROM artist_music where music_id = @mId",
-                new { mId = oldMid }, transaction);
-
-            if (rowsDeletedA <= 0)
-            {
-                throw new Exception("Failed to delete a");
-            }
-
-            int rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
-                new { mId = oldMid }, transaction);
-
-            newSong.Id = oldMid;
-            int mId = await InsertSong(newSong, connection, transaction);
-            if (mId <= 0 || mId != oldMid)
-            {
-                throw new Exception($"Failed to insert song: {newSong}");
-            }
-
-            if (rowsDeletedMel > 0)
-            {
-                Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
-                // extra check to make sure we don't lose any links
-                var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single();
-                var o = JsonSerializer.SerializeToNode(oldSong.Links);
-                var n = JsonSerializer.SerializeToNode(insertedSong.Links);
-                if (!JsonNode.DeepEquals(o, n))
-                {
-                    throw new Exception(
-                        $"Links differ: {JsonSerializer.Serialize(o)} versus {JsonSerializer.Serialize(n)}");
-                }
-            }
-
-            await transaction.CommitAsync();
-            return true;
+            ownConnection = true;
+            connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            await connection.OpenAsync();
+            transaction = await connection.BeginTransactionAsync();
         }
+
+        // todo cleanup of music_source and artist?
+        var oldSong = (await SelectSongsMIds(new[] { oldMid }, false)).Single();
+        int rowsDeletedMt = await connection.ExecuteAsync("DELETE FROM music_title where music_id = @mId",
+            new { mId = oldMid }, transaction);
+
+        if (rowsDeletedMt <= 0)
+        {
+            throw new Exception("Failed to delete mt");
+        }
+
+        int rowsDeletedMsm = await connection.ExecuteAsync("DELETE FROM music_source_music where music_id = @mId",
+            new { mId = oldMid }, transaction);
+
+        if (rowsDeletedMsm <= 0)
+        {
+            throw new Exception("Failed to delete msm");
+        }
+
+        // keep C/A/L when doing vndb or musicbrainz imports
+        string roleClause = " AND (role = 0 OR role = 1)";
+        int rowsDeletedA = await connection.ExecuteAsync(
+            "DELETE FROM artist_music where music_id = @mId" + (isImport ? roleClause : ""),
+            new { mId = oldMid }, transaction);
+
+        if (rowsDeletedA <= 0)
+        {
+            throw new Exception("Failed to delete a");
+        }
+
+        int rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
+            new { mId = oldMid }, transaction);
+
+        newSong.Id = oldMid;
+        int mId = await InsertSong(newSong, connection, transaction);
+        if (mId <= 0 || mId != oldMid)
+        {
+            throw new Exception($"Failed to insert song: {newSong}");
+        }
+
+        if (rowsDeletedMel > 0)
+        {
+            Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
+            // extra check to make sure we don't lose any links
+            var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single(); // todo? transaction
+            var o = JsonSerializer.SerializeToNode(oldSong.Links);
+            var n = JsonSerializer.SerializeToNode(insertedSong.Links);
+            if (!JsonNode.DeepEquals(o, n))
+            {
+                throw new Exception(
+                    $"Links differ: {JsonSerializer.Serialize(o)} versus {JsonSerializer.Serialize(n)}");
+            }
+        }
+
+        if (ownConnection)
+        {
+            await transaction!.CommitAsync();
+            await connection.DisposeAsync();
+            await transaction.DisposeAsync();
+        }
+
+        return true;
     }
 
     public static async Task<List<SHRoomContainer>> GetSHRoomContainers(int userId,

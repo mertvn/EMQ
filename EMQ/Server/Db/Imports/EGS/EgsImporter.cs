@@ -50,7 +50,8 @@ public static class EgsImporter
                 gameMusicCategory = SongSourceSongType.ED;
             }
             else if (split[4].Contains("挿入歌") || split[4].Contains("イメージソング") || split[4].Contains("キャラソン") ||
-                     split[4].Contains("イメーシーソング") || split[4].Contains("イメージ") || split[4].Contains("イメ－ジソング"))
+                     split[4].Contains("イメーシーソング") || split[4].Contains("イメージ") || split[4].Contains("イメ－ジソング") ||
+                     split[4].Contains("IM"))
             {
                 gameMusicCategory = SongSourceSongType.Insert;
             }
@@ -88,7 +89,6 @@ public static class EgsImporter
             }
 
             gameVndbUrl = gameVndbUrl.ToVndbUrl();
-
             if (Blacklists.EgsImporterBlacklist.Contains(gameVndbUrl))
             {
                 continue;
@@ -116,6 +116,9 @@ public static class EgsImporter
                 CreaterId = createrId,
                 CreaterNames = createrName,
                 CreaterFurigana = split[15],
+                Composer = JsonSerializer.Deserialize<int?[]>(split[16])!,
+                Arranger = JsonSerializer.Deserialize<int?[]>(split[17])!,
+                Lyricist = JsonSerializer.Deserialize<int?[]>(split[18])!,
             };
 
             egsDataList.Add(egsData);
@@ -146,6 +149,7 @@ public static class EgsImporter
         await File.WriteAllTextAsync($"{folder}\\egsData.json", serialized);
         // Console.WriteLine(serialized);
 
+        // todo important batch
         // Attempt to match EGS songs with VNDB songs
         var egsImporterInnerResults = new ConcurrentBag<EgsImporterInnerResult>();
         await Parallel.ForEachAsync(egsDataList, async (egsData, _) =>
@@ -167,8 +171,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/");
 
                 // egs stores names without spaces, vndb stores them with spaces; brute-force conversion
-                var aIds = await DbManager.FindArtistIdsByArtistNames(egsData.CreaterNames);
-
+                int[] aIds = (await DbManager.FindArtistIdsByArtistNames(egsData.CreaterNames)).Select(x => x.Item1)
+                    .ToArray();
                 if (!aIds.Any())
                 {
                     if (CreaterNameOverrideDict.ContainsKey(egsData.CreaterId))
@@ -183,6 +187,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
                 innerResult.aIds = aIds.ToList();
 
+                queryMusic.Where($"m.data_source={(int)DataSourceKind.VNDB}");
                 queryMusic.Where($"msel.url={egsData.GameVndbUrl}");
                 queryMusic.Where($"msm.type={(int)egsData.GameMusicCategory}");
                 queryMusic.Where($"a.id = ANY({aIds.ToList()})");
@@ -265,6 +270,11 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         Console.WriteLine("noAids count: " +
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoAids));
 
+        await File.WriteAllTextAsync($"{folder}\\matched.json",
+            JsonSerializer.Serialize(
+                egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched),
+                Utils.JsoIndented));
+
         await File.WriteAllTextAsync($"{folder}\\noMids.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.NoMids),
@@ -289,6 +299,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     x.EgsData.GameMusicCategory != SongSourceSongType.Insert),
                 Utils.JsoIndented));
 
+        return; // todo
         // Insert the matched results
         var matchedResults = egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched);
         await Parallel.ForEachAsync(matchedResults, async (innerResult, _) =>
@@ -296,7 +307,6 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
             {
                 // todo? don't insert if latin title is the same after normalization
-                // todo important only update if data source is vndb
                 await connection.ExecuteAsync(
                     "UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle WHERE mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
                     new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId = innerResult.mIds.Single() });

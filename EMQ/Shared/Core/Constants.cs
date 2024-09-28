@@ -16,7 +16,7 @@ public static class Constants
 
     public const string ImportDateVndb = "2024-08-30";
 
-    public const string ImportDateEgs = "2024-01-23";
+    public const string ImportDateEgs = "2024-09-25";
 
     public const string ImportDateMusicBrainz = "2023-08-19"; // not really accurate as it's rolling
 

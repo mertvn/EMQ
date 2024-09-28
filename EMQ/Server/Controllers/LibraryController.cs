@@ -1,17 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Client.Components;
-using EMQ.Client.Pages;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
@@ -21,9 +15,7 @@ using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
-using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EMQ.Server.Controllers;
@@ -33,14 +25,6 @@ namespace EMQ.Server.Controllers;
 [Route("[controller]")]
 public class LibraryController : ControllerBase
 {
-    public LibraryController(ILogger<LibraryController> logger)
-    {
-        _logger = logger;
-    }
-
-    // ReSharper disable once NotAccessedField.Local
-    private readonly ILogger<LibraryController> _logger;
-
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsBySongSourceTitle")]

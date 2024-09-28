@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -99,9 +99,18 @@ public class ModController : ControllerBase
             return Unauthorized();
         }
 
-        // todo use return value
-        bool success = await DbManager.UpdateEditQueueItem(req.RQId, req.ReviewQueueStatus, reason: req.Notes);
-        return Ok();
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        bool success =
+            await DbManager.UpdateEditQueueItem(transaction, req.RQId, req.ReviewQueueStatus, reason: req.Notes);
+        if (success)
+        {
+            await transaction.CommitAsync();
+            return Ok();
+        }
+
+        return StatusCode(409);
     }
 
     [CustomAuthorize(PermissionKind.Admin)]

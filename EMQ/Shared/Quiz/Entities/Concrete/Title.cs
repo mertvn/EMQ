@@ -13,6 +13,9 @@ public class Title
 
     public bool IsMainTitle { get; set; }
 
+    /// added for EGS C/A/L matching purposes, don't rely on it being filled elsewhere
+    public int ArtistAliasId { get; set; }
+
     public override string ToString()
     {
         return $"{LatinTitle}" +

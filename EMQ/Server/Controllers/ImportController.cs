@@ -182,7 +182,7 @@ public class ImportController : ControllerBase
                 return StatusCode(409);
             }
 
-            bool success = await DbManager.OverwriteMusic(req.OldMid, req.NewSong);
+            bool success = await DbManager.OverwriteMusic(req.OldMid, req.NewSong, true);
             if (success)
             {
                 if (req.NewSong.MusicBrainzRecordingGid != null)

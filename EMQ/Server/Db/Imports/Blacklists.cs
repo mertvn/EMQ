@@ -163,6 +163,7 @@ public static class Blacklists
         "https://vndb.org/v1884",
         "https://vndb.org/v1972",
         "https://vndb.org/v2082",
+        "https://vndb.org/v2160",
         "https://vndb.org/v2205",
         "https://vndb.org/v2301",
         "https://vndb.org/v2517",
@@ -182,8 +183,8 @@ public static class Blacklists
         "https://vndb.org/v5957",
         "https://vndb.org/v6700",
         "https://vndb.org/v7557",
-        "",
-        "",
+        "https://vndb.org/v8005",
+        "https://vndb.org/v13628",
     };
 
     public static List<string> MusicBrainzImporterReleaseBlacklist { get; } = new()
