@@ -90,7 +90,7 @@
     protected override async Task OnParametersSetAsync()
     {
         await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
-        PlayerSongStats = null;
+    // PlayerSongStats = null;
     // StateHasChanged(); // fetched fast enough to make the flickering not worth it
 
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", new SongArtist { Id = ArtistId });
