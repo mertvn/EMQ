@@ -4266,7 +4266,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
-            int[] aIds = (await FindArtistIdsByArtistNames(artists)).Select(x => x.Item1).ToArray();
+            HashSet<int> aIds = (await FindArtistIdsByArtistNames(artists)).Select(x => x.Item1).ToHashSet();
             if (!aIds.Any())
             {
                 return ret;
@@ -4286,7 +4286,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
             queryMusic.Where($"mst.is_main_title = true");
             queryMusic.Where($"(mt.latin_title % ANY({titles}) OR mt.non_latin_title % ANY({titles}))");
-            queryMusic.Where($"a.id = ANY({aIds})");
+            queryMusic.Where($"a.id = ANY({aIds.ToArray()})");
             queryMusic.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
             // Console.WriteLine(queryMusic.Sql);

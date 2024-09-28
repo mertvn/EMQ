@@ -171,8 +171,8 @@ public static class SongMatcher
 
                 // Console.WriteLine(JsonSerializer.Serialize(songMatch.Artists, Utils.Jso));
                 var aIds = (await DbManager.FindArtistIdsByArtistNames(songMatch.Artists)).Select(x => x.Item1)
-                    .ToList();
-                innerResult.aIds = aIds;
+                    .ToHashSet();
+                innerResult.aIds = aIds.ToList();
 
                 if (!aIds.Any())
                 {

@@ -171,8 +171,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 /**where**/");
 
                 // egs stores names without spaces, vndb stores them with spaces; brute-force conversion
-                int[] aIds = (await DbManager.FindArtistIdsByArtistNames(egsData.CreaterNames)).Select(x => x.Item1)
-                    .ToArray();
+                HashSet<int> aIds = (await DbManager.FindArtistIdsByArtistNames(egsData.CreaterNames))
+                    .Select(x => x.Item1).ToHashSet();
                 if (!aIds.Any())
                 {
                     if (CreaterNameOverrideDict.ContainsKey(egsData.CreaterId))
@@ -190,9 +190,9 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 queryMusic.Where($"m.data_source={(int)DataSourceKind.VNDB}");
                 queryMusic.Where($"msel.url={egsData.GameVndbUrl}");
                 queryMusic.Where($"msm.type={(int)egsData.GameMusicCategory}");
-                queryMusic.Where($"a.id = ANY({aIds.ToList()})");
+                queryMusic.Where($"a.id = ANY({aIds.ToArray()})");
 
-                var mIds = (await queryMusic.QueryAsync<int?>()).ToList();
+                var mIds = (await queryMusic.QueryAsync<int?>()).ToHashSet();
                 if (mIds.Count > 1)
                 {
                     innerResult.ResultKind = EgsImporterInnerResultKind.MultipleMids;
