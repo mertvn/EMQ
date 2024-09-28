@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Client.Components;
@@ -428,6 +429,11 @@ public class LibraryController : ControllerBase
         {
             var res = await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false);
             Song song = res.Single();
+            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(song), JsonSerializer.SerializeToNode(req.Song)))
+            {
+                return BadRequest("No changes detected.");
+            }
+
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }
 
@@ -510,6 +516,11 @@ public class LibraryController : ControllerBase
         }
         else
         {
+            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(artist), JsonSerializer.SerializeToNode(req.Artist)))
+            {
+                return BadRequest("No changes detected.");
+            }
+
             oldEntityJson = JsonSerializer.Serialize(artist, Utils.JsoCompact);
         }
 
