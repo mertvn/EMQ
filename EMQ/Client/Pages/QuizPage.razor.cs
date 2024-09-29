@@ -207,6 +207,8 @@ public partial class QuizPage
 
     private Dictionary<int, SongHistory> ClientSongsHistory { get; set; } = new();
 
+    private int EnabledGuessKindCount { get; set; } = 1;
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -478,6 +480,7 @@ public partial class QuizPage
             }
 
             PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
+            EnabledGuessKindCount = Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value);
 
             if (!PhaseChangeInProgress || room is not null || forcePhaseChange)
             {
