@@ -27,7 +27,7 @@ public class UserLabel
     public bool vndb_label_is_private { get; set; }
 
     [Required]
-    public int kind { get; set; }
+    public LabelKind kind { get; set; }
 
     [Required]
     public string preset_name { get; set; } = "";

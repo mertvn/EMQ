@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Library.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -18,7 +19,7 @@ public class Report
     public string url { get; set; } = "";
 
     [Required]
-    public int report_kind { get; set; }
+    public SongReportKind report_kind { get; set; }
 
     [Required]
     public string submitted_by { get; set; } = "";

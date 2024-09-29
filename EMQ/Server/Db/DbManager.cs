@@ -1131,9 +1131,9 @@ GROUP BY artist_id";
         {
             var music = new Music
             {
-                type = (int)song.Type,
+                type = song.Type,
                 musicbrainz_recording_gid = song.MusicBrainzRecordingGid,
-                attributes = (int)song.Attributes,
+                attributes = song.Attributes,
                 data_source = song.DataSource
             };
             if (!await connection.InsertAsync(music, transaction))
@@ -1167,7 +1167,7 @@ GROUP BY artist_id";
                 {
                     music_id = mId,
                     url = songLink.Url,
-                    type = (int)songLink.Type,
+                    type = songLink.Type,
                     is_video = songLink.IsVideo,
                     duration = songLink.Duration,
                     submitted_by = songLink.SubmittedBy,
@@ -1206,7 +1206,7 @@ GROUP BY artist_id";
                     rating_bayesian = songSource.RatingBayesian,
                     // popularity = songSource.Popularity,
                     votecount = songSource.VoteCount,
-                    type = (int)songSource.Type
+                    type = songSource.Type
                 };
 
                 if (!await connection.InsertAsync(ms, transaction))
@@ -1250,7 +1250,7 @@ GROUP BY artist_id";
                         var newCategory = new Category()
                         {
                             name = songSourceCategory.Name,
-                            type = (int)songSourceCategory.Type,
+                            type = songSourceCategory.Type,
                             vndb_id = songSourceCategory.VndbId,
                         };
 
@@ -1296,7 +1296,7 @@ GROUP BY artist_id";
                             {
                                 music_source_id = msId,
                                 url = songSourceLink.Url,
-                                type = (int)songSourceLink.Type,
+                                type = songSourceLink.Type,
                                 name = songSourceLink.Name
                             }, transaction))
                     {
@@ -1319,7 +1319,7 @@ GROUP BY artist_id";
                     if (!await connection.InsertAsync(
                             new MusicSourceMusic()
                             {
-                                music_id = mId, music_source_id = msId, type = (int)songSourceSongType
+                                music_id = mId, music_source_id = msId, type = songSourceSongType
                             }, transaction))
                     {
                         throw new Exception("Failed to insert msm");
@@ -1344,7 +1344,7 @@ GROUP BY artist_id";
                 if (!await connection.InsertAsync(
                         new ArtistMusic()
                         {
-                            music_id = mId, artist_id = aId, artist_alias_id = aaId, role = (int)songArtistRole
+                            music_id = mId, artist_id = aId, artist_alias_id = aaId, role = songArtistRole
                         }, transaction))
                 {
                     throw new Exception();
@@ -2537,7 +2537,7 @@ AND msm.type = ANY(@msmType)";
             {
                 music_id = mId,
                 url = songLink.Url,
-                type = (int)songLink.Type,
+                type = songLink.Type,
                 is_video = songLink.IsVideo,
                 duration = songLink.Duration,
                 submitted_by = songLink.SubmittedBy,
@@ -2636,7 +2636,7 @@ WHERE id = {mId};
                 {
                     music_id = mId,
                     url = songLink.Url,
-                    type = (int)songLink.Type,
+                    type = songLink.Type,
                     is_video = songLink.IsVideo,
                     submitted_by = songLink.SubmittedBy!,
                     submitted_on = DateTime.UtcNow,
@@ -2679,7 +2679,7 @@ WHERE id = {mId};
                 {
                     music_id = songReport.music_id,
                     url = songReport.url,
-                    report_kind = (int)songReport.report_kind,
+                    report_kind = songReport.report_kind,
                     submitted_by = songReport.submitted_by,
                     submitted_on = DateTime.UtcNow,
                     status = (int)ReviewQueueStatus.Pending,
@@ -3189,7 +3189,7 @@ WHERE id = {mId};
                     throw new ArgumentOutOfRangeException(nameof(requestedStatus), requestedStatus, null);
             }
 
-            rq.status = (int)requestedStatus;
+            rq.status = requestedStatus;
 
             if (!string.IsNullOrWhiteSpace(reason))
             {

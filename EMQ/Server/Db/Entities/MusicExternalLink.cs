@@ -17,7 +17,7 @@ public class MusicExternalLink
     public string url { get; set; } = "";
 
     [Required]
-    public int type { get; set; }
+    public SongLinkType type { get; set; }
 
     [Required]
     public bool is_video { get; set; }

@@ -268,7 +268,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             {
                 username = username,
                 email = verificationRegister.email,
-                roles = (int)UserRoleKind.User,
+                roles = UserRoleKind.User,
                 created_at = DateTime.UtcNow,
                 salt = saltStr,
                 hash = hashStr

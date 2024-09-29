@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -15,7 +16,7 @@ public class MusicSourceExternalLink
     public string url { get; set; } = "";
 
     [Required]
-    public int type { get; set; }
+    public SongSourceLinkType type { get; set; }
 
     [Required]
     public string name { get; set; } = "";

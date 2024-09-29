@@ -269,7 +269,7 @@ public class ModController : ControllerBase
         Console.WriteLine(
             $"{session.Player.Username} is setting song attributes for mId {song.Id} {song} from {(SongAttributes)music.attributes} to {song.Attributes}");
 
-        music.attributes = (int)song.Attributes;
+        music.attributes = song.Attributes;
         bool success = await DbManager.UpdateEntity(music);
         if (success)
         {

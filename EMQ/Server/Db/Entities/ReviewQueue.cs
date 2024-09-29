@@ -18,8 +18,9 @@ public class ReviewQueue
     [Required]
     public string url { get; set; } = "";
 
+    // todo remove because it's unused
     [Required]
-    public int type { get; set; }
+    public SongLinkType type { get; set; }
 
     [Required]
     public bool is_video { get; set; }
@@ -31,7 +32,7 @@ public class ReviewQueue
     public DateTime submitted_on { get; set; }
 
     [Required]
-    public int status { get; set; }
+    public ReviewQueueStatus status { get; set; }
 
     public string? reason { get; set; }
 

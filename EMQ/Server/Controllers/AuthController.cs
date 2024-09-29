@@ -251,7 +251,7 @@ public class AuthController : ControllerBase
             vndb_label_id = req.Label.Id,
             vndb_label_name = req.Label.Name,
             vndb_label_is_private = req.Label.IsPrivate,
-            kind = (int)req.Label.Kind,
+            kind = req.Label.Kind,
             preset_name = session.ActiveUserLabelPresetName!,
         };
         long userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
@@ -326,7 +326,7 @@ public class AuthController : ControllerBase
                     vndb_label_id = label.Id,
                     vndb_label_name = label.Name,
                     vndb_label_is_private = label.IsPrivate,
-                    kind = (int)label.Kind,
+                    kind = label.Kind,
                     preset_name = session.ActiveUserLabelPresetName,
                 };
                 long _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);

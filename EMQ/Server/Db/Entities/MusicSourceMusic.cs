@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -16,5 +17,5 @@ public class MusicSourceMusic
 
     [Key]
     [Required]
-    public int type { get; set; }
+    public SongSourceSongType type { get; set; }
 }

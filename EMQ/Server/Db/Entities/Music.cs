@@ -14,7 +14,7 @@ public class Music
     public int id { get; set; }
 
     [Required]
-    public int type { get; set; } // todo enum
+    public SongType type { get; set; }
 
     [Required]
     public long stat_correct { get; set; }
@@ -44,7 +44,7 @@ public class Music
     public int stat_uniqueusers { get; set; }
 
     [Required]
-    public int attributes { get; set; } // todo enum
+    public SongAttributes attributes { get; set; }
 
     [Required]
     public DataSourceKind data_source { get; set; }

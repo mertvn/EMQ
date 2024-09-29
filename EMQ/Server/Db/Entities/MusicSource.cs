@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -27,5 +28,5 @@ public class MusicSource
     public int? votecount { get; set; }
 
     [Required]
-    public int type { get; set; }
+    public SongSourceType type { get; set; }
 }

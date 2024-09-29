@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -15,7 +16,7 @@ public class ArtistMusic
     public int music_id { get; set; }
 
     [Key]
-    public int role { get; set; }
+    public SongArtistRole role { get; set; }
 
     [Required]
     public int artist_alias_id { get; set; }
