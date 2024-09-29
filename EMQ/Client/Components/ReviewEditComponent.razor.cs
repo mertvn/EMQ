@@ -82,14 +82,10 @@ public partial class ReviewEditComponent
                             }
 
                             // todo
-                            if (reviewingItem.submitted_by != "Cookie4IS")
-                            {
-                                var nextItems = CurrentEQs!.Where(x => x.id > reviewingItem.id);
-                                isReadonly = nextItems.Any(x =>
-                                    JsonSerializer.Deserialize<Song>(x.entity_json, Utils.JsoCompact)!.Id ==
-                                    Entity.Id);
-                            }
-
+                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
+                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
+                                JsonSerializer.Deserialize<Song>(x.entity_json, Utils.JsoCompact)!.Id ==
+                                Entity.Id);
                             break;
                         }
                     case EntityKind.SongArtist:
@@ -101,14 +97,10 @@ public partial class ReviewEditComponent
                             }
 
                             // todo
-                            if (reviewingItem.submitted_by != "Cookie4IS")
-                            {
-                                var nextItems = CurrentEQs!.Where(x => x.id > reviewingItem.id);
-                                isReadonly = nextItems.Any(x =>
-                                    JsonSerializer.Deserialize<SongArtist>(x.entity_json, Utils.JsoCompact)!.Id ==
-                                    Entity.Id);
-                            }
-
+                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
+                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
+                                JsonSerializer.Deserialize<SongArtist>(x.entity_json, Utils.JsoCompact)!.Id ==
+                                Entity.Id);
                             break;
                         }
                 }
