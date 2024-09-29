@@ -1477,7 +1477,7 @@ GROUP BY artist_id";
                 }
             }
 
-            // todo delete aliases that exist in the db but not in the argument
+            // todo delete aliases that exist in the db but not in the argument -- might be easier to use UpsertList
             aaIds.Add(aaId);
         }
 
@@ -4515,8 +4515,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
             // extra check to make sure we don't lose any links
             var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single(); // todo transaction
-            var o = JsonSerializer.SerializeToNode(oldSong.Links);
-            var n = JsonSerializer.SerializeToNode(insertedSong.Links);
+            var o = JsonSerializer.SerializeToNode(oldSong.Links.OrderBy(x => x.Url));
+            var n = JsonSerializer.SerializeToNode(insertedSong.Links.OrderBy(x => x.Url));
             if (!JsonNode.DeepEquals(o, n))
             {
                 throw new Exception(
