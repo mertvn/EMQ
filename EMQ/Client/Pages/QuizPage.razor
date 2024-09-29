@@ -279,9 +279,19 @@
     }
 </div>
 
+@{
+    int? count = Room?.QuizSettings.EnabledGuessKinds.Count(x => x.Value);
+    float? width = 40 - (1.2f * count);
+    float? height = 44 - (4.5f * count);
+    float? playerHeight = 8.6f + (2.5f * count);
+    string widthStr = $"{width}vw";
+    string heightStr = $"{height}vh";
+    string playerHeightStr = $"{playerHeight}vh";
+}
+
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
 
-    <ul id="correctAnswerSources" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: 37.5vw; min-height: 52px">
+    <ul id="correctAnswerSources" style="visibility: @UiHelpers.Bool2Vis(PageState.VideoPlayerVisibility); width: @widthStr; min-height: 52px">
         @if (_correctAnswer?.Sources != null)
         {
             foreach (SongSource source in _correctAnswer.Sources)
@@ -296,7 +306,7 @@
     </ul>
 
 <div class="videoWrapper"
-     style="position: relative; background: dimgrey; width:37.5vw; height:42vh; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
+     style="position: relative; background: dimgrey; width:@widthStr; height:@heightStr; cursor: @UiHelpers.Bool2CursorPointer(PageState.VideoPlayerVisibility)"
      onclick="@(() => { if (PageState.VideoPlayerVisibility || Room?.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None) ClientState.Preferences.HideVideo = !ClientState.Preferences.HideVideo; })">
 
     @if (ClientState.Preferences.HideVideo &&
@@ -352,12 +362,12 @@
 
             <video src="@(video1Src)"
                    id="video1" autoplay
-                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video1"); width: 37.5vw; height: 42vh;">
+                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video1"); width: @widthStr; height: @heightStr;">
             </video>
 
             <video src="@(video2Src)"
                    id="video2" autoplay
-                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video2"); width: 37.5vw; height: 42vh;">
+                   style="background: black; display: @UiHelpers.Bool2Display(VisibleVideoElementId == "video2"); width: @widthStr; height: @heightStr;">
             </video>
 
             @if (PageState.VideoPlayerVisibility && _currentSong is not null && (!_currentSong.Links.FirstOrDefault()?.Url.IsVideoLink() ?? false))
@@ -365,7 +375,7 @@
                 @if (ClientState.Preferences.ShowVndbCovers && !string.IsNullOrEmpty(_currentSong.CoverUrl))
                 {
                     <div id="vnCoverDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Preferences.HideVideo);">
-                        <img src="@_currentSong.CoverUrl" alt="" style="object-fit: contain; width:37.5vw; height:42vh;">
+                        <img src="@_currentSong.CoverUrl" alt="" style="object-fit: contain; width:@widthStr; height:@heightStr;">
                     </div>
                 }
                 else
@@ -412,7 +422,7 @@
         @if (!string.IsNullOrEmpty(_currentSong?.ScreenshotUrl))
         {
             <div id="screenshotDiv" style="position: absolute; top: 0; right: 0; cursor: pointer; visibility: @UiHelpers.Bool2Vis(!ClientState.Preferences.HideVideo);">
-                <img src="@_currentSong.ScreenshotUrl" alt="" style="object-fit: contain; width:37.5vw; height:42vh;">
+                <img src="@_currentSong.ScreenshotUrl" alt="" style="object-fit: contain; width:@widthStr; height:@heightStr;">
             </div>
         }
         else
@@ -425,7 +435,7 @@
         }
     </div>
 
-<div class="progress" style="height: 5px; max-width: 37.5vw">
+<div class="progress" style="height: 5px; max-width: @widthStr">
     <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>
 </div>
 
@@ -480,7 +490,7 @@ word-wrap: break-word;
 }
 else
 {
-    <div id="GuessInput" style="max-width:37.5vw; padding-left: 10px; padding-right: 10px; margin-top: 10px;
+    <div id="GuessInput" style="max-width:@widthStr; padding-left: 10px; padding-right: 10px; margin-top: 10px;
                          pointer-events:@UiHelpers.Bool2PointerEvents(!PageState.VideoPlayerVisibility);">
 
         @if (Room != null)
@@ -631,13 +641,13 @@ else
                     };
 
                 <div class="playerDiv"
-                     style="margin: 10px; max-width: 160px; max-height: 290px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5");
+                     style="margin: 10px; max-width: 160px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5");
 box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor;">
                     <div class="playerGuessDiv" style="visibility: @UiHelpers.Bool2Vis(PageState.GuessesVisibility);
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (playerGuess?.Dict.Any(x => !string.IsNullOrWhiteSpace(x.Value)) ?? false));"
                          @onclick="@(() => SetGuess(playerGuess ?? new PlayerGuess()))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: 90px; display: block; z-index: 5; padding: 4px;
+                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: @playerHeightStr; display: block; z-index: 5; padding: 4px;
                                              color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @* todo make text smaller as it gets longer *@
                                 @if (playerGuess != null)
