@@ -158,7 +158,7 @@ public static class ServerUtils
             Id = userLabel.vndb_label_id,
             IsPrivate = userLabel.vndb_label_is_private,
             Name = userLabel.vndb_label_name,
-            Kind = (LabelKind)userLabel.kind,
+            Kind = userLabel.kind,
         };
         return label;
     }

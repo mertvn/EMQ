@@ -507,7 +507,7 @@ public class EntryPoints
                 Utils.JsoIndented)!;
 
         foreach (ReviewQueue reviewQueue in reviewQueues.Where(x =>
-                     (ReviewQueueStatus)x.status == ReviewQueueStatus.Approved))
+                     x.status == ReviewQueueStatus.Approved))
         {
             string submittedBy = reviewQueue.submitted_by;
             string url = reviewQueue.url;

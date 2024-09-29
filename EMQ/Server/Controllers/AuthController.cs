@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
                 Secret secret = await AuthManager.CreateSecret(user.id, ip);
                 username = user.username;
                 token = secret.token.ToString();
-                userRoleKind = (UserRoleKind)user.roles;
+                userRoleKind = user.roles;
                 playerId = user.id;
                 character = user.avatar;
                 skin = user.skin;
@@ -104,7 +104,7 @@ public class AuthController : ControllerBase
                 {
                     username = user.username;
                     token = secret.token.ToString();
-                    userRoleKind = (UserRoleKind)user.roles;
+                    userRoleKind = user.roles;
                     playerId = user.id;
                     character = user.avatar;
                     skin = user.skin;

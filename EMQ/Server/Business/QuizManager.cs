@@ -1642,8 +1642,8 @@ public class QuizManager
                 {
                     var userLabels =
                         await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId, session.ActiveUserLabelPresetName);
-                    var include = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Include).ToList();
-                    var exclude = userLabels.Where(x => (LabelKind)x.kind == LabelKind.Exclude).ToList();
+                    var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
+                    var exclude = userLabels.Where(x => x.kind == LabelKind.Exclude).ToList();
 
                     // todo Exclude does nothing on its own (don't break Balanced while fixing this)
                     if (include.Any())
@@ -2422,7 +2422,7 @@ public class QuizManager
 
             if (treasure != null)
             {
-                if (treasure.Position.IsReachableFromCoords((int)player.LootingInfo.X, (int)player.LootingInfo.Y))
+                if (treasure.Position.IsReachableFromCoords(player.LootingInfo.X, player.LootingInfo.Y))
                 {
                     if (player.LootingInfo.Inventory.Count < Quiz.Room.QuizSettings.InventorySize)
                     {
@@ -2467,12 +2467,12 @@ public class QuizManager
             var treasureRoom = Quiz.Room.TreasureRooms[player.LootingInfo.TreasureRoomCoords.X][
                 player.LootingInfo.TreasureRoomCoords.Y];
 
-            int newX = (int)Math.Clamp(
+            int newX = Math.Clamp(
                 player.LootingInfo.X +
                 Random.Shared.Next(-LootingConstants.PlayerAvatarSize, LootingConstants.PlayerAvatarSize),
                 0, LootingConstants.TreasureRoomWidth - LootingConstants.PlayerAvatarSize);
 
-            int newY = (int)Math.Clamp(
+            int newY = Math.Clamp(
                 player.LootingInfo.Y +
                 Random.Shared.Next(-LootingConstants.PlayerAvatarSize, LootingConstants.PlayerAvatarSize),
                 0, LootingConstants.TreasureRoomHeight - LootingConstants.PlayerAvatarSize);
