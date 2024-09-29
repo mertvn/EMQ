@@ -84,6 +84,28 @@ public partial class Song : IEditQueueEntity
         return
             $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.FirstOrDefault().ToString()} {first.LatinTitle}";
     }
+
+    /// NOT [Pure]
+    public Song Sort()
+    {
+        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ToList();
+        Links = Links.OrderBy(x => x.Url).ToList();
+        Artists = Artists.OrderBy(x => x.Id).ToList();
+        Sources = Sources.OrderBy(x => x.Id).ToList();
+        // todo? other stuff
+
+        foreach (SongArtist songArtist in Artists)
+        {
+            songArtist.Sort();
+        }
+
+        foreach (SongSource songSource in Sources)
+        {
+            songSource.Sort();
+        }
+
+        return this;
+    }
 }
 
 public enum DataSourceKind

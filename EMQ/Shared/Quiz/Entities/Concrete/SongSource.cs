@@ -47,6 +47,18 @@ public class SongSource
                    ? $" ({first.NonLatinTitle})"
                    : "");
     }
+
+    /// NOT [Pure]
+    public SongSource Sort()
+    {
+        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ToList();
+        Links = Links.OrderBy(x => x.Url).ToList();
+        Categories = Categories.OrderBy(x => x.Id).ToList();
+        Developers = Developers.OrderBy(x => x.VndbId).ToList();
+        // todo MusicIds
+        SongTypes.Sort();
+        return this;
+    }
 }
 
 public enum SongSourceSongType

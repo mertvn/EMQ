@@ -34,6 +34,15 @@ public class SongArtist : IEditQueueEntity
                    ? $" ({first.NonLatinTitle})"
                    : "");
     }
+
+    /// NOT [Pure]
+    public SongArtist Sort()
+    {
+        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ToList();
+        Links = Links.OrderBy(x => x.Url).ToList();
+        Roles.Sort();
+        return this;
+    }
 }
 
 public enum Sex

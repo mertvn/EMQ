@@ -429,7 +429,8 @@ public class LibraryController : ControllerBase
         {
             var res = await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false);
             Song song = res.Single();
-            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(song), JsonSerializer.SerializeToNode(req.Song)))
+            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(song.Sort()),
+                    JsonSerializer.SerializeToNode(req.Song.Sort())))
             {
                 return BadRequest("No changes detected.");
             }
@@ -516,7 +517,8 @@ public class LibraryController : ControllerBase
         }
         else
         {
-            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(artist), JsonSerializer.SerializeToNode(req.Artist)))
+            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(artist!.Sort()),
+                    JsonSerializer.SerializeToNode(req.Artist.Sort())))
             {
                 return BadRequest("No changes detected.");
             }
