@@ -160,19 +160,22 @@
             </div>
             <br/>
 
-            <details>
-                <summary>Persist after submitting</summary>
-                @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
-                {
-                    if (true)
+            @if (IsNew)
+            {
+                <details>
+                    <summary>Persist after submitting</summary>
+                    @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
                     {
-                        string id = $"PersistAfterSubmittingDict-{key}";
-                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
-                        <label for="@id">@key</label>
-                        <br/>
+                        if (true)
+                        {
+                            string id = $"PersistAfterSubmittingDict-{key}";
+                            <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
+                            <label for="@id">@key</label>
+                            <br/>
+                        }
                     }
-                }
-            </details>
+                </details>
+            }
 
             <textarea id="note_user"
                       rows="2"
