@@ -128,7 +128,7 @@ public class EntryPoints
         await EgsImporter.ImportEgsData();
     }
 
-    // todo find more ways to match (try removing parentheses or manual stuff)
+    // todo find more ways to match (manual stuff)
     // todo import all staff from vndb
     [Test, Explicit]
     public async Task InsertCALFromEgs()
@@ -163,7 +163,7 @@ public class EntryPoints
         {
             "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO",
             "rian", "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki",
-            "Antistar", "anporin", "mio", "ちづ", "SAORI",
+            "Antistar", "anporin", "mio", "ちづ", "SAORI", "yui", "masa", "yuri",
         };
         blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
         SongArtistRole[] songArtistRoles =
@@ -260,12 +260,16 @@ public class EntryPoints
                             }
                             else
                             {
-                                if (!blacklistedCreaterNames.Any(x =>
-                                        x == egsDataCreater.Name.NormalizeForAutocomplete() ||
-                                        x == egsDataCreater.Furigana.NormalizeForAutocomplete()))
+                                string name = egsDataCreater.Name;
+                                int firstParenthesisIndex = name.IndexOf('(');
+                                if (firstParenthesisIndex > 0)
                                 {
-                                    aIds = await DbManager.FindArtistIdsByArtistNames(
-                                        new List<string> { egsDataCreater.Name });
+                                    name = name[..firstParenthesisIndex];
+                                }
+
+                                if (!blacklistedCreaterNames.Any(x => x == name.NormalizeForAutocomplete()))
+                                {
+                                    aIds = await DbManager.FindArtistIdsByArtistNames(new List<string> { name });
                                 }
                             }
 
@@ -286,12 +290,12 @@ public class EntryPoints
         }
 
         // return;
+        json = json.DistinctBy(x => x.mIds.Single()).ToArray();
         var artistAliasDict = new Dictionary<int, SongArtist>();
         var songsDict =
             (await DbManager.SelectSongsMIds(json.SelectMany(x => x.mIds).ToArray(), false))
             .ToDictionary(x => x.Id, x => x);
 
-        HashSet<int> editedSongIds = new();
         var controller = new LibraryController
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
@@ -305,6 +309,12 @@ public class EntryPoints
             bool addedSomething = false;
             int mId = egsImporterInnerResult.mIds.Single();
             var song = songsDict[mId];
+            // foreach (SongArtist songArtist in song.Artists)
+            // {
+            //     if (songArtist.VndbId == "s2384")
+            //     {
+            //     }
+            // }
 
             // if (egsImporterInnerResult.EgsData.MusicId != 2887)
             // {
@@ -393,21 +403,19 @@ public class EntryPoints
 
             if (addedSomething)
             {
-                if (editedSongIds.Contains(song.Id))
-                {
-                    Console.WriteLine($"skipping duplicate edit for mId {song.Id}");
-                    continue;
-                }
-
                 if (song.Artists.Any(x => x.Titles.Count != 1))
                 {
                     throw new Exception($"artists must have exactly one title per song: {song}");
                 }
 
-                editedSongIds.Add(song.Id);
                 // Console.WriteLine(song);
-                await controller.EditSong(new ReqEditSong(song, false,
+                var actionResult = await controller.EditSong(new ReqEditSong(song, false,
                     $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={egsImporterInnerResult.EgsData.MusicId}"));
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+                }
             }
 
             foreach (SongArtist songArtist in song.Artists)
