@@ -53,7 +53,7 @@ public static class EgsImporter
         }
 
         var egsDataList = new List<EgsData>();
-        string[] rows = await File.ReadAllLinesAsync($"{folder}\\egs.tsv");
+        string[] rows = await File.ReadAllLinesAsync($"{folder}/egs.tsv");
         for (int i = 1; i < rows.Length; i++)
         {
             string row = rows[i];
@@ -165,7 +165,7 @@ public static class EgsImporter
         }
 
         string serialized = JsonSerializer.Serialize(egsDataList, Utils.JsoIndented);
-        await File.WriteAllTextAsync($"{folder}\\egsData.json", serialized);
+        await File.WriteAllTextAsync($"{folder}/egsData.json", serialized);
         // Console.WriteLine(serialized);
 
         // todo important batch
@@ -290,29 +290,29 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         Console.WriteLine("noAids count: " +
                           egsImporterInnerResults.Count(x => x.ResultKind == EgsImporterInnerResultKind.NoAids));
 
-        await File.WriteAllTextAsync($"{folder}\\matched.json",
+        await File.WriteAllTextAsync($"{folder}/matched.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched),
                 Utils.JsoIndented));
 
-        await File.WriteAllTextAsync($"{folder}\\noMids.json",
+        await File.WriteAllTextAsync($"{folder}/noMids.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.NoMids),
                 Utils.JsoIndented));
 
-        await File.WriteAllTextAsync($"{folder}\\noMids_noins.json",
+        await File.WriteAllTextAsync($"{folder}/noMids_noins.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x =>
                     x.ResultKind == EgsImporterInnerResultKind.NoMids &&
                     x.EgsData.GameMusicCategory != SongSourceSongType.Insert),
                 Utils.JsoIndented));
 
-        await File.WriteAllTextAsync($"{folder}\\noAids.json",
+        await File.WriteAllTextAsync($"{folder}/noAids.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.NoAids),
                 Utils.JsoIndented));
 
-        await File.WriteAllTextAsync($"{folder}\\noAids_noins.json",
+        await File.WriteAllTextAsync($"{folder}/noAids_noins.json",
             JsonSerializer.Serialize(
                 egsImporterInnerResults.Where(x =>
                     x.ResultKind == EgsImporterInnerResultKind.NoAids &&
