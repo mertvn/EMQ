@@ -109,19 +109,19 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
-    [Obsolete("deprecated in favor of Upload/PostFile")]
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("ImportSongLink")]
-    public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
-    {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
-        {
-            return false;
-        }
-
-        return await ServerUtils.ImportSongLinkInner(req.MId, req.SongLink, "", null) != null;
-    }
+    // [Obsolete("deprecated in favor of Upload/PostFile")]
+    // [CustomAuthorize(PermissionKind.Admin)]
+    // [HttpPost]
+    // [Route("ImportSongLink")]
+    // public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
+    // {
+    //     if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+    //     {
+    //         return false;
+    //     }
+    //
+    //     return await ServerUtils.ImportSongLinkInner(req.MId, req.SongLink, "", null) != null;
+    // }
 
     [CustomAuthorize(PermissionKind.ReportSongLink)]
     [HttpPost]

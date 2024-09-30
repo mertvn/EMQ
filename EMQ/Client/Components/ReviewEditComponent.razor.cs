@@ -124,6 +124,7 @@ public partial class ReviewEditComponent
             ReviewQueueStatus.Rejected);
         if (ApplyToNext500Batch)
         {
+            ApplyToNext500Batch = false;
             foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
             {
                 await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Rejected);
@@ -137,6 +138,7 @@ public partial class ReviewEditComponent
             ReviewQueueStatus.Pending);
         if (ApplyToNext500Batch)
         {
+            ApplyToNext500Batch = false;
             foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
             {
                 await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Pending);
@@ -150,6 +152,7 @@ public partial class ReviewEditComponent
             ReviewQueueStatus.Approved);
         if (ApplyToNext500Batch)
         {
+            ApplyToNext500Batch = false;
             foreach (var eq in CurrentEQs!.Where(x => x.id > reviewingId).Take(500))
             {
                 await EditQueueComponent!.SendUpdateEditQueueItem(eq, eq.note_mod, ReviewQueueStatus.Approved);
