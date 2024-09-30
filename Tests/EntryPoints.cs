@@ -125,7 +125,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task ImportEgsData()
     {
-        await EgsImporter.ImportEgsData();
+        await EgsImporter.ImportEgsData(DateTime.Parse(Constants.ImportDateEgs), false);
     }
 
     // todo make use of mel egs links

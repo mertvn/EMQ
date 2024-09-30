@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
@@ -20,14 +21,29 @@ public static class EgsImporter
     public static readonly Dictionary<int, List<string>> CreaterNameOverrideDict = new();
 
     // todo use xrefs (or just import xrefs to the db and use those tbh)
-    public static async Task ImportEgsData()
+    public static async Task ImportEgsData(DateTime dateTime, bool calledFromApi)
     {
-        string date = Constants.ImportDateEgs;
-        string folder = $"C:\\emq\\egs\\{date}";
+        if (ConnectionHelper.GetConnectionString().Contains("AUTH"))
+        {
+            throw new Exception("wrong db");
+        }
 
+        string date = dateTime.ToString("yyyy-MM-dd");
+        string folderPrelude;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            folderPrelude = "C:/emq/egs/";
+        }
+        else
+        {
+            folderPrelude = "egsimporter/";
+            Console.WriteLine($"{Directory.GetCurrentDirectory()}/{folderPrelude}");
+        }
+
+        string folder = $"{folderPrelude}{date}";
         var createrNameOverrideDictFile =
             JsonSerializer.Deserialize<Dictionary<int, List<string>>>(
-                await File.ReadAllTextAsync("C:\\emq\\egs\\createrNameOverrideDict.json"), Utils.JsoIndented)!;
+                await File.ReadAllTextAsync($"{folderPrelude}createrNameOverrideDict.json"), Utils.JsoIndented)!;
         foreach ((int key, List<string>? value) in createrNameOverrideDictFile)
         {
             if (!CreaterNameOverrideDict.TryAdd(key, value))
@@ -155,7 +171,8 @@ public static class EgsImporter
         // todo important batch
         // Attempt to match EGS songs with VNDB songs
         var egsImporterInnerResults = new ConcurrentBag<EgsImporterInnerResult>();
-        await Parallel.ForEachAsync(egsDataList, async (egsData, _) =>
+        var opt = new ParallelOptions { MaxDegreeOfParallelism = calledFromApi ? 1 : Environment.ProcessorCount };
+        await Parallel.ForEachAsync(egsDataList, opt, async (egsData, _) =>
         {
             var innerResult = new EgsImporterInnerResult { EgsData = egsData };
             egsImporterInnerResults.Add(innerResult);
@@ -325,6 +342,10 @@ WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = 
             {
                 // Console.WriteLine($"Error updating music_title for mId {mId} {innerResult.EgsData.MusicName}");
             }
+            else
+            {
+                Console.WriteLine($"updated music_title for mId {mId} {innerResult.EgsData.MusicName}");
+            }
 
             if (!mIdsWithExistingMels.Contains(mId))
             {
@@ -347,6 +368,8 @@ WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = 
                 }
                 else
                 {
+                    Console.WriteLine(
+                        $"inserted music_external_link for mId {mId} https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}");
                     mIdsWithExistingMels.Add(mId);
                 }
             }

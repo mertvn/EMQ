@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Imports.EGS;
 using EMQ.Server.Db.Imports.MusicBrainz;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -86,6 +87,17 @@ public class ImportController : ControllerBase
         var date = DateTime.UtcNow;
         date = DateTime.UtcNow - TimeSpan.FromDays(0); // todo
         await VndbImporter.ImportVndbData(date, true);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("RunEgsImporter")]
+    public async Task<ActionResult> RunEgsImporter()
+    {
+        var date = DateTime.UtcNow;
+        date = DateTime.UtcNow - TimeSpan.FromDays(0); // todo
+        await EgsImporter.ImportEgsData(date, true);
         return Ok();
     }
 

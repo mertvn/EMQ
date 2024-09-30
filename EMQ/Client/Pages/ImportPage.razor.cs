@@ -43,6 +43,11 @@ public partial class ImportPage
         }
     }
 
+    private async Task Onclick_RunEgsImporter()
+    {
+        HttpResponseMessage _ = await _client.PostAsJsonAsync("Import/RunEgsImporter", "");
+    }
+
     private async Task Onclick_RunMusicBrainzImporter()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Import/RunMusicBrainzImporter", "");
