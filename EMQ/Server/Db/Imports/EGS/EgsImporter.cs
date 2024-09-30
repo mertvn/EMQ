@@ -211,7 +211,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 queryMusic.Where($"msel.url={egsData.GameVndbUrl}");
                 queryMusic.Where($"msm.type={(int)egsData.GameMusicCategory}");
                 queryMusic.Where($"a.id = ANY({aIds.ToArray()})");
-                queryMusic.Where($"a.role = {(int)SongArtistRole.Vocals})");
+                queryMusic.Where($"am.role = {(int)SongArtistRole.Vocals})");
 
                 var mIds = (await queryMusic.QueryAsync<int?>()).ToHashSet();
                 if (mIds.Count > 1)
