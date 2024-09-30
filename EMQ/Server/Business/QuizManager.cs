@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1593,6 +1593,26 @@ public class QuizManager
             {
                 Quiz.Room.QuizSettings.ListDistributionKind = ListDistributionKind.Random;
             }
+        }
+
+        int playersInActiveQuizzes = ServerState.Rooms.Where(x =>
+                x.Quiz != null && !x.Quiz.QuizState.IsPaused && x.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+            .Sum(x => x.Players.Count(y => !y.IsBot));
+        if (Quiz.Room.Players.Count(x => !x.IsBot) > 1)
+        {
+            Quiz.Room.QuizSettings.TimeoutMs = playersInActiveQuizzes switch
+            {
+                > 10 and < 15 => Math.Max(6000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 15 and < 20 => Math.Max(7000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 20 and < 25 => Math.Max(9000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 25 and < 30 => Math.Max(10000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 30 and < 40 => Math.Max(12000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 40 and < 50 => Math.Max(14000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 50 and < 70 => Math.Max(17000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 70 and < 99 => Math.Max(20000, Quiz.Room.QuizSettings.TimeoutMs),
+                > 99 => Math.Max(25000, Quiz.Room.QuizSettings.TimeoutMs),
+                _ => Quiz.Room.QuizSettings.TimeoutMs
+            };
         }
 
         CorrectAnswersDicts =
