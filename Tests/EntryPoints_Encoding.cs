@@ -541,7 +541,7 @@ public class EntryPoints_Encoding
             var songs = await DbManager.SelectSongsMIds(validMids.ToArray(), false);
             foreach (Song song in songs)
             {
-                song.Links = SongLink.FilterSongLinks(song.Links);
+                song.Links = SongLink.FilterSongLinks(song.Links).Where(x => x.IsFileLink).ToList();
             }
 
             var links = songs.Where(z => z.Links.Any() && !z.Links.Any(v => !v.IsVideo))
@@ -815,7 +815,7 @@ public class EntryPoints_Encoding
             var processedMidsSongs = await DbManager.SelectSongsMIds(validRqs.Select(x => x.music_id).ToArray(), false);
             foreach (var processedMidsSong in processedMidsSongs)
             {
-                var filtered = SongLink.FilterSongLinks(processedMidsSong.Links);
+                var filtered = SongLink.FilterSongLinks(processedMidsSong.Links).Where(x => x.IsFileLink).ToArray();
                 if (filtered.Any(x => x.Url.EndsWith(".weba")))
                 {
                     foreach (var songLink in filtered.Where(x => !x.IsVideo && !x.Url.EndsWith(".weba")))
@@ -851,7 +851,7 @@ public class EntryPoints_Encoding
                 continue;
             }
 
-            var filtered = SongLink.FilterSongLinks(song.Links);
+            var filtered = SongLink.FilterSongLinks(song.Links).Where(x => x.IsFileLink).ToArray();
             if (filtered.Any(x => x.Url.EndsWith(".weba") && x.SubmittedBy != "Lkyda") && !filtered.Any(x => x.IsVideo))
             {
                 Console.WriteLine($"possibly corrupt link: {song}");

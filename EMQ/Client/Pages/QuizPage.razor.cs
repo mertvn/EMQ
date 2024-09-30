@@ -836,7 +836,7 @@ public partial class QuizPage
             return true;
         }
 
-        if (!song.Links.Any()) // no sound mode
+        if (!song.Links.Any(x => x.IsFileLink)) // no sound mode
         {
             song.DoneBuffering = true;
             await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered",

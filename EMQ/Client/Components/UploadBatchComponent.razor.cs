@@ -188,7 +188,7 @@ public partial class UploadBatchComponent
                             uploadResult.PossibleMatches.Add(matchingSongs.First());
                             uploadResult.File = file;
 
-                            if (!matchingSongs.First().Links.Any())
+                            if (!matchingSongs.First().Links.Any(x => x.IsFileLink))
                             {
                                 UploadTasks.Add(ChooseAndUpload(uploadResult, matchingSongs.First().Id));
                             }

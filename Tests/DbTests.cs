@@ -44,7 +44,10 @@ public class DbTests
             {
                 Assert.That(!string.IsNullOrWhiteSpace(songLink.Url));
                 Assert.That(songLink.Type != SongLinkType.Unknown);
-                Assert.That(songLink.Duration.TotalMilliseconds > 0);
+                if (songLink.IsFileLink)
+                {
+                    Assert.That(songLink.Duration.TotalMilliseconds > 0);
+                }
             }
 
             foreach (SongSource songSource in song.Sources)
@@ -230,7 +233,7 @@ public class DbTests
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 7);
-        Assert.That(song.Links.Any());
+        Assert.That(song.Links.Any(x => x.IsFileLink));
     }
 
     [Test]
@@ -756,7 +759,8 @@ public class DbTests
 
         Assert.That(songs.Count > 200);
         Assert.That(songs.Count < 10000);
-        Assert.That(songs.All(song => song.Links.Any(x => uploaders.Contains(x.SubmittedBy!.ToLowerInvariant()))));
+        Assert.That(songs.All(song =>
+            song.Links.Where(x => x.IsFileLink).Any(x => uploaders.Contains(x.SubmittedBy!.ToLowerInvariant()))));
         GenericSongsAssert(songs);
     }
 
@@ -882,10 +886,7 @@ public class DbTests
         var song = new Song()
         {
             Titles =
-                new List<Title>()
-                {
-                    new Title() { LatinTitle = "Desire", Language = "en", IsMainTitle = true },
-                },
+                new List<Title>() { new Title() { LatinTitle = "Desire", Language = "en", IsMainTitle = true }, },
             Artists = new List<SongArtist>()
             {
                 new SongArtist()
@@ -908,9 +909,7 @@ public class DbTests
                     {
                         new SongArtistLink
                         {
-                            Url = "https://vndb.org/s1440",
-                            Type = SongArtistLinkType.VNDBStaff,
-                            Name = "",
+                            Url = "https://vndb.org/s1440", Type = SongArtistLinkType.VNDBStaff, Name = "",
                         }
                     }
                 }
@@ -957,17 +956,6 @@ public class DbTests
         };
 
         int _ = await DbManager.InsertSong(song);
-    }
-
-    [Test, Explicit]
-    public async Task Test_FilterSongLinks()
-    {
-        var song = (await DbManager.SelectSongsBatch(
-            new List<Song> { new Song { Titles = new List<Title> { new() { LatinTitle = "Mirage Lullaby" } } } },
-            false)).Single();
-
-        var filtered = SongLink.FilterSongLinks(song.Links);
-        Assert.That(filtered.Count == 1);
     }
 
     [Test]

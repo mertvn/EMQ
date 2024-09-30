@@ -95,12 +95,12 @@
                         Allowed link types
                     </summary>
                     <ul>
-                        @foreach (var type in Enum.GetValues<SongArtistLinkType>())
+                        @foreach ((SongArtistLinkType key, Regex value) in RegexPatterns.ArtistLinkRegex)
                         {
-                            if (type != SongArtistLinkType.Unknown)
+                            if (key != SongArtistLinkType.Unknown)
                             {
                                 <li>
-                                    @type.GetDescription(): @RegexPatterns.ArtistLinkRegex[type].ToString()
+                                    @key.GetDescription(): @value.ToString()
                                 </li>
                             }
                         }
@@ -204,10 +204,10 @@
 
     private async Task RemoveAlias(int index)
     {
-        // if (!IsNew)
-        // {
-        //     return;
-        // }
+    // if (!IsNew)
+    // {
+    //     return;
+    // }
 
         if (Artist.Titles.Count <= 1)
         {

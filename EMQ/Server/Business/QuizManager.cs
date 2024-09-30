@@ -1948,6 +1948,12 @@ public class QuizManager
                 Quiz.ValidSourcesForLooting = validSourcesLooting;
                 break;
             case SongSelectionKind.LocalMusicLibrary:
+                bool b = false;
+                if (!b)
+                {
+                    throw new Exception("broken since who knows when");
+                }
+
                 dbSongs = new List<Song>();
                 string[] filePaths =
                     Directory.GetFiles(Constants.LocalMusicLibraryPath, "*.mp3", SearchOption.AllDirectories);

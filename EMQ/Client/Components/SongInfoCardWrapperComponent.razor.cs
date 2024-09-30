@@ -33,7 +33,7 @@ public partial class SongInfoCardWrapperComponent
     [Parameter]
     public Dictionary<int, Func<Task>>? BatchUploaderCallbacks { get; set; }
 
-    private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
+    // private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
 
     private int VisibleSongsCount { get; set; }
 
@@ -45,48 +45,48 @@ public partial class SongInfoCardWrapperComponent
 
     private ReviewComponent _reviewComponent = null!;
 
-    private async Task SubmitSongUrl(int mId, string url)
-    {
-        if (ClientState.Session?.Player.Username is null)
-        {
-            return;
-        }
-
-        _addSongLinkModel[mId].Url = "";
-        StateHasChanged();
-
-        url = url.Trim().ToLowerInvariant();
-        bool isVideo = url.IsVideoLink();
-        SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
-
-        string submittedBy = ClientState.Session.Player.Username;
-        var req = new ReqImportSongLink(mId,
-            new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType, SubmittedBy = submittedBy });
-        var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
-        if (res.IsSuccessStatusCode)
-        {
-            var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
-            if (isSuccess)
-            {
-                Console.WriteLine("Imported song link!");
-                // await _reviewQueueComponent!.RefreshRQs(); // todo
-            }
-            else
-            {
-                _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
-                Console.WriteLine("Error importing song link");
-            }
-        }
-        else
-        {
-            _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
-            Console.WriteLine("Error importing song link");
-        }
-    }
+    // private async Task SubmitSongUrl(int mId, string url)
+    // {
+    //     if (ClientState.Session?.Player.Username is null)
+    //     {
+    //         return;
+    //     }
+    //
+    //     _addSongLinkModel[mId].Url = "";
+    //     StateHasChanged();
+    //
+    //     url = url.Trim().ToLowerInvariant();
+    //     bool isVideo = url.IsVideoLink();
+    //     SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
+    //
+    //     string submittedBy = ClientState.Session.Player.Username;
+    //     var req = new ReqImportSongLink(mId,
+    //         new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType, SubmittedBy = submittedBy });
+    //     var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
+    //     if (res.IsSuccessStatusCode)
+    //     {
+    //         var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
+    //         if (isSuccess)
+    //         {
+    //             Console.WriteLine("Imported song link!");
+    //             // await _reviewQueueComponent!.RefreshRQs(); // todo
+    //         }
+    //         else
+    //         {
+    //             _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
+    //             Console.WriteLine("Error importing song link");
+    //         }
+    //     }
+    //     else
+    //     {
+    //         _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
+    //         Console.WriteLine("Error importing song link");
+    //     }
+    // }
 
     private async Task BatchSetSubmittedBy()
     {
-        var links = CurrentSongs.SelectMany(x => x.Links.Where(y => y.SubmittedBy == "[unknown]"));
+        var links = CurrentSongs.SelectMany(x => x.Links.Where(y => y.IsFileLink && y.SubmittedBy == "[unknown]"));
         string[] urls = links.Select(x => x.Url).ToArray();
 
         var req = new ReqSetSubmittedBy(urls, _batchSetSubmittedByText);
@@ -157,9 +157,9 @@ public partial class SongInfoCardWrapperComponent
     }
 }
 
-public class AddSongLinkModel
-{
-    [Required]
-    [RegularExpression(RegexPatterns.CatboxRegex, ErrorMessage = "Invalid Url")]
-    public string Url { get; set; } = "";
-}
+// public class AddSongLinkModel
+// {
+//     [Required]
+//     [RegularExpression(RegexPatterns.CatboxRegex, ErrorMessage = "Invalid Url")]
+//     public string Url { get; set; } = "";
+// }

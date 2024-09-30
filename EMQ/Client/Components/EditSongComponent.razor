@@ -2,209 +2,248 @@
 @using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Client.Pages
 @using System.Linq
+@using System.Text.RegularExpressions
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
 @inject HttpClient _client
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
-    @if (IsNew)
-    {
-        <details style="padding: 5px;">
-            <summary>Guidelines for adding songs</summary>
-            <h5>What can be added</h5>
-            <ol>
-                <li>Follow VNDB's guidelines on romanization.</li>
-                <li>Currently we're only accepting non-BGM Non-canon song submissions. Canon songs should be added to VNDB instead.</li>
-                <li>Currently it's possible to add songs only to sources already existing in the database.</li>
-                <li>All Official submissions are accepted.</li>
-                <li>Unofficial submissions may be rejected if they are too obscure/low-quality.</li>
+@if (IsNew)
+{
+    <details style="padding: 5px;">
+        <summary>Guidelines for adding songs</summary>
+        <h5>What can be added</h5>
+        <ol>
+            <li>Follow VNDB's guidelines on romanization.</li>
+            <li>Currently we're only accepting non-BGM Non-canon song submissions. Canon songs should be added to VNDB instead.</li>
+            <li>Currently it's possible to add songs only to sources already existing in the database.</li>
+            <li>All Official submissions are accepted.</li>
+            <li>Unofficial submissions may be rejected if they are too obscure/low-quality.</li>
 
-                <br/>
-                <h6>Extra restrictions for Unofficial submissions:</h6>
-                <ol>
-                    <li>DO NOT SUBMIT AI OR VTUBER COVERS.</li>
-                    <li>DO NOT SUBMIT COVERS BY NON-JAPANESE PEOPLE.</li>
-                    <li>DO NOT SUBMIT NON-ORIGINAL LANGUAGE COVERS (unless the target language is Japanese).</li>
-                </ol>
-            </ol>
             <br/>
+            <h6>Extra restrictions for Unofficial submissions:</h6>
+            <ol>
+                <li>DO NOT SUBMIT AI OR VTUBER COVERS.</li>
+                <li>DO NOT SUBMIT COVERS BY NON-JAPANESE PEOPLE.</li>
+                <li>DO NOT SUBMIT NON-ORIGINAL LANGUAGE COVERS (unless the target language is Japanese).</li>
+            </ol>
+        </ol>
+        <br/>
 
-            @* todo show this on edit page too? *@
-            <h5>Attributes</h5>
-            <ul>
-                @foreach (var attr in Enum.GetValues<SongAttributes>())
+        @* todo show this on edit page too? *@
+        <h5>Attributes</h5>
+        <ul>
+            @foreach (var attr in Enum.GetValues<SongAttributes>())
+            {
+                @if (attr != SongAttributes.None)
                 {
-                    @if (attr != SongAttributes.None)
+                    <li>
+                        @attr.GetDescription():
+                        <br/>
+                        @attr.GetDisplayName()
+                    </li>
+                    <br/>
+                }
+            }
+        </ul>
+
+        <h5>Examples</h5>
+        <ul>
+            <li>
+                <a href="https://vgmdb.net/album/89086" target="_blank">https://vgmdb.net/album/89086</a>
+                <br/>
+                The first disc of this album contains covers of some popular VN songs.
+                <br/>
+                They can be added to their respective sources, with the artist as Denkishiki Karen Ongaku Shuudan and attributes as Non-canon and Unofficial.
+            </li>
+            <br/>
+            <li>
+                <a href="https://vgmdb.net/album/17301" target="_blank">https://vgmdb.net/album/17301</a>
+                <br/>
+                The first track of this album "insensible ～ヒカル＆ナギ Ver.～" is a cover of "insensible" that plays in "Peace@Pieces".
+                <br/>
+                It does not play in the VN, so it should be marked as Non-canon, however it was released by the original developer of the VN, so it should NOT be marked as Unofficial.
+            </li>
+        </ul>
+        <br/>
+    </details>
+}
+
+<div style="display: flex; flex-wrap: wrap">
+    <div style="border: 1px black solid; padding: 10px; width: 970px;">
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>Sources</h5>
+            <GuessInputComponent @ref="_guessInputComponentRef"
+                                 Placeholder="Add source"
+                                 IsDisabled="@(Song.DataSource != DataSourceKind.EMQ)"
+                                 IsQuizPage="false"
+                                 @bind-GuessT="@SelectedMusicSourceTitle"
+                                 Callback="SelectedResultChangedMst">
+            </GuessInputComponent>
+            @foreach (var source in Song.Sources)
+            {
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source.Id); } })">
+                        🗑
+                    </span>
+                    @source.ToString()
+                    <div>
+                        @foreach (var key in Enum.GetValues<SongSourceSongType>())
+                        {
+                            if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
+                            {
+                                string id = $"checkbox-SSST-{source.Id}-{key}";
+                                <input type="checkbox" id="@id" class="form-check-input" disabled
+                                       @bind:get="@source.SongTypes.Contains(key)"
+                                       @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
+                                       @bind:event="oninput"
+                                       style="margin: 5px"/>
+                                <label for="@id">@key.ToString()</label>
+                                <br/>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        <br/>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>Artists</h5>
+            <AutocompleteAComponent @ref="_autocompleteAComponentRef"
+                                    Placeholder="Add artist"
+                                    IsDisabled="false"
+                                    IsQuizPage="false"
+                                    @bind-Guess="@SelectedArtist"
+                                    Callback="SelectedResultChangedA">
+            </AutocompleteAComponent>
+            @foreach (var artist in Song.Artists)
+            {
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ || !(artist.Roles.Contains(SongArtistRole.Unknown) || artist.Roles.Contains(SongArtistRole.Vocals))) { await RemoveArtist(artist.Id); } })">
+                        🗑
+                    </span>
+                    @artist.ToString()
+
+                    <div>
+                        @foreach (var key in Enum.GetValues<SongArtistRole>())
+                        {
+                            @if (key != SongArtistRole.Unknown)
+                            {
+                                string id = $"checkbox-ArtistRole-{artist.Id}-{key}";
+                                <input type="checkbox" id="@id" class="form-check-input" disabled="@(Song.DataSource != DataSourceKind.EMQ && key is (SongArtistRole.Unknown or SongArtistRole.Vocals))"
+                                       @bind:get="@artist.Roles.Contains(key)"
+                                       @bind:set="@(new Func<bool, Task>(async value => await OnArtistRoleCheckboxClick(value, key, artist)))"
+                                       @bind:event="oninput"
+                                       style="margin: 5px"/>
+                                <label for="@id">@key.ToString()</label>
+                                <br/>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        <br/>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>Song title</h5>
+            <label style="padding: 4px;">
+                <input type="text" @bind="Song.Titles.Single().LatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
+                Latin title
+            </label>
+            <br/>
+            <label style="padding: 4px;">
+                <input type="text" @bind="Song.Titles.Single().NonLatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
+                Non-Latin title
+            </label>
+        </div>
+        <br/>
+
+        @if (IsNew)
+        {
+            <details>
+                <summary>Persist after submitting</summary>
+                @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
+                {
+                    if (true)
                     {
-                        <li>
-                            @attr.GetDescription():
-                            <br/>
-                            @attr.GetDisplayName()
-                        </li>
+                        string id = $"PersistAfterSubmittingDict-{key}";
+                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
+                        <label for="@id">@key</label>
                         <br/>
                     }
                 }
-            </ul>
+            </details>
+        }
 
-            <h5>Examples</h5>
-            <ul>
-                <li>
-                    <a href="https://vgmdb.net/album/89086" target="_blank">https://vgmdb.net/album/89086</a>
-                    <br/>
-                    The first disc of this album contains covers of some popular VN songs.
-                    <br/>
-                    They can be added to their respective sources, with the artist as Denkishiki Karen Ongaku Shuudan and attributes as Non-canon and Unofficial.
-                </li>
-                <br/>
-                <li>
-                    <a href="https://vgmdb.net/album/17301" target="_blank">https://vgmdb.net/album/17301</a>
-                    <br/>
-                    The first track of this album "insensible ～ヒカル＆ナギ Ver.～" is a cover of "insensible" that plays in "Peace@Pieces".
-                    <br/>
-                    It does not play in the VN, so it should be marked as Non-canon, however it was released by the original developer of the VN, so it should NOT be marked as Unofficial.
-                </li>
-            </ul>
-            <br/>
-        </details>
-    }
-
-    <div style="display: flex; flex-wrap: wrap">
-        <div style="border: 1px black solid; padding: 10px; width: 970px;">
-            <div style="border: 1px black solid; padding: 10px;">
-                <h5>Sources</h5>
-                <GuessInputComponent @ref="_guessInputComponentRef"
-                                     Placeholder="Add source"
-                                     IsDisabled="@(Song.DataSource != DataSourceKind.EMQ)"
-                                     IsQuizPage="false"
-                                     @bind-GuessT="@SelectedMusicSourceTitle"
-                                     Callback="SelectedResultChangedMst">
-                </GuessInputComponent>
-                @foreach (var source in Song.Sources)
-                {
-                    <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source.Id); } })">
-                            🗑
-                        </span>
-                        @source.ToString()
-                        <div>
-                            @foreach (var key in Enum.GetValues<SongSourceSongType>())
-                            {
-                                if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
-                                {
-                                    string id = $"checkbox-SSST-{source.Id}-{key}";
-                                    <input type="checkbox" id="@id" class="form-check-input" disabled
-                                           @bind:get="@source.SongTypes.Contains(key)"
-                                           @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
-                                           @bind:event="oninput"
-                                           style="margin: 5px"/>
-                                    <label for="@id">@key.ToString()</label>
-                                    <br/>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-            <br/>
-
-            <div style="border: 1px black solid; padding: 10px;">
-                <h5>Artists</h5>
-                <AutocompleteAComponent @ref="_autocompleteAComponentRef"
-                                        Placeholder="Add artist"
-                                        IsDisabled="false"
-                                        IsQuizPage="false"
-                                        @bind-Guess="@SelectedArtist"
-                                        Callback="SelectedResultChangedA">
-                </AutocompleteAComponent>
-                @foreach (var artist in Song.Artists)
-                {
-                    <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ || !(artist.Roles.Contains(SongArtistRole.Unknown) || artist.Roles.Contains(SongArtistRole.Vocals))) { await RemoveArtist(artist.Id); } })">
-                            🗑
-                        </span>
-                        @artist.ToString()
-
-                        <div>
-                            @foreach (var key in Enum.GetValues<SongArtistRole>())
-                            {
-                                @if (key != SongArtistRole.Unknown)
-                                {
-                                    string id = $"checkbox-ArtistRole-{artist.Id}-{key}";
-                                    <input type="checkbox" id="@id" class="form-check-input" disabled="@(Song.DataSource != DataSourceKind.EMQ && key is (SongArtistRole.Unknown or SongArtistRole.Vocals))"
-                                           @bind:get="@artist.Roles.Contains(key)"
-                                           @bind:set="@(new Func<bool, Task>(async value => await OnArtistRoleCheckboxClick(value, key, artist)))"
-                                           @bind:event="oninput"
-                                           style="margin: 5px"/>
-                                    <label for="@id">@key.ToString()</label>
-                                    <br/>
-                                }
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-            <br/>
-
-            <div style="border: 1px black solid; padding: 10px;">
-                <h5>Song title</h5>
-                <label style="padding: 4px;">
-                    <input type="text" @bind="Song.Titles.Single().LatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
-                    Latin title
-                </label>
-                <br/>
-                <label style="padding: 4px;">
-                    <input type="text" @bind="Song.Titles.Single().NonLatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
-                    Non-Latin title
-                </label>
-            </div>
-            <br/>
-
-            @if (IsNew)
-            {
-                <details>
-                    <summary>Persist after submitting</summary>
-                    @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>External links</h5>
+            <details>
+                <summary>
+                    Allowed link types
+                </summary>
+                <ul>
+                    @foreach ((SongLinkType key, Regex value) in RegexPatterns.SongLinkRegex)
                     {
-                        if (true)
+                        if (key != SongLinkType.Unknown)
                         {
-                            string id = $"PersistAfterSubmittingDict-{key}";
-                            <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
-                            <label for="@id">@key</label>
-                            <br/>
+                            <li>
+                                @key.GetDescription(): @value.ToString()
+                            </li>
                         }
                     }
-                </details>
-            }
+                </ul>
+            </details>
+            <table>
+                @foreach (var link in Song.Links.Where(x => !x.IsFileLink))
+                {
+                    <tr>
+                        <td>
+                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(_ => Song.Links.Remove(link))">🗑</span>
+                        </td>
+                        <td>
+                            <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
+                        </td>
+                        <td>
+                            @link.Url
+                        </td>
+                    </tr>
+                }
+            </table>
+            <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
+        </div>
+        <br/>
 
-            <textarea id="note_user"
+        <textarea id="note_user"
                       rows="2"
                       cols="34"
                       maxlength="780"
                       placeholder="Summarize the changes you have made, including links to source(s)."
                       @bind="NoteUser">
             </textarea>
-            <br/>
+        <br/>
 
-            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
-            <ul>
-                @foreach (string validationMessage in ValidationMessages)
-                {
-                    string color = validationMessage.StartsWith("Added") ? "green" : "red";
-                    <li style="color: @color;">@validationMessage</li>
-                }
-            </ul>
-            <br/>
-        </div>
-
-        <div style="border: 1px black solid; padding: 10px;">
-            <div style="margin: 16px; width: 330px; min-height:200px;">
-                <h4>Preview</h4>
-                <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent>
-            </div>
-            <br/>
-        </div>
+        <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+        <ul>
+            @foreach (string validationMessage in ValidationMessages)
+            {
+                string color = validationMessage.StartsWith("Added") ? "green" : "red";
+                <li style="color: @color;">@validationMessage</li>
+            }
+        </ul>
+        <br/>
     </div>
+
+    <div style="border: 1px black solid; padding: 10px;">
+        <div style="margin: 16px; width: 330px; min-height:200px;">
+            <h4>Preview</h4>
+            <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent>
+        </div>
+        <br/>
+    </div>
+</div>
 </div>
 
 @code {
@@ -235,6 +274,8 @@
     public string NoteUser { get; set; } = "";
 
     public bool Ready { get; set; } = true;
+
+    public string ExternalLinksInputText { get; set; } = "";
 
     public Dictionary<string, bool> PersistAfterSubmittingDict { get; } = new()
     {
@@ -427,11 +468,11 @@
             }
             else
             {
-                // if (isNew && song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-                // {
-                //     ValidationMessages.Add("It is not allowed to add new BGM at this time.");
-                //     isValid = false;
-                // }
+    // if (isNew && song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+    // {
+    //     ValidationMessages.Add("It is not allowed to add new BGM at this time.");
+    //     isValid = false;
+    // }
 
                 if (IsNew && !song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
                 {
@@ -482,6 +523,44 @@
         }
 
         return isValid;
+    }
+
+    // todo convert all links in db to end with / (except anison.info)
+    private async Task AddNewExternalLink(string value)
+    {
+        ExternalLinksInputText = value;
+        if (Song.Links.Any(x => x.Url == value))
+        {
+            return;
+        }
+
+        if (!value.EndsWith('/'))
+        {
+            value += '/';
+        }
+
+        foreach ((SongLinkType key, Regex regex) in RegexPatterns.SongLinkRegex)
+        {
+            if (Song.Links.Any(x => x.Type == key))
+            {
+                continue;
+            }
+
+            string str = value;
+            if (key == SongLinkType.AnisonInfoSong)
+            {
+    // anison.info links can't end with /
+                str = JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value))!.TrimEnd('/');
+            }
+
+            if (regex.IsMatch(str))
+            {
+                Song.Links.Add(new SongLink { Type = key, Url = value.TrimEnd('/') });
+                ExternalLinksInputText = "";
+            }
+        }
+
+        StateHasChanged();
     }
 
 }

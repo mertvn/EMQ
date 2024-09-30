@@ -26,15 +26,17 @@ public partial class SongReportComponent
 
     public async Task Onclick_Report()
     {
-        if (ClientState.Session != null && (Song?.Links.Any() ?? false))
+        if (ClientState.Session != null && (Song?.Links.Any(x => x.IsFileLink) ?? false))
         {
             await _modalRef.Show();
             ClientSongReport = new SongReport
             {
                 music_id = Song.Id, submitted_by = ClientState.Session.Player.Username, Song = Song,
             };
-            SelectedUrls = Song.Links.ToDictionary(x => x.Url, _ => Song.Links.Count == 1);
+            SelectedUrls = Song.Links.Where(x => x.IsFileLink)
+                .ToDictionary(x => x.Url, _ => Song.Links.Count(x => x.IsFileLink) == 1);
         }
+
         StateHasChanged();
     }
 

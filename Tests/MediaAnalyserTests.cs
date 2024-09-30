@@ -47,7 +47,7 @@ public class MediaAnalyserTests
         var dbSongs = await DbManager.GetRandomSongs(int.MaxValue, true);
         foreach (Song dbSong in dbSongs)
         {
-            foreach (SongLink dbSongLink in dbSong.Links)
+            foreach (SongLink dbSongLink in dbSong.Links.Where(x => x.IsFileLink))
             {
                 // if (true || dbSongLink.Duration.TotalMilliseconds <= 0)
                 if (dbSongLink.Duration.TotalMilliseconds <= 0)

@@ -45,7 +45,7 @@
                             <div style="margin: 5px; padding: 5px;">
                                 <span>Please select the URLs you want to report</span>
                                 <br/>
-                                @foreach (var songLink in ClientSongReport.Song.Links)
+                                @foreach (var songLink in ClientSongReport.Song.Links.Where(x => x.IsFileLink))
                                 {
                                     <input type="checkbox" id="@songLink.Url" class="form-check-input" @bind="@(SelectedUrls[songLink.Url])" style="margin: 5px"/>
                                     <label for="@songLink.Url">

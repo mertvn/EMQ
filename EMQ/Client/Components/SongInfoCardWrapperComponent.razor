@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @using EMQ.Shared.Auth.Entities.Concrete
@@ -96,8 +96,9 @@
     {
         @if (true)
         {
-            bool hasVideo = song.Links.Any(x => x.IsVideo);
-            bool hasSound = song.Links.Any(x => !x.IsVideo);
+            var songFileLinks = song.Links.Where(x => x.IsFileLink).ToList();
+            bool hasVideo = songFileLinks.Any(x => x.IsVideo);
+            bool hasSound = songFileLinks.Any(x => !x.IsVideo);
 
             bool shouldDisplay = LibrarySongFilter switch
             {
@@ -117,12 +118,12 @@
             {
                 VisibleSongsCount += 1;
 
-                if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
-                {
-                    _addSongLinkModel[song.Id] = new AddSongLinkModel();
-                }
+                // if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
+                // {
+                //     _addSongLinkModel[song.Id] = new AddSongLinkModel();
+                // }
 
-                var validUrls = SongLink.FilterSongLinks(song.Links).Select(x => x.Url).ToList();
+                var validUrls = SongLink.FilterSongLinks(songFileLinks).Select(x => x.Url).ToList();
 
                 // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
                 <div class="song card" style="margin: 16px; width: 330px; min-height:200px;" @key="@song.Id">
@@ -132,7 +133,7 @@
                             Video links:
                             @if (hasVideo)
                             {
-                                var videoLinks = song.Links.Where(x => x.IsVideo);
+                                var videoLinks = songFileLinks.Where(x => x.IsVideo);
                                 <ul class="songInfoCardSongLinksVideoLinks">
                                     @foreach (SongLink videoLink in videoLinks)
                                     {
@@ -189,7 +190,7 @@
                             Sound links:
                             @if (hasSound)
                             {
-                                var soundLinks = song.Links.Where(x => !x.IsVideo);
+                                var soundLinks = songFileLinks.Where(x => !x.IsVideo);
                                 <ul class="songInfoCardSongLinksSoundLinks">
                                     @foreach (SongLink soundLink in soundLinks)
                                     {
@@ -291,7 +292,7 @@
                                         }
                                     }
                                 }
-
+                                // todo editq
                                 @if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(song.Id))
                                 {
                                     <br/>

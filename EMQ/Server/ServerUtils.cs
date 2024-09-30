@@ -81,7 +81,7 @@ public static class ServerUtils
 
         foreach (Song song in songs)
         {
-            foreach (SongLink songLink in song.Links)
+            foreach (SongLink songLink in song.Links.Where(x => x.Type == SongLinkType.Self))
             {
                 string tempPath = $"{Path.GetTempPath()}/{songLink.Url.LastSegment()}";
                 try

@@ -41,25 +41,27 @@ public static class RegexPatterns
 
     public static readonly Dictionary<SongArtistLinkType, Regex> ArtistLinkRegex = new()
     {
-        { SongArtistLinkType.VNDBStaff, new Regex(@"^https://vndb\.org/s[0-9]+/$", RegexOptions.Compiled) },
+        { SongArtistLinkType.VNDBStaff, new Regex(@"^https://vndb\.org/s[0-9]+/$") },
+        { SongArtistLinkType.MusicBrainzArtist, new Regex(@"^https://musicbrainz\.org/artist/[a-f0-9-]{36}/$") },
+        { SongArtistLinkType.VGMdbArtist, new Regex(@"^https://vgmdb\.net/artist/[0-9]+/$") },
         {
-            SongArtistLinkType.MusicBrainzArtist,
-            new Regex(@"^https://musicbrainz\.org/artist/[a-f0-9-]{36}/$", RegexOptions.Compiled)
+            SongArtistLinkType.ErogameScapeCreater,
+            new Regex(@"^https://erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/creater\.php\?creater=[0-9]+/$")
         },
-        { SongArtistLinkType.VGMdbArtist, new Regex(@"^https://vgmdb\.net/artist/[0-9]+/$", RegexOptions.Compiled) },
+        { SongArtistLinkType.AnisonInfoPerson, new Regex(@"^http://anison\.info/data/person/[0-9]+\.html$") },
+        { SongArtistLinkType.WikidataItem, new Regex(@"^https://www\.wikidata\.org/wiki/Q[0-9]+/$") },
+        { SongArtistLinkType.AniDBCreator, new Regex(@"^https://anidb\.net/creator/[0-9]+/$") },
+    };
+
+    public static readonly Dictionary<SongLinkType, Regex> SongLinkRegex = new()
+    {
+        { SongLinkType.MusicBrainzRecording, new Regex(@"^https://musicbrainz\.org/recording/[a-f0-9-]{36}/$") },
         {
-            SongArtistLinkType.ErogameScapeCreater, new Regex(
-                @"^https://erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/creater\.php\?creater=[0-9]+/$",
-                RegexOptions.Compiled)
+            SongLinkType.ErogameScapeMusic,
+            new Regex(@"^https://erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/music\.php\?music=[0-9]+/$")
         },
-        {
-            SongArtistLinkType.AnisonInfoPerson,
-            new Regex(@"^http://anison\.info/data/person/[0-9]+\.html$", RegexOptions.Compiled)
-        },
-        {
-            SongArtistLinkType.WikidataItem,
-            new Regex(@"^https://www\.wikidata\.org/wiki/Q[0-9]+/$", RegexOptions.Compiled)
-        },
-        { SongArtistLinkType.AniDBCreator, new Regex(@"^https://anidb\.net/creator/[0-9]+/$", RegexOptions.Compiled) },
+        { SongLinkType.AnisonInfoSong, new Regex(@"^http://anison\.info/data/song/[0-9]+\.html$") },
+        { SongLinkType.WikidataItem, new Regex(@"^https://www\.wikidata\.org/wiki/Q[0-9]+/$") },
+        { SongLinkType.AniDBSong, new Regex(@"^https://anidb\.net/song/[0-9]+/$") },
     };
 }

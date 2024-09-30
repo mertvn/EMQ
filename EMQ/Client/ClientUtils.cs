@@ -292,7 +292,7 @@ public class ClientUtils
 
         if (string.IsNullOrWhiteSpace(url))
         {
-            url = song.Links.FirstOrDefault()?.Url;
+            url = song.Links.FirstOrDefault(x=> x.IsFileLink)?.Url;
         }
 
         return url;

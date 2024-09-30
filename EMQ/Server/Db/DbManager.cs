@@ -1532,6 +1532,8 @@ GROUP BY artist_id";
                                      ";
 
             var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
+            queryMusicIds.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
+
             var excludedArtistIds = new List<int>();
             var excludedCategoryVndbIds = new List<string>();
 
@@ -1556,6 +1558,7 @@ GROUP BY artist_id";
                                      ";
 
                     var queryCategories = connection.QueryBuilder($"{sqlCategories:raw}");
+                    queryCategories.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
 
                     var validCategories = filters.CategoryFilters;
                     var trileans = validCategories.Select(x => x.Trilean);
@@ -1635,6 +1638,7 @@ GROUP BY artist_id";
                                      ";
 
                     var queryArtists = connection.QueryBuilder($"{sqlArtists:raw}");
+                    queryArtists.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
 
                     var validArtists = filters.ArtistFilters;
                     var trileans = validArtists.Select(x => x.Trilean);
@@ -2237,6 +2241,7 @@ GROUP BY artist_id";
                 re.AALatinAliasNormalized = re.AALatinAlias.NormalizeForAutocomplete();
                 re.AANonLatinAliasNormalized = re.AANonLatinAlias.NormalizeForAutocomplete();
 
+                // todo handle mb names (, )
                 re.AALatinAliasNormalizedReversed = string.Join("", re.AALatinAlias
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Reverse()).NormalizeForAutocomplete();
@@ -2423,9 +2428,11 @@ GROUP BY artist_id";
         List<Song> songs = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            const string sql = "SELECT DISTINCT music_id from music_external_link where submitted_by ILIKE @uploader";
+            const string sql =
+                "SELECT DISTINCT music_id from music_external_link where submitted_by ILIKE @uploader AND type = ANY(@types)";
 
-            var mids = (await connection.QueryAsync<int>(sql, new { uploader })).ToList();
+            var mids =
+                (await connection.QueryAsync<int>(sql, new { uploader, types = SongLink.FileLinkTypes })).ToList();
             if (mids.Count > 2000)
             {
                 // too costly to process + browsers would freeze because there's no pagination right now
@@ -2514,7 +2521,7 @@ AND msm.type = ANY(@msmType)";
             foreach (Song song in ret)
             {
                 var filtered = SongLink.FilterSongLinks(song.Links); // todo? option to not filter
-                foreach (SongLink songLink in filtered)
+                foreach (SongLink songLink in filtered.Where(x => x.IsFileLink))
                 {
                     if (songLink.AnalysisRaw?.Warnings.Any(x => warnings.Contains(x)) ?? false)
                     {
@@ -3419,6 +3426,7 @@ WHERE id = {mId};
         return success;
     }
 
+    // todo investigate performance regression
     public static async Task<LibraryStats> SelectLibraryStats(int limit, SongSourceSongType[] songSourceSongTypes)
     {
         // var stopWatch = new Stopwatch();
@@ -3459,25 +3467,28 @@ WHERE id = {mId};
             string sqlArtist =
                 $"SELECT COUNT(DISTINCT a.id) FROM artist_music am LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id LEFT JOIN artist a ON a.id = aa.artist_id LEFT JOIN music_external_link mel ON mel.music_id = am.music_id WHERE am.music_id = ANY(@validMids)";
 
-            const string sqlAndClause = $" AND mel.url is not null";
+            const string sqlAndClause = $" AND mel.url is not null AND mel.type = ANY(@types)";
 
 
             int totalMusicCount =
                 await connection.QuerySingleAsync<int>(sqlMusic, new { validMids });
             int availableMusicCount =
-                await connection.QuerySingleAsync<int>(sqlMusic + sqlAndClause, new { validMids });
+                await connection.QuerySingleAsync<int>(sqlMusic + sqlAndClause,
+                    new { validMids, types = SongLink.FileLinkTypes });
 
             int totalMusicSourceCount =
                 await connection.QuerySingleAsync<int>(sqlMusicSource, new { validMids });
             int availableMusicSourceCount =
-                await connection.QuerySingleAsync<int>(sqlMusicSource + sqlAndClause, new { validMids });
+                await connection.QuerySingleAsync<int>(sqlMusicSource + sqlAndClause,
+                    new { validMids, types = SongLink.FileLinkTypes });
 
             int totalArtistCount =
                 await connection.QuerySingleAsync<int>(sqlArtist, new { validMids });
             int availableArtistCount =
-                await connection.QuerySingleAsync<int>(sqlArtist + sqlAndClause, new { validMids });
+                await connection.QuerySingleAsync<int>(sqlArtist + sqlAndClause,
+                    new { validMids, types = SongLink.FileLinkTypes });
 
-
+            string fileLinkTypesStr = string.Join(',', SongLink.FileLinkTypes);
             string sqlMusicType =
                 @"SELECT msm.type as Type, COUNT(DISTINCT m.id) as MusicCount
 FROM music m
@@ -3492,22 +3503,22 @@ order by type";
             //     $"StartSection totalMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
             qMusicType.Where($"mel.url is not null");
+            qMusicType.Where($"mel.type IN ({fileLinkTypesStr:raw})");
+
             // Console.WriteLine(
             //     $"StartSection availableMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
-
-
             // Console.WriteLine(
             //     $"StartSection mels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             int videoLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id not in (select music_id FROM music_external_link where not is_video) and music_id = ANY(@validMids)",
-                new { validMids }));
+                "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id not in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
+                new { validMids, types = SongLink.FileLinkTypes }));
             int soundLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where not is_video and music_id not in (select music_id FROM music_external_link where is_video) and music_id = ANY(@validMids)",
-                new { validMids }));
+                "SELECT count(distinct music_id) FROM music_external_link where not is_video AND type = ANY(@types) and music_id not in (select music_id FROM music_external_link where is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
+                new { validMids, types = SongLink.FileLinkTypes }));
             int bothLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video and music_id in (select music_id FROM music_external_link where not is_video) and music_id = ANY(@validMids)",
-                new { validMids }));
+                "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
+                new { validMids, types = SongLink.FileLinkTypes }));
 
             int composerCount = (await connection.ExecuteScalarAsync<int>(
                 $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Composer} and music_id = ANY(@validMids)",
@@ -3520,10 +3531,10 @@ order by type";
                 new { validMids }));
 
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
-                await SelectLibraryStats_VN(connection, limit, songSourceSongTypes);
+                await SelectLibraryStats_VN(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
             (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes);
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
 
             string sqlMsYear =
@@ -3543,6 +3554,7 @@ order by year";
                 (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
 
             qMsYear.Where($"mel.url is not null");
+            qMsYear.Where($"mel.type IN ({fileLinkTypesStr:raw})");
             // Console.WriteLine(
             //     $"StartSection msYearAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
             var msYearAvailable =
@@ -3696,7 +3708,8 @@ LIMIT 25", new { validMids }));
     }
 
     public static async Task<(List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable)> SelectLibraryStats_VN(
-        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes)
+        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes,
+        string fileLinkTypesStr)
     {
         string sqlMusicSourceMusic =
             @"SELECT ms.id AS MSId, mst.latin_title AS MstLatinTitle, msel.url AS MselUrl, COUNT(DISTINCT m.id) AS MusicCount
@@ -3720,6 +3733,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
         var msm = (await qMsm.QueryAsync<LibraryStatsMsm>()).ToList();
 
         qMsm.Where($"mel.url is not null");
+        qMsm.Where($"mel.type IN ({fileLinkTypesStr:raw})");
         qMsm.Append($"LIMIT {limit:raw}");
         // Console.WriteLine(
         //     $"StartSection msmAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -3737,7 +3751,8 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
-        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes)
+        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes,
+        string fileLinkTypesStr)
     {
         string sqlArtistMusic =
             @"SELECT a.id AS AId, COUNT(DISTINCT m.id) AS MusicCount, json_agg(DISTINCT ael.*) as LinksJson
@@ -3759,6 +3774,7 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
         var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
         qAm.Where($"mel.url is not null");
+        qAm.Where($"mel.type IN ({fileLinkTypesStr:raw})");
         qAm.Append($"LIMIT {limit:raw}");
         // Console.WriteLine(
         //     $"StartSection amAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
@@ -3923,7 +3939,8 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var mids = (await connection.QueryAsync<int>(
-                    "SELECT music_id FROM music_external_link where is_video = false"))
+                    "SELECT music_id FROM music_external_link where is_video = false AND type = ANY(@types)",
+                    new { types = SongLink.FileLinkTypes }))
                 .ToHashSet();
             return mids;
         }
@@ -4513,10 +4530,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         if (rowsDeletedMel > 0)
         {
             Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
-            // extra check to make sure we don't lose any links
+            // extra check to make sure we don't lose any file links
             var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single(); // todo transaction
-            var o = JsonSerializer.SerializeToNode(oldSong.Links.OrderBy(x => x.Url));
-            var n = JsonSerializer.SerializeToNode(insertedSong.Links.OrderBy(x => x.Url));
+            var o = JsonSerializer.SerializeToNode(oldSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
+            var n = JsonSerializer.SerializeToNode(insertedSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
             if (!JsonNode.DeepEquals(o, n))
             {
                 throw new Exception(

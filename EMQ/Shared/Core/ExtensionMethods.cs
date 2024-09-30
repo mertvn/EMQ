@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -324,7 +324,7 @@ public static class ExtensionMethods
 
     public static int DetermineSongStartTime(this Song song, QuizFilters? filters)
     {
-        int duration = (int)SongLink.GetShortestLink(song.Links).Duration.TotalSeconds;
+        int duration = (int)SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink)).Duration.TotalSeconds;
         int startTimeStart = 0;
         int startTimeEnd = duration;
         const int leeway = 40;

@@ -19,6 +19,7 @@ public class AlterTableMusic_External_Link : Migration
 
         Execute.Sql("CREATE INDEX trgm_idx_mel_submitted_by ON music_external_link USING gin (submitted_by gin_trgm_ops) WITH ( FASTUPDATE = ON );");
         Execute.Sql("CREATE INDEX idx_mel_sha256 ON music_external_link(sha256);");
+        Execute.Sql("CREATE INDEX idx_mel_type ON music_external_link(type);");
     }
 
     public override void Down()

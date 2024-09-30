@@ -63,7 +63,7 @@
     bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
     bool isDebugMode = ClientState.Preferences.DebugMode;
-    @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
+    @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any(x => x.IsFileLink))
     {
         <SongReportComponent @ref="_songReportComponent" Song="@Song"/>
     }
@@ -92,7 +92,7 @@
             }
         </span>
 
-        @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any())
+        @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any(x => x.IsFileLink))
         {
             <span class="songInfoCardReportButton link-danger"
                   style="position: absolute; right: 10px; top: 5px; cursor: pointer;"
@@ -347,9 +347,9 @@
                     <MusicVoteComponent Song="Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
                 }
 
-                bool open = Song.Attributes > 0 || IsEditing;
+                bool openAtrributes = Song.Attributes > 0 || IsEditing;
                 <br/>
-                <details open=@open>
+                <details open=@openAtrributes>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
                     {
@@ -377,6 +377,21 @@
                         <br/>
                     }
                 </details>
+
+                SongLink[] externalLinks = Song.Links.Where(x => !x.IsFileLink).ToArray();
+                @if (externalLinks.Any() || IsEditing)
+                {
+                    <details open="@(!IsQuizPage)">
+                        <summary>External links</summary>
+                        @foreach (SongLink link in externalLinks)
+                        {
+                            // todo favicon
+                            <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
+                            <br/>
+                        }
+                        <br/>
+                    </details>
+                }
             }
             </div>
 

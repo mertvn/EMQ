@@ -809,7 +809,7 @@ public class EntryPoints
         var dbSongs = await DbManager.GetRandomSongs(int.MaxValue, true);
         foreach (Song dbSong in dbSongs)
         {
-            foreach (SongLink dbSongLink in dbSong.Links)
+            foreach (SongLink dbSongLink in dbSong.Links.Where(x => x.IsFileLink))
             {
                 if (string.IsNullOrWhiteSpace(dbSongLink.Sha256))
                 {
