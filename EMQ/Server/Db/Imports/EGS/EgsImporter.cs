@@ -6,7 +6,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
+using Dapper.Database.Extensions;
 using DapperQueryBuilder;
+using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Npgsql;
@@ -17,6 +19,7 @@ public static class EgsImporter
 {
     public static readonly Dictionary<int, List<string>> CreaterNameOverrideDict = new();
 
+    // todo use xrefs (or just import xrefs to the db and use those tbh)
     public static async Task ImportEgsData()
     {
         string date = Constants.ImportDateEgs;
@@ -299,21 +302,57 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     x.EgsData.GameMusicCategory != SongSourceSongType.Insert),
                 Utils.JsoIndented));
 
-        return; // todo
+        // return; // todo
         // Insert the matched results
-        var matchedResults = egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched);
-        await Parallel.ForEachAsync(matchedResults, async (innerResult, _) =>
-        {
-            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-            {
-                // todo? don't insert if latin title is the same after normalization
-                await connection.ExecuteAsync(
-                    "UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle WHERE mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
-                    new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId = innerResult.mIds.Single() });
+        var matchedResults = egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched)
+            .ToArray();
 
-                // todo? insert egs music & game links
+        HashSet<int> mIdsWithExistingMels =
+            (await new NpgsqlConnection(ConnectionHelper.GetConnectionString()).QueryAsync<int>(
+                $"select music_id from music_external_link where type = {(int)SongLinkType.ErogameScapeMusic} AND music_id = ANY(@mIds)",
+                new { mIds = matchedResults.Select(x => x.mIds.Single()).ToArray() })).ToHashSet();
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        foreach (EgsImporterInnerResult innerResult in matchedResults)
+        {
+            int mId = innerResult.mIds.Single();
+            // todo? don't insert if latin title is the same after normalization
+            int rowsUpdate = await connection.ExecuteAsync(
+                @"UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle
+WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
+                new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId });
+            if (rowsUpdate <= 0)
+            {
+                // Console.WriteLine($"Error updating music_title for mId {mId} {innerResult.EgsData.MusicName}");
             }
-        });
+
+            if (!mIdsWithExistingMels.Contains(mId))
+            {
+                bool success = await connection.InsertAsync(new MusicExternalLink
+                {
+                    music_id = mId,
+                    url =
+                        $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}",
+                    type = SongLinkType.ErogameScapeMusic,
+                    is_video = false,
+                    duration = default,
+                    submitted_by = null,
+                    sha256 = "",
+                    analysis_raw = null
+                });
+                if (!success)
+                {
+                    Console.WriteLine(
+                        $"Error inserting music_external_link for mId {mId} https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}");
+                }
+                else
+                {
+                    mIdsWithExistingMels.Add(mId);
+                }
+            }
+
+            // todo? insert egs game links
+        }
     }
 }
 

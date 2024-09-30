@@ -128,6 +128,7 @@ public class EntryPoints
         await EgsImporter.ImportEgsData();
     }
 
+    // todo make use of mel egs links
     // todo find more ways to match (manual stuff)
     // todo import all staff from vndb
     [Test, Explicit]
