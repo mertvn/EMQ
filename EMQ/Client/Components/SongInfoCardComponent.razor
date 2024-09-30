@@ -347,9 +347,9 @@
                     <MusicVoteComponent Song="Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
                 }
 
-                bool openAtrributes = Song.Attributes > 0 || IsEditing;
+                bool openAttributes = Song.Attributes > 0 || IsEditing;
                 <br/>
-                <details open=@openAtrributes>
+                <details open=@openAttributes>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
                     {
