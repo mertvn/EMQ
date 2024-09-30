@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Server.Business;
+using EMQ.Shared.Core;
 using Microsoft.AspNetCore.SignalR.Protocol;
 
 namespace EMQ.Server;
@@ -76,6 +77,8 @@ public static class ServerState
     }
 
     public static string AutocompleteFolder { get; set; } = "";
+
+    public static CountdownInfo CountdownInfo { get; set; } = new();
 
     public static void RemoveRoom(Room room, string source)
     {

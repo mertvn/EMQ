@@ -373,6 +373,7 @@ public class AuthController : ControllerBase
             IsServerReadOnly = ServerState.IsServerReadOnly,
             IsSubmissionDisabled = ServerState.IsSubmissionDisabled,
             GitHash = ServerState.GitHash,
+            CountdownInfo = ServerState.CountdownInfo,
         };
     }
 

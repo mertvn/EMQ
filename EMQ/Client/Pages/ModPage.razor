@@ -35,6 +35,22 @@
     </button>
     <br/>
 
+    <div>
+        <h5>Countdown</h5>
+        <label style="padding: 4px;">
+            <input type="text" @bind="CountdownMessage"/>
+            Message
+        </label>
+        <label style="padding: 4px;">
+            <input type="number" @bind="CountdownMinutes"/>
+            Minutes
+        </label>
+        <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_StartCountdown(); })">
+            Start countdown
+        </button>
+    </div>
+    <br/>
+
     @ClientState.ServerStats.IsServerReadOnly
     <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsServerReadOnly(); })">
         Toggle IsServerReadOnly

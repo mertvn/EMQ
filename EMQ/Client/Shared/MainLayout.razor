@@ -1,7 +1,13 @@
 ﻿@using EMQ.Client.Components
 @using EMQ.Shared.Core
+@using System.Threading
+@using System.Timers
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Timer = System.Timers.Timer
 @inherits LayoutComponentBase
 @inject NavigationManager _navigation
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
 
 <PageTitle>EMQ</PageTitle>
 
@@ -41,6 +47,15 @@
         </ul>
     </div>
 
+    @if (ClientState.Countdown.TotalSeconds > 0)
+    {
+        <div class="countdownInfo" style="padding: 2px; margin: 5px 12px 5px 5px; position: fixed; top: 0; right: 7%; text-align: center;">
+            <span> @ClientState.ServerStats.CountdownInfo.Message</span>
+            <br/>
+            <span> @(ClientState.Countdown.ToString(@"mm\:ss"))</span>
+        </div>
+    }
+
     @{
         string lastSegment = new Uri(_navigation.Uri).Segments.Last();
     }
@@ -73,4 +88,53 @@
     };
 
     private PlayerPreferencesComponent? _playerPreferencesComponent;
+
+    private Timer Timer { get; } = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Timer.Interval = TimeSpan.FromSeconds(30).TotalMilliseconds;
+            Timer.Elapsed += GetServerStats;
+            Timer.AutoReset = true;
+            Timer.Start();
+        }
+
+        if (ClientState.ServerStats.CountdownInfo.DateTime >= DateTime.UtcNow)
+        {
+            const string key = "countdownInfo";
+            const int period = 1;
+            if (ClientState.Timers.TryGetValue(key, out var timer))
+            {
+                timer.Dispose();
+            }
+
+            ClientState.Countdown = ClientState.ServerStats.CountdownInfo.DateTime - DateTime.UtcNow;
+            timer = new PeriodicTimer(TimeSpan.FromSeconds(period));
+            ClientState.Timers[key] = timer;
+            while (await timer.WaitForNextTickAsync())
+            {
+                ClientState.Countdown = TimeSpan.FromSeconds(ClientState.Countdown.TotalSeconds - period);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async void GetServerStats(object? sender, ElapsedEventArgs elapsedEventArgs)
+    {
+        ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats");
+        if (res is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(ClientState.ServerStats.GitHash) && res.GitHash != ClientState.ServerStats.GitHash)
+            {
+                await _jsRuntime.InvokeVoidAsync("alert", "EMQ has been updated. Press OK to refresh.");
+                await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}");
+                return;
+            }
+
+            ClientState.ServerStats = res;
+        }
+        StateHasChanged();
+    }
 }

@@ -1,4 +1,6 @@
-﻿namespace EMQ.Shared.Quiz.Entities.Concrete;
+﻿using EMQ.Shared.Core;
+
+namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class ServerStats
 {
@@ -15,4 +17,6 @@ public class ServerStats
     public bool IsSubmissionDisabled { get; set; }
 
     public string GitHash { get; set; } = "";
+
+    public CountdownInfo CountdownInfo { get; set; } = new();
 }

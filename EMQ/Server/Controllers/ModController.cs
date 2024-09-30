@@ -73,6 +73,20 @@ public class ModController : ControllerBase
         return Ok();
     }
 
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("StartCountdown")]
+    public async Task<ActionResult> StartCountdown(ReqStartCountdown req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        ServerState.CountdownInfo = new CountdownInfo { Message = req.Message, DateTime = req.DateTime };
+        return Ok();
+    }
+
     [CustomAuthorize(PermissionKind.ReviewSongLink)]
     [HttpPost]
     [Route("UpdateReviewQueueItem")]

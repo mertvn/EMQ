@@ -17,6 +17,10 @@ public partial class ModPage
 {
     public List<SongReport> SongReports { get; set; } = new();
 
+    public string CountdownMessage { get; set; } = "Server restart in";
+
+    public int CountdownMinutes { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -52,6 +56,15 @@ public partial class ModPage
     private async Task Onclick_RunAnalysis()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunAnalysis", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
+    }
+
+    private async Task Onclick_StartCountdown()
+    {
+        var req = new ReqStartCountdown(CountdownMessage, DateTime.UtcNow.AddMinutes(CountdownMinutes));
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/StartCountdown", req);
         if (res.IsSuccessStatusCode)
         {
         }

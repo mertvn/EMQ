@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -12,6 +13,8 @@ public static class ClientState
     public static Session? Session { get; set; }
 
     public static ServerStats ServerStats { get; set; } = new();
+
+    public static TimeSpan Countdown { get; set; }
 
     public static PlayerVndbInfo VndbInfo { get; set; } = new();
 
