@@ -17,28 +17,7 @@
     var artist = ResGetSongArtist.SongArtists.First();
     <span style="font-size: x-large">@Converters.GetSingleTitle(artist.Titles).ToString()</span>
 
-    // todo important componentize this
-    foreach (SongArtistLink songArtistLink in artist.Links)
-    {
-        string iconSrc;
-        switch (songArtistLink.Type)
-        {
-            case SongArtistLinkType.VNDBStaff:
-                iconSrc = "assets/favicon/vndb.ico";
-                break;
-            case SongArtistLinkType.MusicBrainzArtist:
-                iconSrc = "assets/favicon/musicbrainz.png";
-                break;
-            default:
-                continue;
-        }
-
-        <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
-            <img width="16px" height="16px"
-                 src="@iconSrc" alt="link"
-                 style="margin-left: 6px; scale: 1.2;">
-        </a>
-    }
+    <ArtistFaviconsComponent Links="artist.Links"/>
     <br/>
 
     <details>

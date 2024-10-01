@@ -186,27 +186,7 @@
                         @if (song.Artists.Count == 1)
                         {
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                            foreach (SongArtistLink songArtistLink in song.Artists.First().Links)
-                            {
-                                string iconSrc;
-                                switch (songArtistLink.Type)
-                                {
-                                    case SongArtistLinkType.VNDBStaff:
-                                        iconSrc = "assets/favicon/vndb.ico";
-                                        break;
-                                    case SongArtistLinkType.MusicBrainzArtist:
-                                        iconSrc = "assets/favicon/musicbrainz.png";
-                                        break;
-                                    default:
-                                        continue;
-                                }
-
-                                <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="@iconSrc" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
+                            <ArtistFaviconsComponent Links="song.Artists.First().Links"/>
                         }
                         else
                         {
@@ -215,27 +195,7 @@
                             string tooltipText = $"<ul>{joined}</ul>";
 
                             <span>@Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle</span>
-                            foreach (SongArtistLink songArtistLink in song.Artists.First().Links)
-                            {
-                                string iconSrc;
-                                switch (songArtistLink.Type)
-                                {
-                                    case SongArtistLinkType.VNDBStaff:
-                                        iconSrc = "assets/favicon/vndb.ico";
-                                        break;
-                                    case SongArtistLinkType.MusicBrainzArtist:
-                                        iconSrc = "assets/favicon/musicbrainz.png";
-                                        break;
-                                    default:
-                                        continue;
-                                }
-
-                                <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
-                                    <img width="16px" height="16px"
-                                         src="@iconSrc" alt="link"
-                                         style="margin-left: 6px; scale: 1.2;">
-                                </a>
-                            }
+                            <ArtistFaviconsComponent Links="song.Artists.First().Links"/>
 
                             <Blazorise.Tooltip
                                 Inline="true"

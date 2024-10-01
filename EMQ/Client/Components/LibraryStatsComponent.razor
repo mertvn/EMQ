@@ -275,29 +275,8 @@
                                     @* todo nonlatinalias *@
                                     @if (true)
                                     {
-                                        // todo important componentize this
                                         <span>@item.AALatinAlias</span>
-                                        foreach (SongArtistLink songArtistLink in item.Links)
-                                        {
-                                            string iconSrc;
-                                            switch (songArtistLink.Type)
-                                            {
-                                                case SongArtistLinkType.VNDBStaff:
-                                                    iconSrc = "assets/favicon/vndb.ico";
-                                                    break;
-                                                case SongArtistLinkType.MusicBrainzArtist:
-                                                    iconSrc = "assets/favicon/musicbrainz.png";
-                                                    break;
-                                                default:
-                                                    continue;
-                                            }
-
-                                            <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
-                                                <img width="16px" height="16px"
-                                                     src="@iconSrc" alt="link"
-                                                     style="margin-left: 6px; scale: 1.2;">
-                                            </a>
-                                        }
+                                        <ArtistFaviconsComponent Links="item.Links"/>
                                     }
                                 </td>
                                 <td>
@@ -327,27 +306,7 @@
                                     @if (true)
                                     {
                                         <span>@item.AALatinAlias</span>
-                                        foreach (SongArtistLink songArtistLink in item.Links)
-                                        {
-                                            string iconSrc;
-                                            switch (songArtistLink.Type)
-                                            {
-                                                case SongArtistLinkType.VNDBStaff:
-                                                    iconSrc = "assets/favicon/vndb.ico";
-                                                    break;
-                                                case SongArtistLinkType.MusicBrainzArtist:
-                                                    iconSrc = "assets/favicon/musicbrainz.png";
-                                                    break;
-                                                default:
-                                                    continue;
-                                            }
-
-                                            <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
-                                                <img width="16px" height="16px"
-                                                     src="@iconSrc" alt="link"
-                                                     style="margin-left: 6px; scale: 1.2;">
-                                            </a>
-                                        }
+                                        <ArtistFaviconsComponent Links="item.Links"/>
                                     }
                                 </td>
                                 <td>

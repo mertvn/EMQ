@@ -1,0 +1,46 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+
+@foreach (SongArtistLink songArtistLink in Links.OrderBy(x => x.Type))
+{
+    string iconSrc;
+    switch (songArtistLink.Type)
+    {
+        case SongArtistLinkType.VNDBStaff:
+            iconSrc = "assets/favicon/vndb.ico";
+            break;
+        case SongArtistLinkType.MusicBrainzArtist:
+            iconSrc = "assets/favicon/musicbrainz.png";
+            break;
+        case SongArtistLinkType.VGMdbArtist:
+            iconSrc = "assets/favicon/vgmdb.ico";
+            break;
+        case SongArtistLinkType.ErogameScapeCreater:
+            iconSrc = "assets/favicon/egs.ico";
+            break;
+        case SongArtistLinkType.AnisonInfoPerson:
+            iconSrc = "assets/favicon/anison.ico";
+            break;
+        case SongArtistLinkType.WikidataItem:
+            iconSrc = "assets/favicon/wikidata.ico";
+            break;
+        case SongArtistLinkType.AniDBCreator:
+            iconSrc = "assets/favicon/anidb.png";
+            break;
+        case SongArtistLinkType.Unknown:
+        default:
+            continue;
+    }
+
+    <a class="songArtistsTitle link-primary" href="@songArtistLink.Url" target="_blank">
+        <img width="16px" height="16px"
+             src="@iconSrc" alt="link"
+             style="margin-left: 7px; scale: 1.2;">
+    </a>
+}
+
+@code {
+
+    [Parameter]
+    public List<SongArtistLink> Links { get; set; } = null!;
+
+}
