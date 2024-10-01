@@ -176,17 +176,11 @@
 
     public string ExternalLinksInputText { get; set; } = "";
 
-    public IEnumerable<SongArtistLink>? InitialLinks { get; set; }
-
     protected override void OnParametersSet()
     {
         if (IsNew)
         {
             Artist = GetNewArtist;
-        }
-        else
-        {
-            InitialLinks = Artist.Links.ToList();
         }
 
         Ready = true;
@@ -224,7 +218,7 @@
         {
             Ready = false;
             StateHasChanged();
-            bool isValid = await ValidateArtist(Artist, IsNew, _client, InitialLinks ?? Array.Empty<SongArtistLink>());
+            bool isValid = await ValidateArtist(Artist, IsNew);
             if (isValid)
             {
                 var req = new ReqEditArtist(Artist, IsNew, NoteUser);
@@ -253,7 +247,7 @@
         }
     }
 
-    public async Task<bool> ValidateArtist(SongArtist artist, bool isNew, HttpClient client, IEnumerable<SongArtistLink> initialLinks)
+    public async Task<bool> ValidateArtist(SongArtist artist, bool isNew)
     {
         ValidationMessages.Clear();
         bool isValid = true;
@@ -274,7 +268,7 @@
                 }
             }
 
-            if (artist.Titles.Count(x => x.IsMainTitle) != 1)
+            if (isNew && artist.Titles.Count(x => x.IsMainTitle) != 1)
             {
                 ValidationMessages.Add("There must be exactly one primary alias.");
                 isValid = false;
@@ -299,21 +293,6 @@
             {
                 ValidationMessages.Add("Only one external link of each type is allowed.");
                 isValid = false;
-            }
-        }
-
-        if (isValid)
-        {
-            var req = new SongArtist { Links = artist.Links.ExceptBy(initialLinks.Select(x => x.Url), x => x.Url).ToList() };
-            HttpResponseMessage res1 = await client.PostAsJsonAsync("Library/GetSongArtist", req);
-            if (res1.IsSuccessStatusCode)
-            {
-                var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
-                if (content.SongArtists.Any())
-                {
-                    ValidationMessages.Add("An artist linked to at least one of the external links you've added already exists in the database.");
-                    isValid = false;
-                }
             }
         }
 

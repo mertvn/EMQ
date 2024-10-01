@@ -498,12 +498,24 @@ public class LibraryController : ControllerBase
         }
 
         var comp = new EditArtistComponent(); // todo move this method to somewhere better
-        bool isValid = await comp.ValidateArtist(req.Artist, req.IsNew,
-            new HttpClient() { BaseAddress = new Uri($"https://{Request.Host}") }, // todo idk if this is reliable
-            artist?.Links.ToArray() ?? Array.Empty<SongArtistLink>());
+        bool isValid = await comp.ValidateArtist(req.Artist, req.IsNew);
         if (!isValid)
         {
             return BadRequest($"artist object failed validation: {comp.ValidationMessages.First()}");
+        }
+
+        var content = await DbManager.GetSongArtist(
+            new SongArtist
+            {
+                Links = req.Artist.Links.ExceptBy(
+                        (artist?.Links.ToArray() ?? Array.Empty<SongArtistLink>()).Select(x => x.Url), x => x.Url)
+                    .ToList()
+            },
+            session);
+        if (content.SongArtists.Any())
+        {
+            return BadRequest(
+                $"An artist linked to at least one of the external links you've added already exists in the database.");
         }
 
         // todo important set unrequired stuff to null/empty for safety reasons

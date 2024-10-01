@@ -54,4 +54,9 @@ public readonly struct XRef
     public string Anison { get; init; }
 
     public string Egs { get; init; }
+
+    public override string ToString()
+    {
+        return $"{Vndb},{Vgmdb},{Anison},{Egs}";
+    }
 }

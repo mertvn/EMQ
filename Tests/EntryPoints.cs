@@ -428,6 +428,144 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task ImportXrefs()
+    {
+        string date = Constants.ImportDateEgs;
+        string folder = $"C:\\emq\\egs\\{date}";
+        var xRefs = new List<XRef>();
+        string[] xRefsRows = await File.ReadAllLinesAsync($"{folder}\\xrefs.csv");
+        for (int i = 1; i < xRefsRows.Length; i++)
+        {
+            string xRefRow = xRefsRows[i];
+            string[] split = xRefRow.Split(',');
+            xRefs.Add(new XRef { Vndb = split[0], Vgmdb = split[1], Anison = split[2], Egs = split[3] });
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionVndb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+
+        foreach (XRef xRef in xRefs)
+        {
+            var mbArtistIdFromVndbDB =
+                await connectionVndb.QuerySingleOrDefaultAsync<Guid?>("select l_mbrainz from staff where id = @id",
+                    new { id = xRef.Vndb });
+            // if (mbArtistIdFromVndbDB is null)
+            // {
+            //     continue;
+            // }
+
+            var artists = await DbManager.SelectArtistBatchNoAM(connection,
+                new List<Song>
+                {
+                    new()
+                    {
+                        Artists = new List<SongArtist>
+                        {
+                            new()
+                            {
+                                Links = new List<SongArtistLink>
+                                {
+                                    new() { Url = xRef.Vndb.ToVndbUrl() },
+                                    new() { Url = xRef.Vgmdb.ToVndbUrl() },
+                                    new() { Url = xRef.Anison.ToVndbUrl() },
+                                    new() { Url = xRef.Egs.ToVndbUrl() },
+                                    new() { Url = $"https://musicbrainz.org/artist/{mbArtistIdFromVndbDB}" },
+                                }
+                            }
+                        }
+                    }
+                }, true);
+            if (!artists.Any())
+            {
+                Console.WriteLine($"needs inserting: {xRef.Vndb}");
+                continue;
+            }
+
+            var single = artists.Single();
+            if (single.Value.Count > 1)
+            {
+                Console.WriteLine($"needs merging: {xRef.Vndb}");
+                continue;
+            }
+
+            var artist = single.Value.Single().Value;
+            if (!string.IsNullOrEmpty(xRef.Vndb) &&
+                !artist.Links.Any(x => x.Type == SongArtistLinkType.VNDBStaff))
+            {
+                artist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https:/vndb.org/{xRef.Vndb}", Type = SongArtistLinkType.VNDBStaff, Name = "",
+                });
+            }
+
+            if (!string.IsNullOrEmpty(xRef.Vgmdb) &&
+                !artist.Links.Any(x => x.Type == SongArtistLinkType.VGMdbArtist))
+            {
+                artist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https://vgmdb.net/artist/{xRef.Vgmdb}",
+                    Type = SongArtistLinkType.VGMdbArtist,
+                    Name = "",
+                });
+            }
+
+            if (!string.IsNullOrEmpty(xRef.Anison) &&
+                !artist.Links.Any(x => x.Type == SongArtistLinkType.AnisonInfoPerson))
+            {
+                artist.Links.Add(new SongArtistLink
+                {
+                    Url = $"http://anison.info/data/person/{xRef.Anison}.html",
+                    Type = SongArtistLinkType.AnisonInfoPerson,
+                    Name = "",
+                });
+            }
+
+            if (!string.IsNullOrEmpty(xRef.Egs) &&
+                !artist.Links.Any(x => x.Type == SongArtistLinkType.ErogameScapeCreater))
+            {
+                artist.Links.Add(new SongArtistLink
+                {
+                    Url =
+                        $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/creater.php?creater={xRef.Egs}",
+                    Type = SongArtistLinkType.ErogameScapeCreater,
+                    Name = "",
+                });
+            }
+
+            if (mbArtistIdFromVndbDB != null &&
+                !artist.Links.Any(x => x.Type == SongArtistLinkType.MusicBrainzArtist))
+            {
+                artist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https://musicbrainz.org/artist/{mbArtistIdFromVndbDB}",
+                    Type = SongArtistLinkType.MusicBrainzArtist,
+                    Name = "",
+                });
+            }
+
+            // if (artist.Titles.Count == 1 && !artist.Titles.First().IsMainTitle)
+            // {
+            //     artist.Titles.First().IsMainTitle = true;
+            // }
+
+            var actionResult =
+                await controller.EditArtist(new ReqEditArtist(artist, false,
+                    $"from VNDB (MB) and xrefs.csv: {xRef.ToString()}"));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine($"actionResult is not OkResult: {artist} {badRequestObjectResult?.Value}");
+            }
+        }
+    }
+
+    [Test, Explicit]
     public async Task ImportMusicBrainzData()
     {
         await MusicBrainzImporter.ImportMusicBrainzData(true, false);
