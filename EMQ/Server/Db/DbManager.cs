@@ -876,7 +876,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 }
                 else
                 {
-                    if (!existingArtist.Titles.Any(x => x.LatinTitle == artistAlias.latin_alias))
+                    if (!existingArtist.Titles.Any(x => x.ArtistAliasId == artistAlias.id))
                     {
                         existingArtist.Titles.Add(title);
                     }
@@ -1038,7 +1038,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 }
                 else
                 {
-                    if (!existingArtist.Titles.Any(x => x.LatinTitle == artistAlias.latin_alias))
+                    if (!existingArtist.Titles.Any(x => x.ArtistAliasId == artistAlias.id))
                     {
                         existingArtist.Titles.Add(title);
                     }
@@ -1437,8 +1437,8 @@ GROUP BY artist_id";
             if (aaId < 1)
             {
                 aaId = (await connection.QueryAsync<int>(
-                        "select aa.id from artist_alias aa join artist a on a.id = aa.artist_id where a.id=@aId AND aa.latin_alias=@latinAlias",
-                        new { aId, latinAlias = title.LatinTitle },
+                        "select aa.id from artist_alias aa join artist a on a.id = aa.artist_id where a.id=@aId AND aa.latin_alias=@latinAlias and aa.non_latin_alias=@nonLatinAlias",
+                        new { aId, latinAlias = title.LatinTitle, nonLatinAlias = title.NonLatinTitle },
                         transaction))
                     .ToList().SingleOrDefault();
             }

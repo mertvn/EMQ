@@ -118,6 +118,16 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetSongArtist_ArtistAliasDistinctByNonLatinTitleThing()
+    {
+        var artists = (await DbManager.GetSongArtist(
+                new SongArtist { Links = new List<SongArtistLink> { new() { Url = "https://vndb.org/s972" } } }, null))
+            .SongArtists;
+        Assert.That(artists.Count == 1);
+        Assert.That(artists.First().Titles.Count > 2);
+    }
+
+    [Test]
     public async Task Test_FindSongsBySongSourceTitle_MultipleSongSourceTypes()
     {
         var songs = (await DbManager.FindSongsBySongSourceTitle("Yoake Mae yori Ruri Iro na")).ToList();

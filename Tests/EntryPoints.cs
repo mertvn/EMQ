@@ -503,7 +503,7 @@ public class EntryPoints
                 addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
-                    Url = $"https:/vndb.org/{xRef.Vndb}", Type = SongArtistLinkType.VNDBStaff, Name = "",
+                    Url = $"https://vndb.org/{xRef.Vndb}", Type = SongArtistLinkType.VNDBStaff, Name = "",
                 });
             }
 
@@ -575,10 +575,120 @@ public class EntryPoints
         }
     }
 
-    // prob from vndbforemq
+    // todo use this to sync aliases for existing artists as well?
     [Test, Explicit]
-    public async Task ImportVndbArtists()
+    public async Task ImportMissingVndbStaff()
     {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionVndb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+
+        string[] emqArtistVndbIds =
+            (await connection.QueryAsync<string>(
+                $"select url from artist_external_link where type = {(int)SongArtistLinkType.VNDBStaff}"))
+            .Select(x => x.ToVndbId()).ToArray();
+
+        var artistsJson = (await connectionVndb.QueryAsync<dynamic>(@"
+SELECT s.*
+FROM vn_staff vs
+JOIN vn v ON v.id = vs.id
+JOIN releases_vn rv ON rv.vid = v.id
+JOIN releases r ON r.id = rv.id
+JOIN staff_alias sa ON sa.aid = vs.aid
+JOIN staff s ON s.id = sa.id
+WHERE lang = 'ja' AND (vs.role in ('music') OR vs.note ~* 'lyric') and not s.id = any(@emqArtistVndbIds)
+GROUP BY s.id", new { emqArtistVndbIds })).ToList();
+
+        var artists_aliasesLookup = (await connectionVndb.QueryAsync<dynamic>(@"
+SELECT sa.id, sa.aid, name, latin
+FROM staff s
+JOIN staff_alias sa ON sa.id = s.id
+WHERE s.lang = 'ja'"))
+            .ToLookup(x => (string)x.id); // indexed by staff id as opposed to alias id, unlike VndbImporter!
+
+        var songArtists = new List<SongArtist>();
+        foreach (dynamic dynArtist in artistsJson)
+        {
+            var titles = new List<Title>();
+            foreach (dynamic dynArtistAlias in artists_aliasesLookup[dynArtist.id])
+            {
+                (string artistLatinTitle, string? artistNonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(
+                    (string)dynArtistAlias.name,
+                    (string?)dynArtistAlias.latin);
+                titles.Add(new Title
+                {
+                    LatinTitle = artistLatinTitle,
+                    NonLatinTitle = artistNonLatinTitle,
+                    Language = dynArtist.lang,
+                    IsMainTitle = (int)dynArtist.main == (int)dynArtistAlias.aid
+                });
+            }
+
+            Sex sex = (string)dynArtist.gender switch
+            {
+                "f" => Sex.Female,
+                "m" => Sex.Male,
+                "" => Sex.Unknown,
+                _ => throw new Exception($"Invalid artist sex: {(string)dynArtist.gender}")
+            };
+
+            SongArtist songArtist = new()
+            {
+                Roles = new List<SongArtistRole>(), PrimaryLanguage = dynArtist.lang, Titles = titles, Sex = sex
+            };
+            songArtists.Add(songArtist);
+
+            var l_vndb = (string?)dynArtist.id;
+            var l_vgmdb = (int?)dynArtist.l_vgmdb ;
+            // var l_anison = dynArtist.l_anison;
+            // svar l_egs = dynArtist.l_egs;
+            var l_mbrainz = (Guid?)dynArtist.l_mbrainz;
+
+            if (!string.IsNullOrEmpty(l_vndb))
+            {
+                songArtist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https://vndb.org/{l_vndb}", Type = SongArtistLinkType.VNDBStaff, Name = "",
+                });
+            }
+
+            if (l_vgmdb is > 0)
+            {
+                songArtist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https://vgmdb.net/artist/{l_vgmdb}", Type = SongArtistLinkType.VGMdbArtist, Name = "",
+                });
+            }
+
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (l_mbrainz is not null && l_mbrainz != Guid.Empty)
+            {
+                songArtist.Links.Add(new SongArtistLink
+                {
+                    Url = $"https://musicbrainz.org/artist/{l_mbrainz}",
+                    Type = SongArtistLinkType.MusicBrainzArtist,
+                    Name = "",
+                });
+            }
+        }
+
+        foreach (SongArtist songArtist in songArtists)
+        {
+            // Console.WriteLine(songArtist.ToString());
+            var actionResult =
+                await controller.EditArtist(new ReqEditArtist(songArtist, true,
+                    "new composers and lyricists from VNDB"));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine($"actionResult is not OkResult: {songArtist} {badRequestObjectResult?.Value}");
+            }
+        }
     }
 
     [Test, Explicit]

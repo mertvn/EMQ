@@ -20,7 +20,7 @@ public class AddTableArtist_Alias : Migration
 
         Create.UniqueConstraint()
             .OnTable(tableName)
-            .Columns("artist_id", "latin_alias");
+            .Columns("artist_id", "latin_alias", "non_latin_alias");
 
         Execute.Sql("CREATE INDEX idx_artist_alias_latin_alias_lower ON artist_alias(lower(latin_alias))");
         // Create.Index().OnTable(tableName).InSchema("public").OnColumn("lower(latin_alias)");
