@@ -358,7 +358,7 @@ WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = 
                     type = SongLinkType.ErogameScapeMusic,
                     is_video = false,
                     duration = default,
-                    submitted_by = null,
+                    submitted_by = "Cookie4IS",
                     sha256 = "",
                     analysis_raw = null
                 });

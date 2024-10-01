@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -107,6 +107,7 @@ public class QuizManager
                         {
                             Quiz.Room.Log("Canceling quiz due to looting failure", writeToChat: true);
                             await CancelQuiz();
+                            return;
                         }
 
                         await EnterGuessingPhase();
