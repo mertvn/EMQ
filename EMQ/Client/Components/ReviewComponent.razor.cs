@@ -99,7 +99,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            foreach (RQ rq in BGMBatch)
+            foreach (RQ rq in BGMBatch.Reverse())
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Rejected);
             }
@@ -123,7 +123,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            foreach (RQ rq in BGMBatch)
+            foreach (RQ rq in BGMBatch.Reverse())
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Pending);
             }
@@ -147,7 +147,7 @@ public partial class ReviewComponent
 
         if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
         {
-            foreach (RQ rq in BGMBatch)
+            foreach (RQ rq in BGMBatch.Reverse())
             {
                 await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Approved);
             }

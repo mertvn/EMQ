@@ -128,6 +128,7 @@ public class EntryPoints
         await EgsImporter.ImportEgsData(DateTime.Parse(Constants.ImportDateEgs), false);
     }
 
+    // todo use xrefs in db instead of from file
     // todo make use of mel egs links
     // todo find more ways to match (manual stuff)
     // todo import all staff from vndb
@@ -494,10 +495,12 @@ public class EntryPoints
                 continue;
             }
 
+            bool addedSomething = false;
             var artist = single.Value.Single().Value;
             if (!string.IsNullOrEmpty(xRef.Vndb) &&
                 !artist.Links.Any(x => x.Type == SongArtistLinkType.VNDBStaff))
             {
+                addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
                     Url = $"https:/vndb.org/{xRef.Vndb}", Type = SongArtistLinkType.VNDBStaff, Name = "",
@@ -507,6 +510,7 @@ public class EntryPoints
             if (!string.IsNullOrEmpty(xRef.Vgmdb) &&
                 !artist.Links.Any(x => x.Type == SongArtistLinkType.VGMdbArtist))
             {
+                addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
                     Url = $"https://vgmdb.net/artist/{xRef.Vgmdb}",
@@ -518,6 +522,7 @@ public class EntryPoints
             if (!string.IsNullOrEmpty(xRef.Anison) &&
                 !artist.Links.Any(x => x.Type == SongArtistLinkType.AnisonInfoPerson))
             {
+                addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
                     Url = $"http://anison.info/data/person/{xRef.Anison}.html",
@@ -529,6 +534,7 @@ public class EntryPoints
             if (!string.IsNullOrEmpty(xRef.Egs) &&
                 !artist.Links.Any(x => x.Type == SongArtistLinkType.ErogameScapeCreater))
             {
+                addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
                     Url =
@@ -541,6 +547,7 @@ public class EntryPoints
             if (mbArtistIdFromVndbDB != null &&
                 !artist.Links.Any(x => x.Type == SongArtistLinkType.MusicBrainzArtist))
             {
+                addedSomething = true;
                 artist.Links.Add(new SongArtistLink
                 {
                     Url = $"https://musicbrainz.org/artist/{mbArtistIdFromVndbDB}",
@@ -554,15 +561,24 @@ public class EntryPoints
             //     artist.Titles.First().IsMainTitle = true;
             // }
 
-            var actionResult =
-                await controller.EditArtist(new ReqEditArtist(artist, false,
-                    $"from VNDB (MB) and xrefs.csv: {xRef.ToString()}"));
-            if (actionResult is not OkResult)
+            if (addedSomething)
             {
-                var badRequestObjectResult = actionResult as BadRequestObjectResult;
-                Console.WriteLine($"actionResult is not OkResult: {artist} {badRequestObjectResult?.Value}");
+                var actionResult =
+                    await controller.EditArtist(new ReqEditArtist(artist, false,
+                        $"from VNDB (MB) and xrefs.csv: {xRef.ToString()}"));
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine($"actionResult is not OkResult: {artist} {badRequestObjectResult?.Value}");
+                }
             }
         }
+    }
+
+    // prob from vndbforemq
+    [Test, Explicit]
+    public async Task ImportVndbArtists()
+    {
     }
 
     [Test, Explicit]
