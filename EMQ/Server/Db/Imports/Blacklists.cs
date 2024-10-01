@@ -188,6 +188,7 @@ public static class Blacklists
         "https://vndb.org/v6700",
         "https://vndb.org/v7557",
         "https://vndb.org/v8005",
+        "https://vndb.org/v13325",
         "https://vndb.org/v13628",
     };
 

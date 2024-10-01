@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -41,7 +41,7 @@ public static class ExtensionMethods
 
     public static string ToVndbUrl(this string? vndbId)
     {
-        return "https://vndb.org/" + vndbId;
+        return $"https://vndb.org/{vndbId}";
     }
 
     public static string ToVndbId(this string vndbUrl)
@@ -237,6 +237,7 @@ public static class ExtensionMethods
             .Normalize(NormalizationForm.FormC);
     }
 
+    // todo remove these 2
     public static string ReplaceSelfhostLink(this string url)
     {
         if (Constants.SelfhostAddress is null)
