@@ -124,18 +124,25 @@
 
     private async void GetServerStats(object? sender, ElapsedEventArgs elapsedEventArgs)
     {
-        ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats");
-        if (res is not null)
+        try
         {
-            if (!string.IsNullOrWhiteSpace(ClientState.ServerStats.GitHash) && res.GitHash != ClientState.ServerStats.GitHash)
+            ServerStats? res = await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats");
+            if (res is not null)
             {
-                await _jsRuntime.InvokeVoidAsync("alert", "EMQ has been updated. Press OK to refresh.");
-                await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}");
-                return;
-            }
+                if (!string.IsNullOrWhiteSpace(ClientState.ServerStats.GitHash) && res.GitHash != ClientState.ServerStats.GitHash)
+                {
+                    await _jsRuntime.InvokeVoidAsync("alert", "EMQ has been updated. Press OK to refresh.");
+                    await _jsRuntime.InvokeVoidAsync("changeLocation", $"{_navigation.BaseUri}");
+                    return;
+                }
 
-            ClientState.ServerStats = res;
+                ClientState.ServerStats = res;
+            }
+            StateHasChanged();
         }
-        StateHasChanged();
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
     }
 }
