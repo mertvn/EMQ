@@ -381,4 +381,7 @@ public enum LibrarySongFilterKind
 
     [Description("Missing lyricist info")]
     MissingLyricist,
+
+    [Description("Missing ErogameScape music link")]
+    MissingErogameScapeMusic,
 }
