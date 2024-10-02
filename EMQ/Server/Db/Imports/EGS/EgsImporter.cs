@@ -292,7 +292,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     throw new ArgumentOutOfRangeException();
             }
 
-            if (needsPrint)
+            if (needsPrint && !calledFromApi)
             {
                 Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.EgsData.MusicName, Utils.Jso));
                 Console.WriteLine(egsImporterInnerResult.EgsData.CreaterId +
