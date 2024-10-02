@@ -49,7 +49,7 @@
 
     @if (ClientState.Countdown.TotalSeconds > 0)
     {
-        <div class="countdownInfo" style="padding: 2px; margin: 5px 12px 5px 5px; position: fixed; top: 0; right: 7%; text-align: center;">
+        <div class="countdownInfo" style="padding: 2px; margin: 5px 12px 5px 5px; position: fixed; top: 10%; right: 37%; text-align: center;">
             <span> @ClientState.ServerStats.CountdownInfo.Message</span>
             <br/>
             <span> @(ClientState.Countdown.ToString(@"mm\:ss"))</span>
