@@ -34,6 +34,8 @@ public readonly struct EgsData
     public int?[] Arranger { get; init; }
 
     public int?[] Lyricist { get; init; }
+
+    public override string ToString() => MusicId.ToString();
 }
 
 public readonly struct EgsDataCreater

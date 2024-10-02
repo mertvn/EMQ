@@ -20,7 +20,7 @@ public static class EgsImporter
 {
     public static readonly Dictionary<int, List<string>> CreaterNameOverrideDict = new();
 
-    // todo use xrefs (or just import xrefs to the db and use those tbh)
+    // todo use xrefs in db
     public static async Task ImportEgsData(DateTime dateTime, bool calledFromApi)
     {
         if (ConnectionHelper.GetConnectionString().Contains("AUTH"))
@@ -51,6 +51,14 @@ public static class EgsImporter
                 throw new Exception($"creater id {key} is repeated in the override dict");
             }
         }
+
+        // directly match manually added egs music links
+        var emq = (await new NpgsqlConnection(ConnectionHelper.GetConnectionString()).QueryAsync<(int, int)>(
+                $@"
+select music_id, replace(url, 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music=', '')::int
+from music_external_link
+where type = {(int)SongLinkType.ErogameScapeMusic} and submitted_by is null -- filters Cookie4IS (!= doesnt work because null)"))
+            .ToArray();
 
         var egsDataList = new List<EgsData>();
         string[] rows = await File.ReadAllLinesAsync($"{folder}/egs.tsv");
@@ -93,26 +101,7 @@ public static class EgsImporter
                 throw new ArgumentOutOfRangeException("", $"mId {Convert.ToInt32(split[0])} " + split[4]);
             }
 
-            if (gameMusicCategory == SongSourceSongType.Unknown)
-            {
-                // Console.WriteLine("Skipping row with Unknown GameMusicCategory");
-                continue;
-            }
-
             string gameVndbUrl = split[6];
-            if (string.IsNullOrWhiteSpace(gameVndbUrl))
-            {
-                // todo try using the EGS links attached to VNDB releases
-                // Console.WriteLine("Skipping row with no GameVndbUrl");
-                continue;
-            }
-
-            gameVndbUrl = gameVndbUrl.ToVndbUrl();
-            if (Blacklists.EgsImporterBlacklist.Contains(gameVndbUrl))
-            {
-                continue;
-            }
-
             int createrId = Convert.ToInt32(split[13]);
 
             List<string> createrName = new() { split[14] };
@@ -129,7 +118,7 @@ public static class EgsImporter
                 MusicPlaytime = split[3],
                 GameMusicCategory = gameMusicCategory,
                 GameName = split[5],
-                GameVndbUrl = gameVndbUrl,
+                GameVndbUrl = gameVndbUrl.ToVndbUrl(),
                 SingerCharacterName = split[9],
                 SingerFeaturing = split[10] == "t",
                 CreaterId = createrId,
@@ -140,15 +129,36 @@ public static class EgsImporter
                 Lyricist = JsonSerializer.Deserialize<int?[]>(split[18])!,
             };
 
+            if (!emq.Any(x => x.Item2 == egsData.MusicId))
+            {
+                if (gameMusicCategory == SongSourceSongType.Unknown)
+                {
+                    // Console.WriteLine("Skipping row with Unknown GameMusicCategory");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(gameVndbUrl))
+                {
+                    // todo try using the EGS links attached to VNDB releases
+                    // Console.WriteLine("Skipping row with no GameVndbUrl");
+                    continue;
+                }
+
+                if (Blacklists.EgsImporterBlacklist.Contains(gameVndbUrl.ToVndbUrl()))
+                {
+                    continue;
+                }
+            }
+
             egsDataList.Add(egsData);
         }
 
+        // todo? don't remove emq
         // remove duplicate items caused by EGS storing releases as separate games
         List<EgsData> toRemove = new();
         for (int i = 0; i < egsDataList.Count; i++)
         {
             EgsData egsData = egsDataList[i];
-
             var match = egsDataList.Skip(i + 1).Where(x =>
                 x.MusicName == egsData.MusicName &&
                 x.GameVndbUrl == egsData.GameVndbUrl &&
@@ -171,6 +181,20 @@ public static class EgsImporter
         // todo important batch
         // Attempt to match EGS songs with VNDB songs
         var egsImporterInnerResults = new ConcurrentBag<EgsImporterInnerResult>();
+        var egsDataEmq = egsDataList.Where(x => emq.Any(y => y.Item2 == x.MusicId)).ToArray();
+        egsDataList = egsDataList.Except(egsDataEmq).ToList();
+
+        foreach (EgsData egsData in egsDataEmq)
+        {
+            egsImporterInnerResults.Add(new EgsImporterInnerResult
+            {
+                EgsData = egsData,
+                aIds = new List<int>(), // todo? (it's not actually being used right now)
+                mIds = new List<int> { emq.First(x => x.Item2 == egsData.MusicId).Item1 },
+                ResultKind = EgsImporterInnerResultKind.Matched
+            });
+        }
+
         var opt = new ParallelOptions { MaxDegreeOfParallelism = calledFromApi ? 1 : Environment.ProcessorCount };
         await Parallel.ForEachAsync(egsDataList, opt, async (egsData, _) =>
         {
