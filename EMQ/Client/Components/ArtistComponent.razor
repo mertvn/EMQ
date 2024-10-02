@@ -17,7 +17,7 @@
     var artist = ResGetSongArtist.SongArtists.First();
     <span style="font-size: x-large">@Converters.GetSingleTitle(artist.Titles).ToString()</span>
 
-    <ArtistFaviconsComponent Links="artist.Links"/>
+    <ArtistFaviconsComponent Links="artist.Links" IsArtistPage="true"/>
     <br/>
 
     <details>
