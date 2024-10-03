@@ -167,7 +167,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
             if (confirmed)
             {
                 SelectedValue = value;
-                CurrentSearchResults = OnSearch.Invoke(SelectedText);
+                CurrentSearchResults = OnSearch.Invoke(SelectedText); // todo? option to not do this
                 await OnValueChanged.InvokeAsync(SelectedValue);
                 Answered = true;
             }
@@ -175,7 +175,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         else
         {
             SelectedValue = default;
-            CurrentSearchResults = OnSearch.Invoke(SelectedText);
+            CurrentSearchResults = OnSearch.Invoke(SelectedText); // todo? option to not do this
             await OnValueChanged.InvokeAsync(SelectedValue);
             Answered = true;
         }

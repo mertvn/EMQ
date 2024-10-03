@@ -109,7 +109,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         }
 
         bool hasNonAscii = !Ascii.IsValid(value);
-        const int maxResults = 25; // todo
+        const int maxResults = 30; // todo
         var dictLT = new Dictionary<AutocompleteA, StringMatch>();
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)

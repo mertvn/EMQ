@@ -476,7 +476,7 @@ public class EntryPoints
             bool addedSomething = true;
             foreach (Credit credit in grouping)
             {
-                Console.WriteLine(credit);
+                // Console.WriteLine(credit);
                 var songArtistRole = credit.Type;
                 string vndbUrl = credit.VndbId.ToVndbUrl();
 
@@ -528,6 +528,14 @@ public class EntryPoints
 
             if (addedSomething)
             {
+                foreach (SongArtist songArtist in song.Artists)
+                {
+                    songArtist.Titles = new List<Title>
+                    {
+                        songArtist.Titles.SingleOrDefault(x => x.IsMainTitle) ?? songArtist.Titles.First()
+                    };
+                }
+
                 var actionResult = await controller.EditSong(new ReqEditSong(song, false, "from credits.csv"));
                 if (actionResult is not OkResult)
                 {
