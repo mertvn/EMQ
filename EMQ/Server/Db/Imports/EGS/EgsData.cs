@@ -62,3 +62,17 @@ public readonly struct XRef
         return $"{Vndb},{Vgmdb},{Anison},{Egs}";
     }
 }
+
+public readonly struct Credit
+{
+    public int MusicId { get; init; }
+
+    public string VndbId { get; init; }
+
+    public SongArtistRole Type { get; init; }
+
+    public override string ToString()
+    {
+        return $"{MusicId},{VndbId},{Type.ToString()}";
+    }
+}

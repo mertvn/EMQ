@@ -410,9 +410,18 @@ public class EntryPoints
                     throw new Exception($"artists must have exactly one title per song: {song}");
                 }
 
+                string? existingUrl = song.Links.SingleOrDefault(x => x.Type == SongLinkType.ErogameScapeMusic)?.Url;
+                string noteUser =
+                    $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={egsImporterInnerResult.EgsData.MusicId}";
+
+                if (existingUrl != null && existingUrl != noteUser)
+                {
+                    Console.WriteLine($"skipping mismatched urls {existingUrl} vs {noteUser}");
+                    continue;
+                }
+
                 // Console.WriteLine(song);
-                var actionResult = await controller.EditSong(new ReqEditSong(song, false,
-                    $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={egsImporterInnerResult.EgsData.MusicId}"));
+                var actionResult = await controller.EditSong(new ReqEditSong(song, false, noteUser));
                 if (actionResult is not OkResult)
                 {
                     var badRequestObjectResult = actionResult as BadRequestObjectResult;
@@ -424,6 +433,107 @@ public class EntryPoints
             {
                 songArtist.Roles =
                     songArtist.Roles.Where(x => x is SongArtistRole.Unknown or SongArtistRole.Vocals).ToList();
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task InsertCALFromCreditsCsv()
+    {
+        string date = Constants.ImportDateEgs;
+        string folder = $"C:\\emq\\egs\\{date}";
+
+        var credits = new List<Credit>();
+        string[] creditsRows = await File.ReadAllLinesAsync($"{folder}\\credits.csv");
+        for (int i = 1; i < creditsRows.Length; i++)
+        {
+            string creditRow = creditsRows[i];
+            string[] split = creditRow.Split(',');
+            var credit = new Credit
+            {
+                MusicId = Convert.ToInt32(split[0]),
+                VndbId = split[1],
+                Type = Enum.Parse<SongArtistRole>(split[2].Split('#')[0]),
+            };
+            credits.Add(credit);
+        }
+
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+
+        var songsDict =
+            (await DbManager.SelectSongsMIds(credits.Select(x => x.MusicId).ToArray(), false))
+            .ToDictionary(x => x.Id, x => x);
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        foreach (IGrouping<int, Credit> grouping in credits.GroupBy(x => x.MusicId))
+        {
+            var song = songsDict[grouping.First().MusicId].Clone();
+            bool addedSomething = true;
+            foreach (Credit credit in grouping)
+            {
+                Console.WriteLine(credit);
+                var songArtistRole = credit.Type;
+                string vndbUrl = credit.VndbId.ToVndbUrl();
+
+                // check if song already has that artist and ignore alias if so
+                var artist = song.Artists.SingleOrDefault(x =>
+                    x.Links.Any(y => y.Type == SongArtistLinkType.VNDBStaff && y.Url == vndbUrl));
+                bool artistWasAlreadyAdded = artist != null;
+                if (!artistWasAlreadyAdded)
+                {
+                    // if (!artistAliasDict.TryGetValue(aaId, out artist))
+                    // {
+                    try
+                    {
+                        artist = (await DbManager.SelectArtistBatchNoAM(connection,
+                            new List<Song>
+                            {
+                                new Song
+                                {
+                                    Artists = new List<SongArtist>
+                                    {
+                                        new()
+                                        {
+                                            Links = new List<SongArtistLink> { new() { Url = vndbUrl } }
+                                        },
+                                    }
+                                }
+                            }, false)).Single().Value.Single().Value;
+                        // artistAliasDict[aaId] = artist;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"credit not in emq: {credit.VndbId}");
+                        continue;
+                    }
+                    // }
+                }
+
+                if (!artistWasAlreadyAdded)
+                {
+                    song.Artists.Add(artist!);
+                }
+
+                if (!artist!.Roles.Contains(songArtistRole))
+                {
+                    artist.Roles.Add(songArtistRole);
+                    addedSomething = true;
+                }
+            }
+
+            if (addedSomething)
+            {
+                var actionResult = await controller.EditSong(new ReqEditSong(song, false, "from credits.csv"));
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+                }
             }
         }
     }
@@ -644,7 +754,7 @@ WHERE s.lang = 'ja'"))
             songArtists.Add(songArtist);
 
             var l_vndb = (string?)dynArtist.id;
-            var l_vgmdb = (int?)dynArtist.l_vgmdb ;
+            var l_vgmdb = (int?)dynArtist.l_vgmdb;
             // var l_anison = dynArtist.l_anison;
             // svar l_egs = dynArtist.l_egs;
             var l_mbrainz = (Guid?)dynArtist.l_mbrainz;
@@ -878,8 +988,8 @@ WHERE s.lang = 'ja'"))
     [Test, Explicit]
     public async Task UpdateEditQueueItem()
     {
-        const int s = 5689;
-        const int e = 8278;
+        const int s = 9122;
+        const int e = 12046;
         const ReviewQueueStatus status = ReviewQueueStatus.Approved;
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -1412,7 +1522,7 @@ WHERE s.lang = 'ja'"))
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2024-05-22_EMQ@erogemusicquiz.com.tar";
+        string dumpFileName = "pgdump_2024-10-02_EMQ@erogemusicquiz.com.tar";
         // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {
