@@ -267,41 +267,44 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             }
         });
 
-        foreach (EgsImporterInnerResult egsImporterInnerResult in egsImporterInnerResults)
+        if (!calledFromApi)
         {
-            bool needsPrint;
-            switch (egsImporterInnerResult.ResultKind)
+            foreach (EgsImporterInnerResult egsImporterInnerResult in egsImporterInnerResults)
             {
-                case EgsImporterInnerResultKind.Matched:
-                    // Console.WriteLine("matched: ");
-                    needsPrint = false;
-                    break;
-                case EgsImporterInnerResultKind.MultipleMids:
-                    Console.WriteLine("multiple music matches: ");
-                    needsPrint = true;
-                    break;
-                case EgsImporterInnerResultKind.NoMids:
-                    Console.WriteLine("no music matches: ");
-                    needsPrint = true;
-                    break;
-                case EgsImporterInnerResultKind.NoAids:
-                    Console.WriteLine("no artist id matches: ");
-                    needsPrint = true;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                bool needsPrint;
+                switch (egsImporterInnerResult.ResultKind)
+                {
+                    case EgsImporterInnerResultKind.Matched:
+                        // Console.WriteLine("matched: ");
+                        needsPrint = false;
+                        break;
+                    case EgsImporterInnerResultKind.MultipleMids:
+                        Console.WriteLine("multiple music matches: ");
+                        needsPrint = true;
+                        break;
+                    case EgsImporterInnerResultKind.NoMids:
+                        Console.WriteLine("no music matches: ");
+                        needsPrint = true;
+                        break;
+                    case EgsImporterInnerResultKind.NoAids:
+                        Console.WriteLine("no artist id matches: ");
+                        needsPrint = true;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
 
-            if (needsPrint && !calledFromApi)
-            {
-                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.EgsData.MusicName, Utils.Jso));
-                Console.WriteLine(egsImporterInnerResult.EgsData.CreaterId +
-                                  JsonSerializer.Serialize(egsImporterInnerResult.EgsData.CreaterNames, Utils.Jso));
-                Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.EgsData.GameVndbUrl,
-                    Utils.Jso));
-                Console.WriteLine(JsonSerializer.Serialize((int)egsImporterInnerResult.EgsData.GameMusicCategory,
-                    Utils.Jso));
-                Console.WriteLine("--------------");
+                if (needsPrint)
+                {
+                    Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.EgsData.MusicName, Utils.Jso));
+                    Console.WriteLine(egsImporterInnerResult.EgsData.CreaterId +
+                                      JsonSerializer.Serialize(egsImporterInnerResult.EgsData.CreaterNames, Utils.Jso));
+                    Console.WriteLine(JsonSerializer.Serialize(egsImporterInnerResult.EgsData.GameVndbUrl,
+                        Utils.Jso));
+                    Console.WriteLine(JsonSerializer.Serialize((int)egsImporterInnerResult.EgsData.GameMusicCategory,
+                        Utils.Jso));
+                    Console.WriteLine("--------------");
+                }
             }
         }
 
