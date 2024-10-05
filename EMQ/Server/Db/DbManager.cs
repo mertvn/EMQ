@@ -39,41 +39,32 @@ public static class DbManager
     public static async Task Init()
     {
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
 
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
-            MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
-                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
-        }
+        var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
+        MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
+            .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
 
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var musicBrainzReleaseVgmdbAlbums = await connection.GetListAsync<MusicBrainzReleaseVgmdbAlbum>();
-            MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
-                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
-        }
+        var musicBrainzReleaseVgmdbAlbums = await connection.GetListAsync<MusicBrainzReleaseVgmdbAlbum>();
+        MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
+            .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
 
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
-            MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
-                .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
-        }
+        var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
+        MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
+            .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
 
-        string[] vnIds;
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            vnIds = (await connection.QueryAsync<string>(
-                    $"select url from music_source_external_link where type = {(int)SongSourceLinkType.VNDB}"))
-                .Select(x => x.ToVndbId()).ToArray();
-        }
+        IgnoredMusicVotes = (await connectionAuth.QueryAsync<int>("select id from users where ign_mv")).ToArray();
+
+        string[] vnIds = (await connection.QueryAsync<string>(
+                $"select url from music_source_external_link where type = {(int)SongSourceLinkType.VNDB}"))
+            .Select(x => x.ToVndbId()).ToArray();
 
         // todo automate setting this to false when running freshsetup
         bool hasVndbDb = true;
         if (hasVndbDb)
         {
-            await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+            await using (var connectionVndb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
             {
                 const string sql = @"
 SELECT distinct v.id, p.id, p.name, p.latin FROM producers p
@@ -84,7 +75,7 @@ JOIN vn v ON v.id = rv.vid
 WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
                 var vnDevelopers =
-                    await connection.QueryAsync<(string vId, string pId, string name, string? latin)>(sql,
+                    await connectionVndb.QueryAsync<(string vId, string pId, string name, string? latin)>(sql,
                         new { vnIds });
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToFrozenDictionary(y => y.Key, y => y.Select(z => z).ToArray());
@@ -125,6 +116,8 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
         FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
+
+    private static int[] IgnoredMusicVotes { get; set; } = Array.Empty<int>();
 
     private static async Task RefreshMusicIdsRecordingGidsCache()
     {
@@ -378,8 +371,10 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
             // TOSCALE
             var musicVotes =
-                (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = ANY(@mIds)",
-                    new { mIds = songs.Select(x => x.Value.Id).ToArray() })).GroupBy(x => x.music_id).ToArray();
+                (await connection.QueryAsync<MusicVote>(
+                    "select * from music_vote where music_id = ANY(@mIds) and not user_id = any(@ign)",
+                    new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }))
+                .GroupBy(x => x.music_id).ToArray();
 
             foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
             {
@@ -1855,7 +1850,8 @@ GROUP BY artist_id";
                     // TOSCALE
                     var musicVotes =
                         await connection.QueryAsync<(int mId, float avg)>(
-                            @"SELECT music_id, avg(vote) * 10 FROM music_vote GROUP BY music_id");
+                            @"SELECT music_id, avg(vote) * 10 FROM music_vote where not user_id = any(@ign) GROUP BY music_id",
+                            new { ign = IgnoredMusicVotes });
 
                     var validMidsMusicVotes = musicVotes.Where(x =>
                             x.avg >= filters.SongRatingAverageStart &&
@@ -3638,17 +3634,19 @@ order by count(music_id) desc
             var mvAvg = (await connection.QueryAsync<int>(
                 @"SELECT music_id FROM music_vote mv
 WHERE music_id = ANY(@validMids)
+and not user_id = any(@ign)
 GROUP BY music_id
 HAVING count(*) >= 3
 ORDER BY avg(vote) DESC
-LIMIT 25", new { validMids }));
+LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
 
             var mvCount = (await connection.QueryAsync<int>(
                 @"SELECT music_id FROM music_vote mv
 WHERE music_id = ANY(@validMids)
+and not user_id = any(@ign)
 GROUP BY music_id
 ORDER BY count(*) DESC
-LIMIT 25", new { validMids }));
+LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
 
             var highlyRatedSongs = (await SelectSongsMIds(mvAvg.ToArray(), false))
                 .OrderByDescending(x => x.VoteAverage).ThenByDescending(x => x.VoteCount).ToArray();
@@ -5063,8 +5061,9 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
     public static async Task<ResGetMusicVotes> GetMusicVotes(int musicId)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        var musicVotes = (await connection.QueryAsync<MusicVote>("select * from music_vote where music_id = @musicId",
-            new { musicId })).ToArray();
+        var musicVotes = (await connection.QueryAsync<MusicVote>(
+            "select * from music_vote where music_id = @musicId and not user_id = any(@ign)",
+            new { musicId, ign = IgnoredMusicVotes })).ToArray();
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict =

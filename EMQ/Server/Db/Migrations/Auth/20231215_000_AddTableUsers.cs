@@ -21,7 +21,8 @@ public class AddTableUsers : Migration
             .WithColumn("salt").AsString().NotNullable()
             .WithColumn("hash").AsString().NotNullable()
             .WithColumn("avatar").AsInt32().NotNullable().WithDefaultValue(Avatar.DefaultAvatar.Character)
-            .WithColumn("skin").AsString(32).NotNullable().WithDefaultValue(Avatar.DefaultAvatar.Skin);
+            .WithColumn("skin").AsString(32).NotNullable().WithDefaultValue(Avatar.DefaultAvatar.Skin)
+            .WithColumn("ign_mv").AsBoolean().NotNullable().WithDefaultValue(false);
 
         Execute.Sql(@"CREATE UNIQUE INDEX UC_users_username_lower ON users(lower(username));");
         Execute.Sql($@"ALTER TABLE users ADD CHECK (username ~* '{RegexPatterns.UsernameRegex}');");
