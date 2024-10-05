@@ -2507,11 +2507,11 @@ AND msm.type = ANY(@msmType)";
             const string sql = @"SELECT DISTINCT mel.music_id
 FROM music_external_link mel
 JOIN music_source_music msm on mel.music_id = msm.music_id
-WHERE mel.analysis_raw NOT LIKE '%Warnings"":[]%'
+WHERE mel.type = ANY(@types) and mel.analysis_raw NOT LIKE '%Warnings"":[]%'
 AND msm.type = ANY(@msmType)";
 
             var mids = (await connection.QueryAsync<int>(sql,
-                new { msmType = songSourceSongTypes.Cast<int>().ToArray() })).ToList();
+                new { msmType = songSourceSongTypes.Cast<int>().ToArray(), types = SongLink.FileLinkTypes })).ToList();
 
             var ret = await SelectSongsMIds(mids.ToArray(), false);
             foreach (Song song in ret)
@@ -3422,14 +3422,16 @@ WHERE id = {mId};
         return success;
     }
 
-    // todo investigate performance regression
     public static async Task<LibraryStats> SelectLibraryStats(int limit, SongSourceSongType[] songSourceSongTypes)
     {
-        // var stopWatch = new Stopwatch();
-        // stopWatch.Start();
-        // Console.WriteLine(
-        //     $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        var stopWatch = new Utils.MyStopwatch();
+        bool useStopWatch = false;
+        if (useStopWatch)
+        {
+            stopWatch.Start();
+        }
 
+        stopWatch.StartSection("start");
         string cacheKey = $"{limit}-{string.Join(",", songSourceSongTypes.OrderBy(x => x).Select(y => y))}";
         if (CachedLibraryStats.TryGetValue(cacheKey, out LibraryStats? cached))
         {
@@ -3451,9 +3453,7 @@ WHERE id = {mId};
                 .Select(z => z.Key)
                 .ToList();
 
-            // Console.WriteLine(
-            //     $"StartSection Song: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-
+            stopWatch.StartSection("Song");
             string sqlMusic =
                 $"SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id WHERE m.id = ANY(@validMids)";
 
@@ -3495,17 +3495,14 @@ group by msm.type
 order by type";
             var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
             qMusicType.Where($"msm.music_id = ANY({validMids})");
-            // Console.WriteLine(
-            //     $"StartSection totalMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("totalMusicTypeCount");
             var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
             qMusicType.Where($"mel.url is not null");
             qMusicType.Where($"mel.type IN ({fileLinkTypesStr:raw})");
 
-            // Console.WriteLine(
-            //     $"StartSection availableMusicTypeCount: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("availableMusicTypeCount");
             var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
-            // Console.WriteLine(
-            //     $"StartSection mels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("mels");
             int videoLinkCount = (await connection.ExecuteScalarAsync<int>(
                 "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id not in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
                 new { validMids, types = SongLink.FileLinkTypes }));
@@ -3526,9 +3523,11 @@ order by type";
                 $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Lyricist} and music_id = ANY(@validMids)",
                 new { validMids }));
 
+            stopWatch.StartSection("SelectLibraryStats_VN");
             (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
                 await SelectLibraryStats_VN(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
+            stopWatch.StartSection("SelectLibraryStats_Artist");
             (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
                 await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
@@ -3544,15 +3543,13 @@ group by year
 order by year";
             var qMsYear = connection.QueryBuilder($"{sqlMsYear:raw}");
             qMsYear.Where($"msm.music_id = ANY({validMids})");
-            // Console.WriteLine(
-            //     $"StartSection msYear: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("msYear");
             var msYear =
                 (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
 
             qMsYear.Where($"mel.url is not null");
             qMsYear.Where($"mel.type IN ({fileLinkTypesStr:raw})");
-            // Console.WriteLine(
-            //     $"StartSection msYearAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("msYearAvailable");
             var msYearAvailable =
                 (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
 
@@ -3619,11 +3616,11 @@ order by count(music_id) desc
             }
 
 
-            // Console.WriteLine(
-            //     $"StartSection songDifficultyLevels: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("songDifficultyLevels");
             var songDifficultyLevels = await GetSongDifficultyLevelCounts(validMids.ToArray());
 
             // todo batch
+            stopWatch.StartSection("warningsDict");
             var warningsDict = new Dictionary<MediaAnalyserWarningKind, int>();
             foreach (MediaAnalyserWarningKind warningKind in Enum.GetValues<MediaAnalyserWarningKind>())
             {
@@ -3631,6 +3628,7 @@ order by count(music_id) desc
                     (await FindSongsByWarnings(new[] { warningKind }, songSourceSongTypes)).Count();
             }
 
+            stopWatch.StartSection("mv");
             var mvAvg = (await connection.QueryAsync<int>(
                 @"SELECT music_id FROM music_vote mv
 WHERE music_id = ANY(@validMids)
@@ -3653,6 +3651,7 @@ LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
             var mostVotedSongs = (await SelectSongsMIds(mvCount.ToArray(), false))
                 .OrderByDescending(x => x.VoteCount).ThenByDescending(x => x.VoteAverage).ToArray();
 
+            stopWatch.StartSection("new LibraryStats");
             var libraryStats = new LibraryStats
             {
                 // General
@@ -3699,7 +3698,7 @@ LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
                 MostVotedSongs = mostVotedSongs,
             };
 
-            // stopWatch.Stop();
+            stopWatch.Stop();
             CachedLibraryStats[cacheKey] = libraryStats;
             return libraryStats;
         }

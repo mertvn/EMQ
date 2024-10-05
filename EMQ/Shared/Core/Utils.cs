@@ -85,9 +85,9 @@ public static class Utils
 
     public class MyStopwatch
     {
-        public Stopwatch Stopwatch { get; set; } = new();
+        public Stopwatch Stopwatch { get; } = new();
 
-        public List<MyStopwatchSection> Sections { get; set; } = new();
+        public List<MyStopwatchSection> Sections { get; } = new();
 
         public void StartSection(string name)
         {
@@ -104,16 +104,20 @@ public static class Utils
             StartSection("end");
             Stopwatch.Stop();
 
-            for (int index = 0; index < Sections.Count; index++)
+            bool shouldPrint = Sections.First().Elapsed > TimeSpan.Zero;
+            if (shouldPrint)
             {
-                MyStopwatchSection current = Sections[index];
-                MyStopwatchSection? next = Sections.ElementAtOrDefault(index + 1);
-                if (next is null)
+                for (int index = 0; index < Sections.Count; index++)
                 {
-                    continue;
-                }
+                    MyStopwatchSection current = Sections[index];
+                    MyStopwatchSection? next = Sections.ElementAtOrDefault(index + 1);
+                    if (next is null)
+                    {
+                        continue;
+                    }
 
-                Console.WriteLine($"{current.Name}: {(next.Elapsed - current.Elapsed).TotalMilliseconds}ms");
+                    Console.WriteLine($"{current.Name}: {(next.Elapsed - current.Elapsed).TotalMilliseconds}ms");
+                }
             }
         }
     }
