@@ -747,6 +747,7 @@ public class QuizManager
         foreach (var player in Quiz.Room.Players)
         {
             player.IsBuffered = false;
+            player.IsSkipping = false;
         }
 
         TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
