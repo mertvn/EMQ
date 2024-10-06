@@ -22,9 +22,6 @@
     <Content>
     @if (true)
     {
-        List<LibraryStatsAm> am = libraryStats.am;
-        List<LibraryStatsAm> amAvailable = libraryStats.amAvailable;
-        List<LibraryStatsMsm> msm = libraryStats.msm;
         List<LibraryStatsMsm> msmAvailable = libraryStats.msmAvailable;
 
         <Blazorise.TabPanel Name="TabGeneral">
@@ -195,35 +192,8 @@
 
 
         <Blazorise.TabPanel Name="TabVN">
-            <div class="libraryStatsDoubleTableOuter">
-                <div class="libraryStatsDoubleTableInner">
-                    <p>Total:</p>
-                    <table>
-                        <tr class="libraryStatsHeaders">
-                            <th class="libraryStatsHeader">#</th>
-                            <th class="libraryStatsHeader">VN</th>
-                            <th class="libraryStatsHeader">Songs</th>
-                        </tr>
-                        @for (int i = 0; i < msm.Count; i++)
-                        {
-                            var item = msm[i];
-                            <tr class="libraryStatsRow">
-                                <td>@(i + 1)</td>
-                                <td>
-                                    <a class="link-primary" href="@(item.MselUrl)" target="_blank">
-                                        <span>@item.MstLatinTitle</span>
-                                    </a>
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_Mst(item.MstLatinTitle); })">@item.MusicCount</b>
-                                </td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-
-                <div class="libraryStatsDoubleTableInner">
-                    <p>Available:</p>
+            <div style="max-width: 700px;">
+                <div>
                     <table>
                         <tr class="libraryStatsHeaders">
                             <th class="libraryStatsHeader">#</th>
@@ -257,70 +227,52 @@
 
 
         <Blazorise.TabPanel Name="TabArtist">
-            <div class="libraryStatsDoubleTableOuter">
-                <div class="libraryStatsDoubleTableInner">
-                    <p>Total:</p>
-                    <table>
-                        <tr class="libraryStatsHeaders">
-                            <th class="libraryStatsHeader">#</th>
-                            <th class="libraryStatsHeader">Artist</th>
-                            <th class="libraryStatsHeader">Songs</th>
-                        </tr>
-                        @for (int i = 0; i < am.Count; i++)
-                        {
-                            var item = am[i];
-                            <tr class="libraryStatsRow">
-                                <td>@(i + 1)</td>
-                                <td>
-                                    @* todo nonlatinalias *@
-                                    @if (true)
+            <Blazorise.Tabs SelectedTab="All">
+                <Items>
+                    @foreach (string key in libraryStats.amAvailableDict.Keys)
+                    {
+                        <Blazorise.Tab @key="@key" Name="@key">@key</Blazorise.Tab>
+                    }
+                </Items>
+                <Content>
+                    @foreach ((string key, List<LibraryStatsAm> value) in libraryStats.amAvailableDict)
+                    {
+                        <Blazorise.TabPanel @key="@key" Name="@key">
+                            <div style="max-width: 700px;">
+                                <table>
+                                    <tr class="libraryStatsHeaders">
+                                        <th class="libraryStatsHeader">#</th>
+                                        <th class="libraryStatsHeader">Artist</th>
+                                        <th class="libraryStatsHeader">Songs</th>
+                                        <th class="libraryStatsHeader">Percentage</th>
+                                    </tr>
+                                    @for (int i = 0; i < value.Count; i++)
                                     {
-                                        <span>@item.AALatinAlias</span>
-                                        <ArtistFaviconsComponent Links="item.Links"/>
+                                        var item = value[i];
+                                        <tr class="libraryStatsRow">
+                                            <td>@(i + 1)</td>
+                                            <td>
+                                                @* todo nonlatinalias *@
+                                                @if (true)
+                                                {
+                                                    <span>@item.AALatinAlias</span>
+                                                    <ArtistFaviconsComponent Links="item.Links"/>
+                                                }
+                                            </td>
+                                            <td>
+                                                <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
+                                            </td>
+                                            <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
+                                                <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
+                                            </td>
+                                        </tr>
                                     }
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.MusicCount</b>
-                                </td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-
-                <div class="libraryStatsDoubleTableInner">
-                    <p>Available:</p>
-                    <table>
-                        <tr class="libraryStatsHeaders">
-                            <th class="libraryStatsHeader">#</th>
-                            <th class="libraryStatsHeader">Artist</th>
-                            <th class="libraryStatsHeader">Songs</th>
-                            <th class="libraryStatsHeader">Percentage</th>
-                        </tr>
-                        @for (int i = 0; i < amAvailable.Count; i++)
-                        {
-                            var item = amAvailable[i];
-                            <tr class="libraryStatsRow">
-                                <td>@(i + 1)</td>
-                                <td>
-                                    @* todo nonlatinalias *@
-                                    @if (true)
-                                    {
-                                        <span>@item.AALatinAlias</span>
-                                        <ArtistFaviconsComponent Links="item.Links"/>
-                                    }
-                                </td>
-                                <td>
-                                    <b style="cursor: pointer" @onclick="@(async () => { await Onclick_A(item.AId); })">@item.AvailableMusicCount/@item.MusicCount</b>
-                                </td>
-                                <td style="color: @UiHelpers.Bool2Color(item.AvailableMusicCount == @item.MusicCount, "green", "inherit")">
-                                    <b>@Utils.PercentageStr(item.AvailableMusicCount, item.MusicCount)</b>
-                                </td>
-                            </tr>
-                        }
-                    </table>
-                </div>
-            </div>
-
+                                </table>
+                            </div>
+                        </Blazorise.TabPanel>
+                    }
+                </Content>
+            </Blazorise.Tabs>
         </Blazorise.TabPanel>
 
 

@@ -17,12 +17,3 @@ th, td {
 tr:nth-child(even) {
     background-color: rgba(0, 0, 0, 0.10);
 }
-
-.libraryStatsDoubleTableOuter {
-    display: flex;
-}
-
-.libraryStatsDoubleTableInner {
-    flex: 50%;
-    padding: 5px;
-}

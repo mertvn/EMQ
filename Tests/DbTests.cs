@@ -852,11 +852,9 @@ public class DbTests
         Assert.That(libraryStats.SoundLinkCount > 0);
         Assert.That(libraryStats.BothLinkCount > 0);
 
-        Assert.That(libraryStats.msm.First().MSId > 0);
         Assert.That(libraryStats.msmAvailable.First().MSId > 0);
 
-        Assert.That(libraryStats.am.First().AId > 0);
-        Assert.That(libraryStats.amAvailable.First().AId > 0);
+        Assert.That(libraryStats.amAvailableDict.First().Value.First().AId > 0);
 
         Assert.That(libraryStats.msYear.First().Value > 0);
         Assert.That(libraryStats.msYearAvailable.ElementAtOrDefault(10).Value > 0);
@@ -871,7 +869,7 @@ public class DbTests
     public async Task Test_SelectLibraryStatsYoneMado()
     {
         var libraryStats = await DbManager.SelectLibraryStats(int.MaxValue, Enum.GetValues<SongSourceSongType>());
-        var yoneMado = libraryStats.am.Single(x => x.AALatinAlias == "Yonezawa Madoka");
+        var yoneMado = libraryStats.amAvailableDict.First().Value.Single(x => x.AALatinAlias == "Yonezawa Madoka");
         Console.WriteLine(yoneMado.MusicCount);
         Assert.That(yoneMado.MusicCount > 14);
     }

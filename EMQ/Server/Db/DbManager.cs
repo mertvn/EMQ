@@ -3524,13 +3524,39 @@ order by type";
                 new { validMids }));
 
             stopWatch.StartSection("SelectLibraryStats_VN");
-            (List<LibraryStatsMsm> msm, List<LibraryStatsMsm> msmAvailable) =
+            (List<LibraryStatsMsm> _, List<LibraryStatsMsm> msmAvailable) =
                 await SelectLibraryStats_VN(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
+            // todo important do this in a single query
             stopWatch.StartSection("SelectLibraryStats_Artist");
-            (List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailable) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    null);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableUnknown) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    SongArtistRole.Unknown);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableVocals) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    SongArtistRole.Vocals);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableComposer) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    SongArtistRole.Composer);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableArranger) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    SongArtistRole.Arranger);
+            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableLyricist) =
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                    SongArtistRole.Lyricist);
 
+            var amAvailableDict = new Dictionary<string, List<LibraryStatsAm>>()
+            {
+                { "All", amAvailable },
+                { SongArtistRole.Unknown.ToString(), amAvailableUnknown },
+                { SongArtistRole.Vocals.ToString(), amAvailableVocals },
+                { SongArtistRole.Composer.ToString(), amAvailableComposer },
+                { SongArtistRole.Arranger.ToString(), amAvailableArranger },
+                { SongArtistRole.Lyricist.ToString(), amAvailableLyricist },
+            };
 
             string sqlMsYear =
                 @"SELECT date_trunc('year', ms.air_date_start) AS year, Count(DISTINCT m.id)
@@ -3673,12 +3699,10 @@ LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
                 AvailableLyricistCount = lyricistCount,
 
                 // VN
-                msm = msm.Take(limit).ToList(),
                 msmAvailable = msmAvailable,
 
                 // Artist
-                am = am.Take(limit).ToList(),
-                amAvailable = amAvailable,
+                amAvailableDict = amAvailableDict,
 
                 // VN year
                 msYear = msYear,
@@ -3749,7 +3773,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
 
     public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
         IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes,
-        string fileLinkTypesStr)
+        string fileLinkTypesStr, SongArtistRole? role)
     {
         string sqlArtistMusic =
             @"SELECT a.id AS AId, COUNT(DISTINCT m.id) AS MusicCount, json_agg(DISTINCT ael.*) as LinksJson
@@ -3765,16 +3789,15 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
 
         var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
         qAm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
+        if (role != null)
+        {
+            qAm.Where($"am.role = {role}");
+        }
 
-        // Console.WriteLine(
-        //     $"StartSection am: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
-        var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
-
+        var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList(); // todo get rid of this
         qAm.Where($"mel.url is not null");
         qAm.Where($"mel.type IN ({fileLinkTypesStr:raw})");
         qAm.Append($"LIMIT {limit:raw}");
-        // Console.WriteLine(
-        //     $"StartSection amAvailable: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
         var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
 
         var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(

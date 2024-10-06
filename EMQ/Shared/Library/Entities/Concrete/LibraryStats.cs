@@ -34,13 +34,9 @@ public struct LibraryStats
 
     public int AvailableLyricistCount { get; set; }
 
-    public List<LibraryStatsMsm> msm { get; set; }
-
     public List<LibraryStatsMsm> msmAvailable { get; set; }
 
-    public List<LibraryStatsAm> am { get; set; }
-
-    public List<LibraryStatsAm> amAvailable { get; set; }
+    public Dictionary<string, List<LibraryStatsAm>> amAvailableDict { get; set; }
 
     public Dictionary<DateTime, int> msYear { get; set; }
 
