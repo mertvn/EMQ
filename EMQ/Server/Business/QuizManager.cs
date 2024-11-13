@@ -806,6 +806,47 @@ public class QuizManager
             TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
                 false);
         }
+
+        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+        {
+            // bot picks/burns
+            var qm = ServerState.QuizManagers.First(x => x.Quiz.Id == Quiz.Id);
+            foreach (Player bot in Quiz.Room.Players.Where(x => x.IsBot && (x.NGMCMustPick || x.NGMCMustBurn)))
+            {
+                if (bot.NGMCMustPick)
+                {
+                    // todo? smarter algo
+                    var pickedPlayer = Quiz.Room.Players.Last(x => x.TeamId == bot.TeamId && x.NGMCCanBePicked);
+                    await qm.NGMCPickPlayer(pickedPlayer, bot, false);
+                }
+                else if (bot.NGMCMustBurn)
+                {
+                    // todo? smarter algo
+                    var halfGuessPlayer = Quiz.Room.Players.LastOrDefault(x =>
+                        x.TeamId == bot.TeamId && x.NGMCGuessesCurrent >= 0.5f &&
+                        (Math.Abs((int)x.NGMCGuessesCurrent - x.NGMCGuessesCurrent) > 0.01f));
+                    if (halfGuessPlayer != null)
+                    {
+                        await qm.NGMCBurnPlayer(halfGuessPlayer, bot);
+                    }
+                    else if (Random.Shared.NextSingle() < 0.5f)
+                    {
+                        var burnedPlayer = Quiz.Room.Players.Last(x =>
+                            x.TeamId == bot.TeamId && x.NGMCGuessesCurrent >= 0.5f);
+                        await qm.NGMCBurnPlayer(burnedPlayer, bot);
+                    }
+                    else
+                    {
+                        bot.NGMCCanBurn = false;
+                        bot.NGMCMustBurn = false;
+                        Quiz.Room.Log($"{bot.Username} skipped burning.", writeToChat: true);
+                        TypedQuizHub.ReceiveUpdateRoom(
+                            Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
+                            false);
+                    }
+                }
+            }
+        }
     }
 
     private async Task JudgeGuesses()
