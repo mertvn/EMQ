@@ -167,6 +167,26 @@
                                                 </a>
                                             }
 
+                                            @if (true)
+                                            {
+                                                string iconSrc;
+                                                switch (videoLink.Type)
+                                                {
+                                                    case SongLinkType.Catbox:
+                                                        iconSrc = "assets/favicon/catbox.png";
+                                                        break;
+                                                    case SongLinkType.Self:
+                                                        iconSrc = "favicon.ico";
+                                                        break;
+                                                    default:
+                                                        continue;
+                                                }
+
+                                                <img width="16px" height="16px"
+                                                     src="@iconSrc" alt="host"
+                                                     style="margin-left: 7px; margin-right: 1px; scale: 1.2;">
+                                            }
+
                                             @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
                                             {
                                                 @if (isDebugMode && isAdmin)
@@ -222,6 +242,26 @@
                                                         <span style="color: orange">✘ @soundLink.Duration.ToString("mm\\:ss")</span>
                                                     </Blazorise.Tooltip>
                                                 </a>
+                                            }
+
+                                            @if (true)
+                                            {
+                                                string iconSrc;
+                                                switch (soundLink.Type)
+                                                {
+                                                    case SongLinkType.Catbox:
+                                                        iconSrc = "assets/favicon/catbox.png";
+                                                        break;
+                                                    case SongLinkType.Self:
+                                                        iconSrc = "favicon.ico";
+                                                        break;
+                                                    default:
+                                                        continue;
+                                                }
+
+                                                <img width="16px" height="16px"
+                                                     src="@iconSrc" alt="host"
+                                                     style="margin-left: 7px; margin-right: 1px; scale: 1.2;">
                                             }
 
                                             @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
