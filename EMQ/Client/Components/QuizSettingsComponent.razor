@@ -199,7 +199,7 @@
                             <br/>
                         }
 
-                        <details>
+                        <details style="pointer-events: all; cursor: pointer;">
                             <summary>Guess types</summary>
                             @foreach (var key in ClientQuizSettings.EnabledGuessKinds.Keys.ToList())
                             {
@@ -234,7 +234,7 @@
                             }
                         </details>
 
-                        <details>
+                        <details style="pointer-events: all; cursor: pointer;">
                             <summary>Hints</summary>
                             @foreach (var key in ClientQuizSettings.EnabledSongHintKinds.Keys.ToList())
                             {
@@ -404,7 +404,7 @@
                                 }
                             }
 
-                            <details>
+                            <details style="pointer-events: all; cursor: pointer;">
                                 <summary>Configure random</summary>
                                 @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeRandomEnabledSongTypes.Keys.ToList())
                                 {
