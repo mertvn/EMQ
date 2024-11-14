@@ -30,6 +30,8 @@ public partial class ChatComponent
 
     public Timer Timer = new();
 
+    public int ColumnsVw { get; set; } = 14;
+
     protected override async Task OnInitializedAsync()
     {
         SetTimer();

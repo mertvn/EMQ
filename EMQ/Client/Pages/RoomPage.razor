@@ -156,7 +156,7 @@ else
 @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
 {
     <button type="button" class="btn btn-primary" @onclick="@OnclickChangeRoomNameAndPassword" style="margin:5px; padding: 5px;">
-        Change room name and password
+        Change room info
     </button>
 
     <button type="button" class="btn" style="background-color: var(--bs-emphasis-color); color: var(--bs-body-bg)" @onclick="@(async () => { await Onclick_InviteLink(); })">

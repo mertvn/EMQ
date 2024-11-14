@@ -15,7 +15,18 @@
 
 }
 
-<div id="chat">
+<div id="chat" style="display: grid;
+                      grid-template-columns: @(ColumnsVw)vw;
+                      grid-template-rows: 66vh 100px;
+                      background-color: dimgray;
+                      color: white;
+                      padding: 5px;
+                      margin: 5px;
+                      float: right;
+                      position: relative;">
+
+    <button style="position: absolute; top: 0; right: 0; border-radius: 50%; width: 20px" @onclick="@(() => { ColumnsVw = ColumnsVw < 54 ? 54 : 14; })">&lt;</button>
+
     <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
         @foreach (ChatMessage chatMessage in Chat.Concat(ClientChat).OrderBy(x => x.Timestamp))
         {
