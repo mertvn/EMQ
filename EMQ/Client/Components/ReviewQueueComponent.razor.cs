@@ -27,6 +27,10 @@ public partial class ReviewQueueComponent
     public string CellStyleInlineBlockShort { get; set; } =
         "max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
 
+    public DateTime StartDateFilter { get; set; } = DateTime.UtcNow.AddDays(-3);
+
+    public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshRQs();
@@ -34,7 +38,7 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-17), DateTime.UtcNow.AddDays(1));
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter);
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {

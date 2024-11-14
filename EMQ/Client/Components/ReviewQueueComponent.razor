@@ -12,6 +12,24 @@
 @using SortDirection = Microsoft.AspNetCore.Components.QuickGrid.SortDirection
 
 <CascadingValue Value="@this" IsFixed="true">
+    <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 240px;">
+        <div id="StartDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+            <Blazorise.DatePicker TValue="DateTime"
+                                  @bind-Date="@StartDateFilter"/>
+        </div>
+        <label for="StartDateFilter">Start date</label>
+        <br/>
+        <br/>
+        <div id="EndDateFilter" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+            <Blazorise.DatePicker TValue="DateTime"
+                                  @bind-Date="@EndDateFilter"/>
+        </div>
+        <label for="EndDateFilter">End date</label>
+        <br/>
+        <br/>
+        <button type="button" class="btn btn-primary" @onclick="RefreshRQs">Search</button>
+    </div>
+
     <ReviewComponent CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewComponent>
 
     <div class="page-size-chooser">

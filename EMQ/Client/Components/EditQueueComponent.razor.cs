@@ -27,6 +27,10 @@ public partial class EditQueueComponent
     public string CellStyleInlineBlockShort { get; set; } =
         "max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
 
+    public DateTime StartDateFilter { get; set; } = DateTime.UtcNow.AddDays(-3);
+
+    public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshEQs();
