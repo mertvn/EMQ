@@ -4,23 +4,23 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public enum SongDifficultyLevel
 {
-    [Range(70.01d, 100d)]
+    [Range(60.01d, 100d)]
     [Display(Name = "Very Easy")]
     VeryEasy,
 
-    [Range(50.01d, 70d)]
+    [Range(35.01d, 60d)]
     [Display(Name = "Easy")]
     Easy,
 
-    [Range(20.01d, 50d)]
+    [Range(15.01d, 35d)]
     [Display(Name = "Medium")]
     Medium,
 
-    [Range(10.01d, 20d)]
+    [Range(7.01d, 15d)]
     [Display(Name = "Hard")]
     Hard,
 
-    [Range(0.01d, 10d)]
+    [Range(0.01d, 7d)]
     [Display(Name = "Very Hard")]
     VeryHard,
 
