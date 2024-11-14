@@ -3002,6 +3002,7 @@ WHERE id = {mId};
     //     }
     // }
 
+    // todo? limit max range to 2 months or something
     public static async Task<IEnumerable<RQ>> FindRQs(DateTime startDate, DateTime endDate)
     {
         var rqs = new List<RQ>(777);

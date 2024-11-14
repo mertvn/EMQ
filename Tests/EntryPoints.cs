@@ -164,7 +164,7 @@ public class EntryPoints
         {
             "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO",
             "rian", "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki",
-            "Antistar", "anporin", "mio", "ちづ", "SAORI", "yui", "masa", "yuri",
+            "Antistar", "anporin", "mio", "ちづ", "SAORI", "yui", "masa", "yuri", "SHIKI",
         };
         blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
         SongArtistRole[] songArtistRoles =
@@ -407,6 +407,11 @@ public class EntryPoints
                 if (song.Artists.Any(x => x.Titles.Count != 1))
                 {
                     throw new Exception($"artists must have exactly one title per song: {song}");
+                }
+
+                if (!song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+                {
+                    throw new Exception($"At least one artist must have the Vocals role.");
                 }
 
                 string? existingUrl = song.Links.SingleOrDefault(x => x.Type == SongLinkType.ErogameScapeMusic)?.Url;
