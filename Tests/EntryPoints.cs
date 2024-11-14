@@ -131,7 +131,6 @@ public class EntryPoints
     // todo use xrefs in db instead of from file
     // todo make use of mel egs links
     // todo find more ways to match (manual stuff)
-    // todo import all staff from vndb
     [Test, Explicit]
     public async Task InsertCALFromEgs()
     {

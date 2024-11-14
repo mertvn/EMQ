@@ -41,6 +41,7 @@ public static class EgsImporter
         }
 
         string folder = $"{folderPrelude}{date}";
+        CreaterNameOverrideDict.Clear();
         var createrNameOverrideDictFile =
             JsonSerializer.Deserialize<Dictionary<int, List<string>>>(
                 await File.ReadAllTextAsync($"{folderPrelude}createrNameOverrideDict.json"), Utils.JsoIndented)!;
