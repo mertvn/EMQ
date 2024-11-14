@@ -152,7 +152,7 @@
                        IsLibraryPage="true"/>
 
 <div style="border: 1px solid #ddd; padding: 5px">
-    <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+    <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
         <Items>
             <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
