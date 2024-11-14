@@ -316,6 +316,39 @@
                     i += 1;
                 }
             </table>
+
+            <br/>
+            <table style="max-width: 350px">
+                <tr class="libraryStatsHeaders">
+                    <th class="libraryStatsHeader">#</th>
+                    <th class="libraryStatsHeader">Username</th>
+                    <th class="libraryStatsHeader">Approved edits</th>
+                </tr>
+                @{ int j = 1; }
+                @foreach ((string username, int count) in libraryStats.EditorCounts)
+                {
+                    bool isRobot = username == Constants.RobotNameLower;
+                    <tr class="libraryStatsRow">
+                        <td>@j</td>
+                        <td>
+                            @if (isRobot)
+                            {
+                                <a class="link-primary" href="https://vndb.org/c49124" target="_blank">
+                                    <span>@Constants.RobotName</span>
+                                </a>
+                            }
+                            else
+                            {
+                                @username
+                            }
+                        </td>
+                        <td>
+                            <b>@count</b>
+                        </td>
+                    </tr>
+                    j += 1;
+                }
+            </table>
         </Blazorise.TabPanel>
     }
     </Content>

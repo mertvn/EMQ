@@ -3641,6 +3641,14 @@ order by count(music_id) desc
                 uploaderCounts[key] = uploaderStats;
             }
 
+            var editorCounts = (await connection.QueryAsync<(string, int)>($@"
+select lower(submitted_by), count(*) from edit_queue eq
+where eq.status = {(int)ReviewQueueStatus.Approved}
+--and mel.music_id = ANY(@validMids) -- todo?
+group by lower(submitted_by)
+order by count(*) desc
+", new { validMids })).Take(limit).ToDictionary(x => x.Item1, x => x.Item2);
+
 
             stopWatch.StartSection("songDifficultyLevels");
             var songDifficultyLevels = await GetSongDifficultyLevelCounts(validMids.ToArray());
@@ -3708,8 +3716,9 @@ LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
                 msYear = msYear,
                 msYearAvailable = msYearAvailable,
 
-                // Uploaders
+                // Uploaders & Editors
                 UploaderCounts = uploaderCounts,
+                EditorCounts = editorCounts,
 
                 // Song difficulty
                 SongDifficultyLevels = songDifficultyLevels,

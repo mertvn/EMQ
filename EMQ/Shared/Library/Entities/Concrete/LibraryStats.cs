@@ -44,6 +44,8 @@ public struct LibraryStats
 
     public Dictionary<string, UploaderStats> UploaderCounts { get; set; }
 
+    public Dictionary<string, int> EditorCounts { get; set; }
+
     public Dictionary<SongDifficultyLevel, int> SongDifficultyLevels { get; set; }
 
     public Dictionary<MediaAnalyserWarningKind, int> Warnings { get; set; }

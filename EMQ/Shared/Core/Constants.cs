@@ -26,7 +26,7 @@ public static class Constants
 
     public const string AnalysisOkStr = "OK";
 
-    public const string RobotName = "Cookie 4IS";
+    public const string RobotName = "Cookie 4IS"; // todo no space
 
     public static readonly string RobotNameLower = RobotName.ToLowerInvariant();
 
