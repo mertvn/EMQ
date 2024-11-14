@@ -288,7 +288,7 @@
         }
         else
         {
-    // todo validate link regex
+    // todo important validate link regex
             if (artist.Links.GroupBy(x => x.Type).Any(y => y.Count() > 1))
             {
                 ValidationMessages.Add("Only one external link of each type is allowed.");
@@ -325,6 +325,18 @@
             {
     // anison.info links can't end with /
                 str = JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value))!.TrimEnd('/');
+
+    // support anison javascript links
+                var javascriptLinkMatch = RegexPatterns.AnisonJavascriptLinkRegex.Match(str);
+                if (javascriptLinkMatch.Success)
+                {
+                    str = javascriptLinkMatch.Groups[1].Value switch
+                    {
+                        "person" => $"http://anison.info/data/person/{javascriptLinkMatch.Groups[2].Value}.html",
+                        _ => str
+                        };
+                    value = str;
+                }
             }
 
             if (regex.IsMatch(str))

@@ -522,6 +522,8 @@
             isValid = false;
         }
 
+        // todo important validate link regex
+
         return isValid;
     }
 
@@ -551,6 +553,18 @@
             {
     // anison.info links can't end with /
                 str = JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value))!.TrimEnd('/');
+
+    // support anison javascript links
+                var javascriptLinkMatch = RegexPatterns.AnisonJavascriptLinkRegex.Match(str);
+                if (javascriptLinkMatch.Success)
+                {
+                    str = javascriptLinkMatch.Groups[1].Value switch
+                    {
+                        "song" => $"http://anison.info/data/song/{javascriptLinkMatch.Groups[2].Value}.html",
+                        _ => str
+                        };
+                    value = str;
+                }
             }
 
             if (regex.IsMatch(str))
