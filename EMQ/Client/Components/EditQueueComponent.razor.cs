@@ -38,7 +38,7 @@ public partial class EditQueueComponent
 
     public async Task RefreshEQs()
     {
-        var req = new ReqFindRQs(DateTime.UtcNow.AddDays(-17), DateTime.UtcNow.AddDays(1));
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter);
         var res = await _client.PostAsJsonAsync("Library/FindEQs", req);
         if (res.IsSuccessStatusCode)
         {
