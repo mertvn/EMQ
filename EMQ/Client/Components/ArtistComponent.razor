@@ -2,11 +2,16 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using EMQ.Client.Pages
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
+
+@{
+    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
+}
 
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId + 1}"))">Next</button>
@@ -20,10 +25,14 @@
     <ArtistFaviconsComponent Links="artist.Links" IsArtistPage="true"/>
     <br/>
 
-    <details>
-        <summary>Edit artist</summary>
-        <EditArtistComponent Artist="artist" IsNew="false"></EditArtistComponent>
-    </details>
+    @if (hasImportSongLinkPerms)
+    {
+        <details>
+            <summary>Edit artist</summary>
+            <EditArtistComponent Artist="artist" IsNew="false"></EditArtistComponent>
+        </details>
+    }
+
     <br/>
 }
 
