@@ -225,7 +225,7 @@ public class AuthController : ControllerBase
                 Domain = $".{Constants.WebsiteDomainNoProtocol}",
                 MaxAge = TimeSpan.FromDays(1),
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 HttpOnly = true,
                 IsEssential = true,
             });
@@ -235,7 +235,7 @@ public class AuthController : ControllerBase
                 Domain = $".{Constants.WebsiteDomainNoProtocol}",
                 MaxAge = TimeSpan.FromDays(1),
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 HttpOnly = true,
                 IsEssential = true,
             });
