@@ -248,7 +248,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpGet]
     [Route("ValidateSessionWithCookie")]
-    public async Task<ActionResult> ValidateSession()
+    public async Task<ActionResult> ValidateSessionWithCookie()
     {
         if (!Request.Cookies.TryGetValue("user-id", out string? userId))
         {
