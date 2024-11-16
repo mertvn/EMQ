@@ -222,7 +222,7 @@ public class AuthController : ControllerBase
         {
             HttpContext.Response.Cookies.Append("user-id", session.Player.Id.ToString(), new CookieOptions
             {
-                Path = $".{Constants.WebsiteDomainNoProtocol}",
+                Domain = $".{Constants.WebsiteDomainNoProtocol}",
                 MaxAge = TimeSpan.FromDays(1),
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
@@ -232,7 +232,7 @@ public class AuthController : ControllerBase
 
             HttpContext.Response.Cookies.Append("session-token", session.Token, new CookieOptions
             {
-                Path = $".{Constants.WebsiteDomainNoProtocol}",
+                Domain = $".{Constants.WebsiteDomainNoProtocol}",
                 MaxAge = TimeSpan.FromDays(1),
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
