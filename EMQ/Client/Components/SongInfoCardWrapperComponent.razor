@@ -112,6 +112,8 @@
                 LibrarySongFilterKind.MissingArranger => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger)),
                 LibrarySongFilterKind.MissingLyricist => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist)),
                 LibrarySongFilterKind.MissingErogameScapeMusic => !song.Links.Any(x => x.Type == SongLinkType.ErogameScapeMusic),
+                LibrarySongFilterKind.Voted => ClientState.MusicVotes.ContainsKey(song.Id),
+                LibrarySongFilterKind.Unvoted => !ClientState.MusicVotes.ContainsKey(song.Id),
                 _ => throw new ArgumentOutOfRangeException()
                 };
 
