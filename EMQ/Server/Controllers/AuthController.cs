@@ -17,6 +17,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
@@ -219,10 +220,58 @@ public class AuthController : ControllerBase
         }
         else
         {
+            HttpContext.Response.Cookies.Append("user-id", session.Player.Id.ToString(), new CookieOptions
+            {
+                MaxAge = TimeSpan.FromDays(1),
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                HttpOnly = true,
+                IsEssential = true,
+            });
+
+            HttpContext.Response.Cookies.Append("session-token", session.Token, new CookieOptions
+            {
+                MaxAge = TimeSpan.FromDays(1),
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                HttpOnly = true,
+                IsEssential = true,
+            });
+
             vndbInfo ??=
                 await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
             return new ResValidateSession(session, vndbInfo);
         }
+    }
+
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpGet]
+    [Route("ValidateSessionWithCookie")]
+    public async Task<ActionResult> ValidateSession()
+    {
+        if (!Request.Cookies.TryGetValue("user-id", out string? userId))
+        {
+            return Unauthorized();
+        }
+
+        if (!Request.Cookies.TryGetValue("session-token", out string? token))
+        {
+            return Unauthorized();
+        }
+
+        var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        Response.Headers.Add("X-USER-ID", session.Player.Id.ToString());
+        Response.Headers.Add("X-USER-NAME", session.Player.Username);
+        Response.Headers.Add("X-USER-ROLE",
+            AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor");
+
+        return Ok();
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
