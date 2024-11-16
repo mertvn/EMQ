@@ -252,26 +252,19 @@ public class AuthController : ControllerBase
     [Route("ValidateSessionWithCookie")]
     public async Task<ActionResult> ValidateSessionWithCookie()
     {
-        if (!Request.Cookies.TryGetValue("user-id", out string? userId))
+        if (Request.Cookies.TryGetValue("user-id", out string? userId) &&
+            Request.Cookies.TryGetValue("session-token", out string? token))
         {
-            return Unauthorized();
+            var session =
+                ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
+            if (session != null)
+            {
+                Response.Headers.Add("X-USER-ID", session.Player.Id.ToString());
+                Response.Headers.Add("X-USER-NAME", session.Player.Username);
+                Response.Headers.Add("X-USER-ROLE",
+                    AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor");
+            }
         }
-
-        if (!Request.Cookies.TryGetValue("session-token", out string? token))
-        {
-            return Unauthorized();
-        }
-
-        var session = ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
-        if (session == null)
-        {
-            return Unauthorized();
-        }
-
-        Response.Headers.Add("X-USER-ID", session.Player.Id.ToString());
-        Response.Headers.Add("X-USER-NAME", session.Player.Username);
-        Response.Headers.Add("X-USER-ROLE",
-            AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor");
 
         return Ok();
     }
