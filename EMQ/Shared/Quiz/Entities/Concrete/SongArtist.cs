@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Abstract;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -24,6 +26,8 @@ public class SongArtist : IEditQueueEntity
     public List<SongArtistRole> Roles { get; set; } = new();
 
     public List<SongArtistLink> Links { get; set; } = new();
+
+    public List<ArtistArtist> ArtistArtists { get; set; } = new();
 
     public override string ToString()
     {
@@ -62,4 +66,10 @@ public enum SongArtistRole
     // Translator = 4,
     Arranger = 5,
     Lyricist = 6,
+}
+
+public enum ArtistArtistRelKind
+{
+    [Display(Name = "Member of band")]
+    MemberOfBand = 103, // https://musicbrainz.org/relationship/5be4c609-9afa-4ea0-910b-12ffb71e3821
 }

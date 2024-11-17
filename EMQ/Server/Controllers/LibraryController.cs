@@ -515,7 +515,7 @@ public class LibraryController : ControllerBase
         if (content.SongArtists.Any())
         {
             return BadRequest(
-                $"An artist linked to at least one of the external links you've added already exists in the database.");
+                $"An artist linked to at least one of the external links you've added already exists in the database: ea{content.SongArtists.First().Id}");
         }
 
         // todo important set unrequired stuff to null/empty for safety reasons

@@ -126,6 +126,84 @@
             </div>
             <br/>
 
+            @if (!IsNew)
+            {
+                <div style="border: 1px black solid; padding: 10px;">
+                    <h5>Relationships (artist-artist)</h5>
+                    <AutocompleteAComponent @ref="_autocompleteAComponentRef"
+                                            Placeholder="Enter artist name here"
+                                            IsDisabled="false"
+                                            IsQuizPage="false"
+                                            @bind-Guess="@SelectedArtist"
+                                            Callback="SelectedResultChangedA">
+                    </AutocompleteAComponent>
+                    @foreach (var arar in Artist.ArtistArtists)
+                    {
+                        string sourceStr = arar.rel switch {
+                            ArtistArtistRelKind.MemberOfBand => "Member: ",
+                            _ => "Source: "
+                            };
+
+                        string targetStr = arar.rel switch {
+                            ArtistArtistRelKind.MemberOfBand => "Band: ",
+                            _ => "Target: "
+                            };
+
+                        <div style="border: 1px black solid; padding: 10px;">
+                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { await RemoveArtistArtist(arar); })">
+                                🗑
+                            </span>
+
+                            <div>
+                                @sourceStr
+                                @if (ClientState.ArtistsCache.TryGetValue(arar.source, out var sourceArtist))
+                                {
+                                    string href = $"ea{arar.source}";
+                                    <a href=@href>@Converters.GetSingleTitle(sourceArtist.Titles)</a>
+                                }
+                                else
+                                {
+                                    @arar.source
+                                }
+                            </div>
+
+                            <div>
+                                @targetStr
+                                @if (ClientState.ArtistsCache.TryGetValue(arar.target, out var targetArtist))
+                                {
+                                    string href = $"ea{arar.target}";
+                                    <a href=@href>@Converters.GetSingleTitle(targetArtist.Titles)</a>
+                                }
+                                else
+                                {
+                                    @arar.target
+                                }
+                            </div>
+
+                            <div>
+                                Type:
+                                @if (true)
+                                {
+                                    string id = $"select-ArtistArtist-{arar.source}-{arar.target}-{arar.rel}";
+                                    <select id="@id" style="margin: 5px" @bind="arar.rel">
+                                        @foreach (var key in Enum.GetValues<ArtistArtistRelKind>())
+                                        {
+                                            <option value="@key">@key.GetDisplayName()</option>
+                                        }
+                                    </select>
+                                    <br/>
+                                }
+                            </div>
+
+                            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(() => (arar.source, arar.target) = (arar.target, arar.source))">
+                                Change direction
+                            </button>
+                        </div>
+                    }
+                </div>
+                <br/>
+            }
+
             <textarea id="note_user"
                       rows="2"
                       cols="34"
@@ -176,11 +254,43 @@
 
     public string ExternalLinksInputText { get; set; } = "";
 
-    protected override void OnParametersSet()
+    private AutocompleteAComponent _autocompleteAComponentRef = null!;
+
+    public AutocompleteA? SelectedArtist { get; set; }
+
+    protected override async Task OnParametersSetAsync()
     {
         if (IsNew)
         {
             Artist = GetNewArtist;
+        }
+
+        ClientState.ArtistsCache[Artist.Id] = Artist;
+        foreach (ArtistArtist arar in Artist.ArtistArtists)
+        {
+            if (!ClientState.ArtistsCache.ContainsKey(arar.source))
+            {
+                var req = new SongArtist() { Id = arar.source };
+                HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
+                if (res1.IsSuccessStatusCode)
+                {
+                    var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                    var artist = content.SongArtists.First();
+                    ClientState.ArtistsCache[artist.Id] = artist;
+                }
+            }
+
+            if (!ClientState.ArtistsCache.ContainsKey(arar.target))
+            {
+                var req = new SongArtist() { Id = arar.target };
+                HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
+                if (res1.IsSuccessStatusCode)
+                {
+                    var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                    var artist = content.SongArtists.First();
+                    ClientState.ArtistsCache[artist.Id] = artist;
+                }
+            }
         }
 
         Ready = true;
@@ -296,6 +406,39 @@
             }
         }
 
+        foreach (ArtistArtist arar in artist.ArtistArtists)
+        {
+            if (arar.source == arar.target)
+            {
+                ValidationMessages.Add("Selfcest is not allowed.");
+                isValid = false;
+            }
+
+            if (arar.source <= 0)
+            {
+                ValidationMessages.Add("Invalid artist-artist relationship source.");
+                isValid = false;
+            }
+
+            if (arar.target <= 0)
+            {
+                ValidationMessages.Add("Invalid artist-artist relationship target.");
+                isValid = false;
+            }
+
+            if (!Enum.IsDefined(typeof(ArtistArtistRelKind), arar.rel))
+            {
+                ValidationMessages.Add("Invalid artist-artist relationship type.");
+                isValid = false;
+            }
+
+            if (artist.ArtistArtists.Count(x => x.source == arar.source && x.target == arar.target && x.rel == arar.rel) != 1)
+            {
+                ValidationMessages.Add("Duplicate artist-artist relationship detected.");
+                isValid = false;
+            }
+        }
+
         return isValid;
     }
 
@@ -356,6 +499,40 @@
             var title = Artist.Titles[index];
             title.IsMainTitle = index == selectedIndex;
         }
+    }
+
+    private async Task SelectedResultChangedA()
+    {
+        if (SelectedArtist is null)
+        {
+            return;
+        }
+
+        if (Artist.Id == SelectedArtist.AId)
+        {
+            return;
+        }
+
+        var req = new SongArtist() { Id = SelectedArtist.AId };
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+            var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
+            artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
+
+            ClientState.ArtistsCache[artistAlias.Id] = artistAlias;
+            Artist.ArtistArtists.Add(new ArtistArtist { source = Artist.Id, target = artistAlias.Id });
+        }
+
+        await _autocompleteAComponentRef.ClearInputField();
+        await CallStateHasChanged();
+    }
+
+    private async Task RemoveArtistArtist(ArtistArtist arar)
+    {
+        Artist.ArtistArtists.Remove(arar);
+        await CallStateHasChanged();
     }
 
 }

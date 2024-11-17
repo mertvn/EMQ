@@ -909,6 +909,19 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             mIdSongArtists = await SelectArtistBatch(connection, inputWithArtistId, false);
         }
 
+        var aIds = mIdSongArtists.SelectMany(x => x.Value.Keys).ToArray();
+        var artistArtists = (await connection.QueryAsync<ArtistArtist>(
+            "select distinct * from artist_artist where source = any(@aIds) or target = any(@aIds)",
+            new { aIds })).ToArray();
+
+        foreach (KeyValuePair<int, Dictionary<int, SongArtist>> mIdSongArtist in mIdSongArtists)
+        {
+            foreach ((int key, SongArtist value) in mIdSongArtist.Value)
+            {
+                value.ArtistArtists = artistArtists.Where(x => x.source == key || x.target == key).ToList();
+            }
+        }
+
         return mIdSongArtists;
     }
 
@@ -1063,6 +1076,19 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 new Song() { Artists = new List<SongArtist>() { new SongArtist() { Id = x } } }).ToList();
 
             mIdSongArtists = await SelectArtistBatchNoAM(connection, inputWithArtistId, false);
+        }
+
+        var aIds = mIdSongArtists.SelectMany(x => x.Value.Keys).ToArray();
+        var artistArtists = (await connection.QueryAsync<ArtistArtist>(
+            "select distinct * from artist_artist where source = any(@aIds) or target = any(@aIds)",
+            new { aIds })).ToArray();
+
+        foreach (KeyValuePair<int, Dictionary<int, SongArtist>> mIdSongArtist in mIdSongArtists)
+        {
+            foreach ((int key, SongArtist value) in mIdSongArtist.Value)
+            {
+                value.ArtistArtists = artistArtists.Where(x => x.source == key || x.target == key).ToList();
+            }
         }
 
         return mIdSongArtists;
@@ -1491,6 +1517,14 @@ GROUP BY artist_id";
                 {
                     throw new Exception("Failed to insert ael");
                 }
+            }
+        }
+
+        foreach (ArtistArtist arar in songArtist.ArtistArtists)
+        {
+            if (!await connection.InsertAsync(arar, transaction))
+            {
+                throw new Exception("Failed to insert arar");
             }
         }
 
@@ -4603,6 +4637,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         {
             throw new Exception("Failed to delete ael");
         }
+
+        int _ = await connection.ExecuteAsync(
+            "DELETE FROM artist_artist where source = @aId or target = @aId",
+            new { aId = oldAid }, transaction);
 
         newArtist.Id = oldAid;
         (int aId, List<int> aaIds) = await InsertArtist(newArtist, transaction!);

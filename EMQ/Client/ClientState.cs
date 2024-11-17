@@ -25,4 +25,6 @@ public static class ClientState
     public static ConcurrentDictionary<string, UploadResult> UploadResults { get; set; } = new();
 
     public static Dictionary<int, MusicVote> MusicVotes { get; set; } = new();
+
+    public static Dictionary<int, SongArtist> ArtistsCache { get; } = new(); // todo? move to ArtistComponent
 }
