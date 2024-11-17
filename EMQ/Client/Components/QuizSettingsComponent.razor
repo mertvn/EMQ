@@ -213,11 +213,23 @@
                                     {
                                         <br/>
 
+                                        bool isMergeArtistAliasesIsDisabled = !(ClientQuizSettings.EnabledGuessKinds[GuessKind.A] ||
+                                                                                ClientQuizSettings.EnabledGuessKinds[GuessKind.Composer] ||
+                                                                                ClientQuizSettings.EnabledGuessKinds[GuessKind.Arranger] ||
+                                                                                ClientQuizSettings.EnabledGuessKinds[GuessKind.Lyricist]);
                                         <label for="IsMergeArtistAliases" style="padding-left: 16px;">
                                             <InputCheckbox id="IsMergeArtistAliases" class="form-check-input" @bind-Value="ClientQuizSettings.IsMergeArtistAliases"
-                                                           disabled="@(!(ClientQuizSettings.EnabledGuessKinds[GuessKind.A] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Composer] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Arranger] || ClientQuizSettings.EnabledGuessKinds[GuessKind.Lyricist]))">
+                                                           disabled="@isMergeArtistAliasesIsDisabled">
                                             </InputCheckbox>
                                             Merge artist aliases
+                                        </label>
+                                        <br/>
+
+                                        <label for="IsMergeArtistBands" style="padding-left: 32px;">
+                                            <InputCheckbox id="IsMergeArtistBands" class="form-check-input" @bind-Value="ClientQuizSettings.IsMergeArtistBands"
+                                                          disabled="@(isMergeArtistAliasesIsDisabled || !ClientQuizSettings.IsMergeArtistAliases)">
+                                            </InputCheckbox>
+                                            Merge artist bands
                                         </label>
                                         <br/>
 

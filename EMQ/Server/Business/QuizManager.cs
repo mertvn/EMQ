@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -39,6 +39,8 @@ public class QuizManager
     private Dictionary<GuessKind, Dictionary<int, List<string>>> CorrectAnswersDicts { get; set; } = new();
 
     private FrozenDictionary<int, string[]>? ArtistAliasesDict { get; set; }
+
+    private FrozenDictionary<int, string[]>? ArtistBandsDict { get; set; }
 
     private DateTime PreviousGuessPhaseStartedAt { get; set; }
 
@@ -446,6 +448,17 @@ public class QuizManager
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
+                    }
+
+                    if (ArtistBandsDict != null)
+                    {
+                        foreach (int aId in Quiz.Songs[Quiz.QuizState.sp].Artists.Select(x => x.Id))
+                        {
+                            if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
+                            {
+                                correctAnswers.AddRange(bandMemberAliases.Select(x => x.NormalizeForAutocomplete()));
+                            }
+                        }
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();
@@ -1484,6 +1497,29 @@ public class QuizManager
         {
             ArtistAliasesDict =
                 await DbManager.SelectArtistAliases(Quiz.Songs.SelectMany(x => x.Artists.Select(y => y.Id)).ToArray());
+
+            if (Quiz.Room.QuizSettings.IsMergeArtistBands)
+            {
+                var artistArtists = Quiz.Songs
+                    .SelectMany(x => x.Artists.SelectMany(y =>
+                        y.ArtistArtists.Where(z => z.rel == ArtistArtistRelKind.MemberOfBand))).ToArray();
+                var artistAliasesDict =
+                    await DbManager.SelectArtistAliases(artistArtists.Select(x => x.source).ToArray());
+
+                var ret = new Dictionary<int, List<string>>();
+                foreach (ArtistArtist arar in artistArtists)
+                {
+                    if (!ret.TryGetValue(arar.target, out var list))
+                    {
+                        list = new List<string>();
+                    }
+
+                    list.AddRange(artistAliasesDict[arar.source]);
+                    ret[arar.target] = list;
+                }
+
+                ArtistBandsDict = ret.ToFrozenDictionary(x => x.Key, x => x.Value.ToArray());
+            }
         }
 
         // reduce serialized Room size
@@ -1661,6 +1697,7 @@ public class QuizManager
         CorrectAnswersDicts =
             Enum.GetValues<GuessKind>().ToDictionary(x => x, _ => new Dictionary<int, List<string>>());
         ArtistAliasesDict = null;
+        ArtistBandsDict = null;
         Dictionary<int, List<string>> validSourcesDict = new();
 
         var playerSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))

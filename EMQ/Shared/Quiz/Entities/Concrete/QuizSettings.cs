@@ -284,6 +284,12 @@ public class QuizSettings
     [DefaultValue(true)]
     public bool IsTreatNonVocalsAsCorrect { get; set; } = true;
 
+    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
+    [ProtoMember(34)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsMergeArtistBands { get; set; } = true;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -614,8 +620,12 @@ public class QuizSettings
 
         if (o.IsMergeArtistAliases != n.IsMergeArtistAliases)
         {
-            diff.Add(
-                $"Merge artist aliases: {o.IsMergeArtistAliases} → {n.IsMergeArtistAliases}");
+            diff.Add($"Merge artist aliases: {o.IsMergeArtistAliases} → {n.IsMergeArtistAliases}");
+        }
+
+        if (o.IsMergeArtistBands != n.IsMergeArtistBands)
+        {
+            diff.Add($"Merge artist bands: {o.IsMergeArtistBands} → {n.IsMergeArtistBands}");
         }
 
         if (o.IsTreatNonVocalsAsCorrect != n.IsTreatNonVocalsAsCorrect)
