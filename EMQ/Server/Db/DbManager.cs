@@ -1921,10 +1921,10 @@ GROUP BY artist_id";
                     case MusicVoteStatusKind.All:
                         break;
                     case MusicVoteStatusKind.Voted:
-                        queryMusicIds.Append($"AND mv.user_id = {ownerUserId}");
+                        queryMusicIds.Append($" AND mv.user_id = {ownerUserId}");
                         break;
                     case MusicVoteStatusKind.Unvoted:
-                        queryMusicIds.Append($"AND NOT mv.user_id = {ownerUserId}");
+                        queryMusicIds.Append($" AND NOT mv.user_id = {ownerUserId}");
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
