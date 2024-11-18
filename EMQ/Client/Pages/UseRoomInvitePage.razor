@@ -62,6 +62,13 @@
                 _navigation.NavigateTo("/RoomPage");
             }
         }
+        else
+        {
+            StatusText = "Something went wrong when joining room. You will be redirected in 3 seconds.";
+            StateHasChanged();
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            _navigation.NavigateTo("/", forceLoad: true);
+        }
 
         StateHasChanged();
     }

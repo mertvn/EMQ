@@ -23,7 +23,7 @@ public class PumpQueue
 
 public static class ServerState
 {
-    private static readonly object s_serverStateLock = new();
+    private static readonly Lock s_serverStateLock = new();
 
     // We cannot use a ConcurrentDictionary here, because we can't get references after indexing
     // TODO: would be better if this was a ConcurrentQueue

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -18,7 +19,7 @@ public sealed class Room : IDisposable
         CreatedAt = DateTime.UtcNow;
     }
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public Guid Id { get; }
 
