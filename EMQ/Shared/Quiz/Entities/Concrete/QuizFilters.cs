@@ -153,6 +153,11 @@ public class QuizFilters
             { ListReadKind.Random, new IntWrapper(0) },
         };
 
+    [ProtoMember(25)]
+    [Required]
+    [DefaultValue(MusicVoteStatusKind.All)]
+    public MusicVoteStatusKind OwnersMusicVoteStatus { get; set; } = MusicVoteStatusKind.All;
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

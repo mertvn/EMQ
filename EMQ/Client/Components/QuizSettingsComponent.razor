@@ -320,6 +320,24 @@
                             <InputCheckbox id="OnlyOwnUploads" class="form-check-input" @bind-Value="ClientQuizSettings.Filters.OnlyOwnUploads" style="margin: 5px"></InputCheckbox>
                             <label for="OnlyOwnUploads">Only own uploads</label>
                             <br/>
+
+                            <InputSelect id="OwnersMusicVoteStatus" @bind-Value="ClientQuizSettings.Filters.OwnersMusicVoteStatus" style="margin: 5px; width: 65px;">
+                                @foreach (MusicVoteStatusKind musicVoteStatusKind in Enum.GetValues<MusicVoteStatusKind>())
+                                {
+                                    <option value="@musicVoteStatusKind">
+                                        @if (!string.IsNullOrEmpty(musicVoteStatusKind.GetDescription()))
+                                        {
+                                            @musicVoteStatusKind.GetDescription()
+                                        }
+                                        else
+                                        {
+                                            @musicVoteStatusKind
+                                        }
+                                    </option>
+                                }
+                            </InputSelect>
+                            <label for="OwnersMusicVoteStatus">Owner's vote</label>
+                            <br/>
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">

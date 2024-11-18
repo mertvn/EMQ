@@ -1556,6 +1556,7 @@ GROUP BY artist_id";
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     LEFT JOIN music_vote mv on mv.music_id = m.id
                                      WHERE 1=1
                                      AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
@@ -1913,6 +1914,20 @@ GROUP BY artist_id";
                     validMids = validMids == null
                         ? validMidsMusicVotes.ToList()
                         : validMidsMusicVotes.Intersect(validMids).ToList();
+                }
+
+                switch (filters.OwnersMusicVoteStatus)
+                {
+                    case MusicVoteStatusKind.All:
+                        break;
+                    case MusicVoteStatusKind.Voted:
+                        queryMusicIds.Append($"AND mv.user_id = {ownerUserId}");
+                        break;
+                    case MusicVoteStatusKind.Unvoted:
+                        queryMusicIds.Append($"AND NOT mv.user_id = {ownerUserId}");
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
 

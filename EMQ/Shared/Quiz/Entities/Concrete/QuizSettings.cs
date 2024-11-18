@@ -672,6 +672,12 @@ public class QuizSettings
                 $"Prevent same VN spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
         }
 
+        if (o.Filters.OwnersMusicVoteStatus != n.Filters.OwnersMusicVoteStatus)
+        {
+            diff.Add(
+                $"Owner's song vote status: {o.Filters.OwnersMusicVoteStatus.GetDescription()} → {n.Filters.OwnersMusicVoteStatus.GetDescription()}");
+        }
+
         return diff;
     }
 }
