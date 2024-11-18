@@ -1097,7 +1097,7 @@ public class QuizManager
             case GamemodeKind.Default:
             case GamemodeKind.Radio:
             default:
-                throw new ArgumentOutOfRangeException();
+                break;
         }
     }
 
