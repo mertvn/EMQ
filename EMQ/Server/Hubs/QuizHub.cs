@@ -220,12 +220,12 @@ public class QuizHub : Hub
                     if (room.Quiz != null &&
                         room.Quiz.QuizState.QuizStatus is not QuizStatus.Ended or QuizStatus.Canceled)
                     {
-                        if (room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
+                        if (room.QuizSettings.GamemodeKind is GamemodeKind.NGMC or GamemodeKind.EruMode)
                         {
                             var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                             if (quizManager != null)
                             {
-                                room.Log("NGMC mode cannot continue if a player leaves.", -1, true);
+                                room.Log("This gamemode cannot continue if a player leaves.", -1, true);
                                 await quizManager.EndQuiz();
                             }
                         }

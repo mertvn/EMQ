@@ -28,7 +28,8 @@ public class QuizSettings
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads;
 
-    public bool IsSharedGuessesTeams => TeamSize > 1 && GamemodeKind != GamemodeKind.NGMC;
+    public bool IsSharedGuessesTeams =>
+        TeamSize > 1 && GamemodeKind != GamemodeKind.NGMC && GamemodeKind != GamemodeKind.EruMode;
 
     public bool IsMstGuessTypeEnabled =>
         EnabledGuessKinds.TryGetValue(GuessKind.Mst, out bool mst) && mst;
