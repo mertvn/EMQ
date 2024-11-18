@@ -314,9 +314,12 @@ public class QuizManager
                     }
                 case PlayerBotKind.Mimic:
                     {
-                        float hitChance = bot.BotInfo.SongHitChanceDict[song.Id];
-                        hitChance = Math.Clamp(hitChance, 0, 100);
-                        bot.BotInfo.LastSongHitChance = hitChance;
+                        if (bot.BotInfo.SongHitChanceDict.TryGetValue(song.Id, out float hitChance))
+                        {
+                            hitChance = Math.Clamp(hitChance, 0, 100);
+                            bot.BotInfo.LastSongHitChance = hitChance;
+                        }
+
                         isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
                         break;
                     }
