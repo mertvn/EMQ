@@ -1556,7 +1556,6 @@ GROUP BY artist_id";
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
-                                     LEFT JOIN music_vote mv on mv.music_id = m.id
                                      WHERE 1=1
                                      AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
@@ -1921,11 +1920,22 @@ GROUP BY artist_id";
                     case MusicVoteStatusKind.All:
                         break;
                     case MusicVoteStatusKind.Voted:
-                        queryMusicIds.Append($" AND mv.user_id = {ownerUserId}");
-                        break;
+                        {
+                            var musicVotes = await connection.QueryAsync<int>(
+                                @"SELECT music_id FROM music_vote where user_id = @ownerUserId", new { ownerUserId });
+                            validMids = validMids == null
+                                ? musicVotes.ToList()
+                                : musicVotes.Intersect(validMids).ToList();
+                            break;
+                        }
                     case MusicVoteStatusKind.Unvoted:
-                        queryMusicIds.Append($" AND NOT mv.user_id = {ownerUserId}");
-                        break;
+                        {
+                            var musicVotes = await connection.QueryAsync<int>(
+                                @"SELECT music_id FROM music_vote where user_id = @ownerUserId", new { ownerUserId });
+                            invalidMids ??= new List<int>();
+                            invalidMids.AddRange(musicVotes);
+                            break;
+                        }
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
