@@ -14,6 +14,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
@@ -180,6 +181,27 @@ public class LibraryController : ControllerBase
     {
         var eq = await DbManager.FindEQ(eqId);
         return eq;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindQueueItemsWithPendingChanges")]
+    public async Task<ResFindQueueItemsWithPendingChanges> FindQueueItemsWithPendingChanges()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var pendingRQs =
+            await connection.QueryAsync<(int, int)>(
+                $"select distinct on (music_id) music_id, id from review_queue where status = {(int)ReviewQueueStatus.Pending}");
+
+        // todo add entity_id to edit_queue
+        // var pendingEQs =
+        //     await connection.QueryAsync<int>(
+        //         $"select entity_id from edit_queue where status = {(int)ReviewQueueStatus.Pending}");
+        return new ResFindQueueItemsWithPendingChanges
+        {
+            RQs = pendingRQs.ToDictionary(x => x.Item1, x => x.Item2),
+            // EQs = pendingEQs.ToArray(),
+        };
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]

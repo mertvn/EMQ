@@ -336,10 +336,10 @@
                                     }
                                 }
                                 // todo editq
-                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.Contains(song.Id))
+                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.TryGetValue(song.Id, out int rqId))
                                 {
                                     <br/>
-                                    <span style="color: red">Has pending uploads in the review queue.</span>
+                                    <span style="color: red">Pending in the review queue: @rqId</span>
                                     <br/>
                                 }
                             }

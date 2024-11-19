@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.DataGrid;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -19,7 +20,7 @@ public partial class ReviewQueueComponent
 
     public IQueryable<RQ>? CurrentRQs { get; set; }
 
-    public static HashSet<int> CurrentPendingRQsMIds { get; set; } = new();
+    public static Dictionary<int, int> CurrentPendingRQsMIds { get; set; } = new();
 
     public string CellStyleInlineBlock { get; set; } =
         "max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
@@ -34,6 +35,12 @@ public partial class ReviewQueueComponent
     protected override async Task OnInitializedAsync()
     {
         await RefreshRQs();
+        var res = await _client.PostAsJsonAsync("Library/FindQueueItemsWithPendingChanges", "");
+        if (res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadFromJsonAsync<ResFindQueueItemsWithPendingChanges>();
+            CurrentPendingRQsMIds = content!.RQs;
+        }
     }
 
     public async Task RefreshRQs()
@@ -47,9 +54,6 @@ public partial class ReviewQueueComponent
             {
                 content.Reverse();
                 CurrentRQs = content.AsQueryable();
-                CurrentPendingRQsMIds = content.Where(x => x.status == ReviewQueueStatus.Pending)
-                    .Select(y => y.music_id)
-                    .ToHashSet();
             }
             else
             {
