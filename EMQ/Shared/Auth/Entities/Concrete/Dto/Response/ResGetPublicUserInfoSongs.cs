@@ -27,7 +27,7 @@ public class ResMostPlayedSongs
 
     public int IntervalDays { get; set; }
 
-    public Song Song { get; set; } = new();
+    public SongMini SongMini { get; set; } = new();
 }
 
 public class ResCommonPlayers
@@ -39,7 +39,7 @@ public class ResCommonPlayers
 
 public class ResUserMusicVotes
 {
-    public Song Song { get; set; } = new();
+    public SongMini SongMini { get; set; }= new();
 
     public MusicVote MusicVote { get; set; } = new();
 }

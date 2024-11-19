@@ -60,19 +60,19 @@
                 </TemplateColumn>
             }
 
-            <TemplateColumn Title="My vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => GetGridSortMyVote(x.Song.Id)))">
+            <TemplateColumn Title="My vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => GetGridSortMyVote(x.SongMini.Id)))">
                 @{
                     // todo fix desync that happens when you vote on the library page and then go to user profile page
-                    _ = ClientState.MusicVotes.TryGetValue(context.Song.Id, out MusicVote? musicVote);
+                    _ = ClientState.MusicVotes.TryGetValue(context.SongMini.Id, out MusicVote? musicVote);
                 }
 
                 <div style="margin-right: 5px; display: inline-block;">
-                    <MusicVoteComponent Song="context.Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
+                    <MusicVoteComponent SongId="context.SongMini.Id" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
                 </div>
             </TemplateColumn>
             <TemplateColumn Title="Link">
                 @{
-                    string? href = ClientUtils.GetPreferredSongLinkUrl(context.Song, ClientState.Preferences.WantsVideo, ClientState.Preferences.LinkHost);
+                    string? href = ClientUtils.GetPreferredSongLinkUrl(context.SongMini.L, ClientState.Preferences.WantsVideo, ClientState.Preferences.LinkHost);
                 }
 
                 @if (href != null)
@@ -82,10 +82,10 @@
                     </a>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.Song.ToStringLatin()))">
-                @context.Song.ToStringLatin()
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.SongMini.S))">
+                @context.SongMini.S
             </TemplateColumn>
-            <PropertyColumn Property="@(x => Converters.GetSingleTitle(x.Song.Artists.First().Titles, "ja", "en").LatinTitle)" Title="Artist" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.SongMini.A)" Title="Artist" Sortable="true"/>
         </QuickGrid>
     </div>
     <br/>
@@ -100,8 +100,8 @@
     </div>
     <div class="grid" tabindex="-1">
         <QuickGrid Items="@MostPlayedSongs" Pagination="@_paginationMostPlayedSongs">
-            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.Song.ToStringLatin()))">
-                @context.Song.ToStringLatin()
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.SongMini.S))">
+                @context.SongMini.S
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
             <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<ResMostPlayedSongs>.ByAscending(x => x.CorrectPercentage))">

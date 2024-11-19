@@ -324,7 +324,7 @@
                 if (!IsEditing)
                 {
                     _ = ClientState.MusicVotes.TryGetValue(Song.Id, out MusicVote? musicVote);
-                    <MusicVoteComponent Song="Song" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
+                    <MusicVoteComponent SongId="Song.Id" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
                 }
 
                 bool openAttributes = Song.Attributes > 0 || IsEditing;

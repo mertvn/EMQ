@@ -129,7 +129,7 @@ public class QuizController : ControllerBase
                     {
                         var song = room.Quiz.Songs[req.SongIndex];
 
-                        string url = ClientUtils.GetPreferredSongLinkUrl(song, req.WantsVideo, req.Host)!;
+                        string url = ClientUtils.GetPreferredSongLinkUrl(song.Links, req.WantsVideo, req.Host)!;
 
                         SongHint hint = new();
                         if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Msst, out bool msst) &&

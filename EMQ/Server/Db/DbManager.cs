@@ -17,6 +17,7 @@ using Dapper;
 using Dapper.Database;
 using Dapper.Database.Extensions;
 using DapperQueryBuilder;
+using EMQ.Client;
 using EMQ.Client.Pages;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
@@ -4948,20 +4949,38 @@ GROUP BY qsh.quiz_id
             .ToDictionary(x => x.Id, x => x);
         foreach ((_, Song value) in songs)
         {
+            value.Links = value.Links.Where(x => x.IsFileLink).ToList();
             foreach (SongLink link in value.Links)
             {
                 link.AnalysisRaw = null;
+                link.Sha256 = "";
+                link.SubmittedBy = null;
             }
         }
 
+        // todo only convert to songmini once?
         foreach (ResMostPlayedSongs resMostPlayedSong in resMostPlayedSongs)
         {
-            resMostPlayedSong.Song = songs[resMostPlayedSong.MusicId];
+            var song = songs[resMostPlayedSong.MusicId];
+            resMostPlayedSong.SongMini = new SongMini
+            {
+                Id = song.Id,
+                S = song.ToStringLatin(),
+                L = song.Links,
+                A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
+            };
         }
 
         foreach (ResUserMusicVotes resUserMusicVote in resUserMusicVotes)
         {
-            resUserMusicVote.Song = songs[resUserMusicVote.MusicVote.music_id];
+            var song = songs[resUserMusicVote.MusicVote.music_id];
+            resUserMusicVote.SongMini = new SongMini
+            {
+                Id = song.Id,
+                S = song.ToStringLatin(),
+                L = song.Links,
+                A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
+            };
         }
 
         var resCommonPlayers =

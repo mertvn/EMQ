@@ -272,27 +272,27 @@ public class ClientUtils
         }
     }
 
-    public static string? GetPreferredSongLinkUrl(Song song, bool wantsVideo, SongLinkType host)
+    public static string? GetPreferredSongLinkUrl(List<SongLink> links, bool wantsVideo, SongLinkType host)
     {
         string? url;
         if (wantsVideo)
         {
-            url = song.Links.FirstOrDefault(x => x.Type == host && x.IsVideo)?.Url;
+            url = links.FirstOrDefault(x => x.Type == host && x.IsVideo)?.Url;
         }
         else
         {
-            url = song.Links.FirstOrDefault(x => x.Type == host && !x.IsVideo)?.Url;
+            url = links.FirstOrDefault(x => x.Type == host && !x.IsVideo)?.Url;
         }
 
         // todo priority setting for host or video
         if (string.IsNullOrWhiteSpace(url))
         {
-            url = song.Links.FirstOrDefault(x => x.Type == host)?.Url;
+            url = links.FirstOrDefault(x => x.Type == host)?.Url;
         }
 
         if (string.IsNullOrWhiteSpace(url))
         {
-            url = song.Links.FirstOrDefault(x=> x.IsFileLink)?.Url;
+            url = links.FirstOrDefault(x => x.IsFileLink)?.Url;
         }
 
         return url;
