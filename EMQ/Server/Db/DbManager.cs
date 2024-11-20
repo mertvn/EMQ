@@ -1523,9 +1523,9 @@ GROUP BY artist_id";
 
         foreach (ArtistArtist arar in songArtist.ArtistArtists)
         {
-            if (!await connection.InsertAsync(arar, transaction))
+            if (!await connection.UpsertAsync(arar, transaction))
             {
-                throw new Exception("Failed to insert arar");
+                throw new Exception("Failed to upsert arar");
             }
         }
 
