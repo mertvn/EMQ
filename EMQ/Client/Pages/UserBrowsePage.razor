@@ -1,0 +1,39 @@
+﻿@page "/eu/all"
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient _client
+
+<p>Browse users</p>
+<br/>
+
+<div>
+    <Paginator State="@_pagination"/>
+</div>
+<div class="grid" tabindex="-1">
+    <QuickGrid Items="@UserStats" Pagination="@_pagination">
+        <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.CreatedAt)" Title="Registered" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+        <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.Votes)" Title="Votes" Sortable="true"/>
+    </QuickGrid>
+</div>
+<br/>
+
+@code {
+
+    private IQueryable<UserStat>? UserStats { get; set; }
+
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 50 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage res1 =
+            await _client.PostAsJsonAsync("Auth/GetUserStats", "");
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<List<UserStat>>())!;
+            UserStats = content.AsQueryable();
+        }
+    }
+
+}

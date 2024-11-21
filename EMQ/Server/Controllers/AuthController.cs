@@ -634,6 +634,15 @@ public class AuthController : ControllerBase
         return publicUserInfo != null ? publicUserInfo : StatusCode(404);
     }
 
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetUserStats")]
+    public async Task<List<UserStat>> GetUserStats()
+    {
+        var userStats = await DbManager.GetUserStats();
+        return userStats;
+    }
+
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
     [HttpGet]
     [Route("GetUserLabelPresets")]

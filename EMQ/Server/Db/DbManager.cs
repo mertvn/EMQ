@@ -5023,6 +5023,40 @@ GROUP BY qsh.quiz_id
         return res;
     }
 
+    public static async Task<List<UserStat>> GetUserStats()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+
+        var u = await connectionAuth.QueryAsync<(int userId, string username, DateTime createdAt)>(
+            "select id as userId, username, created_at as createdAt from users order by created_at desc");
+
+        var qsh = (await connection.QueryAsync<(int userId, int count)>(
+                "select user_id as userId, count(*) as count from quiz_song_history group by user_id"))
+            .ToDictionary(x => x.userId, x => x.count);
+
+        var mv = (await connection.QueryAsync<(int userId, int count)>(
+                "select user_id as userId, count(*) as count from music_vote group by user_id"))
+            .ToDictionary(x => x.userId, x => x.count);
+
+        var res = new List<UserStat>();
+        foreach ((int userId, string username, DateTime createdAt) in u)
+        {
+            _ = qsh.TryGetValue(userId, out int q);
+            _ = mv.TryGetValue(userId, out int m);
+            res.Add(new UserStat
+            {
+                Id = userId,
+                Username = username,
+                CreatedAt = createdAt,
+                Played = q,
+                Votes = m,
+            });
+        }
+
+        return res;
+    }
+
     public static async Task<LabelStats> GetLabelStats(int[] mIds)
     {
         const string sqlAvg = @"
