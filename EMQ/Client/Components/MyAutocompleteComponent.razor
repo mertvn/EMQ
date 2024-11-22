@@ -37,7 +37,7 @@
             string divClass = i == CurrentFocus ? "autocomplete-active" : "";
             string divId = $"autocomplete-item-{i}";
             string textField = TextField.Invoke(searchResult);
-            <div id="@divId" class="@divClass" @onpointerdown="@(async args => await Onclick_AutocompleteItem(args, indexCopy))" @onpointerdown:preventDefault="true">
+            <div id="@divId" class="@divClass" @onclick="@(async args => await Onclick_AutocompleteItem(args, indexCopy))" @onmousedown="@Onmousedown" @onmousedown:preventDefault="true">
                 @if (HighlightMatch)
                 {
                     int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);

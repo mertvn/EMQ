@@ -206,4 +206,9 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         CurrentFocus = index;
         await SelectValue();
     }
+
+    private void Onmousedown()
+    {
+        // Do not remove.
+    }
 }
