@@ -4647,8 +4647,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
             // extra check to make sure we don't lose any file links
             var insertedSong = (await SelectSongsMIds(new[] { mId }, false, transaction)).Single();
-            var o = JsonSerializer.SerializeToNode(oldSong.Links.OrderBy(x => x.Url));
-            var n = JsonSerializer.SerializeToNode(insertedSong.Links.OrderBy(x => x.Url));
+            var o = JsonSerializer.SerializeToNode(oldSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
+            var n = JsonSerializer.SerializeToNode(insertedSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
             if (!JsonNode.DeepEquals(o, n))
             {
                 throw new Exception(
