@@ -1566,7 +1566,6 @@ GROUP BY artist_id";
 
         // 1. Find all valid music ids
         var ret = new List<Song>();
-        var rng = Random.Shared;
 
         List<(int, string)> ids = new();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))

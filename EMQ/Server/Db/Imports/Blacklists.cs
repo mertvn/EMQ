@@ -53,6 +53,7 @@ public static class Blacklists
         ("v16974", "Resolve!"),
         ("v29066", "Meguriaetane"),
         ("v29936", "Destiny"),
+        ("v30616", "Feeling Heart"),
         ("v31469", "Half to Whole -Vocal Solo-"), // Half to Whole -Grand Finale- also needs to be split 14x1 + 14x1
         ("v31740", "Journey"),
     };
