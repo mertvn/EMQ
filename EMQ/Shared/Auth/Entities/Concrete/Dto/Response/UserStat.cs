@@ -12,5 +12,7 @@ public class UserStat
 
     public int Played { get; set; }
 
+    public float AvgPlaysPerDay { get; set; }
+
     public int Votes { get; set; }
 }

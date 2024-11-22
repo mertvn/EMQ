@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @inject HttpClient _client
 
-<p>Browse users</p>
+<h3>Browse users</h3>
 <br/>
 
 <div>
@@ -11,9 +11,17 @@
 </div>
 <div class="grid" tabindex="-1">
     <QuickGrid Items="@UserStats" Pagination="@_pagination">
-        <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
-        <PropertyColumn Property="@(x => x.CreatedAt)" Title="Registered" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-        <PropertyColumn Property="@(x => x.Played)" Title="Play count" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.Id)" Title="Id" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+        <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<UserStat>.ByAscending(x => x.Username))">
+            @if (true)
+            {
+                string href = $"eu{context.Id}";
+                <a href="@href">@context.Username</a>
+            }
+        </TemplateColumn>
+        <PropertyColumn Property="@(x => x.CreatedAt)" Title="Registered" Format="s" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.Played)" Title="Plays" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.AvgPlaysPerDay)" Title="Avg. plays per day" Sortable="true"/>
         <PropertyColumn Property="@(x => x.Votes)" Title="Votes" Sortable="true"/>
     </QuickGrid>
 </div>

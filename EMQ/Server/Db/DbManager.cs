@@ -5036,7 +5036,8 @@ GROUP BY qsh.quiz_id
             .ToDictionary(x => x.userId, x => x.count);
 
         var mv = (await connection.QueryAsync<(int userId, int count)>(
-                "select user_id as userId, count(*) as count from music_vote group by user_id"))
+                "select user_id as userId, count(*) as count from music_vote where not user_id = any(@ign) group by user_id",
+                new { ign = IgnoredMusicVotes }))
             .ToDictionary(x => x.userId, x => x.count);
 
         var res = new List<UserStat>();
@@ -5050,6 +5051,7 @@ GROUP BY qsh.quiz_id
                 Username = username,
                 CreatedAt = createdAt,
                 Played = q,
+                AvgPlaysPerDay = (float)Math.Round(q / (DateTime.UtcNow - createdAt).TotalDays, 2),
                 Votes = m,
             });
         }

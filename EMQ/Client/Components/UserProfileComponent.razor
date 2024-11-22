@@ -8,6 +8,8 @@
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 
+<a class="link link-primary" href="/eu/all">Browse users</a>
+<br/>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eu{UserId + 1}"))">Next</button>
 
