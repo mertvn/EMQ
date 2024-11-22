@@ -1414,7 +1414,8 @@ GROUP BY artist_id";
 
         if (songArtist.Id > 0)
         {
-            if (connection.ExecuteScalar<bool>("select 1 from artist where id = @id", new { id = songArtist.Id }))
+            if (connection.ExecuteScalar<bool>("select 1 from artist where id = @id", new { id = songArtist.Id },
+                    transaction))
             {
                 aId = songArtist.Id;
                 // todo update stuff like primary_language and sex?
@@ -1459,7 +1460,8 @@ GROUP BY artist_id";
             if (aaId < 1)
             {
                 aaId = (await connection.QueryAsync<int>(
-                        "select aa.id from artist_alias aa join artist a on a.id = aa.artist_id where a.id=@aId AND aa.latin_alias=@latinAlias and aa.non_latin_alias=@nonLatinAlias",
+                        @"select aa.id from artist_alias aa join artist a on a.id = aa.artist_id
+                        where a.id=@aId AND aa.latin_alias=@latinAlias and ((@nonLatinAlias::text IS NULL) or aa.non_latin_alias = @nonLatinAlias::text)",
                         new { aId, latinAlias = title.LatinTitle, nonLatinAlias = title.NonLatinTitle },
                         transaction))
                     .ToList().SingleOrDefault();
