@@ -4584,6 +4584,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         // todo cleanup of music_source and artist?
+        // todo this deletes non_latin_title if isImport
         var oldSong = (await SelectSongsMIds(new[] { oldMid }, false)).Single();
         int rowsDeletedMt = await connection.ExecuteAsync("DELETE FROM music_title where music_id = @mId",
             new { mId = oldMid }, transaction);
@@ -4609,8 +4610,12 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             throw new Exception("Failed to delete a");
         }
 
-        int rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
-            new { mId = oldMid }, transaction);
+        int rowsDeletedMel = 0;
+        if (!isImport) // newSong won't contain Links if isImport
+        {
+            rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
+                new { mId = oldMid }, transaction);
+        }
 
         newSong.Id = oldMid;
         int mId = await InsertSong(newSong, connection, transaction);
@@ -4619,13 +4624,16 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             throw new Exception($"Failed to insert song: {newSong}");
         }
 
+        // TODO
+        // TODO THIS CHECK DOES NOT WORK RIGHT NOW BECAUSE OF THE LACK OF TRANSACTION
+        // TODO
         if (rowsDeletedMel > 0)
         {
             Console.WriteLine($"rowsDeletedMel: {rowsDeletedMel}");
             // extra check to make sure we don't lose any file links
             var insertedSong = (await SelectSongsMIds(new[] { mId }, false)).Single(); // todo transaction
-            var o = JsonSerializer.SerializeToNode(oldSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
-            var n = JsonSerializer.SerializeToNode(insertedSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url));
+            var o = JsonSerializer.SerializeToNode(oldSong.Links.OrderBy(x => x.Url));
+            var n = JsonSerializer.SerializeToNode(insertedSong.Links.OrderBy(x => x.Url));
             if (!JsonNode.DeepEquals(o, n))
             {
                 throw new Exception(

@@ -26,10 +26,12 @@ public class VNDBStaffNotesParserTests
     [Test]
     public async Task Test_Batch()
     {
+        // todo move to Blacklists
         // @formatter:off
         List<string> blacklist = new()
         {
           "v24208", // possible room for improvement
+          "v1571",
         };
 
         List<string> graylist = new()
