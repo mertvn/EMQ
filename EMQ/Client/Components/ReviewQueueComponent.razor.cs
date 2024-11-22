@@ -32,6 +32,24 @@ public partial class ReviewQueueComponent
 
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
+    private string SubmittedByFilter { get; set; } = "";
+
+    private IQueryable<RQ>? FilteredRQs
+    {
+        get
+        {
+            SubmittedByFilter = SubmittedByFilter.Trim();
+            var result = CurrentRQs?.AsQueryable(); // deep-copy
+            if (!string.IsNullOrWhiteSpace(SubmittedByFilter))
+            {
+                result = result?.Where(x =>
+                    x.submitted_by.Contains(SubmittedByFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return result;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshRQs();

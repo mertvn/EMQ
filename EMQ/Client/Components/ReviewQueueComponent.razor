@@ -48,7 +48,7 @@
     </div>
 
     <div class="grid" tabindex="-1">
-        <QuickGrid Items="@CurrentRQs" Pagination="_pagination">
+        <QuickGrid Items="@FilteredRQs" Pagination="_pagination">
             <TemplateColumn Title="ID" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.id))" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending">
                 @if (true)
                 {
@@ -96,7 +96,11 @@
                     <span>@(context.is_video ? "Video" : "")</span>
                 }
             </TemplateColumn>
-            <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true">
+                <ColumnOptions>
+                    <input id="submittedByFilter" type="text" @bind="@SubmittedByFilter" @bind:event="oninput"/>
+                </ColumnOptions>
+            </PropertyColumn>
             <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>
             <PropertyColumn Property="@(x => x.analysis)" Title="Analysis" Sortable="true"/>
             <PropertyColumn Property="@(x => x.duration)" Title="Duration" Format="mm\:ss" Sortable="true"/>
