@@ -111,6 +111,8 @@
 
         <div style="border: 1px black solid; padding: 10px;">
             <h5>Artists</h5>
+            <button type="button" class="btn btn-primary" @onclick="CopyCAL">Copy C/A/L</button>
+            <button type="button" class="btn btn-primary" @onclick="PasteCAL">Paste C/A/L</button>
             <AutocompleteAComponent @ref="_autocompleteAComponentRef"
                                     Placeholder="Add artist"
                                     IsDisabled="false"
@@ -575,6 +577,18 @@
         }
 
         StateHasChanged();
+    }
+
+    private void CopyCAL()
+    {
+        ClientState.CopiedCAL =
+            Song.Artists.Where(x => x.Roles.Any(y => y is SongArtistRole.Composer or SongArtistRole.Arranger or SongArtistRole.Lyricist)).ToArray();
+    }
+
+    private void PasteCAL()
+    {
+        Song.Artists.AddRange(ClientState.CopiedCAL);
+        // ClientState.CopiedCAL = Array.Empty<SongArtist>();
     }
 
 }
