@@ -5086,7 +5086,7 @@ GROUP BY qsh.quiz_id
                 Username = username,
                 CreatedAt = createdAt,
                 Played = q,
-                AvgPlaysPerDay = (float)Math.Round(q / (DateTime.UtcNow - createdAt).TotalDays, 2),
+                AvgPlaysPerDay = (float)Math.Round(((float)q).Div0((int)(DateTime.UtcNow - createdAt).TotalDays), 2),
                 Votes = m,
             });
         }
