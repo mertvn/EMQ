@@ -116,11 +116,14 @@ public enum DataSourceKind
     EMQ,
 }
 
+[Flags]
 public enum SongType
 {
-    Unknown,
-    Standard,
-    Instrumental,
-    Chanting,
-    Character
+    Unknown = 0,
+    Standard = 1,
+    Instrumental = 2,
+
+    // Chanting = 4,
+    Image = 8,
+    Cover = 16,
 }

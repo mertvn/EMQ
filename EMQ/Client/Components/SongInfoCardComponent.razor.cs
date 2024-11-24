@@ -112,12 +112,6 @@ public partial class SongInfoCardComponent
 
     private async Task OnSongAttributesCheckboxClick(bool value, SongAttributes attribute)
     {
-        // todo? move attribute setting to EditSongComponent
-        // if (!IsNew)
-        // {
-        //     return;
-        // }
-
         if (value)
         {
             Song!.Attributes |= attribute;
@@ -131,20 +125,25 @@ public partial class SongInfoCardComponent
         if (Song.Attributes.HasFlag(SongAttributes.Unofficial))
         {
             Song.Attributes |= SongAttributes.NonCanon;
-        }
-
-        if (!IsEditing)
-        {
-            await SetSongAttributes(Song);
+            await CallStateHasChanged();
         }
     }
 
-    private async Task SetSongAttributes(Song song)
+    private async Task OnSongTypesCheckboxClick(bool value, SongType type)
     {
-        var res = await _client.PostAsJsonAsync("Mod/SetSongAttributes", song);
-        if (!res.IsSuccessStatusCode)
+        if (value)
         {
-            await _jsRuntime.InvokeVoidAsync("alert", $"Error setting attributes for {song}");
+            Song!.Type |= type;
+        }
+        else
+        {
+            Song!.Type ^= type;
+        }
+
+        if (Song.Type < SongType.Standard)
+        {
+            Song!.Type |= SongType.Standard;
+            await CallStateHasChanged();
         }
     }
 

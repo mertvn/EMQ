@@ -31,7 +31,22 @@
         </ol>
         <br/>
 
-        @* todo show this on edit page too? *@
+        <h5>Types</h5>
+        <ul>
+            @foreach (var type in Enum.GetValues<SongType>())
+            {
+                @if (type != SongType.Unknown)
+                {
+                    <li>
+                        @type.GetDescription():
+                        <br/>
+                        @type.GetDisplayName()
+                    </li>
+                    <br/>
+                }
+            }
+        </ul>
+
         <h5>Attributes</h5>
         <ul>
             @foreach (var attr in Enum.GetValues<SongAttributes>())
@@ -520,6 +535,12 @@
         if (string.IsNullOrWhiteSpace(song.Titles.Single().LatinTitle))
         {
             ValidationMessages.Add("Latin title must not be empty.");
+            isValid = false;
+        }
+
+        if (song.Type <= SongType.Unknown)
+        {
+            ValidationMessages.Add("Songs must have at least one type.");
             isValid = false;
         }
 

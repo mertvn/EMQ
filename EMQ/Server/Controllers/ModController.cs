@@ -262,34 +262,4 @@ public class ModController : ControllerBase
 
         return success ? Ok() : StatusCode(500);
     }
-
-    [CustomAuthorize(PermissionKind.Moderator)] // todo db mod requirement, eventually
-    [HttpPost]
-    [Route("SetSongAttributes")]
-    public async Task<ActionResult> SetSongAttributes([FromBody] Song song)
-    {
-        if (ServerState.IsServerReadOnly)
-        {
-            return Unauthorized();
-        }
-
-        var session = AuthStuff.GetSession(HttpContext.Items);
-        if (session == null)
-        {
-            return Unauthorized();
-        }
-
-        var music = (await DbManager.GetEntity<Music>(song.Id))!;
-        Console.WriteLine(
-            $"{session.Player.Username} is setting song attributes for mId {song.Id} {song} from {music.attributes} to {song.Attributes}");
-
-        music.attributes = song.Attributes;
-        bool success = await DbManager.UpdateEntity(music);
-        if (success)
-        {
-            await DbManager.EvictFromSongsCache(song.Id);
-        }
-
-        return success ? Ok() : StatusCode(500);
-    }
 }

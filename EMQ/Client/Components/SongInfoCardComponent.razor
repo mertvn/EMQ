@@ -327,8 +327,37 @@
                     <MusicVoteComponent SongId="Song.Id" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
                 }
 
-                bool openAttributes = Song.Attributes > 0 || IsEditing;
                 <br/>
+                bool openTypes = Song.Type > SongType.Standard || IsEditing;
+                <details open=@openTypes>
+                    <summary>Types</summary>
+                    @foreach (SongType key in Enum.GetValues<SongType>())
+                    {
+                        if (key == SongType.Unknown)
+                        {
+                            continue;
+                        }
+
+                        <label>
+                            <input type="checkbox" class="form-check-input" disabled="@(!IsEditing)"
+                                   @bind:get="@Song.Type.HasFlag(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnSongTypesCheckboxClick(value, key)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            @if (!string.IsNullOrEmpty(key.GetDescription()))
+                            {
+                                @key.GetDescription()
+                            }
+                            else
+                            {
+                                @key.ToString()
+                            }
+                        </label>
+                        <br/>
+                    }
+                </details>
+
+                bool openAttributes = Song.Attributes > SongAttributes.None || IsEditing;
                 <details open=@openAttributes>
                     <summary>Attributes</summary>
                     @foreach (SongAttributes key in Enum.GetValues<SongAttributes>())
@@ -338,13 +367,12 @@
                             continue;
                         }
 
-                        string id = $"SongAttribute-{Song.Id}-{key}";
-                        <input type="checkbox" id="@id" class="form-check-input" disabled="@(!isMod && !IsEditing)"
-                               @bind:get="@Song.Attributes.HasFlag(key)"
-                               @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
-                               @bind:event="oninput"
-                               style="margin: 5px"/>
-                        <label for="@id">
+                        <label>
+                            <input type="checkbox" class="form-check-input" disabled="@(!IsEditing)"
+                                   @bind:get="@Song.Attributes.HasFlag(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
                             @if (!string.IsNullOrEmpty(key.GetDescription()))
                             {
                                 @key.GetDescription()

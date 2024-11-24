@@ -1128,7 +1128,7 @@ GROUP BY artist_id";
     }
 
     public static async Task<int> InsertSong(Song song, NpgsqlConnection? connection = null,
-        NpgsqlTransaction? transaction = null)
+        NpgsqlTransaction? transaction = null, bool updateMusicTable = false)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
 
@@ -1147,7 +1147,18 @@ GROUP BY artist_id";
             if (connection.ExecuteScalar<bool>("select 1 from music where id = @id", new { id = song.Id }))
             {
                 mId = song.Id;
-                // todo update stuff like attributes and datasource?
+
+                // todo? update other stuff
+                if (updateMusicTable)
+                {
+                    int rows = await connection.ExecuteScalarAsync<int>(
+                        "UPDATE music SET type = @type, attributes = @attributes WHERE id = @id;",
+                        new { type = song.Type, attributes = song.Attributes, id = mId });
+                    if (rows < 0)
+                    {
+                        throw new Exception($"Failed to update music");
+                    }
+                }
             }
             else
             {
@@ -4635,7 +4646,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         newSong.Id = oldMid;
-        int mId = await InsertSong(newSong, connection, transaction);
+        int mId = await InsertSong(newSong, connection, transaction, !isImport);
         if (mId <= 0 || mId != oldMid)
         {
             throw new Exception($"Failed to insert song: {newSong}");
