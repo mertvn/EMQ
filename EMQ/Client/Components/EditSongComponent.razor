@@ -84,7 +84,7 @@
             @foreach (var source in Song.Sources)
             {
                 <div style="border: 1px black solid; padding: 10px;">
-                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source.Id); } })">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source); } })">
                         🗑
                     </span>
                     @source.ToString()
@@ -123,7 +123,7 @@
             @foreach (var artist in Song.Artists)
             {
                 <div style="border: 1px black solid; padding: 10px;">
-                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ || !(artist.Roles.Contains(SongArtistRole.Unknown) || artist.Roles.Contains(SongArtistRole.Vocals))) { await RemoveArtist(artist.Id); } })">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ || !(artist.Roles.Contains(SongArtistRole.Unknown) || artist.Roles.Contains(SongArtistRole.Vocals))) { await RemoveArtist(artist); } })">
                         🗑
                     </span>
                     @artist.ToString()
@@ -331,9 +331,9 @@
         await CallStateHasChanged();
     }
 
-    private async Task RemoveSongSource(int sourceId)
+    private async Task RemoveSongSource(SongSource source)
     {
-        Song.Sources.RemoveAll(x => x.Id == sourceId);
+        Song.Sources.Remove(source);
         await CallStateHasChanged();
     }
 
@@ -365,9 +365,9 @@
         await CallStateHasChanged();
     }
 
-    private async Task RemoveArtist(int artistId)
+    private async Task RemoveArtist(SongArtist artist)
     {
-        Song.Artists.RemoveAll(x => x.Id == artistId);
+        Song.Artists.Remove(artist);
         await CallStateHasChanged();
     }
 
@@ -504,6 +504,17 @@
                     isValid = false;
                 }
             }
+
+    // todo enforce one artist_alias per song
+            var seenArtists = new HashSet<int>();
+            foreach (SongArtist songArtist in song.Artists)
+            {
+                if (!seenArtists.Add(songArtist.Id))
+                {
+                    ValidationMessages.Add("An artist may only be credited once per song.");
+                    isValid = false;
+                }
+            }
         }
 
         if (string.IsNullOrWhiteSpace(song.Titles.Single().LatinTitle))
@@ -524,7 +535,7 @@
             isValid = false;
         }
 
-        // todo important validate link regex
+    // todo important validate link regex
 
         return isValid;
     }
@@ -581,14 +592,20 @@
 
     private void CopyCAL()
     {
-        ClientState.CopiedCAL =
-            Song.Artists.Where(x => x.Roles.Any(y => y is SongArtistRole.Composer or SongArtistRole.Arranger or SongArtistRole.Lyricist)).ToArray();
+        var copy = JsonSerializer.Deserialize<SongArtist[]>(JsonSerializer.Serialize(
+            Song.Artists.Where(x => x.Roles.Any(y => y is SongArtistRole.Composer or SongArtistRole.Arranger or SongArtistRole.Lyricist))))!;
+        foreach (SongArtist songArtist in copy)
+        {
+            songArtist.Roles.Remove(SongArtistRole.Vocals);
+        }
+
+        ClientState.CopiedCAL = copy;
     }
 
     private void PasteCAL()
     {
         Song.Artists.AddRange(ClientState.CopiedCAL);
-        // ClientState.CopiedCAL = Array.Empty<SongArtist>();
+    // ClientState.CopiedCAL = Array.Empty<SongArtist>();
     }
 
 }
