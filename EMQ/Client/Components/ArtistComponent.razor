@@ -92,6 +92,8 @@
             <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
                 @(Math.Round((double)context.CorrectPercentage, 2))%
             </TemplateColumn>
+            <PropertyColumn Property="@(x => x.VoteAverage)" Title="Vote avg." Sortable="true"/>
+            <PropertyColumn Property="@(x => x.VoteCount)" Title="Vote count" Sortable="true"/>
         </QuickGrid>
     </div>
     <br/>

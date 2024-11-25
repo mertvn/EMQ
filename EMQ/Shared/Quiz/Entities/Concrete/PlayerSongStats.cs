@@ -21,4 +21,8 @@ public class PlayerSongStats
     public int AverageGuessMs => (int)((float)TotalGuessMs).Div0(TimesGuessed);
 
     public string Username { get; set; } = "";
+
+    public float VoteAverage { get; set; }
+
+    public int VoteCount { get; set; }
 }

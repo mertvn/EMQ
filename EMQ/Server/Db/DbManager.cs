@@ -5295,12 +5295,36 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             // todo should_update_stats filter
             int artistId = artist.First().Value.First().Key; // todo?
             string sqlA =
-                $@"SELECT user_id as UserId, COUNT(*) AS TimesPlayed, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS TimesCorrect
-FROM quiz_song_history qsh
-JOIN artist_music am ON am.music_id = qsh.music_id
-WHERE am.artist_id = @artistId and user_id < {Constants.PlayerIdGuestMin}
-GROUP BY user_id
-ORDER BY TimesPlayed DESC
+                $@"SELECT
+    qsh.user_id AS UserId,
+    COUNT(*) AS TimesPlayed,
+    SUM(CASE WHEN qsh.is_correct THEN 1 ELSE 0 END) AS TimesCorrect,
+    COALESCE(ROUND(votes.AvgVote, 2), 0) AS VoteAverage,
+    COALESCE(votes.VoteCount, 0) AS VoteCount
+FROM
+    quiz_song_history qsh
+JOIN
+    artist_music am ON am.music_id = qsh.music_id
+LEFT JOIN (
+    SELECT
+        mv.user_id,
+        AVG(mv.vote) / 10 AS AvgVote,
+        COUNT(DISTINCT mv.music_id) AS VoteCount
+    FROM
+        music_vote mv
+    JOIN
+        artist_music am ON am.music_id = mv.music_id
+    WHERE
+        am.artist_id = @artistId and mv.user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY
+        mv.user_id
+) AS votes ON votes.user_id = qsh.user_id
+WHERE
+    am.artist_id = @artistId and qsh.user_id < {Constants.PlayerIdGuestMin}
+GROUP BY
+    qsh.user_id, votes.AvgVote, votes.VoteCount
+ORDER BY
+    TimesPlayed DESC;
 ";
             playerSongStats = (await connection.QueryAsync<PlayerSongStats>(sqlA, new { artistId })).ToArray();
 
