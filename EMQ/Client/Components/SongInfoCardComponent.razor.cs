@@ -125,8 +125,9 @@ public partial class SongInfoCardComponent
         if (Song.Attributes.HasFlag(SongAttributes.Unofficial))
         {
             Song.Attributes |= SongAttributes.NonCanon;
-            await CallStateHasChanged();
         }
+
+        await CallStateHasChanged();
     }
 
     private async Task OnSongTypesCheckboxClick(bool value, SongType type)
@@ -143,8 +144,13 @@ public partial class SongInfoCardComponent
         if (Song.Type < SongType.Standard)
         {
             Song!.Type |= SongType.Standard;
-            await CallStateHasChanged();
         }
+        else if (Song.Type > SongType.Standard)
+        {
+            Song!.Type &= ~SongType.Standard;
+        }
+
+        await CallStateHasChanged();
     }
 
     private async Task OnclickSongStatsDiv()
