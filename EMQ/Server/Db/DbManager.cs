@@ -5246,7 +5246,7 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
     public static async Task<MusicVote[]> GetUserMusicVotes(int userId, SongSourceSongTypeMode ssstm)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        return (await connection.QueryAsync<MusicVote>(@"select * from music_vote mv
+        return (await connection.QueryAsync<MusicVote>(@"select DISTINCT ON (mv.music_id) mv.* from music_vote mv
 JOIN music_source_music msm ON msm.music_id = mv.music_id
 where user_id = @userId AND msm.type = ANY(@msmType)",
             new { userId, msmType = ssstm.ToSongSourceSongTypes().Cast<int>().ToArray() })).ToArray();
