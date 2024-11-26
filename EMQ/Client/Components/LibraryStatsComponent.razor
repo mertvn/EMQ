@@ -227,7 +227,7 @@
 
 
         <Blazorise.TabPanel Name="TabArtist">
-            <Blazorise.Tabs SelectedTab="All">
+            <Blazorise.Tabs SelectedTab="@SelectedTabArtist">
                 <Items>
                     @foreach (string key in libraryStats.amAvailableDict.Keys)
                     {

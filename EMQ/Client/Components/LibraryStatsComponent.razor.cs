@@ -20,6 +20,8 @@ public partial class LibraryStatsComponent
     [Parameter]
     public SongSourceSongTypeMode Mode { get; set; }
 
+    public string SelectedTabArtist { get; set; } = "All";
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshStats();

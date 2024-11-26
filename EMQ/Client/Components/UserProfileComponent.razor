@@ -40,7 +40,7 @@
 }
 
 @* can't seem to stop the chart from lazy-loading so might as well set this to LazyLoad as well *@
-<Blazorise.Tabs SelectedTab="TabVocals" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+<Blazorise.Tabs SelectedTab="@SelectedTabMusicVotes" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
     <Items>
         <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
         <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>
@@ -125,6 +125,8 @@
     private readonly PaginationState _paginationCommonPlayers = new() { ItemsPerPage = 25 };
 
     private bool IsOwnPage => ClientState.Session != null && ClientState.Session.Player.Id == UserId;
+
+    public string SelectedTabMusicVotes { get; set; } = "TabVocals";
 
     protected override async Task OnParametersSetAsync()
     {
