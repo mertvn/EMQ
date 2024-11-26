@@ -4969,17 +4969,22 @@ GROUP BY qsh.quiz_id
         var resMostPlayedSongs =
             (await connection.QueryAsync<ResMostPlayedSongs>(sqlMostPlayedSongs, new { userId })).ToArray();
 
-        var musicVotes = await GetUserMusicVotes(userId);
-        var resUserMusicVotes = musicVotes.Select(x => new ResUserMusicVotes { MusicVote = x }).ToArray();
+        var musicVotesVocals = await GetUserMusicVotes(userId, SongSourceSongTypeMode.Vocals);
+        var musicVotesBgm = await GetUserMusicVotes(userId, SongSourceSongTypeMode.BGM);
+        var resUserMusicVotesVocals = musicVotesVocals
+            .Select(x => new ResUserMusicVotes { MusicVote = x, IsBGM = false }).ToArray();
+        var resUserMusicVotesBgm = musicVotesBgm
+            .Select(x => new ResUserMusicVotes { MusicVote = x, IsBGM = true }).ToArray();
 
-        if (!resMostPlayedSongs.Any() && !resUserMusicVotes.Any())
+        if (!resMostPlayedSongs.Any() && !resUserMusicVotesVocals.Any() && !resUserMusicVotesBgm.Any())
         {
             return null;
         }
 
         var songs =
             (await SelectSongsMIdsCached(
-                resMostPlayedSongs.Select(x => x.MusicId).Concat(musicVotes.Select(x => x.music_id)).Distinct()
+                resMostPlayedSongs.Select(x => x.MusicId)
+                    .Concat(musicVotesVocals.Concat(musicVotesBgm).Select(x => x.music_id)).Distinct()
                     .ToArray()))
             .ToDictionary(x => x.Id, x => x);
         foreach ((_, Song value) in songs)
@@ -5006,7 +5011,7 @@ GROUP BY qsh.quiz_id
             };
         }
 
-        foreach (ResUserMusicVotes resUserMusicVote in resUserMusicVotes)
+        foreach (ResUserMusicVotes resUserMusicVote in resUserMusicVotesVocals.Concat(resUserMusicVotesBgm))
         {
             var song = songs[resUserMusicVote.MusicVote.music_id];
             resUserMusicVote.SongMini = new SongMini
@@ -5052,7 +5057,9 @@ GROUP BY qsh.quiz_id
 
         var res = new ResGetPublicUserInfoSongs
         {
-            MostPlayedSongs = resMostPlayedSongs, CommonPlayers = commonPlayers, UserMusicVotes = resUserMusicVotes,
+            MostPlayedSongs = resMostPlayedSongs,
+            CommonPlayers = commonPlayers,
+            UserMusicVotes = resUserMusicVotesVocals.Concat(resUserMusicVotesBgm).ToArray(),
         };
 
         return res;
@@ -5236,11 +5243,13 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
         return ret;
     }
 
-    public static async Task<MusicVote[]> GetUserMusicVotes(int userId)
+    public static async Task<MusicVote[]> GetUserMusicVotes(int userId, SongSourceSongTypeMode ssstm)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        return (await connection.QueryAsync<MusicVote>("select * from music_vote where user_id = @userId",
-            new { userId })).ToArray();
+        return (await connection.QueryAsync<MusicVote>(@"select * from music_vote mv
+JOIN music_source_music msm ON msm.music_id = mv.music_id
+where user_id = @userId AND msm.type = ANY(@msmType)",
+            new { userId, msmType = ssstm.ToSongSourceSongTypes().Cast<int>().ToArray() })).ToArray();
     }
 
     public static async Task<ResGetMusicVotes> GetMusicVotes(int musicId)

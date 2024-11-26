@@ -776,7 +776,7 @@ public class AuthController : ControllerBase
     [Route("GetUserMusicVotes")]
     public async Task<ActionResult<MusicVote[]>> GetUserMusicVotes([FromBody] int userId)
     {
-        return await DbManager.GetUserMusicVotes(userId);
+        return await DbManager.GetUserMusicVotes(userId, SongSourceSongTypeMode.All);
     }
 
     [CustomAuthorize(PermissionKind.ViewStats)]

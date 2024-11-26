@@ -39,59 +39,25 @@
     <br/>
 }
 
-@if (UserMusicVotes != null && UserMusicVotes.Any())
-{
-    <h4>Song votes</h4>
-
-    <div style="max-width: 30%; max-height: 30%;">
-        <ChartUserMusicVotesComponent UserMusicVotes="UserMusicVotes"/>
-    </div>
-
-    <span>@UserMusicVotes.Count() votes total, average @((((float)UserMusicVotes.Average(x => x.MusicVote.vote)! / 10)).ToString("F2", CultureInfo.InvariantCulture))</span>
-    <br/>
-    <div>
-        <Paginator State="@_paginationUserMusicVotes"/>
-    </div>
-    <div class="grid" tabindex="-1">
-        <QuickGrid Items="@UserMusicVotes" Pagination="@_paginationUserMusicVotes">
-            <PropertyColumn Property="@(x => x.MusicVote.updated_at)" Title="Vote date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" />
-            @if (!IsOwnPage)
-            {
-                <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.MusicVote.vote))">
-                    @(((float)context.MusicVote.vote! / 10).ToString(CultureInfo.InvariantCulture))
-                </TemplateColumn>
-            }
-
-            <TemplateColumn Title="My vote" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => GetGridSortMyVote(x.SongMini.Id)))">
-                @{
-                    // todo fix desync that happens when you vote on the library page and then go to user profile page
-                    _ = ClientState.MusicVotes.TryGetValue(context.SongMini.Id, out MusicVote? musicVote);
-                }
-
-                <div style="margin-right: 5px; display: inline-block;">
-                    <MusicVoteComponent SongId="context.SongMini.Id" ParentStateHasChangedCallback="CallStateHasChanged" MusicVote="musicVote"/>
-                </div>
-            </TemplateColumn>
-            <TemplateColumn Title="Link">
-                @{
-                    string? href = ClientUtils.GetPreferredSongLinkUrl(context.SongMini.L, ClientState.Preferences.WantsVideo, ClientState.Preferences.LinkHost);
-                }
-
-                @if (href != null)
-                {
-                    <a class="link-primary" href="@href" target="_blank">
-                        Link
-                    </a>
-                }
-            </TemplateColumn>
-            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<ResUserMusicVotes>.ByAscending(x => x.SongMini.S))">
-                @context.SongMini.S
-            </TemplateColumn>
-            <PropertyColumn Property="@(x => x.SongMini.A)" Title="Artist" Sortable="true"/>
-        </QuickGrid>
-    </div>
-    <br/>
-}
+@* can't seem to stop the chart from lazy-loading so might as well set this to LazyLoad as well *@
+<Blazorise.Tabs SelectedTab="TabVocals" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+    <Items>
+        <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
+        <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>
+        <Blazorise.Tab Name="TabBGM">BGM</Blazorise.Tab>
+    </Items>
+    <Content>
+        <Blazorise.TabPanel Name="TabAll">
+            <UserProfileMusicVotesComponent UserMusicVotes="UserMusicVotes" IsOwnPage="IsOwnPage" ParentStateHasChangedCallback="CallStateHasChanged"></UserProfileMusicVotesComponent>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabVocals">
+            <UserProfileMusicVotesComponent UserMusicVotes="UserMusicVotes?.Where(x => !x.IsBGM)" IsOwnPage="IsOwnPage" ParentStateHasChangedCallback="CallStateHasChanged"></UserProfileMusicVotesComponent>
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabBGM">
+            <UserProfileMusicVotesComponent UserMusicVotes="UserMusicVotes?.Where(x => x.IsBGM)" IsOwnPage="IsOwnPage" ParentStateHasChangedCallback="CallStateHasChanged"></UserProfileMusicVotesComponent>
+        </Blazorise.TabPanel>
+    </Content>
+</Blazorise.Tabs>
 
 @if (MostPlayedSongs != null)
 {
@@ -158,8 +124,6 @@
 
     private readonly PaginationState _paginationCommonPlayers = new() { ItemsPerPage = 25 };
 
-    private readonly PaginationState _paginationUserMusicVotes = new() { ItemsPerPage = 50 };
-
     private bool IsOwnPage => ClientState.Session != null && ClientState.Session.Player.Id == UserId;
 
     protected override async Task OnParametersSetAsync()
@@ -195,11 +159,6 @@
     {
         await Task.Yield();
         StateHasChanged();
-    }
-
-    private short? GetGridSortMyVote(int songId)
-    {
-        return ClientState.MusicVotes.GetValueOrDefault(songId)?.vote;
     }
 
 }

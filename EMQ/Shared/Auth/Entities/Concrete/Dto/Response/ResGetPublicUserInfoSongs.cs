@@ -42,4 +42,6 @@ public class ResUserMusicVotes
     public SongMini SongMini { get; set; }= new();
 
     public MusicVote MusicVote { get; set; } = new();
+
+    public bool IsBGM { get; set; }
 }
