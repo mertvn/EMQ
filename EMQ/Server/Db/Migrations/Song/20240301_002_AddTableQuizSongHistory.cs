@@ -29,6 +29,8 @@ public class AddTableQuizSongHistory : Migration
         Create.Index().OnTable(tableName).InSchema("public")
             .OnColumn("user_id").Ascending()
             .OnColumn("played_at");
+        Create.Index().OnTable(tableName).InSchema("public") // yes, we really need both of these indexes
+            .OnColumn("played_at");
 
         Alter.Table("music").AddColumn("stat_uniqueusers").AsInt32().NotNullable().WithDefaultValue(0);
     }
