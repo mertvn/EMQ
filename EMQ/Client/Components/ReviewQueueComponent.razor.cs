@@ -16,7 +16,7 @@ namespace EMQ.Client.Components;
 
 public partial class ReviewQueueComponent
 {
-    private readonly PaginationState _pagination = new() { ItemsPerPage = 25 };
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 250 };
 
     public IQueryable<RQ>? CurrentRQs { get; set; }
 

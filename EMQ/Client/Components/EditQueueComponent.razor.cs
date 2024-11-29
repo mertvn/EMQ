@@ -17,7 +17,7 @@ namespace EMQ.Client.Components;
 
 public partial class EditQueueComponent
 {
-    private readonly PaginationState _pagination = new() { ItemsPerPage = 25 };
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 250 };
 
     public IQueryable<EditQueue>? CurrentEQs { get; set; }
 
