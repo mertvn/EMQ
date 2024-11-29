@@ -284,9 +284,9 @@
     float width = 40 - (1.2f * count);
     float height = 44 - (4.5f * count);
     float playerHeight = 8.6f + (2.5f * count);
-    string widthStr = $"{width}vw";
-    string heightStr = $"{height}vh";
-    string playerHeightStr = $"{playerHeight}vh";
+    string widthStr = $"{width.ToString(CultureInfo.InvariantCulture)}vw";
+    string heightStr = $"{height.ToString(CultureInfo.InvariantCulture)}vh";
+    string playerHeightStr = $"{playerHeight.ToString(CultureInfo.InvariantCulture)}vh";
 }
 
 <div id="quizGrid" style="display:grid; justify-content:center; align-items:center;">
