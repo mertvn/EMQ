@@ -97,10 +97,10 @@ public class AuthController : ControllerBase
         }
         else if (!string.IsNullOrWhiteSpace(req.Token))
         {
-            var secret = await DbManager.GetSecret(req.UserId, new Guid(req.Token));
+            var secret = await DbManager_Auth.GetSecret(req.UserId, new Guid(req.Token));
             if (secret is not null)
             {
-                var user = await DbManager.GetEntity_Auth<User>(secret.user_id);
+                var user = await DbManager_Auth.GetEntity_Auth<User>(secret.user_id);
                 if (user != null)
                 {
                     username = user.username;
@@ -158,7 +158,7 @@ public class AuthController : ControllerBase
             return;
         }
 
-        var secret = await DbManager.GetSecret(session.Player.Id, new Guid(session.Token));
+        var secret = await DbManager_Auth.GetSecret(session.Player.Id, new Guid(session.Token));
 
         // enable if guest sessions are ever written to DB
         // if (secret == null)
@@ -168,7 +168,7 @@ public class AuthController : ControllerBase
 
         if (secret != null)
         {
-            await DbManager.DeleteEntity_Auth(secret);
+            await DbManager_Auth.DeleteEntity_Auth(secret);
         }
 
         ServerState.RemoveSession(session, "RemoveSession");
@@ -183,7 +183,7 @@ public class AuthController : ControllerBase
         string ip = ServerUtils.GetIpAddress(Request.HttpContext) ?? "";
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
 
-        var secret = await DbManager.GetSecret(req.Player.Id, new Guid(req.Token));
+        var secret = await DbManager_Auth.GetSecret(req.Player.Id, new Guid(req.Token));
         if (secret is not null)
         {
             secret = await AuthManager.RefreshSecretIfNecessary(secret, ip);
@@ -459,7 +459,7 @@ public class AuthController : ControllerBase
     [Route("IsUsernameAvailable")]
     public async Task<ActionResult<bool>> IsUsernameAvailable([FromBody] string username)
     {
-        return await DbManager.IsUsernameAvailable(username);
+        return await DbManager_Auth.IsUsernameAvailable(username);
     }
 
     [EnableRateLimiting(RateLimitKind.Register)]

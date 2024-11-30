@@ -101,7 +101,7 @@ builder.Services.AddRateLimiter(options =>
     options.OnRejected = async (context, token) =>
     {
         string action = context.HttpContext.Request.Path.ToString();
-        await DbManager.InsertEntity_Auth(new Ratelimited
+        await DbManager_Auth.InsertEntity_Auth(new Ratelimited
         {
             ip = ServerUtils.GetIpAddress(context.HttpContext) ?? "", action = action, created_at = DateTime.UtcNow,
         });

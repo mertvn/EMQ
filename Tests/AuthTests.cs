@@ -16,7 +16,7 @@ public class AuthTests
     [SetUp]
     public async Task Setup()
     {
-        if (await DbManager.IsUsernameAvailable("test_user"))
+        if (await DbManager_Auth.IsUsernameAvailable("test_user"))
         {
             string username = "test_user";
             string email = $"{username}@example.com";
@@ -25,7 +25,7 @@ public class AuthTests
             bool isValid = await AuthManager.RegisterStep1SendEmail(username, email);
             Assert.That(isValid); // valid can also mean that the duplicate email was sent
 
-            var verificationRegister = await DbManager.GetVerificationRegister(username);
+            var verificationRegister = await DbManager_Auth.GetVerificationRegister(username);
             if (verificationRegister == null)
             {
                 throw new Exception("Failed to GetVerificationRegister");
@@ -93,7 +93,7 @@ public class AuthTests
     {
         string user = "";
 
-        bool isValid = await DbManager.IsUsernameAvailable(user);
+        bool isValid = await DbManager_Auth.IsUsernameAvailable(user);
         Assert.That(isValid);
     }
 
@@ -102,7 +102,7 @@ public class AuthTests
     {
         string user = "test_user";
 
-        bool isValid = await DbManager.IsUsernameAvailable(user);
+        bool isValid = await DbManager_Auth.IsUsernameAvailable(user);
         Assert.That(!isValid);
     }
 
@@ -116,7 +116,7 @@ public class AuthTests
         bool isValid = await AuthManager.RegisterStep1SendEmail(username, email);
         Assert.That(isValid); // valid can also mean that the duplicate email was sent
 
-        var verificationRegister = await DbManager.GetVerificationRegister(username);
+        var verificationRegister = await DbManager_Auth.GetVerificationRegister(username);
         if (verificationRegister == null)
         {
             throw new Exception("Failed to GetVerificationRegister");
@@ -147,7 +147,7 @@ public class AuthTests
         bool isValid = await AuthManager.ForgottenPasswordStep1SendEmail(email);
         Assert.That(isValid); // valid can also mean that there is no user with that email
 
-        var user = await DbManager.FindUserByUsername(username);
+        var user = await DbManager_Auth.FindUserByUsername(username);
         if (user is null)
         {
             throw new Exception("Failed to FindUserByUsername");

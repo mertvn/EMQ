@@ -26,11 +26,11 @@ public static class AuthManager
         // this check is only correct as long as we don't allow @ in usernames
         if (usernameOrEmail.Contains('@'))
         {
-            dbUser = await DbManager.FindUserByEmail(usernameOrEmail);
+            dbUser = await DbManager_Auth.FindUserByEmail(usernameOrEmail);
         }
         else
         {
-            dbUser = await DbManager.FindUserByUsername(usernameOrEmail);
+            dbUser = await DbManager_Auth.FindUserByUsername(usernameOrEmail);
             if (dbUser == null)
             {
                 // usernames aren't private information, so we don't have to delay here
@@ -94,7 +94,7 @@ public static class AuthManager
             secret.last_used_at = DateTime.UtcNow;
             secret.ip_last = ip;
 
-            if (await DbManager.UpdateEntity_Auth(secret))
+            if (await DbManager_Auth.UpdateEntity_Auth(secret))
             {
                 return secret;
             }
@@ -131,7 +131,7 @@ public static class AuthManager
             return false;
         }
 
-        if (!await DbManager.IsUsernameAvailable(username))
+        if (!await DbManager_Auth.IsUsernameAvailable(username))
         {
             return false;
         }
@@ -139,7 +139,7 @@ public static class AuthManager
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        var user = await DbManager.FindUserByEmail(email);
+        var user = await DbManager_Auth.FindUserByEmail(email);
         if (user is null)
         {
             await SendEmail_Register(username, email);
@@ -165,7 +165,7 @@ public static class AuthManager
         const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
 
         var registrationToken = Guid.NewGuid();
-        int verificationRegisterId = (int)await DbManager.InsertEntity_Auth(new VerificationRegister
+        int verificationRegisterId = (int)await DbManager_Auth.InsertEntity_Auth(new VerificationRegister
         {
             username = username, email = email, token = registrationToken.ToString(), created_at = DateTime.UtcNow
         });
@@ -239,13 +239,13 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
         }
 
         // todo? we're not checking for email here
-        VerificationRegister? verificationRegister = await DbManager.GetVerificationRegister(username, token);
+        VerificationRegister? verificationRegister = await DbManager_Auth.GetVerificationRegister(username, token);
         if (verificationRegister is null)
         {
             return userId;
         }
 
-        if (!await DbManager.DeleteEntity_Auth(verificationRegister))
+        if (!await DbManager_Auth.DeleteEntity_Auth(verificationRegister))
         {
             return userId;
         }
@@ -261,7 +261,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
         string saltStr = Convert.ToHexString(saltBytes);
         string hashStr = Convert.ToHexString(hashBytes);
 
-        var user = await DbManager.FindUserByUsername(username);
+        var user = await DbManager_Auth.FindUserByUsername(username);
         if (user is null)
         {
             user = new User
@@ -279,7 +279,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             throw new Exception("User already exists."); // todo?
         }
 
-        userId = (int)await DbManager.InsertEntity_Auth(user);
+        userId = (int)await DbManager_Auth.InsertEntity_Auth(user);
         if (userId <= 0)
         {
             throw new Exception("Failed to insert User."); // todo?
@@ -303,7 +303,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             return userId;
         }
 
-        var user = await DbManager.FindUserByUsername(username);
+        var user = await DbManager_Auth.FindUserByUsername(username);
         if (user is null)
         {
             throw new Exception("User doesn't exist."); // todo?
@@ -328,7 +328,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
         user.salt = saltStr;
         user.hash = hashStr;
 
-        if (!await DbManager.UpdateEntity_Auth(user))
+        if (!await DbManager_Auth.UpdateEntity_Auth(user))
         {
             throw new Exception("Failed to update User."); // todo?
         }
@@ -343,7 +343,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
     public static async Task<Secret> CreateSecret(int userId, string ip)
     {
         // delete previous secret if it exists
-        await DbManager.DeleteSecret(userId);
+        await DbManager_Auth.DeleteSecret(userId);
 
         Secret secret = new()
         {
@@ -355,7 +355,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
             last_used_at = DateTime.UtcNow,
         };
 
-        int secretId = (int)await DbManager.InsertEntity_Auth(secret);
+        int secretId = (int)await DbManager_Auth.InsertEntity_Auth(secret);
         if (secretId <= 0)
         {
             throw new Exception("idk"); // todo?
@@ -376,7 +376,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        var user = await DbManager.FindUserByEmail(email);
+        var user = await DbManager_Auth.FindUserByEmail(email);
         bool isValid = user is not null;
         if (isValid)
         {
@@ -400,7 +400,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
 
         // todo? check with user_id before inserting
         var resetToken = Guid.NewGuid();
-        int verificationForgottenPasswordId = (int)await DbManager.InsertEntity_Auth(new VerificationForgottenPassword
+        int verificationForgottenPasswordId = (int)await DbManager_Auth.InsertEntity_Auth(new VerificationForgottenPassword
         {
             user_id = user.id, token = resetToken.ToString(), created_at = DateTime.UtcNow
         });
@@ -444,13 +444,13 @@ Please ignore this email if you did not initiate this action over at {websiteDom
         }
 
         VerificationForgottenPassword? verificationForgottenPassword =
-            await DbManager.GetVerificationForgottenPassword(userId, token);
+            await DbManager_Auth.GetVerificationForgottenPassword(userId, token);
         if (verificationForgottenPassword is null)
         {
             return ret;
         }
 
-        if (!await DbManager.DeleteEntity_Auth(verificationForgottenPassword))
+        if (!await DbManager_Auth.DeleteEntity_Auth(verificationForgottenPassword))
         {
             return ret;
         }
@@ -466,7 +466,7 @@ Please ignore this email if you did not initiate this action over at {websiteDom
         string saltStr = Convert.ToHexString(saltBytes);
         string hashStr = Convert.ToHexString(hashBytes);
 
-        var user = await DbManager.GetEntity_Auth<User>(userId);
+        var user = await DbManager_Auth.GetEntity_Auth<User>(userId);
         if (user is null)
         {
             throw new Exception("User doesn't exist."); // todo?
@@ -479,7 +479,7 @@ Please ignore this email if you did not initiate this action over at {websiteDom
         user.salt = saltStr;
         user.hash = hashStr;
 
-        if (!await DbManager.UpdateEntity_Auth(user))
+        if (!await DbManager_Auth.UpdateEntity_Auth(user))
         {
             throw new Exception("Failed to update User."); // todo?
         }
