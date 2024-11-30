@@ -133,7 +133,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        string? activeUserLabelPresetName = await DbManager.GetActiveUserLabelPresetName(playerId);
+        string? activeUserLabelPresetName = await DbManager_Auth.GetActiveUserLabelPresetName(playerId);
         var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
         var player = new Player(playerId, username, new Avatar(character, skin));
         var session = new Session(player, token, userRoleKind, activeUserLabelPresetName);
@@ -282,7 +282,7 @@ public class AuthController : ControllerBase
         }
 
         PlayerVndbInfo vndbInfo =
-            await DbManager.GetUserVndbInfo(session.Player.Id, session.ActiveUserLabelPresetName);
+            await DbManager_Auth.GetUserVndbInfo(session.Player.Id, session.ActiveUserLabelPresetName);
         if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
             throw new Exception($"Couldn't GetUserVndbInfo for p{session.Player.Id}");
@@ -299,9 +299,9 @@ public class AuthController : ControllerBase
             kind = req.Label.Kind,
             preset_name = session.ActiveUserLabelPresetName!,
         };
-        long userLabelId = await DbManager.RecreateUserLabel(userLabel, req.Label.VNs);
+        long userLabelId = await DbManager_Auth.RecreateUserLabel(userLabel, req.Label.VNs);
 
-        var userLabelVns = await DbManager.GetUserLabelVns(userLabelId);
+        var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabelId);
         var label = ServerUtils.FromUserLabel(userLabel);
         label.VNs = userLabelVns.ToDictionary(x => x.vnid, x => x.vote);
 
@@ -357,7 +357,7 @@ public class AuthController : ControllerBase
             return StatusCode(520);
         }
 
-        await DbManager.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
+        await DbManager_Auth.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
 
         if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId) && req.VndbInfo.Labels is not null)
         {
@@ -374,7 +374,7 @@ public class AuthController : ControllerBase
                     kind = label.Kind,
                     preset_name = session.ActiveUserLabelPresetName,
                 };
-                long _ = await DbManager.RecreateUserLabel(userLabel, label.VNs);
+                long _ = await DbManager_Auth.RecreateUserLabel(userLabel, label.VNs);
             }
         }
 
@@ -582,7 +582,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        return await DbManager.SelectUserQuizSettings(session.Player.Id);
+        return await DbManager_Auth.SelectUserQuizSettings(session.Player.Id);
     }
 
     [CustomAuthorize(PermissionKind.StoreQuizSettings)]
@@ -596,7 +596,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        await DbManager.InsertUserQuizSettings(session.Player.Id, req.Name, req.B64);
+        await DbManager_Auth.InsertUserQuizSettings(session.Player.Id, req.Name, req.B64);
         Console.WriteLine($"p{session.Player.Id} {session.Player.Username} saved preset {req.Name} {req.B64.Length}");
         return Ok();
     }
@@ -612,7 +612,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        await DbManager.DeleteUserQuizSettings(session.Player.Id, req.Name);
+        await DbManager_Auth.DeleteUserQuizSettings(session.Player.Id, req.Name);
         Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted preset {req.Name}");
         return Ok();
     }
@@ -655,7 +655,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        return await DbManager.GetUserLabelPresets(session.Player.Id);
+        return await DbManager_Auth.GetUserLabelPresets(session.Player.Id);
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
@@ -670,7 +670,7 @@ public class AuthController : ControllerBase
         }
 
         bool success =
-            await DbManager.UpsertUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
+            await DbManager_Auth.UpsertUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
         if (success)
         {
             Console.WriteLine($"p{session.Player.Id} {session.Player.Username} upserted user label preset {name}");
@@ -696,7 +696,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        await DbManager.DeleteUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
+        await DbManager_Auth.DeleteUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
         session.ActiveUserLabelPresetName = null;
         Console.WriteLine($"p{session.Player.Id} {session.Player.Username} deleted user label preset {name}");
         return Ok();
@@ -725,7 +725,7 @@ public class AuthController : ControllerBase
             }
         }
 
-        await DbManager.SetAvatar(session.Player.Id, req);
+        await DbManager_Auth.SetAvatar(session.Player.Id, req);
         session.Player.Avatar = req;
         return req;
     }

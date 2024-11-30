@@ -1800,7 +1800,8 @@ public class QuizManager
                 if (vndbInfo.Labels != null)
                 {
                     var userLabels =
-                        await DbManager.GetUserLabels(player.Id, vndbInfo.VndbId, session.ActiveUserLabelPresetName);
+                        await DbManager_Auth.GetUserLabels(player.Id, vndbInfo.VndbId,
+                            session.ActiveUserLabelPresetName);
                     var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
                     var exclude = userLabels.Where(x => x.kind == LabelKind.Exclude).ToList();
 
@@ -1812,7 +1813,7 @@ public class QuizManager
                         // todo method
                         foreach (UserLabel userLabel in include)
                         {
-                            var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                            var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
                             validSourcesDict[player.Id].AddRange(userLabelVns.Select(x => x.vnid));
                         }
 
@@ -1821,7 +1822,7 @@ public class QuizManager
                             var excluded = new List<string>();
                             foreach (UserLabel userLabel in exclude)
                             {
-                                var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                                var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
                                 excluded.AddRange(userLabelVns.Select(x => x.vnid));
                             }
 

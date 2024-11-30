@@ -169,10 +169,10 @@ public static class ServerUtils
         // var stopWatch = new Stopwatch();
         // stopWatch.Start();
 
-        var vndbInfo = await DbManager.GetUserVndbInfo(userId, presetName);
+        var vndbInfo = await DbManager_Auth.GetUserVndbInfo(userId, presetName);
         if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && !string.IsNullOrEmpty(presetName))
         {
-            var userLabels = await DbManager.GetUserLabels(userId, vndbInfo.VndbId, presetName);
+            var userLabels = await DbManager_Auth.GetUserLabels(userId, vndbInfo.VndbId, presetName);
             vndbInfo.Labels = new List<Label>();
 
             // todo batch
@@ -180,7 +180,7 @@ public static class ServerUtils
             foreach (UserLabel userLabel in userLabels)
             {
                 var label = FromUserLabel(userLabel);
-                var userLabelVns = await DbManager.GetUserLabelVns(userLabel.id);
+                var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
                 foreach (UserLabelVn userLabelVn in userLabelVns)
                 {
                     label.VNs[userLabelVn.vnid] = userLabelVn.vote;
