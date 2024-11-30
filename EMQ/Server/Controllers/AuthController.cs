@@ -260,10 +260,10 @@ public class AuthController : ControllerBase
                 ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
             if (session != null)
             {
-                Response.Headers.Add("X-USER-ID", session.Player.Id.ToString());
-                Response.Headers.Add("X-USER-NAME", session.Player.Username);
-                Response.Headers.Add("X-USER-ROLE",
-                    AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor");
+                Response.Headers["X-USER-ID"] = session.Player.Id.ToString();
+                Response.Headers["X-USER-NAME"] = session.Player.Username;
+                Response.Headers["X-USER-ROLE"] =
+                    AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor";
             }
         }
 

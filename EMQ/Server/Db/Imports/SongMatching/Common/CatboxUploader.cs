@@ -24,8 +24,8 @@ public static class CatboxUploader
     private static async Task<HttpResponseMessage> PostMultipart(string url, Dictionary<string, string> strings,
         string filepath, string filename)
     {
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-        ServicePointManager.Expect100Continue = false;
+        // ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        // ServicePointManager.Expect100Continue = false;
 
         MultipartFormDataContent formContent = new();
         foreach (string key in strings.Keys)

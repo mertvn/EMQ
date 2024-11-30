@@ -510,7 +510,7 @@ public class EntryPoints
                             }, false)).Single().Value.Single().Value;
                         // artistAliasDict[aaId] = artist;
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine($"credit not in emq: {credit.VndbId}");
                         continue;
