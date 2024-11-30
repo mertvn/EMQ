@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -221,6 +221,7 @@ public class QuizManager
         Quiz.QuizState.ExtraInfo = "";
         while (Quiz.QuizState.IsPaused)
         {
+            // todo this fucks up timing of radio
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
@@ -823,6 +824,7 @@ public class QuizManager
                 false);
         }
 
+        // todo ignore spaces for every box
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
         {
             // bot picks/burns

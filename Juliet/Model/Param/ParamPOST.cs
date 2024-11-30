@@ -25,6 +25,7 @@ public class ParamPOST<T> : Param
     /// Grab all results?
     /// </summary>
     [DefaultValue(true)]
+    // todo refactor to maxresults
     public bool Exhaust { get; set; } = true;
 
     public Query? Filters { get; set; }

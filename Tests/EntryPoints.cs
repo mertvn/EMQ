@@ -940,7 +940,7 @@ WHERE s.lang = 'ja'"))
         }
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task TestSongLite_MBHealth()
     {
         // todo path

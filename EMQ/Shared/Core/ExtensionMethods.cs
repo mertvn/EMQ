@@ -278,6 +278,7 @@ public static class ExtensionMethods
         }
     }
 
+    // todo convert to static dict
     public static SongSourceSongType[] ToSongSourceSongTypes(this SongSourceSongTypeMode mode)
     {
         SongSourceSongType[] songSourceSongTypes = mode switch
