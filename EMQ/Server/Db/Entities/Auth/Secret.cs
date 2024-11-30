@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EMQ.Server.Db.Entities;
+namespace EMQ.Server.Db.Entities.Auth;
 
 [Table("secret")]
 public class Secret

@@ -22,6 +22,7 @@ using EMQ.Client.Pages;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
 using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;

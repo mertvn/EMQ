@@ -2,20 +2,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EMQ.Server.Db.Entities;
+namespace EMQ.Server.Db.Entities.Auth;
 
-[Table("verification_register")]
-public class VerificationRegister
+[Table("verification_forgottenpassword")]
+public class VerificationForgottenPassword
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Required]
     public int id { get; set; }
 
     [Required]
-    public string username { get; set; } = "";
-
-    [Required]
-    public string email { get; set; } = "";
+    public int user_id { get; set; }
 
     [Required]
     public string token { get; set; } = "";

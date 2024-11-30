@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Database.Extensions;
-using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using Npgsql;

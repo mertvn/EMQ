@@ -5,7 +5,7 @@ using Dapper;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
-using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using Npgsql;
 using NUnit.Framework;
 

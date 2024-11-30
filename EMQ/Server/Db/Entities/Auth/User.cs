@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
-namespace EMQ.Server.Db.Entities;
+namespace EMQ.Server.Db.Entities.Auth;
 
 [Table("users")]
 public class User

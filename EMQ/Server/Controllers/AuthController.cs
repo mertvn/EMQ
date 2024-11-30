@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;

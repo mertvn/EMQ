@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using EMQ.Server;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
