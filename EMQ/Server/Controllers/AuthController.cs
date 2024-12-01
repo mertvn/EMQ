@@ -221,6 +221,7 @@ public class AuthController : ControllerBase
         }
         else
         {
+            // todo move this to the end of CreateSession as ValidateSession calls it anyways
             HttpContext.Response.Cookies.Append("user-id", session.Player.Id.ToString(), new CookieOptions
             {
                 Domain = $".{Constants.WebsiteDomainNoProtocol}",
