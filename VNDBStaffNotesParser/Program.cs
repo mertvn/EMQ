@@ -131,7 +131,8 @@ public static class Program
                         "Image song",
                         "Image songs",
                         "IT ", // https://vndb.org/v1180 ¯\_(ツ)_/¯
-                        "(IT)",
+                        "(IT)", // ^
+                        "Bonus track", // ^
                         "Character song",
                         "Epilogue song",
                         "Interlude",

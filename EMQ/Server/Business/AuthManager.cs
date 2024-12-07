@@ -334,7 +334,7 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
 
         stopWatch.Stop();
         Console.WriteLine(
-            $"{true} {nameof(RegisterStep2SetPassword)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s (no random delay)");
+            $"{true} {nameof(ChangePassword)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s (no random delay)");
 
         return userId;
     }
@@ -399,10 +399,11 @@ Please ignore this email if you have not tried to sign up over at {websiteDomain
 
         // todo? check with user_id before inserting
         var resetToken = Guid.NewGuid();
-        int verificationForgottenPasswordId = (int)await DbManager_Auth.InsertEntity_Auth(new VerificationForgottenPassword
-        {
-            user_id = user.id, token = resetToken.ToString(), created_at = DateTime.UtcNow
-        });
+        int verificationForgottenPasswordId = (int)await DbManager_Auth.InsertEntity_Auth(
+            new VerificationForgottenPassword
+            {
+                user_id = user.id, token = resetToken.ToString(), created_at = DateTime.UtcNow
+            });
 
         if (verificationForgottenPasswordId <= 0)
         {
@@ -485,7 +486,7 @@ Please ignore this email if you did not initiate this action over at {websiteDom
 
         stopWatch.Stop();
         Console.WriteLine(
-            $"{true} {nameof(RegisterStep2SetPassword)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s (no random delay)");
+            $"{true} {nameof(ForgottenPasswordStep2ResetPassword)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s (no random delay)");
 
         return ret;
     }
