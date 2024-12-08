@@ -174,6 +174,9 @@ public class PlayerPreferences
     public bool WantsEnglish { get; set; } = false;
 
     [Required]
+    public bool WantsOriginalTitle { get; set; } = false;
+
+    [Required]
     public bool ShowVndbCovers { get; set; } = true;
 
     [Required]

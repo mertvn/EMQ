@@ -456,7 +456,7 @@
                 {
                     foreach (var title in current)
                     {
-                        string displayTitle = ClientState.Preferences.WantsEnglish ? title.LatinTitle : (title.NonLatinTitle ?? title.LatinTitle);
+                        string displayTitle = ClientState.Preferences.WantsOriginalTitle ? (title.NonLatinTitle ?? title.LatinTitle) : title.LatinTitle;
                         bool selected = PageState.Guess?.Dict[GuessKind.Mst] == title.LatinTitle;
                         <div class="MultipleChoiceOption" title="@(title.ToString())"
                              @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Dict = { [GuessKind.Mst] = title.LatinTitle } }); })"
