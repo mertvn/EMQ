@@ -49,6 +49,10 @@
                                     <label for="WantsEnglish">Prefer English titles when available</label>
                                     <br/>
 
+                                    <InputCheckbox id="WantsOriginalTitle" class="form-check-input" @bind-Value="ClientState.Preferences.WantsOriginalTitle" style="margin: 5px"></InputCheckbox>
+                                    <label for="WantsOriginalTitle">Prefer original title for multiple choice options</label>
+                                    <br/>
+
                                     <InputCheckbox id="RestartSongsOnResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
                                     <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
                                     <br/>
