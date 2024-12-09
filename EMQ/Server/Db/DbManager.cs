@@ -4687,7 +4687,7 @@ limit 777;
         return ret;
     }
 
-    public static async Task<ResGetPublicUserInfoSongs?> GetPublicUserInfoSongs(int userId)
+    public static async Task<string?> GetPublicUserInfoSongs(int userId)
     {
         const string sqlMostPlayedSongs =
             @"select qsh.music_id AS MusicId, count(*) as Played, count(qsh.is_correct) FILTER (WHERE qsh.is_correct) AS Correct, usr.interval_days AS IntervalDays
@@ -4741,7 +4741,7 @@ GROUP BY qsh.quiz_id
             foreach (SongLink link in value.Links)
             {
                 link.AnalysisRaw = null;
-                link.Sha256 = "";
+                link.Sha256 = null!;
                 link.SubmittedBy = null;
             }
         }
@@ -4810,7 +4810,7 @@ GROUP BY qsh.quiz_id
             UserMusicVotes = resUserMusicVotesVocals.Concat(resUserMusicVotesBgm).ToArray(),
         };
 
-        return res;
+        return JsonSerializer.Serialize(res, Utils.JsoCompact);
     }
 
     public static async Task<List<UserStat>> GetUserStats()

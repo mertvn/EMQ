@@ -10,6 +10,7 @@ using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -1212,7 +1213,8 @@ order by ms.id
     [Test]
     public async Task Test_GetPublicUserInfoSongs()
     {
-        var res = await DbManager.GetPublicUserInfoSongs(2);
+        string? resJson = await DbManager.GetPublicUserInfoSongs(2);
+        var res = JsonSerializer.Deserialize<ResGetPublicUserInfoSongs>(resJson!, Utils.JsoCompact);
         Assert.That(res != null);
         Assert.That(res!.MostPlayedSongs.Any());
         Assert.That(res.MostPlayedSongs.First().MusicId > 0);

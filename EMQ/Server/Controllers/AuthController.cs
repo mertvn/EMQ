@@ -630,7 +630,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetPublicUserInfoSongs")]
-    public async Task<ActionResult<ResGetPublicUserInfoSongs>> GetPublicUserInfoSongs([FromBody] int userId)
+    public async Task<ActionResult<string?>> GetPublicUserInfoSongs([FromBody] int userId)
     {
         var publicUserInfo = await DbManager.GetPublicUserInfoSongs(userId);
         return publicUserInfo != null ? publicUserInfo : StatusCode(404);
