@@ -48,18 +48,6 @@ public class MBRecording
     [JsonPropertyName("artist-credit")]
     public List<MbArtistCredit> artistcredit { get; set; } = new();
 
-    [JsonPropertyName("video")]
-    public bool? video { get; set; }
-
-    [JsonPropertyName("disambiguation")]
-    public string disambiguation { get; set; } = "";
-
     [JsonPropertyName("id")]
     public string id { get; set; } = "";
-
-    [JsonPropertyName("first-release-date")]
-    public string firstreleasedate { get; set; } = "";
-
-    [JsonPropertyName("length")]
-    public int? length { get; set; }
 }

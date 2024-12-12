@@ -6,6 +6,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 
+// protobuf is bigger/slower than json for this
 public class ResGetPublicUserInfoSongs
 {
     public ResMostPlayedSongs[] MostPlayedSongs { get; set; } = Array.Empty<ResMostPlayedSongs>();
