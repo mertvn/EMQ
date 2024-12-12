@@ -671,7 +671,14 @@
 
         PersistAfterSubmittingDict["Sources"] = true;
         MBTracks.Clear();
-        MBTracks.AddRange(mbRelease.media.SelectMany(x => x.tracks).OrderBy(x => x.position));
+        foreach (MBMedium mbMedium in mbRelease.media.OrderBy(x => x.position))
+        {
+            foreach (MBTrack mbTrack in mbMedium.tracks.OrderBy(x => x.position))
+            {
+                MBTracks.Add(mbTrack);
+            }
+        }
+
         await SetMBTracksIndex(0);
     }
 

@@ -9,6 +9,9 @@ namespace EMQ.Shared.Core;
 
 public class MBMedium
 {
+    [JsonPropertyName("position")]
+    public int position { get; set; }
+
     [JsonPropertyName("tracks")]
     public List<MBTrack> tracks { get; set; } = new();
 }
