@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core.SharedDbEntities;
@@ -29,4 +30,6 @@ public static class ClientState
     public static Dictionary<int, SongArtist> ArtistsCache { get; } = new(); // todo? move to ArtistComponent
 
     public static SongArtist[] CopiedCAL { get; set; } = Array.Empty<SongArtist>();
+
+    public static HttpClient ExternalClient { get; } = new();
 }

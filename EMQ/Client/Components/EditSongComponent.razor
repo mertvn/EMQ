@@ -85,6 +85,23 @@
     </details>
 }
 
+<details style="padding: 5px;">
+    <summary>MusicBrainz seeder</summary>
+    <p>Enter a MusicBrainz release id or URL to fill information automatically.</p>
+    <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 540px;"/>
+    <br/>
+    <br/>
+
+    @if (MBTracks.Any())
+    {
+        <span> Displaying track @(MBTracksIndex + 1)/@(MBTracks.Count)</span>
+        <br/>
+        <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex - 1))">Prev</button>
+        <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex + 1))">Next</button>
+    }
+</details>
+<br/>
+
 <div style="display: flex; flex-wrap: wrap">
     <div style="border: 1px black solid; padding: 10px; width: 970px;">
         <div style="border: 1px black solid; padding: 10px;">
@@ -307,6 +324,12 @@
         },
     };
 
+    private string MusicBrainzSeederInputText { get; set; } = "";
+
+    private List<MBTrack> MBTracks { get; } = new();
+
+    private int MBTracksIndex { get; set; } = -1;
+
     protected override void OnInitialized()
     {
         if (IsNew)
@@ -449,6 +472,7 @@
                         }
 
                         NoteUser = "";
+                        await SetMBTracksIndex(MBTracksIndex + 1); // returns early if invalid index
                     }
                     else
                     {
@@ -627,6 +651,59 @@
     {
         Song.Artists.AddRange(ClientState.CopiedCAL);
     // ClientState.CopiedCAL = Array.Empty<SongArtist>();
+    }
+
+    private async Task SeedFromMusicBrainz(string value)
+    {
+        MusicBrainzSeederInputText = value;
+        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/release/", ""), out var guid))
+        {
+            MusicBrainzSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var mbRelease = await MBApi.GetRelease(ClientState.ExternalClient, guid);
+        if (mbRelease == null)
+        {
+            MusicBrainzSeederInputText = "Error fetching release information.";
+            return;
+        }
+
+        PersistAfterSubmittingDict["Sources"] = true;
+        MBTracks.Clear();
+        MBTracks.AddRange(mbRelease.media.SelectMany(x => x.tracks).OrderBy(x => x.position));
+        await SetMBTracksIndex(0);
+    }
+
+    private async Task SetMBTracksIndex(int newIndex)
+    {
+        if (newIndex < 0 || newIndex >= MBTracks.Count)
+        {
+            return;
+        }
+
+    // todo cache recording api results
+        MBTracksIndex = newIndex;
+        var mbTrack = MBTracks[MBTracksIndex];
+        var mbRecording = await MBApi.GetRecording(ClientState.ExternalClient, new Guid(mbTrack.recording!.id));
+        if (mbRecording == null)
+        {
+            MusicBrainzSeederInputText = "Error fetching recording information.";
+            return;
+        }
+
+        string joinedArtistCredit = "";
+        foreach (MbArtistCredit mbArtistCredit in mbRecording.artistcredit)
+        {
+            joinedArtistCredit += $"{mbArtistCredit.name}{mbArtistCredit.joinphrase}";
+        }
+
+        await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
+        Song.Titles.First().NonLatinTitle = mbTrack.title; // not sure whether using track or recording title is better here
+        Song.Links = new List<SongLink>
+        {
+            new() { Url = $"https://musicbrainz.org/recording/{mbRecording.id}", Type = SongLinkType.MusicBrainzRecording }
+        };
     }
 
 }

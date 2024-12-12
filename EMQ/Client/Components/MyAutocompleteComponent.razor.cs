@@ -91,7 +91,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         }
     }
 
-    private async Task OnSetInputSearch(string value)
+    public async Task OnSetInputSearch(string value)
     {
         SelectedText = value;
         CurrentSearchResults = OnSearch.Invoke(value);

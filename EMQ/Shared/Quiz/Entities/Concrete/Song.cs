@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
@@ -120,10 +121,18 @@ public enum DataSourceKind
 public enum SongType
 {
     Unknown = 0,
+
+    [Display(Name = "Self-explanatory.")]
     Standard = 1,
+
+    [Display(Name = "Karaoke/offvocal also goes here.")]
     Instrumental = 2,
 
     // Chanting = 4,
+
+    [Display(Name = "Also known as character songs.")]
     Image = 8,
+
+    [Display(Name = "Self-explanatory.")]
     Cover = 16,
 }
