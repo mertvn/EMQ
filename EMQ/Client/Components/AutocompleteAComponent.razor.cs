@@ -114,6 +114,12 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
         {
+            var matchId = d.AId.ToString().StartsWithContains(value, StringComparison.Ordinal);
+            if (matchId > 0)
+            {
+                dictNLT[d] = matchId;
+            }
+
             var matchLT = d.AALatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
             if (matchLT > 0)
             {
