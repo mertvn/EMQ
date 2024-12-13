@@ -426,9 +426,18 @@
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
-            var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
-            artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
-            Song.Artists.Add(artistAlias);
+
+            // todo do this in a better way somehow
+            if (content.SongArtists.Count == 1 && content.SongArtists.First().Titles.Count == 1)
+            {
+                Song.Artists.Add(content.SongArtists.First());
+            }
+            else
+            {
+                var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
+                artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
+                Song.Artists.Add(artistAlias);
+            }
         }
 
         await _autocompleteAComponentRef.ClearInputField();
