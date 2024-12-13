@@ -68,6 +68,11 @@
                         }
                         <p> Owner: @room.Owner.Username</p>
                         <p> Players: @(room.Players.Count - botCount)</p>
+                        @if (room.Spectators.Count > 0)
+                        {
+                            <p> Spectators: @(room.Spectators.Count)</p>
+                        }
+
                         @if (botCount > 0)
                         {
                             <p> Bots: @botCount</p>
