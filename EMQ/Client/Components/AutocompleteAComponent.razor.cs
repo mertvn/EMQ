@@ -102,6 +102,17 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
 
     private TValue[] OnSearch<TValue>(string value)
     {
+        if (value.StartsWith("id:"))
+        {
+            string replaced = value.Replace("id:", "");
+            if (string.IsNullOrWhiteSpace(replaced))
+            {
+                return Array.Empty<TValue>();
+            }
+
+            return (TValue[])(object)new AutocompleteA[] { new(Convert.ToInt32(replaced), replaced) };
+        }
+
         value = value.NormalizeForAutocomplete();
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -114,12 +125,6 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
         {
-            var matchId = d.AId.ToString().StartsWithContains(value, StringComparison.Ordinal);
-            if (matchId > 0)
-            {
-                dictNLT[d] = matchId;
-            }
-
             var matchLT = d.AALatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
             if (matchLT > 0)
             {
