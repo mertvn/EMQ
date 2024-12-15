@@ -295,7 +295,7 @@ public class QuizSettings
     {
         if (sum == 0)
         {
-            return new ValidationResult("The sum of selected song types must be greater than 0.",
+            return new ValidationResult("The sum of selected source song types must be greater than 0.",
                 new[] { validationContext.MemberName! });
         }
 
@@ -304,7 +304,7 @@ public class QuizSettings
 
         if (sum != numSongsPropertyValue)
         {
-            return new ValidationResult("The sum of selected song types must be equal to the number of songs.",
+            return new ValidationResult("The sum of selected source song types must be equal to the number of songs.",
                 new[] { validationContext.MemberName! });
         }
 
@@ -496,7 +496,7 @@ public class QuizSettings
                 .Where(x => x.Value)
                 .Select(y => y.Key);
 
-            diff.Add($"Random song types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+            diff.Add($"Random source song types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         if (JsonSerializer.Serialize(o.Filters.SongDifficultyLevelFilters) !=

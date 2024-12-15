@@ -76,6 +76,7 @@
             <Items>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabGeneral">General</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters">Filters</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters2">Filters 2</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabTags">Tags</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabArtists">Artists</Blazorise.Tab>
                 @if (!IsLibraryPage)
@@ -410,7 +411,7 @@
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
-                            <h5>Song types</h5>
+                            <h5>Source song types</h5>
 
                             @foreach (var key in ClientQuizSettings.Filters.SongSourceSongTypeFilters.Keys.ToList())
                             {
@@ -639,6 +640,59 @@
 
                     </div>
                 </Blazorise.TabPanel>
+
+                <Blazorise.TabPanel Name="TabFilters2">
+                    <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 340px;">
+                            <h5>Song attributes</h5>
+                            @foreach ((SongAttributes key, LabelKind _) in ClientQuizSettings.Filters.SongAttributesTrileans)
+                            {
+                                <label>
+                                    <select @bind="@(ClientQuizSettings.Filters.SongAttributesTrileans[key])" @bind:event="oninput" style="margin: 5px">
+                                        @foreach (var trilean in Enum.GetValues<LabelKind>())
+                                        {
+                                            <option value="@trilean">@trilean.GetDescription()</option>
+                                        }
+                                    </select>
+                                    @if (!string.IsNullOrEmpty(key.GetDescription()))
+                                    {
+                                        @key.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @key.ToString()
+                                    }
+                                </label>
+                                <br/>
+                            }
+                        </div>
+
+                        <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 340px;">
+                            <h5>Song types</h5>
+                            @foreach ((SongType key, LabelKind _) in ClientQuizSettings.Filters.SongTypeTrileans)
+                            {
+                                <label>
+                                    <select @bind="@(ClientQuizSettings.Filters.SongTypeTrileans[key])" @bind:event="oninput" style="margin: 5px">
+                                        @foreach (var trilean in Enum.GetValues<LabelKind>())
+                                        {
+                                            <option value="@trilean">@trilean.GetDescription()</option>
+                                        }
+                                    </select>
+                                    @if (!string.IsNullOrEmpty(key.GetDescription()))
+                                    {
+                                        @key.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @key.ToString()
+                                    }
+                                </label>
+                                <br/>
+                            }
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+
                 <Blazorise.TabPanel Name="TabTags">
                     <div id="tagEdit" style="margin: 5px; padding: 5px;">
                         <AutocompleteCComponent @ref="AutocompleteCComponent"

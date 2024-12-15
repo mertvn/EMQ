@@ -158,6 +158,26 @@ public class QuizFilters
     [DefaultValue(MusicVoteStatusKind.All)]
     public MusicVoteStatusKind OwnersMusicVoteStatus { get; set; } = MusicVoteStatusKind.All;
 
+    [ProtoMember(26)]
+    public Dictionary<SongAttributes, LabelKind> SongAttributesTrileans { get; set; } =
+        new()
+        {
+            { SongAttributes.Spoilers, LabelKind.Maybe },
+            { SongAttributes.NonCanon, LabelKind.Maybe },
+            { SongAttributes.Unofficial, LabelKind.Maybe },
+            { SongAttributes.FlashingLights, LabelKind.Maybe },
+        };
+
+    [ProtoMember(27)]
+    public Dictionary<SongType, LabelKind> SongTypeTrileans { get; set; } =
+        new()
+        {
+            { SongType.Standard, LabelKind.Maybe },
+            { SongType.Instrumental, LabelKind.Maybe },
+            { SongType.Image, LabelKind.Maybe },
+            { SongType.Cover, LabelKind.Maybe },
+        };
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);
