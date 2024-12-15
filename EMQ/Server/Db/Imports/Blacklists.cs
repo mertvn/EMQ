@@ -45,6 +45,7 @@ public static class Blacklists
         // ("v10632", "Ageless Love"), // todo 2x1 + 2x1 + 2x1
         ("v10632", "Eternal Flower"),
         ("v11000", "Photograph Memory"),
+        ("v11000", "Moonlight Starlight"),
         ("v14005", "Onaji Hohaba de, Zutto"),
         ("v15395", "Chaleur"),
         ("v15641", "Want more need less"),
