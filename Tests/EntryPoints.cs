@@ -2107,4 +2107,158 @@ order by user_id";
     //         throw new Exception();
     //     }
     // }
+
+    [Test, Explicit]
+    public async Task MergeDuplicateArtists()
+    {
+        async Task<bool> MergeArtists_Inner(SongArtist source, SongArtist target, NpgsqlTransaction transaction)
+        {
+            Console.WriteLine($"merging aId {source.Id} {source} into aId {target.Id} {target}");
+            var connection = transaction.Connection!;
+
+            var sharedAm =
+                await connection.QueryAsync<int>(@"select music_id from artist_music am
+where am.artist_id = @sAid
+and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am.music_id)
+", new { sAid = source.Id, tAid = target.Id, }, transaction);
+
+            int rowsAmDelete = await connection.ExecuteAsync(
+                "delete from artist_music where artist_id = @sAid and music_id = any(@sharedAm)",
+                new { sAid = source.Id, sharedAm, }, transaction);
+            if (rowsAmDelete <= 0)
+            {
+                Console.WriteLine("failed to delete am");
+            }
+
+            foreach (Title sourceTitle in source.Titles)
+            {
+                int existingAaId =
+                    await connection.ExecuteScalarAsync<int>(
+                        "select id from artist_alias where artist_id = @tAid and latin_alias = @la and non_latin_alias = @nla",
+                        new { tAid = target.Id, la = sourceTitle.LatinTitle, nla = sourceTitle.NonLatinTitle }, transaction);
+                if (existingAaId > 0)
+                {
+                    int rowsAmUpdate2 = await connection.ExecuteAsync(
+                        "update artist_music set artist_id = @tAid, artist_alias_id = @existingAaId WHERE artist_id = @sAid",
+                        new { sAid = source.Id, tAid = target.Id, existingAaId }, transaction);
+                    if (rowsAmUpdate2 <= 0)
+                    {
+                        Console.WriteLine("failed to update am");
+                    }
+                }
+                else
+                {
+                    int rowsAa = await connection.ExecuteAsync(
+                        @"update artist_alias set artist_id = @tAid WHERE artist_id = @sAid and latin_alias = @la and non_latin_alias = @nla",
+                        new
+                        {
+                            sAid = source.Id,
+                            tAid = target.Id,
+                            la = sourceTitle.LatinTitle,
+                            nla = sourceTitle.NonLatinTitle,
+                        }, transaction);
+                    if (rowsAa <= 0)
+                    {
+                        Console.WriteLine("failed to update aa");
+                    }
+
+                    // todo this doesn't need to be in a loop
+                    int rowsAmUpdate = await connection.ExecuteAsync(
+                        "update artist_music set artist_id = @tAid WHERE artist_id = @sAid",
+                        new { sAid = source.Id, tAid = target.Id, }, transaction);
+                    if (rowsAmUpdate <= 0)
+                    {
+                        Console.WriteLine("failed to update am");
+                    }
+                }
+            }
+
+            int rowsAel = await connection.ExecuteAsync(
+                "update artist_external_link set artist_id = @tAid WHERE artist_id = @sAid",
+                new { sAid = source.Id, tAid = target.Id, }, transaction);
+            if (rowsAel <= 0)
+            {
+                Console.WriteLine("failed to update ael");
+            }
+
+            int rowsA = await connection.ExecuteAsync("delete from artist WHERE id = @sAid",
+                new { sAid = source.Id, }, transaction);
+            if (rowsA <= 0)
+            {
+                Console.WriteLine("failed to delete a");
+            }
+
+            return true;
+        }
+
+        var dupeArtists = new HashSet<(int aId1, int aid2)>();
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
+        foreach (Song song in songs)
+        {
+            var seenArtists = new Dictionary<string, List<int>>();
+            foreach (SongArtist songArtist in song.Artists)
+            {
+                string norm = songArtist.Titles.Single().LatinTitle.NormalizeForAutocomplete();
+                if (seenArtists.TryGetValue(norm, out var aIds))
+                {
+                    // Console.WriteLine($"dupe artist: mId {song.Id} {norm}");
+                    aIds.Add(songArtist.Id);
+                }
+                else
+                {
+                    seenArtists[norm] = new List<int> { songArtist.Id };
+                }
+            }
+
+            foreach ((string _, List<int>? value) in seenArtists)
+            {
+                switch (value.Count)
+                {
+                    case 2:
+                        dupeArtists.Add((value[0], value[1]));
+                        break;
+                    case > 2:
+                        Console.WriteLine(">2");
+                        break;
+                }
+            }
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        foreach ((int aId1, int aId2) in dupeArtists.OrderBy(x=> x.aId1).ThenBy(y=> y.aid2))
+        {
+            // Console.WriteLine($"{aId1} <=> {aId2}");
+            var a1 = (await DbManager.SelectArtistBatchNoAM(connection,
+                new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId1 } } } },
+                false)).Single().Value.Single().Value;
+            var a2 = (await DbManager.SelectArtistBatchNoAM(connection,
+                new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId2 } } } },
+                false)).Single().Value.Single().Value;
+
+            bool a1HasVndb = a1.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
+            bool a2HasVndb = a2.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
+            if (!a1HasVndb && !a2HasVndb)
+            {
+                throw new Exception("neither artist has a vndb link");
+            }
+
+            if (a1HasVndb && a2HasVndb)
+            {
+                throw new Exception("both artists have vndb links");
+            }
+
+            var source = a1HasVndb ? a2 : a1;
+            var target = a1HasVndb ? a1 : a2;
+            bool success = await MergeArtists_Inner(source, target, transaction);
+            if (!success)
+            {
+                throw new Exception("failed to merge artists");
+            }
+        }
+
+        await transaction.CommitAsync();
+    }
 }
