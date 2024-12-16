@@ -1977,50 +1977,44 @@ GROUP BY artist_id";
                     .Select(y => y.Key).ToArray();
                 var excludedSongAttributes = filters.SongAttributesTrileans.Where(x => x.Value == LabelKind.Exclude)
                     .Select(y => y.Key).ToArray();
-                if (includedSongAttributes.Any() || excludedSongAttributes.Any())
+                foreach (SongAttributes includedSongAttribute in includedSongAttributes)
                 {
-                    foreach (SongAttributes includedSongAttribute in includedSongAttributes)
-                    {
-                        queryMusicIds.Append($"\n");
-                        queryMusicIds.Append($" AND (");
-                        queryMusicIds.Append(
-                            $"(m.attributes & {(int)includedSongAttribute}) > 0");
-                        queryMusicIds.Append($")");
-                    }
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append(
+                        $"(m.attributes & {(int)includedSongAttribute}) > 0");
+                    queryMusicIds.Append($")");
+                }
 
-                    foreach (SongAttributes excludedSongAttribute in excludedSongAttributes)
-                    {
-                        queryMusicIds.Append($"\n");
-                        queryMusicIds.Append($" AND NOT (");
-                        queryMusicIds.Append(
-                            $"(m.attributes & {(int)excludedSongAttribute}) > 0");
-                        queryMusicIds.Append($")");
-                    }
+                foreach (SongAttributes excludedSongAttribute in excludedSongAttributes)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND NOT (");
+                    queryMusicIds.Append(
+                        $"(m.attributes & {(int)excludedSongAttribute}) > 0");
+                    queryMusicIds.Append($")");
                 }
 
                 var includedSongTypes = filters.SongTypeTrileans.Where(x => x.Value == LabelKind.Include)
                     .Select(y => y.Key).ToArray();
                 var excludedSongTypes = filters.SongTypeTrileans.Where(x => x.Value == LabelKind.Exclude)
                     .Select(y => y.Key).ToArray();
-                if (includedSongTypes.Any() || excludedSongTypes.Any())
+                foreach (SongType includedSongType in includedSongTypes)
                 {
-                    foreach (SongType includedSongType in includedSongTypes)
-                    {
-                        queryMusicIds.Append($"\n");
-                        queryMusicIds.Append($" AND (");
-                        queryMusicIds.Append(
-                            $"(m.type & {(int)includedSongType}) > 0");
-                        queryMusicIds.Append($")");
-                    }
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND (");
+                    queryMusicIds.Append(
+                        $"(m.type & {(int)includedSongType}) > 0");
+                    queryMusicIds.Append($")");
+                }
 
-                    foreach (SongType excludedSongType in excludedSongTypes)
-                    {
-                        queryMusicIds.Append($"\n");
-                        queryMusicIds.Append($" AND NOT (");
-                        queryMusicIds.Append(
-                            $"(m.type & {(int)excludedSongType}) > 0");
-                        queryMusicIds.Append($")");
-                    }
+                foreach (SongType excludedSongType in excludedSongTypes)
+                {
+                    queryMusicIds.Append($"\n");
+                    queryMusicIds.Append($" AND NOT (");
+                    queryMusicIds.Append(
+                        $"(m.type & {(int)excludedSongType}) > 0");
+                    queryMusicIds.Append($")");
                 }
             }
 
