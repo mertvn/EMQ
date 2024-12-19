@@ -38,7 +38,9 @@
                         <b>@(chatMessage.Sender.Username): </b>
                     </span>
                 }
-                <span class="chatMessageContents">@(chatMessage.Contents)</span>
+                <span class="chatMessageContents">
+                    <LinkifierComponent Text="@chatMessage.Contents"></LinkifierComponent>
+                </span>
             </div>
         }
     </div>

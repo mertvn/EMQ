@@ -56,14 +56,9 @@
                 }
 
                 <span>Notes (User): </span>
-                @if (reviewingItem.note_user?.StartsWith("http") ?? false)
-                {
-                    <a href="@reviewingItem.note_user" target="_blank">@reviewingItem.note_user</a>
-                }
-                else
-                {
-                    <span>@reviewingItem.note_user</span>
-                }
+                <span>
+                    <LinkifierComponent Text="@reviewingItem.note_user"/>
+                </span>
 
                 <div style="display: flex; flex-wrap: wrap; margin: 5px;">
                     @if (IsLibraryPage)
