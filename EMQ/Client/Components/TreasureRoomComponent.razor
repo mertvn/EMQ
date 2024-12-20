@@ -33,21 +33,24 @@
                     <div id="treasureRoomInventoryDiv"
                          style="position: absolute; left: 5px; top: 10px; max-width: @(LootingConstants.TreasureRoomWidth / 3)px;
                           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ">
-                        Inventory <span style="margin-left: @(LootingConstants.TreasureRoomWidth / 6)px;">@(Room.QuizSettings.InventorySize - player.LootingInfo.Inventory.Count)</span>
-                        <br/>
-                        @if (player.LootingInfo.Inventory.Any())
-                        {
-                            @foreach (var treasure in player.LootingInfo.Inventory)
+                        <details open>
+                            <summary>
+                                Inventory <span style="margin-left: @(LootingConstants.TreasureRoomWidth / 6)px;">@(Room.QuizSettings.InventorySize - player.LootingInfo.Inventory.Count)</span>
+                            </summary>
+                            @if (player.LootingInfo.Inventory.Any())
                             {
-                                var sourceLatinTitle = Converters.GetSingleTitle(@treasure.ValidSource.Value).LatinTitle;
-                                <span style="cursor: pointer"
-                                      @onclick="@(() => DropTreasure(treasure))">
-                                    <Blazorise.Tooltip Text="@sourceLatinTitle">
-                                        @sourceLatinTitle
-                                    </Blazorise.Tooltip>
-                                </span>
+                                @foreach (var treasure in player.LootingInfo.Inventory)
+                                {
+                                    var sourceLatinTitle = Converters.GetSingleTitle(@treasure.ValidSource.Value).LatinTitle;
+                                    <span style="cursor: pointer"
+                                          @onclick="@(() => DropTreasure(treasure))">
+                                        <Blazorise.Tooltip Text="@sourceLatinTitle">
+                                            @sourceLatinTitle
+                                        </Blazorise.Tooltip>
+                                    </span>
+                                }
                             }
-                        }
+                        </details>
                     </div>
                 }
 
