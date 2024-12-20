@@ -25,6 +25,8 @@ public static class RegexPatterns
     public static readonly Regex AnisonJavascriptLinkRegex =
         new(@"^javascript:link\('(.+)','([0-9]+)'\)$", RegexOptions.Compiled);
 
+    public static readonly Regex EmojiRegex = new(@":(.+?):", RegexOptions.Compiled);
+
     public static readonly Dictionary<string, string> AutocompleteStringReplacements = new()
     {
         // only 1 appearance in the DB: Δ, κ, ν, ο, π, Σ, ψ, χ

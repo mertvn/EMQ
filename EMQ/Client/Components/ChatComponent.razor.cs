@@ -32,10 +32,13 @@ public partial class ChatComponent
 
     public int ColumnsVw { get; set; } = 14;
 
+    private Dictionary<string, string> EmojiData { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         SetTimer();
         await SyncChat();
+        EmojiData = (await _client.GetFromJsonAsync<Dictionary<string, string>>("emoji.json"))!;
     }
 
     public void SetTimer()
@@ -127,7 +130,11 @@ public partial class ChatComponent
                     }
                     else
                     {
-                        var req = new ReqSendChatMessage(session.Token, ChatInputText);
+                        string contents = RegexPatterns.EmojiRegex.Replace(ChatInputText,
+                            match => EmojiData.TryGetValue(match.Groups[1].Value, out string? emoji)
+                                ? emoji
+                                : match.Value);
+                        var req = new ReqSendChatMessage(session.Token, contents);
                         ChatInputText = "";
                         var res = await _client.PostAsJsonAsync("Quiz/SendChatMessage", req);
                         if (res.IsSuccessStatusCode)
