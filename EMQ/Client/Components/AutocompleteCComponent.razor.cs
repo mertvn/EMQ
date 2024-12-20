@@ -87,9 +87,11 @@ public partial class AutocompleteCComponent
         const int maxResults = 25; // todo
         var dictLT = new Dictionary<SongSourceCategory, StringMatch>();
         var dictNLT = new Dictionary<SongSourceCategory, StringMatch>();
+        var valueSpan = value.AsSpan();
         foreach (SongSourceCategory d in AutocompleteData)
         {
-            var matchLT = d.Name.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.Name.NormalizeForAutocomplete().AsSpan()
+                .StartsWithContains(valueSpan, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;
@@ -97,7 +99,8 @@ public partial class AutocompleteCComponent
 
             if (!string.IsNullOrEmpty(d.VndbId))
             {
-                var matchNLT = d.VndbId.StartsWithContains(value, StringComparison.Ordinal);
+                var matchNLT = d.VndbId.AsSpan()
+                    .StartsWithContains(valueSpan, StringComparison.Ordinal);
                 if (matchNLT > 0)
                 {
                     dictNLT[d] = matchNLT;

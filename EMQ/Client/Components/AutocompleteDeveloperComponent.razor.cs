@@ -86,13 +86,15 @@ public partial class AutocompleteDeveloperComponent : IAutocompleteComponent
             return Array.Empty<TValue>();
         }
 
-        bool hasNonAscii = !Ascii.IsValid(value);
+        var valueSpan = value.AsSpan();
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 25; // todo
         var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
         var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
         foreach (AutocompleteMst d in AutocompleteData)
         {
-            var matchLT = d.MSTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.MSTLatinTitleNormalized.AsSpan()
+                .StartsWithContains(valueSpan, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;
@@ -100,7 +102,8 @@ public partial class AutocompleteDeveloperComponent : IAutocompleteComponent
 
             if (hasNonAscii)
             {
-                var matchNLT = d.MSTNonLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
+                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan()
+                    .StartsWithContains(valueSpan, StringComparison.Ordinal);
                 if (matchNLT > 0)
                 {
                     dictNLT[d] = matchNLT;

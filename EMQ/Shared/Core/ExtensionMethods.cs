@@ -382,9 +382,10 @@ public static class ExtensionMethods
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static StringMatch StartsWithContains(this string str, string search, StringComparison stringComparison)
+    public static StringMatch StartsWithContains(this ReadOnlySpan<char> str, ReadOnlySpan<char> search,
+        StringComparison stringComparison)
     {
-        if (str == "" || search == "")
+        if (str.IsEmpty || search.IsEmpty)
         {
             return StringMatch.None;
         }

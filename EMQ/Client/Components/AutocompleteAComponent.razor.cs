@@ -119,30 +119,36 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
             return Array.Empty<TValue>();
         }
 
-        bool hasNonAscii = !Ascii.IsValid(value);
+        var valueSpan = value.AsSpan();
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 30; // todo
         var dictLT = new Dictionary<AutocompleteA, StringMatch>();
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
         {
-            var matchLT = d.AALatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.AALatinAliasNormalized.AsSpan()
+                .StartsWithContains(valueSpan, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;
             }
-            else if (d.AALatinAliasNormalizedReversed.StartsWithContains(value, StringComparison.Ordinal) > 0)
+            else if (d.AALatinAliasNormalizedReversed.AsSpan()
+                         .StartsWithContains(valueSpan, StringComparison.Ordinal) >
+                     0)
             {
                 dictLT[d] = matchLT;
             }
 
             if (hasNonAscii)
             {
-                var matchNLT = d.AANonLatinAliasNormalized.StartsWithContains(value, StringComparison.Ordinal);
+                var matchNLT = d.AANonLatinAliasNormalized.AsSpan()
+                    .StartsWithContains(valueSpan, StringComparison.Ordinal);
                 if (matchNLT > 0)
                 {
                     dictNLT[d] = matchNLT;
                 }
-                else if (d.AANonLatinAliasNormalizedReversed.StartsWithContains(value, StringComparison.Ordinal) > 0)
+                else if (d.AANonLatinAliasNormalizedReversed.AsSpan()
+                             .StartsWithContains(valueSpan, StringComparison.Ordinal) > 0)
                 {
                     dictNLT[d] = matchNLT;
                 }

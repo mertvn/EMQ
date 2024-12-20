@@ -86,13 +86,14 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
             return Array.Empty<TValue>();
         }
 
-        // bool hasNonAscii = !Ascii.IsValid(value);
+        var valueSpan = value.AsSpan();
+        // bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 25; // todo
         var dictLT = new Dictionary<AutocompleteMt, StringMatch>();
         // var dictNLT = new Dictionary<AutocompleteMt, StringMatch>();
         foreach (AutocompleteMt d in AutocompleteData)
         {
-            var matchLT = d.MTLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.MTLatinTitleNormalized.AsSpan().StartsWithContains(valueSpan, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;

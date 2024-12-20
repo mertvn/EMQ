@@ -85,7 +85,7 @@ public partial class AutocompletePlayerComponent : IAutocompleteComponent
         var dictLT = new Dictionary<string, StringMatch>();
         foreach (string d in AutocompleteData)
         {
-            var matchLT = d.NormalizeForAutocomplete().StartsWithContains(value, StringComparison.Ordinal);
+            var matchLT = d.NormalizeForAutocomplete().AsSpan().StartsWithContains(value, StringComparison.Ordinal);
             if (matchLT > 0)
             {
                 dictLT[d] = matchLT;
