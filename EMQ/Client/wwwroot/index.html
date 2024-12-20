@@ -355,6 +355,106 @@
         return el;
     }
 
+    function initAutoResize(elementId, containerSelector, minFontSize, maxFontSize) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        // Find the container if a selector is provided, otherwise use the element's parent
+        const container = containerSelector
+            ? element.closest(containerSelector)
+            : element.parentElement;
+
+        if (!container) return;
+
+        // Find all related elements that should resize together
+        const getRelatedElements = () => {
+            // If element is in a list, get all auto-resize elements in that list
+            const ul = element.closest('ul');
+            if (ul) {
+                return {
+                    elements: ul.querySelectorAll('[id^="auto-resize-"]'),
+                    list: ul
+                };
+            }
+            // If standalone element with no container selector, just return the element itself
+            if (!containerSelector) {
+                return {
+                    elements: [element],
+                    list: null
+                };
+            }
+            // If element is in a container, get all auto-resize elements in that container
+            // TODO: UNTESTED!
+            return {
+                elements: container.querySelectorAll('[id^="auto-resize-"]'),
+                list: null
+            };
+        };
+
+        const checkFit = (elements, list) => {
+            if (list) {
+                // For list items, check the entire list's dimensions
+                return list.scrollHeight <= container.clientHeight &&
+                    list.scrollWidth <= container.clientWidth;
+            } else {
+                // For non-list elements, check each element individually
+                return Array.from(elements).every(el => {
+                    const parent = el.parentElement;
+                    return parent.scrollHeight <= parent.clientHeight &&
+                        parent.scrollWidth <= parent.clientWidth;
+                });
+            }
+        };
+
+        const resizeAll = () => {
+            const { elements, list } = getRelatedElements();
+            let low = minFontSize;
+            let high = maxFontSize;
+            let bestSize = minFontSize;
+
+            while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+
+                // Apply size to all related elements
+                elements.forEach(el => {
+                    el.style.fontSize = `${mid}px`;
+                });
+
+                // Check if all content fits
+                const contentFits = checkFit(elements, list);
+                if (contentFits) {
+                    bestSize = mid;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            // Apply the best size to all elements
+            elements.forEach(el => {
+                el.style.fontSize = `${bestSize}px`;
+            });
+        };
+
+        const observer = new ResizeObserver(resizeAll);
+
+        // todo: might be a little overkill
+        // Observe the container and all related elements
+        observer.observe(container);
+        const { elements, list } = getRelatedElements();
+        if (list) {
+            observer.observe(list); // Observe the list element if it exists
+        }
+        elements.forEach(el => {
+            observer.observe(el);
+        });
+
+        // Initial resize
+        resizeAll();
+
+        return () => observer.disconnect();
+    }
+
 </script>
 
 </body>

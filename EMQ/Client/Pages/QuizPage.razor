@@ -648,9 +648,8 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                                      cursor: @UiHelpers.Bool2CursorPointer(Room?.Quiz?.QuizState.Phase == QuizPhaseKind.Guess && (playerGuess?.Dict.Any(x => !string.IsNullOrWhiteSpace(x.Value)) ?? false));"
                          @onclick="@(() => SetGuess(playerGuess ?? new PlayerGuess()))">
                         <div class="playerIsCorrectDiv" style="display: flex; justify-content:center; align-items:center;">
-                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: @playerHeightStr; display: block; z-index: 5; padding: 4px;
-                                             color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
-                                @* todo make text smaller as it gets longer *@
+                            <span class="playerGuessSpan" style="word-wrap: anywhere; height: @playerHeightStr; display: block; z-index: 5; padding: 2px;
+                                                                 color: @UiHelpers.Bools2Color(player.PlayerStatus == PlayerStatus.Correct, player.PlayerStatus is PlayerStatus.Wrong or PlayerStatus.Dead, "green", "red")">
                                 @if (playerGuess != null)
                                 {
                                     @if (Room != null && Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value) > 1)
@@ -658,7 +657,7 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                                         bool swap = ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns &&
                                                     Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.A, out bool a) && a &&
                                                     Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Mt, out bool mt) && mt;
-                                        <ul>
+                                        <ul style="list-style: none; padding: 0; margin: 0;">
                                             @foreach ((GuessKind key, bool value) in Room.QuizSettings.EnabledGuessKinds)
                                             {
                                                 // meh.
@@ -677,8 +676,9 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                                                 {
                                                     bool? isCorrect = null;
                                                     _ = player.IsGuessKindCorrectDict?.TryGetValue(k, out isCorrect);
-                                                    <li style="color: @UiHelpers.Bool2Color(isCorrect, "green", "red")">
-                                                        @playerGuess.Dict[k]
+                                                    <li style="color: @UiHelpers.Bool2Color(isCorrect, "green", "red"); display: flex; align-items: flex-start;">
+                                                        <span style="margin-right: 6px;">•</span>
+                                                        <AutoResizeText Text="@(playerGuess.Dict[k])" MinFontSize="8" MaxFontSize="16" ContainerSelector=".playerIsCorrectDiv"/>
                                                     </li>
                                                 }
                                             }
@@ -686,7 +686,7 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                                     }
                                     else
                                     {
-                                        @playerGuess
+                                        <AutoResizeText Text="@(playerGuess.ToString())" MinFontSize="8" MaxFontSize="16"/>
                                     }
                                 }
                             </span>
