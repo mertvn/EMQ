@@ -152,6 +152,17 @@
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(videoLink))">?</span>
                                             }
 
+                                            @if (videoLink.LastUnhandledReport != null)
+                                            {
+                                                var r = videoLink.LastUnhandledReport;
+                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.note_user}";
+                                                <Blazorise.Tooltip
+                                                    Inline="true"
+                                                    Text="@tooltipText">
+                                                    <span style="margin-right: 4px;">⚠️</span>
+                                                </Blazorise.Tooltip>
+                                            }
+
                                             @if (validUrls.Contains(videoLink.Url))
                                             {
                                                 <a href="@videoLink.Url" target="_blank">
@@ -227,6 +238,17 @@
                                             {
                                                 string analysisColor = soundLink.AnalysisRaw.Warnings.Any() ? "red" : "green";
                                                 <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(soundLink))">?</span>
+                                            }
+
+                                            @if (soundLink.LastUnhandledReport != null)
+                                            {
+                                                var r = soundLink.LastUnhandledReport;
+                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.note_user}";
+                                                <Blazorise.Tooltip
+                                                    Inline="true"
+                                                    Text="@tooltipText">
+                                                    <span style="margin-right: 4px;">⚠️</span>
+                                                </Blazorise.Tooltip>
                                             }
 
                                             @if (validUrls.Contains(soundLink.Url))

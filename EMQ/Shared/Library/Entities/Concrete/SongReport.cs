@@ -25,5 +25,5 @@ public class SongReport
 
     public string note_user { get; set; } = "";
 
-    public Song Song { get; set; } = new();
+    public Song? Song { get; set; } = new();
 }

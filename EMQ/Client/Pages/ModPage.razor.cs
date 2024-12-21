@@ -38,7 +38,7 @@ public partial class ModPage
             var songReports = await res.Content.ReadFromJsonAsync<List<SongReport>>();
             foreach (SongReport songReport in songReports!)
             {
-                songReport.Song = null!;
+                songReport.Song = null;
             }
 
             SongReports = songReports;

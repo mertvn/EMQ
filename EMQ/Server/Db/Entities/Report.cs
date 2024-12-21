@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -28,7 +29,7 @@ public class Report
     public DateTime submitted_on { get; set; }
 
     [Required]
-    public int status { get; set; }
+    public ReviewQueueStatus status { get; set; }
 
     public string note_mod { get; set; } = "";
 

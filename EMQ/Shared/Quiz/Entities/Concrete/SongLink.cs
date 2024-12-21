@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using EMQ.Shared.Core;
+using EMQ.Shared.Library.Entities.Concrete;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -25,6 +26,8 @@ public class SongLink
     public string Sha256 { get; set; } = "";
 
     public MediaAnalyserResult? AnalysisRaw { get; set; }
+
+    public SongReport? LastUnhandledReport { get; set; }
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
     {

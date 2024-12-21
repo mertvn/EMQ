@@ -382,6 +382,36 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             // }
         }
 
+        var reportsLookup = (await connection.QueryAsync<Report>(
+            "select * from report where music_id = any(@mIds) order by submitted_on",
+            new { mIds = songs.Keys.ToArray() })).ToLookup(x => x.music_id, x => x);
+        foreach (IGrouping<int, Report> grouping in reportsLookup)
+        {
+            var song = songs[grouping.Key];
+            foreach (SongLink songLink in song.Links)
+            {
+                foreach (Report value in grouping)
+                {
+                    if (value.status == ReviewQueueStatus.Pending && songLink.Url == value.url)
+                    {
+                        songLink.LastUnhandledReport = new SongReport
+                        {
+                            id = value.id,
+                            music_id = value.music_id,
+                            url = value.url,
+                            report_kind = value.report_kind,
+                            submitted_by = value.submitted_by,
+                            submitted_on = value.submitted_on,
+                            status = value.status,
+                            note_mod = value.note_mod,
+                            note_user = value.note_user,
+                            Song = null
+                        };
+                    }
+                }
+            }
+        }
+
         // TOSCALE
         var musicVotes =
             (await connection.QueryAsync<MusicVote>(
