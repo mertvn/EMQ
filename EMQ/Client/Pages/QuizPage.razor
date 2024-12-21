@@ -380,7 +380,7 @@
                 }
                 else
                 {
-                    <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000">Sound only</p>
+                    <p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: xxx-large; color: white; z-index: 3000">Sound only</p>
                 }
             }
     </div>
@@ -427,13 +427,12 @@
         }
         else
         {
-                 @* TODO: properly center this *@
-                <div id="countdownDiv" style="position: absolute; top: 40%; right: 45%; font-size: xxx-large; color: white;">
-                    @((int)Math.Round(PageState.Countdown / 1000))
-                </div>
-            }
+            <div id="countdownDiv" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: xxx-large; color: white;">
+                @((int)Math.Round(PageState.Countdown / 1000))
+            </div>
         }
-    </div>
+    }
+</div>
 
 <div class="progress" style="height: 5px; max-width: @widthStr">
     <div class="progress-bar" role="progressbar" style="transition: width .017s ease; width:@(PageState.ProgressValue)%"></div>

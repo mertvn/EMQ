@@ -63,17 +63,19 @@
                 <button type="button" class="btn btn-secondary" @onclick="@(() => controls = !controls)">Toggle controls</button>
 
                 <div style="display: flex; flex-wrap: wrap; margin: 5px;">
-                    <div style="position: relative">
+                        <div style="position: relative; width: 720px; height: 400px;">
                         <video src="@videoSrc"
                                id="@VideoElementId" width="720px" height="400px" autoplay controls="@controls"
                                style="background: black; margin: 5px 20px 5px 5px;">
                         </video>
 
-                        @if (!reviewingItem.is_video)
-                        {
-                            <p style="position: absolute; top: 40%; right: 33%; font-size: xxx-large; color: white; z-index: 3000; pointer-events: none;">Sound only</p>
-                        }
-                    </div>
+                            @if (!reviewingItem.is_video)
+                            {
+                                <p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: xxx-large; color: white; z-index: 3000; margin: 0;">
+                                    Sound only
+                                </p>
+                            }
+                        </div>
 
                     @if (IsLibraryPage)
                     {
