@@ -298,8 +298,8 @@
             {
                 var sourceTitle = Converters.GetSingleTitle(source.Titles);
                 <li class="correctAnswerSourceTitle">
+                    @* todo? autoresize text *@
                     @sourceTitle.ToString()
-                    @* todo tooltip with all of the other titles? *@
                 </li>
             }
         }
@@ -780,10 +780,9 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                             }
                             else
                             {
-                                 @* todo make text smaller as it gets longer *@
-                                <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                                <span style="color: white; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
                                       @onclick="@(() => Onclick_Username(player.Id))">
-                                    @player.Username
+                                    <AutoResizeText Text="@player.Username"/>
                                 </span>
                             }
 

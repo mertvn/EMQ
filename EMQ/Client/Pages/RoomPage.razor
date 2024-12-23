@@ -248,9 +248,8 @@ else
                         </span>
                     }
 
-                    @* todo make text smaller as it gets longer *@
-                    <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @player.Username
+                    <span style="color: white; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <AutoResizeText Text="@player.Username"/>
                     </span>
                 </div>
                 @if (Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id)
