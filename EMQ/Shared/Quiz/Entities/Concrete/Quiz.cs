@@ -80,17 +80,6 @@ public class SongHistory
     public long TotalGuessMs => PlayerGuessInfos.Sum(x => x.Value.FirstGuessMs);
 
     // public int AverageGuessMs => PlayerGuessInfos.Count(x => todo);
-
-    public static SongStats ToSongStats(SongHistory songHistory)
-    {
-        return new SongStats
-        {
-            TimesCorrect = songHistory.TimesCorrect,
-            TimesPlayed = songHistory.TimesPlayed,
-            TimesGuessed = songHistory.TimesGuessed,
-            TotalGuessMs = songHistory.TotalGuessMs,
-        };
-    }
 }
 
 public readonly struct GuessInfo

@@ -577,8 +577,8 @@ public class DbTests
 
         Assert.That(songs.Count > 0);
         Assert.That(songs.All(song =>
-            song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum &&
-            song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum));
+            song.Stats[GuessKind.Mst].CorrectPercentage >= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Minimum &&
+            song.Stats[GuessKind.Mst].CorrectPercentage <= (double)SongDifficultyLevel.VeryEasy.GetRange()!.Maximum));
         GenericSongsAssert(songs);
     }
 
@@ -593,10 +593,10 @@ public class DbTests
 
         Assert.That(songs.Count > 0);
         Assert.That(songs.All(song =>
-            (song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.Easy.GetRange()!.Minimum &&
-             song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.Easy.GetRange()!.Maximum) ||
-            (song.Stats.CorrectPercentage >= (double)SongDifficultyLevel.Hard.GetRange()!.Minimum &&
-             song.Stats.CorrectPercentage <= (double)SongDifficultyLevel.Hard.GetRange()!.Maximum)));
+            (song.Stats[GuessKind.Mst].CorrectPercentage >= (double)SongDifficultyLevel.Easy.GetRange()!.Minimum &&
+             song.Stats[GuessKind.Mst].CorrectPercentage <= (double)SongDifficultyLevel.Easy.GetRange()!.Maximum) ||
+            (song.Stats[GuessKind.Mst].CorrectPercentage >= (double)SongDifficultyLevel.Hard.GetRange()!.Minimum &&
+             song.Stats[GuessKind.Mst].CorrectPercentage <= (double)SongDifficultyLevel.Hard.GetRange()!.Maximum)));
         GenericSongsAssert(songs);
     }
 
@@ -708,7 +708,7 @@ public class DbTests
     // }
 
     [Test]
-    public async Task Test_GetRandomSongs_RatingVoteCountFilter()
+    public async Task Test_GetRandomSongs_VoteCountFilter()
     {
         int voteCountStart = 3000;
         int voteCountEnd = 4000;

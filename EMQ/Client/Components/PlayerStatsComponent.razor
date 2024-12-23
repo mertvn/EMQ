@@ -194,7 +194,7 @@
                         {
                             timesCorrect += 1;
 
-                            totalDiff += songHistory.Song.Stats.CorrectPercentage;
+                            totalDiff += songHistory.Song.Stats.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
                             totalHits += songHistory.TimesCorrect;
 
                             if (songHistory.TimesCorrect == 1)

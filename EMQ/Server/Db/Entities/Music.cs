@@ -16,32 +16,7 @@ public class Music
     [Required]
     public SongType type { get; set; }
 
-    [Required]
-    public long stat_correct { get; set; }
-
-    [Required]
-    public long stat_played { get; set; }
-
-    [Required]
-    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    [IgnoreInsert, IgnoreUpdate]
-    public float stat_correctpercentage { get; set; }
-
-    [Required]
-    public long stat_guessed { get; set; }
-
-    [Required]
-    public long stat_totalguessms { get; set; }
-
-    [Required]
-    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-    [IgnoreInsert, IgnoreUpdate]
-    public int stat_averageguessms { get; set; }
-
     public Guid? musicbrainz_recording_gid { get; set; }
-
-    [Required]
-    public int stat_uniqueusers { get; set; }
 
     [Required]
     public SongAttributes attributes { get; set; }

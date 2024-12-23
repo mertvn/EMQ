@@ -227,6 +227,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             FROM music m
             LEFT JOIN music_title mt ON mt.music_id = m.id
             LEFT JOIN music_external_link mel ON mel.music_id = m.id
+            LEFT JOIN music_stat mstat ON mstat.music_id = m.id
             /**where**/
     ");
 
@@ -255,12 +256,13 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
         var songs = new Dictionary<int, Song>();
         await connection.QueryAsync(queryMusic.Sql,
-            new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), }, (objects) =>
+            new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), typeof(MusicStat), }, (objects) =>
             {
                 // Console.WriteLine(JsonSerializer.Serialize(objects, Utils.Jso));
                 var music = (Music)objects[0];
                 var musicTitle = (MusicTitle)objects[1];
                 var musicExternalLink = (MusicExternalLink?)objects[2];
+                var musicStat = (MusicStat?)objects[3];
 
                 if (!songs.TryGetValue(music.id, out Song? existingSong))
                 {
@@ -273,16 +275,21 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                     song.Attributes = (SongAttributes)music.attributes;
                     song.DataSource = music.data_source;
                     song.MusicBrainzRecordingGid = music.musicbrainz_recording_gid;
-                    song.Stats = new SongStats()
+
+                    if (musicStat != null)
                     {
-                        TimesCorrect = music.stat_correct,
-                        TimesPlayed = music.stat_played,
-                        CorrectPercentage = music.stat_correctpercentage,
-                        TimesGuessed = music.stat_guessed,
-                        TotalGuessMs = music.stat_totalguessms,
-                        AverageGuessMs = music.stat_averageguessms,
-                        UniqueUsers = music.stat_uniqueusers,
-                    };
+                        song.Stats[musicStat.guess_kind] =
+                            new SongStats()
+                            {
+                                TimesCorrect = musicStat.stat_correct,
+                                TimesPlayed = musicStat.stat_played,
+                                CorrectPercentage = musicStat.stat_correctpercentage,
+                                TimesGuessed = musicStat.stat_guessed,
+                                TotalGuessMs = musicStat.stat_totalguessms,
+                                AverageGuessMs = musicStat.stat_averageguessms,
+                                UniqueUsers = musicStat.stat_uniqueusers,
+                            };
+                    }
 
                     songTitles.Add(new Title()
                     {
@@ -338,6 +345,25 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                 Sha256 = musicExternalLink.sha256,
                                 AnalysisRaw = musicExternalLink.analysis_raw,
                             });
+                        }
+                    }
+
+                    if (musicStat != null)
+                    {
+                        if (!existingSong.Stats.Any(x => x.Key == musicStat.guess_kind))
+                        {
+                            existingSong.Stats[musicStat.guess_kind] =
+                                new SongStats()
+                                {
+                                    TimesCorrect = musicStat.stat_correct,
+                                    TimesPlayed = musicStat.stat_played,
+                                    CorrectPercentage = musicStat.stat_correctpercentage,
+                                    TimesGuessed = musicStat.stat_guessed,
+                                    TotalGuessMs = musicStat.stat_totalguessms,
+                                    AverageGuessMs = musicStat.stat_averageguessms,
+                                    UniqueUsers = musicStat.stat_uniqueusers,
+                                };
+
                         }
                     }
                 }
@@ -1819,21 +1845,28 @@ GROUP BY artist_id";
                     (validSongDifficultyLevels.Count != 6 ||
                      validSongDifficultyLevels.Any(x => !x.Value)))
                 {
-                    queryMusicIds.Append($"\n");
+                    const string sqlDiff = "select music_id from music_stat where guess_kind = 0"; // todo
+                    var queryDiff = connection.QueryBuilder($"{sqlDiff:raw}");
+
+                    queryDiff.Append($"\n");
                     for (int index = 0; index < validSongDifficultyLevels.Count; index++)
                     {
                         (SongDifficultyLevel songDifficultyLevel, _) = validSongDifficultyLevels.ElementAt(index);
                         var range = songDifficultyLevel.GetRange();
                         double min = (double)range!.Minimum;
                         double max = (double)range!.Maximum;
-                        queryMusicIds.Append(index == 0
+                        queryDiff.Append(index == 0
                             ? (FormattableString)
-                            $" AND (( m.stat_correctpercentage >= {min} AND m.stat_correctpercentage <= {max} )"
+                            $" AND (( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )"
                             : (FormattableString)
-                            $" OR ( m.stat_correctpercentage >= {min} AND m.stat_correctpercentage <= {max} )");
+                            $" OR ( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )");
                     }
 
-                    queryMusicIds.Append($")");
+                    queryDiff.Append($")");
+                    var validMidsDiff = await connection.QueryAsync<int>(queryDiff.Sql, queryDiff.Parameters);
+                    validMids = validMids == null
+                        ? validMidsDiff.ToList()
+                        : validMidsDiff.Intersect(validMids).ToList();
                 }
 
                 var validSongSourceSongTypes = new HashSet<SongSourceSongType>();
@@ -2641,8 +2674,9 @@ AND msm.type = ANY(@msmType)";
             const string sql = @"SELECT DISTINCT m.id
 FROM music m
 JOIN music_source_music msm on m.id = msm.music_id
+join music_stat mstat on mstat.music_id = m.id
 WHERE stat_correctpercentage >= @diffMin AND stat_correctpercentage <= @diffMax
-AND stat_played > 0 -- 0 play songs have a GR of 0%, we don't want them
+AND mstat.guess_kind = 0 --todo
 AND msm.type = ANY(@msmType)";
 
             var mids = (await connection.QueryAsync<int>(sql,
@@ -2727,23 +2761,23 @@ AND msm.type = ANY(@msmType)";
         return success;
     }
 
-    public static async Task<bool> SetSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
-    {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var querySongStats = connection.QueryBuilder($@"UPDATE music SET
-                 stat_correct = {songStats.TimesCorrect},
-                 stat_played = {songStats.TimesPlayed},
-                 stat_guessed = {songStats.TimesGuessed},
-                 stat_totalguessms = {songStats.TotalGuessMs}
-WHERE id = {mId};
-                 ");
-
-            Console.WriteLine(
-                $"Attempting to set SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
-            return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
-        }
-    }
+//     public static async Task<bool> SetSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
+//     {
+//         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+//         {
+//             var querySongStats = connection.QueryBuilder($@"UPDATE music SET
+//                  stat_correct = {songStats.TimesCorrect},
+//                  stat_played = {songStats.TimesPlayed},
+//                  stat_guessed = {songStats.TimesGuessed},
+//                  stat_totalguessms = {songStats.TotalGuessMs}
+// WHERE id = {mId};
+//                  ");
+//
+//             Console.WriteLine(
+//                 $"Attempting to set SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
+//             return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
+//         }
+//     }
 
     public static async Task<bool> RecalculateSongStats(HashSet<int> mIds)
     {
@@ -2751,38 +2785,41 @@ WHERE id = {mId};
         await connection.OpenAsync();
         await using (var transaction = await connection.BeginTransactionAsync())
         {
-            foreach (int mId in mIds)
+            const string sql = @"
+                SELECT
+                    sq.music_id,
+                    COUNT(sq.is_correct) FILTER(WHERE sq.is_correct) as stat_correct,
+                    COUNT(sq.music_id) as stat_played,
+                    COUNT(sq.guessed) as stat_guessed,
+                    SUM(sq.first_guess_ms) as stat_totalguessms,
+                    COUNT(DISTINCT sq.user_id) as stat_uniqueusers
+                FROM (
+                    SELECT
+                        qsh.music_id,
+                        qsh.user_id,
+                        qsh.is_correct,
+                        qsh.first_guess_ms,
+                        NULLIF(qsh.guess, '') as guessed,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY qsh.user_id, qsh.music_id
+                            ORDER BY qsh.played_at DESC
+                        ) as row_number
+                    FROM quiz q
+                    JOIN quiz_song_history qsh ON qsh.quiz_id = q.id
+                    WHERE q.should_update_stats AND music_id = ANY(@mIds)
+                ) sq
+                WHERE row_number <= @lastNPlays
+                GROUP BY sq.music_id";
+
+            var musicStats = (await connection.QueryAsync<MusicStat>(sql,
+                new { mIds = mIds.ToArray(), lastNPlays = Constants.SHUseLastNPlaysPerPlayer })).ToArray();
+            foreach (MusicStat musicStat in musicStats)
             {
-                string sql =
-                    $@"select count(sq.is_correct) filter(where sq.is_correct) as correct, count(sq.music_id) as played, count(sq.guessed) as guessed, sum(sq.first_guess_ms) as totalguessms, count(distinct sq.user_id) as uniqueusers
-from (
-select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed, row_number() over (partition by qsh.user_id order by qsh.played_at desc) as row_number
-from quiz q
-join quiz_song_history qsh on qsh.quiz_id = q.id
-where q.should_update_stats and music_id = @mId
-order by qsh.played_at desc
-) sq
-where row_number <= {Constants.SHUseLastNPlaysPerPlayer}";
-
-                var res =
-                    await connection
-                        .QuerySingleAsync<(int correct, int played, int guessed, int totalguessms, int uniqueusers)>(
-                            sql,
-                            new { mId = mId });
-
-                var querySongStats = connection.QueryBuilder($@"UPDATE music SET
-                 stat_correct = {res.correct},
-                 stat_played = {res.played},
-                 stat_guessed = {res.guessed},
-                 stat_totalguessms = {res.totalguessms},
-                 stat_uniqueusers = {res.uniqueusers}
-WHERE id = {mId};
-                 ");
-
-                Console.WriteLine($"Attempting to recalculate SongStats for mId {mId}");
-                await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction);
+                musicStat.guess_kind = GuessKind.Mst; // todo
             }
 
+            Console.WriteLine($"Attempting to recalculate SongStats for mIds {string.Join(',', mIds)}");
+            await connection.UpsertListAsync(musicStats, transaction);
             await transaction.CommitAsync();
         }
 
@@ -3088,70 +3125,70 @@ WHERE id = {mId};
     //     }
     // }
 
-    public static async Task ImportSongLite_MB(List<SongLite_MB> songLites)
-    {
-        bool b = false;
-        if (!b)
-        {
-            throw new Exception("use ImportMusicBrainzData_InsertPendingSongsWithSongLiteMusicIds instead");
-        }
-
-        const string sqlMIdFromSongLite = @"
-            SELECT m.id
-            FROM music m
-            WHERE musicbrainz_recording_gid = @recording
-";
-
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.OpenAsync();
-        await using (var transaction = await connection.BeginTransactionAsync())
-        {
-            bool errored = false;
-            foreach (SongLite_MB songLite in songLites)
-            {
-                List<int> mIds = (await connection.QueryAsync<int>(sqlMIdFromSongLite,
-                        new { recording = songLite.Recording }))
-                    .ToList();
-
-                if (!mIds.Any())
-                {
-                    errored = true;
-                    Console.WriteLine($"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
-                    continue;
-                }
-
-                if (mIds.Count > 1)
-                {
-                    errored = true;
-                    Console.WriteLine($"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
-                    continue;
-                }
-
-                foreach (int mId in mIds)
-                {
-                    foreach (SongLink link in songLite.Links)
-                    {
-                        await InsertSongLink(mId, link, transaction);
-                    }
-
-                    if (songLite.SongStats != null)
-                    {
-                        await SetSongStats(mId, songLite.SongStats, transaction);
-                    }
-                }
-            }
-
-            if (errored)
-            {
-                await transaction.RollbackAsync();
-                throw new Exception();
-            }
-            else
-            {
-                await transaction.CommitAsync();
-            }
-        }
-    }
+//     public static async Task ImportSongLite_MB(List<SongLite_MB> songLites)
+//     {
+//         bool b = false;
+//         if (!b)
+//         {
+//             throw new Exception("use ImportMusicBrainzData_InsertPendingSongsWithSongLiteMusicIds instead");
+//         }
+//
+//         const string sqlMIdFromSongLite = @"
+//             SELECT m.id
+//             FROM music m
+//             WHERE musicbrainz_recording_gid = @recording
+// ";
+//
+//         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+//         await connection.OpenAsync();
+//         await using (var transaction = await connection.BeginTransactionAsync())
+//         {
+//             bool errored = false;
+//             foreach (SongLite_MB songLite in songLites)
+//             {
+//                 List<int> mIds = (await connection.QueryAsync<int>(sqlMIdFromSongLite,
+//                         new { recording = songLite.Recording }))
+//                     .ToList();
+//
+//                 if (!mIds.Any())
+//                 {
+//                     errored = true;
+//                     Console.WriteLine($"No matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+//                     continue;
+//                 }
+//
+//                 if (mIds.Count > 1)
+//                 {
+//                     errored = true;
+//                     Console.WriteLine($"Multiple matches for {JsonSerializer.Serialize(songLite, Utils.JsoIndented)}");
+//                     continue;
+//                 }
+//
+//                 foreach (int mId in mIds)
+//                 {
+//                     foreach (SongLink link in songLite.Links)
+//                     {
+//                         await InsertSongLink(mId, link, transaction);
+//                     }
+//
+//                     if (songLite.SongStats != null)
+//                     {
+//                         await SetSongStats(mId, songLite.SongStats, transaction);
+//                     }
+//                 }
+//             }
+//
+//             if (errored)
+//             {
+//                 await transaction.RollbackAsync();
+//                 throw new Exception();
+//             }
+//             else
+//             {
+//                 await transaction.CommitAsync();
+//             }
+//         }
+//     }
 
     // public static async Task ImportReviewQueue(List<ReviewQueue> reviewQueues)
     // {
@@ -4052,7 +4089,8 @@ group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
     	END AS ""diff"",
     count(id)
     from music m
-    where stat_played > 0
+    join music_stat mstat on mstat.music_id = m.id
+    where mstat.guess_kind = 0 -- todo
     and m.id = ANY(@mIds)
     group by diff
     order by diff
@@ -4930,9 +4968,10 @@ GROUP BY qsh.quiz_id
 SELECT ((1.0 * sum(stat_correct) / COALESCE(NULLIF(sum(stat_played), 0), 1)) * 100) AS CorrectPercentage,
 sum(stat_totalguessms) / COALESCE(NULLIF(sum(stat_guessed), 0), 1) AS GuessMs,
 avg(stat_uniqueusers) AS UniqueUsers
-FROM music
+FROM music m
+join music_stat mstat on mstat.music_id = m.id
 WHERE id = ANY(@mIds)
-and stat_played > 0
+and mstat.guess_kind = 0 -- todo
 ";
 
         const string sqlMs = @"

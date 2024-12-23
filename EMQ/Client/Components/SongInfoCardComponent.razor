@@ -294,22 +294,27 @@
                         }
                     }
                 </div>
-                @if (Song.Stats.TimesPlayed > 0)
+
+            @if (true)
+            {
+                var songStats = Song.Stats.GetValueOrDefault(GuessKind.Mst);
+                @if (songStats != null && songStats.TimesPlayed > 0)
                 {
                     <br/>
                     <div class="songStats" @onclick="OnclickSongStatsDiv" style="cursor: pointer;">
                         <div class="songStatsGuessRate">
-                            Guess rate: @(Math.Round(Song.Stats.CorrectPercentage, 2))% (@(Song.Stats.TimesCorrect)/@(Song.Stats.TimesPlayed))
+                            Guess rate: @(Math.Round(songStats.CorrectPercentage, 2))% (@(songStats.TimesCorrect)/@(songStats.TimesPlayed))
                         </div>
-                        @if (Song.Stats.TimesGuessed > 0)
+                        @if (songStats.TimesGuessed > 0)
                         {
                             <div class="songStatsGuessTime">
-                                Average guess time: @(Math.Round((float)Song.Stats.AverageGuessMs / 1000, 2))s (@Song.Stats.TimesGuessed)
+                                Average guess time: @(Math.Round((float)songStats.AverageGuessMs / 1000, 2))s (@songStats.TimesGuessed)
                             </div>
                         }
-                        Unique players: @Song.Stats.UniqueUsers
+                        Unique players: @songStats.UniqueUsers
                     </div>
                 }
+            }
 
             <br/>
             @if (Song.Id > 0 || IsEditing)

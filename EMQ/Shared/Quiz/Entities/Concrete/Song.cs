@@ -40,7 +40,7 @@ public partial class Song : IEditQueueEntity
     [JsonIgnore]
     public Dictionary<int, List<Label>> PlayerLabels { get; set; } = new();
 
-    public SongStats Stats { get; set; } = new();
+    public Dictionary<GuessKind, SongStats> Stats { get; set; } = new();
 
     public Guid? MusicBrainzRecordingGid { get; set; }
 

@@ -283,7 +283,7 @@ public class QuizManager
             {
                 case PlayerBotKind.Default:
                     {
-                        float hitChance = song.Stats.CorrectPercentage;
+                        float hitChance = song.Stats.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
                         switch (bot.BotInfo!.Difficulty)
                         {
                             case SongDifficultyLevel.VeryEasy:
@@ -310,7 +310,7 @@ public class QuizManager
                         hitChance = Math.Clamp(hitChance, 0, 100);
                         bot.BotInfo.LastSongHitChance = hitChance;
                         // bot.BotInfo.SongHitChanceDict[song.Id] = hitChance;
-                        isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
+                        isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
                         break;
                     }
                 case PlayerBotKind.Mimic:
@@ -321,7 +321,7 @@ public class QuizManager
                             bot.BotInfo.LastSongHitChance = hitChance;
                         }
 
-                        isCorrect = Random.Shared.Next(0, 100) <= (int)hitChance; // todo?
+                        isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
                         break;
                     }
                 default:

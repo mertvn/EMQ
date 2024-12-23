@@ -204,7 +204,7 @@ public static class ExtensionMethods
             sourcesDict,
             song.Artists,
             song.Id,
-            song.Stats);
+            song.Stats.GetValueOrDefault(GuessKind.Mst));
         return songLite;
     }
 
@@ -214,7 +214,7 @@ public static class ExtensionMethods
             song.MusicBrainzRecordingGid!.Value,
             song.Links,
             song.Id,
-            song.Stats);
+            song.Stats.GetValueOrDefault(GuessKind.Mst));
         return songLite;
     }
 

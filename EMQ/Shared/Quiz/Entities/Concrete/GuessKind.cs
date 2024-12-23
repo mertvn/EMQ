@@ -5,26 +5,26 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 public enum GuessKind
 {
     [Description("Source Title")]
-    Mst,
+    Mst = 0,
 
     [Description("Artist Name")]
-    A,
+    A = 1,
 
     [Description("Song Title")]
-    Mt,
+    Mt = 2,
 
     [Description("Rigger Name")]
-    Rigger,
+    Rigger = 3,
 
     [Description("Developer Name")]
-    Developer,
+    Developer = 4,
 
     [Description("Composer Name")]
-    Composer,
+    Composer = 5,
 
     [Description("Arranger Name")]
-    Arranger,
+    Arranger = 6,
 
     [Description("Lyricist Name")]
-    Lyricist,
+    Lyricist = 7,
 }
