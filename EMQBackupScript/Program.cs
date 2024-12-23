@@ -12,9 +12,11 @@ public static class Program
     {
         DotEnv.Load(@"C:/emq/.env");
         bool doAuth = false;
-        bool doSong = false;
+        bool doSong = true;
         bool doBotg = false;
-        bool doSHS = true;
+        bool doSHS = false;
+
+        bool isPublicDump = true;
 
         if (doAuth)
         {
@@ -70,13 +72,15 @@ public static class Program
         {
             try
             {
+                Directory.CreateDirectory(@"C:/emq/dbbackups/song");
                 Directory.SetCurrentDirectory(@"C:/emq/dbbackups/song");
                 string envVar = "EMQ_REMOTE_SONG_DATABASE_URL";
 
                 var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
                 Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-                string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
+                string prelude = isPublicDump ? "public_" : "";
+                string dumpFileName = $"{prelude}pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
                 var proc = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
@@ -87,8 +91,16 @@ public static class Program
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
+                        RedirectStandardError = true,
                     }
                 };
+
+                if (isPublicDump)
+                {
+                    proc.StartInfo.Arguments +=
+                        " -t \"artist*\" -t category -t edit_queue -t \"erodle*\" -t \"music*\" -t quiz -t report -t review_queue -t room -T \"*user*\" -T quiz_song_history";
+                }
+
                 proc.Start();
 
                 File.Delete("output_pg_dump_song.txt");
@@ -99,6 +111,7 @@ public static class Program
 
                 if (!File.Exists(dumpFileName))
                 {
+                    File.AppendAllText("err_pg_dump_song.txt", proc.StandardError.ReadLine() + "\n");
                     throw new Exception("pg_dump failed");
                 }
 
@@ -106,6 +119,25 @@ public static class Program
                 if (filesizeBytes <= (7000 * 1000)) // 7000 KB
                 {
                     throw new Exception("filesizeBytes is too small");
+                }
+
+                var procZstd = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "zstd",
+                        Arguments = $"-19 --rm -f {dumpFileName}",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                    }
+                };
+                procZstd.Start();
+
+                File.Delete("output_zstd_song.txt");
+                while (!procZstd.StandardOutput.EndOfStream)
+                {
+                    File.AppendAllText("output_zstd_song.txt", procZstd.StandardOutput.ReadLine() + "\n");
                 }
             }
             catch (Exception e)
