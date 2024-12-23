@@ -55,6 +55,9 @@ public sealed class Room : IDisposable
     [JsonIgnore]
     public Dictionary<int, PlayerGuess?> PlayerGuesses => Players.ToDictionary(x => x.Id, x => x.Guess);
 
+    /// Only set by the GetRooms action, do not use elsewhere.
+    public bool IsPrivate { get; set; }
+
     public void Dispose()
     {
         Quiz?.Dispose();

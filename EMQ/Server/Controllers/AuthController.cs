@@ -437,12 +437,14 @@ public class AuthController : ControllerBase
     public IEnumerable<Room> GetRooms()
     {
         var ret = ServerState.Rooms.ToList();
+        var privateRooms = ret.Where(x => !string.IsNullOrEmpty(x.Password)).Select(x => x.Id).ToHashSet();
 
         // todo use Clone()
         ret = JsonSerializer.Deserialize<List<Room>>(JsonSerializer.Serialize(ret))!; // need deep-copy
         foreach (Room room in ret)
         {
             room.Chat = null!;
+            room.IsPrivate = privateRooms.Contains(room.Id);
         }
 
         return ret;

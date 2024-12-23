@@ -93,7 +93,7 @@
                     style="margin: 16px"
                     disabled="@(ClientState.Session == null || IsJoiningRoom)"
                     @onclick="@(async () => { SelectedRoomId = room.Id; SelectedRoomPassword = ""; await JoinRoom(SelectedRoomId, SelectedRoomPassword); })">
-                Join
+                @(room.IsPrivate ? "🔒" : "") Join
             </button>
         </div>
     }
