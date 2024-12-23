@@ -280,7 +280,7 @@
                 <div>
                     @if (ShowDevelopers) // todo this is shown when playing with hints during guess phase when it shouldn't be
                     {
-                        var developers = Song.Sources.SelectMany(x => x.Developers).ToArray();
+                        var developers = Song.Sources.SelectMany(x => x.Developers).DistinctBy(x => x.Title.LatinTitle).ToArray();
                         if (developers.Any())
                         {
                             <br/>
