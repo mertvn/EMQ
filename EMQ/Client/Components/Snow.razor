@@ -1,0 +1,68 @@
+﻿@using EMQ.Shared.Core.UI
+@using System.Threading
+<div class="snow-container">
+    @if (_positions.Any())
+    {
+        @for (int i = 0; i < NumberOfSnowflakes; i++)
+        {
+            <div class="snowflake" style="left: @(_positions[i].X)%; animation-delay: @(_positions[i].Delay)s; animation-duration: @(_positions[i].Duration)s;">
+                ❄
+            </div>
+        }
+    }
+
+</div>
+
+@code {
+
+    [Parameter]
+    public int NumberOfSnowflakes { get; set; }
+
+    private List<(double X, double Delay, double Duration)> _positions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ClientState.Timers.TryGetValue("Snow", out var timer))
+        {
+            timer.Dispose();
+        }
+
+        if (ClientState.Preferences.ShowSnowflakes)
+        {
+            for (int i = 0; i < NumberOfSnowflakes; i++)
+            {
+                _positions.Add((
+                    Random.Shared.NextDouble() * 100, // X position (0-100%)
+                        Random.Shared.NextDouble() * 5, // Delay (0-5s)
+                        Random.Shared.NextDouble() * 3 + 3 // Duration (3-6s)
+                    ));
+            }
+        }
+
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        ClientState.Timers["Snow"] = timer;
+        while (await timer.WaitForNextTickAsync())
+        {
+            if (ClientState.Preferences.ShowSnowflakes)
+            {
+                if (!_positions.Any())
+                {
+                    for (int i = 0; i < NumberOfSnowflakes; i++)
+                    {
+                        _positions.Add((
+                            Random.Shared.NextDouble() * 100, // X position (0-100%)
+                                Random.Shared.NextDouble() * 5, // Delay (0-5s)
+                                Random.Shared.NextDouble() * 3 + 3 // Duration (3-6s)
+                            ));
+                    }
+                }
+            }
+            else
+            {
+                _positions.Clear();
+            }
+            StateHasChanged();
+        }
+    }
+
+}

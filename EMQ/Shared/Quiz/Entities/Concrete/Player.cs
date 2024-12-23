@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -203,4 +204,7 @@ public class PlayerPreferences
 
     [Required]
     public bool AutocompleteRequireConfirmation { get; set; } = false;
+
+    [Required]
+    public bool ShowSnowflakes { get; set; } = Constants.IsChristmasMode;
 }

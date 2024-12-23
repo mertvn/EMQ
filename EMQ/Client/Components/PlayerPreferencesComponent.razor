@@ -89,6 +89,13 @@
                                     <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
                                     <br/>
 
+                                    @if (Constants.IsChristmasMode)
+                                    {
+                                        <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>
+                                        <label for="ShowSnowflakes">Show snowflakes</label>
+                                        <br/>
+                                    }
+
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Preferences.LinkHost" style="margin: 5px">
                                         @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
                                         {

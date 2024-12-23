@@ -9,6 +9,11 @@
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
 
+@if (Constants.IsChristmasMode)
+{
+    <Snow NumberOfSnowflakes="34"/>
+}
+
 <PageTitle>EMQ</PageTitle>
 
 <div class="page">
