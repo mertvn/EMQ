@@ -73,6 +73,11 @@ public partial class AutocompletePlayerComponent : IAutocompleteComponent
         AutocompleteComponent.Close();
     }
 
+    public async Task CallFocusAsync()
+    {
+        await AutocompleteComponent.Focus();
+    }
+
     private TValue[] OnSearch<TValue>(string value)
     {
         value = value.NormalizeForAutocomplete();

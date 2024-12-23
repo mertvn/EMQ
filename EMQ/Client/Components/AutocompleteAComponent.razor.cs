@@ -100,6 +100,11 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         AutocompleteComponent.Close();
     }
 
+    public async Task CallFocusAsync()
+    {
+        await AutocompleteComponent.Focus();
+    }
+
     private TValue[] OnSearch<TValue>(string value)
     {
         if (value.StartsWith("id:"))

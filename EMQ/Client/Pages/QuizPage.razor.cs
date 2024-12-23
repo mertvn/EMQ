@@ -648,10 +648,14 @@ public partial class QuizPage
                 if (focusedElementName != null &&
                     !focusedElementName.Contains("chat", StringComparison.OrdinalIgnoreCase))
                 {
-                    var guessInputComponent = AutocompleteComponentDict[GuessKind.Mst];
-                    if (guessInputComponent != null)
+                    foreach (GuessKind guessKind in Enum.GetValues<GuessKind>())
                     {
-                        await Unsafe.As<GuessInputComponent>(guessInputComponent).CallFocusAsync();
+                        var comp = AutocompleteComponentDict[guessKind];
+                        if (comp != null)
+                        {
+                            await comp.CallFocusAsync();
+                            break;
+                        }
                     }
                 }
 

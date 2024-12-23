@@ -11,4 +11,6 @@ public interface IAutocompleteComponent
     public string? GetSelectedText();
 
     public void CallClose();
+
+    public Task CallFocusAsync();
 }
