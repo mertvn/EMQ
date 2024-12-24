@@ -297,7 +297,7 @@
 
             @if (true)
             {
-                var songStats = Song.Stats.GetValueOrDefault(GuessKind.Mst);
+                var songStats = Song.Stats?.GetValueOrDefault(GuessKind.Mst); // do not remove ?
                 @if (songStats != null && songStats.TimesPlayed > 0)
                 {
                     <br/>

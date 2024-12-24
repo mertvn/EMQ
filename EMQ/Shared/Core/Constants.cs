@@ -52,6 +52,10 @@ public static class Constants
 
     public const bool IsChristmasMode = true;
 
+    public const int EntityVersionSong = 2;
+
+    public const int EntityVersionArtist = 1;
+
     public const string QFDateMin = "1987-01-01";
 
     public const string QFDateMax = "2030-01-01";

@@ -439,6 +439,7 @@ public class LibraryController : ControllerBase
         }
 
         // todo important set unrequired stuff to null/empty for safety reasons
+        req.Song.Stats = null!;
         // todo? extra validation for safety reasons
 
         string? oldEntityJson = null;
@@ -457,10 +458,10 @@ public class LibraryController : ControllerBase
                 return BadRequest("No changes detected.");
             }
 
+            song.Stats = null!;
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }
 
-        const int entityVersion = 1; // todo?
         const EntityKind entityKind = EntityKind.Song;
         var editQueue = new EditQueue
         {
@@ -469,7 +470,7 @@ public class LibraryController : ControllerBase
             status = ReviewQueueStatus.Pending,
             entity_kind = entityKind,
             entity_json = JsonSerializer.Serialize(req.Song, Utils.JsoCompact),
-            entity_version = entityVersion,
+            entity_version = Constants.EntityVersionSong,
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
         };
@@ -560,7 +561,6 @@ public class LibraryController : ControllerBase
             oldEntityJson = JsonSerializer.Serialize(artist, Utils.JsoCompact);
         }
 
-        const int entityVersion = 1; // todo?
         const EntityKind entityKind = EntityKind.SongArtist;
         var editQueue = new EditQueue
         {
@@ -569,7 +569,7 @@ public class LibraryController : ControllerBase
             status = ReviewQueueStatus.Pending,
             entity_kind = entityKind,
             entity_json = JsonSerializer.Serialize(req.Artist, Utils.JsoCompact),
-            entity_version = entityVersion,
+            entity_version = Constants.EntityVersionArtist,
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
         };

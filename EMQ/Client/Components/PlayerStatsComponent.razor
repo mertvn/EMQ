@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
@@ -194,7 +194,7 @@
                         {
                             timesCorrect += 1;
 
-                            totalDiff += songHistory.Song.Stats.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
+                            totalDiff += songHistory.Song.Stats?.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0; // do not remove ?
                             totalHits += songHistory.TimesCorrect;
 
                             if (songHistory.TimesCorrect == 1)

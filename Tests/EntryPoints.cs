@@ -2261,4 +2261,23 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
 
         await transaction.CommitAsync();
     }
+
+    [Test, Explicit]
+    public async Task RemoveStatsFromEntityQueueJson()
+    {
+        var regex = new Regex(@"""Stats"":{.+?},""MusicBrainzReleases", RegexOptions.Compiled);
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var editQueues = (await connection.GetListAsync<EditQueue>()).ToArray();
+        foreach (EditQueue editQueue in editQueues)
+        {
+            editQueue.entity_json = regex.Replace(editQueue.entity_json, @"""Stats"":null,""MusicBrainzReleases");
+            if (editQueue.old_entity_json != null)
+            {
+                editQueue.old_entity_json =
+                    regex.Replace(editQueue.old_entity_json, @"""Stats"":null,""MusicBrainzReleases");
+            }
+        }
+
+        await connection.UpsertListAsync(editQueues);
+    }
 }
