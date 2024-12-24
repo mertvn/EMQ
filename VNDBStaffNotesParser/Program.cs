@@ -61,7 +61,8 @@ public static class Program
                         "start theme",
                         "Main menu theme:",
                         "Title BGM", // https://vndb.org/v2322
-                        "Title Song" // https://vndb.org/v852
+                        "Title Song", // https://vndb.org/v852
+                        "Movie Theme", // https://vndb.org/v27548
                     }.OrderByDescending(x => x).ToList()
                 }
             },
