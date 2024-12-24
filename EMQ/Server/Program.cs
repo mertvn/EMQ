@@ -277,7 +277,7 @@ app.UseStaticFiles(new StaticFileOptions
         }
 
         // todo investigate if we need /QuizPage etc. here
-        if (ctx.File.Name is "index.html" or "/")
+        if (ctx.File.Name is "index.html" or "/" or "app.css")
         {
             maxAge = TimeSpan.FromMinutes(1);
         }
