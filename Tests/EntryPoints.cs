@@ -1534,7 +1534,7 @@ WHERE s.lang = 'ja'"))
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2024-10-02_EMQ@erogemusicquiz.com.tar";
+        string dumpFileName = "pgdump_2024-12-11_EMQ@erogemusicquiz.com.tar";
         // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {
@@ -1680,155 +1680,100 @@ GRANT ALL ON SCHEMA public TO public;";
             $"StartSection finished: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
     }
 
-    // todo automatically do this after import and overwrite
-    [Test, Explicit]
-    public async Task ReplaceMergedRecordingsInSongLite_MB()
-    {
-        const string sqlRedirect = "SELECT new_id FROM recording_gid_redirect WHERE gid = @gid";
-        const string sqlRecordingGid = "SELECT gid FROM recording WHERE id = @id";
-
-        async Task<Guid> GetMergedRecordingGid(IDbConnection connection, Guid gid)
-        {
-            int newId = await connection.QuerySingleOrDefaultAsync<int>(sqlRedirect, new { gid = gid });
-            if (newId > 0)
-            {
-                gid = await connection.QuerySingleAsync<Guid>(sqlRecordingGid, new { id = newId });
-                await GetMergedRecordingGid(connection, gid);
-            }
-
-            return gid;
-        }
-
-        if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new Exception("Database name in the connstr must be 'EMQ'");
-        }
-
-        const string path = "C:\\emq\\emqsongsmetadata\\SongLite_MB.json";
-        var deserialized = JsonConvert.DeserializeObject<List<SongLite_MB>>(await File.ReadAllTextAsync(path))!;
-        File.Copy(path, $"{path}@{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss_fff}.json");
-
-        // todo
-        string cnnstrMusicbrainz = ConnectionHelper
-            .GetConnectionStringBuilderWithDatabaseUrl(
-                "postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
-            .ToString();
-
-        await Parallel.ForEachAsync(deserialized,
-            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 0 },
-            async (songLite, _) =>
-            {
-                await using (var connection = new NpgsqlConnection(cnnstrMusicbrainz))
-                {
-                    Guid oldGid = songLite.Recording;
-                    Guid newGid = await GetMergedRecordingGid(connection, oldGid);
-
-                    if (oldGid != newGid)
-                    {
-                        Console.WriteLine($"{oldGid} => {newGid}");
-                        songLite.Recording = newGid;
-                    }
-                }
-            });
-
-        deserialized = deserialized.DistinctBy(x => x.Recording).ToList();
-        await File.WriteAllTextAsync(path, JsonSerializer.Serialize(deserialized, Utils.JsoIndented));
-    }
-
-    [Test, Explicit]
-    public async Task ScaffoldQuizSongHistory()
-    {
-        var regex = new Regex(@"SongHistory_(.+)_r(.+)q(.+)\.json",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        string dir = @"C:\Users\Mert\Desktop\SongHistory";
-        var jsons = Directory.EnumerateFiles(dir, "*.json");
-        foreach (string json in jsons)
-        {
-            var match = regex.Match(json);
-            string roomName = match.Groups[1].Value;
-            Guid roomId = Guid.Parse(match.Groups[2].Value);
-            Guid quizId = Guid.Parse(match.Groups[3].Value);
-            var date = File.GetLastWriteTime(json);
-
-            string contents = await File.ReadAllTextAsync(json);
-            var songHistories = JsonSerializer.Deserialize<Dictionary<int, SongHistory>>(contents, Utils.JsoIndented)!;
-
-            try
-            {
-                var entityRoom = new EntityRoom
-                {
-                    id = roomId, initial_name = roomName, created_by = 1, created_at = date
-                };
-                await DbManager.InsertEntity(entityRoom);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
-            try
-            {
-                var entityQuiz = new EntityQuiz
-                {
-                    id = quizId,
-                    room_id = roomId,
-                    settings_b64 = "",
-                    should_update_stats = true, // todo?
-                    created_at = date,
-                };
-                long _ = await DbManager.InsertEntity(entityQuiz);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
-            var quizSongHistories = new List<QuizSongHistory>();
-            foreach ((int sp, SongHistory? songHistory) in songHistories)
-            {
-                foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
-                {
-                    var quizSongHistory = new QuizSongHistory
-                    {
-                        quiz_id = quizId,
-                        sp = sp,
-                        music_id = songHistory.Song.Id,
-                        user_id = userId,
-                        guess = guessInfo.Guess,
-                        first_guess_ms = guessInfo.FirstGuessMs,
-                        is_correct = guessInfo.IsGuessCorrect,
-                        is_on_list = guessInfo.Labels?.Any() ?? false,
-                        played_at = date,
-                    };
-
-                    quizSongHistories.Add(quizSongHistory);
-                }
-            }
-
-            // Console.WriteLine(JsonSerializer.Serialize(quizSongHistories, Utils.JsoIndented));
-
-            if (!quizSongHistories.Any())
-            {
-                continue;
-            }
-
-            try
-            {
-                bool success = await DbManager.InsertEntityBulk(quizSongHistories);
-                if (!success)
-                {
-                    throw new Exception();
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Failed to insert QuizSongHistory");
-                Console.WriteLine(e);
-            }
-
-            await DbManager.RecalculateSongStats(songHistories.Select(x => x.Value.Song.Id).ToHashSet());
-        }
-    }
+    // [Test, Explicit]
+    // public async Task ScaffoldQuizSongHistory()
+    // {
+    //     var regex = new Regex(@"SongHistory_(.+)_r(.+)q(.+)\.json",
+    //         RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    //     string dir = @"C:\Users\Mert\Desktop\SongHistory";
+    //     var jsons = Directory.EnumerateFiles(dir, "*.json");
+    //     foreach (string json in jsons)
+    //     {
+    //         var match = regex.Match(json);
+    //         string roomName = match.Groups[1].Value;
+    //         Guid roomId = Guid.Parse(match.Groups[2].Value);
+    //         Guid quizId = Guid.Parse(match.Groups[3].Value);
+    //         var date = File.GetLastWriteTime(json);
+    //
+    //         string contents = await File.ReadAllTextAsync(json);
+    //         var songHistories = JsonSerializer.Deserialize<Dictionary<int, SongHistory>>(contents, Utils.JsoIndented)!;
+    //
+    //         try
+    //         {
+    //             var entityRoom = new EntityRoom
+    //             {
+    //                 id = roomId, initial_name = roomName, created_by = 1, created_at = date
+    //             };
+    //             await DbManager.InsertEntity(entityRoom);
+    //         }
+    //         catch (Exception)
+    //         {
+    //             // ignored
+    //         }
+    //
+    //         try
+    //         {
+    //             var entityQuiz = new EntityQuiz
+    //             {
+    //                 id = quizId,
+    //                 room_id = roomId,
+    //                 settings_b64 = "",
+    //                 should_update_stats = true, // todo?
+    //                 created_at = date,
+    //             };
+    //             long _ = await DbManager.InsertEntity(entityQuiz);
+    //         }
+    //         catch (Exception)
+    //         {
+    //             // ignored
+    //         }
+    //
+    //         var quizSongHistories = new List<QuizSongHistory>();
+    //         foreach ((int sp, SongHistory? songHistory) in songHistories)
+    //         {
+    //             foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
+    //             {
+    //                 var quizSongHistory = new QuizSongHistory
+    //                 {
+    //                     quiz_id = quizId,
+    //                     sp = sp,
+    //                     music_id = songHistory.Song.Id,
+    //                     user_id = userId,
+    //                     guess = guessInfo.Guess,
+    //                     first_guess_ms = guessInfo.FirstGuessMs,
+    //                     is_correct = guessInfo.IsGuessCorrect,
+    //                     is_on_list = guessInfo.Labels?.Any() ?? false,
+    //                     played_at = date,
+    //                 };
+    //
+    //                 quizSongHistories.Add(quizSongHistory);
+    //             }
+    //         }
+    //
+    //         // Console.WriteLine(JsonSerializer.Serialize(quizSongHistories, Utils.JsoIndented));
+    //
+    //         if (!quizSongHistories.Any())
+    //         {
+    //             continue;
+    //         }
+    //
+    //         try
+    //         {
+    //             bool success = await DbManager.InsertEntityBulk(quizSongHistories);
+    //             if (!success)
+    //             {
+    //                 throw new Exception();
+    //             }
+    //         }
+    //         catch (Exception e)
+    //         {
+    //             Console.WriteLine("Failed to insert QuizSongHistory");
+    //             Console.WriteLine(e);
+    //         }
+    //
+    //         await DbManager.RecalculateSongStats(songHistories.Select(x => x.Value.Song.Id).ToHashSet());
+    //     }
+    // }
 
     [Test, Explicit]
     public async Task CalculateAvgSongsPerVn()
