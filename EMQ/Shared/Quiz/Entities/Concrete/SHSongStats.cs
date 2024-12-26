@@ -19,4 +19,6 @@ public class SHSongStats
     public int RowNumber { get; set; }
 
     public string Username { get; set; } = "";
+
+    public GuessKind GuessKind { get; set; }
 }

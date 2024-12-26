@@ -67,17 +67,18 @@ public class SongHistory
 
     public Song Song { get; set; } = new();
 
-    public Dictionary<int, GuessInfo> PlayerGuessInfos { get; set; } = new();
+    public Dictionary<int, Dictionary<GuessKind, GuessInfo>> PlayerGuessInfos { get; set; } = new();
 
-    public long TimesCorrect => PlayerGuessInfos.Count(x => x.Value.IsGuessCorrect);
+    public long TimesCorrect =>
+        PlayerGuessInfos.Count(x => x.Value.GetValueOrDefault(GuessKind.Mst).IsGuessCorrect);
 
-    public long TimesPlayed => PlayerGuessInfos.Count;
+    // public long TimesPlayed => PlayerGuessInfos.Count;
 
     // public float CorrectPercentage => PlayerGuessInfos.Count(x => todo);
 
-    public long TimesGuessed => PlayerGuessInfos.Count(x => !string.IsNullOrWhiteSpace(x.Value.Guess));
+    // public long TimesGuessed => PlayerGuessInfos.Count(x => !string.IsNullOrWhiteSpace(x.Value.Guess));
 
-    public long TotalGuessMs => PlayerGuessInfos.Sum(x => x.Value.FirstGuessMs);
+    // public long TotalGuessMs => PlayerGuessInfos.Sum(x => x.Value.FirstGuessMs);
 
     // public int AverageGuessMs => PlayerGuessInfos.Count(x => todo);
 }

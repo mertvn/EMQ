@@ -193,6 +193,12 @@ builder.Services.AddHostedService<ErodleService>();
 builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
     .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);
 
+builder.Services.AddOutputCache(options =>
+{
+    options.AddBasePolicy(x => x.Tag("all"));
+    options.AddPolicy("MyOutputCachePolicy", MyOutputCachePolicy.Instance);
+});
+
 var app = builder.Build();
 app.UseResponseCompression();
 
@@ -303,6 +309,7 @@ app.UseRouting();
 app.UseRateLimiter();
 
 app.UseAuthentication();
+app.UseOutputCache();
 app.UseAuthorization();
 
 app.MapRazorPages();
@@ -444,6 +451,8 @@ async Task Init()
             double ms = (stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency;
             Console.WriteLine($"Precached songs in {Math.Round(ms / 1000, 2)}s");
         }
+
+        // todo regenerate unique_quiz_plays
 
         ServerUtils.RunAggressiveGc();
     }

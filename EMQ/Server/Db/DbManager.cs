@@ -363,7 +363,6 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                                     AverageGuessMs = musicStat.stat_averageguessms,
                                     UniqueUsers = musicStat.stat_uniqueusers,
                                 };
-
                         }
                     }
                 }
@@ -2788,8 +2787,9 @@ AND msm.type = ANY(@msmType)";
             const string sql = @"
                 SELECT
                     sq.music_id,
+                    sq.guess_kind,
                     COUNT(sq.is_correct) FILTER(WHERE sq.is_correct) as stat_correct,
-                    COUNT(sq.music_id) as stat_played,
+                    COUNT(DISTINCT sq.play_key) as stat_played,
                     COUNT(sq.guessed) as stat_guessed,
                     SUM(sq.first_guess_ms) as stat_totalguessms,
                     COUNT(DISTINCT sq.user_id) as stat_uniqueusers
@@ -2797,11 +2797,14 @@ AND msm.type = ANY(@msmType)";
                     SELECT
                         qsh.music_id,
                         qsh.user_id,
+                        qsh.guess_kind,
                         qsh.is_correct,
                         qsh.first_guess_ms,
                         NULLIF(qsh.guess, '') as guessed,
+                        -- Create a unique key for each play
+                        CONCAT(qsh.quiz_id, '_', qsh.sp, '_', qsh.music_id, '_', qsh.user_id, '_', qsh.guess_kind) as play_key,
                         ROW_NUMBER() OVER (
-                            PARTITION BY qsh.user_id, qsh.music_id
+                            PARTITION BY qsh.user_id, qsh.music_id, qsh.guess_kind
                             ORDER BY qsh.played_at DESC
                         ) as row_number
                     FROM quiz q
@@ -2809,14 +2812,10 @@ AND msm.type = ANY(@msmType)";
                     WHERE q.should_update_stats AND music_id = ANY(@mIds)
                 ) sq
                 WHERE row_number <= @lastNPlays
-                GROUP BY sq.music_id";
+                GROUP BY sq.music_id, sq.guess_kind";
 
             var musicStats = (await connection.QueryAsync<MusicStat>(sql,
                 new { mIds = mIds.ToArray(), lastNPlays = Constants.SHUseLastNPlaysPerPlayer })).ToArray();
-            foreach (MusicStat musicStat in musicStats)
-            {
-                musicStat.guess_kind = GuessKind.Mst; // todo
-            }
 
             Console.WriteLine($"Attempting to recalculate SongStats for mIds {string.Join(',', mIds)}");
             await connection.UpsertListAsync(musicStats, transaction);
@@ -4342,10 +4341,16 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
     public static async Task<bool> InsertEntityBulk<T>(IEnumerable<T> entity) where T : class
     {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        bool success = await connection.InsertListAsync(entity, transaction);
+        if (success)
         {
-            return await connection.InsertListAsync(entity);
+            await transaction.CommitAsync();
         }
+
+        return success;
     }
 
     public static async Task<bool> UpsertEntity<T>(T entity) where T : class
@@ -4623,15 +4628,23 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                     {
                         MId = firstHistory.music_id,
                         PlayedAt = firstHistory.played_at,
-                        PlayerGuessInfos = histories.ToDictionary(c => c.user_id, c => new GuessInfo
-                        {
-                            Username = Utils.UserIdToUsername(usernamesDict, c.user_id),
-                            Guess = c.guess,
-                            FirstGuessMs = c.first_guess_ms,
-                            IsGuessCorrect = c.is_correct,
-                            Labels = null,
-                            IsOnList = c.is_on_list,
-                        }),
+                        PlayerGuessInfos = histories
+                            .GroupBy(c => c.user_id)
+                            .ToDictionary(
+                                userGroup => userGroup.Key,
+                                userGroup => userGroup.ToDictionary(
+                                    h => h.guess_kind,
+                                    h => new GuessInfo
+                                    {
+                                        Username = Utils.UserIdToUsername(usernamesDict, h.user_id),
+                                        Guess = h.guess,
+                                        FirstGuessMs = h.first_guess_ms,
+                                        IsGuessCorrect = h.is_correct,
+                                        Labels = null,
+                                        IsOnList = h.is_on_list,
+                                    }
+                                )
+                            )
                     };
 
                     songHistories[histories.Key] = sh;
@@ -4707,7 +4720,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
         const string sql =
             @"select count(music_id) as count, (100 / (count(music_id)::real / COALESCE(NULLIF(count(is_correct) filter(where is_correct), 0), 1))) as gr from quiz_song_history
-where user_id = @userId
+where user_id = @userId and guess_kind = 0 --todo
 group by user_id
 ";
 
@@ -4716,7 +4729,7 @@ WITH counts AS (
     SELECT type, COUNT(*) AS total, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) AS correct
     FROM quiz_song_history qsh
     JOIN music_source_music msm ON qsh.music_id = msm.music_id
-    WHERE user_id = @userId
+    WHERE user_id = @userId and guess_kind = 0 --todo
     GROUP BY TYPE
 ),
 percentages AS (
@@ -4749,81 +4762,112 @@ ORDER BY type";
         return res;
     }
 
-    public static async Task<ILookup<int, PlayerSongStats>> GetSHPlayerSongStats(List<int> mIds, List<int> userIds)
+    public static async Task<ILookup<int, Dictionary<GuessKind, PlayerSongStats>>> GetSHPlayerSongStats(List<int> mIds,
+        List<int> userIds)
     {
         const string sql =
-            @"select sq.user_id as userid, sq.music_id AS musicid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms
+            @"select sq.user_id as userid, sq.music_id AS musicid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms, sq.guess_kind as guesskind
 from (
-select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed
+select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed, qsh.guess_kind
 from quiz q
 join quiz_song_history qsh on qsh.quiz_id = q.id
 where q.should_update_stats and music_id = ANY(@mIds) and user_id = ANY(@userIds)
 order by qsh.played_at desc
 ) sq
-group by sq.user_id, sq.music_id
+group by sq.user_id, sq.music_id, sq.guess_kind
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        var ret = (await connection.QueryAsync<PlayerSongStats>(sql, new { mIds, userIds })).ToLookup(x => x.UserId);
+        var results = await connection.QueryAsync<PlayerSongStats>(sql, new { mIds, userIds });
 
-        return ret;
+        var lookup = results.GroupBy(x => x.UserId)
+            .ToLookup(group => group.Key, group => group.ToDictionary(stats => stats.GuessKind));
+        return lookup;
     }
 
-    public static async Task<SHSongStats[]> GetSHSongStats(int mId)
+    public static async Task<Dictionary<GuessKind, SHSongStats[]>> GetSHSongStats(int mId)
     {
         string sql =
             @$"select *
 from (
-select qsh.music_id as MusicId, qsh.user_id as UserId, qsh.is_correct as IsCorrect, qsh.first_guess_ms as FirstGuessMs, NULLIF(qsh.guess, '') as Guess, qsh.played_at as PlayedAt,
-       row_number() over (partition by qsh.user_id order by qsh.played_at desc) as RowNumber
+select qsh.music_id as MusicId, qsh.user_id as UserId, qsh.is_correct as IsCorrect, qsh.first_guess_ms as FirstGuessMs, NULLIF(qsh.guess, '') as Guess, qsh.played_at as PlayedAt, qsh.guess_kind as GuessKind,
+       row_number() over (partition by qsh.user_id, qsh.guess_kind order by qsh.played_at desc) as RowNumber
 from quiz q
 join quiz_song_history qsh on qsh.quiz_id = q.id
 where q.should_update_stats and music_id = @mId
 order by qsh.played_at desc
 ) sq
 where RowNumber <= {Constants.SHUseLastNPlaysPerPlayer}
-limit 777;
+limit 2500;
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        var ret = (await connection.QueryAsync<SHSongStats>(sql, new { mId })).ToArray();
+        var results = await connection.QueryAsync<SHSongStats>(sql,
+            new { mId, lastNPlays = Constants.SHUseLastNPlaysPerPlayer });
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
             .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
 
-        foreach (SHSongStats shSongStats in ret)
+        var statsByGuessKind = results.GroupBy(x => x.GuessKind).OrderBy(x => x.Key).ToDictionary(g => g.Key, g =>
         {
-            shSongStats.Username = Utils.UserIdToUsername(usernamesDict, shSongStats.UserId);
-        }
+            var statsArray = g.ToArray();
+            foreach (var stats in statsArray)
+            {
+                stats.Username = Utils.UserIdToUsername(usernamesDict, stats.UserId);
+            }
 
-        return ret;
+            return statsArray;
+        });
+        return statsByGuessKind;
     }
 
     public static async Task<string?> GetPublicUserInfoSongs(int userId)
     {
         const string sqlMostPlayedSongs =
-            @"select qsh.music_id AS MusicId, count(*) as Played, count(qsh.is_correct) FILTER (WHERE qsh.is_correct) AS Correct, usr.interval_days AS IntervalDays
-from quiz q
-join quiz_song_history qsh on qsh.quiz_id = q.id
-LEFT JOIN user_spaced_repetition usr ON usr.music_id = qsh.music_id AND usr.user_id = qsh.user_id
-where q.should_update_stats and qsh.user_id = @userId
-GROUP BY qsh.music_id, usr.interval_days
+            @"SELECT
+    uqp.music_id AS MusicId,
+    count(*) as Played,
+    count(uqp.is_correct) FILTER (WHERE uqp.is_correct) AS Correct, -- todo will be slightly incorrect due to how we're generating uqp but meh
+    usr.interval_days AS IntervalDays
+FROM quiz q
+JOIN unique_quiz_plays uqp ON uqp.quiz_id = q.id
+LEFT JOIN user_spaced_repetition usr
+    ON usr.music_id = uqp.music_id
+    AND usr.user_id = uqp.user_id
+WHERE q.should_update_stats
+AND uqp.user_id = @userId
+GROUP BY uqp.music_id, usr.interval_days
 ORDER BY count(*) DESC
-limit 50;
+LIMIT 50;
 ";
 
         const string sqlCommonPlayers =
-            @"WITH cte AS (
-SELECT DISTINCT qsh.quiz_id
-FROM quiz_song_history qsh
-WHERE qsh.user_id = @userId
-AND EXISTS (SELECT 1 FROM quiz_song_history qsh2 WHERE qsh2.quiz_id = qsh.quiz_id AND qsh2.user_id != @userId)
+            @"WITH common_quizzes AS (
+    -- Find quizzes where target user played with others
+    SELECT DISTINCT qsh.quiz_id
+    FROM unique_quiz_plays qsh
+    WHERE qsh.user_id = @userId
+    AND EXISTS (
+        SELECT 1
+        FROM unique_quiz_plays qsh2
+        WHERE qsh2.quiz_id = qsh.quiz_id
+        AND qsh2.user_id != @userId
+    )
+),
+player_quiz_counts AS (
+    -- Count quizzes per player, excluding the target user
+    SELECT
+        qsh.user_id as ""UserId"",
+        COUNT(DISTINCT qsh.quiz_id) as ""QuizCount""
+    FROM unique_quiz_plays qsh
+    JOIN common_quizzes cq ON cq.quiz_id = qsh.quiz_id
+    WHERE qsh.user_id != @userId
+    GROUP BY qsh.user_id
 )
-SELECT array_agg(DISTINCT user_id) AS arr, qsh.quiz_id AS id
-FROM quiz_song_history qsh
-JOIN cte ON cte.quiz_id = qsh.quiz_id
-GROUP BY qsh.quiz_id
+SELECT *
+FROM player_quiz_counts
+ORDER BY ""QuizCount"" DESC;
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -4884,37 +4928,19 @@ GROUP BY qsh.quiz_id
             };
         }
 
-        var resCommonPlayers =
-            (await connection.QueryAsync<(int[] arr, Guid quizId)>(sqlCommonPlayers, new { userId })).ToArray();
-
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))
             .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
 
-        Dictionary<int, int> commonPlayersDict = new();
-        foreach ((int[] arr, Guid _) in resCommonPlayers)
-        {
-            foreach (int id in arr)
+        var commonPlayers = (await connection.QueryAsync<ResCommonPlayers>(sqlCommonPlayers, new { userId }))
+            .Select(x => new ResCommonPlayers
             {
-                if (id == userId)
+                UserLite = new UserLite
                 {
-                    continue;
-                }
-
-                if (!commonPlayersDict.ContainsKey(id))
-                {
-                    commonPlayersDict[id] = 0;
-                }
-
-                commonPlayersDict[id] += 1;
-            }
-        }
-
-        var commonPlayers = commonPlayersDict.OrderByDescending(x => x.Value).Select(x => new ResCommonPlayers
-        {
-            UserLite = new UserLite { Id = x.Key, Username = Utils.UserIdToUsername(usernamesDict, x.Key) },
-            QuizCount = x.Value
-        }).ToArray();
+                    Id = x.UserId, Username = Utils.UserIdToUsername(usernamesDict, x.UserId)
+                },
+                QuizCount = x.QuizCount
+            }).ToArray();
 
         var res = new ResGetPublicUserInfoSongs
         {
@@ -4935,7 +4961,7 @@ GROUP BY qsh.quiz_id
             "select id as userId, username, created_at as createdAt from users order by created_at desc");
 
         var qsh = (await connection.QueryAsync<(int userId, int count)>(
-                "select user_id as userId, count(*) as count from quiz_song_history group by user_id"))
+                "select user_id as userId, count(*) as count from quiz_song_history where guess_kind = 0 group by user_id --todo"))
             .ToDictionary(x => x.userId, x => x.count);
 
         var mv = (await connection.QueryAsync<(int userId, int count)>(
@@ -5020,8 +5046,11 @@ where music_id = ANY(@mIds)
     public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate)
     {
         string sqlDailyPlayers = $@"
-SELECT to_char(played_at, 'yyyy-mm-dd'), count(DISTINCT user_id) FILTER(WHERE user_id < {Constants.PlayerIdGuestMin}) AS users, count(DISTINCT user_id) FILTER(WHERE user_id >= {Constants.PlayerIdGuestMin}) AS guests
-FROM quiz_song_history qsh
+SELECT
+    to_char(played_at, 'yyyy-mm-dd'),
+    count(DISTINCT user_id) FILTER(WHERE user_id < {Constants.PlayerIdGuestMin}) AS users,
+    count(DISTINCT user_id) FILTER(WHERE user_id >= {Constants.PlayerIdGuestMin}) AS guests
+FROM unique_quiz_plays uqp
 WHERE played_at >= @startDate AND played_at <= @endDate
 --AND user_id < @maxUserId
 GROUP BY to_char(played_at, 'yyyy-mm-dd')
@@ -5100,15 +5129,15 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
             int artistId = artist.First().Value.First().Key; // todo?
             string sqlA =
                 $@"SELECT
-    qsh.user_id AS UserId,
+    uqp.user_id AS UserId,
     COUNT(*) AS TimesPlayed,
-    SUM(CASE WHEN qsh.is_correct THEN 1 ELSE 0 END) AS TimesCorrect,
+    SUM(CASE WHEN uqp.is_correct THEN 1 ELSE 0 END) AS TimesCorrect, -- todo will be slightly incorrect due to how we're generating uqp but meh
     COALESCE(ROUND(votes.AvgVote, 2), 0) AS VoteAverage,
     COALESCE(votes.VoteCount, 0) AS VoteCount
 FROM
-    quiz_song_history qsh
+    unique_quiz_plays uqp
 JOIN
-    artist_music am ON am.music_id = qsh.music_id
+    artist_music am ON am.music_id = uqp.music_id
 LEFT JOIN (
     SELECT
         mv.user_id,
@@ -5122,11 +5151,11 @@ LEFT JOIN (
         am.artist_id = @artistId and mv.user_id < {Constants.PlayerIdGuestMin}
     GROUP BY
         mv.user_id
-) AS votes ON votes.user_id = qsh.user_id
+) AS votes ON votes.user_id = uqp.user_id
 WHERE
-    am.artist_id = @artistId and qsh.user_id < {Constants.PlayerIdGuestMin}
+    am.artist_id = @artistId and uqp.user_id < {Constants.PlayerIdGuestMin}
 GROUP BY
-    qsh.user_id, votes.AvgVote, votes.VoteCount
+    uqp.user_id, votes.AvgVote, votes.VoteCount
 ORDER BY
     TimesPlayed DESC;
 ";

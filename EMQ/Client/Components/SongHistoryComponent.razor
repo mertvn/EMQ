@@ -48,7 +48,8 @@
             {
                 var song = songHistory.Song;
                 string rowBackgroundColor = "initial";
-                bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(selectedPlayerId, out var ownPgi);
+                bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(selectedPlayerId, out var ownPgi1);
+                var ownPgi = ownPgi1?.GetValueOrDefault(GuessKind.Mst) ?? new GuessInfo();
                 if (ownPgiExists)
                 {
                     rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
@@ -255,8 +256,9 @@
                             </ul>
 
                             <ul>
-                                @foreach ((int _, GuessInfo value) in songHistory.PlayerGuessInfos)
+                                @foreach ((int _, var value1) in songHistory.PlayerGuessInfos)
                                 {
+                                    var value = value1.GetValueOrDefault(GuessKind.Mst);
                                     <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick"); padding-left: 4px;">
                                         @value.Username:
                                         <span> @value.Guess </span>

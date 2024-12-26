@@ -337,7 +337,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetSHSongStats")]
-    public async Task<SHSongStats[]> GetSHSongStats([FromBody] int mId)
+    public async Task<Dictionary<GuessKind, SHSongStats[]>> GetSHSongStats([FromBody] int mId)
     {
         var res = await DbManager.GetSHSongStats(mId);
         return res;

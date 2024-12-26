@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request
@@ -122,8 +122,9 @@
 
             foreach (SongHistory songHistory in songHistories)
             {
-                foreach ((int key, GuessInfo value) in songHistory.PlayerGuessInfos)
+                foreach ((int key, var value1) in songHistory.PlayerGuessInfos)
                 {
+                    GuessInfo value = value1.GetValueOrDefault(GuessKind.Mst);
                     if (key == playerId)
                     {
                         username = value.Username;

@@ -11,31 +11,46 @@
 <GenericModal @ref="@_shSongStatsModalRef"
               Title="@(Song?.Id > 0 ? Song.ToStringLatin() : "")"
               Size="@Blazorise.ModalSize.ExtraLarge">
-    @if (SHSongStats != null)
+    @if (SHSongStatsDict != null)
     {
-        <div class="grid" tabindex="-1">
-            <QuickGrid Items="@SHSongStats">
-                <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-                <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
-                <TemplateColumn Title="Correct?" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.IsCorrect)">
-                    @if (context.IsCorrect)
-                    {
-                        <span style="color: green">✓</span>
-                    }
-                    else
-                    {
-                        <span style="color: red">✘</span>
-                    }
-                </TemplateColumn>
-                <TemplateColumn Title="Guess time" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.FirstGuessMs)">
-                    @if (context.FirstGuessMs > 0)
-                    {
-                        <span>@(Math.Round((float)context.FirstGuessMs / 1000, 2))s</span>
-                    }
-                </TemplateColumn>
-                <PropertyColumn Property="@(x => x.Guess)" Title="Guess" Sortable="true"/>
-            </QuickGrid>
-        </div>
+        <Blazorise.Tabs SelectedTab="@GuessKind.Mst.ToString()" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+            <Items>
+                @foreach ((GuessKind guessKind, IQueryable<SHSongStats> _) in SHSongStatsDict)
+                {
+                    <Blazorise.Tab Name="@guessKind.ToString()">@guessKind.GetDescription()</Blazorise.Tab>
+                }
+            </Items>
+            <Content>
+                @foreach ((GuessKind guessKind, IQueryable<SHSongStats> shSongStats) in SHSongStatsDict)
+                {
+                    <Blazorise.TabPanel Name="@guessKind.ToString()">
+                        <div class="grid" tabindex="-1">
+                            <QuickGrid Items="@shSongStats">
+                                <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                                <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+                                <TemplateColumn Title="Correct?" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.IsCorrect)">
+                                    @if (context.IsCorrect)
+                                    {
+                                        <span style="color: green">✓</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: red">✘</span>
+                                    }
+                                </TemplateColumn>
+                                <TemplateColumn Title="Guess time" Sortable="true" SortBy="GridSort<SHSongStats>.ByAscending(x => x.FirstGuessMs)">
+                                    @if (context.FirstGuessMs > 0)
+                                    {
+                                        <span>@(Math.Round((float)context.FirstGuessMs / 1000, 2))s</span>
+                                    }
+                                </TemplateColumn>
+                                <PropertyColumn Property="@(x => x.Guess)" Title="Guess" Sortable="true"/>
+                            </QuickGrid>
+                        </div>
+                    </Blazorise.TabPanel>
+                }
+            </Content>
+        </Blazorise.Tabs>
     }
 </GenericModal>
 

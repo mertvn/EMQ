@@ -25,9 +25,6 @@ public class Player
     [JsonIgnore]
     public PlayerGuess? Guess { get; set; }
 
-    // todo: do we want last guess or first guess here?
-    public int FirstGuessMs { get; set; }
-
     public int Score { get; set; }
 
     public Avatar Avatar { get; set; }
@@ -112,6 +109,18 @@ public class PlayerGuess
         { GuessKind.Composer, null },
         { GuessKind.Arranger, null },
         { GuessKind.Lyricist, null },
+    };
+
+    public Dictionary<GuessKind, int> DictFirstGuessMs { get; set; } = new()
+    {
+        { GuessKind.Mst, 0 },
+        { GuessKind.A, 0 },
+        { GuessKind.Mt, 0 },
+        { GuessKind.Rigger, 0 },
+        { GuessKind.Developer, 0 },
+        { GuessKind.Composer, 0 },
+        { GuessKind.Arranger, 0 },
+        { GuessKind.Lyricist, 0 },
     };
 
     public override string ToString()

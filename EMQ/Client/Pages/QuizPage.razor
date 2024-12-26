@@ -218,9 +218,10 @@
 
     @if (ClientState.Session != null && Room?.Quiz != null && ClientSongsHistory.TryGetValue(Room.Quiz.QuizState.sp, out var songHistory))
     {
-        bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session.Player.Id, out var ownPgi);
+        bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(ClientState.Session.Player.Id, out var ownPgi1);
         if (ownPgiExists)
         {
+            var ownPgi = ownPgi1!.GetValueOrDefault(GuessKind.Mst);
             @if (ownPgi.PlayerSongStats != null)
             {
                 <div class="card" id="playerSongStatsCard">

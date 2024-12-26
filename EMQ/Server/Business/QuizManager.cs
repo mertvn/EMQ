@@ -235,7 +235,6 @@ public class QuizManager
         {
             player.Guess = null;
             player.IsGuessKindCorrectDict = null;
-            player.FirstGuessMs = 0;
             player.PlayerStatus = PlayerStatus.Thinking;
             player.IsBuffered = false;
             player.IsSkipping = false;
@@ -874,6 +873,8 @@ public class QuizManager
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
+
+        // todo? take guesskinds as a param to avoid selecting unnecessary information
         var userSongStatsLookup =
             await DbManager.GetSHPlayerSongStats(new List<int> { song.Id },
                 Quiz.Room.Players.Select(x => x.Id).ToList());
@@ -963,25 +964,36 @@ public class QuizManager
 
                 _ = song.PlayerLabels.TryGetValue(player.Id, out var labels);
 
-                PlayerSongStats? userSongStats = null;
-                if (userSongStatsLookup.Contains(player.Id))
+                foreach ((GuessKind key, bool _) in Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Value))
                 {
-                    userSongStats = userSongStatsLookup[player.Id].Single();
-                }
+                    PlayerSongStats? userSongStats = null;
+                    if (userSongStatsLookup.Contains(player.Id))
+                    {
+                        userSongStats = userSongStatsLookup[player.Id].Single().GetValueOrDefault(key);
+                    }
 
-                var guessInfo = new GuessInfo
-                {
-                    Username = player.Username,
-                    Guess = player.Guess?.Dict[GuessKind.Mst] ?? "", // todo
-                    FirstGuessMs = player.FirstGuessMs,
-                    IsGuessCorrect = player.IsGuessKindCorrectDict[GuessKind.Mst]!.Value, // todo
-                    Labels = labels,
-                    IsOnList = labels?.Any() ?? false,
-                    PreviousUserSpacedRepetition = previous,
-                    CurrentUserSpacedRepetition = current,
-                    PlayerSongStats = userSongStats,
-                };
-                songHistory.PlayerGuessInfos[player.Id] = guessInfo;
+                    userSongStats ??= new PlayerSongStats { UserId = player.Id, MusicId = song.Id, GuessKind = key };
+                    var guessInfo = new GuessInfo
+                    {
+                        Username = player.Username,
+                        Guess = player.Guess?.Dict[key] ?? "",
+                        FirstGuessMs = player.Guess?.DictFirstGuessMs[key] ?? 0,
+                        IsGuessCorrect = player.IsGuessKindCorrectDict[key]!.Value,
+                        Labels = labels,
+                        IsOnList = labels?.Any() ?? false,
+                        PreviousUserSpacedRepetition = previous,
+                        CurrentUserSpacedRepetition = current,
+                        PlayerSongStats = userSongStats,
+                    };
+
+                    if (!songHistory.PlayerGuessInfos.TryGetValue(player.Id, out var dict))
+                    {
+                        dict = new Dictionary<GuessKind, GuessInfo>();
+                        songHistory.PlayerGuessInfos[player.Id] = dict;
+                    }
+
+                    dict[key] = guessInfo;
+                }
             }
         }
 
@@ -1321,7 +1333,13 @@ public class QuizManager
         var quizSongHistories = new List<QuizSongHistory>();
         foreach ((int sp, SongHistory? songHistory) in Quiz.SongsHistory)
         {
-            foreach ((int userId, GuessInfo guessInfo) in songHistory.PlayerGuessInfos)
+            // Console.WriteLine(JsonSerializer.Serialize(songHistory.PlayerGuessInfos, Utils.JsoIndented));
+            bool isBGM = songHistory.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
+            bool hasDeveloper = songHistory.Song.Sources.Any(x => x.Developers.Any());
+            bool hasComposer = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer));
+            bool hasArranger = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger));
+            bool hasLyricist = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist));
+            foreach ((int userId, Dictionary<GuessKind, GuessInfo> guessInfoDict) in songHistory.PlayerGuessInfos)
             {
                 // todo? guests
                 bool isBot = userId >= Constants.PlayerIdBotMin;
@@ -1330,25 +1348,81 @@ public class QuizManager
                     continue;
                 }
 
-                var quizSongHistory = new QuizSongHistory
+                foreach ((GuessKind guessKind, GuessInfo guessInfo) in guessInfoDict)
                 {
-                    quiz_id = Quiz.Id,
-                    sp = sp,
-                    music_id = songHistory.Song.Id,
-                    user_id = userId,
-                    guess = guessInfo.Guess,
-                    first_guess_ms = guessInfo.FirstGuessMs,
-                    is_correct = guessInfo.IsGuessCorrect,
-                    is_on_list = guessInfo.IsOnList,
-                    played_at = songHistory.Song.PlayedAt,
-                };
+                    bool shouldAdd = true;
+                    switch (guessKind)
+                    {
+                        case GuessKind.Mt: // todo bgm autocomplete
+                            if (isBGM)
+                            {
+                                shouldAdd = false;
+                            }
 
-                quizSongHistories.Add(quizSongHistory);
+                            break;
+                        case GuessKind.Rigger: // not much point tracking this
+                            shouldAdd = false;
+                            break;
+                        case GuessKind.Developer:
+                            if (!hasDeveloper)
+                            {
+                                shouldAdd = false;
+                            }
+
+                            break;
+                        case GuessKind.Composer:
+                            if (!hasComposer)
+                            {
+                                shouldAdd = false;
+                            }
+
+                            break;
+                        case GuessKind.Arranger:
+                            if (!hasArranger)
+                            {
+                                shouldAdd = false;
+                            }
+
+                            break;
+                        case GuessKind.Lyricist:
+                            if (!hasLyricist)
+                            {
+                                shouldAdd = false;
+                            }
+
+                            break;
+                        case GuessKind.Mst:
+                        case GuessKind.A:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                    if (shouldAdd)
+                    {
+                        var quizSongHistory = new QuizSongHistory
+                        {
+                            quiz_id = Quiz.Id,
+                            sp = sp,
+                            music_id = songHistory.Song.Id,
+                            user_id = userId,
+                            guess_kind = guessKind,
+                            guess = guessInfo.Guess,
+                            first_guess_ms = guessInfo.FirstGuessMs,
+                            is_correct = guessInfo.IsGuessCorrect,
+                            is_on_list = guessInfo.IsOnList,
+                            played_at = songHistory.Song.PlayedAt,
+                        };
+
+                        quizSongHistories.Add(quizSongHistory);
+                    }
+                }
             }
         }
 
         try
         {
+            // Console.WriteLine(JsonSerializer.Serialize(quizSongHistories, Utils.JsoIndented));
             bool success = await DbManager.InsertEntityBulk(quizSongHistories);
             if (!success)
             {
@@ -1615,7 +1689,8 @@ public class QuizManager
                     foreach (Song song in Quiz.Songs)
                     {
                         mimic.BotInfo!.SongHitChanceDict[song.Id] =
-                            userSongStats.SingleOrDefault(x => x.MusicId == song.Id)?.CorrectPercentage ?? 0;
+                            userSongStats.SingleOrDefault(x => x.GetValueOrDefault(GuessKind.Mst)?.MusicId == song.Id)
+                                ?.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
                     }
                 }
             }
@@ -1770,7 +1845,6 @@ public class QuizManager
                 : Quiz.Room.QuizSettings.AnsweringKind;
             player.Guess = null;
             player.IsGuessKindCorrectDict = null;
-            player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
             // do not set player.IsReadiedUp to false here, because it would be annoying to ready up again if we return false
@@ -2262,7 +2336,6 @@ public class QuizManager
                 : Quiz.Room.QuizSettings.AnsweringKind;
             player.Guess = null;
             player.IsGuessKindCorrectDict = null;
-            player.FirstGuessMs = 0;
             player.IsBuffered = false;
             player.IsSkipping = false;
             player.IsReadiedUp = player.IsBot;
@@ -2325,15 +2398,16 @@ public class QuizManager
                 player.PlayerStatus = PlayerStatus.Guessed;
                 player.Guess.Dict[guessKind] = guess;
 
-                if (player.FirstGuessMs <= 0)
+                if (player.Guess.DictFirstGuessMs[guessKind] <= 0)
                 {
                     switch (Quiz.QuizState.Phase)
                     {
                         case QuizPhaseKind.Guess:
-                            player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs - (int)Quiz.QuizState.RemainingMs;
+                            player.Guess.DictFirstGuessMs[guessKind] =
+                                Quiz.Room.QuizSettings.GuessMs - (int)Quiz.QuizState.RemainingMs;
                             break;
                         case QuizPhaseKind.Judgement:
-                            player.FirstGuessMs = Quiz.Room.QuizSettings.GuessMs;
+                            player.Guess.DictFirstGuessMs[guessKind] = Quiz.Room.QuizSettings.GuessMs;
                             break;
                         case QuizPhaseKind.Results:
                         case QuizPhaseKind.Looting:

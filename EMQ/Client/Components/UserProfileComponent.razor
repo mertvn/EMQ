@@ -149,8 +149,7 @@
         }
 
         StateHasChanged();
-        HttpResponseMessage res2 =
-            await _client.PostAsJsonAsync("Auth/GetPublicUserInfoSongs", UserId);
+        HttpResponseMessage res2 = await _client.GetAsync($"Auth/GetPublicUserInfoSongs?userId={UserId}");
         if (res2.IsSuccessStatusCode)
         {
             var content = (await res2.Content.ReadFromJsonAsync<ResGetPublicUserInfoSongs>())!;

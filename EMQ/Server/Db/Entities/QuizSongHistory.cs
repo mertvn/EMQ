@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
 
@@ -13,11 +14,13 @@ public class QuizSongHistory
     [Key]
     public int sp { get; set; }
 
-    [Key]
     public int music_id { get; set; }
 
     [Key]
     public int user_id { get; set; }
+
+    [Key]
+    public GuessKind guess_kind { get; set; }
 
     public string guess { get; set; } = "";
 

@@ -36,6 +36,8 @@ public class ResCommonPlayers
     public UserLite UserLite { get; set; } = new();
 
     public int QuizCount { get; set; }
+
+    public int UserId { get; set; }
 }
 
 public class ResUserMusicVotes

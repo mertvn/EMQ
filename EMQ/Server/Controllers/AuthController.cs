@@ -20,6 +20,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 
@@ -31,12 +32,19 @@ namespace EMQ.Server.Controllers;
 [Route("[controller]")]
 public class AuthController : ControllerBase
 {
-    public AuthController(ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IOutputCacheStore outputCache)
     {
         _logger = logger;
+        _outputCache = outputCache;
     }
 
     private readonly ILogger<AuthController> _logger;
+    private readonly IOutputCacheStore _outputCache;
+
+    public async Task EvictFromOutputCache(string tag)
+    {
+        await _outputCache.EvictByTagAsync(tag, default);
+    }
 
     [EnableRateLimiting(RateLimitKind.Login)]
     [CustomAuthorize(PermissionKind.Login)]
@@ -630,9 +638,10 @@ public class AuthController : ControllerBase
     }
 
     [CustomAuthorize(PermissionKind.ViewStats)]
-    [HttpPost]
+    [HttpGet]
+    [OutputCache(Duration = 5 * 60, PolicyName = "MyOutputCachePolicy")]
     [Route("GetPublicUserInfoSongs")]
-    public async Task<ActionResult<string?>> GetPublicUserInfoSongs([FromBody] int userId)
+    public async Task<ActionResult<string?>> GetPublicUserInfoSongs([FromQuery] int userId)
     {
         var publicUserInfo = await DbManager.GetPublicUserInfoSongs(userId);
         return publicUserInfo != null ? publicUserInfo : StatusCode(404);
@@ -673,7 +682,10 @@ public class AuthController : ControllerBase
         }
 
         bool success =
-            await DbManager_Auth.UpsertUserLabelPreset(new UserLabelPreset { user_id = session.Player.Id, name = name });
+            await DbManager_Auth.UpsertUserLabelPreset(new UserLabelPreset
+            {
+                user_id = session.Player.Id, name = name
+            });
         if (success)
         {
             Console.WriteLine($"p{session.Player.Id} {session.Player.Username} upserted user label preset {name}");
@@ -765,6 +777,7 @@ public class AuthController : ControllerBase
 
         if (success)
         {
+            await EvictFromOutputCache("all");
             Console.WriteLine(
                 $"p{session.Player.Id} {session.Player.Username} upserted music vote {req.MusicId} = {req.Vote}");
             return musicVote;

@@ -19,7 +19,6 @@ public class QuizSettings
         AnsweringKind == AnsweringKind.Typing &&
         GamemodeKind != GamemodeKind.Radio &&
         Filters.ScreenshotKind == ScreenshotKind.None &&
-        IsMstGuessTypeEnabled &&
         !IsSharedGuessesTeams &&
         !IsNoSoundMode &&
         !EnabledSongHintKinds.Any(x => x.Value) &&
@@ -251,7 +250,6 @@ public class QuizSettings
         set { MaxWaitForLaggingPlayersMs = value * 1000; }
     }
 
-    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
     [ProtoMember(28)]
     [Required]
     [DefaultValue(true)]
@@ -279,13 +277,11 @@ public class QuizSettings
     [DefaultValue(60)]
     public int PreventSameVNSpamMinutes { get; set; } = 60;
 
-    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
     [ProtoMember(33)]
     [Required]
     [DefaultValue(true)]
     public bool IsTreatNonVocalsAsCorrect { get; set; } = true;
 
-    // TODO: If stats for non-mst ever gets implemented, don't count artist name as correct if this is set to true
     [ProtoMember(34)]
     [Required]
     [DefaultValue(true)]

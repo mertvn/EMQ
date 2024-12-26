@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http.Json;
@@ -35,7 +36,7 @@ public partial class SongInfoCardComponent
 
     private GenericModal _shSongStatsModalRef { get; set; } = null!;
 
-    private IQueryable<SHSongStats>? SHSongStats { get; set; }
+    private Dictionary<GuessKind, IQueryable<SHSongStats>>? SHSongStatsDict { get; set; }
 
     private bool ForceRender { get; set; }
 
@@ -158,7 +159,9 @@ public partial class SongInfoCardComponent
         var res = await _client.PostAsJsonAsync("Library/GetSHSongStats", Song!.Id);
         if (res.IsSuccessStatusCode)
         {
-            SHSongStats = (await res.Content.ReadFromJsonAsync<SHSongStats[]>())!.AsQueryable();
+            SHSongStatsDict =
+                (await res.Content.ReadFromJsonAsync<Dictionary<GuessKind, SHSongStats[]>>())!.ToDictionary(x => x.Key,
+                    x => x.Value.AsQueryable());
             _shSongStatsModalRef.Show();
         }
     }

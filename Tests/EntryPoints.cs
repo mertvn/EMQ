@@ -2135,7 +2135,8 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
                 int existingAaId =
                     await connection.ExecuteScalarAsync<int>(
                         "select id from artist_alias where artist_id = @tAid and latin_alias = @la and non_latin_alias = @nla",
-                        new { tAid = target.Id, la = sourceTitle.LatinTitle, nla = sourceTitle.NonLatinTitle }, transaction);
+                        new { tAid = target.Id, la = sourceTitle.LatinTitle, nla = sourceTitle.NonLatinTitle },
+                        transaction);
                 if (existingAaId > 0)
                 {
                     int rowsAmUpdate2 = await connection.ExecuteAsync(
@@ -2228,7 +2229,7 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
 
-        foreach ((int aId1, int aId2) in dupeArtists.OrderBy(x=> x.aId1).ThenBy(y=> y.aid2))
+        foreach ((int aId1, int aId2) in dupeArtists.OrderBy(x => x.aId1).ThenBy(y => y.aid2))
         {
             // Console.WriteLine($"{aId1} <=> {aId2}");
             var a1 = (await DbManager.SelectArtistBatchNoAM(connection,
@@ -2279,5 +2280,83 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         }
 
         await connection.UpsertListAsync(editQueues);
+    }
+
+    [Test, Explicit]
+    public async Task ScaffoldQuizSongHistoryScalingTest()
+    {
+        // const int roomCount = 5000; // * 1800 v
+        // const int quizzesPerRoom = 5;
+        // const int songsPerQuiz = 40;
+        // const int usersPerRoom = 3;
+        // const int guessKindsPerUser = 3;
+
+        const int roomCount = 100;  // * 60000 v
+        const int quizzesPerRoom = 10;
+        const int songsPerQuiz = 100;
+        const int usersPerRoom = 10;
+        const int guessKindsPerUser = 6;
+
+        const string roomName = "Room";
+        var date = DateTime.UtcNow;
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var rooms = Enumerable.Range(1, roomCount).Select(x => new EntityRoom
+        {
+            id = Guid.NewGuid(),
+            initial_name = roomName,
+            created_by = 1,
+            created_at = date
+        }).ToArray();
+
+        var quizzes = new List<EntityQuiz>(roomCount * quizzesPerRoom);
+        var quizSongHistories = new List<QuizSongHistory>();
+        foreach (EntityRoom entityRoom in rooms)
+        {
+            for (int i = 0; i < quizzesPerRoom; i++)
+            {
+                var quiz = new EntityQuiz
+                {
+                    id = Guid.NewGuid(),
+                    room_id = entityRoom.id,
+                    settings_b64 = "",
+                    should_update_stats = true,
+                    created_at = date,
+                };
+                quizzes.Add(quiz);
+
+                for (int sp = 0; sp < songsPerQuiz; sp++)
+                {
+                    for (int userId = 0; userId < usersPerRoom; userId++)
+                    {
+                        for (int guessKind = 0; guessKind < guessKindsPerUser; guessKind++)
+                        {
+                            var quizSongHistory = new QuizSongHistory
+                            {
+                                quiz_id = quiz.id,
+                                sp = sp,
+                                music_id = sp + 4,
+                                user_id = userId + 1500,
+                                guess_kind = (GuessKind)guessKind,
+                                guess = "my test guess",
+                                first_guess_ms = 7000,
+                                is_correct = false,
+                                is_on_list = false,
+                                played_at = date,
+                            };
+
+                            quizSongHistories.Add(quizSongHistory);
+                        }
+                    }
+                }
+            }
+        }
+
+        await connection.InsertListAsync(rooms);
+        await connection.InsertListAsync(quizzes);
+        await connection.InsertListAsync(quizSongHistories);
+        await transaction.CommitAsync();
+        // await DbManager.RecalculateSongStats(songHistories.Select(x => x.Value.Song.Id).ToHashSet());
     }
 }

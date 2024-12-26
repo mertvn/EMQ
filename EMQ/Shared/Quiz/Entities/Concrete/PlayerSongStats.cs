@@ -8,6 +8,8 @@ public class PlayerSongStats
 
     public int MusicId { get; set; }
 
+    public GuessKind GuessKind { get; set; }
+
     public long TimesCorrect { get; set; }
 
     public long TimesPlayed { get; set; }
