@@ -222,7 +222,7 @@
         if (ownPgiExists)
         {
             var ownPgi = ownPgi1!.GetValueOrDefault(GuessKind.Mst);
-            @if (ownPgi.PlayerSongStats != null)
+            @if (ownPgi.PlayerSongStats != null && ownPgi.PlayerSongStats.TimesPlayed > 0)
             {
                 <div class="card" id="playerSongStatsCard">
                     <div class="card-body">
