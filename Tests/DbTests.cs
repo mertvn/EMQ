@@ -1224,4 +1224,11 @@ order by ms.id
         Assert.That(res.CommonPlayers.First().UserLite.Id > 0);
         Assert.That(res.CommonPlayers.First().QuizCount > 0);
     }
+
+    [Test, Explicit]
+    public async Task Test_GetSHPlayerSongStats()
+    {
+        var a = await DbManager.GetSHPlayerSongStats(new List<int> { 10851, 10610 }, new List<int> { 8 });
+        Console.WriteLine(JsonSerializer.Serialize(a, Utils.JsoIndented));
+    }
 }

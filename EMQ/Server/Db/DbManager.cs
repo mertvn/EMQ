@@ -4762,8 +4762,8 @@ ORDER BY type";
         return res;
     }
 
-    public static async Task<ILookup<int, Dictionary<GuessKind, PlayerSongStats>>> GetSHPlayerSongStats(List<int> mIds,
-        List<int> userIds)
+    public static async Task<ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>>
+        GetSHPlayerSongStats(List<int> mIds, List<int> userIds)
     {
         const string sql =
             @"select sq.user_id as userid, sq.music_id AS musicid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms, sq.guess_kind as guesskind
@@ -4777,11 +4777,15 @@ order by qsh.played_at desc
 group by sq.user_id, sq.music_id, sq.guess_kind
 ";
 
+        // Console.WriteLine(JsonSerializer.Serialize(mIds));
+        // Console.WriteLine(JsonSerializer.Serialize(userIds));
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var results = await connection.QueryAsync<PlayerSongStats>(sql, new { mIds, userIds });
 
-        var lookup = results.GroupBy(x => x.UserId)
-            .ToLookup(group => group.Key, group => group.ToDictionary(stats => stats.GuessKind));
+        var lookup = results
+            .GroupBy(x => x.UserId).ToLookup(group => group.Key,
+                group => group.GroupBy(x => x.GuessKind).ToDictionary(gk => gk.Key,
+                    gk => gk.ToDictionary(ps => ps.MusicId, ps => ps)));
         return lookup;
     }
 

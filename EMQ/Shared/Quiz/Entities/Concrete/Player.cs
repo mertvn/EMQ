@@ -87,7 +87,7 @@ public class PlayerBotInfo
 
     public float LastSongHitChance { get; set; }
 
-    public Dictionary<int, float> SongHitChanceDict { get; } = new();
+    public Dictionary<int, Dictionary<GuessKind, float>?> SongHitChanceDict { get; } = new();
 }
 
 public enum PlayerBotKind

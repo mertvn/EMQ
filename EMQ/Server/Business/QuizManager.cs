@@ -277,65 +277,100 @@ public class QuizManager
         var song = Quiz.Songs[Quiz.QuizState.sp];
         foreach (var bot in Quiz.Room.Players.Where(x => x.IsBot))
         {
-            bool isCorrect;
-            switch (bot.BotInfo!.BotKind)
+            foreach ((GuessKind guessKind, bool _) in Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Value))
             {
-                case PlayerBotKind.Default:
-                    {
-                        float hitChance = song.Stats.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
-                        switch (bot.BotInfo!.Difficulty)
+                bool isCorrect;
+                switch (bot.BotInfo!.BotKind)
+                {
+                    case PlayerBotKind.Default:
                         {
-                            case SongDifficultyLevel.VeryEasy:
-                                hitChance *= 0.2f;
-                                break;
-                            case SongDifficultyLevel.Easy:
-                                hitChance *= 0.5f;
-                                break;
-                            case SongDifficultyLevel.Medium:
-                                break;
-                            case SongDifficultyLevel.Hard:
-                                hitChance *= 1.5f;
-                                break;
-                            case SongDifficultyLevel.VeryHard:
-                                hitChance *= 2f;
-                                break;
-                            case SongDifficultyLevel.Impossible:
-                                hitChance = 100;
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
+                            float hitChance = song.Stats.GetValueOrDefault(guessKind)?.CorrectPercentage ?? 0;
+                            switch (bot.BotInfo!.Difficulty)
+                            {
+                                case SongDifficultyLevel.VeryEasy:
+                                    hitChance *= 0.2f;
+                                    break;
+                                case SongDifficultyLevel.Easy:
+                                    hitChance *= 0.5f;
+                                    break;
+                                case SongDifficultyLevel.Medium:
+                                    break;
+                                case SongDifficultyLevel.Hard:
+                                    hitChance *= 1.5f;
+                                    break;
+                                case SongDifficultyLevel.VeryHard:
+                                    hitChance *= 2f;
+                                    break;
+                                case SongDifficultyLevel.Impossible:
+                                    hitChance = 100;
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
 
-                        hitChance = Math.Clamp(hitChance, 0, 100);
-                        bot.BotInfo.LastSongHitChance = hitChance;
-                        // bot.BotInfo.SongHitChanceDict[song.Id] = hitChance;
-                        isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
-                        break;
-                    }
-                case PlayerBotKind.Mimic:
-                    {
-                        if (bot.BotInfo.SongHitChanceDict.TryGetValue(song.Id, out float hitChance))
-                        {
                             hitChance = Math.Clamp(hitChance, 0, 100);
-                            bot.BotInfo.LastSongHitChance = hitChance;
+
+                            // todo
+                            if (guessKind == GuessKind.Mst)
+                            {
+                                bot.BotInfo.LastSongHitChance = hitChance;
+                            }
+
+                            // bot.BotInfo.SongHitChanceDict[song.Id] = hitChance;
+                            isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
+                            break;
                         }
+                    case PlayerBotKind.Mimic:
+                        {
+                            float hitChance = 0;
+                            if (bot.BotInfo.SongHitChanceDict.TryGetValue(song.Id, out var hitChanceDict))
+                            {
+                                if (hitChanceDict != null && hitChanceDict.TryGetValue(guessKind, out hitChance))
+                                {
+                                    hitChance = Math.Clamp(hitChance, 0, 100);
 
-                        isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
-                        break;
-                    }
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                                    // todo
+                                    if (guessKind == GuessKind.Mst)
+                                    {
+                                        bot.BotInfo.LastSongHitChance = hitChance;
+                                    }
+                                }
+                            }
 
-            if (isCorrect)
-            {
-                // todo? non-mst
-                var guess = Converters.GetSingleTitle(song.Sources.First().Titles);
-                await OnSendGuessChanged(bot.Id, guess.LatinTitle, GuessKind.Mst);
-            }
-            else
-            {
-                // todo? set guess to something random
+                            isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
+                            break;
+                        }
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (isCorrect)
+                {
+                    // todo? artist answers might not work with all settings
+                    string guess = guessKind switch
+                    {
+                        GuessKind.Mst => Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle,
+                        GuessKind.A => Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle,
+                        GuessKind.Mt => Converters.GetSingleTitle(song.Titles).LatinTitle,
+                        GuessKind.Developer => song.Sources.First().Developers.FirstOrDefault()?.Title.LatinTitle ?? "",
+                        GuessKind.Composer => Converters.GetSingleTitle(
+                            song.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Composer))?.Titles ??
+                            new List<Title> { new() }).LatinTitle,
+                        GuessKind.Arranger => Converters.GetSingleTitle(
+                            song.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Arranger))?.Titles ??
+                            new List<Title> { new() }).LatinTitle,
+                        GuessKind.Lyricist => Converters.GetSingleTitle(
+                            song.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Lyricist))?.Titles ??
+                            new List<Title> { new() }).LatinTitle,
+                        _ => ""
+                    };
+
+                    await OnSendGuessChanged(bot.Id, guess, guessKind);
+                }
+                else
+                {
+                    // todo? set guess to something random
+                }
             }
         }
     }
@@ -969,7 +1004,8 @@ public class QuizManager
                     PlayerSongStats? userSongStats = null;
                     if (userSongStatsLookup.Contains(player.Id))
                     {
-                        userSongStats = userSongStatsLookup[player.Id].Single().GetValueOrDefault(key);
+                        userSongStats = userSongStatsLookup[player.Id].Single().GetValueOrDefault(key)
+                            ?.GetValueOrDefault(song.Id);
                     }
 
                     userSongStats ??= new PlayerSongStats { UserId = player.Id, MusicId = song.Id, GuessKind = key };
@@ -1688,9 +1724,18 @@ public class QuizManager
                     var userSongStats = userSongStatsLookup[mimickedUserId].ToArray();
                     foreach (Song song in Quiz.Songs)
                     {
-                        mimic.BotInfo!.SongHitChanceDict[song.Id] =
-                            userSongStats.SingleOrDefault(x => x.GetValueOrDefault(GuessKind.Mst)?.MusicId == song.Id)
-                                ?.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0;
+                        mimic.BotInfo!.SongHitChanceDict[song.Id] = new Dictionary<GuessKind, float>();
+
+                        var stats = userSongStats.FirstOrDefault(x =>
+                            x.Values.Any(y => y.Values.Any(z => z.MusicId == song.Id)));
+                        if (stats != null)
+                        {
+                            foreach ((GuessKind key, var value) in stats)
+                            {
+                                mimic.BotInfo.SongHitChanceDict[song.Id]![key] =
+                                    value.GetValueOrDefault(song.Id)?.CorrectPercentage ?? 0;
+                            }
+                        }
                     }
                 }
             }
