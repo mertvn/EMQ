@@ -333,11 +333,12 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
 
                     if (musicExternalLink != null)
                     {
-                        if (!existingSong.Links.Any(x => x.Url == musicExternalLink.url))
+                        string replaced = musicExternalLink.url.ReplaceSelfhostLink();
+                        if (!existingSong.Links.Any(x => x.Url == replaced))
                         {
                             existingSong.Links.Add(new SongLink()
                             {
-                                Url = musicExternalLink.url.ReplaceSelfhostLink(),
+                                Url = replaced,
                                 Type = (SongLinkType)musicExternalLink.type,
                                 IsVideo = musicExternalLink.is_video,
                                 Duration = musicExternalLink.duration,
