@@ -1015,7 +1015,7 @@ public class QuizManager
                         Guess = player.Guess?.Dict[key] ?? "",
                         FirstGuessMs = player.Guess?.DictFirstGuessMs[key] ?? 0,
                         IsGuessCorrect = player.IsGuessKindCorrectDict[key]!.Value,
-                        Labels = labels,
+                        Labels = key == GuessKind.Mst ? labels : null,
                         IsOnList = labels?.Any() ?? false,
                         PreviousUserSpacedRepetition = key == GuessKind.Mst ? previous : null,
                         CurrentUserSpacedRepetition = key == GuessKind.Mst ? current : null,
