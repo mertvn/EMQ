@@ -23,7 +23,9 @@
             <Content>
                 @foreach ((GuessKind guessKind, IQueryable<SHSongStats> shSongStats) in SHSongStatsDict)
                 {
+                    var songStats = Song?.Stats.GetValueOrDefault(guessKind);
                     <Blazorise.TabPanel Name="@guessKind.ToString()">
+                        Guess rate: @(Math.Round(songStats?.CorrectPercentage ?? 0, 2))% (@(songStats?.TimesCorrect ?? 0)/@(songStats?.TimesPlayed ?? 0))
                         <div class="grid" tabindex="-1">
                             <QuickGrid Items="@shSongStats">
                                 <PropertyColumn Property="@(x => x.PlayedAt)" Title="Date" Sortable="true" Format="s" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
