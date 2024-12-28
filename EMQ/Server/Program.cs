@@ -34,6 +34,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+using Npgsql;
+
+#if DEBUG // todo
+var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
+NpgsqlLoggingConfiguration.InitializeLogging(loggerFactory, parameterLoggingEnabled: true);
+#endif
 
 // Console.WriteLine(Directory.GetCurrentDirectory());
 DotEnv.Load("../../.env");

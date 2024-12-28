@@ -1017,8 +1017,8 @@ public class QuizManager
                         IsGuessCorrect = player.IsGuessKindCorrectDict[key]!.Value,
                         Labels = labels,
                         IsOnList = labels?.Any() ?? false,
-                        PreviousUserSpacedRepetition = previous,
-                        CurrentUserSpacedRepetition = current,
+                        PreviousUserSpacedRepetition = key == GuessKind.Mst ? previous : null,
+                        CurrentUserSpacedRepetition = key == GuessKind.Mst ? current : null,
                         PlayerSongStats = userSongStats,
                     };
 

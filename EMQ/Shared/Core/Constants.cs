@@ -50,7 +50,7 @@ public static class Constants
 
     public const int PlayerIdBotMin = 2_000_000_000;
 
-    public const bool IsChristmasMode = true;
+    public const bool IsChristmasMode = false;
 
     public const int EntityVersionSong = 2;
 
