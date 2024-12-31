@@ -5068,7 +5068,10 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
             .ToDictionary(x => x.date,
                 x => new ServerActivityStatsDailyPlayers() { Users = x.users, Guests = x.guests });
 
-        var ret = new ServerActivityStats { DailyPlayers = resDailyPlayers };
+        var lastMugyuOrNeko = await connection.ExecuteScalarAsync<DateTime>(
+            "SELECT played_at FROM unique_quiz_plays WHERE music_id = any('{9880,9884}') ORDER BY played_at DESC LIMIT 1");
+
+        var ret = new ServerActivityStats { DailyPlayers = resDailyPlayers, LastMugyuOrNeko = lastMugyuOrNeko, };
         return ret;
     }
 

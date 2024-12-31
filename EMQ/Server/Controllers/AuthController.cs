@@ -416,6 +416,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpGet]
     [Route("GetServerStats")]
+    [OutputCache(Duration = 10, PolicyName = "MyOutputCachePolicy")]
     public ServerStats GetServerStats()
     {
         return new ServerStats()
@@ -434,6 +435,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetServerActivityStats")]
+    [OutputCache(Duration = 5 * 60, PolicyName = "MyOutputCachePolicy")]
     public async Task<ServerActivityStats> GetServerActivityStats(ReqGetServerActivityStats req)
     {
         return await DbManager.GetServerActivityStats(req.StartDate, req.EndDate);

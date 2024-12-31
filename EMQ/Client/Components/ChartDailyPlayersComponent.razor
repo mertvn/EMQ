@@ -3,9 +3,15 @@
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using System.Globalization
 @inject HttpClient _client
 
 @* <button type="button" class="btn btn-primary" @onclick="@(async () => await HandleRedraw())">Fetch</button> *@
+
+@if (ServerActivityStats.LastMugyuOrNeko != default)
+{
+    <p>Hours since last mugyu or neko: @(((DateTime.UtcNow - ServerActivityStats.LastMugyuOrNeko).TotalHours).ToString("F1", CultureInfo.InvariantCulture))</p>
+}
 
 <h4>Daily players (at least one song played)</h4>
 <Chart @ref="_barChart" Type="ChartType.Bar" TItem="int" Options="@Options"/>
@@ -40,12 +46,14 @@
     {
         await _barChart.Clear();
 
+        // todo this needs to be moved outside
         var req = new ReqGetServerActivityStats(DateTime.UtcNow.AddDays(-90), DateTime.UtcNow.AddDays(1));
         var res = await _client.PostAsJsonAsync("Auth/GetServerActivityStats", req);
         if (res.IsSuccessStatusCode)
         {
             var content = await res.Content.ReadFromJsonAsync<ServerActivityStats>();
             ServerActivityStats = content!;
+            StateHasChanged();
         }
 
         await _barChart.AddLabelsDatasetsAndUpdate(ServerActivityStats.DailyPlayers.Keys, GetBarChartDataset(0), GetBarChartDataset(1));

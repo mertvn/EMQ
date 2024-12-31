@@ -1,10 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class ServerActivityStats
 {
     public Dictionary<string, ServerActivityStatsDailyPlayers> DailyPlayers { get; set; } = new();
+
+    public DateTime LastMugyuOrNeko { get; set; }
 }
 
 public class ServerActivityStatsDailyPlayers
