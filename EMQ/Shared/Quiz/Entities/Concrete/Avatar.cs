@@ -20,6 +20,7 @@ public class Avatar
     {
         { AvatarCharacter.Auu, new List<string> { "Default", "OG" } },
         { AvatarCharacter.VNDBCharacterImage, new List<string> { "" } },
+        { AvatarCharacter.ProcrasAndTina, new List<string> { "Default" } },
     };
 
     public static Avatar DefaultAvatar { get; } = new(AvatarCharacter.Auu, "Default");

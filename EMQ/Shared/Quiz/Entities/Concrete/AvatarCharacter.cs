@@ -8,4 +8,7 @@ public enum AvatarCharacter
 
     [Description("VNDB")]
     VNDBCharacterImage,
+
+    [Description("Procras & Tina")]
+    ProcrasAndTina,
 }
