@@ -50,6 +50,8 @@ public partial class LibraryPage
     // Only for Search by room settings tab
     private Room Room { get; } = new(Guid.Empty, "", new Player(-1, "", Avatar.DefaultAvatar));
 
+    private bool IsMergeBGMTabs { get; set; }
+
     private QuizSettingsComponent? _quizSettingsComponent;
 
     private async Task StateHasChangedAsync()

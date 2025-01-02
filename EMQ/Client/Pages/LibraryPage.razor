@@ -257,44 +257,43 @@
             </select>
             <label for="SongSelectionKind">Filter</label>
             <br/>
+            <label>
+                <input type="checkbox" class="form-check-input" style="margin: 5px" @bind="IsMergeBGMTabs"/>
+                Merge BGM tabs
+            </label>
         </div>
 
         @{
             var bgms = CurrentSongs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
             var tabs = new Dictionary<string, List<Song>>();
-            // var grouped = bgms
-            //     .GroupBy(x => x.Sources.SelectMany(y => y.Links.Where(z => z.Type == SongSourceLinkType.MusicBrainz).Select(z => z.Url)))
-            //     .First();
 
-            // todo don't show releases that are not what's entered in the input box?
-            var releases = bgms.SelectMany(x =>
-                x.Sources.SelectMany(y =>
-                    y.Links.Where(z =>
-                        z.Type == SongSourceLinkType.MusicBrainzRelease))).DistinctBy(x => x.Url);
-
-            // var releases = bgms.SelectMany(x => x.MusicBrainzReleases).Distinct();
-
-            foreach (var release in releases)
+            @if (IsMergeBGMTabs)
             {
-                var releaseString = release.Name.ToString();
-                if (!tabs.ContainsKey(releaseString))
-                {
-                    tabs[releaseString] = new List<Song>();
-                }
+                tabs["MusicBrainz"] = bgms;
+            }
+            else
+            {
+                // todo don't show releases that are not what's entered in the input box?
+                var releases = bgms.SelectMany(x =>
+                    x.Sources.SelectMany(y =>
+                        y.Links.Where(z =>
+                            z.Type == SongSourceLinkType.MusicBrainzRelease))).DistinctBy(x => x.Url);
 
-                foreach (Song bgm in bgms)
+                foreach (var release in releases)
                 {
-                    // var asdf1 = bgm.Sources.SelectMany(y => y.Links).Where(z => z.Type == SongSourceLinkType.MusicBrainzRelease).Select(a => a.Url);
-                    // if (asdf1.Contains(release))
-                    // {
-                    //     tabs[releaseString].Add(bgm);
-                    // }
-
-                    var songReleases = bgm.Sources.SelectMany(y => y.Links.Where(a => a.Type == SongSourceLinkType.MusicBrainzRelease).Select(z => z.Url)).Distinct();
-                    // var songReleases = bgm.MusicBrainzReleases;
-                    if (songReleases.Contains(release.Url))
+                    if (!tabs.ContainsKey(release.Name))
                     {
-                        tabs[releaseString].Add(bgm);
+                        tabs[release.Name] = new List<Song>();
+                    }
+
+                    foreach (Song bgm in bgms)
+                    {
+                        var songReleases = bgm.Sources.SelectMany(y => y.Links.Where(a => a.Type == SongSourceLinkType.MusicBrainzRelease).Select(z => z.Url)).Distinct();
+                        // var songReleases = bgm.MusicBrainzReleases;
+                        if (songReleases.Contains(release.Url))
+                        {
+                            tabs[release.Name].Add(bgm);
+                        }
                     }
                 }
             }
