@@ -750,7 +750,9 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                         }
 
                         <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
-                            <span style="color: white; position: absolute; bottom: 0%; left: 2%;">@player.Score</span>
+                            <span class="scoreSpan" style="color: white; position: absolute; bottom: 0; left: 0; height:25px; width: 18px;">
+                                <AutoResizeText Text="@player.Score.ToString()" ContainerSelector=".scoreSpan"/>
+                            </span>
 
                             @if (Room != null && Room.QuizSettings.AnsweringKind == AnsweringKind.Mixed)
                             {
@@ -781,9 +783,9 @@ box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @box
                             }
                             else
                             {
-                                <span style="color: white; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
+                                <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;"
                                       @onclick="@(() => Onclick_Username(player.Id))">
-                                    <AutoResizeText Text="@player.Username"/>
+                                    @player.Username
                                 </span>
                             }
 

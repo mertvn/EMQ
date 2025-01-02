@@ -31,6 +31,7 @@ public static class Blacklists
         ("v2112", "Yasashii Mori"),
         ("v2112", "Ai no Chocolate Souffle"),
         ("v2112", "Akai Akai Hana ~THE WILD FLOWER~"),
+        ("v2177", "Ashita e to Tsuzuku Michi"),
         ("v2396", "Go! Go! Waitress"),
         ("v2438", "Blue Twilight ~Taiyou to Tsuki ga Deau Toki~"),
         ("v2501", "Hide and seek"),

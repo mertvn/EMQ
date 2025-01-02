@@ -317,7 +317,12 @@ public partial class RoomPage
                 RoomPassword = await res.Content.ReadAsStringAsync();
             }
 
-            string inviteLink = $"{_navigation.BaseUri}UseRoomInvitePage?roomId={Room.Id}&password={RoomPassword}";
+            string inviteLink = $"{_navigation.BaseUri}UseRoomInvitePage?roomId={Room.Id}";
+            if (!string.IsNullOrEmpty(RoomPassword))
+            {
+                inviteLink += $"&password={RoomPassword}";
+            }
+
             await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", inviteLink);
 
             // This is kind of hacky. Do I care? Not really.
