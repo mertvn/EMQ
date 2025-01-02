@@ -123,11 +123,13 @@ public static class TypedQuizHub
     }
 
     public static void ReceiveCorrectAnswer(IEnumerable<int> playerIds, Song song,
-        Dictionary<int, List<Label>> playerLabels, Dictionary<int, PlayerGuess?> playerGuesses)
+        Dictionary<int, List<Label>> playerLabels, Dictionary<int, PlayerGuess?> playerGuesses,
+        Dictionary<int, short> playerVotes)
     {
         foreach (int playerId in playerIds)
         {
-            EnqueuePumpMessage(playerId, "ReceiveCorrectAnswer", new object[] { song, playerLabels, playerGuesses });
+            EnqueuePumpMessage(playerId, "ReceiveCorrectAnswer",
+                new object[] { song, playerLabels, playerGuesses, playerVotes });
         }
     }
 

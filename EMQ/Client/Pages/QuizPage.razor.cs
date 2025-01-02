@@ -36,13 +36,15 @@ public partial class QuizPage
                 "ReceiveCorrectAnswer", (
                     new Type[]
                     {
-                        typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, PlayerGuess?>)
+                        typeof(Song), typeof(Dictionary<int, List<Label>>), typeof(Dictionary<int, PlayerGuess?>),
+                        typeof(Dictionary<int, short>)
                     },
                     async param =>
                     {
                         await OnReceiveCorrectAnswer((Song)param[0]!,
                             (Dictionary<int, List<Label>>)param[1]!,
-                            (Dictionary<int, PlayerGuess?>)param[2]!);
+                            (Dictionary<int, PlayerGuess?>)param[2]!,
+                            (Dictionary<int, short>)param[3]!);
                     })
             },
             {
@@ -131,6 +133,8 @@ public partial class QuizPage
         : null;
 
     private Dictionary<int, List<Label>> _correctAnswerPlayerLabels { get; set; } = new();
+
+    private Dictionary<int, short> _correctAnswerPlayerVotes { get; set; } = new();
 
     private Dictionary<int, PlayerGuess?> _playerGuesses { get; set; } = new();
 
@@ -317,7 +321,8 @@ public partial class QuizPage
 
     private async Task OnReceiveCorrectAnswer(Song correctAnswer,
         Dictionary<int, List<Label>> playerLabels,
-        Dictionary<int, PlayerGuess?> playerGuesses)
+        Dictionary<int, PlayerGuess?> playerGuesses,
+        Dictionary<int, short> playerVotes)
     {
         if (_isDisposed)
         {
@@ -331,6 +336,7 @@ public partial class QuizPage
 
         _correctAnswerPlayerLabels = playerLabels;
         _playerGuesses = playerGuesses;
+        _correctAnswerPlayerVotes = playerVotes;
     }
 
     private async Task OnReceivePlayerGuesses(Dictionary<int, PlayerGuess?> playerGuesses)

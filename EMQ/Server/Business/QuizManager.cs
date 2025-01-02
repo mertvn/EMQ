@@ -780,7 +780,8 @@ public class QuizManager
         TypedQuizHub.ReceiveCorrectAnswer(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Songs[Quiz.QuizState.sp],
             Quiz.Songs[Quiz.QuizState.sp].PlayerLabels,
-            Quiz.Room.PlayerGuesses);
+            Quiz.Room.PlayerGuesses,
+            Quiz.Songs[Quiz.QuizState.sp].PlayerVotes);
 
         // wait a little for these messages to reach players, otherwise it looks really janky
         await Task.Delay(TimeSpan.FromMilliseconds(160));
@@ -1739,6 +1740,19 @@ public class QuizManager
                     }
                 }
             }
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var votes = (await connection.QueryAsync<MusicVote>(
+            @"SELECT * FROM music_vote WHERE user_id = ANY(@uIds) AND music_id = ANY(@mIds)",
+            new
+            {
+                uIds = Quiz.Room.Players.Select(x => x.Id).ToArray(), mIds = Quiz.Songs.Select(x => x.Id).ToArray()
+            })).ToArray();
+
+        foreach (var song in Quiz.Songs)
+        {
+            song.PlayerVotes = votes.Where(x => x.music_id == song.Id).ToDictionary(x => x.user_id, x => x.vote!.Value);
         }
 
         TypedQuizHub.ReceiveQuizEntered(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id));
