@@ -1861,7 +1861,7 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
         {
-            if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsOnlyRead)
+            if (Quiz.Room.QuizSettings.Filters.ListReadKindFiltersHasUnread)
             {
                 Quiz.Room.QuizSettings.ListDistributionKind = ListDistributionKind.Random;
             }
@@ -2096,15 +2096,35 @@ public class QuizManager
                                 .Where(x => x.Value.Value > 0)
                                 .ToDictionary(x => x.Key, x => x.Value.Value);
 
-                            int sumOfSongTypesLeft = songTypesLeft.Sum(x => x.Value);
+                            var listReadKindLeft = Quiz.Room.QuizSettings.Filters.ListReadKindFilters
+                                .OrderByDescending(x => x.Key) // Random must be selected first
+                                .Where(x => x.Value.Value > 0)
+                                .ToDictionary(x => x.Key, x => x.Value.Value);
+
+                            int readCount = Quiz.Room.QuizSettings.Filters.ListReadKindFilters
+                                .GetValueOrDefault(ListReadKind.Read)?.Value ?? 0;
+
                             int targetNumSongsPerPlayer = Math.Min(
-                                sumOfSongTypesLeft / validSourcesDict.Count,
+                                readCount / validSourcesDict.Count,
                                 validSourcesDict.MinBy(x => x.Value.Count).Value.Count);
                             Console.WriteLine($"targetNumSongsPerPlayer: {targetNumSongsPerPlayer}");
 
                             dbSongs = new List<Song>();
+                            invalidMids ??= new List<int>();
 
-                            // we randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount
+                            // Select Random ListReadKind songs first
+                            dbSongs.AddRange(await DbManager.GetRandomSongs(
+                                Quiz.Room.QuizSettings.NumSongs - readCount,
+                                Quiz.Room.QuizSettings.Duplicates,
+                                null,
+                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
+                                ownerUserId: Quiz.Room.Owner.Id,
+                                gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind, listReadKindLeft: listReadKindLeft));
+                            invalidMids.AddRange(dbSongs.Select(x => x.Id));
+
+                            // then select the Read songs.
+                            // We randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount.
                             foreach ((int pId, _) in validSourcesDict.Shuffle())
                             {
                                 var player = Quiz.Room.Players.Single(x => x.Id == pId);
@@ -2117,7 +2137,6 @@ public class QuizManager
                                             (DateTime.UtcNow - x.Value) <
                                             TimeSpan.FromMinutes(Quiz.Room.QuizSettings.PreventSameSongSpamMinutes))
                                         .Select(x => x.Key);
-                                    invalidMids ??= new List<int>();
                                     invalidMids.AddRange(playedInTheLastXMinutes);
                                 }
 
@@ -2137,7 +2156,9 @@ public class QuizManager
                                     filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
                                     ownerUserId: Quiz.Room.Owner.Id,
-                                    gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind));
+                                    gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
+                                    listReadKindLeft: listReadKindLeft));
+                                invalidMids.AddRange(dbSongs.Select(x => x.Id));
                             }
 
                             if (!Quiz.Room.QuizSettings.Duplicates)
@@ -2164,8 +2185,8 @@ public class QuizManager
                             dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
                             Console.WriteLine($"dbSongs.Count after distinct2: {dbSongs.Count}");
 
-                            int diff = (targetNumSongsPerPlayer * validSourcesDict.Count) - dbSongs.Count;
-                            Console.WriteLine($"NumSongs to actual diff: {diff}");
+                            // int diff = (targetNumSongsPerPlayer * validSourcesDict.Count) - dbSongs.Count;
+                            // Console.WriteLine($"NumSongs to actual diff: {diff}");
 
                             Quiz.Room.Log($"Balanced mode tried to select {targetNumSongsPerPlayer} songs per player.",
                                 writeToChat: true);

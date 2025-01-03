@@ -369,7 +369,7 @@
 
                             <br/>
                             <div style="border: 1px black solid;">
-                                <InputSelect id="ListDistributionKind" @bind-Value="ClientQuizSettings.ListDistributionKind" style="margin: 5px" disabled="@(!ClientQuizSettings.Filters.ListReadKindFiltersIsOnlyRead)">
+                                <InputSelect id="ListDistributionKind" @bind-Value="ClientQuizSettings.ListDistributionKind" style="margin: 5px" disabled="@(ClientQuizSettings.Filters.ListReadKindFiltersHasUnread)">
                                     @foreach (ListDistributionKind listDistributionKind in Enum.GetValues<ListDistributionKind>())
                                     {
                                         <option value="@listDistributionKind">
@@ -387,7 +387,7 @@
                                 <label for="ListDistributionKind">List distribution</label>
                                 <br/>
 
-                                @if (ClientQuizSettings.Filters.ListReadKindFiltersIsOnlyRead && ClientQuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
+                                @if (!ClientQuizSettings.Filters.ListReadKindFiltersHasUnread && ClientQuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
                                 {
                                     <div style="border: 1px black solid;">
                                         <InputCheckbox id="IsPreventSameSongSpam" class="form-check-input" @bind-Value="ClientQuizSettings.IsPreventSameSongSpam" style="margin: 5px;"></InputCheckbox>

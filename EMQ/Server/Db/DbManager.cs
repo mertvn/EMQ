@@ -1628,7 +1628,8 @@ GROUP BY artist_id";
         bool selectCategories = false, List<Player>? players = null, ListDistributionKind? listDistributionKind = null,
         List<int>? validMids = null, List<int>? invalidMids = null,
         Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null,
-        GamemodeKind? gamemodeKind = null, SongSelectionKind? songSelectionKind = null)
+        GamemodeKind? gamemodeKind = null, SongSelectionKind? songSelectionKind = null,
+        Dictionary<ListReadKind, int>? listReadKindLeft = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -2167,8 +2168,7 @@ GROUP BY artist_id";
             .Where(x => x.Value.Value > 0)
             .ToDictionary(x => x.Key, x => x.Value.Value);
 
-        // todo? param
-        Dictionary<ListReadKind, int>? listReadKindLeft = filters?.ListReadKindFilters
+        listReadKindLeft ??= filters?.ListReadKindFilters
             .OrderByDescending(x => x.Key) // Random must be selected first
             .Where(x => x.Value.Value > 0)
             .ToDictionary(x => x.Key, x => x.Value.Value);

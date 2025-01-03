@@ -185,6 +185,9 @@ public class QuizFilters
     public bool ListReadKindFiltersIsAllRandom =>
         ListReadKindFilters.TryGetValue(ListReadKind.Random, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Random).Any(x => x.Value.Value > 0);
+
+    public bool ListReadKindFiltersHasUnread =>
+        ListReadKindFilters.TryGetValue(ListReadKind.Unread, out var val) && val.Value > 0;
 }
 
 public enum ListReadKind // todo? find a better name
