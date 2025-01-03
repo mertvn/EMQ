@@ -237,6 +237,16 @@
                             @*     </ul> *@
                             @* } *@
 
+                            @if (true)
+                            {
+                                var developers = song.Sources.SelectMany(x => x.Developers).DistinctBy(x => x.Title.LatinTitle).ToArray();
+                                if (developers.Any())
+                                {
+                                    <span>Developers: @string.Join(", ", developers.Select(x => x.Title.LatinTitle))</span>
+                                    <br/>
+                                }
+                            }
+
                             @if (!string.IsNullOrEmpty(song.ScreenshotUrl))
                             {
                                 <ul>
