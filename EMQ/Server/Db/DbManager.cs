@@ -1680,8 +1680,9 @@ GROUP BY artist_id";
                     queryCategories.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
 
                     var validCategories = filters.CategoryFilters;
-                    var trileans = validCategories.Select(x => x.Trilean);
+                    var trileans = validCategories.Select(x => x.Trilean).ToArray();
                     bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+                    bool isOnlyExcludes = trileans.All(y => y is LabelKind.Exclude);
 
                     var ordered = validCategories.OrderByDescending(x => x.Trilean == LabelKind.Include)
                         .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
@@ -1727,16 +1728,20 @@ GROUP BY artist_id";
  AND msc.rating >= {categoryFilter.SongSourceCategory.Rating ?? 0}");
                     }
 
-                    if (printSql)
+                    if (!isOnlyExcludes) // performance optimization
                     {
-                        Console.WriteLine(queryCategories.Sql);
-                        Console.WriteLine(JsonSerializer.Serialize(queryCategories.Parameters, Utils.JsoIndented));
-                    }
+                        if (printSql)
+                        {
+                            Console.WriteLine(queryCategories.Sql);
+                            Console.WriteLine(JsonSerializer.Serialize(queryCategories.Parameters, Utils.JsoIndented));
+                        }
 
-                    var resCategories =
-                        (await connection.QueryAsync<(int, string)>(queryCategories.Sql, queryCategories.Parameters))
-                        .Shuffle().ToList();
-                    ids = resCategories;
+                        var resCategories =
+                            (await connection.QueryAsync<(int, string)>(queryCategories.Sql,
+                                queryCategories.Parameters))
+                            .Shuffle().ToList();
+                        ids = resCategories;
+                    }
                 }
 
                 if (filters.ArtistFilters.Any())
