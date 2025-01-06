@@ -25,6 +25,8 @@ public partial class SongHistoryComponent
 
     private string SelectedPlayerUsername { get; set; } = "-";
 
+    private GuessKind SelectedGuessKind { get; set; }
+
     private bool SessionWasNull { get; set; } = true;
 
     protected override async Task OnParametersSetAsync()
@@ -36,7 +38,8 @@ public partial class SongHistoryComponent
             if (newCount != _previousCount)
             {
                 PlayerStatsDict =
-                    PlayerStatsComponent.CalculatePlayerStats(SongsHistory.Select(x => x.Value).ToArray());
+                    PlayerStatsComponent.CalculatePlayerStats(SongsHistory.Select(x => x.Value).ToArray(),
+                        SelectedGuessKind);
             }
 
             _previousCount = newCount;
@@ -96,6 +99,19 @@ public partial class SongHistoryComponent
     private async Task OnSelectedPlayerUsernameChanged(string value)
     {
         SelectedPlayerUsername = value;
+        await CallStateHasChanged();
+    }
+
+    private async Task OnSelectedGuessKindChanged(GuessKind value)
+    {
+        SelectedGuessKind = value;
+        if (SongsHistory != null)
+        {
+            PlayerStatsDict =
+                PlayerStatsComponent.CalculatePlayerStats(SongsHistory.Select(x => x.Value).ToArray(),
+                    SelectedGuessKind);
+        }
+
         await CallStateHasChanged();
     }
 }

@@ -35,7 +35,7 @@
     <summary>Player stats</summary>
     <p>Only counting quizzes that count for stats.</p>
     <PlayerStatsComponent
-        PlayerStatsDict="@PlayerStatsComponent.CalculatePlayerStats(SHRoomContainers.SelectMany(x => x.Quizzes.Where(z => z.Quiz.should_update_stats).SelectMany(y => y.SongHistories)).Select(x => x.Value).ToArray())">
+        PlayerStatsDict="@PlayerStatsComponent.CalculatePlayerStats(SHRoomContainers.SelectMany(x => x.Quizzes.Where(z => z.Quiz.should_update_stats).SelectMany(y => y.SongHistories)).Select(x => x.Value).ToArray(), GuessKind.Mst)">
     </PlayerStatsComponent>
 </details>
 
@@ -115,7 +115,7 @@
     {
         foreach (var shQuizContainer in room.Quizzes)
         {
-            shQuizContainer.PlayerStats = PlayerStatsComponent.CalculatePlayerStats(shQuizContainer.SongHistories.Select(x => x.Value).ToArray());
+            shQuizContainer.PlayerStats = PlayerStatsComponent.CalculatePlayerStats(shQuizContainer.SongHistories.Select(x => x.Value).ToArray(), GuessKind.Mst);
         }
 
         string json = JsonSerializer.Serialize(room, Utils.JsoIndented);

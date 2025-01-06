@@ -25,6 +25,15 @@
         }
     </select>
     <label for="SelectedPlayerUsername">Player</label>
+
+    <br/>
+    <select id="SelectedGuessKind" style="margin: 5px" @bind:get="@SelectedGuessKind" @bind:set="@OnSelectedGuessKindChanged">
+        @foreach (var guessKind in Enum.GetValues<GuessKind>())
+        {
+            <option value="@guessKind">@guessKind.GetDescription()</option>
+        }
+    </select>
+    <label for="SelectedGuessKind">Guess type</label>
 </div>
 
 <table class="songHistoryTable" style="width: 100%;">
@@ -49,7 +58,7 @@
                 var song = songHistory.Song;
                 string rowBackgroundColor = "initial";
                 bool ownPgiExists = songHistory.PlayerGuessInfos.TryGetValue(selectedPlayerId, out var ownPgi1);
-                var ownPgi = ownPgi1?.GetValueOrDefault(GuessKind.Mst) ?? new GuessInfo();
+                var ownPgi = ownPgi1?.GetValueOrDefault(SelectedGuessKind) ?? new GuessInfo();
                 if (ownPgiExists)
                 {
                     rowBackgroundColor = UiHelpers.Bool2Color(ownPgi.IsGuessCorrect, "seagreen", "firebrick");
@@ -268,7 +277,7 @@
                             <ul>
                                 @foreach ((int _, var value1) in songHistory.PlayerGuessInfos)
                                 {
-                                    var value = value1.GetValueOrDefault(GuessKind.Mst);
+                                    var value = value1.GetValueOrDefault(SelectedGuessKind);
                                     <li style="background-color: @UiHelpers.Bool2Color(value.IsGuessCorrect, "seagreen", "firebrick"); padding-left: 4px;">
                                         @value.Username:
                                         <span> @value.Guess </span>
@@ -291,5 +300,5 @@
 <br/>
 <details>
     <summary>Player stats</summary>
-    <PlayerStatsComponent PlayerStatsDict="PlayerStatsDict"></PlayerStatsComponent>
+    <PlayerStatsComponent PlayerStatsDict="PlayerStatsDict"/>
 </details>

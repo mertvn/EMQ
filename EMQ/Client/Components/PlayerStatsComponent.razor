@@ -77,7 +77,7 @@
     [Parameter]
     public Dictionary<int, PlayerStats> PlayerStatsDict { get; set; } = null!;
 
-    public static Dictionary<int, PlayerStats> CalculatePlayerStats(SongHistory[] songHistories)
+    public static Dictionary<int, PlayerStats> CalculatePlayerStats(SongHistory[] songHistories, GuessKind guessKind)
     {
         Console.WriteLine("CalculatePlayerStats");
         var dict = new Dictionary<int, PlayerStats>();
@@ -124,7 +124,7 @@
             {
                 foreach ((int key, var value1) in songHistory.PlayerGuessInfos)
                 {
-                    GuessInfo value = value1.GetValueOrDefault(GuessKind.Mst);
+                    GuessInfo value = value1.GetValueOrDefault(guessKind);
                     if (key == playerId)
                     {
                         username = value.Username;
@@ -195,7 +195,7 @@
                         {
                             timesCorrect += 1;
 
-                            totalDiff += songHistory.Song.Stats?.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0; // do not remove ?
+                            totalDiff += songHistory.Song.Stats?.GetValueOrDefault(guessKind)?.CorrectPercentage ?? 0; // do not remove ?
                             totalHits += songHistory.TimesCorrect;
 
                             if (songHistory.TimesCorrect == 1)
