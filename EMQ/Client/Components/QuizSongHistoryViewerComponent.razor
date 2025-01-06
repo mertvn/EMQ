@@ -41,39 +41,47 @@
 
 @foreach (var shRoomContainer in SHRoomContainers)
 {
-    <details style="margin: 10px;">
+    if (!IsOpenDict.TryGetValue(shRoomContainer.Room.id, out bool isOpen))
+    {
+        IsOpenDict[shRoomContainer.Room.id] = false;
+    }
+
+    <details style="margin: 10px;" open="@isOpen" @ontoggle="@(_ => IsOpenDict[shRoomContainer.Room.id] = !isOpen)">
         <summary>
             @shRoomContainer.Room.created_at.ToString("s") @shRoomContainer.Room.initial_name
             <button type="button" class="btn btn-secondary" @onclick="@(() => DownloadRoomJson(shRoomContainer))">
                 Download JSON (Room)
             </button>
         </summary>
-        <div>
-            @foreach (var quiz in shRoomContainer.Quizzes)
-            {
-                <details style="padding-left: 6px; margin: 10px;">
-                    <summary>
-                        @quiz.Quiz.created_at.ToString("s") Quiz (@quiz.SongHistories.First().Value.PlayerGuessInfos.Count players)
+        @if (isOpen)
+        {
+            <div>
+                @foreach (var quiz in shRoomContainer.Quizzes)
+                {
+                    <details style="padding-left: 6px; margin: 10px;">
+                        <summary>
+                            @quiz.Quiz.created_at.ToString("s") Quiz (@quiz.SongHistories.First().Value.PlayerGuessInfos.Count players)
 
-                        <button type="button" class="btn btn-secondary" @onclick="@(() => CopySettingsCode(quiz))">
-                            Copy settings code
-                        </button>
-                    </summary>
-                    <div>
-                        @if (quiz.Quiz.should_update_stats)
-                        {
-                            <p>Counts for stats.</p>
-                        }
-                        else
-                        {
-                            <p>Does not count for stats.</p>
-                        }
+                            <button type="button" class="btn btn-secondary" @onclick="@(() => CopySettingsCode(quiz))">
+                                Copy settings code
+                            </button>
+                        </summary>
+                        <div>
+                            @if (quiz.Quiz.should_update_stats)
+                            {
+                                <p>Counts for stats.</p>
+                            }
+                            else
+                            {
+                                <p>Does not count for stats.</p>
+                            }
 
-                        <SongHistoryComponent SongsHistory="@quiz.SongHistories"></SongHistoryComponent>
-                    </div>
-                </details>
-            }
-        </div>
+                            <SongHistoryComponent SongsHistory="@quiz.SongHistories"></SongHistoryComponent>
+                        </div>
+                    </details>
+                }
+            </div>
+        }
     </details>
 }
 
@@ -86,6 +94,8 @@
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
     public List<SHRoomContainer> SHRoomContainers { get; set; } = new();
+
+    public Dictionary<Guid, bool> IsOpenDict { get; } = new();
 
     protected override async Task OnInitializedAsync()
     {
