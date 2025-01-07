@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -852,6 +852,11 @@ public class QuizManager
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
+                }
+
+                if (Quiz.Room.QuizSettings.TeamSize > 1)
+                {
+                    Quiz.Room.QuizSettings.TeamSize += 1;
                 }
             }
 
