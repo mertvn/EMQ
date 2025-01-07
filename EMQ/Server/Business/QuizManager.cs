@@ -840,8 +840,7 @@ public class QuizManager
         {
             while (Quiz.Room.HotjoinQueue.Any())
             {
-                Quiz.Room.HotjoinQueue.TryDequeue(out Player? player);
-                if (player != null)
+                if (Quiz.Room.HotjoinQueue.TryDequeue(out Player? player))
                 {
                     player.Lives = Quiz.Room.QuizSettings.MaxLives;
                     player.Score = 0;
@@ -852,11 +851,11 @@ public class QuizManager
                     Quiz.Room.Players.Enqueue(player);
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
-                }
 
-                if (Quiz.Room.QuizSettings.TeamSize > 1)
-                {
-                    Quiz.Room.QuizSettings.TeamSize += 1;
+                    if (Quiz.Room.QuizSettings.TeamSize > 1)
+                    {
+                        Quiz.Room.QuizSettings.TeamSize += 1;
+                    }
                 }
             }
 
