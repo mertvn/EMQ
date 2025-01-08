@@ -3003,6 +3003,8 @@ public class QuizManager
         {
             if (vndbInfo.Labels != null)
             {
+                var excludedVns = vndbInfo.Labels.Where(x => x is { Kind: LabelKind.Exclude })
+                    .SelectMany(x => x.VNs.Select(y => y.Key));
                 playerLabels[playerId] = new List<Label>();
                 foreach (Label label in vndbInfo.Labels.Where(x => x.Kind == LabelKind.Include))
                 {
@@ -3011,7 +3013,7 @@ public class QuizManager
                         .Select(z => z.Url)
                         .ToList();
 
-                    if (currentSongSourceVndbUrls.Any(x => label.VNs.ContainsKey(x)))
+                    if (currentSongSourceVndbUrls.Any(x => label.VNs.ContainsKey(x) && !excludedVns.Contains(x)))
                     {
                         // todo? add preference for showing private labels as is
                         if (label.IsPrivate)
