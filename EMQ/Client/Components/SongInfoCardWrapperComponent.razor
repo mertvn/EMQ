@@ -155,7 +155,7 @@
                                             @if (videoLink.LastUnhandledReport != null)
                                             {
                                                 var r = videoLink.LastUnhandledReport;
-                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.note_user}";
+                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.report_kind.GetDisplayName()} <br/> {r.note_user}";
                                                 <Blazorise.Tooltip
                                                     Inline="true"
                                                     Text="@tooltipText">
@@ -243,7 +243,7 @@
                                             @if (soundLink.LastUnhandledReport != null)
                                             {
                                                 var r = soundLink.LastUnhandledReport;
-                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.note_user}";
+                                                string tooltipText = $"{r.submitted_by} at {r.submitted_on:s} <br/> {r.report_kind.GetDisplayName()} <br/> {r.note_user}";
                                                 <Blazorise.Tooltip
                                                     Inline="true"
                                                     Text="@tooltipText">
