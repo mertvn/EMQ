@@ -472,6 +472,14 @@ public class QuizManager
                         foreach (int aId in aIds)
                         {
                             correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                            if (ArtistBandsDict != null)
+                            {
+                                if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
+                                {
+                                    correctAnswers.AddRange(bandMemberAliases.Select(x =>
+                                        x.NormalizeForAutocomplete()));
+                                }
+                            }
                         }
                     }
                     else
@@ -486,17 +494,6 @@ public class QuizManager
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
-                    }
-
-                    if (ArtistBandsDict != null)
-                    {
-                        foreach (int aId in Quiz.Songs[Quiz.QuizState.sp].Artists.Select(x => x.Id))
-                        {
-                            if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
-                            {
-                                correctAnswers.AddRange(bandMemberAliases.Select(x => x.NormalizeForAutocomplete()));
-                            }
-                        }
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();
@@ -619,20 +616,28 @@ public class QuizManager
             {
                 if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
                 {
+                    var songArtistsWithRole = Quiz.Songs[Quiz.QuizState.sp].Artists
+                        .Where(x => x.Roles.Contains(SongArtistRole.Composer)).ToArray();
                     if (ArtistAliasesDict != null)
                     {
                         correctAnswers = new List<string>();
-                        var aIds = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Composer)).Select(x => x.Id);
+                        var aIds = songArtistsWithRole.Select(x => x.Id);
                         foreach (int aId in aIds)
                         {
                             correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                            if (ArtistBandsDict != null)
+                            {
+                                if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
+                                {
+                                    correctAnswers.AddRange(bandMemberAliases.Select(x =>
+                                        x.NormalizeForAutocomplete()));
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        var titles = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Composer)).SelectMany(x => x.Titles).ToArray();
+                        var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
@@ -664,20 +669,28 @@ public class QuizManager
             {
                 if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
                 {
+                    var songArtistsWithRole = Quiz.Songs[Quiz.QuizState.sp].Artists
+                        .Where(x => x.Roles.Contains(SongArtistRole.Arranger)).ToArray();
                     if (ArtistAliasesDict != null)
                     {
                         correctAnswers = new List<string>();
-                        var aIds = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Arranger)).Select(x => x.Id);
+                        var aIds = songArtistsWithRole.Select(x => x.Id);
                         foreach (int aId in aIds)
                         {
                             correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                            if (ArtistBandsDict != null)
+                            {
+                                if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
+                                {
+                                    correctAnswers.AddRange(bandMemberAliases.Select(x =>
+                                        x.NormalizeForAutocomplete()));
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        var titles = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Arranger)).SelectMany(x => x.Titles).ToArray();
+                        var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
@@ -709,20 +722,28 @@ public class QuizManager
             {
                 if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
                 {
+                    var songArtistsWithRole = Quiz.Songs[Quiz.QuizState.sp].Artists
+                        .Where(x => x.Roles.Contains(SongArtistRole.Lyricist)).ToArray();
                     if (ArtistAliasesDict != null)
                     {
                         correctAnswers = new List<string>();
-                        var aIds = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Lyricist)).Select(x => x.Id);
+                        var aIds = songArtistsWithRole.Select(x => x.Id);
                         foreach (int aId in aIds)
                         {
                             correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                            if (ArtistBandsDict != null)
+                            {
+                                if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
+                                {
+                                    correctAnswers.AddRange(bandMemberAliases.Select(x =>
+                                        x.NormalizeForAutocomplete()));
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        var titles = Quiz.Songs[Quiz.QuizState.sp].Artists
-                            .Where(x => x.Roles.Contains(SongArtistRole.Lyricist)).SelectMany(x => x.Titles).ToArray();
+                        var titles =songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
