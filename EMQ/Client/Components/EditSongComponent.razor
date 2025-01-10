@@ -658,7 +658,21 @@
 
     private void PasteCAL()
     {
-        Song.Artists.AddRange(ClientState.CopiedCAL);
+        foreach (SongArtist copied in ClientState.CopiedCAL)
+        {
+            bool added = false;
+            foreach (SongArtist current in Song.Artists.Where(current => current.Id == copied.Id))
+            {
+                added = true;
+                current.Roles = current.Roles.Union(copied.Roles).ToList();
+            }
+
+            if (!added)
+            {
+                Song.Artists.Add(copied);
+            }
+        }
+
     // ClientState.CopiedCAL = Array.Empty<SongArtist>();
     }
 
