@@ -24,7 +24,8 @@ public class ProtoBufTests
             ArtistFilters =
                 new List<ArtistFilter>
                 {
-                    new(new AutocompleteA(11111,"Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
+                    new(new AutocompleteA(11111, "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include,
+                        SongArtistRole.Unknown, false)
                 },
             CategoryFilters = new List<CategoryFilter>
             {
@@ -58,7 +59,8 @@ public class ProtoBufTests
             ArtistFilters =
                 new List<ArtistFilter>
                 {
-                    new(new AutocompleteA(11111, "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include)
+                    new(new AutocompleteA(11111, "Shimotsuki Haruka", "霜月 はるか"), LabelKind.Include,
+                        SongArtistRole.Unknown, false)
                 },
             CategoryFilters = new List<CategoryFilter>
             {

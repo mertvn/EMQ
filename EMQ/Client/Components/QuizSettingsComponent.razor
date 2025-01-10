@@ -773,6 +773,7 @@
                             <tr>
                                 <th></th>
                                 <th>Selection</th>
+                                <th>Role</th>
                                 <th>VNDB Id</th>
                                 <th>Artist Name</th>
                             </tr>
@@ -790,6 +791,19 @@
                                                 <option value="@labelKind">@labelKind</option>
                                             }
                                         </InputSelect>
+                                    </th>
+
+                                    <th>
+                                        <InputCheckbox class="form-check-input" @bind-Value="@af.IsRoleFilterEnabled" style="margin: 5px"/>
+                                        @if (af.IsRoleFilterEnabled)
+                                        {
+                                            <InputSelect @bind-Value="@af.Role" style="margin: 5px">
+                                                @foreach (var role in Enum.GetValues<SongArtistRole>())
+                                                {
+                                                    <option value="@role">@role</option>
+                                                }
+                                            </InputSelect>
+                                        }
                                     </th>
 
                                     @* todo *@

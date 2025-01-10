@@ -269,7 +269,7 @@ public partial class QuizSettingsComponent
                 trilean = (LabelKind)rng.Next(-1, 1);
             }
 
-            var categoryFilter = new ArtistFilter(songSourceCategory, trilean);
+            var categoryFilter = new ArtistFilter(songSourceCategory, trilean, SongArtistRole.Vocals, false);
             categoryFilters.Add(categoryFilter);
         }
 
@@ -308,7 +308,8 @@ public partial class QuizSettingsComponent
         // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
         if (SelectedArtist != null)
         {
-            ClientQuizSettings.Filters.ArtistFilters.Add(new ArtistFilter(SelectedArtist, LabelKind.Maybe));
+            ClientQuizSettings.Filters.ArtistFilters.Add(new ArtistFilter(SelectedArtist, LabelKind.Maybe,
+                SongArtistRole.Vocals, false));
             // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
 
             // need to call it twice for it to work

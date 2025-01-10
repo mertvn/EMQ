@@ -439,7 +439,10 @@ public class DbTests
     [Test]
     public async Task Test_GetRandomSongs_ArtistFilter_Maybe()
     {
-        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, ""), LabelKind.Maybe), };
+        List<ArtistFilter> artists = new()
+        {
+            new ArtistFilter(new AutocompleteA(1, ""), LabelKind.Maybe, SongArtistRole.Unknown, false),
+        };
 
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { ArtistFilters = artists }, printSql: true);
@@ -452,7 +455,10 @@ public class DbTests
     [Test]
     public async Task Test_GetRandomSongs_ArtistFilter_Exclude()
     {
-        List<ArtistFilter> artists = new() { new ArtistFilter(new AutocompleteA(1, ""), LabelKind.Exclude), };
+        List<ArtistFilter> artists = new()
+        {
+            new ArtistFilter(new AutocompleteA(1, ""), LabelKind.Exclude, SongArtistRole.Unknown, false),
+        };
 
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
             filters: new QuizFilters { ArtistFilters = artists }, printSql: true);

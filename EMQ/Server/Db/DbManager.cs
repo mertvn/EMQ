@@ -1637,7 +1637,7 @@ GROUP BY artist_id";
         // 1. Find all valid music ids
         var ret = new List<Song>();
 
-        List<(int, string)> ids = new();
+        List<(int, string)>? ids = null;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             string sqlMusicIds =
@@ -1805,7 +1805,10 @@ GROUP BY artist_id";
                         }
 
                         queryArtists.Append(
-                            $@" AND a.id = {artistFilter.Artist.AId}");
+                            artistFilter.IsRoleFilterEnabled
+                                ? (FormattableString)
+                                $@" AND (a.id = {artistFilter.Artist.AId} AND am.role = {(int)artistFilter.Role})"
+                                : (FormattableString)$@" AND a.id = {artistFilter.Artist.AId}");
                     }
 
                     if (printSql)
@@ -1818,7 +1821,7 @@ GROUP BY artist_id";
                         (await connection.QueryAsync<(int, string)>(queryArtists.Sql, queryArtists.Parameters))
                         .Shuffle().ToList();
 
-                    if (ids.Any())
+                    if (ids != null && ids.Any())
                     {
                         bool and = true; // todo? option
                         if (and)
@@ -1839,7 +1842,7 @@ GROUP BY artist_id";
                 Console.WriteLine(
                     $"StartSection GetRandomSongs_filters: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
-                if (ids.Any())
+                if (ids != null)
                 {
                     // apply results of category/artist filters
                     queryMusicIds.AppendLine($"AND m.id = ANY({ids.Select(x => x.Item1).ToList()})");
