@@ -1,4 +1,4 @@
-﻿@page "/LibraryPage"
+@page "/LibraryPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
@@ -257,6 +257,16 @@
             </select>
             <label for="SongSelectionKind">Filter</label>
             <br/>
+
+            <select id="SongOrderKind" style="margin: 5px" @oninput="OnLibrarySongOrderChanged">
+                @foreach (LibrarySongOrderKind orderKind in Enum.GetValues<LibrarySongOrderKind>())
+                {
+                    <option value="@orderKind">@orderKind.GetDescription()</option>
+                }
+            </select>
+            <label>Sort</label>
+            <br/>
+
             <label>
                 <input type="checkbox" class="form-check-input" style="margin: 5px" @bind="IsMergeBGMTabs"/>
                 Merge BGM tabs

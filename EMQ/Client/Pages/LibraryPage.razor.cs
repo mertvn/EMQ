@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -302,6 +302,24 @@ public partial class LibraryPage
         await StateHasChangedAsync();
     }
 
+    private async Task OnLibrarySongOrderChanged(ChangeEventArgs arg)
+    {
+        // Console.WriteLine("sorting");
+        var orderKind = Enum.Parse<LibrarySongOrderKind>((string)arg.Value!);
+        CurrentSongs = orderKind switch
+        {
+            LibrarySongOrderKind.Id => CurrentSongs.OrderBy(x => x.Id).ToList(),
+            LibrarySongOrderKind.VoteAverage => CurrentSongs.OrderByDescending(x => x.VoteAverage).ToList(),
+            LibrarySongOrderKind.PlayCount => CurrentSongs
+                .OrderByDescending(x => x.Stats.GetValueOrDefault(GuessKind.Mst)?.TimesPlayed ?? 0).ToList(),
+            LibrarySongOrderKind.GuessRate => CurrentSongs
+                .OrderByDescending(x => x.Stats.GetValueOrDefault(GuessKind.Mst)?.CorrectPercentage ?? 0).ToList(),
+            LibrarySongOrderKind.MyVote => CurrentSongs
+                .OrderByDescending(x => ClientState.MusicVotes.GetValueOrDefault(x.Id)?.vote ?? 0).ToList(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
     private async Task OnclickButtonFetchByVndbAdvsearchStr(MouseEventArgs arg)
     {
         VndbAdvsearchStr = VndbAdvsearchStr.SanitizeVndbAdvsearchStr();
@@ -392,4 +410,22 @@ public enum LibrarySongFilterKind
 
     [Description("Unvoted")]
     Unvoted,
+}
+
+public enum LibrarySongOrderKind
+{
+    [Description("Id")]
+    Id,
+
+    [Description("Vote average")]
+    VoteAverage,
+
+    [Description("Play count")]
+    PlayCount,
+
+    [Description("Guess rate")]
+    GuessRate,
+
+    [Description("My vote")]
+    MyVote,
 }
