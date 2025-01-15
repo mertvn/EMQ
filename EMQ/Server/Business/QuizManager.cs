@@ -1368,10 +1368,10 @@ public class QuizManager
             return;
         }
 
-        Directory.CreateDirectory("SongHistory");
-        await File.WriteAllTextAsync(
-            $"SongHistory/SongHistory_{Utils.FixFileName(Quiz.Room.Name)}_r{Quiz.Room.Id}q{Quiz.Id}.json",
-            JsonSerializer.Serialize(Quiz.SongsHistory, Utils.JsoIndented));
+        // Directory.CreateDirectory("SongHistory");
+        // await File.WriteAllTextAsync(
+        //     $"SongHistory/SongHistory_{Utils.FixFileName(Quiz.Room.Name)}_r{Quiz.Room.Id}q{Quiz.Id}.json",
+        //     JsonSerializer.Serialize(Quiz.SongsHistory, Utils.JsoIndented));
 
         var entityQuiz = new EntityQuiz
         {

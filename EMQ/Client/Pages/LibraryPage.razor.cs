@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -35,6 +35,8 @@ public partial class LibraryPage
     private string _selectedTabVndb = "TabVNDB";
 
     private string _selectedTabStats = "TabAll";
+
+    private string _selectedTabQueue { get; set; } = "TabReviewQueue";
 
     public LibrarySongFilterKind LibrarySongFilter { get; set; }
 

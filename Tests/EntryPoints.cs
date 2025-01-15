@@ -2236,7 +2236,7 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         // const int usersPerRoom = 3;
         // const int guessKindsPerUser = 3;
 
-        const int roomCount = 100;  // * 60000 v
+        const int roomCount = 100; // * 60000 v
         const int quizzesPerRoom = 10;
         const int songsPerQuiz = 100;
         const int usersPerRoom = 10;
@@ -2249,10 +2249,7 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         await using var transaction = await connection.BeginTransactionAsync();
         var rooms = Enumerable.Range(1, roomCount).Select(x => new EntityRoom
         {
-            id = Guid.NewGuid(),
-            initial_name = roomName,
-            created_by = 1,
-            created_at = date
+            id = Guid.NewGuid(), initial_name = roomName, created_by = 1, created_at = date
         }).ToArray();
 
         var quizzes = new List<EntityQuiz>(roomCount * quizzesPerRoom);

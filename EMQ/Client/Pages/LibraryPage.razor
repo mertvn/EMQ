@@ -1,4 +1,4 @@
-@page "/LibraryPage"
+﻿@page "/LibraryPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
@@ -376,7 +376,7 @@
 
 <br/>
 
-<Blazorise.Tabs SelectedTab="TabReviewQueue" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+<Blazorise.Tabs SelectedTab="@_selectedTabQueue" RenderMode="Blazorise.TabsRenderMode.LazyReload">
     <Items>
         <Blazorise.Tab Name="TabReviewQueue">Review Queue</Blazorise.Tab>
         <Blazorise.Tab Name="TabEditQueue">Edit Queue</Blazorise.Tab>

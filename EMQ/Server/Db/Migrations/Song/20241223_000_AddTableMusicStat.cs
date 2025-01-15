@@ -15,7 +15,8 @@ public class AddTableMusicStat : Migration
 (
     music_id                  integer
         constraint ""FK_music_stat_music""
-            references music (id),
+            references music (id)
+                ON DELETE CASCADE,
     guess_kind                integer not null,
     stat_correct              bigint  default 0 not null,
     stat_played               bigint  default 0 not null,
