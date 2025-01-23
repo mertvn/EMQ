@@ -420,26 +420,10 @@ public class QuizHub : Hub
                 pci.Page = pong.Page;
                 pci.LastHeartbeatTimestamp = DateTime.UtcNow;
 
-                // session.Player.LastHeartbeatTimestamp = session.PlayerConnectionInfos.Any()
-                //     ? session.PlayerConnectionInfos.MaxBy(x => x.Value.LastHeartbeatTimestamp).Value
-                //         .LastHeartbeatTimestamp
-                //     : default;
-                //
-                // var pciQuiz =
-                //     session.PlayerConnectionInfos
-                //         .Where(x => x.Value.Page is "QuizPage" or "RoomPage" or "PyramidPage")
-                //         .ToArray();
-                // session.Player.LastHeartbeatTimestampQuiz = pciQuiz.Any()
-                //     ? pciQuiz.MaxBy(x => x.Value.LastHeartbeatTimestamp).Value.LastHeartbeatTimestamp
-                //     : default;
-
+                session.Player.LastHeartbeatTimestamp = pci.LastHeartbeatTimestamp;
                 if (Pong.QuizPages.Contains(pci.Page))
                 {
                     session.Player.LastHeartbeatTimestampQuiz = pci.LastHeartbeatTimestamp;
-                }
-                else
-                {
-                    session.Player.LastHeartbeatTimestamp = pci.LastHeartbeatTimestamp;
                 }
             }
         }
