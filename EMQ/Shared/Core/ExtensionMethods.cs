@@ -463,4 +463,10 @@ public static class ExtensionMethods
 
         return sb.ToString();
     }
+
+    public static TSource? FirstOrNull<TSource>(this IEnumerable<TSource> source) where TSource : struct
+    {
+        using var enumerator = source.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : null;
+    }
 }

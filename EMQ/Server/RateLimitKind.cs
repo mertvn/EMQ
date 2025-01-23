@@ -12,4 +12,6 @@ public static class RateLimitKind
     public const string ValidateSession = "ratelimit-ValidateSession";
 
     public const string UploadFile = "ratelimit-UploadFile";
+
+    public const string OnceEvery5Seconds = "ratelimit-OnceEvery5Seconds";
 }

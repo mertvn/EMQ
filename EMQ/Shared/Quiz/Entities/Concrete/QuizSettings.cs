@@ -27,6 +27,7 @@ public class QuizSettings
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads;
 
+    // todo 1v1s?
     public bool IsSharedGuessesTeams =>
         TeamSize > 1 && GamemodeKind != GamemodeKind.NGMC && GamemodeKind != GamemodeKind.EruMode;
 

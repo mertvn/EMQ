@@ -78,6 +78,7 @@ public partial class Song : IEditQueueEntity
     {
         var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.FirstOrDefault();
         var firstSource = Sources.FirstOrDefault(x => x.Titles.Any(y => y.Language == "ja" && y.IsMainTitle)) ??
+                          Sources.FirstOrDefault(x => x.Titles.Any(y => y.IsMainTitle)) ??
                           Sources.FirstOrDefault();
 
         if (first == null || firstSource is not { Id: > 0 })
@@ -86,7 +87,7 @@ public partial class Song : IEditQueueEntity
         }
 
         return
-            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.FirstOrDefault().ToString()} {first.LatinTitle}";
+            $"{(firstSource.Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? firstSource.Titles.FirstOrDefault(x => x.IsMainTitle) ?? firstSource.Titles.First()).LatinTitle} {firstSource.SongTypes.FirstOrDefault().ToString()} {first.LatinTitle}";
     }
 
     /// NOT [Pure]

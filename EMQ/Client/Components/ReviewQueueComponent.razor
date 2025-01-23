@@ -98,7 +98,9 @@
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.submitted_by)" Title="Submitted By" Sortable="true">
                 <ColumnOptions>
-                    <input id="submittedByFilter" type="text" @bind="@SubmittedByFilter" @bind:event="oninput"/>
+                    <label>
+                        <input id="submittedByFilter" type="text" @bind="@SubmittedByFilter" @bind:event="oninput"/>
+                    </label>
                 </ColumnOptions>
             </PropertyColumn>
             <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>

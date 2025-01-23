@@ -17,6 +17,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -176,6 +177,7 @@ public class QuizController : ControllerBase
         }
     }
 
+    [EnableRateLimiting(RateLimitKind.OnceEvery5Seconds)]
     [CustomAuthorize(PermissionKind.CreateRoom)]
     [HttpPost]
     [Route("CreateRoom")]
