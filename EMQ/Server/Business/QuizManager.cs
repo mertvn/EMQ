@@ -187,7 +187,7 @@ public class QuizManager
         // Console.WriteLine("ibc " + isBufferedCount);
 
         int activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
-            .Count(x => x.Player.HasActiveConnection);
+            .Count(x => x.Player.HasActiveConnectionQuiz);
         // Room.Log($"activePlayers: {activePlayers}/{Quiz.Room.Players.Count}");
 
         float waitNumber = (float)Math.Round(
@@ -204,7 +204,7 @@ public class QuizManager
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
 
             activePlayersCount = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
-                .Count(x => x.Player.HasActiveConnection);
+                .Count(x => x.Player.HasActiveConnectionQuiz);
 
             waitNumber = (float)Math.Round(
                 activePlayersCount * ((float)Quiz.Room.QuizSettings.WaitPercentage / 100),
@@ -775,7 +775,7 @@ public class QuizManager
         await Utils.WaitWhile(() =>
         {
             bool needToWait = false;
-            var playerIds = Quiz.Room.Players.Where(x => x.HasActiveConnection).Select(x => x.Id);
+            var playerIds = Quiz.Room.Players.Where(x => x.HasActiveConnectionQuiz).Select(x => x.Id);
             foreach (int playerId in playerIds)
             {
                 if (ServerState.PumpMessages.TryGetValue(playerId, out var queue))
@@ -1003,7 +1003,7 @@ public class QuizManager
                 }
             }
 
-            if (player.HasActiveConnection)
+            if (player.HasActiveConnectionQuiz)
             {
                 UserSpacedRepetition? previous = null;
                 UserSpacedRepetition? current = null;
@@ -2949,7 +2949,7 @@ public class QuizManager
         }
 
         var activeSessions = ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id))
-            .Where(x => x.Player.HasActiveConnection).ToList();
+            .Where(x => x.Player.HasActiveConnectionQuiz).ToList();
         int isSkippingCount = activeSessions.Count(x => x.Player.IsSkipping);
 
         const float skipConst = 0.8f;
@@ -3006,13 +3006,6 @@ public class QuizManager
         {
             await OnSendPlayerIsBuffered(playerId, "OnConnectedAsync");
         }
-
-        // todo
-        // HubContext.Clients.Clients(connectionId)
-        //     .SendAsync("ReceiveRequestPlayerStatus");
-
-        // HubContext.Clients.Client(oldConnectionId)
-        //     .SendAsync("ReceiveDisconnectSelf"); // todo should be on room page too
     }
 
     private static Dictionary<int, List<Label>> GetPlayerLabelsForSong(Song song,

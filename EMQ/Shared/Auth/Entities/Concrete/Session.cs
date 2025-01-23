@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -20,7 +23,8 @@ public class Session
 
     public string Token { get; set; }
 
-    public string? ConnectionId { get; set; }
+    [JsonIgnore]
+    public ConcurrentDictionary<string, PlayerConnectionInfo> PlayerConnectionInfos { get; } = new();
 
     [JsonIgnore]
     // Only available client-side.

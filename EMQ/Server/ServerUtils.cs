@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -284,5 +284,10 @@ public static class ServerUtils
         }
 
         return (analyserResult, rqId);
+    }
+
+    public static Session? GetSessionFromConnectionId(string connectionId)
+    {
+        return ServerState.Sessions.FirstOrDefault(x => x.PlayerConnectionInfos.ContainsKey(connectionId));
     }
 }

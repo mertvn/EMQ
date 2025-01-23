@@ -219,6 +219,8 @@ public partial class QuizPage
         //     $"OnInitialized on Component {Id.ToString().Substring(32)} ran at {DateTime.UtcNow.ToLongTimeString()}");
 
         await _clientUtils.TryRestoreSession();
+        await ClientUtils.SendPong(_navigation.Uri.LastSegment());
+
         var room = await _clientUtils.SyncRoom();
         if (ClientState.Session is null || room is null)
         {

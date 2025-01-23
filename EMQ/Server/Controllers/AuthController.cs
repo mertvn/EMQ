@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -449,7 +449,7 @@ public class AuthController : ControllerBase
         var ret = ServerState.Rooms.ToList();
         var privateRooms = ret.Where(x => !string.IsNullOrEmpty(x.Password)).Select(x => x.Id).ToHashSet();
 
-        // todo use Clone()
+        // Clone() doesn't really work
         ret = JsonSerializer.Deserialize<List<Room>>(JsonSerializer.Serialize(ret))!; // need deep-copy
         foreach (Room room in ret)
         {

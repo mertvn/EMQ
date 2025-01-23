@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using EMQ.Client;
 using EMQ.Server.Business;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -29,47 +30,13 @@ public class QuizHub : Hub
         var session = ServerState.Sessions.SingleOrDefault(x => accessToken == x.Token);
         if (session != null)
         {
-            session.Player.LastHeartbeatTimestamp = DateTime.UtcNow;
-            string? oldConnectionId = session.ConnectionId;
             string newConnectionId = Context.ConnectionId;
-
-            if (oldConnectionId != null)
+            Console.WriteLine($"new ConnectionId for p{session.Player.Id} = {newConnectionId}");
+            while (!session.PlayerConnectionInfos.ContainsKey(newConnectionId))
             {
-                Console.WriteLine(
-                    $"p{session.Player.Id} ConnectionId changed from {oldConnectionId} to {newConnectionId}");
-
-                var room = ServerState.Rooms.SingleOrDefault(x =>
-                    x.Players.Any(player => player.Id == session.Player.Id) ||
-                    x.Spectators.Any(player => player.Id == session.Player.Id));
-
-                if (room != null)
-                {
-                    // todo notify joinqueue?
-                    room.Log($"ConnectionId changed from {oldConnectionId} to {newConnectionId}",
-                        session.Player.Id);
-
-                    if (room.Quiz != null)
-                    {
-                        var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                        if (quizManager != null)
-                        {
-                            await quizManager.OnConnectedAsync(session.Player.Id, newConnectionId);
-                        }
-                        else
-                        {
-                            // todo
-                        }
-                    }
-                    else
-                    {
-                        // todo
-                    }
-                }
+                session.PlayerConnectionInfos.TryAdd(newConnectionId,
+                    new PlayerConnectionInfo { LastHeartbeatTimestamp = DateTime.UtcNow });
             }
-
-            session.ConnectionId = Context.ConnectionId;
-            var heartbeat = Context.Features.Get<IConnectionHeartbeatFeature>();
-            heartbeat!.OnHeartbeat(OnHeartbeat, session.Player);
         }
         else
         {
@@ -77,15 +44,10 @@ public class QuizHub : Hub
         }
     }
 
-    private static void OnHeartbeat(object obj)
-    {
-        ((Player)obj).LastHeartbeatTimestamp = DateTime.UtcNow;
-    }
-
     // [Authorize]
     public async Task SendPlayerJoinedQuiz()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x =>
@@ -97,26 +59,14 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendPlayerJoinedQuiz(Context.ConnectionId, session.Player.Id);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendGuessChanged(string? guess, GuessKind guessKind)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -134,7 +84,7 @@ public class QuizHub : Hub
     // [Authorize]
     public async Task SendPlayerIsBuffered(int playerId, string source)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -145,19 +95,7 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendPlayerIsBuffered(session.Player.Id, source);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
@@ -165,7 +103,7 @@ public class QuizHub : Hub
     // [Authorize]
     public async Task SendTogglePause()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -178,31 +116,15 @@ public class QuizHub : Hub
                     {
                         await quizManager.OnSendTogglePause();
                     }
-                    else
-                    {
-                        // todo
-                    }
-                }
-                else
-                {
-                    // todo
                 }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendPlayerLeaving()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x =>
@@ -265,21 +187,13 @@ public class QuizHub : Hub
                 TypedQuizHub.ReceiveUpdateRoom(new[] { session.Player.Id }, room, false);
                 TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendPlayerMoved(int newX, int newY, DateTime dateTime)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -290,26 +204,14 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendPlayerMoved(session.Player, newX, newY, dateTime, Context.ConnectionId);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendPickupTreasure(Guid treasureGuid)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -320,26 +222,14 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendPickupTreasure(session, treasureGuid);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendDropTreasure(Guid treasureGuid)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -350,26 +240,14 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendDropTreasure(session, treasureGuid);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendChangeTreasureRoom(Point treasureRoomId, Direction direction)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x =>
@@ -381,26 +259,14 @@ public class QuizHub : Hub
                 {
                     await quizManager.OnSendChangeTreasureRoom(session, treasureRoomId, direction);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // [Authorize]
     public async Task SendToggleSkip()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -413,30 +279,14 @@ public class QuizHub : Hub
                     {
                         await quizManager.OnSendToggleSkip(Context.ConnectionId, session.Player.Id);
                     }
-                    else
-                    {
-                        // todo
-                    }
-                }
-                else
-                {
-                    // todo
                 }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     public async Task SendHotjoinQuiz()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == session.Player.Id));
@@ -451,25 +301,13 @@ public class QuizHub : Hub
                         TypedQuizHub.ReceiveUpdateRoom(new[] { session.Player.Id }, room, false);
                     }
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     public async Task SendToggleReadiedUp()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -478,20 +316,12 @@ public class QuizHub : Hub
                 session.Player.IsReadiedUp = !session.Player.IsReadiedUp;
                 TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     public async Task SendConvertSpectatorToPlayerInRoom()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == session.Player.Id));
@@ -506,25 +336,13 @@ public class QuizHub : Hub
 
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     public async Task SendConvertPlayerToSpectatorInRoom()
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -539,25 +357,13 @@ public class QuizHub : Hub
 
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
-                else
-                {
-                    // todo
-                }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     public async Task SendTransferRoomOwnership(int playerId)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -575,21 +381,13 @@ public class QuizHub : Hub
                     Console.WriteLine("Failed to find the player that is going to be the new owner.");
                 }
             }
-            else
-            {
-                // todo
-            }
-        }
-        else
-        {
-            // todo
         }
     }
 
     // todo spectators?
     public async Task SendKickFromRoom(int playerId)
     {
-        var session = ServerState.Sessions.SingleOrDefault(x => x.ConnectionId == Context.ConnectionId);
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
@@ -609,14 +407,41 @@ public class QuizHub : Hub
                     Console.WriteLine("Failed to find the player that is going to be kicked.");
                 }
             }
-            else
-            {
-                // todo
-            }
         }
-        else
+    }
+
+    public async Task SendPong(Pong pong)
+    {
+        var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
+        if (session != null)
         {
-            // todo
+            if (session.PlayerConnectionInfos.TryGetValue(Context.ConnectionId, out var pci))
+            {
+                pci.Page = pong.Page;
+                pci.LastHeartbeatTimestamp = DateTime.UtcNow;
+
+                // session.Player.LastHeartbeatTimestamp = session.PlayerConnectionInfos.Any()
+                //     ? session.PlayerConnectionInfos.MaxBy(x => x.Value.LastHeartbeatTimestamp).Value
+                //         .LastHeartbeatTimestamp
+                //     : default;
+                //
+                // var pciQuiz =
+                //     session.PlayerConnectionInfos
+                //         .Where(x => x.Value.Page is "QuizPage" or "RoomPage" or "PyramidPage")
+                //         .ToArray();
+                // session.Player.LastHeartbeatTimestampQuiz = pciQuiz.Any()
+                //     ? pciQuiz.MaxBy(x => x.Value.LastHeartbeatTimestamp).Value.LastHeartbeatTimestamp
+                //     : default;
+
+                if (Pong.QuizPages.Contains(pci.Page))
+                {
+                    session.Player.LastHeartbeatTimestampQuiz = pci.LastHeartbeatTimestamp;
+                }
+                else
+                {
+                    session.Player.LastHeartbeatTimestamp = pci.LastHeartbeatTimestamp;
+                }
+            }
         }
     }
 }

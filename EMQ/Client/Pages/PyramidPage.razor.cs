@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Client.Components;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Logging;
@@ -51,6 +52,8 @@ public partial class PyramidPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        await ClientUtils.SendPong(_navigation.Uri.LastSegment());
+
         if (ClientState.Session is null) // todo check if user !belongs to a quiz as well
         {
             _locationChangingRegistration?.Dispose();

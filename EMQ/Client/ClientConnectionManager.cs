@@ -12,6 +12,15 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Client;
 
+// todo? move
+public class Pong
+{
+    // todo? move
+    public static readonly HashSet<string> QuizPages = new() { "QuizPage", "RoomPage", "PyramidPage" };
+
+    public string Page { get; init; } = "";
+}
+
 public class ClientConnectionManager
 {
     public ClientConnectionManager(ILogger<ClientConnectionManager> logger, HttpClient client)
@@ -28,16 +37,15 @@ public class ClientConnectionManager
 
     private Dictionary<string, (Type[] types, Func<object?[], Task> value)> CurrentHandlers { get; set; } = new();
 
-    public bool IsConnected =>
-        ClientState.Session?.hubConnection?.State == HubConnectionState.Connected;
+    public static bool IsConnected => ClientState.Session?.hubConnection?.State == HubConnectionState.Connected;
 
     public async Task StartManagingConnection()
     {
         await EnsureHubConnection(CurrentHandlers);
 
-        // ClientState.Timer = new Timer { Interval = 3000, AutoReset = true };
-        // ClientState.Timer.Elapsed += async (sender, args) => { await EnsureHubConnection(CurrentHandlers); };
-        // ClientState.Timer.Start();
+        // add "global" handlers
+        // ClientState.Session!.hubConnection!.On("ReceivePing", OnReceivePing);
+        // todo chat stuff etc.
     }
 
     private async Task InitHubConnection()

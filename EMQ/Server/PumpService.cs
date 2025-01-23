@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EMQ.Client;
 using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -98,9 +100,17 @@ public sealed class PumpService : BackgroundService
                         //         $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         // }
 
+                        var validConnectionIds = new List<string>();
+                        foreach (var connectionInfo in session.PlayerConnectionInfos)
+                        {
+                            if (Pong.QuizPages.Contains(connectionInfo.Value.Page))
+                            {
+                                validConnectionIds.Add(connectionInfo.Key);
+                            }
+                        }
+
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
-                        // session.ConnectionId can actually be null here very very rarely but it doesn't matter
-                        var task = _hubContext.Clients.Client(session.ConnectionId!)
+                        var task = _hubContext.Clients.Clients(validConnectionIds)
                             .SendCoreAsync(message.Target, message.Arguments, token);
 
                         int timeoutSeconds = message.Target switch

@@ -98,6 +98,8 @@ public partial class RoomPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        await ClientUtils.SendPong(_navigation.Uri.LastSegment());
+
         var room = await _clientUtils.SyncRoom();
         if (ClientState.Session is null || room is null)
         {

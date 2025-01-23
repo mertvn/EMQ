@@ -46,7 +46,13 @@ public class Player
 
     public DateTime LastHeartbeatTimestamp { get; set; }
 
-    public bool HasActiveConnection => IsBot || (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
+    public DateTime LastHeartbeatTimestampQuiz { get; set; }
+
+    public bool HasActiveConnection =>
+        IsBot || (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
+
+    public bool HasActiveConnectionQuiz =>
+        IsBot || (DateTime.UtcNow - LastHeartbeatTimestampQuiz) < TimeSpan.FromSeconds(30);
 
     public int NGMCGuessesInitial { get; set; }
 
@@ -73,6 +79,13 @@ public class Player
 
     [JsonIgnore]
     public Dictionary<string, DateTime> VNLastPlayedAtDict { get; } = new();
+}
+
+public class PlayerConnectionInfo
+{
+    public DateTime LastHeartbeatTimestamp { get; set; }
+
+    public string Page { get; set; } = ""; // todo? enum
 }
 
 public class PlayerBotInfo

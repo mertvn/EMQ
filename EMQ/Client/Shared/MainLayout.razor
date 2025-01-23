@@ -3,6 +3,7 @@
 @using System.Threading
 @using System.Timers
 @using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.SignalR.Client
 @using Timer = System.Timers.Timer
 @inherits LayoutComponentBase
 @inject NavigationManager _navigation
@@ -101,7 +102,7 @@
         if (firstRender)
         {
             GetServerStats(null, null!);
-            Timer.Interval = TimeSpan.FromSeconds(30).TotalMilliseconds;
+            Timer.Interval = TimeSpan.FromSeconds(12).TotalMilliseconds;
             Timer.Elapsed += GetServerStats;
             Timer.AutoReset = true;
             Timer.Start();
@@ -144,6 +145,8 @@
                 ClientState.ServerStats = res;
             }
             StateHasChanged();
+
+            await ClientUtils.SendPong(_navigation.Uri.LastSegment());
         }
         catch (Exception e)
         {

@@ -17,6 +17,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -296,5 +297,13 @@ public class ClientUtils
         }
 
         return url;
+    }
+
+    public static async Task SendPong(string page)
+    {
+        if (ClientState.Session?.hubConnection != null)
+        {
+            await ClientState.Session.hubConnection.SendAsync("SendPong", new Pong { Page = page });
+        }
     }
 }

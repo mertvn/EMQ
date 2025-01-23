@@ -171,7 +171,7 @@ else
         {
             bool isReadiedUp = player.IsReadiedUp || Room?.Owner.Id == player.Id;
             string boxShadowColor = isReadiedUp ? "#0f0" : "#f00";
-            <div class="playerDiv" style="margin: 10px; width: 160px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnection, "inherit", "0.5");
+            <div class="playerDiv" style="margin: 10px; width: 160px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnectionQuiz, "inherit", "0.5");
                  box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor;">
                 <p style="text-align: center;">@(isReadiedUp ? "Ready" : "Not ready")</p>
 
