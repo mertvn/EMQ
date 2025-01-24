@@ -321,7 +321,14 @@
                             }
                             else
                             {
-                                if (hasImportSongLinkPerms)
+                                // todo editq
+                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.TryGetValue(song.Id, out int rqId))
+                                {
+                                    <br/>
+                                    <span style="color: red">Pending in the review queue: @rqId</span>
+                                    <br/>
+                                }
+                                else if (hasImportSongLinkPerms)
                                 {
                                     @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
@@ -356,13 +363,6 @@
                                             <EditSongWrapperComponent Song="song" IsNew="false"></EditSongWrapperComponent>
                                         }
                                     }
-                                }
-                                // todo editq
-                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.TryGetValue(song.Id, out int rqId))
-                                {
-                                    <br/>
-                                    <span style="color: red">Pending in the review queue: @rqId</span>
-                                    <br/>
                                 }
                             }
                         }
