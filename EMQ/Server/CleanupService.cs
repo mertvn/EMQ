@@ -99,8 +99,8 @@ public sealed class CleanupService : BackgroundService
             {
                 if ((DateTime.UtcNow - value.LastHeartbeatTimestamp) > TimeSpan.FromMinutes(2))
                 {
-                    Console.WriteLine(
-                        $"Evicting inactive connection {key} from memory p{session.Player.Id} {session.Player.Username}");
+                    // Console.WriteLine(
+                    //     $"Evicting inactive connection {key} from memory p{session.Player.Id} {session.Player.Username}");
                     while (session.PlayerConnectionInfos.ContainsKey(key))
                     {
                         session.PlayerConnectionInfos.Remove(key, out _);
