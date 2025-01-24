@@ -328,7 +328,8 @@
                                     <span style="color: red">Pending in the review queue: @rqId</span>
                                     <br/>
                                 }
-                                else if (hasImportSongLinkPerms)
+
+                                if (hasImportSongLinkPerms)
                                 {
                                     @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
@@ -355,7 +356,7 @@
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
 
-                                    if (song.DataSource is DataSourceKind.EMQ or DataSourceKind.VNDB)
+                                    if (rqId == 0 && song.DataSource is DataSourceKind.EMQ or DataSourceKind.VNDB)
                                     {
                                         // todo perms
                                         if (hasImportSongLinkPerms)
