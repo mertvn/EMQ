@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -166,27 +166,30 @@ public static class ServerUtils
     // todo return null if not found
     public static async Task<PlayerVndbInfo> GetVndbInfo_Inner(int userId, string? presetName)
     {
-        // var stopWatch = new Stopwatch();
-        // stopWatch.Start();
-
         var vndbInfo = await DbManager_Auth.GetUserVndbInfo(userId, presetName);
         if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && !string.IsNullOrEmpty(presetName))
         {
-            var userLabels = await DbManager_Auth.GetUserLabels(userId, vndbInfo.VndbId, presetName);
             vndbInfo.Labels = new List<Label>();
 
-            // todo batch
-            // todo? method
-            foreach (UserLabel userLabel in userLabels)
+            var userLabels = await DbManager_Auth.GetUserLabels(userId, vndbInfo.VndbId, presetName);
+            if (userLabels.Any())
             {
-                var label = FromUserLabel(userLabel);
-                var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
-                foreach (UserLabelVn userLabelVn in userLabelVns)
+                var userLabelVnsDict = (await DbManager_Auth.GetUserLabelVns(userLabels.Select(x => x.id).ToList()))
+                    .GroupBy(x => x.users_label_id)
+                    .ToDictionary(x => x.Key, x => x.ToList());
+                foreach (var userLabel in userLabels)
                 {
-                    label.VNs[userLabelVn.vnid] = userLabelVn.vote;
-                }
+                    var label = FromUserLabel(userLabel);
+                    if (userLabelVnsDict.TryGetValue(userLabel.id, out var userLabelVns))
+                    {
+                        foreach (var userLabelVn in userLabelVns)
+                        {
+                            label.VNs[userLabelVn.vnid] = userLabelVn.vote;
+                        }
+                    }
 
-                vndbInfo.Labels.Add(label);
+                    vndbInfo.Labels.Add(label);
+                }
             }
         }
 
@@ -196,10 +199,6 @@ public static class ServerUtils
             // this implementation doesn't work correctly if the user has labels named 0-9, but meh
             vndbInfo.Labels = vndbInfo.Labels.OrderBy(x => x.Id <= 7 ? x.Id.ToString() : x.Name).ToList();
         }
-
-        // stopWatch.Stop();
-        // Console.WriteLine(
-        //     $"GetVndbInfo_Inner took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         return vndbInfo;
     }

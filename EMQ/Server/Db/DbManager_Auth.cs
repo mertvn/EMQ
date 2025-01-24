@@ -231,12 +231,12 @@ public class DbManager_Auth
         }
     }
 
-    public static async Task<List<UserLabelVn>> GetUserLabelVns(long usersLabelId)
+    public static async Task<List<UserLabelVn>> GetUserLabelVns(List<long> userLabelIds)
     {
-        const string sql = "SELECT * from users_label_vn where users_label_id = @users_label_id";
+        const string sql = @"SELECT * FROM users_label_vn WHERE users_label_id = ANY(@userLabelIds)";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
-            return (await connection.QueryAsync<UserLabelVn>(sql, new { users_label_id = usersLabelId, })).ToList();
+            return (await connection.QueryAsync<UserLabelVn>(sql, new { userLabelIds })).ToList();
         }
     }
 

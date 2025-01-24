@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1966,23 +1966,15 @@ public class QuizManager
                     // todo Exclude does nothing on its own (don't break Balanced while fixing this)
                     if (include.Any())
                     {
-                        validSourcesDict[player.Id] = new List<string>();
-                        // todo batch
-                        // todo method
-                        foreach (UserLabel userLabel in include)
-                        {
-                            var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
-                            validSourcesDict[player.Id].AddRange(userLabelVns.Select(x => x.vnid));
-                        }
+                        validSourcesDict[player.Id] =
+                            (await DbManager_Auth.GetUserLabelVns(include.Select(x => x.id).ToList()))
+                            .Select(x => x.vnid).ToList();
 
                         if (exclude.Any())
                         {
-                            var excluded = new List<string>();
-                            foreach (UserLabel userLabel in exclude)
-                            {
-                                var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabel.id);
-                                excluded.AddRange(userLabelVns.Select(x => x.vnid));
-                            }
+                            List<string> excluded =
+                                (await DbManager_Auth.GetUserLabelVns(exclude.Select(x => x.id).ToList()))
+                                .Select(x => x.vnid).ToList();
 
                             validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
                         }

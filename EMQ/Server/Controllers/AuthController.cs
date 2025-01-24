@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -310,7 +310,7 @@ public class AuthController : ControllerBase
         };
         long userLabelId = await DbManager_Auth.RecreateUserLabel(userLabel, req.Label.VNs);
 
-        var userLabelVns = await DbManager_Auth.GetUserLabelVns(userLabelId);
+        var userLabelVns = await DbManager_Auth.GetUserLabelVns(new List<long> { userLabelId });
         var label = ServerUtils.FromUserLabel(userLabel);
         label.VNs = userLabelVns.ToDictionary(x => x.vnid, x => x.vote);
 
