@@ -1551,7 +1551,7 @@ GROUP BY artist_id";
                         where a.id=@aId AND aa.latin_alias=@latinAlias and ((@nonLatinAlias::text IS NULL) or aa.non_latin_alias = @nonLatinAlias::text)",
                         new { aId, latinAlias = title.LatinTitle, nonLatinAlias = title.NonLatinTitle },
                         transaction))
-                    .ToList().SingleOrDefault();
+                    .ToList().FirstOrDefault();
             }
 
             if (aaId < 1)

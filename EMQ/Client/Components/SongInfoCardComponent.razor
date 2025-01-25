@@ -218,7 +218,7 @@
                                                 string href = link.Url;
                                                 @if (IsModPage && link.Url.Contains("vndb.org/v"))
                                                 {
-                                                    href += "/hist";
+                                                    href += "/hist?cfv=12";
                                                 }
 
                                                 <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
