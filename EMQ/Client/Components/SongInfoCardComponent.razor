@@ -138,6 +138,12 @@
                         <br/>
                         <span> @Song.MusicBrainzRecordingGid </span>
                     }
+
+                    @if (isAdmin)
+                    {
+                        <br/>
+                        <span>@(Song.ToSongLite().EMQSongHash)</span>
+                    }
                 }
 
                 <div>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -217,6 +217,44 @@ public class ImportController : ControllerBase
             }
 
             return success ? Ok() : StatusCode(500);
+        }
+        finally
+        {
+            s_semaphoreImport.Release();
+        }
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("RemoveFromPendingSongs")]
+    public async Task<ActionResult> RemoveFromPendingSongs([FromBody] Song song)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await s_semaphoreImport.WaitAsync();
+        try
+        {
+            if (song.MusicBrainzRecordingGid != null)
+            {
+                MusicBrainzImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite_MB().Recording == song.ToSongLite_MB().Recording);
+            }
+            else
+            {
+                VndbImporter.PendingSongs.RemoveAll(x =>
+                    x.ToSongLite().EMQSongHash == song.ToSongLite().EMQSongHash);
+            }
+
+            return Ok();
         }
         finally
         {

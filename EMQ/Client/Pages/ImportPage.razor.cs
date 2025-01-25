@@ -103,6 +103,14 @@ public partial class ImportPage
         Ready = true;
     }
 
+    private async Task RemoveFromPendingSongs(Song song)
+    {
+        Ready = false;
+        var _ = await _client.PostAsJsonAsync("Import/RemoveFromPendingSongs", song);
+        ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
+        Ready = true;
+    }
+
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         Console.WriteLine("OnInputFileChange");

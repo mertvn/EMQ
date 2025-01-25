@@ -68,6 +68,16 @@
                     @onclick="@(async () => await OverwriteMusic(song))">
                 This is a modification of an existing song
             </button>
+
+            @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+            {
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@(!Ready)"
+                        @onclick="@(async () => await RemoveFromPendingSongs(song))">
+                    Remove from PendingSongs
+                </button>
+            }
         </div>
     }
 </div>

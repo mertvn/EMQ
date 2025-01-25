@@ -178,6 +178,7 @@ public static class Program
                         "Event song",
                         "Rhythm Segments Songs",
                         "Cover Song",
+                        "INS Mitsurugi Sakuya Character song", // https://vndb.org/v7093.14
                     }.OrderByDescending(x => x).ToList()
                 }
             },
