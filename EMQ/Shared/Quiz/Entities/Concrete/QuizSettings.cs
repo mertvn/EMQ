@@ -296,7 +296,7 @@ public class QuizSettings
             { MCOptionKind.Random, false },
             { MCOptionKind.Lists, false },
             { MCOptionKind.SelectedSongs, true },
-            { MCOptionKind.Artist, false },
+            { MCOptionKind.Artist, true },
             { MCOptionKind.ArtistPair, true },
             { MCOptionKind.Developer, false },
             { MCOptionKind.Qsh, true },
