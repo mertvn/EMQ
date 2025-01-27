@@ -1572,7 +1572,7 @@ public class QuizManager
                     rAndSsList.AddRange(songs);
                 }
 
-                foreach (Song song in rAndSsList)
+                foreach (Song song in rAndSsList.Shuffle())
                 {
                     foreach (SongSource songSource in song.Sources)
                     {
