@@ -150,7 +150,7 @@
                         <label for="AnsweringKind">Answering method</label>
                         <br/>
 
-                        @if (ClientQuizSettings.AnsweringKind == AnsweringKind.MultipleChoice)
+                        @if (ClientQuizSettings.AnsweringKind == AnsweringKind.Mixed)
                         {
                             <InputNumber id="NumMultipleChoiceOptions" @bind-Value="ClientQuizSettings.NumMultipleChoiceOptions" style="margin: 5px"></InputNumber>
                             <label for="NumMultipleChoiceOptions">Number of multiple choice options</label>
