@@ -1572,7 +1572,7 @@ public class QuizManager
                     rAndSsList.AddRange(songs);
                 }
 
-                foreach (Song song in rAndSsList.Shuffle())
+                foreach (Song song in rAndSsList)
                 {
                     foreach (SongSource songSource in song.Sources)
                     {
@@ -1712,7 +1712,7 @@ public class QuizManager
             seenCorrectAnswerLatinTitles.Add(correctAnswerTitle.LatinTitle);
 
             List<int> globalRandomIndexes = new();
-            foreach ((int key, Title? value) in globalTitles)
+            foreach ((int key, Title? value) in globalTitles.Shuffle())
             {
                 if (quizSettings.Duplicates)
                 {
@@ -1730,8 +1730,7 @@ public class QuizManager
                 }
             }
 
-            globalRandomIndexes =
-                globalRandomIndexes.Shuffle().Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
+            globalRandomIndexes = globalRandomIndexes.Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
 
             List<Title> list = new() { correctAnswerTitle };
