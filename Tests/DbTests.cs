@@ -844,6 +844,25 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GenerateMultipleChoiceOptions_NewDuplicateAnswerThingy()
+    {
+        var songs = await DbManager.GetRandomSongs(100, false);
+        GenericSongsAssert(songs);
+
+        var sessions = new List<Session>()
+        {
+            new(new Player(7, "t", new Avatar(AvatarCharacter.Auu)) { }, "", UserRoleKind.User, null)
+        };
+
+        var ret =
+            await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
+                new QuizSettings { SongSelectionKind = SongSelectionKind.Random, NumMultipleChoiceOptions = 4 },
+                Array.Empty<TreasureRoom[]>());
+
+        Assert.That(ret.Any());
+    }
+
+    [Test]
     public async Task Test_SelectLibraryStats()
     {
         var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
@@ -1236,5 +1255,20 @@ order by ms.id
     {
         var a = await DbManager.GetSHPlayerSongStats(new List<int> { 10851, 10610 }, new List<int> { 8 });
         Console.WriteLine(JsonSerializer.Serialize(a, Utils.JsoIndented));
+    }
+
+    [Test]
+    public async Task Test_ArtistCollaborationFinder()
+    {
+        int[] artistsToFind = { 53, 409, 3450 }; // KOTOKO, C.G mix, Takase Kazuya
+
+        var collaborations = ArtistCollaborationFinder.FindPairwiseCollaborations(artistsToFind);
+        foreach (int collaboration in collaborations)
+        {
+            Console.WriteLine(collaboration);
+        }
+
+        Assert.That(collaborations.Count > 50);
+        Assert.That(collaborations.Count < 500);
     }
 }

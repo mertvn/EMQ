@@ -288,6 +288,20 @@ public class QuizSettings
     [DefaultValue(true)]
     public bool IsMergeArtistBands { get; set; } = true;
 
+    [ProtoMember(35)]
+    [Required]
+    public Dictionary<MCOptionKind, bool> EnabledMCOptionKinds { get; set; } =
+        new()
+        {
+            { MCOptionKind.Random, false },
+            { MCOptionKind.Lists, false },
+            { MCOptionKind.SelectedSongs, true },
+            { MCOptionKind.Artist, false },
+            { MCOptionKind.ArtistPair, true },
+            { MCOptionKind.Developer, false },
+            { MCOptionKind.Qsh, true },
+        };
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -674,6 +688,20 @@ public class QuizSettings
         {
             diff.Add(
                 $"Owner's song vote status: {o.Filters.OwnersMusicVoteStatus.GetDescription()} → {n.Filters.OwnersMusicVoteStatus.GetDescription()}");
+        }
+
+        if (JsonSerializer.Serialize(o.EnabledMCOptionKinds) !=
+            JsonSerializer.Serialize(n.EnabledMCOptionKinds))
+        {
+            var ol = o.EnabledMCOptionKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            var ne = n.EnabledMCOptionKinds
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            diff.Add($"MC options: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         return diff;

@@ -141,6 +141,17 @@ public partial class QuizSettingsComponent
             EditContext.NotifyValidationStateChanged();
         }
 
+        if (!((ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r) ||
+              (ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Lists, out bool l) && l) ||
+              (ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.SelectedSongs, out bool ss) && ss)))
+        {
+            ValidationMessageStore.Add(() => ClientQuizSettings.Filters.ListReadKindFilters,
+                "At least one of the following types must be enabled for Multiple Choice: " +
+                $"\"{MCOptionKind.Random.GetDescription()}\", \"{MCOptionKind.Lists.GetDescription()}\", or \"{MCOptionKind.SelectedSongs.GetDescription()}\".");
+
+            EditContext.NotifyValidationStateChanged();
+        }
+
         bool isValid = EditContext.Validate();
         if (!isValid)
         {

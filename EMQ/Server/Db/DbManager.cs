@@ -42,6 +42,7 @@ public static class DbManager
     {
         // return;
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
+        SqlMapper.AddTypeHandler(new GenericArrayHandler<int>());
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
 
@@ -85,17 +86,33 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
             }
         }
 
-        await RefreshMusicIdsRecordingGidsCache();
+        const string sqlMcOptionsQsh = @"WITH ranked_guesses AS (
+    SELECT
+        qsh.music_id,
+        ROW_NUMBER() OVER (PARTITION BY qsh.music_id ORDER BY COUNT(qsh.guess) DESC) AS rank,
+        mst.music_source_id
+    FROM quiz_song_history qsh
+    JOIN music_source_title mst
+        ON qsh.guess = mst.latin_title
+    WHERE
+        NOT qsh.is_correct
+        AND mst.is_main_title
+    GROUP BY qsh.music_id, qsh.guess, mst.music_source_id
+    HAVING count(qsh.guess) >= 3
+    ORDER BY rank
+)
+SELECT
+    music_id,
+    array_agg(music_source_id)
+FROM ranked_guesses
+WHERE rank <= 3 -- todo increase after adding weights
+GROUP BY music_id
+ORDER BY music_id;";
+        McOptionsQshDict =
+            (await connection.QueryAsync<(int, int[])>(sqlMcOptionsQsh))
+            .ToFrozenDictionary(x => x.Item1, x => x.Item2.ToList());
 
-        // await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        // {
-        //     const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
-        //     Dictionary<int, List<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
-        //         .GroupBy(x => x.Item1)
-        //         .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToList());
-        //
-        //     MusicIdsSongSourceSongTypes = mids;
-        // }
+        await RefreshMusicIdsRecordingGidsCache();
     }
 
     private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
@@ -112,11 +129,12 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
     private static FrozenDictionary<int, Guid?> MusicIdsRecordingGids { get; set; } =
         FrozenDictionary<int, Guid?>.Empty;
 
-    // public static Dictionary<int, List<SongSourceSongType>> MusicIdsSongSourceSongTypes { get; set; }
-
     public static FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>
         VnDevelopers { get; set; } =
         FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
+
+    public static FrozenDictionary<int, List<int>> McOptionsQshDict { get; set; } =
+        FrozenDictionary<int, List<int>>.Empty;
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 

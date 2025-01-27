@@ -155,6 +155,20 @@
                             <InputNumber id="NumMultipleChoiceOptions" @bind-Value="ClientQuizSettings.NumMultipleChoiceOptions" style="margin: 5px"></InputNumber>
                             <label for="NumMultipleChoiceOptions">Number of multiple choice options</label>
                             <br/>
+
+                            <details style="pointer-events: all; cursor: pointer;">
+                                <summary>Configure multiple choice options generation</summary>
+                                @foreach (var key in ClientQuizSettings.EnabledMCOptionKinds.Keys.ToList())
+                                {
+                                    if (key != MCOptionKind.Developer) // todo
+                                    {
+                                        string id = $"EnabledMCOptionKinds-{key}";
+                                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.EnabledMCOptionKinds[key])" style="margin: 5px"/>
+                                        <label for="@id">@key.GetDescription()</label>
+                                        <br/>
+                                    }
+                                }
+                            </details>
                         }
 
                         <InputSelect id="ScreenshotKind" @bind-Value="ClientQuizSettings.Filters.ScreenshotKind" style="margin: 5px">

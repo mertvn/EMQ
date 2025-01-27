@@ -1515,58 +1515,157 @@ public class QuizManager
         }
     }
 
+    // todo don't use SelectSongSourceBatch, create new method that returns msid and Title object
+    // todo weights, and maybe min/max
     public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
         List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms)
     {
         var ret = new Dictionary<int, List<Title>>();
-        Dictionary<int, Title> allTitles = new();
-        HashSet<int> addedSourceIds = new();
+        Dictionary<int, Title> globalTitles = new();
+        HashSet<int> globalAddedSourceIds = new();
+        Dictionary<int, Dictionary<MCOptionKind, List<Title>>> validTitlesForSongDict = songs.Select(x => x.Id)
+            .ToDictionary(x => x, _ => new Dictionary<MCOptionKind, List<Title>>());
+        var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
         switch (quizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
             case SongSelectionKind.SpacedRepetition:
             case SongSelectionKind.LocalMusicLibrary:
-                var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-                if (!quizSettings.Filters.ListReadKindFiltersIsAllRandom &&
-                    allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
+                // we'll want to "top up" with at least one of these three types (Lists, Random, SelectedSongs) regardless of what other options are enabled
+                if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Lists, out bool l) && l)
                 {
-                    // generate wrong multiple choice options from player vndb lists if there are any,
-                    // and at least one Read or Unread is requested
-                    // todo add a few completely random songs here as well
-                    int[] mIds = await DbManager.FindMusicIdsByLabels(allVndbInfos
-                        .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
-                    var allPlayerVnTitles = await DbManager.SelectSongsMIds(mIds, false);
-
-                    foreach (Song song in allPlayerVnTitles)
+                    var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
+                    if (!quizSettings.Filters.ListReadKindFiltersIsAllRandom &&
+                        allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
                     {
-                        foreach (SongSource songSource in song.Sources)
+                        int[] mIds = await DbManager.FindMusicIdsByLabels(allVndbInfos
+                            .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
+                        var allPlayerVnTitles = await DbManager.SelectSongsMIds(mIds, false);
+
+                        foreach (Song song in allPlayerVnTitles)
                         {
-                            if (addedSourceIds.Add(songSource.Id))
+                            foreach (SongSource songSource in song.Sources)
                             {
-                                allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                                break;
+                                if (globalAddedSourceIds.Add(songSource.Id))
+                                {
+                                    globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-                else
-                {
-                    // or from a combination of the selected songs and completely random songs if not
-                    var selectedMids = songs.Select(x => x.Id).ToHashSet();
 
+                var rAndSsList = new List<Song>();
+                if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r)
+                {
+                    var selectedMids = songs.Select(x => x.Id).ToHashSet();
                     var randomSongs =
                         await DbManager.GetRandomSongs(songs.Count * 2, false, null, quizSettings.Filters);
                     var randomSongsFiltered = randomSongs.Where(x => !selectedMids.Contains(x.Id)).ToList();
+                    rAndSsList.AddRange(randomSongsFiltered);
+                }
 
-                    foreach (Song song in songs.Concat(randomSongsFiltered))
+                if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.SelectedSongs, out bool ss) && ss)
+                {
+                    rAndSsList.AddRange(songs);
+                }
+
+                foreach (Song song in rAndSsList)
+                {
+                    foreach (SongSource songSource in song.Sources)
                     {
-                        foreach (SongSource songSource in song.Sources)
+                        if (globalAddedSourceIds.Add(songSource.Id))
                         {
-                            if (addedSourceIds.Add(songSource.Id))
+                            globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                            break;
+                        }
+                    }
+                }
+
+                foreach (Song song in songs)
+                {
+                    if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Artist, out bool a) && a)
+                    {
+                        var msIds = (await connection.QueryAsync<int>(
+                            @"SELECT distinct music_source_id
+            FROM music_source_music msm
+            JOIN artist_music am ON am.music_id = msm.music_id
+            WHERE am.artist_id = any(@aIds)",
+                            new
                             {
-                                allTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                                break;
+                                aIds = song.Artists.Where(x => x.Roles.Any(y => y != SongArtistRole.Lyricist))
+                                    .Select(x => x.Id).ToArray()
+                            })).ToList();
+
+                        // todo batch
+                        var sources = (await DbManager.SelectSongSourceBatch(
+                                new NpgsqlConnection(ConnectionHelper.GetConnectionString()),
+                                msIds.Select(x =>
+                                        new Song { Sources = new List<SongSource> { new() { Id = x } } })
+                                    .ToList(), false)).SelectMany(x => x.Value.Select(y => y.Value))
+                            .DistinctBy(z => z.Id);
+
+                        validTitlesForSongDict[song.Id][MCOptionKind.Artist] = new List<Title>();
+                        foreach (SongSource songSource in sources.OrderBy(d => msIds.IndexOf(d.Id)))
+                        {
+                            // todo msId dupe check?
+                            validTitlesForSongDict[song.Id][MCOptionKind.Artist]
+                                .Add(Converters.GetSingleTitle(songSource.Titles));
+                        }
+                    }
+
+                    if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.ArtistPair, out bool ap) && ap)
+                    {
+                        // todo batch
+                        var collabMids = ArtistCollaborationFinder.FindPairwiseCollaborations(song.Artists
+                            .Where(x => x.Roles.Any(y => y != SongArtistRole.Lyricist)).Select(x => x.Id)
+                            .ToArray()).ToArray();
+
+                        var msIds = (await connection.QueryAsync<int>(
+                            "select distinct music_source_id from music_source_music where music_id = any(@mIds)",
+                            new { mIds = collabMids })).ToList();
+
+                        // todo batch
+                        var sources = (await DbManager.SelectSongSourceBatch(
+                                new NpgsqlConnection(ConnectionHelper.GetConnectionString()),
+                                msIds.Select(x =>
+                                        new Song { Sources = new List<SongSource> { new() { Id = x } } })
+                                    .ToList(), false)).SelectMany(x => x.Value.Select(y => y.Value))
+                            .DistinctBy(z => z.Id);
+
+                        validTitlesForSongDict[song.Id][MCOptionKind.ArtistPair] = new List<Title>();
+                        foreach (SongSource songSource in sources.OrderBy(d => msIds.IndexOf(d.Id)))
+                        {
+                            // todo msId dupe check?
+                            validTitlesForSongDict[song.Id][MCOptionKind.ArtistPair]
+                                .Add(Converters.GetSingleTitle(songSource.Titles));
+                        }
+                    }
+
+                    if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Developer, out bool d) && d)
+                    {
+                        throw new NotImplementedException();
+                    }
+
+                    if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Qsh, out bool qsh) && qsh)
+                    {
+                        if (DbManager.McOptionsQshDict.TryGetValue(song.Id, out var msIds))
+                        {
+                            // todo batch
+                            var sources = (await DbManager.SelectSongSourceBatch(connection,
+                                    msIds.Select(x =>
+                                            new Song { Sources = new List<SongSource> { new() { Id = x } } })
+                                        .ToList(), false)).SelectMany(x => x.Value.Select(y => y.Value))
+                                .DistinctBy(z => z.Id);
+
+                            validTitlesForSongDict[song.Id][MCOptionKind.Qsh] = new List<Title>();
+                            foreach (SongSource songSource in sources.OrderBy(d => msIds.IndexOf(d.Id)))
+                            {
+                                // todo msId dupe check?
+                                validTitlesForSongDict[song.Id][MCOptionKind.Qsh]
+                                    .Add(Converters.GetSingleTitle(songSource.Titles));
                             }
                         }
                     }
@@ -1589,9 +1688,9 @@ public class QuizManager
                 validSources = validSources.DistinctBy(x => x.Key).ToList();
                 foreach ((string key, List<Title> value) in validSources)
                 {
-                    if (addedSourceIds.Add(key.GetHashCode()))
+                    if (globalAddedSourceIds.Add(key.GetHashCode()))
                     {
-                        allTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
+                        globalTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
                     }
                 }
 
@@ -1612,50 +1711,77 @@ public class QuizManager
             var correctAnswerTitle = Converters.GetSingleTitle(correctAnswer.Titles);
             seenCorrectAnswerLatinTitles.Add(correctAnswerTitle.LatinTitle);
 
-            List<int> randomIndexes = new();
-            foreach ((int key, Title? value) in allTitles)
+            List<int> globalRandomIndexes = new();
+            foreach ((int key, Title? value) in globalTitles)
             {
                 if (quizSettings.Duplicates)
                 {
                     if (value.LatinTitle != correctAnswerTitle.LatinTitle)
                     {
-                        randomIndexes.Add(key);
+                        globalRandomIndexes.Add(key);
                     }
                 }
                 else
                 {
                     if (!seenCorrectAnswerLatinTitles.Contains(value.LatinTitle))
                     {
-                        randomIndexes.Add(key);
+                        globalRandomIndexes.Add(key);
                     }
                 }
             }
 
-            randomIndexes = randomIndexes.Shuffle().Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
+            globalRandomIndexes =
+                globalRandomIndexes.Shuffle().Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
             // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
 
             List<Title> list = new() { correctAnswerTitle };
-            foreach (int randomIndex in randomIndexes)
-            {
-                list.Add(allTitles[randomIndex]);
-            }
 
-            list = list.Shuffle().ToList();
-            ret[index] = list;
-
-            int count = 0;
-            foreach (Title wrongAnswerTitle in list)
+            if (validTitlesForSongDict.TryGetValue(dbSong.Id, out var dicts))
             {
-                if (wrongAnswerTitle.LatinTitle == correctAnswerTitle.LatinTitle)
+                foreach ((MCOptionKind key, List<Title>? value) in dicts.OrderByDescending(x => x.Key)) // todo weights
                 {
-                    count++;
+                    if (list.Count >= quizSettings.NumMultipleChoiceOptions)
+                    {
+                        break;
+                    }
+
+                    var titles = key == MCOptionKind.Qsh
+                        ? value.DistinctBy(x => x.LatinTitle) // order is important for this one
+                        : value.DistinctBy(x => x.LatinTitle).Shuffle();
+                    foreach (Title title in titles)
+                    {
+                        if (list.Count >= quizSettings.NumMultipleChoiceOptions)
+                        {
+                            break;
+                        }
+
+                        if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                        {
+                            list.Add(title);
+                        }
+                    }
                 }
             }
 
-            if (count > 1)
+            if (list.Count < quizSettings.NumMultipleChoiceOptions)
             {
-                throw new Exception("duplicate title detected when generating multiple choice options");
+                foreach (int globalRandomIndex in globalRandomIndexes)
+                {
+                    if (list.Count >= quizSettings.NumMultipleChoiceOptions)
+                    {
+                        break;
+                    }
+
+                    var title = globalTitles[globalRandomIndex];
+                    if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                    {
+                        list.Add(title);
+                    }
+                }
             }
+
+            list = list.DistinctBy(x => x.LatinTitle).Shuffle().ToList();
+            ret[index] = list;
         }
 
         return ret;
