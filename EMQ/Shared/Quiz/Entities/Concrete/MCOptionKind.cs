@@ -7,8 +7,8 @@ public enum MCOptionKind
     Random = 0,
     Lists = 1,
 
-    [Description("Other songs in the quiz")]
-    SelectedSongs = 2,
+    // [Description("Other songs in the quiz")]
+    // SelectedSongs = 2,
 
     [Description("Same artist")]
     Artist = 3,

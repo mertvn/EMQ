@@ -1532,7 +1532,7 @@ public class QuizManager
             case SongSelectionKind.Random:
             case SongSelectionKind.SpacedRepetition:
             case SongSelectionKind.LocalMusicLibrary:
-                // we'll want to "top up" with at least one of these three types (Lists, Random, SelectedSongs) regardless of what other options are enabled
+                // we'll want to "top up" with at least one of these two types (Lists, Random) regardless of what other options are enabled
                 if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Lists, out bool l) && l)
                 {
                     var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
@@ -1557,29 +1557,22 @@ public class QuizManager
                     }
                 }
 
-                var rAndSsList = new List<Song>();
                 if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r)
                 {
                     var selectedMids = songs.Select(x => x.Id).ToHashSet();
                     var randomSongs =
                         await DbManager.GetRandomSongs(songs.Count * 2, false, null, quizSettings.Filters);
                     var randomSongsFiltered = randomSongs.Where(x => !selectedMids.Contains(x.Id)).ToList();
-                    rAndSsList.AddRange(randomSongsFiltered);
-                }
 
-                if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.SelectedSongs, out bool ss) && ss)
-                {
-                    rAndSsList.AddRange(songs);
-                }
-
-                foreach (Song song in rAndSsList)
-                {
-                    foreach (SongSource songSource in song.Sources)
+                    foreach (Song song in randomSongsFiltered)
                     {
-                        if (globalAddedSourceIds.Add(songSource.Id))
+                        foreach (SongSource songSource in song.Sources)
                         {
-                            globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
-                            break;
+                            if (globalAddedSourceIds.Add(songSource.Id))
+                            {
+                                globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                break;
+                            }
                         }
                     }
                 }
