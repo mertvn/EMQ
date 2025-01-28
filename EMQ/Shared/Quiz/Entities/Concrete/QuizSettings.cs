@@ -293,9 +293,9 @@ public class QuizSettings
     public Dictionary<MCOptionKind, bool> EnabledMCOptionKinds { get; set; } =
         new()
         {
-            { MCOptionKind.Random, false },
-            { MCOptionKind.Lists, false },
-            { MCOptionKind.SelectedSongs, true },
+            { MCOptionKind.Random, true },
+            { MCOptionKind.Lists, true },
+            { MCOptionKind.SelectedSongs, false },
             { MCOptionKind.Artist, true },
             { MCOptionKind.ArtistPair, true },
             { MCOptionKind.Developer, false },
