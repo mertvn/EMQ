@@ -306,4 +306,20 @@ public class ClientUtils
             await ClientState.Session.hubConnection.SendAsync("SendPong", new Pong { Page = page });
         }
     }
+
+    public static bool HasUploadPerms()
+    {
+        return ClientState.Session != null &&
+               AuthStuff.HasPermission(ClientState.Session, PermissionKind.UploadSongLink);
+    }
+
+    public static bool HasEditPerms()
+    {
+        return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Edit);
+    }
+
+    public static bool HasAdminPerms()
+    {
+        return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin);
+    }
 }

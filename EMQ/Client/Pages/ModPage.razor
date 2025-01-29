@@ -25,7 +25,7 @@
 </button>
 <br/>
 
-@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
 {
     <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
         Run GC

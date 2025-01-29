@@ -77,8 +77,7 @@
 
 @if (Song != null)
 {
-    bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
-    bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
+    bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator);
     bool isDebugMode = ClientState.Preferences.DebugMode;
     @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any(x => x.IsFileLink))
     {
@@ -124,7 +123,7 @@
                 {
                     @if (Song.Id > 0)
                     {
-                        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.EditSongMetadata))
+                        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Delete))
                         {
                             <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
                             <br/>
@@ -139,7 +138,7 @@
                         <span> @Song.MusicBrainzRecordingGid </span>
                     }
 
-                    @if (isAdmin)
+                    @if (false && ClientUtils.HasAdminPerms())
                     {
                         <br/>
                         <span>@(Song.ToSongLite().EMQSongHash)</span>
@@ -263,7 +262,7 @@
                             Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
 
                             <div>
-                                @* @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.EditSongMetadata)) *@
+                                @* @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditSongMetadata)) *@
                                 @* { *@
                                 @*     // todo should probably show up only on artist's page instead of on every song they've performed in *@
                                 @*     <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteArtist(songArtist))">🗑</span> *@

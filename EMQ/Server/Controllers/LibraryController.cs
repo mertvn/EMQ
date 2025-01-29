@@ -279,7 +279,7 @@ public class LibraryController : ControllerBase
         }
 
         var rq = await DbManager.FindRQ(id);
-        if (AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+        if (AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) ||
             string.Equals(rq.submitted_by, session.Player.Username, StringComparison.InvariantCultureIgnoreCase))
         {
             if (rq.status == ReviewQueueStatus.Pending)
@@ -298,7 +298,7 @@ public class LibraryController : ControllerBase
         }
     }
 
-    [CustomAuthorize(PermissionKind.UploadSongLink)]
+    [CustomAuthorize(PermissionKind.Edit)]
     [HttpPost]
     [Route("DeleteEditQueueItem")]
     public async Task<ActionResult<bool>> DeleteEditQueueItem([FromBody] int id)
@@ -315,7 +315,7 @@ public class LibraryController : ControllerBase
         }
 
         var eq = await DbManager.FindEQ(id);
-        if (AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+        if (AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) ||
             string.Equals(eq.submitted_by, session.Player.Username, StringComparison.InvariantCultureIgnoreCase))
         {
             if (eq.status == ReviewQueueStatus.Pending)
@@ -404,7 +404,7 @@ public class LibraryController : ControllerBase
         return res;
     }
 
-    [CustomAuthorize(PermissionKind.UploadSongLink)] // todo
+    [CustomAuthorize(PermissionKind.Edit)]
     [HttpPost]
     [Route("EditSong")]
     public async Task<ActionResult> EditSong([FromBody] ReqEditSong req)
@@ -484,7 +484,7 @@ public class LibraryController : ControllerBase
         return eqId > 0 ? Ok() : StatusCode(500);
     }
 
-    [CustomAuthorize(PermissionKind.UploadSongLink)] // todo
+    [CustomAuthorize(PermissionKind.Edit)]
     [HttpPost]
     [Route("EditArtist")]
     public async Task<ActionResult> EditArtist([FromBody] ReqEditArtist req)

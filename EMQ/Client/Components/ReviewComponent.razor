@@ -12,7 +12,7 @@
 @inject IJSRuntime _jsRuntime
 
 @{
-    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink);
+    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink);
 }
 
 @if (IsLibraryPage)

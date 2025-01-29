@@ -55,7 +55,7 @@
                     @if (ClientState.Session != null)
                     {
                         bool canDelete =
-                            AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink) ||
+                            AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink) ||
                             string.Equals(context.submitted_by, ClientState.Session.Player.Username, StringComparison.InvariantCultureIgnoreCase);
 
                         @if (canDelete && context.status == ReviewQueueStatus.Pending)

@@ -79,7 +79,7 @@ public partial class QuizSettingsComponent
             await Task.Delay(TimeSpan.FromMilliseconds(500));
         }
 
-        if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
+        if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.StoreQuizSettings))
         {
             var res = await SendGetUserQuizSettingsReq(ClientState.Session.Token);
             if (res != null)

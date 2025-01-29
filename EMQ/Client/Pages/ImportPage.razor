@@ -11,7 +11,7 @@
 
 <h3>ImportPage</h3>
 
-@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
 {
     <br/>
     <button type="button" class="btn btn-primary" @onclick="@(async () => { await OnClick_DownloadPendingSongs(); })">
@@ -69,7 +69,7 @@
                 This is a modification of an existing song
             </button>
 
-            @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+            @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
             {
                 <button type="button"
                         class="btn btn-primary"

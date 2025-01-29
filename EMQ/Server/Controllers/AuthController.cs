@@ -58,6 +58,8 @@ public class AuthController : ControllerBase
         int playerId;
         string token;
         UserRoleKind userRoleKind;
+        List<PermissionKind>? includedPermissions = null;
+        List<PermissionKind>? excludedPermissions = null;
         AvatarCharacter character = AvatarCharacter.Auu;
         string skin = "Default";
 
@@ -88,6 +90,8 @@ public class AuthController : ControllerBase
                 username = user.username;
                 token = secret.token.ToString();
                 userRoleKind = user.roles;
+                includedPermissions = user.inc_perm?.ToList();
+                excludedPermissions = user.exc_perm?.ToList();
                 playerId = user.id;
                 character = user.avatar;
                 skin = user.skin;
@@ -115,6 +119,8 @@ public class AuthController : ControllerBase
                     username = user.username;
                     token = secret.token.ToString();
                     userRoleKind = user.roles;
+                    includedPermissions = user.inc_perm?.ToList();
+                    excludedPermissions = user.exc_perm?.ToList();
                     playerId = user.id;
                     character = user.avatar;
                     skin = user.skin;
@@ -144,7 +150,10 @@ public class AuthController : ControllerBase
         string? activeUserLabelPresetName = await DbManager_Auth.GetActiveUserLabelPresetName(playerId);
         var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
         var player = new Player(playerId, username, new Avatar(character, skin));
-        var session = new Session(player, token, userRoleKind, activeUserLabelPresetName);
+        var session = new Session(player, token, userRoleKind, activeUserLabelPresetName)
+        {
+            IncludedPermissions = includedPermissions, ExcludedPermissions = excludedPermissions
+        };
 
         ServerState.AddSession(session);
 
@@ -272,7 +281,7 @@ public class AuthController : ControllerBase
                 Response.Headers["X-USER-ID"] = session.Player.Id.ToString();
                 Response.Headers["X-USER-NAME"] = session.Player.Username;
                 Response.Headers["X-USER-ROLE"] =
-                    AuthStuff.HasPermission(session.UserRoleKind, PermissionKind.Admin) ? "admin" : "editor";
+                    AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
             }
         }
 

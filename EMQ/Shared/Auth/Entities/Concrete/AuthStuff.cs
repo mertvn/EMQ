@@ -19,45 +19,57 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
 
     public static readonly string AuthorizationHeaderName = HttpRequestHeader.Authorization.ToString();
 
-    public static PermissionKind[] DefaultVisitorPermissions { get; } =
+    public static HashSet<PermissionKind> DefaultVisitorPermissions { get; } = new()
     {
         PermissionKind.Visitor, PermissionKind.Login, PermissionKind.SearchLibrary, PermissionKind.ViewStats
     };
 
-    public static PermissionKind[] DefaultGuestPermissions { get; } =
-        DefaultVisitorPermissions.Concat(new[]
+    public static HashSet<PermissionKind> DefaultGuestPermissions { get; } =
+        DefaultVisitorPermissions.Concat(new HashSet<PermissionKind>
         {
-            PermissionKind.Guest, PermissionKind.CreateRoom, PermissionKind.PlayQuiz,
-            PermissionKind.SendChatMessage, PermissionKind.UpdatePreferences
-        }).ToArray();
+            PermissionKind.Guest,
+            PermissionKind.CreateRoom,
+            PermissionKind.PlayQuiz,
+            PermissionKind.SendChatMessage,
+            PermissionKind.UpdatePreferences
+        }).ToHashSet();
 
-    public static PermissionKind[] DefaultUserPermissions { get; } =
-        DefaultGuestPermissions.Concat(new[]
+    public static HashSet<PermissionKind> DefaultUserPermissions { get; } =
+        DefaultGuestPermissions.Concat(new HashSet<PermissionKind>
         {
-            PermissionKind.User, PermissionKind.JoinRanked, PermissionKind.UploadSongLink,
-            PermissionKind.ReportSongLink, PermissionKind.StoreQuizSettings, PermissionKind.Vote
-        }).ToArray();
+            PermissionKind.User,
+            PermissionKind.JoinRanked,
+            PermissionKind.UploadSongLink,
+            PermissionKind.ReportSongLink,
+            PermissionKind.StoreQuizSettings,
+            PermissionKind.Vote,
+            PermissionKind.Edit
+        }).ToHashSet();
 
-    public static PermissionKind[] DefaultImportHelperPermissions { get; } =
-        DefaultUserPermissions.Concat(new[] { PermissionKind.ImportHelper }).ToArray();
+    public static HashSet<PermissionKind> DefaultImportHelperPermissions { get; } =
+        DefaultUserPermissions.Concat(new HashSet<PermissionKind> { PermissionKind.ImportHelper }).ToHashSet();
 
-    public static PermissionKind[] DefaultModeratorPermissions { get; } =
-        DefaultUserPermissions.Concat(new[] { PermissionKind.Moderator }).ToArray();
+    public static HashSet<PermissionKind> DefaultModeratorPermissions { get; } =
+        DefaultUserPermissions.Concat(new HashSet<PermissionKind> { PermissionKind.Moderator }).ToHashSet();
 
-    public static PermissionKind[] DefaultChatModeratorPermissions { get; } =
-        DefaultModeratorPermissions.Concat(new[] { PermissionKind.ModerateChat }).ToArray();
+    public static HashSet<PermissionKind> DefaultChatModeratorPermissions { get; } =
+        DefaultModeratorPermissions.Concat(new HashSet<PermissionKind> { PermissionKind.ModerateChat }).ToHashSet();
 
-    public static PermissionKind[] DefaultReviewQueueModeratorPermissions { get; } =
-        DefaultModeratorPermissions.Concat(new[] { PermissionKind.ReviewSongLink, PermissionKind.DeleteSongLink })
-            .ToArray();
+    public static HashSet<PermissionKind> DefaultReviewQueueModeratorPermissions { get; } =
+        DefaultModeratorPermissions
+            .Concat(new HashSet<PermissionKind> { PermissionKind.ReviewSongLink, PermissionKind.DeleteSongLink })
+            .ToHashSet();
 
-    public static PermissionKind[] DefaultDatabaseModeratorPermissions { get; } =
-        DefaultModeratorPermissions.Concat(new[] { PermissionKind.DeleteSongLink, PermissionKind.EditSongMetadata })
-            .ToArray();
+    public static HashSet<PermissionKind> DefaultDatabaseModeratorPermissions { get; } =
+        DefaultModeratorPermissions
+            .Concat(new HashSet<PermissionKind> { PermissionKind.DeleteSongLink, PermissionKind.Delete })
+            .ToHashSet();
 
-    public static PermissionKind[] DefaultAdminPermissions { get; } = Enum.GetValues<PermissionKind>();
+    public static HashSet<PermissionKind> DefaultAdminPermissions { get; } =
+        Enum.GetValues<PermissionKind>().ToHashSet();
 
-    public static Dictionary<UserRoleKind, PermissionKind[]> DefaultRolePermissionsDict { get; } =
+    // MUST contain all possible UserRoleKind values
+    public static Dictionary<UserRoleKind, HashSet<PermissionKind>> DefaultRolePermissionsDict { get; } =
         new()
         {
             { UserRoleKind.Visitor, DefaultVisitorPermissions },
@@ -70,34 +82,29 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
             { UserRoleKind.Admin, DefaultAdminPermissions },
         };
 
-    // probably should cache the result of this or something,
-    // unless we want to somehow make this user-based instead of role-based in the future
-    public static bool HasPermission(UserRoleKind role, PermissionKind permission)
+    public static bool HasPermission(Session? session, PermissionKind permission)
     {
-        var allRoles = Enum.GetValues<UserRoleKind>();
+        var sessionRole = session?.UserRoleKind ?? UserRoleKind.Visitor;
 
-        // List<UserRoleKind> userRoles =
-        //     allRoles.Where(userRoleKind => session.UserRoleKind.HasFlag(userRoleKind)).ToList();
-
-        List<UserRoleKind> userRoles = new();
-        foreach (UserRoleKind userRoleKind in allRoles)
+        HashSet<PermissionKind> userPermissions = new();
+        foreach ((UserRoleKind role, HashSet<PermissionKind> permissions) in DefaultRolePermissionsDict)
         {
-            if (role.HasFlag(userRoleKind))
+            if ((sessionRole & role) == role)
             {
-                userRoles.Add(userRoleKind);
+                userPermissions.UnionWith(permissions);
             }
         }
 
-        // var userPermissions = Session.DefaultRolePermissionsDict
-        //     .Where(x => userRoles.Contains(x.Key))
-        //     .SelectMany(y => y.Value).ToList();
-
-        List<PermissionKind> userPermissions = new();
-        foreach ((UserRoleKind key, PermissionKind[]? value) in AuthStuff.DefaultRolePermissionsDict)
+        if (session != null)
         {
-            if (userRoles.Contains(key))
+            if (session.IncludedPermissions != null)
             {
-                userPermissions.AddRange(value);
+                userPermissions.UnionWith(session.IncludedPermissions);
+            }
+
+            if (session.ExcludedPermissions != null)
+            {
+                userPermissions.ExceptWith(session.ExcludedPermissions);
             }
         }
 
@@ -147,6 +154,7 @@ public enum PermissionKind
     ReportSongLink = 3003,
     StoreQuizSettings = 3004,
     Vote = 3005,
+    Edit = 3006,
 
     ImportHelper = 3700,
 
@@ -157,7 +165,7 @@ public enum PermissionKind
     ReviewSongLink = 6001,
     DeleteSongLink = 6002,
 
-    EditSongMetadata = 7001,
+    Delete = 7001,
 
     EditUsers = 8001,
 

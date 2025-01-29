@@ -25,7 +25,7 @@ public partial class ImportPage
     {
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session == null ||
-            !AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
+            !AuthStuff.HasPermission(ClientState.Session, PermissionKind.ImportHelper))
         {
             _navigation.NavigateTo("/", true);
             return;

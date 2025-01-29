@@ -1,11 +1,11 @@
-﻿@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using System.Globalization
 @using EMQ.Shared.Auth.Entities.Concrete.Dto.Request
 @inject HttpClient _client
 
-@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Vote))
+@if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Vote))
 {
     bool hasVote = MusicVote != null;
     <span>My vote: </span>

@@ -35,4 +35,8 @@ public class Session
     public UserRoleKind UserRoleKind { get; }
 
     public string? ActiveUserLabelPresetName { get; set; }
+
+    public List<PermissionKind>? IncludedPermissions { get; init; }
+
+    public List<PermissionKind>? ExcludedPermissions { get; init; }
 }

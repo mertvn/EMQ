@@ -200,7 +200,7 @@ public class ModController : ControllerBase
         return rows;
     }
 
-    [CustomAuthorize(PermissionKind.Admin)]
+    [CustomAuthorize(PermissionKind.Delete)]
     [HttpPost]
     [Route("DeleteSong")]
     public async Task<ActionResult> DeleteSong([FromBody] int mId)
@@ -220,18 +220,14 @@ public class ModController : ControllerBase
         bool success = await DbManager.DeleteEntity(music!);
         if (success)
         {
-            await DbManager.EvictFromSongsCache(mId);
-        }
-
-        if (success)
-        {
             Console.WriteLine($"{session.Player.Username} DeleteSong {mId}");
+            await DbManager.EvictFromSongsCache(mId);
         }
 
         return success ? Ok() : StatusCode(500);
     }
 
-    [CustomAuthorize(PermissionKind.Admin)]
+    [CustomAuthorize(PermissionKind.Delete)]
     [HttpPost]
     [Route("DeleteArtist")]
     public async Task<ActionResult> DeleteArtist([FromBody] int aId)
@@ -251,13 +247,9 @@ public class ModController : ControllerBase
         bool success = await DbManager.DeleteEntity(artist!);
         if (success)
         {
+            Console.WriteLine($"{session.Player.Username} DeleteArtist {aId}");
             // todo evict all songs with this artist
             await DbManager.EvictFromSongsCache(aId);
-        }
-
-        if (success)
-        {
-            Console.WriteLine($"{session.Player.Username} DeleteArtist {aId}");
         }
 
         return success ? Ok() : StatusCode(500);

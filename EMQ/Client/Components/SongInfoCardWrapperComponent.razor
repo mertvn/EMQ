@@ -9,12 +9,8 @@
 <ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
 
 @{
-    // todo? move
-    bool isAdmin = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin);
-    bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
     bool isDebugMode = ClientState.Preferences.DebugMode;
-    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
-    bool hasDeleteSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.DeleteSongLink);
+    bool hasDeleteSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.DeleteSongLink);
 }
 
 @if (IsLibraryPage)
@@ -22,7 +18,7 @@
     <span style="margin: 5px">Count: @VisibleSongsCount</span>
     <br>
 
-    @if (false && isDebugMode && isAdmin)
+    @if (false && isDebugMode && ClientUtils.HasAdminPerms())
     {
         <textarea id="textarea_batchSetSubmittedBy"
                          rows="1" cols="20" maxlength="16" placeholder=""
@@ -121,11 +117,6 @@
             {
                 VisibleSongsCount += 1;
 
-                // if (!_addSongLinkModel.TryGetValue(song.Id, out AddSongLinkModel? _))
-                // {
-                //     _addSongLinkModel[song.Id] = new AddSongLinkModel();
-                // }
-
                 var validUrls = SongLink.FilterSongLinks(songFileLinks).Select(x => x.Url).ToList();
 
                 // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
@@ -202,7 +193,7 @@
 
                                             @if (!string.IsNullOrEmpty(@videoLink.SubmittedBy))
                                             {
-                                                @if (isDebugMode && isAdmin)
+                                                @if (isDebugMode && ClientUtils.HasAdminPerms())
                                                 {
                                                     <SetSubmittedByComponent Url="@videoLink.Url" SubmittedBy="@videoLink.SubmittedBy"></SetSubmittedByComponent>
                                                 }
@@ -290,7 +281,7 @@
 
                                             @if (!string.IsNullOrEmpty(soundLink.SubmittedBy))
                                             {
-                                                @if (isDebugMode && isAdmin)
+                                                @if (isDebugMode && ClientUtils.HasAdminPerms())
                                                 {
                                                     <SetSubmittedByComponent Url="@soundLink.Url" SubmittedBy="@soundLink.SubmittedBy"></SetSubmittedByComponent>
                                                 }
@@ -329,7 +320,7 @@
                                     <br/>
                                 }
 
-                                if (hasImportSongLinkPerms)
+                                if (ClientUtils.HasUploadPerms())
                                 {
                                     @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
@@ -342,33 +333,21 @@
                                             <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
                                         }
 
-                                  @*  <EditForm Model="@_addSongLinkModel[song.Id]" OnValidSubmit="@(() => SubmitSongUrl(song.Id, _addSongLinkModel[song.Id].Url))">
-                                        <DataAnnotationsValidator/>
-
-                                        <div style="padding: 5px">
-                                            <label for="@song.Id">Add link: </label>
-                                            <InputText id="@song.Id" type="text" @bind-Value="_addSongLinkModel[song.Id].Url"/>
-                                            <ValidationMessage For="@(() => _addSongLinkModel[song.Id].Url)"/>
-                                        </div>
-                                        <input style="margin-top: 5px" type="submit" class="songInfoCardSongLinksUploadButton btn btn-primary" value="Submit" disabled="@(ClientState.Session == null || !hasImportSongLinkPerms)"/>
-                                    </EditForm> *@
-
                                         <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
                                     }
+                                }
 
-                                    if (rqId == 0 && song.DataSource is DataSourceKind.EMQ or DataSourceKind.VNDB)
+                                if (rqId == 0 && song.DataSource is DataSourceKind.EMQ or DataSourceKind.VNDB)
+                                {
+                                    if (ClientUtils.HasEditPerms())
                                     {
-                                        // todo perms
-                                        if (hasImportSongLinkPerms)
-                                        {
-                                            <EditSongWrapperComponent Song="song" IsNew="false"></EditSongWrapperComponent>
-                                        }
+                                        <EditSongWrapperComponent Song="song" IsNew="false"></EditSongWrapperComponent>
                                     }
                                 }
                             }
                         }
 
-                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && hasImportSongLinkPerms)
+                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && ClientUtils.HasUploadPerms())
                         {
                             <br/>
                             @if (hasVideo && hasSound)

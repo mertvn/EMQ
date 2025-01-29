@@ -45,12 +45,6 @@
     </ol>
 </details>
 
-@{
-    // todo? move
-    bool isModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator);
-    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
-}
-
 <details>
     <summary>Batch uploader</summary>
     @if (ClientState.ServerStats.IsServerReadOnly)
@@ -63,7 +57,7 @@
     }
     else
     {
-        @if (hasImportSongLinkPerms)
+        @if (ClientUtils.HasUploadPerms())
         {
             <UploadBatchComponent></UploadBatchComponent>
         }
@@ -123,7 +117,7 @@
 
 <details>
     <summary>Add new song</summary>
-    @if (hasImportSongLinkPerms)
+    @if (ClientUtils.HasEditPerms())
     {
         <EditSongComponent IsNew="true"></EditSongComponent>
     }
@@ -134,7 +128,7 @@
 </details>
 <details>
     <summary>Add new artist</summary>
-    @if (hasImportSongLinkPerms)
+    @if (ClientUtils.HasEditPerms())
     {
         <EditArtistComponent IsNew="true"></EditArtistComponent>
     }
@@ -343,7 +337,7 @@
                             }
                             else
                             {
-                                @if (hasImportSongLinkPerms)
+                                @if (ClientUtils.HasUploadPerms())
                                 {
                                     <UploadBatchComponent Songs="value" IsBGMMode="true"></UploadBatchComponent>
                                 }

@@ -21,7 +21,7 @@
 <div>
     @if (ClientState.Session != null && !LoginInProgress)
     {
-        bool isUserOrGreater = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
+        bool isUserOrGreater = AuthStuff.HasPermission(ClientState.Session, PermissionKind.User);
         <div>
             @if (true)
             {

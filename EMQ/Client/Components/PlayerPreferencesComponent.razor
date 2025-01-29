@@ -20,7 +20,7 @@
         <Blazorise.ModalBody>
             @if (ClientState.Session != null)
             {
-                bool isUser = AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.User);
+                bool isUser = AuthStuff.HasPermission(ClientState.Session, PermissionKind.User);
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
                     <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
                         <DataAnnotationsValidator/>
@@ -34,7 +34,7 @@
                             </Items>
                             <Content>
                                 <Blazorise.TabPanel Name="TabGeneral">
-                                    @if (AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ImportHelper))
+                                    @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.ImportHelper))
                                     {
                                         <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
                                         <label for="DebugMode">Debug mode</label>

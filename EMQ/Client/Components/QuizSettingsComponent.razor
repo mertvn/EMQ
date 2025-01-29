@@ -853,7 +853,7 @@
                     <p>DO NOT USE THIS FILTER WITH A QUERY THAT RETURNS MORE THAN 5000 RESULTS AS YOU WILL JUST GET THROTTLED BY THE VNDB API UNTIL THE END OF TIME.</p>
                     <div>
                         <InputText
-                            disabled="@(ClientState.Session == null || !AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))"
+                            disabled="@(ClientState.Session == null || !AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator))"
                             placeholder="disabled because people are illiterate"
                             @bind-Value="@ClientQuizSettings.Filters.VndbAdvsearchFilter"
                             type="text"
@@ -883,7 +883,7 @@
             Load preset
         </button>
 
-        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.StoreQuizSettings))
+        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.StoreQuizSettings))
         {
             <button type="button" style="margin: 5px" class="btn btn-primary"
                     @onclick="@(() => { _savePresetModalRef.Show(); })">

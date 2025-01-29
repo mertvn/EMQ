@@ -37,4 +37,8 @@ public class User
 
     [Required]
     public string skin { get; set; } = Avatar.DefaultAvatar.Skin;
+
+    public PermissionKind[]? inc_perm { get; set; }
+
+    public PermissionKind[]? exc_perm { get; set; }
 }

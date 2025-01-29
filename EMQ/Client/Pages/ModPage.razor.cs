@@ -25,7 +25,7 @@ public partial class ModPage
     {
         await _clientUtils.TryRestoreSession();
         if (ClientState.Session == null ||
-            !AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Moderator))
+            !AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator))
         {
             _navigation.NavigateTo("/", true);
             return;

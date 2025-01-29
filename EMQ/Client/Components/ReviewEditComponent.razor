@@ -15,7 +15,7 @@
 @inject IJSRuntime _jsRuntime
 
 @{
-    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.ReviewSongLink);
+    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink);
 }
 
 @if (IsLibraryPage)
@@ -109,7 +109,7 @@
                         <button type="button" class="btn btn-success" disabled="@(reviewingItem.status is ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">Approved</button>
                     }
 
-                    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.Admin))
+                    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
                     {
                         <br/>
                         <input type="checkbox" id="checkbox-ApplyToNext500Batch" class="form-check-input" @bind="@ApplyToNext500Batch"/>

@@ -9,10 +9,6 @@
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 
-@{
-    bool hasImportSongLinkPerms = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session.UserRoleKind, PermissionKind.UploadSongLink);
-}
-
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId + 1}"))">Next</button>
 <br/>
@@ -58,7 +54,7 @@
         </ul>
     </details>
 
-    @if (hasImportSongLinkPerms)
+    @if (ClientUtils.HasEditPerms())
     {
         <details>
             <summary>Edit artist</summary>

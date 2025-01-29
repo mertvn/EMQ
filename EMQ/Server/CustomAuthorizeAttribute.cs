@@ -28,8 +28,7 @@ public class CustomAuthorizeAttribute : Attribute, IAsyncActionFilter
             context.HttpContext.Items["EMQ_SESSION"] = session;
         }
 
-        UserRoleKind currentRole = session?.UserRoleKind ?? UserRoleKind.Visitor;
-        bool valid = AuthStuff.HasPermission(currentRole, _requiredPermission);
+        bool valid = AuthStuff.HasPermission(session, _requiredPermission);
         if (valid)
         {
             bool requiresModeratorOrGreater = !AuthStuff.DefaultUserPermissions.Contains(_requiredPermission);
