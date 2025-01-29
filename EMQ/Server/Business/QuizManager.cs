@@ -1527,6 +1527,12 @@ public class QuizManager
             .ToDictionary(x => x, _ => new Dictionary<MCOptionKind, List<Title>>());
         var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
+        var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
+        int[] labelMids = quizSettings.Filters.ListReadKindFiltersIsAllRandom
+            ? Array.Empty<int>()
+            : await DbManager.FindMusicIdsByLabels(allVndbInfos
+                .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
+
         switch (quizSettings.SongSelectionKind)
         {
             case SongSelectionKind.Random:
@@ -1535,14 +1541,9 @@ public class QuizManager
                 // we'll want to "top up" with at least one of these two types (Lists, Random) regardless of what other options are enabled
                 if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Lists, out bool l) && l)
                 {
-                    var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-                    if (!quizSettings.Filters.ListReadKindFiltersIsAllRandom &&
-                        allVndbInfos.Any(x => x.Labels != null && x.Labels.Any(y => y.VNs.Any())))
+                    if (labelMids.Any())
                     {
-                        int[] mIds = await DbManager.FindMusicIdsByLabels(allVndbInfos
-                            .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
-                        var allPlayerVnTitles = await DbManager.SelectSongsMIds(mIds, false);
-
+                        var allPlayerVnTitles = await DbManager.SelectSongsMIds(labelMids, false);
                         foreach (Song song in allPlayerVnTitles)
                         {
                             foreach (SongSource songSource in song.Sources)
@@ -1557,7 +1558,8 @@ public class QuizManager
                     }
                 }
 
-                if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r)
+                if (!labelMids.Any() ||
+                    quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r)
                 {
                     var selectedMids = songs.Select(x => x.Id).ToHashSet();
                     var randomSongs =
@@ -1585,11 +1587,12 @@ public class QuizManager
                             @"SELECT distinct music_source_id
             FROM music_source_music msm
             JOIN artist_music am ON am.music_id = msm.music_id
-            WHERE am.artist_id = any(@aIds)",
+            WHERE am.artist_id = any(@aIds) and ((@mIds::integer[] IS NULL) or am.music_id = any(@mIds))",
                             new
                             {
                                 aIds = song.Artists.Where(x => x.Roles.Any(y => y != SongArtistRole.Lyricist))
-                                    .Select(x => x.Id).ToArray()
+                                    .Select(x => x.Id).ToArray(),
+                                mIds = labelMids.Any() ? labelMids : null
                             })).ToList();
 
                         // todo batch
@@ -1617,8 +1620,12 @@ public class QuizManager
                             .ToArray()).ToArray();
 
                         var msIds = (await connection.QueryAsync<int>(
-                            "select distinct music_source_id from music_source_music where music_id = any(@mIds)",
-                            new { mIds = collabMids })).ToList();
+                                "select distinct music_source_id from music_source_music where music_id = any(@mIds)",
+                                new
+                                    {
+                                        mIds = labelMids.Any() ? collabMids.Intersect(labelMids).ToArray() : collabMids
+                                    }))
+                            .ToList();
 
                         // todo batch
                         var sources = (await DbManager.SelectSongSourceBatch(
@@ -1650,11 +1657,13 @@ public class QuizManager
                             var sources = (await DbManager.SelectSongSourceBatch(connection,
                                     msIds.Select(x =>
                                             new Song { Sources = new List<SongSource> { new() { Id = x } } })
-                                        .ToList(), false)).SelectMany(x => x.Value.Select(y => y.Value))
+                                        .ToList(), false))
+                                .Where(x => !labelMids.Any() || labelMids.Contains(x.Key))
+                                .SelectMany(x => x.Value.Select(y => y.Value))
                                 .DistinctBy(z => z.Id);
 
                             validTitlesForSongDict[song.Id][MCOptionKind.Qsh] = new List<Title>();
-                            foreach (SongSource songSource in sources.OrderBy(d => msIds.IndexOf(d.Id)))
+                            foreach (SongSource songSource in sources.OrderBy(x => msIds.IndexOf(x.Id)))
                             {
                                 // todo msId dupe check?
                                 validTitlesForSongDict[song.Id][MCOptionKind.Qsh]
@@ -1704,30 +1713,9 @@ public class QuizManager
             var correctAnswerTitle = Converters.GetSingleTitle(correctAnswer.Titles);
             seenCorrectAnswerLatinTitles.Add(correctAnswerTitle.LatinTitle);
 
-            List<int> globalRandomIndexes = new();
-            foreach ((int key, Title? value) in globalTitles.Shuffle())
-            {
-                if (quizSettings.Duplicates)
-                {
-                    if (value.LatinTitle != correctAnswerTitle.LatinTitle)
-                    {
-                        globalRandomIndexes.Add(key);
-                    }
-                }
-                else
-                {
-                    if (!seenCorrectAnswerLatinTitles.Contains(value.LatinTitle))
-                    {
-                        globalRandomIndexes.Add(key);
-                    }
-                }
-            }
-
-            globalRandomIndexes = globalRandomIndexes.Take(quizSettings.NumMultipleChoiceOptions - 1).ToList();
-            // Console.WriteLine(JsonSerializer.Serialize(availableIndexes, Utils.Jso));
-
             List<Title> list = new() { correctAnswerTitle };
 
+            // process the advanced option kinds first
             if (validTitlesForSongDict.TryGetValue(dbSong.Id, out var dicts))
             {
                 foreach ((MCOptionKind key, List<Title>? value) in dicts.OrderByDescending(x => x.Key)) // todo weights
@@ -1747,27 +1735,33 @@ public class QuizManager
                             break;
                         }
 
-                        if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                        if (quizSettings.Duplicates || !seenCorrectAnswerLatinTitles.Contains(title.LatinTitle))
                         {
-                            list.Add(title);
+                            if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                            {
+                                list.Add(title);
+                            }
                         }
                     }
                 }
             }
 
+            // then top-up
             if (list.Count < quizSettings.NumMultipleChoiceOptions)
             {
-                foreach (int globalRandomIndex in globalRandomIndexes)
+                foreach ((int _, Title? title) in globalTitles.Shuffle())
                 {
                     if (list.Count >= quizSettings.NumMultipleChoiceOptions)
                     {
                         break;
                     }
 
-                    var title = globalTitles[globalRandomIndex];
-                    if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                    if (quizSettings.Duplicates || !seenCorrectAnswerLatinTitles.Contains(title.LatinTitle))
                     {
-                        list.Add(title);
+                        if (!list.Any(x => x.LatinTitle == title.LatinTitle))
+                        {
+                            list.Add(title);
+                        }
                     }
                 }
             }

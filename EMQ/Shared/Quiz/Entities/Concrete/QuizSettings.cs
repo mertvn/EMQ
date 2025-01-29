@@ -293,7 +293,7 @@ public class QuizSettings
     public Dictionary<MCOptionKind, bool> EnabledMCOptionKinds { get; set; } =
         new()
         {
-            { MCOptionKind.Random, true },
+            { MCOptionKind.Random, false },
             { MCOptionKind.Lists, true },
             { MCOptionKind.Artist, true },
             { MCOptionKind.ArtistPair, true },
