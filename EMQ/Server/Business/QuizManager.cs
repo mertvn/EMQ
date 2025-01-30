@@ -1396,7 +1396,7 @@ public class QuizManager
         foreach ((int sp, SongHistory? songHistory) in Quiz.SongsHistory)
         {
             // Console.WriteLine(JsonSerializer.Serialize(songHistory.PlayerGuessInfos, Utils.JsoIndented));
-            bool isBGM = songHistory.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
+            bool isBGM = songHistory.Song.IsBGM;
             bool hasDeveloper = songHistory.Song.Sources.Any(x => x.Developers.Any());
             bool hasComposer = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer));
             bool hasArranger = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger));

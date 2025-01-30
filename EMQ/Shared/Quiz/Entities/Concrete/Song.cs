@@ -61,6 +61,8 @@ public partial class Song : IEditQueueEntity
 
     public DataSourceKind DataSource { get; set; }
 
+    public bool IsBGM => Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
+
     public override string ToString()
     {
         var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();

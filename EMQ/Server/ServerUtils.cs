@@ -10,12 +10,16 @@ using System.Runtime;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Server.Business;
+using EMQ.Server.Controllers;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using Renci.SshNet;
@@ -288,5 +292,17 @@ public static class ServerUtils
     public static Session? GetSessionFromConnectionId(string connectionId)
     {
         return ServerState.Sessions.FirstOrDefault(x => x.PlayerConnectionInfos.ContainsKey(connectionId));
+    }
+
+    public static async Task<ActionResult> BotEditSong(ReqEditSong req)
+    {
+        // should be fast enough?
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+        return await controller.EditSong(req);
     }
 }

@@ -133,7 +133,6 @@ public sealed class UploadQueueService : BackgroundService
         uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
         Console.WriteLine($"processing {uploadResult.FileName} by {session.Player.Username}");
 
-        bool isBgm = song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
         FileStream? fs = null;
         string? tempPath = null;
         try

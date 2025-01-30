@@ -215,7 +215,7 @@
                                             @if (!string.IsNullOrEmpty(src))
                                             {
                                                 string href = link.Url;
-                                                @if (IsModPage && link.Url.Contains("vndb.org/v"))
+                                                @if (IsModPage && link.Url.Contains("vndb.org/v") && !Song.IsBGM)
                                                 {
                                                     href += "/hist?cfv=12";
                                                 }

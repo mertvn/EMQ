@@ -297,13 +297,6 @@ public class EntryPoints
             (await DbManager.SelectSongsMIds(json.SelectMany(x => x.mIds).ToArray(), false))
             .ToDictionary(x => x.Id, x => x);
 
-        var controller = new LibraryController
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
-        controller.HttpContext.Items["EMQ_SESSION"] =
-            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
-
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         foreach (EgsImporterInnerResult egsImporterInnerResult in json)
         {
@@ -425,7 +418,7 @@ public class EntryPoints
                 }
 
                 // Console.WriteLine(song);
-                var actionResult = await controller.EditSong(new ReqEditSong(song, false, noteUser));
+                var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, false, noteUser));
                 if (actionResult is not OkResult)
                 {
                     var badRequestObjectResult = actionResult as BadRequestObjectResult;
@@ -1618,7 +1611,7 @@ GRANT ALL ON SCHEMA public TO public;";
         // todo
         string cnnstrMusicbrainz = ConnectionHelper
             .GetConnectionStringBuilderWithDatabaseUrl(
-                "postgresql://musicbrainz:musicbrainz@192.168.56.101:5432/musicbrainz_db")
+                "postgresql://musicbrainz:musicbrainz@192.168.254.129:5432/musicbrainz_db")
             .ToString();
 
         string mbDir = $@"C:/emq/musicbrainz/{Constants.ImportDateMusicBrainz:yyyy-MM-dd}";

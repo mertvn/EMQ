@@ -427,7 +427,7 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
 
-            // todo do this in a better way somehow
+    // todo do this in a better way somehow
             if (content.SongArtists.Count == 1 && content.SongArtists.First().Titles.Count == 1)
             {
                 Song.Artists.Add(content.SongArtists.First());
@@ -503,6 +503,7 @@
     {
         ValidationMessages.Clear();
         bool isValid = true;
+        bool isBgm = song.IsBGM;
 
         if (!song.Sources.Any())
         {
@@ -518,13 +519,7 @@
             }
             else
             {
-    // if (isNew && song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-    // {
-    //     ValidationMessages.Add("It is not allowed to add new BGM at this time.");
-    //     isValid = false;
-    // }
-
-                if (IsNew && !song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
+                if (isNew && !isBgm && !song.Sources.All(x => x.SongTypes.Contains(SongSourceSongType.Other)))
                 {
                     ValidationMessages.Add("It is only possible to add Other songs at this time.");
                     isValid = false;
@@ -546,21 +541,24 @@
             }
             else
             {
-                if (IsNew && !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+                if (isNew && !isBgm && !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
                 {
                     ValidationMessages.Add("At least one artist must have the Vocals role.");
                     isValid = false;
                 }
             }
 
-    // todo enforce one artist_alias per song
-            var seenArtists = new HashSet<int>();
-            foreach (SongArtist songArtist in song.Artists)
+            if (!isBgm) // songArtist.Id will be 0 in MusicBrainzImporter
             {
-                if (!seenArtists.Add(songArtist.Id))
+                // todo enforce one artist_alias per song
+                var seenArtists = new HashSet<int>();
+                foreach (SongArtist songArtist in song.Artists)
                 {
-                    ValidationMessages.Add("An artist may only be credited once per song.");
-                    isValid = false;
+                    if (!seenArtists.Add(songArtist.Id))
+                    {
+                        ValidationMessages.Add("An artist may only be credited once per song.");
+                        isValid = false;
+                    }
                 }
             }
         }
@@ -577,7 +575,7 @@
             isValid = false;
         }
 
-        if (isNew && !song.Attributes.HasFlag(SongAttributes.NonCanon))
+        if (isNew && !isBgm && !song.Attributes.HasFlag(SongAttributes.NonCanon))
         {
             ValidationMessages.Add("If a song is Canon, it should be added to VNDB instead.");
             isValid = false;

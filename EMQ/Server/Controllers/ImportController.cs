@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -56,7 +56,7 @@ public class ImportController : ControllerBase
             }
         }
 
-        return VndbImporter.PendingSongs.Concat(MusicBrainzImporter.PendingSongs).ToList();
+        return VndbImporter.PendingSongs.Concat(MusicBrainzImporter.PendingSongs).Take(300).ToList();
     }
 
     [CustomAuthorize(PermissionKind.Admin)]
@@ -95,8 +95,7 @@ public class ImportController : ControllerBase
     [Route("RunEgsImporter")]
     public async Task<ActionResult> RunEgsImporter()
     {
-        var date = DateTime.UtcNow;
-        date = DateTime.UtcNow - TimeSpan.FromDays(0); // todo
+        var date = DateTime.UtcNow - TimeSpan.FromDays(0);
         await EgsImporter.ImportEgsData(date, true);
         return Ok();
     }
@@ -106,8 +105,6 @@ public class ImportController : ControllerBase
     [Route("RunMusicBrainzImporter")]
     public async Task<ActionResult> RunMusicBrainzImporter()
     {
-        var date = DateTime.UtcNow;
-        date = DateTime.UtcNow - TimeSpan.FromDays(2); // todo
         await MusicBrainzImporter.ImportMusicBrainzData(true, true);
         return Ok();
     }

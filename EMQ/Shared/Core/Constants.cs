@@ -20,7 +20,7 @@ public static class Constants
 
     public const string ImportDateMusicBrainz = "2023-08-19"; // not really accurate as it's rolling
 
-    public const string ImportDateMusicBrainzActual = "2023-11-26";
+    public const string ImportDateMusicBrainzActual = "2024-01-30";
 
     public const string ImportDateVgmdb = "2023-08-13";
 

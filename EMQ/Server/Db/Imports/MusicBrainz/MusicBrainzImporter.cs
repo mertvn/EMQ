@@ -11,7 +11,9 @@ using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.MusicBrainz.Model;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Npgsql;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -54,6 +56,11 @@ public static class MusicBrainzImporter
             throw new Exception("wrong db");
         }
 
+        if (!ConnectionHelper.GetConnectionString().Contains("DATABASE=EMQ;", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Database name in the connstr must be 'EMQ'");
+        }
+
         PendingSongs.Clear();
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -92,6 +99,81 @@ public static class MusicBrainzImporter
         incomingSongs = await InsertMissingMusicSources(incomingSongs, calledFromApi);
 
         Console.WriteLine(
+            $"StartSection UpdateMergedRecordings: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        {
+            const string sqlRedirect = "SELECT new_id FROM recording_gid_redirect WHERE gid = @gid";
+            const string sqlRecordingGid = "SELECT gid FROM recording WHERE id = @id";
+
+            async Task<Guid> GetMergedRecordingGid(NpgsqlTransaction transaction, Guid gid)
+            {
+                var connection = transaction.Connection!;
+                int newId = await connection.QuerySingleOrDefaultAsync<int>(sqlRedirect, new { gid });
+                if (newId > 0)
+                {
+                    gid = await connection.QuerySingleAsync<Guid>(sqlRecordingGid, new { id = newId });
+                    await GetMergedRecordingGid(transaction, gid);
+                }
+
+                return gid;
+            }
+
+            IEnumerable<Guid> oldGids = incomingSongs.Select(x => x.MusicBrainzRecordingGid!.Value);
+            string cnnstrMusicbrainz = ConnectionHelper
+                .GetConnectionStringBuilderWithDatabaseUrl(
+                    "postgresql://musicbrainz:musicbrainz@192.168.254.129:5432/musicbrainz_db")
+                .ToString();
+
+            await Parallel.ForEachAsync(oldGids,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 0 },
+                async (oldGid, ct) =>
+                {
+                    await using var connection = new NpgsqlConnection(cnnstrMusicbrainz);
+                    await connection.OpenAsync(ct);
+                    await using var transaction = await connection.BeginTransactionAsync(ct);
+
+                    Guid newGid = await GetMergedRecordingGid(transaction, oldGid);
+                    if (oldGid != newGid)
+                    {
+                        await using var connectionEmq =
+                            new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        Console.WriteLine($"updating merged recording {oldGid} => {newGid}");
+
+                        bool success = true;
+                        int rowsMusic = await connectionEmq.ExecuteAsync(
+                            "UPDATE music SET musicbrainz_recording_gid = @newGid WHERE musicbrainz_recording_gid = @oldGid",
+                            new { oldGid, newGid }, transaction);
+
+                        int rowsRr = await connectionEmq.ExecuteAsync(
+                            "UPDATE musicbrainz_release_recording SET recording = @newGid WHERE recording = @oldGid",
+                            new { oldGid, newGid }, transaction);
+
+                        // todo handle track_gid_redirect as well
+                        // todo? music_external_link, not too important as MB redirects anyways
+                        int rowsTr = await connectionEmq.ExecuteAsync(
+                            "UPDATE musicbrainz_track_recording SET recording = @newGid WHERE recording = @oldGid",
+                            new { oldGid, newGid }, transaction);
+
+                        success &= rowsMusic > 0;
+                        success &= rowsRr > 0;
+                        success &= rowsTr > 0;
+
+                        if (success)
+                        {
+                            await transaction.CommitAsync(ct);
+                            foreach (Song song in incomingSongs.Where(x=> x.MusicBrainzRecordingGid == oldGid))
+                            {
+                                song.MusicBrainzRecordingGid = newGid;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"failed to update merged recording {oldGid} => {newGid}");
+                        }
+                    }
+                });
+        }
+
+        Console.WriteLine(
             $"StartSection InsertMusicBrainzReleaseRecording: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         // return;
@@ -107,7 +189,7 @@ public static class MusicBrainzImporter
             {
                 if (isIncremental)
                 {
-                    Console.WriteLine("ignoring InsertMusicBrainzReleaseRecording error");
+                    // Console.WriteLine("ignoring InsertMusicBrainzReleaseRecording error");
                 }
                 else
                 {
@@ -133,7 +215,7 @@ public static class MusicBrainzImporter
             {
                 if (isIncremental)
                 {
-                    Console.WriteLine("ignoring InsertMusicBrainzReleaseVgmdbAlbum error");
+                    // Console.WriteLine("ignoring InsertMusicBrainzReleaseVgmdbAlbum error");
                 }
                 else
                 {
@@ -159,7 +241,7 @@ public static class MusicBrainzImporter
             {
                 if (isIncremental)
                 {
-                    Console.WriteLine("ignoring InsertMusicBrainzTrackRecording error");
+                    // Console.WriteLine("ignoring InsertMusicBrainzTrackRecording error");
                 }
                 else
                 {
@@ -210,6 +292,8 @@ public static class MusicBrainzImporter
             }
         }
 
+        List<Song> canInsertDirectly = new();
+        List<Song> canNotInsertDirectly = new();
         foreach (Song song in incomingSongs)
         {
             var songLite = song.ToSongLite_MB();
@@ -233,7 +317,24 @@ public static class MusicBrainzImporter
                 }
                 else
                 {
-                    PendingSongs.Add(song);
+                    bool isSingleSource = song.Sources.Count == 1;
+                    if (isSingleSource)
+                    {
+                        // todo? batch
+                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        string[] releaseUrls = song.Sources.First().Links
+                            .Where(x => x.Type == SongSourceLinkType.MusicBrainzRelease).Select(x => x.Url).ToArray();
+                        bool releaseInEmq = await connection.ExecuteScalarAsync<bool>(
+                            "SELECT 1 FROM music_source_external_link where url = ANY(@releaseUrls)",
+                            new { releaseUrls });
+                        if (!releaseInEmq)
+                        {
+                            canInsertDirectly.Add(song);
+                            continue;
+                        }
+                    }
+
+                    canNotInsertDirectly.Add(song);
                 }
             }
             else
@@ -242,21 +343,34 @@ public static class MusicBrainzImporter
             }
         }
 
+        PendingSongs.AddRange(canNotInsertDirectly);
+        foreach (Song song in canInsertDirectly)
+        {
+            string recordingUrl = song.Links.First(x => x.Type == SongLinkType.MusicBrainzRecording).Url;
+            Console.WriteLine($"inserting non-existing-source song: {song}");
+            var actionResult =
+                await ServerUtils.BotEditSong(new ReqEditSong(song, true,
+                    $"{song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB))} BGM"));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+                throw new Exception($"failed to BotEditSong {recordingUrl}");
+            }
+        }
+
         stopWatch.Stop();
         Console.WriteLine(
             $"StartSection end: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+        await DbManager.Init();
+        await DbManager.RefreshAutocompleteFiles();
     }
 
     [SuppressMessage("ReSharper", "StringLiteralTypo")]
     private static async Task<ResImportMusicBrainzDataInner> ImportMusicBrainzDataInner(
         IEnumerable<MusicBrainzJson> json)
     {
-        bool b = true;
-        if (b)
-        {
-            throw new Exception("i think i made the artist changes correctly but still be careful");
-        }
-
         var songs = new List<Song>();
         var musicBrainzReleaseRecordings = new List<MusicBrainzReleaseRecording>();
         var musicBrainzReleaseVgmdbAlbums = new List<MusicBrainzReleaseVgmdbAlbum>();
@@ -424,6 +538,14 @@ public static class MusicBrainzImporter
                             Titles = musicSourceTitles,
                         },
                     },
+                    Links = new List<SongLink>
+                    {
+                        new()
+                        {
+                            Type = SongLinkType.MusicBrainzRecording,
+                            Url = $"https://musicbrainz.org/recording/{data.recording.gid}",
+                        }
+                    }
                 };
 
                 if (!string.IsNullOrEmpty(data.aaa_rids.vgmdburl))

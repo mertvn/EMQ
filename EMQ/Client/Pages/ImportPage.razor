@@ -25,13 +25,13 @@
     <br/>
     <br/>
 
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunVndbImporter(); })">
+    <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(async () => { await Onclick_RunVndbImporter(); })">
         Run VndbImporter
     </button>
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunEgsImporter(); })">
+    <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(async () => { await Onclick_RunEgsImporter(); })">
         Run EgsImporter
     </button>
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunMusicBrainzImporter(); })">
+    <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(async () => { await Onclick_RunMusicBrainzImporter(); })">
         Run MusicBrainzImporter
     </button>
     <br/>

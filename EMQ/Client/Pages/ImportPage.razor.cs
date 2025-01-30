@@ -36,25 +36,31 @@ public partial class ImportPage
 
     private async Task Onclick_RunVndbImporter()
     {
+        Ready = false;
         HttpResponseMessage res = await _client.PostAsJsonAsync("Import/RunVndbImporter", "");
         if (res.IsSuccessStatusCode)
         {
             ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         }
+        Ready = true;
     }
 
     private async Task Onclick_RunEgsImporter()
     {
+        Ready = false;
         HttpResponseMessage _ = await _client.PostAsJsonAsync("Import/RunEgsImporter", "");
+        Ready = true;
     }
 
     private async Task Onclick_RunMusicBrainzImporter()
     {
+        Ready = false;
         HttpResponseMessage res = await _client.PostAsJsonAsync("Import/RunMusicBrainzImporter", "");
         if (res.IsSuccessStatusCode)
         {
             ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         }
+        Ready = true;
     }
 
     private async Task OnClick_DownloadPendingSongs()
