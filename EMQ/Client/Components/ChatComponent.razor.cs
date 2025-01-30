@@ -113,6 +113,11 @@ public partial class ChatComponent
                                     stopwatch.Stop();
                                     break;
                                 }
+                            case "shrug":
+                                {
+                                    message = new ChatMessage(@"¯\_(ツ)_/¯");
+                                    break;
+                                }
                             default:
                                 message = new ChatMessage("Command not found.");
                                 break;

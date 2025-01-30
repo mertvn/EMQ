@@ -1520,6 +1520,9 @@ public class QuizManager
     public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
         List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms)
     {
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
         var ret = new Dictionary<int, List<Title>>();
         Dictionary<int, Title> globalTitles = new();
         HashSet<int> globalAddedSourceIds = new();
@@ -1769,6 +1772,10 @@ public class QuizManager
             list = list.DistinctBy(x => x.LatinTitle).Shuffle().ToList();
             ret[index] = list;
         }
+
+        stopWatch.Stop();
+        Console.WriteLine(
+            $"{nameof(GenerateMultipleChoiceOptions)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         return ret;
     }
@@ -2242,15 +2249,19 @@ public class QuizManager
                             invalidMids ??= new List<int>();
 
                             // Select Random ListReadKind songs first
-                            dbSongs.AddRange(await DbManager.GetRandomSongs(
-                                Quiz.Room.QuizSettings.NumSongs - readCount,
-                                Quiz.Room.QuizSettings.Duplicates,
-                                null,
-                                filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
-                                validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
-                                ownerUserId: Quiz.Room.Owner.Id,
-                                gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind, listReadKindLeft: listReadKindLeft));
-                            invalidMids.AddRange(dbSongs.Select(x => x.Id));
+                            if (listReadKindLeft.TryGetValue(ListReadKind.Random, out int r) && r > 0)
+                            {
+                                dbSongs.AddRange(await DbManager.GetRandomSongs(
+                                    Quiz.Room.QuizSettings.NumSongs - readCount,
+                                    Quiz.Room.QuizSettings.Duplicates,
+                                    null,
+                                    filters: Quiz.Room.QuizSettings.Filters, players: Quiz.Room.Players.ToList(),
+                                    validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
+                                    ownerUserId: Quiz.Room.Owner.Id,
+                                    gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
+                                    listReadKindLeft: listReadKindLeft));
+                                invalidMids.AddRange(dbSongs.Select(x => x.Id));
+                            }
 
                             // then select the Read songs.
                             // We randomize the players here in order to make sure that the first player doesn't get all the EDs (etc.) if EDs are set to a low amount.
