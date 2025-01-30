@@ -363,9 +363,7 @@ public static class MusicBrainzImporter
         {
             string recordingUrl = song.Links.First(x => x.Type == SongLinkType.MusicBrainzRecording).Url;
             Console.WriteLine($"inserting non-existing-source song: {song}");
-            var actionResult =
-                await ServerUtils.BotEditSong(new ReqEditSong(song, true,
-                    $"{song.Sources.First(x => x.Links.Any(y => y.Type == SongSourceLinkType.VNDB))} BGM"));
+            var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, true, "BGM"));
             if (actionResult is not OkResult)
             {
                 var badRequestObjectResult = actionResult as BadRequestObjectResult;

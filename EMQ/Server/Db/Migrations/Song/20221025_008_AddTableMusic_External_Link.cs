@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -11,7 +12,7 @@ public class AddTableMusic_External_Link : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id")
+            .WithColumn("music_id").AsInt32().PrimaryKey().ForeignKey("music", "id").OnDelete(Rule.Cascade)
             .WithColumn("url").AsString().PrimaryKey()
             .WithColumn("type").AsInt32().NotNullable()
             .WithColumn("is_video").AsBoolean().NotNullable()

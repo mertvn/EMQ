@@ -4488,7 +4488,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     public static async Task<bool> OverwriteMusic(int oldMid, Song newSong, bool isImport,
         NpgsqlTransaction? transaction = null)
     {
-        if (newSong.MusicBrainzRecordingGid != null)
+        if (isImport && newSong.MusicBrainzRecordingGid != null)
         {
             // need to update musicbrainz_recording_gid in music and maybe the musicbrainz_release_recording table at least
             throw new NotImplementedException();

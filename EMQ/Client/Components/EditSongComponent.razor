@@ -108,7 +108,7 @@
             <h5>Sources</h5>
             <GuessInputComponent @ref="_guessInputComponentRef"
                                  Placeholder="Add source"
-                                 IsDisabled="@(Song.DataSource != DataSourceKind.EMQ)"
+                                 IsDisabled="@(Song.DataSource == DataSourceKind.VNDB)"
                                  IsQuizPage="false"
                                  @bind-GuessT="@SelectedMusicSourceTitle"
                                  Callback="SelectedResultChangedMst">
@@ -116,7 +116,7 @@
             @foreach (var source in Song.Sources)
             {
                 <div style="border: 1px black solid; padding: 10px;">
-                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource == DataSourceKind.EMQ) { await RemoveSongSource(source); } })">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { if (Song.DataSource != DataSourceKind.VNDB) { await RemoveSongSource(source); } })">
                         🗑
                     </span>
                     @source.ToString()
@@ -361,7 +361,10 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
             content.SongSource.MusicIds.Clear();
-            content.SongSource.SongTypes = new List<SongSourceSongType> { SongSourceSongType.Other };
+            content.SongSource.SongTypes = Song.DataSource == DataSourceKind.MusicBrainz
+                    ? new List<SongSourceSongType> { SongSourceSongType.BGM }
+                    : new List<SongSourceSongType> { SongSourceSongType.Other };
+
             Song.Sources.Add(content.SongSource);
         }
 
