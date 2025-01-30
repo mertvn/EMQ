@@ -141,7 +141,8 @@ public partial class QuizSettingsComponent
             EditContext.NotifyValidationStateChanged();
         }
 
-        if (!((ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r) ||
+        if (ClientQuizSettings.AnsweringKind is AnsweringKind.MultipleChoice or AnsweringKind.Mixed &&
+            !((ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Random, out bool r) && r) ||
               (ClientQuizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Lists, out bool l) && l)))
         {
             ValidationMessageStore.Add(() => ClientQuizSettings.Filters.ListReadKindFilters,
