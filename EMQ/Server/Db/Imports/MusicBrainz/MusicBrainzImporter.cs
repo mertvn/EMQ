@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dapper;
 using EMQ.Server.Db.Entities;
@@ -68,7 +69,17 @@ public static class MusicBrainzImporter
             $"StartSection start: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         string date = Constants.ImportDateMusicBrainz; // todo param
-        string folder = $"C:\\emq\\musicbrainz\\{date}";
+        string folder;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            folder = $"C:/emq/musicbrainz/{date}";
+        }
+        else
+        {
+            folder = $"musicbrainzimporter/{date}";
+            Console.WriteLine($"{Directory.GetCurrentDirectory()}/{folder}");
+        }
+
         string file = await File.ReadAllTextAsync($"{folder}/musicbrainz.json");
         var json = JsonSerializer.Deserialize<MusicBrainzJson[]>(file);
 
@@ -90,7 +101,7 @@ public static class MusicBrainzImporter
             throw new Exception("duplicate recordings detected");
         }
 
-        await File.WriteAllTextAsync("C:\\emq\\emqsongsmetadata\\MusicBrainzImporter.json",
+        await File.WriteAllTextAsync($"{folder}/MusicBrainzImporter.json",
             System.Text.Json.JsonSerializer.Serialize(incomingSongs, Utils.Jso));
 
         Console.WriteLine(
@@ -98,9 +109,13 @@ public static class MusicBrainzImporter
 
         incomingSongs = await InsertMissingMusicSources(incomingSongs, calledFromApi);
 
-        Console.WriteLine(
-            $"StartSection UpdateMergedRecordings: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+        // todo figure out how to do this on the server
+        bool mergeRecordings = false;
+        if (mergeRecordings)
         {
+            Console.WriteLine(
+                $"StartSection UpdateMergedRecordings: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
             const string sqlRedirect = "SELECT new_id FROM recording_gid_redirect WHERE gid = @gid";
             const string sqlRecordingGid = "SELECT gid FROM recording WHERE id = @id";
 
@@ -160,7 +175,7 @@ public static class MusicBrainzImporter
                         if (success)
                         {
                             await transaction.CommitAsync(ct);
-                            foreach (Song song in incomingSongs.Where(x=> x.MusicBrainzRecordingGid == oldGid))
+                            foreach (Song song in incomingSongs.Where(x => x.MusicBrainzRecordingGid == oldGid))
                             {
                                 song.MusicBrainzRecordingGid = newGid;
                             }
@@ -418,8 +433,6 @@ public static class MusicBrainzImporter
                 // {
                 // }
 
-                // todo recording-vn blacklist
-
                 // characters linked to their cv. instead of their own pages break stuff
                 // e.g.: https://musicbrainz.org/recording/6b877bfb-916e-4b8c-80ca-926c4b11eda0
                 data.artist = data.artist.DistinctBy(x => x.id).ToArray();
@@ -635,13 +648,24 @@ public static class MusicBrainzImporter
         // select data for missing music sources
         string vndbDbName = "vndbforemq";
         string executingDirectory = Directory.GetCurrentDirectory();
-        string folder = $"C:\\emq\\vndb\\{Constants.ImportDateVndb}";
+
+        string date = Constants.ImportDateVndb;
+        string folder;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            folder = $"C:/emq/vndb/{date}";
+        }
+        else
+        {
+            folder = $"vndbimporter/{date}";
+            Console.WriteLine($"{Directory.GetCurrentDirectory()}/{folder}");
+        }
 
         List<dynamic> musicSourcesJson = new();
         List<dynamic> musicSourcesTitlesJson = new();
         List<VNTagInfo> vnTagInfoJson = new();
         var tagsJson = JsonConvert.DeserializeObject<List<Tag>>(
-            await File.ReadAllTextAsync($"{folder}\\EMQ tags.json"))!;
+            await File.ReadAllTextAsync($"{folder}/EMQ tags.json"))!;
 
         var vid = missingVndbUrls.Select(x => x.ToVndbId()).ToList();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()
@@ -651,7 +675,10 @@ public static class MusicBrainzImporter
             string mbQueriesDir = @"../../../../Queries/MusicBrainz";
             if (calledFromApi)
             {
-                mbQueriesDir = @"../../Queries/MusicBrainz";
+                mbQueriesDir = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? @"../Queries/MusicBrainz"
+                    : @"../../Queries/MusicBrainz";
+                Console.WriteLine(mbQueriesDir);
             }
 
             var queryNames = new List<string>()
@@ -761,18 +788,18 @@ public static class MusicBrainzImporter
                         //                                 $" has no tags: {JsonConvert.SerializeObject(vnTagInfo)}"));
                     }
 
-                    int date = (int)dynMusicSource.air_date_start;
-                    if (date.ToString().EndsWith("9999"))
+                    int dateInt = (int)dynMusicSource.air_date_start;
+                    if (dateInt.ToString().EndsWith("9999"))
                     {
-                        date -= 9898;
+                        dateInt -= 9898;
                     }
-                    else if (date.ToString().EndsWith("99"))
+                    else if (dateInt.ToString().EndsWith("99"))
                     {
-                        date -= 98;
+                        dateInt -= 98;
                     }
 
                     var airDateStart =
-                        DateTime.ParseExact(date.ToString(), "yyyyMMdd", CultureInfo.InvariantCulture);
+                        DateTime.ParseExact(dateInt.ToString(), "yyyyMMdd", CultureInfo.InvariantCulture);
 
                     var musicSourceTitles = new List<Title>();
                     foreach (dynamic dynMusicSourceTitle in dynMusicSourceTitles)
