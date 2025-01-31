@@ -6,7 +6,7 @@
     @if (Answered && !string.IsNullOrEmpty(GuessStr))
     {
         string opacity = string.Equals(GuessStr, SelectedText, StringComparison.OrdinalIgnoreCase) ? "" : "0.5";
-        <div style="position: absolute; padding: 7px; background-color: cornflowerblue; opacity: @opacity">
+        <div style="position: absolute; padding: 7px; background-color: cornflowerblue; opacity: @opacity" tabindex="-1">
             <Blazorise.Tooltip
                 Inline="true"
                 Text="@GuessStr">
