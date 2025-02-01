@@ -1544,7 +1544,7 @@ GROUP BY artist_id";
         else
         {
             aId = (await connection.QueryAsync<int>(
-                "SELECT artist_id from artist_external_link ael WHERE url = ANY(@urls)",
+                "SELECT distinct artist_id from artist_external_link ael WHERE url = ANY(@urls)",
                 new { urls = songArtist.Links.Select(x => x.Url).ToArray() }, transaction)).SingleOrDefault();
             if (aId < 1)
             {
