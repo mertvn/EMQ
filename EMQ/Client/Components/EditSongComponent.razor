@@ -85,27 +85,38 @@
     </details>
 }
 
-<details style="padding: 5px;">
-    <summary>MusicBrainz seeder</summary>
-    <p>Enter a MusicBrainz release id or URL to fill information automatically.</p>
-    <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 540px;"/>
-    <br/>
-    <br/>
-
-    @if (MBTracks.Any())
-    {
-        <span> Displaying track @(MBTracksIndex + 1)/@(MBTracks.Count)</span>
+@if (IsNew)
+{
+    <details style="padding: 5px;">
+        <summary>MusicBrainz seeder</summary>
+        <p>Enter a MusicBrainz release id or URL to fill information automatically.</p>
+        <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 540px;"/>
         <br/>
-        <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex - 1))">Prev</button>
-        <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex + 1))">Next</button>
-    }
-</details>
-<br/>
+        <br/>
+
+        @if (MBTracks.Any())
+        {
+            <span> Displaying track @(MBTracksIndex + 1)/@(MBTracks.Count)</span>
+            <br/>
+            <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex - 10))">Prev 10</button>
+            <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex - 1))">Prev</button>
+            <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex + 1))">Next</button>
+            <button type="button" class="btn btn-primary" @onclick="@(async () => await SetMBTracksIndex(MBTracksIndex + 10))">Next 10</button>
+        }
+    </details>
+    <br/>
+}
 
 <div style="display: flex; flex-wrap: wrap">
     <div style="border: 1px black solid; padding: 10px; width: 970px;">
         <div style="border: 1px black solid; padding: 10px;">
             <h5>Sources</h5>
+            @if (!IsNew && Song.DataSource != DataSourceKind.VNDB)
+            {
+                <button type="button" class="btn btn-primary" @onclick="CopySources">Copy sources</button>
+                <button type="button" class="btn btn-primary" @onclick="PasteSources">Paste sources (overwrite)</button>
+            }
+
             <GuessInputComponent @ref="_guessInputComponentRef"
                                  Placeholder="Add source"
                                  IsDisabled="@(Song.DataSource == DataSourceKind.VNDB)"
@@ -143,8 +154,12 @@
 
         <div style="border: 1px black solid; padding: 10px;">
             <h5>Artists</h5>
-            <button type="button" class="btn btn-primary" @onclick="CopyCAL">Copy C/A/L</button>
-            <button type="button" class="btn btn-primary" @onclick="PasteCAL">Paste C/A/L</button>
+            @if (!IsNew)
+            {
+                <button type="button" class="btn btn-primary" @onclick="CopyCAL">Copy C/A/L</button>
+                <button type="button" class="btn btn-primary" @onclick="PasteCAL">Paste C/A/L</button>
+            }
+
             <AutocompleteAComponent @ref="_autocompleteAComponentRef"
                                     Placeholder="Add artist"
                                     IsDisabled="false"
@@ -195,23 +210,6 @@
         </div>
         <br/>
 
-        @if (IsNew)
-        {
-            <details>
-                <summary>Persist after submitting</summary>
-                @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
-                {
-                    if (true)
-                    {
-                        string id = $"PersistAfterSubmittingDict-{key}";
-                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
-                        <label for="@id">@key</label>
-                        <br/>
-                    }
-                }
-            </details>
-        }
-
         <div style="border: 1px black solid; padding: 10px;">
             <h5>External links</h5>
             <details>
@@ -249,6 +247,23 @@
             <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
         </div>
         <br/>
+
+        @if (IsNew)
+        {
+            <details>
+                <summary>Persist after submitting</summary>
+                @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
+                {
+                    if (true)
+                    {
+                        string id = $"PersistAfterSubmittingDict-{key}";
+                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(PersistAfterSubmittingDict[key])" style="margin: 5px"/>
+                        <label for="@id">@key</label>
+                        <br/>
+                    }
+                }
+            </details>
+        }
 
         <textarea id="note_user"
                       rows="2"
@@ -671,8 +686,25 @@
                 Song.Artists.Add(copied);
             }
         }
+    }
 
-    // ClientState.CopiedCAL = Array.Empty<SongArtist>();
+    private void CopySources()
+    {
+        var copy = JsonSerializer.Deserialize<SongSource[]>(JsonSerializer.Serialize(Song.Sources))!;
+        ClientState.CopiedSources = copy;
+    }
+
+    private void PasteSources()
+    {
+        Song.Sources = new List<SongSource>();
+        foreach (SongSource copied in ClientState.CopiedSources)
+        {
+            copied.SongTypes = Song.DataSource == DataSourceKind.MusicBrainz
+                ? new List<SongSourceSongType> { SongSourceSongType.BGM }
+                : new List<SongSourceSongType> { SongSourceSongType.Other };
+
+            Song.Sources.Add(copied);
+        }
     }
 
     private async Task SeedFromMusicBrainz(string value)

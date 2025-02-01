@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -385,86 +386,74 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     public static async Task MatchMusicBrainzRelease(List<SongMatch> songMatches, string outputDir, string releaseGid,
         bool useSource = true)
     {
-        Dictionary<Guid, List<Guid>> musicBrainzRecordingReleases;
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
-            musicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
-                .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
-        }
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
+        Dictionary<Guid, List<Guid>> musicBrainzRecordingReleases = musicBrainzReleaseRecordings
+            .GroupBy(x => x.recording)
+            .ToDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
 
+        var recMidDict =
+            (await connection.QueryAsync<(Guid, int)>(
+                "select musicbrainz_recording_gid, id from music where musicbrainz_recording_gid is not null"))
+            .ToFrozenDictionary(x => x.Item1, x => x.Item2);
         var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
         var songMatchInnerResults = new ConcurrentBag<SongMatchInnerResult>();
-        await Parallel.ForEachAsync(songMatches,
-            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 3 },
-            async (songMatch, _) =>
+
+        foreach (SongMatch songMatch in songMatches)
+        {
+            Console.WriteLine(songMatch.Path);
+            var innerResult = new SongMatchInnerResult() { SongMatch = songMatch };
+            songMatchInnerResults.Add(innerResult);
+
+            string? recordingStr = songMatch.MusicBrainzRecording;
+            if (!string.IsNullOrEmpty(recordingStr))
             {
-                await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+                Console.WriteLine(recordingStr);
+
+                // if (recordingStr == "7ea10531-ca87-4234-a8e8-8f15fd93b683")
+                // {
+                // }
+
+                var recordingGuid = new Guid(recordingStr);
+                if (musicBrainzRecordingReleases.TryGetValue(recordingGuid, out var o))
                 {
-                    Console.WriteLine(songMatch.Path);
-                    var innerResult = new SongMatchInnerResult() { SongMatch = songMatch };
-                    songMatchInnerResults.Add(innerResult);
-
-                    string? recordingStr = songMatch.MusicBrainzRecording;
-                    if (!string.IsNullOrEmpty(recordingStr))
+                    Console.WriteLine(JsonSerializer.Serialize(o, Utils.Jso));
+                    if (recMidDict.TryGetValue(recordingGuid, out int mid))
                     {
-                        Console.WriteLine(recordingStr);
-
-                        // if (recordingStr == "7ea10531-ca87-4234-a8e8-8f15fd93b683")
+                        innerResult.mIds.Add(mid);
+                        // if (mid.Count > 1)
                         // {
+                        //     innerResult.ResultKind = SongMatchInnerResultKind.MultipleMids;
+                        //     return;
                         // }
 
-                        if (musicBrainzRecordingReleases.TryGetValue(new Guid(recordingStr), out var o))
+                        if (midsWithSoundLinks.Contains(mid))
                         {
-                            Console.WriteLine(JsonSerializer.Serialize(o, Utils.Jso));
-                            var queryMusic = connection
-                                .QueryBuilder($@"SELECT DISTINCT m.id
-FROM music m
-/**where**/");
-
-                            queryMusic.Where($"m.musicbrainz_recording_gid::text = {recordingStr}");
-
-                            var mids = (await queryMusic.QueryAsync<int>()).ToList();
-                            if (mids.Any())
-                            {
-                                innerResult.mIds.AddRange(mids);
-                                if (mids.Count > 1)
-                                {
-                                    innerResult.ResultKind = SongMatchInnerResultKind.MultipleMids;
-                                    return;
-                                }
-
-                                if (midsWithSoundLinks.Contains(mids.Single()))
-                                {
-                                    innerResult.ResultKind = SongMatchInnerResultKind.AlreadyHave;
-                                    return;
-                                }
-                                else
-                                {
-                                    innerResult.ResultKind = SongMatchInnerResultKind.Matched;
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                innerResult.ResultKind = SongMatchInnerResultKind.NoMids;
-                                return;
-                            }
+                            innerResult.ResultKind = SongMatchInnerResultKind.AlreadyHave;
                         }
                         else
                         {
-                            Console.WriteLine("recording didn't match");
+                            innerResult.ResultKind = SongMatchInnerResultKind.Matched;
                         }
                     }
                     else
                     {
-                        Console.WriteLine("empty recording");
+                        innerResult.ResultKind = SongMatchInnerResultKind.NoMids;
                     }
                 }
-            });
+                else
+                {
+                    Console.WriteLine("recording didn't match");
+                }
+            }
+            else
+            {
+                Console.WriteLine("empty recording");
+            }
+        }
 
         // we don't care about duplicates here because we have the safety guarantee of a recording match
-        // todo don't do this if we ever stop checking recordings
+        // don't do this if we ever stop checking recordings
         var matched = songMatchInnerResults.Where(x => x.ResultKind == SongMatchInnerResultKind.Matched).ToList();
         matched = matched.DistinctBy(x => x.mIds.SingleOrDefault()).ToList();
 

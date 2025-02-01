@@ -271,5 +271,10 @@ public static class Blacklists
         "103b125e-46f9-4f61-bde1-070a48b7b632", // Princess Party Vocal Album
         "713a0a34-de09-4d68-8ada-f5a89396a645", // マジスキ～Marginal Skip～ ボーカルアルバム
         "de8ce1aa-ec11-447e-9347-12fbe8787c8d", // 恋する彼女の不器用な舞台「恋する彼女たちの器用なキャラソンCD」
+        "56ea48d1-a21f-4088-959b-a237130e2d73", // トゥルーラブストーリー3 ボーカルコレクション
+        "fc3cea75-3e00-4abf-b822-675363a0d331", // with me -VOCAL COLLECTION from stay.-
+        "d25afab5-4e73-444a-bc50-78feebf2e336", // まいてつ ボーカルコレクション
+        "03e1ef0a-dae3-49ce-8ae3-8521737c629c", // うみねこのなく頃に
+        "c76cc61e-cbb0-4059-be06-d870a9af8629", // タユタマ－kiss on my deity－ Vocal Collection 「Moment of Love」
     };
 }

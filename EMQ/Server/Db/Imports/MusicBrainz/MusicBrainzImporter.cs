@@ -110,6 +110,7 @@ public static class MusicBrainzImporter
         incomingSongs = await InsertMissingMusicSources(incomingSongs, calledFromApi);
 
         // todo figure out how to do this on the server
+        // todo merge songs
         bool mergeRecordings = false;
         if (mergeRecordings)
         {
@@ -163,7 +164,7 @@ public static class MusicBrainzImporter
                             new { oldGid, newGid }, transaction);
 
                         // todo handle track_gid_redirect as well
-                        // todo? music_external_link, not too important as MB redirects anyways
+                        // todo music_external_link
                         int rowsTr = await connectionEmq.ExecuteAsync(
                             "UPDATE musicbrainz_track_recording SET recording = @newGid WHERE recording = @oldGid",
                             new { oldGid, newGid }, transaction);
@@ -332,21 +333,18 @@ public static class MusicBrainzImporter
                 }
                 else
                 {
-                    bool isSingleSource = song.Sources.Count == 1;
-                    if (isSingleSource)
+                    // todo? batch
+                    await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                    string[] releaseUrls = song.Sources.SelectMany(x =>
+                            x.Links.Where(y => y.Type == SongSourceLinkType.MusicBrainzRelease).Select(x => x.Url))
+                        .ToArray();
+                    bool releaseInEmq = await connection.ExecuteScalarAsync<bool>(
+                        "SELECT 1 FROM music_source_external_link where url = ANY(@releaseUrls)",
+                        new { releaseUrls });
+                    if (!releaseInEmq)
                     {
-                        // todo? batch
-                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-                        string[] releaseUrls = song.Sources.First().Links
-                            .Where(x => x.Type == SongSourceLinkType.MusicBrainzRelease).Select(x => x.Url).ToArray();
-                        bool releaseInEmq = await connection.ExecuteScalarAsync<bool>(
-                            "SELECT 1 FROM music_source_external_link where url = ANY(@releaseUrls)",
-                            new { releaseUrls });
-                        if (!releaseInEmq)
-                        {
-                            canInsertDirectly.Add(song);
-                            continue;
-                        }
+                        canInsertDirectly.Add(song);
+                        continue;
                     }
 
                     canNotInsertDirectly.Add(song);
@@ -439,13 +437,11 @@ public static class MusicBrainzImporter
                 var songArtists = new List<SongArtist>();
                 foreach (artist artist in data.artist)
                 {
-                    // todo add both if we have them
                     List<SongArtistLink> songArtistLinks = new();
                     string vndbid;
                     if (MusicBrainzVndbArtistDict.TryGetValue(artist.gid, out var o))
                     {
                         vndbid = o.First(); // todo?
-
                         if (o.Length > 1)
                         {
                             Console.WriteLine(
@@ -460,15 +456,16 @@ public static class MusicBrainzImporter
                     else
                     {
                         vndbid = artist.gid.ToString();
-                        songArtistLinks.Add(new SongArtistLink
-                        {
-                            Url = $"https://musicbrainz.org/artist/{artist.gid}",
-                            Type = SongArtistLinkType.MusicBrainzArtist,
-                            Name = "",
-                        });
                         // Console.WriteLine(
                         //     $"artist not linked: https://musicbrainz.org/artist/{artist.gid} {artist.name} {artist.sort_name}");
                     }
+
+                    songArtistLinks.Add(new SongArtistLink
+                    {
+                        Url = $"https://musicbrainz.org/artist/{artist.gid}",
+                        Type = SongArtistLinkType.MusicBrainzArtist,
+                        Name = "",
+                    });
 
                     // if (vndbid == "s39" && data.release.gid.ToString() == "4580ceeb-b77b-4870-aae9-ddad74805459")
                     // {
@@ -537,7 +534,7 @@ public static class MusicBrainzImporter
                                 {
                                     Type = SongSourceLinkType.VNDB,
                                     Url = data.aaa_rids.vndbid.ToVndbUrl(),
-                                    Name = "will be overridden", // todo?
+                                    Name = "", // todo?
                                 },
                                 new SongSourceLink()
                                 {
@@ -673,10 +670,9 @@ public static class MusicBrainzImporter
             string mbQueriesDir = @"../../../../Queries/MusicBrainz";
             if (calledFromApi)
             {
-                mbQueriesDir = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    ? @"../Queries/MusicBrainz"
-                    : @"../../Queries/MusicBrainz";
-                Console.WriteLine(mbQueriesDir);
+                mbQueriesDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? @"../../Queries/MusicBrainz"
+                    : @"../Queries/MusicBrainz";
             }
 
             var queryNames = new List<string>()
