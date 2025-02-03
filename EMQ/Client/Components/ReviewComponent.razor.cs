@@ -36,7 +36,7 @@ public partial class ReviewComponent
 
     private const string VideoElementId = "videoReview";
 
-    private int reviewingId = 1;
+    public int reviewingId = 1;
 
     private RQ? reviewingItem => CurrentRQs?.FirstOrDefault(x => x.id == reviewingId);
 

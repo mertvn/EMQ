@@ -40,7 +40,7 @@
         <button type="button" class="btn btn-primary" @onclick="RefreshRQs">Search</button>
     </div>
 
-    <ReviewComponent CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewComponent>
+    <ReviewComponent @ref="_reviewComponentRef" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewComponent>
 
     <div class="page-size-chooser">
         Items per page:
@@ -74,7 +74,7 @@
                         }
                     }
 
-                    <span>@context.id</span>
+                    <span style="cursor:pointer;" @onclick="@(() => Onclick_Id(context.id))">@context.id</span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Source Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">

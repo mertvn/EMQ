@@ -17,6 +17,8 @@ namespace EMQ.Client.Components;
 
 public partial class EditQueueComponent
 {
+    private ReviewEditComponent _reviewEditComponentRef = null!;
+
     private readonly PaginationState _pagination = new() { ItemsPerPage = 250 };
 
     public IQueryable<EditQueue>? CurrentEQs { get; set; }
@@ -113,5 +115,11 @@ public partial class EditQueueComponent
         }
 
         StateHasChanged();
+    }
+
+    private void Onclick_Id(int id)
+    {
+        _reviewEditComponentRef.reviewingId = id;
+        _reviewEditComponentRef.Show();
     }
 }

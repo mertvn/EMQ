@@ -33,7 +33,7 @@
     </div>
 
     @* todo *@
-    <ReviewEditComponent CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewEditComponent>
+    <ReviewEditComponent @ref="_reviewEditComponentRef" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged" IsLibraryPage="true"></ReviewEditComponent>
 
     <div class="page-size-chooser">
         Items per page:
@@ -67,7 +67,7 @@
                         }
                     }
 
-                    <span>@context.id</span>
+                    <span style="cursor:pointer;" @onclick="@(() => Onclick_Id(context.id))">@context.id</span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Entity" Sortable="false">

@@ -37,7 +37,7 @@ public partial class ReviewEditComponent
 
     private Blazorise.Modal _modalRef = null!;
 
-    private int reviewingId = 1;
+    public int reviewingId = 1;
 
     private int oldReviewingId;
 
