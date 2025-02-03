@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -777,17 +777,22 @@ public static class MusicBrainzImporter
                     {
                         foreach (var tvi in vnTagInfo.TVIs)
                         {
-                            var tag = tagsDict[tvi.t];
-                            // Console.WriteLine(JsonConvert.SerializeObject(tag));
-
-                            categories.Add(new SongSourceCategory
+                            if (tagsDict.TryGetValue(tvi.t, out var tag))
                             {
-                                Name = tag.Name,
-                                VndbId = tag.Id,
-                                Type = SongSourceCategoryType.Tag,
-                                Rating = tvi.r,
-                                SpoilerLevel = (SpoilerLevel)tvi.s
-                            });
+                                // Console.WriteLine(JsonConvert.SerializeObject(tag));
+                                categories.Add(new SongSourceCategory
+                                {
+                                    Name = tag.Name,
+                                    VndbId = tag.Id,
+                                    Type = SongSourceCategoryType.Tag,
+                                    Rating = tvi.r,
+                                    SpoilerLevel = (SpoilerLevel)tvi.s
+                                });
+                            }
+                            else
+                            {
+                                Console.WriteLine($"tag not found: {tvi.t}");
+                            }
                         }
                     }
                     else
