@@ -32,6 +32,8 @@ public partial class ReviewQueueComponent
 
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
+    public SongSourceSongTypeMode SSSTMFilter { get; set; } = SongSourceSongTypeMode.All;
+
     private string SubmittedByFilter { get; set; } = "";
 
     private IQueryable<RQ>? FilteredRQs
@@ -63,7 +65,7 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter);
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter);
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {

@@ -1017,7 +1017,7 @@ WHERE s.lang = 'ja'"))
     {
         bool deleteAfter = false;
 
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All);
         foreach (RQ rq in rqs)
         {
             if (rq.analysis == "Pending"
@@ -1058,7 +1058,7 @@ WHERE s.lang = 'ja'"))
     [Test, Explicit]
     public async Task DownloadPendingReviewQueueItems()
     {
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All);
         foreach (RQ rq in rqs.Where(x => x.status == ReviewQueueStatus.Pending))
         {
             string filePath = $"{System.IO.Path.GetTempPath()}{rq.id}-{rq.url.LastSegment()}";

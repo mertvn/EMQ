@@ -146,14 +146,10 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindRQs")]
-    public async Task<IEnumerable<RQ>> FindRQs([FromBody] ReqFindRQs req)
+    public async Task<List<RQ>> FindRQs([FromBody] ReqFindRQs req)
     {
-        // var re = new ReqFindRQs(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(1));
-        // var r = await ServerUtils.Client.PostAsJsonAsync("https://erogemusicquiz.com/Library/FindRQs", re);
-        // return await r.Content.ReadFromJsonAsync<List<RQ>>();
-
-        var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate);
-        return rqs;
+        var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate, req.SSSTM);
+        return rqs.Count > 7800 ? new List<RQ>() : rqs;
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
@@ -170,7 +166,7 @@ public class LibraryController : ControllerBase
     [Route("FindEQs")]
     public async Task<IEnumerable<EditQueue>> FindEQs([FromBody] ReqFindRQs req)
     {
-        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate);
+        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate, req.SSSTM);
         return eqs;
     }
 

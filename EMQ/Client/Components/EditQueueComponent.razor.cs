@@ -38,7 +38,7 @@ public partial class EditQueueComponent
 
     public async Task RefreshEQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter);
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All);
         var res = await _client.PostAsJsonAsync("Library/FindEQs", req);
         if (res.IsSuccessStatusCode)
         {

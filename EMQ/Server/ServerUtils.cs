@@ -56,7 +56,7 @@ public static class ServerUtils
 
     public static async Task RunAnalysis()
     {
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All);
         foreach (RQ rq in rqs)
         {
             if (rq.analysis == "Pending")

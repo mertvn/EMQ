@@ -3231,43 +3231,60 @@ AND msm.type = ANY(@msmType)";
     //     }
     // }
 
-    // todo? limit max range to 2 months or something
-    public static async Task<IEnumerable<RQ>> FindRQs(DateTime startDate, DateTime endDate)
+    public static async Task<List<RQ>> FindRQs(DateTime startDate, DateTime endDate,
+        SongSourceSongTypeMode ssstm)
     {
         var rqs = new List<RQ>(777);
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var reviewQueues =
+            (await connection.QueryAsync<ReviewQueue>(
+                "select * from review_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                new { startDate, endDate }))
+            .ToList();
+        var songs = (await SelectSongsMIdsCached(reviewQueues.Select(x => x.music_id).Distinct().ToArray()))
+            .ToDictionary(x => x.Id, x => x);
+
+        foreach (ReviewQueue reviewQueue in reviewQueues)
         {
-            var reviewQueues =
-                (await connection.QueryAsync<ReviewQueue>(
-                    "select * from review_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
-                    new { startDate, endDate }))
-                .ToList();
-            var songs = (await SelectSongsMIdsCached(reviewQueues.Select(x => x.music_id).Distinct().ToArray()))
-                .ToDictionary(x => x.Id, x => x);
+            var song = songs[reviewQueue.music_id];
 
-            foreach (ReviewQueue reviewQueue in reviewQueues)
+            switch (ssstm)
             {
-                var song = songs[reviewQueue.music_id];
-                var rq = new RQ
-                {
-                    id = reviewQueue.id,
-                    music_id = reviewQueue.music_id,
-                    url = reviewQueue.url.ReplaceSelfhostLink(),
-                    type = (SongLinkType)reviewQueue.type,
-                    is_video = reviewQueue.is_video,
-                    submitted_by = reviewQueue.submitted_by,
-                    submitted_on = reviewQueue.submitted_on,
-                    status = (ReviewQueueStatus)reviewQueue.status,
-                    reason = reviewQueue.reason,
-                    analysis = reviewQueue.analysis,
-                    Song = song,
-                    duration = reviewQueue.duration,
-                    analysis_raw = reviewQueue.analysis_raw,
-                    sha256 = reviewQueue.sha256,
-                };
+                case SongSourceSongTypeMode.Vocals:
+                    if (song.IsBGM)
+                    {
+                        continue;
+                    }
 
-                rqs.Add(rq);
+                    break;
+                case SongSourceSongTypeMode.BGM:
+                    if (!song.IsBGM)
+                    {
+                        continue;
+                    }
+
+                    break;
             }
+
+            var rq = new RQ
+            {
+                id = reviewQueue.id,
+                music_id = reviewQueue.music_id,
+                url = reviewQueue.url.ReplaceSelfhostLink(),
+                type = reviewQueue.type,
+                is_video = reviewQueue.is_video,
+                submitted_by = reviewQueue.submitted_by,
+                submitted_on = reviewQueue.submitted_on,
+                status = reviewQueue.status,
+                reason = reviewQueue.reason,
+                analysis = reviewQueue.analysis,
+                Song = song,
+                duration = reviewQueue.duration,
+                analysis_raw = reviewQueue.analysis_raw,
+                sha256 = reviewQueue.sha256,
+            };
+
+            rqs.Add(rq);
         }
 
         return rqs;
@@ -3311,17 +3328,17 @@ AND msm.type = ANY(@msmType)";
         }
     }
 
-    public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate)
+    public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate,
+        SongSourceSongTypeMode ssstm)
     {
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            var eqs =
-                (await connection.QueryAsync<EditQueue>(
-                    "select * from edit_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
-                    new { startDate, endDate }))
-                .ToList();
-            return eqs;
-        }
+        // todo? ssstm
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var eqs =
+            (await connection.QueryAsync<EditQueue>(
+                "select * from edit_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                new { startDate, endDate }))
+            .ToList();
+        return eqs;
     }
 
     public static async Task<IEnumerable<SongReport>> FindSongReports(DateTime startDate, DateTime endDate)

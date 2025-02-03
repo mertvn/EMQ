@@ -810,7 +810,8 @@ public class EntryPoints_Encoding
                 Console.WriteLine(s);
             }
 
-            var rqs = await DbManager.FindRQs(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1));
+            var rqs = await DbManager.FindRQs(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1),
+                SongSourceSongTypeMode.All);
             var validRqs = rqs.Where(x => x.reason == notes);
             var processedMidsSongs = await DbManager.SelectSongsMIds(validRqs.Select(x => x.music_id).ToArray(), false);
             foreach (var processedMidsSong in processedMidsSongs)

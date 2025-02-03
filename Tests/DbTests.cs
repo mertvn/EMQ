@@ -996,7 +996,7 @@ public class DbTests
     [Test]
     public async Task FindRQs()
     {
-        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue);
+        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All);
     }
 
     [Test]
