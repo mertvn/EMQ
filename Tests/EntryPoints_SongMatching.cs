@@ -262,8 +262,8 @@ public class EntryPoints_SongMatching
             var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
 
             // todo move this one layer up
-            var songs = await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()).ToArray(),
-                false);
+            var songs = (await DbManager.SelectSongsMIds(songMatchInnerResults.Select(x => x.mIds.Single()).ToArray(),
+                false)).ToDictionary(x => x.Id, x => x);
 
             for (int index = 0; index < songMatchInnerResults.Count; index++)
             {
@@ -314,7 +314,7 @@ public class EntryPoints_SongMatching
                     // string sha1Str = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(uploadable.Path)));
 
                     // string newPath = uploadable.Path.Replace(Path.GetExtension(uploadable.Path), ".mp3");
-                    string newPath = $"M:/a/mb/converted/{uploadable.MusicBrainzRecording}.mp3";
+                    string newPath = $"N:/a/mb/converted/{uploadable.MusicBrainzRecording}.mp3";
                     if (!File.Exists(newPath))
                     {
                         Console.WriteLine("converting non .mp3: " + uploadable.Path);
@@ -332,22 +332,23 @@ public class EntryPoints_SongMatching
                         continue;
                     }
 
+                    extension = ".mp3";
                     uploadable.Path = newPath;
                 }
 
-                string recordingStoragePath = $"M:/a/mb/recordingstorage/{uploadable.MusicBrainzRecording}{extension}";
-                if (!File.Exists(recordingStoragePath))
+                long filesizeBytes = new FileInfo(uploadable.Path).Length;
+                if (filesizeBytes <= (17 * 1000)) // 17 KB
                 {
-                    File.Copy(uploadable.Path, recordingStoragePath);
+                    throw new Exception("filesizeBytes is too small");
                 }
 
                 string catboxUrl = await SelfUploader.Upload(uploadable, extension);
                 uploadable.ResultUrl = catboxUrl;
                 Console.WriteLine(catboxUrl);
-                if (!catboxUrl.EndsWith(extension))
+                if (!catboxUrl.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) &&
+                    !catboxUrl.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("invalid resultUrl: " + JsonSerializer.Serialize(uploadable, Utils.JsoIndented));
-                    continue;
+                    throw new Exception();
                 }
 
                 var songLite = songs[uploadable.MId].ToSongLite();
@@ -572,11 +573,11 @@ public class EntryPoints_SongMatching
     [Test, Explicit]
     public async Task ImportMusicBrainzRelease()
     {
-        // string dir = @"L:\olil355 - Copy";
+        string dir = @"L:\olil355 - Copy";
         // string dir = @"G:\Music\Kitto, Sumiwataru Asairo Yori mo\Kitto, Sumiwataru Asairo Yorimo, Music Collection";
         // string dir = @"G:\Music";
         // string dir = @"H:\mb\Music";
-        string dir = @"M:\a\mb\gmusicreplica";
+        // string dir = @"M:\a\mb\gmusicreplica";
         // string dir = @"M:\a\c";
         var regex = new Regex("", RegexOptions.Compiled);
         List<string> extensions = new()
@@ -592,7 +593,7 @@ public class EntryPoints_SongMatching
         };
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extensions, false, true, false);
-        await SongMatcher.MatchMusicBrainzRelease(songMatches, "C:\\emq\\matching\\mb\\gmusicreplica2", "", false);
+        await SongMatcher.MatchMusicBrainzRelease(songMatches, "C:\\emq\\matching\\mb\\2025olil-2", "", false);
     }
 
     [Test, Explicit]
@@ -670,7 +671,7 @@ public class EntryPoints_SongMatching
     }
 
     [Test, Explicit]
-    public async Task CopyFixedCues()
+    public void CopyFixedCues()
     {
         string outDir = @"M:\!!!!temp";
         string dir = @"L:\olil355 - Copy";

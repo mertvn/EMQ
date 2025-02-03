@@ -16,6 +16,7 @@ public static class SelfUploader
         string guid;
         if (false && !string.IsNullOrEmpty(uploadable.MusicBrainzRecording))
         {
+            // bad idea because we could have multiple files for the same recording
             guid = uploadable.MusicBrainzRecording;
         }
         else
@@ -24,13 +25,13 @@ public static class SelfUploader
             Console.WriteLine($"assigned {guid} to {uploadable.Path}");
         }
 
-        string newPath = $"M:/a/mb/selfhoststorage/{guid}{extension}";
+        string newPath = $"N:/a/mb/selfhoststorage/{guid}{extension}";
         if (!File.Exists(newPath))
         {
             File.Copy(uploadable.Path, newPath);
         }
 
         // todo
-        return newPath.Replace("M:/a/mb", "https://emqselfhost");
+        return newPath.Replace("N:/a/mb", "https://emqselfhost");
     }
 }

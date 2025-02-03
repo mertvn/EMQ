@@ -27,7 +27,7 @@ and acn.artist != 92121 -- [dialogue]
 and acn.artist != 41744 -- [data]
 and (r.status is null or r.status = 1 or r.status = 2 or r.status = 3) -- official, promotion, bootleg
 and not exists(select id from aaa_rec_vocals where id = rec.id)
-and not exists(select id from aaa_rec_lyricist where id = rec.id)
+--and not exists(select id from aaa_rec_lyricist where id = rec.id)
 --and (url like '%https://vndb.org/s%' or url is null)
 --and r.gid = '404cf7ad-06a2-41dc-ac7a-e00ad1024d3f'
 --and r.id = '3337626'

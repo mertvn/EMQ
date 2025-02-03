@@ -134,16 +134,11 @@ public static class MusicBrainzImporter
             }
 
             IEnumerable<Guid> oldGids = incomingSongs.Select(x => x.MusicBrainzRecordingGid!.Value);
-            string cnnstrMusicbrainz = ConnectionHelper
-                .GetConnectionStringBuilderWithDatabaseUrl(
-                    "postgresql://musicbrainz:musicbrainz@192.168.254.129:5432/musicbrainz_db")
-                .ToString();
-
             await Parallel.ForEachAsync(oldGids,
                 new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 0 },
                 async (oldGid, ct) =>
                 {
-                    await using var connection = new NpgsqlConnection(cnnstrMusicbrainz);
+                    await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Mb());
                     await connection.OpenAsync(ct);
                     await using var transaction = await connection.BeginTransactionAsync(ct);
 
@@ -308,6 +303,7 @@ public static class MusicBrainzImporter
             }
         }
 
+        bool insertDirectly = true; // todo remove
         List<Song> canInsertDirectly = new();
         List<Song> canNotInsertDirectly = new();
         foreach (Song song in incomingSongs)
@@ -333,6 +329,25 @@ public static class MusicBrainzImporter
                 }
                 else
                 {
+                    // todo remove
+                    string[] ignored =
+                    {
+                        "5a2bb3bc-dc3d-4caf-9248-86cf7dc9d1bf", "c9e90d45-9061-491f-98bf-9fec26745b77",
+                        "f7b9d9c7-7bc9-4b9c-a055-60d296764840", "4d2d81b0-66c4-4ade-a4d3-c259b250032d",
+                        "82599d40-e312-49b8-9ed3-fa220f17e8d5", "586b72ed-3849-40c8-b58c-c80f2362ba75",
+                        "cb372a45-3416-4a14-8500-85f26f08db90", "3fed0826-1cc5-401e-9bc3-876ad44d329f",
+                        "a2e2d706-07aa-478b-9628-2479a4b3f778", "681e6a1b-e6ed-4b6e-adbe-daa035743b67",
+                        "111ee5a0-3733-428e-8162-2990744252f8", "399f12e4-fe09-4af7-942e-225b3d92a2cc",
+                        "f8369b44-a022-43c8-bd28-c8b646f52b01", "172abbd0-741a-4de9-9f93-e90daa0d99cb",
+                        "29f60874-3fd6-46b3-94fd-4596cb21da6d", "6fb243fd-04e4-452f-be6b-512104099c34",
+                        "7ec4ede3-53e0-459d-ac2c-bcc006714d5c", "c82dd4f7-fbae-4782-b4a6-2946b85c69a7",
+                    };
+
+                    if (insertDirectly && ignored.Contains(song.MusicBrainzRecordingGid.ToString()))
+                    {
+                        continue;
+                    }
+
                     // todo? batch
                     await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
                     string[] releaseUrls = song.Sources.SelectMany(x =>
@@ -341,7 +356,7 @@ public static class MusicBrainzImporter
                     bool releaseInEmq = await connection.ExecuteScalarAsync<bool>(
                         "SELECT 1 FROM music_source_external_link where url = ANY(@releaseUrls)",
                         new { releaseUrls });
-                    if (!releaseInEmq)
+                    if (insertDirectly || !releaseInEmq)
                     {
                         canInsertDirectly.Add(song);
                         continue;

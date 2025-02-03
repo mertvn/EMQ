@@ -73,6 +73,25 @@ public static class ConnectionHelper
         }
     }
 
+    public static string GetConnectionString_Mb()
+    {
+        const string db = "EMQ_MB_DATABASE_URL";
+        if (s_cachedCnnStr.TryGetValue(db, out string? cnnStr))
+        {
+            return cnnStr;
+        }
+        else
+        {
+            // string databaseUrl = GetDatabaseUrl(db);
+            NpgsqlConnectionStringBuilder builder =
+                GetConnectionStringBuilderWithDatabaseUrl(
+                    "postgresql://musicbrainz:musicbrainz@192.168.254.129:5432/musicbrainz_db"); // todo?
+            string str = builder.ToString();
+            s_cachedCnnStr[db] = str;
+            return str;
+        }
+    }
+
     public static NpgsqlConnectionStringBuilder GetConnectionStringBuilderWithDatabaseUrl(string databaseUrl)
     {
         var builder = GetConnectionStringBuilderInner(databaseUrl);
