@@ -276,5 +276,10 @@ public static class Blacklists
         "d25afab5-4e73-444a-bc50-78feebf2e336", // まいてつ ボーカルコレクション
         "03e1ef0a-dae3-49ce-8ae3-8521737c629c", // うみねこのなく頃に
         "c76cc61e-cbb0-4059-be06-d870a9af8629", // タユタマ－kiss on my deity－ Vocal Collection 「Moment of Love」
+        "8c9243ca-27c3-4222-94ae-3d84825e90cc", // 俺たちに翼はない キャラクターソングアルバム
+        "d28c8b58-2c3f-4160-8e37-30517e7dcfe1", // One Cut Deeper
+        "2bc73fe2-7dba-423b-8cae-d0c9d3a295b4", // シンフォニックレイン ボーカルアルバム 「RAINBOW」
+        "2c7a8a2e-48c7-4f4c-ba5a-3ae3e7a03a28", // CHAOS;HEAD Audio Series Complete Box
+        "04f0b83f-48fe-4e61-ab61-fac7ed2d05f1", // 「少女☆歌劇 レヴュースタァライト 舞台奏像劇 遙かなるエルドラド」劇中歌アルバム
     };
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -303,7 +303,7 @@ public static class MusicBrainzImporter
             }
         }
 
-        bool insertDirectly = true; // todo remove
+        bool insertDirectly = false; // todo remove
         List<Song> canInsertDirectly = new();
         List<Song> canNotInsertDirectly = new();
         foreach (Song song in incomingSongs)
