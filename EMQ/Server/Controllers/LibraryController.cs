@@ -215,6 +215,11 @@ public class LibraryController : ControllerBase
     public async Task<IEnumerable<Song>> FindSongsByLabels([FromBody] ReqFindSongsByLabels req)
     {
         int[] mIds = await DbManager.FindMusicIdsByLabels(req.Labels, req.SSSTM);
+        if (mIds.Length > 5200)
+        {
+            return Array.Empty<Song>();
+        }
+
         var songs = await DbManager.SelectSongsMIds(mIds, false);
         return songs.OrderBy(x => x.Id);
     }
