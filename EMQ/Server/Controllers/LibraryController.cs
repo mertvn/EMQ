@@ -214,7 +214,7 @@ public class LibraryController : ControllerBase
     [Route("FindSongsByLabels")]
     public async Task<IEnumerable<Song>> FindSongsByLabels([FromBody] ReqFindSongsByLabels req)
     {
-        int[] mIds = await DbManager.FindMusicIdsByLabels(req.Labels, SongSourceSongTypeMode.Vocals);
+        int[] mIds = await DbManager.FindMusicIdsByLabels(req.Labels, req.SSSTM);
         var songs = await DbManager.SelectSongsMIds(mIds, false);
         return songs.OrderBy(x => x.Id);
     }

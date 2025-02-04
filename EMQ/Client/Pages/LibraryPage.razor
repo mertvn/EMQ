@@ -209,8 +209,17 @@
                 @if (ClientState.VndbInfo.Labels != null)
                 {
                    @* todo stats *@
+                    <select id="SSSTMFilter" style="margin: 5px" @bind="SSSTMFilter">
+                        @foreach (var key in Enum.GetValues<SongSourceSongTypeMode>())
+                        {
+                            <option value="@key">@key</option>
+                        }
+                    </select>
+                    <label for="SSSTMFilter">Type</label>
+                    <br/>
+
                     <button type="button" id="ButtonFetchMyList" class="btn btn-primary" style="margin: 5px" @onclick="OnclickButtonFetchMyList">
-                        Fetch vocal songs from my list
+                        Fetch songs from my list
                     </button>
                 }
                 else

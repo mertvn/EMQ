@@ -54,6 +54,8 @@ public partial class LibraryPage
 
     private bool IsMergeBGMTabs { get; set; }
 
+    public SongSourceSongTypeMode SSSTMFilter { get; set; } = SongSourceSongTypeMode.Vocals;
+
     private QuizSettingsComponent? _quizSettingsComponent;
 
     private async Task StateHasChangedAsync()
@@ -278,7 +280,7 @@ public partial class LibraryPage
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            var req = new ReqFindSongsByLabels(ClientState.VndbInfo.Labels);
+            var req = new ReqFindSongsByLabels(ClientState.VndbInfo.Labels, SSSTMFilter);
             var res = await _client.PostAsJsonAsync("Library/FindSongsByLabels", req);
             if (res.IsSuccessStatusCode)
             {
