@@ -380,8 +380,9 @@ public static class MusicBrainzImporter
             if (actionResult is not OkResult)
             {
                 var badRequestObjectResult = actionResult as BadRequestObjectResult;
-                Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
-                throw new Exception($"failed to BotEditSong {recordingUrl}");
+                Console.WriteLine(
+                    $"actionResult is not OkResult: {song} {recordingUrl} {badRequestObjectResult?.Value}");
+                // throw new Exception($"failed to BotEditSong {recordingUrl}");
             }
         }
 
@@ -746,9 +747,12 @@ public static class MusicBrainzImporter
                 if (missingVndbUrls.Contains(songSourceVndbUrl))
                 {
                     var dynData = new ProcessedMusic { VNID = songSourceVndbUrl.ToVndbId() };
-
                     // Console.WriteLine($"Processing {JsonConvert.SerializeObject(dynData)}");
-                    dynamic dynMusicSource = musicSourcesDict[dynData.VNID];
+                    if (!musicSourcesDict.TryGetValue(dynData.VNID, out dynamic? dynMusicSource))
+                    {
+                        continue;
+                    }
+
                     try
                     {
                         dynamic? _ = dynMusicSource.id;
