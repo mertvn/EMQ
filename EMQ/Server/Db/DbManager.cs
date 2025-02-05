@@ -1223,13 +1223,11 @@ GROUP BY artist_id";
             if (connection.ExecuteScalar<bool>("select 1 from music where id = @id", new { id = song.Id }))
             {
                 mId = song.Id;
-
-                // todo? update other stuff
                 if (updateMusicTable)
                 {
                     int rows = await connection.ExecuteScalarAsync<int>(
-                        "UPDATE music SET type = @type, attributes = @attributes WHERE id = @id;",
-                        new { type = song.Type, attributes = song.Attributes, id = mId });
+                        "UPDATE music SET type = @type, attributes = @attributes, data_source = @dataSource WHERE id = @id;",
+                        new { type = song.Type, attributes = song.Attributes, id = mId, dataSource = song.DataSource });
                     if (rows < 0)
                     {
                         throw new Exception($"Failed to update music");

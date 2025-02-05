@@ -137,7 +137,7 @@
                             if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
                             {
                                 string id = $"checkbox-SSST-{source.Id}-{key}";
-                                <input type="checkbox" id="@id" class="form-check-input" disabled
+                                <input type="checkbox" id="@id" class="form-check-input" disabled="@(!ClientUtils.HasAdminPerms())"
                                        @bind:get="@source.SongTypes.Contains(key)"
                                        @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
                                        @bind:event="oninput"
@@ -263,6 +263,23 @@
                     }
                 }
             </details>
+        }
+
+        @if (ClientUtils.HasAdminPerms())
+        {
+            <label style="padding: 4px;">
+                <select style="margin: 5px" @bind="Song.DataSource">
+                    @foreach (var dataSourceKind in Enum.GetValues<DataSourceKind>())
+                    {
+                        @if (dataSourceKind != DataSourceKind.Unknown)
+                        {
+                            <option value="@dataSourceKind">@dataSourceKind</option>
+                        }
+                    }
+                </select>
+                Data source
+            </label>
+            <br/>
         }
 
         <textarea id="note_user"
