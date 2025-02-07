@@ -2,6 +2,7 @@
 @using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Client.Pages
 @using System.Linq
+@using System.Text
 @using System.Text.RegularExpressions
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
@@ -394,8 +395,8 @@
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
             content.SongSource.MusicIds.Clear();
             content.SongSource.SongTypes = Song.DataSource == DataSourceKind.MusicBrainz
-                    ? new List<SongSourceSongType> { SongSourceSongType.BGM }
-                    : new List<SongSourceSongType> { SongSourceSongType.Other };
+                ? new List<SongSourceSongType> { SongSourceSongType.BGM }
+                : new List<SongSourceSongType> { SongSourceSongType.Other };
 
             Song.Sources.Add(content.SongSource);
         }
@@ -446,47 +447,61 @@
 
     private async Task SelectedResultChangedA()
     {
-        if (SelectedArtist is null)
+        await AddArtist(SelectedArtist, null);
+        await _autocompleteAComponentRef.ClearInputField();
+        await CallStateHasChanged();
+    }
+
+    private async Task AddArtist(AutocompleteA? selectedArtist, List<SongArtistRole>? roles)
+    {
+        if (selectedArtist is null)
         {
             return;
         }
 
-        if (Song.Artists.Any(x => x.Id == SelectedArtist.AId))
+        var existingArtist = Song.Artists.FirstOrDefault(x => x.Id == selectedArtist.AId);
+        if (existingArtist != null)
         {
+            if (roles != null)
+            {
+    // todo idk if this is what we want in all cases
+                existingArtist.Roles.AddRange(roles);
+                existingArtist.Roles = existingArtist.Roles.Distinct().ToList();
+            }
+
             return;
         }
 
-        var req = new SongArtist() { Id = SelectedArtist.AId };
+        var req = new SongArtist() { Id = selectedArtist.AId };
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
 
     // todo do this in a better way somehow
+            SongArtist artist;
             if (content.SongArtists.Count == 1 && content.SongArtists.First().Titles.Count == 1)
             {
-                Song.Artists.Add(content.SongArtists.First());
+                artist = content.SongArtists.First();
             }
             else
             {
-                SongArtist artist;
-                if (string.IsNullOrEmpty(SelectedArtist.AALatinAlias)) // from MBID match
+                if (string.IsNullOrEmpty(selectedArtist.AALatinAlias)) // from MBID match
                 {
                     artist = content.SongArtists.First();
                     artist.Titles = new List<Title> { artist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? artist.Titles.First() };
                 }
                 else // normal
                 {
-                    artist = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
-                    artist.Titles = artist.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
+                    artist = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == selectedArtist.AALatinAlias && ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == selectedArtist.AANonLatinAlias))));
+                    artist.Titles = artist.Titles.Where(y => y.LatinTitle == selectedArtist.AALatinAlias && ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == selectedArtist.AANonLatinAlias))).ToList();
                 }
-
-                Song.Artists.Add(artist);
             }
-        }
 
-        await _autocompleteAComponentRef.ClearInputField();
-        await CallStateHasChanged();
+            artist.Roles = roles ?? artist.Roles;
+            Song.Artists.Add(artist);
+            await CallStateHasChanged();
+        }
     }
 
     private async Task OnclickSubmit()
@@ -595,7 +610,7 @@
 
             if (!isBgm) // songArtist.Id will be 0 in MusicBrainzImporter
             {
-                // todo enforce one artist_alias per song
+    // todo enforce one artist_alias per song
                 var seenArtists = new HashSet<int>();
                 foreach (SongArtist songArtist in song.Artists)
                 {
@@ -778,7 +793,6 @@
             return;
         }
 
-    // todo fetch lyricist and comp
     // todo cache recording api results
         MBTracksIndex = newIndex;
         var mbTrack = MBTracks[MBTracksIndex];
@@ -789,13 +803,13 @@
             return;
         }
 
+        await ProcessMBRelations(mbRecording.relations);
         string joinedArtistCredit = "";
         foreach (MbArtistCredit mbArtistCredit in mbRecording.artistcredit)
         {
-            if (ClientState.MBArtistDict.TryGetValue(mbArtistCredit.MbArtist.id, out int aid))
+            if (ClientState.MBArtistDict.TryGetValue(mbArtistCredit.artist.id, out int aid))
             {
-                SelectedArtist = new AutocompleteA { AId = aid };
-                await SelectedResultChangedA();
+                await AddArtist(new AutocompleteA { AId = aid }, null);
             }
             else
             {
@@ -808,11 +822,86 @@
             await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
         }
 
-        Song.Titles.First().NonLatinTitle = mbTrack.title; // not sure whether using track or recording title is better here
+        var firstTitle = Song.Titles.First();
+        if (Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
+        {
+            firstTitle.LatinTitle = mbTrack.title;
+            firstTitle.NonLatinTitle = "";
+        }
+        else
+        {
+            firstTitle.LatinTitle = "";
+            firstTitle.NonLatinTitle = mbTrack.title;
+        }
+
         Song.Links = new List<SongLink>
         {
             new() { Url = $"https://musicbrainz.org/recording/{mbRecording.id}", Type = SongLinkType.MusicBrainzRecording }
         };
+    }
+
+    // todo handle no-MBID-match case (requires some sort of queue for adding artists)
+    private async Task ProcessMBRelations(IEnumerable<MbRelation> relations)
+    {
+        foreach (MbRelation mbRelation in relations)
+        {
+            switch (mbRelation.type)
+            {
+                case "vocal":
+                    {
+                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        {
+                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Vocals });
+                        }
+                        break;
+                    }
+                case "composer":
+                    {
+                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        {
+                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Composer });
+                        }
+                        break;
+                    }
+                case "arranger":
+                    {
+                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        {
+                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Arranger });
+                        }
+                        break;
+                    }
+
+                case "lyricist":
+                    {
+                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        {
+                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Lyricist });
+                        }
+                        break;
+                    }
+                case "performance" when mbRelation.targettype == "work":
+                    {
+                        if (mbRelation.attributes.Contains("instrumental") || mbRelation.attributes.Contains("karaoke"))
+                        {
+                            Song.Type |= SongType.Instrumental;
+                        }
+
+                        if (mbRelation.attributes.Contains("cover"))
+                        {
+                            Song.Type |= SongType.Cover;
+                        }
+
+                        if (Song.Type > SongType.Standard)
+                        {
+                            Song.Type &= ~SongType.Standard;
+                        }
+
+                        await ProcessMBRelations(mbRelation.work!.relations);
+                        break;
+                    }
+            }
+        }
     }
 
 }

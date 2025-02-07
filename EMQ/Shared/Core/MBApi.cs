@@ -39,7 +39,7 @@ public static class MBApi
                 return null;
             }
 
-            string url = $"{BaseUrl}recording/{id}?fmt=json&inc=artists";
+            string url = $"{BaseUrl}recording/{id}?fmt=json&inc=artists+work-level-rels+work-rels+artist-rels";
             var res = await client.GetFromJsonAsync<MBRecording>(url);
             // Console.WriteLine(res);
             return res;
