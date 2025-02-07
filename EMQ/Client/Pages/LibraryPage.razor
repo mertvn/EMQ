@@ -146,7 +146,7 @@
                        IsLibraryPage="true"/>
 
 <div style="border: 1px solid #ddd; padding: 5px">
-    <Blazorise.Tabs @ref="@TabsComponent" SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+    <Blazorise.Tabs @ref="@TabsComponent" @bind-SelectedTab="@_selectedTab" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
         <Items>
             <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
@@ -228,7 +228,7 @@
                 }
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabStats">
-                <Blazorise.Tabs SelectedTab="@_selectedTabStats" SelectedTabChanged="@OnSelectedTabChangedStats">
+                <Blazorise.Tabs @bind-SelectedTab="@_selectedTabStats">
                     <Items>
                         <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
                         <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>
@@ -313,7 +313,7 @@
         }
 
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
-        <Blazorise.Tabs @ref="TabsComponentVndb" SelectedTab="@_selectedTabVndb" SelectedTabChanged="@OnSelectedTabChangedVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+        <Blazorise.Tabs @ref="TabsComponentVndb" @bind-SelectedTab="@_selectedTabVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
                 <Blazorise.Tab Name="TabVNDB">VNDB & EMQ</Blazorise.Tab>
                 @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
@@ -379,7 +379,7 @@
 
 <br/>
 
-<Blazorise.Tabs SelectedTab="@_selectedTabQueue" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+<Blazorise.Tabs @bind-SelectedTab="@_selectedTabQueue" RenderMode="Blazorise.TabsRenderMode.LazyReload">
     <Items>
         <Blazorise.Tab Name="TabReviewQueue">Review Queue</Blazorise.Tab>
         <Blazorise.Tab Name="TabEditQueue">Edit Queue</Blazorise.Tab>

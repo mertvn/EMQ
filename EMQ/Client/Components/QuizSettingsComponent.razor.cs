@@ -49,7 +49,7 @@ public partial class QuizSettingsComponent
 
     private Blazorise.Modal _modalRef = null!;
 
-    private string _selectedTab = "TabGeneral";
+    private string _selectedTab { get; set; } = "TabGeneral";
 
     private EditContext EditContext = null!;
 
@@ -115,12 +115,6 @@ public partial class QuizSettingsComponent
         // {
         //     RecalculateNumSongsAndSongTypeFilters();
         // }
-    }
-
-    private Task OnSelectedTabChanged(string name)
-    {
-        _selectedTab = name;
-        return Task.CompletedTask;
     }
 
     private async Task SendChangeRoomSettingsReq(QuizSettings clientQuizSettings)

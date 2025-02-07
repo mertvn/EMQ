@@ -37,11 +37,6 @@ public partial class LibraryStatsComponent
         }
     }
 
-    private void OnSelectedTabChanged(string name)
-    {
-        SelectedTab = name;
-    }
-
     private async Task Onclick_Mst(string mst)
     {
         if (LibraryPage != null)

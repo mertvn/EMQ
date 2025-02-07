@@ -8,7 +8,7 @@
 @if (LibraryStats is { } libraryStats)
 {
     <div id="libraryStats">
-    <Blazorise.Tabs SelectedTab="@SelectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+    <Blazorise.Tabs @bind-SelectedTab="@SelectedTab">
     <Items>
         <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
         <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
@@ -227,7 +227,7 @@
 
 
         <Blazorise.TabPanel Name="TabArtist">
-            <Blazorise.Tabs SelectedTab="@SelectedTabArtist">
+            <Blazorise.Tabs @bind-SelectedTab="@SelectedTabArtist">
                 <Items>
                     @foreach (string key in libraryStats.amAvailableDict.Keys)
                     {

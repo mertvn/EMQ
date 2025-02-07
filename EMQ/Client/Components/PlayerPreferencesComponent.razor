@@ -26,7 +26,7 @@
                         <DataAnnotationsValidator/>
                         <ValidationSummary/>
 
-                        <Blazorise.Tabs SelectedTab="@_selectedTab" SelectedTabChanged="@OnSelectedTabChanged">
+                        <Blazorise.Tabs @bind-SelectedTab="@_selectedTab">
                             <Items>
                                 <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
                                 <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>

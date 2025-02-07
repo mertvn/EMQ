@@ -42,7 +42,7 @@
 @if (UserMusicVotes != null && UserMusicVotes.Any())
 {
   @* can't seem to stop the chart from lazy-loading so might as well set this to LazyLoad as well *@
-    <Blazorise.Tabs SelectedTab="@SelectedTabMusicVotes" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+    <Blazorise.Tabs @bind-SelectedTab="@SelectedTabMusicVotes" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
         <Items>
             <Blazorise.Tab Name="TabAll">All</Blazorise.Tab>
             <Blazorise.Tab Name="TabVocals">Vocals</Blazorise.Tab>

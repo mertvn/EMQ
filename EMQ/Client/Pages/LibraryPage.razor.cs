@@ -30,11 +30,11 @@ public partial class LibraryPage
 
     public string NoSongsText { get; set; } = "";
 
-    private string _selectedTab = "TabAutocompleteMst";
+    private string _selectedTab { get; set; } = "TabAutocompleteMst";
 
-    private string _selectedTabVndb = "TabVNDB";
+    private string _selectedTabVndb { get; set; } = "TabVNDB";
 
-    private string _selectedTabStats = "TabAll";
+    private string _selectedTabStats { get; set; } = "TabAll";
 
     private string _selectedTabQueue { get; set; } = "TabReviewQueue";
 
@@ -79,24 +79,6 @@ public partial class LibraryPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
-    }
-
-    private Task OnSelectedTabChanged(string name)
-    {
-        _selectedTab = name;
-        return Task.CompletedTask;
-    }
-
-    private Task OnSelectedTabChangedVndb(string name)
-    {
-        _selectedTabVndb = name;
-        return Task.CompletedTask;
-    }
-
-    private Task OnSelectedTabChangedStats(string name)
-    {
-        _selectedTabStats = name;
-        return Task.CompletedTask;
     }
 
     public async Task SelectedResultChangedMst()

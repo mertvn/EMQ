@@ -21,7 +21,7 @@ public partial class PlayerPreferencesComponent
 {
     private Blazorise.Modal _modalRef = null!;
 
-    private string _selectedTab = "TabGeneral";
+    private string _selectedTab { get; set; } = "TabGeneral";
 
     public bool InProgress { get; set; }
 
@@ -86,12 +86,6 @@ public partial class PlayerPreferencesComponent
     {
         StateHasChanged();
         _modalRef.Show();
-    }
-
-    private Task OnSelectedTabChanged(string name)
-    {
-        _selectedTab = name;
-        return Task.CompletedTask;
     }
 
     private async Task FetchLabels(PlayerVndbInfo vndbInfo)
