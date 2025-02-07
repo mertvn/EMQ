@@ -5159,7 +5159,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
         return res;
     }
 
-    public static async Task<ResGetSongArtist> GetSongArtist(SongArtist songArtist, Session? session)
+    public static async Task<ResGetSongArtist> GetSongArtist(SongArtist songArtist, Session? session, bool fetchStats)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var artist = await SelectArtistBatchNoAM(connection,
@@ -5167,7 +5167,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
 
         // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
         PlayerSongStats[] playerSongStats = Array.Empty<PlayerSongStats>();
-        if (artist.Any() && true) // todo require extra param to fetch this
+        if (artist.Any() && fetchStats)
         {
             if (session != null)
             {

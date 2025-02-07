@@ -112,7 +112,7 @@
     // PlayerSongStats = null;
     // StateHasChanged(); // fetched fast enough to make the flickering not worth it
 
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", new SongArtist { Id = ArtistId });
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtistWithStats", new SongArtist { Id = ArtistId });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;

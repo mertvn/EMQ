@@ -122,7 +122,8 @@ public class DbTests
     public async Task Test_GetSongArtist_ArtistAliasDistinctByNonLatinTitleThing()
     {
         var artists = (await DbManager.GetSongArtist(
-                new SongArtist { Links = new List<SongArtistLink> { new() { Url = "https://vndb.org/s972" } } }, null))
+                new SongArtist { Links = new List<SongArtistLink> { new() { Url = "https://vndb.org/s972" } } }, null,
+                false))
             .SongArtists;
         Assert.That(artists.Count == 1);
         Assert.That(artists.First().Titles.Count > 2);

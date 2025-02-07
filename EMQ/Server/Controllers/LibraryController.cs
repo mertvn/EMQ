@@ -18,6 +18,7 @@ using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Npgsql;
 
 namespace EMQ.Server.Controllers;
@@ -401,7 +402,18 @@ public class LibraryController : ControllerBase
     public async Task<ActionResult<ResGetSongArtist>> GetSongArtist(SongArtist req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
-        var res = await DbManager.GetSongArtist(req, session);
+        var res = await DbManager.GetSongArtist(req, session, false);
+        return res;
+    }
+
+    // the things a man does to avoid having to refactor the request object...
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetSongArtistWithStats")]
+    public async Task<ActionResult<ResGetSongArtist>> GetSongArtistWithStats(SongArtist req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        var res = await DbManager.GetSongArtist(req, session, true);
         return res;
     }
 
@@ -535,7 +547,7 @@ public class LibraryController : ControllerBase
                         (artist?.Links.ToArray() ?? Array.Empty<SongArtistLink>()).Select(x => x.Url), x => x.Url)
                     .ToList()
             },
-            session);
+            session, false);
         if (content.SongArtists.Any())
         {
             return BadRequest(
@@ -602,5 +614,17 @@ public class LibraryController : ControllerBase
         room.Quiz = quiz;
         var quizManager = new QuizManager(quiz);
         return await quizManager.PrimeQuiz() ? quiz.Songs.OrderBy(x => x.Id).ToList() : StatusCode(409);
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpGet]
+    [Route("GetMBArtists")]
+    [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
+    public async Task<Dictionary<string, int>> GetMBArtists()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return (await connection.QueryAsync<(string, int)>(
+                "SELECT replace(url, 'https://musicbrainz.org/artist/', ''), artist_id FROM artist_external_link ael WHERE type = 2"))
+            .ToDictionary(x => x.Item1, x => x.Item2);
     }
 }

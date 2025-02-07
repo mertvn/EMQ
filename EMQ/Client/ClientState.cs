@@ -34,4 +34,7 @@ public static class ClientState
     public static SongSource[] CopiedSources { get; set; } = Array.Empty<SongSource>();
 
     public static HttpClient ExternalClient { get; } = new();
+
+    public static Dictionary<string, int> MBArtistDict { get; set; } = new();
+
 }

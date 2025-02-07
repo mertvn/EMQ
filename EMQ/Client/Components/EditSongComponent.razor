@@ -469,9 +469,19 @@
             }
             else
             {
-                var artistAlias = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
-                artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
-                Song.Artists.Add(artistAlias);
+                SongArtist artist;
+                if (string.IsNullOrEmpty(SelectedArtist.AALatinAlias)) // from MBID match
+                {
+                    artist = content.SongArtists.First();
+                    artist.Titles = new List<Title> { artist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? artist.Titles.First() };
+                }
+                else // normal
+                {
+                    artist = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))));
+                    artist.Titles = artist.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
+                }
+
+                Song.Artists.Add(artist);
             }
         }
 
@@ -727,7 +737,7 @@
     private async Task SeedFromMusicBrainz(string value)
     {
         MusicBrainzSeederInputText = value;
-        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/release/", ""), out var guid))
+        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/release/", "").Replace("/", ""), out var guid))
         {
             MusicBrainzSeederInputText = "Invalid input.";
             return;
@@ -740,7 +750,15 @@
             return;
         }
 
-        PersistAfterSubmittingDict["Sources"] = true;
+        if (!ClientState.MBArtistDict.Any())
+        {
+            HttpResponseMessage resMBArtists = await _client.GetAsync("Library/GetMBArtists");
+            if (resMBArtists.IsSuccessStatusCode)
+            {
+                ClientState.MBArtistDict = (await resMBArtists.Content.ReadFromJsonAsync<Dictionary<string, int>>())!;
+            }
+        }
+
         MBTracks.Clear();
         foreach (MBMedium mbMedium in mbRelease.media.OrderBy(x => x.position))
         {
@@ -760,6 +778,7 @@
             return;
         }
 
+    // todo fetch lyricist and comp
     // todo cache recording api results
         MBTracksIndex = newIndex;
         var mbTrack = MBTracks[MBTracksIndex];
@@ -773,10 +792,22 @@
         string joinedArtistCredit = "";
         foreach (MbArtistCredit mbArtistCredit in mbRecording.artistcredit)
         {
-            joinedArtistCredit += $"{mbArtistCredit.name}{mbArtistCredit.joinphrase}";
+            if (ClientState.MBArtistDict.TryGetValue(mbArtistCredit.MbArtist.id, out int aid))
+            {
+                SelectedArtist = new AutocompleteA { AId = aid };
+                await SelectedResultChangedA();
+            }
+            else
+            {
+                joinedArtistCredit += $"{mbArtistCredit.name}{mbArtistCredit.joinphrase}";
+            }
         }
 
-        await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
+        if (joinedArtistCredit != "")
+        {
+            await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
+        }
+
         Song.Titles.First().NonLatinTitle = mbTrack.title; // not sure whether using track or recording title is better here
         Song.Links = new List<SongLink>
         {
