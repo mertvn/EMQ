@@ -591,6 +591,26 @@ public class LibraryController : ControllerBase
         if (eqId > 0)
         {
             Console.WriteLine($"{session.Player.Username} EditArtist {req.Artist}");
+            if (req.IsNew)
+            {
+                await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                await connection.OpenAsync();
+                await using var transaction = await connection.BeginTransactionAsync();
+
+                int approvedEditCount = await connection.ExecuteScalarAsync<int>(
+                    $"select count(*) from edit_queue where status = {(int)ReviewQueueStatus.Approved} and submitted_by = @username",
+                    new { username = session.Player.Username });
+                if (approvedEditCount > 50)
+                {
+                    Console.WriteLine($"automatically approving new artist {req.Artist} by {session.Player.Username}");
+                    bool success = await DbManager.UpdateEditQueueItem(transaction, (int)eqId,
+                        ReviewQueueStatus.Approved, "Automatically approved.");
+                    if (success)
+                    {
+                        await transaction.CommitAsync();
+                    }
+                }
+            }
         }
 
         return eqId > 0 ? Ok() : StatusCode(500);
