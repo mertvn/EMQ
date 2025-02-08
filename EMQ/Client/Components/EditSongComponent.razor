@@ -647,6 +647,13 @@
             isValid = false;
         }
 
+        if (song.DataSource == DataSourceKind.VNDB &&
+            (song.Attributes.HasFlag(SongAttributes.NonCanon) || song.Attributes.HasFlag(SongAttributes.Unofficial)))
+        {
+            ValidationMessages.Add("VNDB songs cannot be Non-canon or Unofficial. Remove the song from VNDB and report it on EMQ if that is the case.");
+            isValid = false;
+        }
+
     // todo important validate link regex
 
         return isValid;
@@ -880,6 +887,7 @@
                         }
                         break;
                     }
+                    // todo can works reference each other?
                 case "performance" when mbRelation.targettype == "work":
                     {
                         if (mbRelation.attributes.Contains("instrumental") || mbRelation.attributes.Contains("karaoke"))

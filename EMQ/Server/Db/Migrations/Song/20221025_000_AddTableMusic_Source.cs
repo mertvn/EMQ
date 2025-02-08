@@ -20,6 +20,8 @@ public class AddTableMusic_Source : Migration
             // .WithColumn("popularity").AsInt32().Nullable()
             .WithColumn("votecount").AsInt32().Nullable()
             .WithColumn("type").AsInt32().NotNullable();
+
+        Execute.Sql("ALTER TABLE music_source ADD CHECK (ISFINITE(air_date_start) = 't');");
     }
 
     public override void Down()

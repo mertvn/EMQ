@@ -593,7 +593,7 @@ public class EntryPoints_SongMatching
         };
 
         var songMatches = SongMatcher.ParseSongFile(dir, regex, extensions, false, true, false);
-        await SongMatcher.MatchMusicBrainzRelease(songMatches, "C:\\emq\\matching\\mb\\2025olil-2", "", false);
+        await SongMatcher.MatchMusicBrainzRelease(songMatches, "C:\\emq\\matching\\mb\\2025olil-4", "", false);
     }
 
     [Test, Explicit]
