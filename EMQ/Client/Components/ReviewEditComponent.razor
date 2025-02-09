@@ -88,6 +88,28 @@
                                     <pre>@JsonSerializer.Serialize(songArtist, Utils.JsoIndented)</pre>
                                     break;
                                 }
+                            case MergeArtists mergeArtists:
+                                {
+                                    @if (true)
+                                    {
+                                        <div>Merging </div>
+                                        {
+                                            string href = $"ea{mergeArtists.SourceId}";
+                                            <a class="link-primary" href="@href" target="_blank" style="margin-left: 4px; margin-right: 4px;">
+                                                @mergeArtists.SourceName
+                                            </a>
+                                        }
+                                        <div>with </div>
+                                        {
+                                            string href = $"ea{mergeArtists.Id}";
+                                            <a class="link-primary" href="@href" target="_blank" style="margin-left: 4px; margin-right: 4px;">
+                                                @href
+                                            </a>
+                                        }
+                                        <br/>
+                                    }
+                                    break;
+                                }
                         }
                     }
                 </div>

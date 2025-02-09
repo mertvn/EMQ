@@ -616,6 +616,44 @@ public class LibraryController : ControllerBase
         return eqId > 0 ? Ok() : StatusCode(500);
     }
 
+    [CustomAuthorize(PermissionKind.Edit)]
+    [HttpPost]
+    [Route("EditMergeArtists")]
+    public async Task<ActionResult> EditMergeArtists([FromBody] MergeArtists req)
+    {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        const EntityKind entityKind = EntityKind.MergeArtists;
+        var editQueue = new EditQueue
+        {
+            submitted_by = session.Player.Username,
+            submitted_on = DateTime.UtcNow,
+            status = ReviewQueueStatus.Pending,
+            entity_kind = entityKind,
+            entity_json = JsonSerializer.Serialize(req, Utils.JsoCompact),
+            entity_version = Constants.EntityVersionMergeArtists,
+            old_entity_json = null,
+            note_user = "",
+        };
+
+        long eqId = await DbManager.InsertEntity(editQueue);
+        if (eqId > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} EditMergeArtists {req}");
+        }
+
+        return eqId > 0 ? Ok() : StatusCode(500);
+    }
+
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByQuizSettings")]
@@ -642,9 +680,6 @@ public class LibraryController : ControllerBase
     [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
     public async Task<Dictionary<string, int>> GetMBArtists()
     {
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        return (await connection.QueryAsync<(string, int)>(
-                "SELECT replace(url, 'https://musicbrainz.org/artist/', ''), artist_id FROM artist_external_link ael WHERE type = 2"))
-            .ToDictionary(x => x.Item1, x => x.Item2);
+        return await DbManager.GetMBArtists();
     }
 }

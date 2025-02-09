@@ -296,7 +296,6 @@ public static class ServerUtils
 
     public static async Task<ActionResult> BotEditSong(ReqEditSong req)
     {
-        // should be fast enough?
         var controller = new LibraryController
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
@@ -304,5 +303,131 @@ public static class ServerUtils
         controller.HttpContext.Items["EMQ_SESSION"] =
             new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
         return await controller.EditSong(req);
+    }
+
+    public static async Task<ActionResult> BotEditArtist(ReqEditArtist req)
+    {
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+        return await controller.EditArtist(req);
+    }
+
+    // todo? add ability to override which one is source and which one is target
+    public static async Task<bool> MergeArtists(int aId1, int aId2, NpgsqlTransaction transaction)
+    {
+        var connection = transaction.Connection!;
+        var a1 = (await DbManager.SelectArtistBatchNoAM(connection,
+            new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId1 } } } },
+            false)).Single().Value.Single().Value;
+        var a2 = (await DbManager.SelectArtistBatchNoAM(connection,
+            new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId2 } } } },
+            false)).Single().Value.Single().Value;
+
+        bool a1HasVndb = a1.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
+        bool a2HasVndb = a2.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
+        if (!a1HasVndb && !a2HasVndb)
+        {
+            throw new Exception("neither artist has a vndb link");
+        }
+
+        if (a1HasVndb && a2HasVndb)
+        {
+            throw new Exception("both artists have vndb links");
+        }
+
+        if (a1.Id == a2.Id)
+        {
+            throw new Exception("Selfcest is once again not allowed.");
+        }
+
+        var source = a1HasVndb ? a2 : a1;
+        var target = a1HasVndb ? a1 : a2;
+        return await MergeArtists_Inner(source, target, transaction);
+    }
+
+    private static async Task<bool> MergeArtists_Inner(SongArtist source, SongArtist target,
+        NpgsqlTransaction transaction)
+    {
+        Console.WriteLine($"merging aId {source.Id} {source} into aId {target.Id} {target}");
+        var connection = transaction.Connection!;
+
+        var sharedAm =
+            await connection.QueryAsync<int>(@"select music_id from artist_music am
+where am.artist_id = @sAid
+and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am.music_id)
+", new { sAid = source.Id, tAid = target.Id, }, transaction);
+
+        int rowsAmDelete = await connection.ExecuteAsync(
+            "delete from artist_music where artist_id = @sAid and music_id = any(@sharedAm)",
+            new { sAid = source.Id, sharedAm, }, transaction);
+        if (rowsAmDelete <= 0)
+        {
+            Console.WriteLine("failed to delete am");
+        }
+
+        foreach (Title sourceTitle in source.Titles)
+        {
+            int existingAaId =
+                await connection.ExecuteScalarAsync<int>(
+                    "select id from artist_alias where artist_id = @tAid and latin_alias = @la and non_latin_alias = @nla",
+                    new { tAid = target.Id, la = sourceTitle.LatinTitle, nla = sourceTitle.NonLatinTitle },
+                    transaction);
+            if (existingAaId > 0)
+            {
+                int rowsAmUpdate2 = await connection.ExecuteAsync(
+                    "update artist_music set artist_id = @tAid, artist_alias_id = @existingAaId WHERE artist_id = @sAid",
+                    new { sAid = source.Id, tAid = target.Id, existingAaId }, transaction);
+                if (rowsAmUpdate2 <= 0)
+                {
+                    Console.WriteLine("failed to update am");
+                }
+            }
+            else
+            {
+                int rowsAa = await connection.ExecuteAsync(
+                    @"update artist_alias set artist_id = @tAid WHERE artist_id = @sAid and latin_alias = @la and non_latin_alias = @nla",
+                    new
+                    {
+                        sAid = source.Id,
+                        tAid = target.Id,
+                        la = sourceTitle.LatinTitle,
+                        nla = sourceTitle.NonLatinTitle,
+                    }, transaction);
+                if (rowsAa <= 0)
+                {
+                    Console.WriteLine("failed to update aa");
+                }
+
+                // todo this doesn't need to be in a loop
+                int rowsAmUpdate = await connection.ExecuteAsync(
+                    "update artist_music set artist_id = @tAid WHERE artist_id = @sAid",
+                    new { sAid = source.Id, tAid = target.Id, }, transaction);
+                if (rowsAmUpdate <= 0)
+                {
+                    Console.WriteLine("failed to update am");
+                }
+            }
+        }
+
+        int rowsAel = await connection.ExecuteAsync(
+            "update artist_external_link set artist_id = @tAid WHERE artist_id = @sAid",
+            new { sAid = source.Id, tAid = target.Id, }, transaction);
+        if (rowsAel <= 0)
+        {
+            Console.WriteLine("failed to update ael");
+        }
+
+        int rowsA = await connection.ExecuteAsync("delete from artist WHERE id = @sAid",
+            new { sAid = source.Id, }, transaction);
+        if (rowsA <= 0)
+        {
+            Console.WriteLine("failed to delete a");
+        }
+
+        return true;
     }
 }

@@ -103,6 +103,11 @@ public partial class ReviewEditComponent
                                 Entity.Id);
                             break;
                         }
+                    case EntityKind.MergeArtists:
+                        {
+                            Entity = JsonSerializer.Deserialize<MergeArtists>(reviewingItem.entity_json)!;
+                            break;
+                        }
                 }
 
                 if (isReadonly && reviewingItem.status == ReviewQueueStatus.Pending)
@@ -150,6 +155,16 @@ public partial class ReviewEditComponent
 
     public async Task Onclick_Approve()
     {
+        if (reviewingItem!.entity_kind == EntityKind.MergeArtists)
+        {
+            bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
+                "This action is IRREVERSIBLE. Are you sure you want to continue?");
+            if (!confirmed)
+            {
+                return;
+            }
+        }
+
         await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!, reviewingItem!.note_mod,
             ReviewQueueStatus.Approved);
         if (ApplyToNext500Batch)

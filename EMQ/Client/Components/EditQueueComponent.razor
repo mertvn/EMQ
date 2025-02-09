@@ -82,6 +82,9 @@
                         case EntityKind.SongArtist:
                             str = JsonSerializer.Deserialize<SongArtist>(context.entity_json)!.ToString();
                             break;
+                        case EntityKind.MergeArtists:
+                            str = JsonSerializer.Deserialize<MergeArtists>(context.entity_json)!.ToString();
+                            break;
                     }
                     <span style="@CellStyleInlineBlock" title="@str">@(str)</span>
                 }

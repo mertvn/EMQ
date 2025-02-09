@@ -3502,6 +3502,9 @@ AND msm.type = ANY(@msmType)";
             case EntityKind.SongArtist:
                 entity = JsonSerializer.Deserialize<SongArtist>(eq.entity_json)!;
                 break;
+            case EntityKind.MergeArtists:
+                entity = JsonSerializer.Deserialize<MergeArtists>(eq.entity_json)!;
+                break;
             case EntityKind.None:
             default:
                 throw new ArgumentOutOfRangeException();
@@ -3549,6 +3552,8 @@ AND msm.type = ANY(@msmType)";
 
                                     break;
                                 }
+                            case EntityKind.MergeArtists:
+                                throw new NotImplementedException();
                             case EntityKind.None:
                             default:
                                 throw new ArgumentOutOfRangeException();
@@ -3572,6 +3577,8 @@ AND msm.type = ANY(@msmType)";
                                     success = await OverwriteArtist(entity.Id, oldEntity, false, transaction);
                                     break;
                                 }
+                            case EntityKind.MergeArtists:
+                                throw new InvalidOperationException();
                             case EntityKind.None:
                             default:
                                 throw new ArgumentOutOfRangeException();
@@ -3609,6 +3616,12 @@ AND msm.type = ANY(@msmType)";
                                 success = aId > 0 && aId == entity.Id;
                                 break;
                             }
+                        case EntityKind.MergeArtists:
+                            {
+                                var concrete = (MergeArtists)entity;
+                                success = await ServerUtils.MergeArtists(concrete.SourceId, concrete.Id, transaction);
+                                break;
+                            }
                         case EntityKind.None:
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -3626,6 +3639,8 @@ AND msm.type = ANY(@msmType)";
                         case EntityKind.SongArtist:
                             success = await OverwriteArtist(entity.Id, (SongArtist)entity, false, transaction);
                             break;
+                        case EntityKind.MergeArtists:
+                            throw new InvalidOperationException();
                         case EntityKind.None:
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -5235,5 +5250,13 @@ ORDER BY
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         return await connection.ExecuteScalarAsync<int>("SELECT nextval(@seq)", new { seq });
+    }
+
+    public static async Task<Dictionary<string, int>> GetMBArtists()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return (await connection.QueryAsync<(string, int)>(
+                "SELECT replace(url, 'https://musicbrainz.org/artist/', ''), artist_id FROM artist_external_link ael WHERE type = 2"))
+            .ToDictionary(x => x.Item1, x => x.Item2);
     }
 }

@@ -60,6 +60,17 @@
             <summary>Edit artist</summary>
             <EditArtistComponent Artist="artist" IsNew="false"></EditArtistComponent>
         </details>
+
+        <details>
+            <summary>Merge artist</summary>
+            <input id="InputMergeArtist" type="text" style="width: 300px;" @bind=@InputMergeArtistText/>
+            <label for="InputMergeArtist">EMQ artist id or URL</label>
+            <br/>
+            <br/>
+            <button type="button" class="btn btn-primary" @onclick="OnClick_ButtonCreateMergeEdit" disabled="@(string.IsNullOrWhiteSpace(InputMergeArtistText))">
+                Create merge edit
+            </button>
+        </details>
     }
 
     <br/>
@@ -106,6 +117,8 @@
 
     private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
 
+    public string? InputMergeArtistText { get; set; }
+
     protected override async Task OnParametersSetAsync()
     {
         await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
@@ -116,6 +129,11 @@
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+            if (!content.SongArtists.Any())
+            {
+                return;
+            }
+
             ResGetSongArtist = content;
             PlayerSongStats = content.PlayerSongStats.AsQueryable();
     // StateHasChanged();
@@ -150,6 +168,30 @@
                 }
             }
         }
+    }
+
+    private async Task OnClick_ButtonCreateMergeEdit()
+    {
+        if (!int.TryParse(InputMergeArtistText?
+            .Replace("https://", "")
+            .Replace($"{Constants.WebsiteDomainNoProtocol}", "")
+            .Replace("/", "")
+            .Replace("ea", ""),
+            out int aid) || aid <= 0 || aid == ArtistId)
+        {
+            InputMergeArtistText = "Invalid input.";
+            return;
+        }
+
+        var req = new MergeArtists
+        {
+            Id = ArtistId,
+            SourceId = aid,
+            SourceName = Converters.GetSingleTitle(ResGetSongArtist!.SongArtists.First().Titles).ToString(),
+        };
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/EditMergeArtists", req);
+        InputMergeArtistText = res.IsSuccessStatusCode ? "Added to the edit queue." : "Failed.";
     }
 
 }
