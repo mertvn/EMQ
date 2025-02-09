@@ -153,6 +153,15 @@ public static class UploadConstants
         new MediaTypeInfo
         {
             IsVideoFormat = false,
+            Extension = "flac",
+            MimeType = "audio/x-flac",
+            Signature = "",
+            RequiresTranscode = true,
+            RequiresEncode = false,
+        },
+        new MediaTypeInfo
+        {
+            IsVideoFormat = false,
             Extension = "wav",
             MimeType = "audio/wav",
             Signature = "",
