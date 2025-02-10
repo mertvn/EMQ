@@ -361,6 +361,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         foreach (EgsImporterInnerResult innerResult in matchedResults)
         {
+            // todo important use ServerUtils.BotEditSong()
             int mId = innerResult.mIds.Single();
             // todo? don't insert if latin title is the same after normalization
             int rowsUpdate = await connection.ExecuteAsync(
@@ -378,6 +379,7 @@ WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = 
 
             if (!mIdsWithExistingMels.Contains(mId))
             {
+                // todo important use ServerUtils.BotEditSong()
                 bool success = await connection.InsertAsync(new MusicExternalLink
                 {
                     music_id = mId,

@@ -2051,7 +2051,7 @@ order by user_id";
     // }
 
     [Test, Explicit]
-    public async Task MergeDuplicateArtists()
+    public async Task MergeDuplicateArtistsAddedToTheSameSong()
     {
         var dupeArtists = new HashSet<(int aId1, int aid2)>();
         var songs = await DbManager.GetRandomSongs(int.MaxValue, true);
