@@ -42,6 +42,8 @@ public static class UiHelpers
 
     public static string Bool2CursorNotAllowed(bool b) => b ? "not-allowed" : "auto";
 
+    public static string Bool2Flex(bool b) => b ? "flex" : "inherit";
+
     public static string Bool2Text(bool? b, string trueValue, string falseValue, string nullValue = "")
     {
         if (b is null)

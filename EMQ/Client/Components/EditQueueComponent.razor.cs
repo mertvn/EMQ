@@ -33,7 +33,7 @@ public partial class EditQueueComponent
 
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
-    public bool IsShowAutomatedEdits { get; set; }
+    public bool IsShowAutomatedEdits { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {

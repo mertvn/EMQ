@@ -105,7 +105,36 @@ public partial class ReviewEditComponent
                         }
                     case EntityKind.MergeArtists:
                         {
-                            Entity = JsonSerializer.Deserialize<MergeArtists>(reviewingItem.entity_json)!;
+                            var mergeArtists = JsonSerializer.Deserialize<MergeArtists>(reviewingItem.entity_json)!;
+                            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist",
+                                new SongArtist { Id = mergeArtists.SourceId });
+                            if (res1.IsSuccessStatusCode)
+                            {
+                                var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                                if (content.SongArtists.Any())
+                                {
+                                    OldEntity = content.SongArtists.First();
+                                }
+                            }
+
+                            HttpResponseMessage res2 = await _client.PostAsJsonAsync("Library/GetSongArtist",
+                                new SongArtist { Id = mergeArtists.Id });
+                            if (res2.IsSuccessStatusCode)
+                            {
+                                var content = (await res2.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                                if (content.SongArtists.Any())
+                                {
+                                    Entity = content.SongArtists.First();
+                                }
+                            }
+
+                            if (Entity == null && OldEntity != null)
+                            {
+                                Entity = JsonSerializer.Deserialize<SongArtist>(
+                                    JsonSerializer.Serialize((SongArtist)OldEntity));
+                                OldEntity = null;
+                            }
+
                             break;
                         }
                 }

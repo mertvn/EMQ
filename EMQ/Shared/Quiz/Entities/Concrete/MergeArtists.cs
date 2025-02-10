@@ -10,5 +10,5 @@ public class MergeArtists : IEditQueueEntity
 
     public string SourceName { get; set; } = "";
 
-    public override string ToString() => $"MERGE {SourceName}";
+    public override string ToString() => $"MERGE ea{SourceId} {SourceName}";
 }

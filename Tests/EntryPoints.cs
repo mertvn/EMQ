@@ -2060,6 +2060,14 @@ order by user_id";
             var seenArtists = new Dictionary<string, List<int>>();
             foreach (SongArtist songArtist in song.Artists)
             {
+                if (songArtist.Titles.Count > 1)
+                {
+                    // idk some weird stuff like quinrose & mari
+                    Console.WriteLine(
+                        $"songArtist.Titles.Count > 1 {JsonSerializer.Serialize(songArtist.Titles, Utils.JsoIndented)}");
+                    continue;
+                }
+
                 string norm = songArtist.Titles.Single().LatinTitle.NormalizeForAutocomplete();
                 if (seenArtists.TryGetValue(norm, out var aIds))
                 {
@@ -2086,21 +2094,16 @@ order by user_id";
             }
         }
 
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.OpenAsync();
-        await using var transaction = await connection.BeginTransactionAsync();
-
         foreach ((int aId1, int aId2) in dupeArtists.OrderBy(x => x.aId1).ThenBy(y => y.aid2))
         {
             // Console.WriteLine($"{aId1} <=> {aId2}");
-            bool success = await ServerUtils.MergeArtists(aId1, aId2, transaction);
-            if (!success)
+            var actionResult = await ServerUtils.BotEditMergeArtists(new MergeArtists { SourceId = aId1, Id = aId2 });
+            if (actionResult is not OkResult)
             {
-                throw new Exception("failed to merge artists");
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine($"actionResult is not OkResult: {aId1} {aId2} {badRequestObjectResult?.Value}");
             }
         }
-
-        await transaction.CommitAsync();
     }
 
     [Test, Explicit]
@@ -2284,10 +2287,13 @@ order by user_id";
 
                     break;
                 case 2:
-                    bool success = await ServerUtils.MergeArtists(aids[0], aids[1], transaction);
-                    if (!success)
+                    var actionResult =
+                        await ServerUtils.BotEditMergeArtists(new MergeArtists { SourceId = aids[0], Id = aids[1] });
+                    if (actionResult is not OkResult)
                     {
-                        throw new Exception("failed to merge artists");
+                        var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                        Console.WriteLine(
+                            $"actionResult is not OkResult: {aids[0]} {aids[1]} {badRequestObjectResult?.Value}");
                     }
 
                     break;

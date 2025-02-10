@@ -316,8 +316,19 @@ public static class ServerUtils
         return await controller.EditArtist(req);
     }
 
+    public static async Task<ActionResult> BotEditMergeArtists(MergeArtists req)
+    {
+        var controller = new LibraryController
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Items["EMQ_SESSION"] =
+            new Session(new Player(1, "Cookie4IS", Avatar.DefaultAvatar), "", UserRoleKind.User, null);
+        return await controller.EditMergeArtists(req);
+    }
+
     // todo? add ability to override which one is source and which one is target
-    public static async Task<bool> MergeArtists(int aId1, int aId2, NpgsqlTransaction transaction)
+    internal static async Task<bool> MergeArtists(int aId1, int aId2, NpgsqlTransaction transaction)
     {
         var connection = transaction.Connection!;
         var a1 = (await DbManager.SelectArtistBatchNoAM(connection,
