@@ -9,6 +9,7 @@ public class ReqFindRQs
     {
         StartDate = startDate;
         EndDate = endDate;
+        SSSTM = ssstm;
         IsShowAutomatedEdits = isShowAutomatedEdits;
     }
 
