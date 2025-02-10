@@ -9,7 +9,7 @@
 {
     bool hasVote = MusicVote != null;
     <span>My vote: </span>
-    <input type="number" placeholder="" style="width: 50px;" step="0.1" min="1" max="10"
+    <input type="number" placeholder="" style="width: 50px;" step="0.1" max="10"
            @bind:get="@(!hasVote ? "" : ((float)MusicVote!.vote! / 10).ToString(CultureInfo.InvariantCulture))"
            @bind:set="@(new Func<string, Task>(async value => await OnSongVote(value)))"/>
 
