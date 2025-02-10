@@ -67,7 +67,7 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter);
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter, true);
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {

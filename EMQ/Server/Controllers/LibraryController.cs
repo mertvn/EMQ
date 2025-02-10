@@ -144,6 +144,7 @@ public class LibraryController : ControllerBase
         return Ok();
     }
 
+    // todo IsShowAutomatedEdits
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindRQs")]
@@ -167,7 +168,7 @@ public class LibraryController : ControllerBase
     [Route("FindEQs")]
     public async Task<IEnumerable<EditQueue>> FindEQs([FromBody] ReqFindRQs req)
     {
-        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate, req.SSSTM);
+        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate, req.SSSTM, req.IsShowAutomatedEdits);
         return eqs;
     }
 

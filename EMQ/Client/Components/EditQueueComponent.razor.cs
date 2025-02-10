@@ -33,6 +33,8 @@ public partial class EditQueueComponent
 
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
+    public bool IsShowAutomatedEdits { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshEQs();
@@ -40,7 +42,7 @@ public partial class EditQueueComponent
 
     public async Task RefreshEQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All);
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All, IsShowAutomatedEdits);
         var res = await _client.PostAsJsonAsync("Library/FindEQs", req);
         if (res.IsSuccessStatusCode)
         {

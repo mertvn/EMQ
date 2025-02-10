@@ -3327,14 +3327,23 @@ AND msm.type = ANY(@msmType)";
     }
 
     public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate,
-        SongSourceSongTypeMode ssstm)
+        SongSourceSongTypeMode ssstm, bool isShowAutomatedEdits)
     {
         // todo? ssstm
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var eqs =
             (await connection.QueryAsync<EditQueue>(
-                "select * from edit_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
-                new { startDate, endDate }))
+                @"select * from edit_queue where
+                             submitted_on >= @startDate AND
+                             submitted_on <= @endDate AND
+                             (@submittedBy::text is null or submitted_by != @submittedBy::text)
+                             order by id",
+                new
+                {
+                    startDate,
+                    endDate,
+                    submittedBy = isShowAutomatedEdits ? null : Constants.RobotName.Replace(" ", "")
+                }))
             .ToList();
         return eqs;
     }
