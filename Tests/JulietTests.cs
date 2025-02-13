@@ -281,4 +281,23 @@ public class JulietTests
         Assert.That(res!.Single().Results.Count == Constants.MaxResultsPerPage);
         Assert.That(res!.Single().Results.All(x => x.Type == "ng"));
     }
+
+    [Test]
+    public async Task Test_POST_staff_GetEverythingById()
+    {
+        var res = await Juliet.Api.POST_staff(new ParamPOST_staff()
+        {
+            Fields = Enum.GetValues<FieldPOST_staff>(),
+            Filters = new Combinator(CombinatorKind.And,
+                new List<Query>()
+                {
+                    new Predicate(FilterField.Id, FilterOperator.Equal, "s71"),
+                    new Predicate(FilterField.IsMain, FilterOperator.Equal, 1),
+                }),
+        });
+        Console.WriteLine(JsonSerializer.Serialize(res,
+            new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+
+        Assert.That(res!.Single().Results.Single().Original == "下屋 則子");
+    }
 }

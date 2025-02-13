@@ -27,4 +27,10 @@ public enum FilterField
 
     [Description("medium")]
     Medium,
+
+    [Description("aid")]
+    Aid,
+
+    [Description("ismain")]
+    IsMain,
 }
