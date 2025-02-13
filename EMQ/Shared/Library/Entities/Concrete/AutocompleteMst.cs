@@ -14,18 +14,18 @@ public class AutocompleteMst
         MSTNonLatinTitleNormalized = mstNonLatinTitleNormalized;
     }
 
-    [JsonPropertyName("msId")]
+    [JsonPropertyName("1")]
     public int MSId { get; set; }
 
-    [JsonPropertyName("mstLT")]
+    [JsonPropertyName("2")]
     public string MSTLatinTitle { get; set; }
 
-    [JsonPropertyName("mstNLT")]
+    [JsonPropertyName("3")]
     public string MSTNonLatinTitle { get; set; }
 
-    [JsonPropertyName("mstLTNorm")]
+    [JsonPropertyName("4")]
     public string MSTLatinTitleNormalized { get; set; }
 
-    [JsonPropertyName("mstNLTNorm")]
+    [JsonPropertyName("5")]
     public string MSTNonLatinTitleNormalized { get; set; }
 }

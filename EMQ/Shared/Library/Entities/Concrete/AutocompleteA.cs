@@ -29,42 +29,42 @@ public class AutocompleteA
     }
 
     [ProtoMember(1)]
-    [JsonPropertyName("aId")]
+    [JsonPropertyName("1")]
     public int AId { get; set; }
 
     // [ProtoMember(2)]
-    // [JsonPropertyName("vndbId")]
+    // [JsonPropertyName("2")]
     // public string VndbId { get; set; } = null!;
 
     [ProtoMember(3)]
-    [JsonPropertyName("aaLA")]
+    [JsonPropertyName("3")]
     public string AALatinAlias { get; set; } = null!;
 
     [ProtoMember(4)]
-    [JsonPropertyName("aaNLA")]
+    [JsonPropertyName("4")]
     public string AANonLatinAlias { get; set; } = null!;
 
     // [ProtoMember(5)]
-    // [JsonPropertyName("aaId")]
+    // [JsonPropertyName("5")]
     // public int AAId { get; set; }
 
     [ProtoMember(6)]
-    [JsonPropertyName("aaLANorm")]
+    [JsonPropertyName("6")]
     public string AALatinAliasNormalized { get; set; } = null!;
 
     [ProtoMember(7)]
-    [JsonPropertyName("aaNLANorm")]
+    [JsonPropertyName("7")]
     public string AANonLatinAliasNormalized { get; set; } = null!;
 
     [ProtoMember(8)]
-    [JsonPropertyName("aaLANormR")]
+    [JsonPropertyName("8")]
     public string AALatinAliasNormalizedReversed { get; set; } = null!;
 
     [ProtoMember(9)]
-    [JsonPropertyName("aaNLANormR")]
+    [JsonPropertyName("9")]
     public string AANonLatinAliasNormalizedReversed { get; set; } = null!;
 
     [ProtoMember(10)]
-    [JsonPropertyName("main")]
+    [JsonPropertyName("10")]
     public bool IsMain { get; set; }
 }

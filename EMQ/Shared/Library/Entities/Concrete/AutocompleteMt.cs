@@ -11,12 +11,12 @@ public class AutocompleteMt
         MTLatinTitleNormalized = mtLatinTitleNormalized;
     }
 
-    [JsonPropertyName("mId")]
+    [JsonPropertyName("1")]
     public int MId { get; set; }
 
-    [JsonPropertyName("mtLT")]
+    [JsonPropertyName("2")]
     public string MTLatinTitle { get; set; }
 
-    [JsonPropertyName("mtLTNorm")]
+    [JsonPropertyName("3")]
     public string MTLatinTitleNormalized { get; set; }
 }
