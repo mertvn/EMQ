@@ -2302,8 +2302,54 @@ order by user_id";
                     break;
             }
         }
-
-        await transaction.CommitAsync();
     }
 
+    [Test, Explicit]
+    public async Task InsertCALFromMusicBrainz()
+    {
+        ClientState.MBArtistDict = await DbManager.GetMBArtists();
+        var internalClient = new HttpClient { BaseAddress = new Uri(Constants.WebsiteDomain) };
+
+        // todo extract this into a method
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+        Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+            .GroupBy(x => x.Item1)
+            .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+        List<int> validMids = mids
+            .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+            .Select(z => z.Key)
+            .ToList();
+
+        List<Song> songs =
+            (await DbManager.SelectSongsMIds(validMids.ToArray(), false)).Where(x =>
+                x.Links.Any(y => y.Type == SongLinkType.MusicBrainzRecording)).ToList();
+
+        foreach (Song song in songs)
+        {
+            string recId = song.Links.Single(x => x.Type == SongLinkType.MusicBrainzRecording).Url
+                .Replace("https://musicbrainz.org/recording/", "");
+            var mbRecording = await MBApi.GetRecording(ServerUtils.Client, new Guid(recId));
+            if (mbRecording == null)
+            {
+                return;
+            }
+
+            bool addedSomething = await MusicBrainzMethods.ProcessMBRelations(song, mbRecording.relations,
+                internalClient, ClientState.MBArtistDict);
+
+            if (addedSomething)
+            {
+                var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, false, "C/A/L from MB"));
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+                }
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(10));
+        }
+    }
 }

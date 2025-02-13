@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Client.Pages
 @using System.Linq
@@ -7,6 +7,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.MusicBrainz.Business
 @inject HttpClient _client
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
@@ -447,61 +448,9 @@
 
     private async Task SelectedResultChangedA()
     {
-        await AddArtist(SelectedArtist, null);
+        await MusicBrainzMethods.AddArtist(Song, SelectedArtist, null, _client);
         await _autocompleteAComponentRef.ClearInputField();
         await CallStateHasChanged();
-    }
-
-    private async Task AddArtist(AutocompleteA? selectedArtist, List<SongArtistRole>? roles)
-    {
-        if (selectedArtist is null)
-        {
-            return;
-        }
-
-        var existingArtist = Song.Artists.FirstOrDefault(x => x.Id == selectedArtist.AId);
-        if (existingArtist != null)
-        {
-            if (roles != null)
-            {
-    // todo idk if this is what we want in all cases
-                existingArtist.Roles.AddRange(roles);
-                existingArtist.Roles = existingArtist.Roles.Distinct().ToList();
-            }
-
-            return;
-        }
-
-        var req = new SongArtist() { Id = selectedArtist.AId };
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongArtist", req);
-        if (res1.IsSuccessStatusCode)
-        {
-            var content = (await res1.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
-
-    // todo do this in a better way somehow
-            SongArtist artist;
-            if (content.SongArtists.Count == 1 && content.SongArtists.First().Titles.Count == 1)
-            {
-                artist = content.SongArtists.First();
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(selectedArtist.AALatinAlias)) // from MBID match
-                {
-                    artist = content.SongArtists.First();
-                    artist.Titles = new List<Title> { artist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? artist.Titles.First() };
-                }
-                else // normal
-                {
-                    artist = content.SongArtists.First(x => x.Titles.Any(y => y.LatinTitle == selectedArtist.AALatinAlias && ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == selectedArtist.AANonLatinAlias))));
-                    artist.Titles = artist.Titles.Where(y => y.LatinTitle == selectedArtist.AALatinAlias && ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == selectedArtist.AANonLatinAlias))).ToList();
-                }
-            }
-
-            artist.Roles = roles ?? artist.Roles;
-            Song.Artists.Add(artist);
-            await CallStateHasChanged();
-        }
     }
 
     private async Task OnclickSubmit()
@@ -815,17 +764,23 @@
             return;
         }
 
+        var oldSources = Song.Sources;
         Song = GetNewSong;
+        if (PersistAfterSubmittingDict["Sources"])
+        {
+            Song.Sources = oldSources;
+        }
+
         await _autocompleteAComponentRef.ClearInputField();
         _autocompleteAComponentRef.CallClose();
 
-        await ProcessMBRelations(mbRecording.relations);
+        await MusicBrainzMethods.ProcessMBRelations(Song, mbRecording.relations, _client, ClientState.MBArtistDict);
         string joinedArtistCredit = "";
         foreach (MbArtistCredit mbArtistCredit in mbRecording.artistcredit)
         {
             if (ClientState.MBArtistDict.TryGetValue(mbArtistCredit.artist.id, out int aid))
             {
-                await AddArtist(new AutocompleteA { AId = aid }, null);
+                await MusicBrainzMethods.AddArtist(Song, new AutocompleteA { AId = aid }, null, _client);
             }
             else
             {
@@ -855,70 +810,4 @@
             new() { Url = $"https://musicbrainz.org/recording/{mbRecording.id}", Type = SongLinkType.MusicBrainzRecording }
         };
     }
-
-    // todo handle no-MBID-match case (requires some sort of queue for adding artists)
-    private async Task ProcessMBRelations(IEnumerable<MbRelation> relations)
-    {
-        foreach (MbRelation mbRelation in relations)
-        {
-            switch (mbRelation.type)
-            {
-                case "vocal":
-                    {
-                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
-                        {
-                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Vocals });
-                        }
-                        break;
-                    }
-                case "composer":
-                    {
-                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
-                        {
-                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Composer });
-                        }
-                        break;
-                    }
-                case "arranger":
-                    {
-                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
-                        {
-                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Arranger });
-                        }
-                        break;
-                    }
-
-                case "lyricist":
-                    {
-                        if (ClientState.MBArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
-                        {
-                            await AddArtist(new AutocompleteA { AId = aid }, new List<SongArtistRole> { SongArtistRole.Lyricist });
-                        }
-                        break;
-                    }
-                    // todo can works reference each other?
-                case "performance" when mbRelation.targettype == "work":
-                    {
-                        if (mbRelation.attributes.Contains("instrumental") || mbRelation.attributes.Contains("karaoke"))
-                        {
-                            Song.Type |= SongType.Instrumental;
-                        }
-
-                        if (mbRelation.attributes.Contains("cover"))
-                        {
-                            Song.Type |= SongType.Cover;
-                        }
-
-                        if (Song.Type > SongType.Standard)
-                        {
-                            Song.Type &= ~SongType.Standard;
-                        }
-
-                        await ProcessMBRelations(mbRelation.work!.relations);
-                        break;
-                    }
-            }
-        }
-    }
-
 }
