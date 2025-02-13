@@ -2107,6 +2107,52 @@ order by user_id";
     }
 
     [Test, Explicit]
+    public async Task MergeMBArtistsWithoutVNDBLinks()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var vndbArtistsWithoutMb = (await connection.QueryAsync<(int, string[])>(@"
+SELECT ael.artist_id, array_agg(DISTINCT aa.latin_alias) FROM artist_external_link ael
+JOIN artist_alias aa ON aa.artist_id = ael.artist_id
+WHERE ael.artist_id NOT IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 2)
+AND ael.artist_id IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 1)
+GROUP BY ael.artist_id
+HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1 --todo
+")).Select(x=> (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
+
+        var mbArtistsWithoutVndb = (await connection.QueryAsync<(int, string[])>(@"
+SELECT ael.artist_id, array_agg(DISTINCT aa.latin_alias) FROM artist_external_link ael
+JOIN artist_alias aa ON aa.artist_id = ael.artist_id
+WHERE ael.artist_id IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 2)
+AND ael.artist_id NOT IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 1)
+GROUP BY ael.artist_id
+HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
+")).Select(x=> (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
+
+        foreach ((int aid, string latinTitle) in mbArtistsWithoutVndb)
+        {
+            if (blacklistedCreaterNames.Contains(latinTitle))
+            {
+                continue;
+            }
+
+            var target = vndbArtistsWithoutMb.FirstOrDefault(x => x.Item2 == latinTitle);
+            if (target.Item1 > 0)
+            {
+                var actionResult = await ServerUtils.BotEditMergeArtists(new MergeArtists
+                {
+                    SourceName = latinTitle, SourceId = aid, Id = target.Item1
+                });
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine(
+                        $"actionResult is not OkResult: {aid} {target.Item1} {badRequestObjectResult?.Value}");
+                }
+            }
+        }
+    }
+
+    [Test, Explicit]
     public async Task RemoveStatsFromEntityQueueJson()
     {
         var regex = new Regex(@"""Stats"":{.+?},""MusicBrainzReleases", RegexOptions.Compiled);
@@ -2257,12 +2303,214 @@ order by user_id";
     // }
 
     [Test, Explicit]
-    public async Task MergeArtistsMbVndbLinks()
+    public async Task InsertArtistLinksFromVndb()
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
 
+        string date = "2025-02-09";
+        string basePath = @$"C:\emq\vndbdumps\{date}\vndb-db-{date}\db";
+        Dictionary<string, string[]> extlinks = (await File.ReadAllLinesAsync($"{basePath}/extlinks"))
+            .Select(x => x.Split("\t"))
+            .ToDictionary(x => x[0], x => x);
+
+        var staffExtlinks = (await File.ReadAllLinesAsync($"{basePath}/staff_extlinks"))
+            .Select(x => x.Split("\t"))
+            .ToLookup(x => x[1], x => x);
+
+        var aids = (await connection.GetListAsync<Artist>()).ToArray();
+        var artists = ((await DbManager.SelectArtistBatchNoAM(connection,
+            aids.Select(x => new Song() { Artists = new List<SongArtist>() { new() { Id = x.id } } }).ToList(),
+            false)).SelectMany(x => x.Value.Select(y => y.Value))).ToArray();
+
+        Dictionary<int, SongArtist> d = new();
+        foreach ((string key, string[] value) in extlinks)
+        {
+            string type = value[1];
+            IEnumerable<string[]> match = staffExtlinks[key];
+
+            if (type is not ("mbrainz" or "vgmdb" or "egs_creator" or "anison" or "wikidata" or "anidb"))
+            {
+                continue;
+            }
+
+            string[]? first = match.FirstOrDefault();
+            if (!(first?.Any() ?? false))
+            {
+                continue;
+            }
+
+            string vndbUrl = first[0].ToVndbUrl();
+            var artist = artists.FirstOrDefault(x => x.Links.Any(y => y.Url == vndbUrl));
+            if (artist == null)
+            {
+                // Console.WriteLine($"not on emq: {vndbUrl}");
+                continue;
+            }
+
+            // todo
+            // else if (artist.Links.Any(x => x.Url == url))
+            // {
+            //     if (!artist.Links.Any(x => x.Type == SongArtistLinkType.VNDBStaff))
+            //     {
+            //         Console.WriteLine($"can add {vndbUrl} to {url} for {artist}");
+            //
+            //     }
+            // }
+
+            // todo change this to check for url instead of type after the first batch is approved
+            switch (type)
+            {
+                case "mbrainz":
+                    {
+                        string url = $"https://musicbrainz.org/artist/{value[2]}";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.MusicBrainzArtist))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink
+                            {
+                                Url = url, Type = SongArtistLinkType.MusicBrainzArtist,
+                            });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+                case "vgmdb":
+                    {
+                        string url = $"https://vgmdb.net/artist/{value[2]}";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.VGMdbArtist))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink { Url = url, Type = SongArtistLinkType.VGMdbArtist, });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+                case "egs_creator":
+                    {
+                        string url =
+                            $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/creater.php?creater={value[2]}";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.ErogameScapeCreater))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink
+                            {
+                                Url = url, Type = SongArtistLinkType.ErogameScapeCreater,
+                            });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+                case "anison":
+                    {
+                        string url = $"http://anison.info/data/person/{value[2]}.html";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.AnisonInfoPerson))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink
+                            {
+                                Url = url, Type = SongArtistLinkType.AnisonInfoPerson,
+                            });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+                case "wikidata":
+                    {
+                        string url = $"https://wikidata.org/wiki/Q{value[2]}";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.WikidataItem))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink { Url = url, Type = SongArtistLinkType.WikidataItem, });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+                case "anidb":
+                    {
+                        string url = $"https://anidb.net/creator/{value[2]}";
+                        if (!artist.Links.Any(x => x.Type == SongArtistLinkType.AniDBCreator))
+                        {
+                            // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                            artist.Links.Add(new SongArtistLink { Url = url, Type = SongArtistLinkType.AniDBCreator, });
+
+                            if (!d.ContainsKey(artist.Id))
+                            {
+                                d[artist.Id] = artist;
+                            }
+                        }
+
+                        break;
+                    }
+            }
+        }
+
+        foreach ((int _, SongArtist? artist) in d)
+        {
+            var actionResult =
+                await ServerUtils.BotEditArtist(new ReqEditArtist(artist, false,
+                    "Links from VNDB"));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine(
+                    $"actionResult is not OkResult: {artist} {badRequestObjectResult?.Value}");
+                if (badRequestObjectResult?.Value != null)
+                {
+                    if (int.TryParse(badRequestObjectResult.Value.ToString()!.Replace(
+                            "An artist linked to at least one of the external links you've added already exists in the database: ea",
+                            ""), out int id))
+                    {
+                        var actionResultMerge = await ServerUtils.BotEditMergeArtists(new MergeArtists
+                        {
+                            Id = id,
+                            SourceId = artist.Id,
+                            SourceName = Converters.GetSingleTitle(artist.Titles).LatinTitle,
+                        });
+                        if (actionResultMerge is not OkResult)
+                        {
+                            var badRequestObjectResultMerge = actionResultMerge as BadRequestObjectResult;
+                            Console.WriteLine(
+                                $"actionResult is not OkResult: {artist.Id} {id} {badRequestObjectResultMerge?.Value}");
+                        }
+                    }
+                }
+            }
+        }
+
+        // await transaction.CommitAsync();
+    }
+
+    [Test, Explicit]
+    public async Task MergeArtistsMbVndbLinks()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionMb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Mb());
         var batch = await connectionMb.QueryAsync<(string, string)>(
             @"SELECT 'https://musicbrainz.org/artist/'||a.gid, url.url FROM url
