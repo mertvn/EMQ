@@ -46,7 +46,7 @@ public static class ExtensionMethods
 
     public static string ToVndbId(this string vndbUrl)
     {
-        return vndbUrl.Replace("https://vndb.org/", "");
+        return vndbUrl.Replace("https://vndb.org/", "").Replace("/", "");
     }
 
     public static string SanitizeVndbAdvsearchStr(this string vndbAdvsearchStr)
