@@ -818,7 +818,7 @@ ORDER BY music_id;";
                     {
                         foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
-                            (string? latinTitle, string? nonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(name, latin);
+                            (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
                             songSourceDevelopers.Add(new SongSourceDeveloper
                             {
                                 VndbId = pId,
@@ -2514,7 +2514,7 @@ GROUP BY artist_id";
         var res = VnDevelopers.SelectMany(x =>
                 x.Value.Select(y =>
                 {
-                    (string? latinTitle, string? nonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(y.name, y.latin);
+                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
                     return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
                         latinTitle.NormalizeForAutocomplete(), nonLatinTitle?.NormalizeForAutocomplete() ?? "");
                 }))

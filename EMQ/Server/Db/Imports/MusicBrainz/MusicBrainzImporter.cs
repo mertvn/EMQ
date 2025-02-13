@@ -827,7 +827,7 @@ public static class MusicBrainzImporter
                             continue;
                         }
 
-                        (string latinTitle, string? nonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(
+                        (string latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(
                             (string)dynMusicSourceTitle.title,
                             (string?)dynMusicSourceTitle.latin);
 

@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Library.Entities.Concrete
 @using EMQ.Client.Pages
 @using System.Linq
@@ -655,6 +655,11 @@
         }
 
     // todo important validate link regex
+        if (song.Links.Any(x => x.Type == SongLinkType.Unknown))
+        {
+            ValidationMessages.Add("Unknown link types are not allowed.");
+            isValid = false;
+        }
 
         return isValid;
     }

@@ -76,6 +76,24 @@ public static class Utils
         return dict.TryGetValue(userId, out string? username) ? username : $"Guest-{userId}";
     }
 
+    public static (string latinTitle, string? nonLatinTitle) VndbTitleToEmqTitle(string vndbName, string? vndbLatin)
+    {
+        string latinTitle;
+        string? nonLatinTitle;
+        if (string.IsNullOrEmpty(vndbLatin))
+        {
+            latinTitle = vndbName;
+            nonLatinTitle = null;
+        }
+        else
+        {
+            latinTitle = vndbLatin;
+            nonLatinTitle = vndbName;
+        }
+
+        return (latinTitle, nonLatinTitle);
+    }
+
     public class MyStopwatchSection
     {
         public string Name { get; set; } = "";

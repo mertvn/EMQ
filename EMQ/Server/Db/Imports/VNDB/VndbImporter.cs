@@ -311,7 +311,7 @@ public static class VndbImporter
                 _ => throw new Exception($"Invalid artist sex: {(string)dynArtist.gender}")
             };
 
-            (string artistLatinTitle, string? artistNonLatinTitle) = VndbTitleToEmqTitle((string)dynArtistAlias.name,
+            (string artistLatinTitle, string? artistNonLatinTitle) = Utils.VndbTitleToEmqTitle((string)dynArtistAlias.name,
                 (string?)dynArtistAlias.latin);
 
             SongArtist songArtist = new SongArtist()
@@ -400,7 +400,7 @@ public static class VndbImporter
                     continue;
                 }
 
-                (string latinTitle, string? nonLatinTitle) = VndbTitleToEmqTitle((string)dynMusicSourceTitle.title,
+                (string latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle((string)dynMusicSourceTitle.title,
                     (string?)dynMusicSourceTitle.latin);
 
                 // we don't want titles that are exactly the same
@@ -498,23 +498,5 @@ public static class VndbImporter
         }
 
         return songs;
-    }
-
-    public static (string latinTitle, string? nonLatinTitle) VndbTitleToEmqTitle(string vndbName, string? vndbLatin)
-    {
-        string latinTitle;
-        string? nonLatinTitle;
-        if (string.IsNullOrEmpty(vndbLatin))
-        {
-            latinTitle = vndbName;
-            nonLatinTitle = null;
-        }
-        else
-        {
-            latinTitle = vndbLatin;
-            nonLatinTitle = vndbName;
-        }
-
-        return (latinTitle, nonLatinTitle);
     }
 }

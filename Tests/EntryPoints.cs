@@ -732,7 +732,7 @@ WHERE s.lang = 'ja'"))
             var titles = new List<Title>();
             foreach (dynamic dynArtistAlias in artists_aliasesLookup[dynArtist.id])
             {
-                (string artistLatinTitle, string? artistNonLatinTitle) = VndbImporter.VndbTitleToEmqTitle(
+                (string artistLatinTitle, string? artistNonLatinTitle) = Utils.VndbTitleToEmqTitle(
                     (string)dynArtistAlias.name,
                     (string?)dynArtistAlias.latin);
                 titles.Add(new Title

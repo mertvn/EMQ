@@ -104,4 +104,65 @@ public static class VndbMethods
 
         return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
     }
+
+    public static async Task<SongArtist?> GetStaffById(string vndbId, CancellationToken? cancellationToken = null)
+    {
+        static List<Title> MapAliases(IEnumerable<Aliases> aliases)
+        {
+            return aliases.Select(x =>
+            {
+                var emqTitle = Utils.VndbTitleToEmqTitle(x.Name, x.Latin);
+                return new Title
+                {
+                    LatinTitle = emqTitle.latinTitle,
+                    NonLatinTitle = emqTitle.nonLatinTitle,
+                    IsMainTitle = x.IsMain,
+                };
+            }).ToList();
+        }
+
+        static List<SongArtistLink> MapExtlinks(IEnumerable<Extlinks> extlinks)
+        {
+            return extlinks.Select(x =>
+            {
+                var type = x.Name switch
+                {
+                    "mbrainz" => SongArtistLinkType.MusicBrainzArtist,
+                    "musicbrainz_artist" => SongArtistLinkType.MusicBrainzArtist, // from wikidata
+                    "vgmdb" => SongArtistLinkType.VGMdbArtist,
+                    "vgmdb_artist" => SongArtistLinkType.VGMdbArtist, // from wikidata
+                    "egs_creator" => SongArtistLinkType.ErogameScapeCreater,
+                    "anison" => SongArtistLinkType.AnisonInfoPerson,
+                    "wikidata" => SongArtistLinkType.WikidataItem,
+                    "anidb" => SongArtistLinkType.AniDBCreator,
+                    _ => SongArtistLinkType.Unknown
+                };
+                return new SongArtistLink { Url = x.Url, Type = type, };
+            }).ToList();
+        }
+
+        var res = await Juliet.Api.POST_staff(
+            new ParamPOST_staff()
+            {
+                Fields = Enum.GetValues<FieldPOST_staff>(),
+                Filters = new Combinator(CombinatorKind.And,
+                    new List<Query>()
+                    {
+                        new Predicate(FilterField.Id, FilterOperator.Equal, vndbId),
+                        new Predicate(FilterField.IsMain, FilterOperator.Equal, 1),
+                    }),
+            }, cancellationToken);
+        if (res == null)
+        {
+            return null;
+        }
+
+        var single = res.Single().Results.Single();
+        return new SongArtist
+        {
+            PrimaryLanguage = single.Lang,
+            Titles = MapAliases(single.Aliases),
+            Links = MapExtlinks(single.Extlinks),
+        };
+    }
 }

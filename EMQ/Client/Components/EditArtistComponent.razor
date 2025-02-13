@@ -6,6 +6,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.VNDB.Business
 @inject HttpClient _client
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
@@ -30,6 +31,17 @@
             </ul>
             <br/>
         </details>
+    }
+
+    @if (IsNew)
+    {
+        <details style="padding: 5px;">
+            <summary>VNDB seeder</summary>
+            <p>Enter a VNDB staff id or URL to fill information automatically.</p>
+            <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 540px;"/>
+            <br/>
+        </details>
+        <br/>
     }
 
     <div style="display: flex; flex-wrap: wrap">
@@ -258,6 +270,8 @@
 
     public AutocompleteA? SelectedArtist { get; set; }
 
+    private string VndbSeederInputText { get; set; } = "";
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsNew)
@@ -404,6 +418,12 @@
                 ValidationMessages.Add("Only one external link of each type is allowed.");
                 isValid = false;
             }
+
+            if (artist.Links.Any(x => x.Type == SongArtistLinkType.Unknown))
+            {
+                ValidationMessages.Add("Unknown link types are not allowed.");
+                isValid = false;
+            }
         }
 
         foreach (ArtistArtist arar in artist.ArtistArtists)
@@ -533,6 +553,28 @@
     {
         Artist.ArtistArtists.Remove(arar);
         await CallStateHasChanged();
+    }
+
+    private async Task SeedFromVndb(string value)
+    {
+        VndbSeederInputText = value;
+        string vndbId = value.ToVndbId();
+        Console.WriteLine(vndbId);
+        if (!vndbId.StartsWith("s") || vndbId.Length < 2 || !int.TryParse(vndbId[1..], out _))
+        {
+            VndbSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var vndbArtist = await VndbMethods.GetStaffById(vndbId);
+        if (vndbArtist == null)
+        {
+            VndbSeederInputText = "Error fetching staff information.";
+            return;
+        }
+
+        vndbArtist.Links = vndbArtist.Links.Where(x => x.Type != SongArtistLinkType.Unknown).ToList();
+        Artist = vndbArtist;
     }
 
 }
