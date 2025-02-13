@@ -107,7 +107,7 @@ public static class VndbMethods
 
     public static async Task<SongArtist?> GetStaffById(string vndbId, CancellationToken? cancellationToken = null)
     {
-        static List<Title> MapAliases(IEnumerable<Aliases> aliases)
+        static IEnumerable<Title> MapAliases(IEnumerable<Aliases> aliases)
         {
             return aliases.Select(x =>
             {
@@ -118,10 +118,10 @@ public static class VndbMethods
                     NonLatinTitle = emqTitle.nonLatinTitle,
                     IsMainTitle = x.IsMain,
                 };
-            }).ToList();
+            });
         }
 
-        static List<SongArtistLink> MapExtlinks(IEnumerable<Extlinks> extlinks)
+        static IEnumerable<SongArtistLink> MapExtlinks(IEnumerable<Extlinks> extlinks)
         {
             return extlinks.Select(x =>
             {
@@ -138,7 +138,7 @@ public static class VndbMethods
                     _ => SongArtistLinkType.Unknown
                 };
                 return new SongArtistLink { Url = x.Url, Type = type, };
-            }).ToList();
+            });
         }
 
         var res = await Juliet.Api.POST_staff(
@@ -161,8 +161,11 @@ public static class VndbMethods
         return new SongArtist
         {
             PrimaryLanguage = single.Lang,
-            Titles = MapAliases(single.Aliases),
-            Links = MapExtlinks(single.Extlinks),
+            Titles = MapAliases(single.Aliases).ToList(),
+            Links = MapExtlinks(single.Extlinks).Concat(new List<SongArtistLink>()
+            {
+                new() { Type = SongArtistLinkType.VNDBStaff, Url = vndbId.ToVndbUrl() }
+            }).ToList(),
         };
     }
 }
