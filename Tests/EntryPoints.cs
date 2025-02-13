@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
 using Dapper.Database.Extensions;
+using EMQ.Client;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
@@ -23,6 +24,7 @@ using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.MusicBrainz.Business;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
@@ -41,6 +43,20 @@ namespace Tests;
 
 public class EntryPoints
 {
+    public string[] blacklistedCreaterNames =
+    {
+        "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO", "rian",
+        "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki", "Antistar",
+        "anporin", "mio", "ちづ", "SAORI", "yui", "ゆい", "masa", "yuri", "SHIKI", "momo", "ayumu", "rin", "yuki",
+        "sana", "ms", "yuuka", "mao", "kana", "mayumi", "rino", "yukari", "kei", "ari", "yun", "uma",
+    };
+
+    [OneTimeSetUp]
+    public void RunBeforeTests()
+    {
+        blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
+    }
+
     [Test, Explicit]
     public async Task GenerateAutocompleteMstJson()
     {
@@ -160,13 +176,6 @@ public class EntryPoints
             xRefs.Add(xRef);
         }
 
-        string[] blacklistedCreaterNames =
-        {
-            "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO",
-            "rian", "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki",
-            "Antistar", "anporin", "mio", "ちづ", "SAORI", "yui", "masa", "yuri", "SHIKI",
-        };
-        blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
         SongArtistRole[] songArtistRoles =
         {
             SongArtistRole.Composer, SongArtistRole.Arranger, SongArtistRole.Lyricist
