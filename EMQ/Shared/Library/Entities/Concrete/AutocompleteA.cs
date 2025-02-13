@@ -17,12 +17,14 @@ public class AutocompleteA
         // string vndbId,
         string aaLatinAlias,
         // int aaId,
-        string aaNonLatinAlias = "")
+        string aaNonLatinAlias = "",
+        bool isMain = true)
     {
         AId = aId;
         // VndbId = vndbId;
         AALatinAlias = aaLatinAlias;
         AANonLatinAlias = aaNonLatinAlias;
+        IsMain = isMain;
         // AAId = aaId;
     }
 
@@ -61,4 +63,8 @@ public class AutocompleteA
     [ProtoMember(9)]
     [JsonPropertyName("aaNLANormR")]
     public string AANonLatinAliasNormalizedReversed { get; set; } = null!;
+
+    [ProtoMember(10)]
+    [JsonPropertyName("main")]
+    public bool IsMain { get; set; }
 }

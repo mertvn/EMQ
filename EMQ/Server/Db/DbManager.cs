@@ -2445,15 +2445,15 @@ GROUP BY artist_id";
     public static async Task<string> SelectAutocompleteA()
     {
         const string sqlAutocompleteA =
-            @"SELECT DISTINCT a.id, aa.latin_alias, aa.non_latin_alias
+            @"SELECT DISTINCT a.id, aa.latin_alias, aa.non_latin_alias, aa.is_main_name
             FROM artist_alias aa
             LEFT JOIN artist a ON a.id = aa.artist_id
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            var res = (await connection.QueryAsync<(int, string, string?)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "")).ToArray();
+            var res = (await connection.QueryAsync<(int, string, string?, bool)>(sqlAutocompleteA))
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "", x.Item4)).ToArray();
 
             foreach (var re in res)
             {

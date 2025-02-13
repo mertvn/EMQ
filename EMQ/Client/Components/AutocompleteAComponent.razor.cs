@@ -161,7 +161,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         }
 
         return (TValue[])(object)dictLT.Concat(dictNLT)
-            .OrderByDescending(x => x.Value)
+            .OrderByDescending(x => x.Value).ThenByDescending(x => x.Key.IsMain)
             .DistinctBy(x => x.Key.AId)
             .Take(maxResults)
             .Select(x => x.Key)
