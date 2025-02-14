@@ -135,6 +135,7 @@ public partial class ReviewEditComponent
                                 OldEntity = null;
                             }
 
+                            isReadonly = false;
                             break;
                         }
                 }

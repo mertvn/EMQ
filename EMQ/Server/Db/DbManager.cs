@@ -1430,6 +1430,11 @@ GROUP BY artist_id";
                 }
             }
 
+            if (!songSource.SongTypes.Any())
+            {
+                throw new Exception("Songs must have at least one song source song type.");
+            }
+
             foreach (var songSourceSongType in songSource.SongTypes)
             {
                 int msmId = (await connection.QueryAsync<int>(
