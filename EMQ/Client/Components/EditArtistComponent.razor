@@ -6,6 +6,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.MusicBrainz.Business
 @using EMQ.Shared.VNDB.Business
 @inject HttpClient _client
 
@@ -41,6 +42,14 @@
             <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 540px;"/>
             <br/>
         </details>
+
+        <details style="padding: 5px;">
+            <summary>MusicBrainz seeder</summary>
+            <p>Enter a MusicBrainz artist id or URL to fill information automatically.</p>
+            <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 540px;"/>
+            <br/>
+        </details>
+
         <br/>
     }
 
@@ -271,6 +280,8 @@
     public AutocompleteA? SelectedArtist { get; set; }
 
     private string VndbSeederInputText { get; set; } = "";
+
+    private string MusicBrainzSeederInputText { get; set; } = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -559,22 +570,62 @@
     {
         VndbSeederInputText = value;
         string vndbId = value.ToVndbId();
-        Console.WriteLine(vndbId);
         if (!vndbId.StartsWith("s") || vndbId.Length < 2 || !int.TryParse(vndbId[1..], out _))
         {
             VndbSeederInputText = "Invalid input.";
             return;
         }
 
-        var vndbArtist = await VndbMethods.GetStaffById(vndbId);
-        if (vndbArtist == null)
+        var artist = await VndbMethods.GetStaff(vndbId);
+        if (artist == null)
         {
-            VndbSeederInputText = "Error fetching staff information.";
+            VndbSeederInputText = "Error fetching information.";
             return;
         }
 
-        vndbArtist.Links = vndbArtist.Links.Where(x => x.Type != SongArtistLinkType.Unknown).ToList();
-        Artist = vndbArtist;
+        artist.Links = artist.Links.Where(x => x.Type != SongArtistLinkType.Unknown).ToList();
+        Artist = artist;
+    }
+
+    private async Task SeedFromMusicBrainz(string value)
+    {
+        MusicBrainzSeederInputText = value;
+        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/artist/", "").Replace("/", ""), out var guid))
+        {
+            MusicBrainzSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var mbArtist = await MBApi.GetArtist(ClientState.ExternalClient, guid);
+        if (mbArtist == null)
+        {
+            MusicBrainzSeederInputText = "Error fetching information.";
+            return;
+        }
+
+        const string lang = "ja"; // todo? fetch from mb area
+        var artist = new SongArtist
+        {
+            PrimaryLanguage = lang,
+            Links = new List<SongArtistLink>()
+            {
+                new() { Url = $"https://musicbrainz.org/artist/{guid}", Type = SongArtistLinkType.MusicBrainzArtist, }
+            },
+            Titles = new List<Title>()
+            {
+                new()
+                {
+                    LatinTitle = mbArtist.sortname,
+                    NonLatinTitle = mbArtist.name == mbArtist.sortname ? null : mbArtist.name,
+                    Language = lang,
+                    IsMainTitle = true
+                },
+            },
+        };
+        var song = new Song() { Artists = new List<SongArtist>() { artist } };
+        await MusicBrainzMethods.ProcessMBRelations(song, mbArtist.relations, _client, ClientState.MBArtistDict);
+        artist.Links = artist.Links.Where(x => x.Type != SongArtistLinkType.Unknown).ToList();
+        Artist = artist;
     }
 
 }

@@ -13,6 +13,7 @@ namespace EMQ.Shared.MusicBrainz.Business;
 
 public class MusicBrainzMethods
 {
+    // todo? split into two (song, artist)
     // todo handle no-MBID-match case (requires some sort of queue for adding artists)
     public static async Task<bool> ProcessMBRelations(Song song, IEnumerable<MbRelation> relations,
         HttpClient client, Dictionary<string, int> mbArtistDict)
@@ -20,106 +21,158 @@ public class MusicBrainzMethods
         bool addedSomething = false;
         foreach (MbRelation mbRelation in relations)
         {
-            switch (mbRelation.type)
+            switch (mbRelation.targettype)
             {
-                case "vocal":
+                case "artist":
                     {
-                        if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        switch (mbRelation.type)
                         {
-                            addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
-                                new List<SongArtistRole> { SongArtistRole.Vocals }, client);
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
-                        }
+                            case "vocal":
+                                {
+                                    if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                                    {
+                                        addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
+                                            new List<SongArtistRole> { SongArtistRole.Vocals }, client);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine(
+                                            $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
+                                    }
 
-                        break;
+                                    break;
+                                }
+                            case "composer":
+                                {
+                                    if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                                    {
+                                        addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
+                                            new List<SongArtistRole> { SongArtistRole.Composer }, client);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine(
+                                            $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
+                                    }
+
+                                    break;
+                                }
+                            case "arranger":
+                                {
+                                    if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                                    {
+                                        addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
+                                            new List<SongArtistRole> { SongArtistRole.Arranger }, client);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine(
+                                            $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
+                                    }
+
+                                    break;
+                                }
+                            case "remixer":
+                                {
+                                    if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                                    {
+                                        addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
+                                            new List<SongArtistRole> { SongArtistRole.Arranger }, client);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine(
+                                            $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
+                                    }
+
+                                    break;
+                                }
+
+                            case "lyricist":
+                                {
+                                    if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                                    {
+                                        addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
+                                            new List<SongArtistRole> { SongArtistRole.Lyricist }, client);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine(
+                                            $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
+                                    }
+
+                                    break;
+                                }
+                        }
                     }
-                case "composer":
+                    break;
+                case "work":
+                    switch (mbRelation.type)
                     {
-                        if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
-                        {
-                            addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
-                                new List<SongArtistRole> { SongArtistRole.Composer }, client);
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
-                        }
+                        // todo can works reference each other?
+                        case "performance":
+                            {
+                                if (mbRelation.attributes.Contains("instrumental") ||
+                                    mbRelation.attributes.Contains("karaoke"))
+                                {
+                                    song.Type |= SongType.Instrumental;
+                                }
 
-                        break;
+                                if (mbRelation.attributes.Contains("cover"))
+                                {
+                                    song.Type |= SongType.Cover;
+                                }
+
+                                if (song.Type > SongType.Standard)
+                                {
+                                    song.Type &= ~SongType.Standard;
+                                }
+
+                                addedSomething |=
+                                    await ProcessMBRelations(song, mbRelation.work!.relations, client, mbArtistDict);
+                                break;
+                            }
                     }
-                case "arranger":
+
+                    break;
+                case "url":
+                    if (mbRelation.url!.resource.Contains("vndb.org"))
                     {
-                        if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        song.Artists.Single().Links.Add(new SongArtistLink
                         {
-                            addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
-                                new List<SongArtistRole> { SongArtistRole.Arranger }, client);
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
-                        }
-
-                        break;
+                            Url = mbRelation.url.resource, Type = SongArtistLinkType.VNDBStaff,
+                        });
                     }
-                case "remixer":
+                    else if (mbRelation.url!.resource.Contains("vgmdb.net"))
                     {
-                        if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        song.Artists.Single().Links.Add(new SongArtistLink
                         {
-                            addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
-                                new List<SongArtistRole> { SongArtistRole.Arranger }, client);
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
-                        }
-
-                        break;
+                            Url = mbRelation.url.resource, Type = SongArtistLinkType.VGMdbArtist,
+                        });
                     }
-
-                case "lyricist":
+                    else if (mbRelation.url!.resource.Contains("anison.info"))
                     {
-                        if (mbArtistDict.TryGetValue(mbRelation.artist!.id, out int aid))
+                        song.Artists.Single().Links.Add(new SongArtistLink
                         {
-                            addedSomething |= await AddArtist(song, new AutocompleteA { AId = aid },
-                                new List<SongArtistRole> { SongArtistRole.Lyricist }, client);
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"unmatched mb artist: https://musicbrainz.org/artist/{mbRelation.artist!.id}");
-                        }
-
-                        break;
+                            Url = mbRelation.url.resource, Type = SongArtistLinkType.AnisonInfoPerson,
+                        });
                     }
-                // todo can works reference each other?
-                case "performance" when mbRelation.targettype == "work":
+                    else if (mbRelation.url!.resource.Contains("wikidata.org"))
                     {
-                        if (mbRelation.attributes.Contains("instrumental") || mbRelation.attributes.Contains("karaoke"))
+                        song.Artists.Single().Links.Add(new SongArtistLink
                         {
-                            song.Type |= SongType.Instrumental;
-                        }
-
-                        if (mbRelation.attributes.Contains("cover"))
-                        {
-                            song.Type |= SongType.Cover;
-                        }
-
-                        if (song.Type > SongType.Standard)
-                        {
-                            song.Type &= ~SongType.Standard;
-                        }
-
-                        addedSomething |=
-                            await ProcessMBRelations(song, mbRelation.work!.relations, client, mbArtistDict);
-                        break;
+                            Url = mbRelation.url.resource, Type = SongArtistLinkType.WikidataItem,
+                        });
                     }
+                    else if (mbRelation.url!.resource.Contains("anidb.net"))
+                    {
+                        song.Artists.Single().Links.Add(new SongArtistLink
+                        {
+                            Url = mbRelation.url.resource, Type = SongArtistLinkType.AniDBCreator,
+                        });
+                    }
+
+                    break;
             }
         }
 

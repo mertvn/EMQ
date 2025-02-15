@@ -50,4 +50,25 @@ public static class MBApi
             return null;
         }
     }
+
+    public static async Task<MbArtist?> GetArtist(HttpClient client, Guid id)
+    {
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return null;
+            }
+
+            string url = $"{BaseUrl}artist/{id}?fmt=json&inc=url-rels";
+            var res = await client.GetFromJsonAsync<MbArtist>(url);
+            // Console.WriteLine(res);
+            return res;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return null;
+        }
+    }
 }

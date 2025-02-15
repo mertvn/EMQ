@@ -9,8 +9,8 @@ namespace EMQ.Shared.Core;
 
 public class MbArtist
 {
-    // [JsonPropertyName("sort-name")]
-    // public string sortname { get; set; } = "";
+    [JsonPropertyName("sort-name")]
+    public string sortname { get; set; } = "";
 
     [JsonPropertyName("id")]
     public string id { get; set; } = "";
@@ -26,6 +26,9 @@ public class MbArtist
 
     // [JsonPropertyName("type")]
     // public string type { get; set; } = "";
+
+    [JsonPropertyName("relations")]
+    public List<MbRelation> relations { get; set; } = new();
 }
 
 public class MbArtistCredit
@@ -69,6 +72,9 @@ public class MbRelation
     [JsonPropertyName("work")]
     public MbWork? work { get; set; }
 
+    [JsonPropertyName("url")]
+    public MbUrl? url { get; set; }
+
     // [JsonPropertyName("attribute-values")]
     // public AttributeValues attributevalues { get; set; }
 
@@ -101,4 +107,13 @@ public class MbWork
 
     // [JsonPropertyName("id")]
     // public string id { get; set; }
+}
+
+public class MbUrl
+{
+    [JsonPropertyName("id")]
+    public string id { get; set; }
+
+    [JsonPropertyName("resource")]
+    public string resource { get; set; }
 }

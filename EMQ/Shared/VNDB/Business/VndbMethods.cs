@@ -105,7 +105,7 @@ public static class VndbMethods
         return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
     }
 
-    public static async Task<SongArtist?> GetStaffById(string vndbId, CancellationToken? cancellationToken = null)
+    public static async Task<SongArtist?> GetStaff(string vndbId, CancellationToken? cancellationToken = null)
     {
         static IEnumerable<Title> MapAliases(IEnumerable<Aliases> aliases)
         {
