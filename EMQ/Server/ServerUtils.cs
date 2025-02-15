@@ -384,7 +384,7 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         {
             int existingAaId =
                 await connection.ExecuteScalarAsync<int>(
-                    "select id from artist_alias where artist_id = @tAid and latin_alias = @la and non_latin_alias = @nla",
+                    "select id from artist_alias where artist_id = @tAid and latin_alias = @la and ((@nla::text IS NULL) or non_latin_alias = @nla::text)",
                     new { tAid = target.Id, la = sourceTitle.LatinTitle, nla = sourceTitle.NonLatinTitle },
                     transaction);
             if (existingAaId > 0)
@@ -400,7 +400,7 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
             else
             {
                 int rowsAa = await connection.ExecuteAsync(
-                    @"update artist_alias set artist_id = @tAid WHERE artist_id = @sAid and latin_alias = @la and non_latin_alias = @nla",
+                    @"update artist_alias set artist_id = @tAid WHERE artist_id = @sAid and latin_alias = @la and ((@nla::text IS NULL) or non_latin_alias = @nla::text)",
                     new
                     {
                         sAid = source.Id,
