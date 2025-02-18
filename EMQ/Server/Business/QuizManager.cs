@@ -433,7 +433,7 @@ public class QuizManager
                         .Select(x => x.LatinTitle).ToList();
                     correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
                         .Select(x => x.NonLatinTitle).Where(x => x != null)!);
-                    correctAnswers = correctAnswers.Select(x => x.Replace(" ", "")).Distinct().ToList();
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
 
                     CorrectAnswersDicts[GuessKind.Mst].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
@@ -441,7 +441,7 @@ public class QuizManager
 
                 foreach (string correctAnswer in correctAnswers)
                 {
-                    if (string.Equals(guess.Replace(" ", ""), correctAnswer, StringComparison.OrdinalIgnoreCase))
+                    if (guess.NormalizeForAutocomplete() == correctAnswer)
                     {
                         correct = true;
                         break;
@@ -525,7 +525,7 @@ public class QuizManager
                         .Select(x => x.LatinTitle).ToList();
                     correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Titles
                         .Select(x => x.NonLatinTitle).Where(x => x != null)!);
-                    correctAnswers = correctAnswers.Distinct().ToList();
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
 
                     CorrectAnswersDicts[GuessKind.Mt].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA-mt: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
@@ -533,7 +533,7 @@ public class QuizManager
 
                 foreach (string correctAnswer in correctAnswers)
                 {
-                    if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                    if (guess.NormalizeForAutocomplete() == correctAnswer)
                     {
                         correct = true;
                         break;
@@ -555,7 +555,7 @@ public class QuizManager
                         .Where(x => x.Value.Any(y => y.Kind == LabelKind.Include)).Select(z => z.Key);
                     correctAnswers = Quiz.Room.Players.Where(x => riggerIds.Contains(x.Id)).Select(y => y.Username)
                         .ToList();
-                    // correctAnswers = correctAnswers.Distinct().ToList();
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
 
                     CorrectAnswersDicts[GuessKind.Rigger].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA-rigger: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
@@ -563,7 +563,7 @@ public class QuizManager
 
                 foreach (string correctAnswer in correctAnswers)
                 {
-                    if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                    if (guess.NormalizeForAutocomplete() == correctAnswer)
                     {
                         correct = true;
                         break;
@@ -591,13 +591,15 @@ public class QuizManager
                         }
                     }
 
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
+
                     CorrectAnswersDicts[GuessKind.Developer].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA-developer: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
                 }
 
                 foreach (string correctAnswer in correctAnswers)
                 {
-                    if (string.Equals(guess, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                    if (guess.NormalizeForAutocomplete() == correctAnswer)
                     {
                         correct = true;
                         break;
