@@ -74,6 +74,12 @@ public class UploadController : ControllerBase
             return BadRequest("uploadOptions is null");
         }
 
+        if (song.Attributes.HasFlag(SongAttributes.Locked) &&
+            !AuthStuff.HasPermission(session, PermissionKind.Moderator))
+        {
+            return BadRequest("Locked.");
+        }
+
         var uploadResult = new UploadResult();
         var file = files.Single();
         string filename = WebUtility.HtmlEncode(file.FileName);

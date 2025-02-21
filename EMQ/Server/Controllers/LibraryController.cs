@@ -472,6 +472,12 @@ public class LibraryController : ControllerBase
                 return BadRequest("No changes detected.");
             }
 
+            if (song.Attributes.HasFlag(SongAttributes.Locked) &&
+                !AuthStuff.HasPermission(session, PermissionKind.Moderator))
+            {
+                return BadRequest("Locked.");
+            }
+
             song.Stats = null!;
             oldEntityJson = JsonSerializer.Serialize(song, Utils.JsoCompact);
         }

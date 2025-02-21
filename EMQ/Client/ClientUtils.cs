@@ -318,6 +318,11 @@ public class ClientUtils
         return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Edit);
     }
 
+    public static bool HasModPerms()
+    {
+        return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator);
+    }
+
     public static bool HasAdminPerms()
     {
         return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin);

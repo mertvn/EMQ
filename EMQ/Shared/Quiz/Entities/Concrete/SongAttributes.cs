@@ -9,7 +9,7 @@ public enum SongAttributes
 {
     None = 0,
 
-    [Display(Name ="Self-explanatory.")]
+    [Display(Name = "Self-explanatory.")]
     [Description("Video contains spoilers")]
     Spoilers = 1,
 
@@ -23,7 +23,10 @@ public enum SongAttributes
         "This song was published by a party other than the original developers/publishers of the VN. It also implies that the song is Non-canon.")]
     Unofficial = 4,
 
-    [Display(Name ="Self-explanatory.")]
+    [Display(Name = "Self-explanatory.")]
     [Description("Video contains flashing lights")]
     FlashingLights = 8,
+
+    [Display(Name = "Edits and uploads are not allowed.")]
+    Locked = 16,
 }

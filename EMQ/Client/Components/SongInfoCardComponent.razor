@@ -77,7 +77,6 @@
 
 @if (Song != null)
 {
-    bool isMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator);
     bool isDebugMode = ClientState.Preferences.DebugMode;
     @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any(x => x.IsFileLink))
     {
@@ -391,7 +390,7 @@
                         }
 
                         <label>
-                            <input type="checkbox" class="form-check-input" disabled="@(!IsEditing)"
+                            <input type="checkbox" class="form-check-input" disabled="@(!IsEditing || (key == SongAttributes.Locked && !ClientUtils.HasModPerms()))"
                                    @bind:get="@Song.Attributes.HasFlag(key)"
                                    @bind:set="@(new Func<bool, Task>(async value => await OnSongAttributesCheckboxClick(value, key)))"
                                    @bind:event="oninput"
