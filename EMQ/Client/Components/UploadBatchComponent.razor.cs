@@ -129,23 +129,19 @@ public partial class UploadBatchComponent
                     // ms.Position = 0; // doesn't work in the browser ¯\_(ツ)_/¯, check again after .NET 9 I guess
 
                     Track tFile = new(ms, file.ContentType);
-                    if (IsBGMMode)
+                    foreach (string possibleRecordingIdName in UploadConstants.PossibleMetadataRecordingIdNames)
                     {
-                        foreach (string possibleRecordingIdName in UploadConstants.PossibleMetadataRecordingIdNames)
+                        if (tFile.AdditionalFields.TryGetValue(possibleRecordingIdName,
+                                out string? possibleRecordingId))
                         {
-                            if (tFile.AdditionalFields.TryGetValue(possibleRecordingIdName,
-                                    out string? possibleRecordingId))
+                            if (!string.IsNullOrWhiteSpace(possibleRecordingId))
                             {
-                                if (!string.IsNullOrWhiteSpace(possibleRecordingId))
-                                {
-                                    metadataMBRecordingOrTrackIds.Add(possibleRecordingId);
-                                }
+                                metadataMBRecordingOrTrackIds.Add(possibleRecordingId);
                             }
                         }
-
-                        // Console.WriteLine(JsonSerializer.Serialize(metadataMBRecordingOrTrackIds));
                     }
-                    else
+
+                    if (!IsBGMMode && !metadataMBRecordingOrTrackIds.Any())
                     {
                         string? metadataTitle = tFile.Title;
                         List<string> metadataArtists = new() { tFile.Artist, tFile.AlbumArtist };
@@ -165,9 +161,9 @@ public partial class UploadBatchComponent
                     continue;
                 }
 
+                uploadResult.MBRecordingOrTrackIds = metadataMBRecordingOrTrackIds;
                 if (IsBGMMode)
                 {
-                    uploadResult.MBRecordingOrTrackIds = metadataMBRecordingOrTrackIds;
                     if (!metadataMBRecordingOrTrackIds.Any())
                     {
                         continue;
@@ -200,10 +196,25 @@ public partial class UploadBatchComponent
                             uploadResult.File = file;
                             break;
                     }
-
-                    StateHasChanged();
                 }
                 else
+                {
+                    var res = await _client.PostAsJsonAsync("Library/FindSongsByMBIDs",
+                        new ReqFindSongsByMBIDs(metadataMBRecordingOrTrackIds));
+                    if (res.IsSuccessStatusCode)
+                    {
+                        var content = await res.Content.ReadFromJsonAsync<List<Song>>();
+                        if (content is not null && content.Any())
+                        {
+                            HaveCount += 1;
+                            // Console.WriteLine(JsonSerializer.Serialize(content, Utils.Jso));
+                            uploadResult.PossibleMatches.AddRange(content);
+                            uploadResult.File = file;
+                        }
+                    }
+                }
+
+                if (!IsBGMMode && !metadataMBRecordingOrTrackIds.Any())
                 {
                     uploadResult.Title = title;
                     uploadResult.Artists = artists;
@@ -225,10 +236,11 @@ public partial class UploadBatchComponent
                             // Console.WriteLine(JsonSerializer.Serialize(content, Utils.Jso));
                             uploadResult.PossibleMatches.AddRange(content);
                             uploadResult.File = file;
-                            StateHasChanged();
                         }
                     }
                 }
+
+                StateHasChanged();
             }
             catch (Exception ex)
             {

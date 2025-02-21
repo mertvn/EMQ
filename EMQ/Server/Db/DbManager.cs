@@ -4367,6 +4367,17 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         return ret;
     }
 
+    public static async Task<List<Song>> GetSongsByMBIDs(List<string> mbids)
+    {
+        // todo tracks somehow?
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        const string sql =
+            @"select music_id from music_external_link where replace(url, 'https://musicbrainz.org/recording/', '') = any(@mbids)";
+
+        var mids = (await connection.QueryAsync<int>(sql, new { mbids })).ToList();
+        return await SelectSongsMIds(mids.ToArray(), false);
+    }
+
     public static async Task<List<MusicExternalLink>> FindMusicExternalLinkBySha256(string sha256)
     {
         const string sql = "SELECT * from music_external_link where sha256 = @sha256";

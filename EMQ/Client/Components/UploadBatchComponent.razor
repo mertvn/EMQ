@@ -30,7 +30,9 @@ else
     <p>
         The batch uploader lets you upload many files at once by matching your files with the songs in the database automatically.
         <br/>
-        Currently it uses the song title and artist metadata in the file. Currently only vocal songs are supported.
+        Currently it uses the MusicBrainz Track Id and MusicBrainz Recording Id metadata in the file. You must tag your files with MusicBrainz Picard in order to use this.
+        <br/>
+        Alternatively it can use the song title and artist metadata in the file if MB metadata is not present.
         <br/>
         To use it, first browse for files, and then click the button under the song info to upload it. If there are multiple matches, make sure you choose the correct one.
     </p>
@@ -78,12 +80,10 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                 @file.FileName
                 <br>
 
-                @if (IsBGMMode)
-                {
-                    <span> MusicBrainz Recording/Track Ids: @string.Join(", ", file.MBRecordingOrTrackIds)</span>
-                    <br>
-                }
-                else
+                <span> MusicBrainz Recording/Track Ids: @string.Join(", ", file.MBRecordingOrTrackIds)</span>
+                <br>
+
+                @if (!IsBGMMode)
                 {
                     <span>Title: @file.Title</span>
                     <br>

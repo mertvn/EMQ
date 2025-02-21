@@ -265,6 +265,15 @@ public class LibraryController : ControllerBase
         return songs;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("FindSongsByMBIDs")]
+    public async Task<IEnumerable<Song>> FindSongsByMBIDs([FromBody] ReqFindSongsByMBIDs req)
+    {
+        var songs = await DbManager.GetSongsByMBIDs(req.MBIDs);
+        return songs;
+    }
+
     [CustomAuthorize(PermissionKind.UploadSongLink)]
     [HttpPost]
     [Route("DeleteReviewQueueItem")]
