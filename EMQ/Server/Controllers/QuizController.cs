@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -957,6 +957,11 @@ public class QuizController : ControllerBase
         }
 
         if (room.Owner.Id != session.Player.Id)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Players.Count(x => x.IsBot) > 17)
         {
             return Unauthorized();
         }
