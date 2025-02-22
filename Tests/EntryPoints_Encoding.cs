@@ -649,7 +649,7 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
                                 extractedOutputFinal, false);
                             if (rqId > 0)
                             {
@@ -717,7 +717,7 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
                                 extractedOutputFinal, false);
                             if (rqId > 0)
                             {
@@ -786,7 +786,7 @@ public class EntryPoints_Encoding
                             };
 
                             await fs.DisposeAsync();
-                            (_, int rqId) = await ServerUtils.ImportSongLinkInnerWithRQId(mId, songLinkExtracted,
+                            (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
                                 extractedOutputFinal, false);
                             if (rqId > 0)
                             {

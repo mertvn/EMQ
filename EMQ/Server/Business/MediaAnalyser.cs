@@ -23,7 +23,7 @@ public static class MediaAnalyser
 
     // todo detect bad transcodes
     public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false,
-        bool? isVideoOverride = null)
+        bool? isVideoOverride = null, int rqId = 0)
     {
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
@@ -211,6 +211,53 @@ public static class MediaAnalyser
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+
+            if (rqId > 0)
+            {
+                try
+                {
+                    string guid = filePath.LastSegment();
+                    string soxFilename = $"{guid}.png";
+                    string soxOut = $"{Path.GetTempPath()}{soxFilename}";
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "sox",
+                            Arguments =
+                                $"\"{filePath}\" -n remix 1,2 spectrogram -x 500 -y 250 -t \"RQ{rqId} {guid}\" -o {soxOut}",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                        }
+                    };
+
+                    process.Start();
+                    await process.WaitForExitAsync();
+                    if (File.Exists(soxOut))
+                    {
+                        // yeah idk about doing this here
+                        await using FileStream fsSox = new(soxOut, FileMode.Open, FileAccess.Read);
+                        ServerUtils.SftpFileUpload(
+                            UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                            UploadConstants.SftpPassword,
+                            fsSox,
+                            Path.Combine(UploadConstants.SftpUserUploadDir, "sox", soxFilename)
+                                .Replace("\\", "/")); // imagine having to do this in 2025
+                        await fsSox.DisposeAsync();
+                        File.Delete(soxOut);
+                    }
+                    else
+                    {
+                        throw new Exception("failed to sox");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
 
             if (!result.Warnings.Any())

@@ -226,8 +226,8 @@ public static class ServerUtils
         }
     }
 
-    public static async Task<MediaAnalyserResult?> ImportSongLinkInner(int mId, SongLink songLink, string existingPath,
-        bool? isVideoOverride)
+    public static async Task<(MediaAnalyserResult?, int rqId)> ImportSongLinkInner(int mId, SongLink songLink,
+        string existingPath, bool? isVideoOverride)
     {
         int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
         MediaAnalyserResult? analyserResult = null;
@@ -236,39 +236,8 @@ public static class ServerUtils
         {
             if (!string.IsNullOrEmpty(existingPath))
             {
-                analyserResult = await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride);
-                await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
-                    analyserResult: analyserResult);
-            }
-            else
-            {
-                string filePath = System.IO.Path.GetTempPath() + songLink.Url.LastSegment();
-                bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(songLink.Url));
-                if (dlSuccess)
-                {
-                    analyserResult = await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
-                    System.IO.File.Delete(filePath);
-                    await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
-                        analyserResult: analyserResult);
-                }
-            }
-        }
-
-        return analyserResult;
-    }
-
-    public static async Task<(MediaAnalyserResult?, int rqId)> ImportSongLinkInnerWithRQId(int mId, SongLink songLink,
-        string existingPath,
-        bool? isVideoOverride)
-    {
-        int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
-        MediaAnalyserResult? analyserResult = null;
-
-        if (rqId > 0)
-        {
-            if (!string.IsNullOrEmpty(existingPath))
-            {
-                analyserResult = await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride);
+                analyserResult =
+                    await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride, rqId: rqId);
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                     analyserResult: analyserResult);
             }
