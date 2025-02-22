@@ -226,7 +226,7 @@ public static class MediaAnalyser
                         {
                             FileName = "ffmpeg",
                             Arguments =
-                                $"-i \"{filePath}\" -lavfi \"showspectrumpic=s=200x400:mode=combined\" {soxOut}",
+                                $"-nostdin -i \"{filePath}\" -lavfi \"showspectrumpic=s=200x400:mode=combined\" {soxOut}",
                             CreateNoWindow = true,
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
