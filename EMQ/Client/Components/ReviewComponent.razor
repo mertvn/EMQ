@@ -104,15 +104,15 @@
                                     <li>@line</li>
                                 }
                             }
-
-                            <br/>
-                            @if (true)
-                            {
-                                string src = $"{Constants.WebsiteDomain}/selfhoststorage/userup/sox/{reviewingItem.url.LastSegment()}.png";
-                                <img src="@src" alt="Spectrogram"/>
-                            }
-
                         </ul>
+
+                        @if (true)
+                        {
+                            string src = $"{Constants.WebsiteDomain}/selfhoststorage/userup/sox/{reviewingItem.url.LastSegment()}.png";
+                            <ul>
+                                <img src="@src" alt="Spectrogram"/>
+                            </ul>
+                        }
                     }
                 </div>
 

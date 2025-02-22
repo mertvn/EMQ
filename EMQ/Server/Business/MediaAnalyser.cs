@@ -224,18 +224,18 @@ public static class MediaAnalyser
                     {
                         StartInfo = new ProcessStartInfo()
                         {
-                            FileName = "sox",
+                            FileName = "ffmpeg",
                             Arguments =
-                                $"\"{filePath}\" -n remix 1,2 spectrogram -x 500 -y 250 -t \"RQ{rqId} {guid}\" -o {soxOut}",
+                                $"-i \"{filePath}\" -lavfi \"showspectrumpic=s=200x400:mode=combined\" {soxOut}",
                             CreateNoWindow = true,
                             UseShellExecute = false,
-                            RedirectStandardOutput = false,
-                            RedirectStandardError = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
                         }
                     };
 
                     process.Start();
-                    await process.WaitForExitAsync();
+                    string err = await process.StandardError.ReadToEndAsync();
                     if (File.Exists(soxOut))
                     {
                         // yeah idk about doing this here
@@ -251,7 +251,8 @@ public static class MediaAnalyser
                     }
                     else
                     {
-                        throw new Exception("failed to sox");
+                        Console.WriteLine(err);
+                        throw new Exception("failed to generate spectrogram");
                     }
                 }
                 catch (Exception e)
