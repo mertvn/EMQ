@@ -213,6 +213,8 @@ public partial class QuizPage
 
     private int EnabledGuessKindCount { get; set; } = 1;
 
+    public bool IsDuca => (_currentSong?.IsDuca ?? false) || (_nextSong?.IsDuca ?? false);
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -403,6 +405,7 @@ public partial class QuizPage
                 {
                     song.StartTime = nextSong.StartTime;
                     song.Links = new List<SongLink> { new() { Url = nextSong.Url } };
+                    song.IsDuca = nextSong.IsDuca;
                 }
 
                 return song;
@@ -903,18 +906,25 @@ public partial class QuizPage
         if (index < _clientSongs.Count)
         {
             PageState.DebugOut.Add("index: " + index);
-
-            if (VisibleVideoElementId == "video1")
+            if (ClientState.Preferences.MuteWhenDuca && IsDuca)
             {
-                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
                 await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
             }
             else
             {
-                LastSetVideoMuted = DateTime.UtcNow;
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+                if (VisibleVideoElementId == "video1")
+                {
+                    LastSetVideoMuted = DateTime.UtcNow;
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+                }
+                else
+                {
+                    LastSetVideoMuted = DateTime.UtcNow;
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+                }
             }
 
             if (_currentSong != null)

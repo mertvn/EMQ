@@ -2,7 +2,8 @@
 
 public class ResNextSong
 {
-    public ResNextSong(int songIndex, string url, int startTime, string screenshotUrl, string coverUrl, SongHint hint)
+    public ResNextSong(int songIndex, string url, int startTime, string screenshotUrl, string coverUrl, SongHint hint,
+        bool isDuca)
     {
         SongIndex = songIndex;
         Url = url;
@@ -10,6 +11,7 @@ public class ResNextSong
         ScreenshotUrl = screenshotUrl;
         CoverUrl = coverUrl;
         Hint = hint;
+        IsDuca = isDuca;
     }
 
     public int SongIndex { get; }
@@ -23,4 +25,6 @@ public class ResNextSong
     public string CoverUrl { get; }
 
     public SongHint Hint { get; set; }
+
+    public bool IsDuca { get; set; }
 }

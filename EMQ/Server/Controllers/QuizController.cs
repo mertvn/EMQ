@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -150,7 +150,7 @@ public class QuizController : ControllerBase
                         }
 
                         return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl,
-                            hint);
+                            hint, song.Artists.Any(x => x.Id == 77 && x.Roles.Contains(SongArtistRole.Vocals)));
                     }
                     else
                     {

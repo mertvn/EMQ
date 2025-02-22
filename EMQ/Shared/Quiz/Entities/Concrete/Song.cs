@@ -16,6 +16,10 @@ public partial class Song : IEditQueueEntity
     [JsonIgnore]
     public bool DoneBuffering { get; set; }
 
+    /// meme thing, do not use
+    [JsonIgnore]
+    public bool IsDuca { get; set; }
+
     public int StartTime { get; set; } // todo move out of this class
 
     public string ScreenshotUrl { get; set; } = ""; // todo move out of this class

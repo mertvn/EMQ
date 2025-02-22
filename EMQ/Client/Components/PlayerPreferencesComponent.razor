@@ -89,6 +89,10 @@
                                     <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
                                     <br/>
 
+                                    <InputCheckbox id="MuteWhenDuca" class="form-check-input" @bind-Value="ClientState.Preferences.MuteWhenDuca" style="margin: 5px"></InputCheckbox>
+                                    <label for="MuteWhenDuca">Mute when Duca</label>
+                                    <br/>
+
                                     @if (Constants.IsChristmasMode)
                                     {
                                         <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>

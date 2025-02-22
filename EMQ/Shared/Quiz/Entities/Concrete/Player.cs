@@ -229,4 +229,7 @@ public class PlayerPreferences
 
     [Required]
     public bool ShowSnowflakes { get; set; } = Constants.IsChristmasMode;
+
+    [Required]
+    public bool MuteWhenDuca { get; set; } = false;
 }
