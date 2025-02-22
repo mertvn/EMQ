@@ -433,7 +433,8 @@ public class QuizManager
                         .Select(x => x.LatinTitle).ToList();
                     correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
                         .Select(x => x.NonLatinTitle).Where(x => x != null)!);
-                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
+                    correctAnswers = correctAnswers.Select(x => x.Replace(" ", "").Replace("　", ""))
+                        .Distinct().ToList();
 
                     CorrectAnswersDicts[GuessKind.Mst].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
@@ -441,7 +442,8 @@ public class QuizManager
 
                 foreach (string correctAnswer in correctAnswers)
                 {
-                    if (guess.NormalizeForAutocomplete() == correctAnswer)
+                    if (string.Equals(guess.Trim().Replace(" ", "").Replace("　", ""),
+                            correctAnswer, StringComparison.InvariantCultureIgnoreCase))
                     {
                         correct = true;
                         break;
