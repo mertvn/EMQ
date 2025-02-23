@@ -43,20 +43,6 @@ namespace Tests;
 
 public class EntryPoints
 {
-    public string[] blacklistedCreaterNames =
-    {
-        "TOSHI", "CAS", "RIO", "Hiro", "maya", "YUINA", "AYA", "koro", "cittan*", "Ryo", "marina", "GORO", "rian",
-        "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki", "Antistar",
-        "anporin", "mio", "ちづ", "SAORI", "yui", "ゆい", "masa", "yuri", "SHIKI", "momo", "ayumu", "rin", "yuki",
-        "sana", "ms", "yuuka", "mao", "kana", "mayumi", "rino", "yukari", "kei", "ari", "yun", "uma",
-    };
-
-    [OneTimeSetUp]
-    public void RunBeforeTests()
-    {
-        blacklistedCreaterNames = blacklistedCreaterNames.Select(x => x.NormalizeForAutocomplete()).ToArray();
-    }
-
     [Test, Explicit]
     public async Task GenerateAutocompleteMstJson()
     {
@@ -277,7 +263,7 @@ public class EntryPoints
                                     name = name[..firstParenthesisIndex];
                                 }
 
-                                if (!blacklistedCreaterNames.Any(x => x == name.NormalizeForAutocomplete()))
+                                if (!Setup.BlacklistedCreaterNames.Any(x => x == name.NormalizeForAutocomplete()))
                                 {
                                     aIds = await DbManager.FindArtistIdsByArtistNames(new List<string> { name });
                                 }
@@ -1537,6 +1523,45 @@ WHERE s.lang = 'ja'"))
     }
 
     [Test, Explicit]
+    public async Task PgDump_OneTable()
+    {
+        Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
+        string envVar = "DATABASE_URL";
+        // envVar = "EMQ_AUTH_DATABASE_URL";
+        // envVar = "EMQ_VNDB_DATABASE_URL";
+
+        string table = "edit_queue";
+        var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
+        Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
+
+        string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}-{table}.tar";
+        var proc = new Process()
+        {
+            StartInfo = new ProcessStartInfo()
+            {
+                FileName = "pg_dump",
+                Arguments =
+                    $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"t\" -f {dumpFileName} -d \"{builder.Database}\" -t {table}",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+            }
+        };
+        proc.Start();
+
+        File.Delete("output_pg_dump.txt");
+        while (!proc.StandardOutput.EndOfStream)
+        {
+            await File.AppendAllTextAsync("output_pg_dump.txt", await proc.StandardOutput.ReadLineAsync() + "\n");
+        }
+
+        if (!File.Exists(dumpFileName))
+        {
+            throw new Exception("pg_dump failed");
+        }
+    }
+
+    [Test, Explicit]
     public async Task PgRestore()
     {
         Directory.SetCurrentDirectory(@"C:/emq/dbbackups");
@@ -1546,7 +1571,7 @@ WHERE s.lang = 'ja'"))
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2025-02-02_EMQ@erogemusicquiz.com.tar";
+        string dumpFileName = "pgdump_2025-02-14_EMQ@erogemusicquiz.com.tar";
         // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {
@@ -2139,7 +2164,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
 
         foreach ((int aid, string latinTitle) in mbArtistsWithoutVndb)
         {
-            if (blacklistedCreaterNames.Contains(latinTitle))
+            if (Setup.BlacklistedCreaterNames.Contains(latinTitle.ToLowerInvariant()))
             {
                 continue;
             }
@@ -2258,6 +2283,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
     [Test, Explicit]
     public async Task ListArtistCommaAliases()
     {
+        bool onlyMainTitles = true;
         string[] blacklist = { "ltd", "inc.", "co.", };
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
@@ -2270,10 +2296,32 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         {
             var commaTitle = artist.Titles.FirstOrDefault(x =>
                 x.LatinTitle.Contains(',') &&
+                (!onlyMainTitles || x.IsMainTitle || !artist.Titles.Any(y => y.IsMainTitle)) &&
                 !blacklist.Any(y => x.LatinTitle.Contains(y, StringComparison.OrdinalIgnoreCase)));
             if (commaTitle != null)
             {
                 Console.WriteLine(commaTitle.LatinTitle);
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task ListArtistsWithoutMainAlias()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+
+        var artistIds = await connection.QueryAsync<int>("select id from artist");
+        var songs = artistIds.Select(x => new Song { Artists = new List<SongArtist> { new() { Id = x } } }).ToList();
+        var artists = (await DbManager.SelectArtistBatchNoAM(connection, songs, false))
+            .SelectMany(x => x.Value.Select(y => y.Value)).DistinctBy(x => x.Id).ToArray();
+
+        foreach (SongArtist artist in artists)
+        {
+            if (artist.Titles.Count > 1 && !artist.Titles.Any(x => x.IsMainTitle) &&
+                artist.Links.Any(x => x.Type == SongArtistLinkType.VNDBStaff))
+            {
+                Console.WriteLine(artist.Titles.FirstOrDefault(x => x.LatinTitle.Contains(','))?.LatinTitle ??
+                                  artist.Titles.First().LatinTitle);
             }
         }
     }
@@ -2327,6 +2375,10 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         var staffExtlinks = (await File.ReadAllLinesAsync($"{basePath}/staff_extlinks"))
             .Select(x => x.Split("\t"))
             .ToLookup(x => x[1], x => x);
+
+        var wikidata = (await File.ReadAllLinesAsync($"{basePath}/wikidata"))
+            .Select(x => x.Split("\t"))
+            .ToDictionary(x => x[0], x => x);
 
         var aids = (await connection.GetListAsync<Artist>()).ToArray();
         var artists = ((await DbManager.SelectArtistBatchNoAM(connection,
@@ -2477,6 +2529,41 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
 
                         break;
                     }
+            }
+        }
+
+        foreach (SongArtist artist in artists.Where(x => x.Links.Any(y => y.Type == SongArtistLinkType.WikidataItem)))
+        {
+            string wikidataId = artist.Links.Single(x => x.Type == SongArtistLinkType.WikidataItem).Url
+                .Replace("https://", "").Replace("www.", "").Replace("wikidata.org/wiki/Q", "");
+            if (wikidata.TryGetValue(wikidataId, out string[]? wikidataRow))
+            {
+                string mbId = wikidataRow[13];
+                if (mbId != "\\N")
+                {
+                    string mbIdReplaced = mbId.Replace("{", "").Replace("}", "");
+                    if (!Guid.TryParse(mbIdReplaced, out _))
+                    {
+                        Console.WriteLine($"invalid mbid: {mbIdReplaced}");
+                        continue;
+                    }
+
+                    string url = $"https://musicbrainz.org/artist/{mbIdReplaced}";
+                    if (!artist.Links.Any(x => x.Type == SongArtistLinkType.MusicBrainzArtist))
+                    {
+                        // Console.WriteLine($"can add {url} to {vndbUrl} for {artist}");
+                        artist.Links.Add(new SongArtistLink
+                        {
+                            Url = url, Type = SongArtistLinkType.MusicBrainzArtist,
+                        });
+
+                        // let these get in the second run w/e
+                        if (!d.ContainsKey(artist.Id))
+                        {
+                            d[artist.Id] = artist;
+                        }
+                    }
+                }
             }
         }
 

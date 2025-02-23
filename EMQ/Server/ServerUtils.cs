@@ -247,7 +247,8 @@ public static class ServerUtils
                 bool dlSuccess = await ServerUtils.Client.DownloadFile(filePath, new Uri(songLink.Url));
                 if (dlSuccess)
                 {
-                    analyserResult = await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
+                    analyserResult =
+                        await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride, rqId: rqId);
                     System.IO.File.Delete(filePath);
                     await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                         analyserResult: analyserResult);

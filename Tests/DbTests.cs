@@ -6,9 +6,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
+using Dapper.Database.Extensions;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
+using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
@@ -36,6 +38,7 @@ public class DbTests
         foreach (Song song in songs)
         {
             Assert.That(song.Id > 0);
+            Assert.That(song.DataSource > DataSourceKind.Unknown);
 
             Assert.That(song.Titles.First().LatinTitle.Any());
             Assert.That(song.Titles.First().Language.Any());
@@ -84,6 +87,12 @@ public class DbTests
             foreach (SongArtist songArtist in song.Artists)
             {
                 Assert.That(songArtist.Id > 0);
+                Assert.That(songArtist.Titles.Count == 1);
+                // if (songArtist.Titles.Count != 1)
+                // {
+                //     Console.WriteLine(song.Id);
+                // }
+
                 Assert.That(songArtist.Titles.First().LatinTitle.Any());
                 Assert.That(songArtist.Roles.Any());
             }
@@ -915,7 +924,6 @@ public class DbTests
         }
     }
 
-
     [Test, Explicit]
     public async Task Test_InsertSong()
     {
@@ -936,7 +944,7 @@ public class DbTests
                             {
                                 LatinTitle = "Misato Aki",
                                 Language = "ja",
-                                NonLatinTitle = "美郷あき",
+                                NonLatinTitle = "美郷 あき",
                                 IsMainTitle = true
                             }
                         },
@@ -987,6 +995,129 @@ public class DbTests
                         new SongSourceCategory() { Name = "cat1", Type = SongSourceCategoryType.Tag },
                         new SongSourceCategory() { Name = "cat2", Type = SongSourceCategoryType.Genre }
                     }
+                },
+            }
+        };
+
+        int _ = await DbManager.InsertSong(song);
+    }
+
+    [Test, Explicit]
+    public async Task InsertSongSource()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        var songSource = new SongSource
+        {
+            AirDateStart = DateTime.UnixEpoch,
+            LanguageOriginal = "ja",
+            Type = SongSourceType.Other,
+            Titles = new List<Title>() { new() { LatinTitle = "[other]", Language = "ja", IsMainTitle = true, } },
+            Links = new List<SongSourceLink>()
+            {
+                new() { Url = "v0".ToVndbUrl(), Type = SongSourceLinkType.VNDB, }
+            },
+        };
+
+        var ms = new MusicSource()
+        {
+            air_date_start = songSource.AirDateStart,
+            air_date_end = songSource.AirDateEnd,
+            language_original = songSource.LanguageOriginal,
+            rating_average = songSource.RatingAverage,
+            rating_bayesian = songSource.RatingBayesian,
+            // popularity = songSource.Popularity,
+            votecount = songSource.VoteCount,
+            type = songSource.Type
+        };
+
+        if (!await connection.InsertAsync(ms, transaction))
+        {
+            throw new Exception("Failed to insert ms");
+        }
+
+        int msId = ms.id;
+        foreach (Title songSourceAlias in songSource.Titles)
+        {
+            if (!await connection.InsertAsync(
+                    new MusicSourceTitle()
+                    {
+                        music_source_id = msId,
+                        latin_title = songSourceAlias.LatinTitle,
+                        non_latin_title = songSourceAlias.NonLatinTitle,
+                        language = songSourceAlias.Language,
+                        is_main_title = songSourceAlias.IsMainTitle
+                    }, transaction))
+            {
+                throw new Exception("Failed to insert mst");
+            }
+        }
+
+        foreach (SongSourceLink songSourceLink in songSource.Links)
+        {
+            if (!await connection.InsertAsync(
+                    new MusicSourceExternalLink()
+                    {
+                        music_source_id = msId,
+                        url = songSourceLink.Url,
+                        type = songSourceLink.Type,
+                        name = songSourceLink.Name
+                    }, transaction))
+            {
+                throw new Exception("Failed to insert msel");
+            }
+        }
+
+        await transaction.CommitAsync();
+    }
+
+    [Test, Explicit]
+    public async Task Test_InsertSongToOtherSource()
+    {
+        var song = new Song()
+        {
+            Type = SongType.Standard,
+            DataSource = DataSourceKind.EMQ,
+            Titles =
+                new List<Title>() { new Title() { LatinTitle = "deleteme", Language = "en", IsMainTitle = true }, },
+            Artists = new List<SongArtist>()
+            {
+                new SongArtist()
+                {
+                    Roles = new List<SongArtistRole> { SongArtistRole.Vocals },
+                    PrimaryLanguage = "ja",
+                    Titles =
+                        new List<Title>()
+                        {
+                            new Title()
+                            {
+                                LatinTitle = "Misato Aki",
+                                Language = "ja",
+                                NonLatinTitle = "美郷 あき",
+                                IsMainTitle = true
+                            }
+                        },
+                    Sex = Sex.Female,
+                    Links = new List<SongArtistLink>()
+                    {
+                        new SongArtistLink
+                        {
+                            Url = "https://vndb.org/s1440", Type = SongArtistLinkType.VNDBStaff, Name = "",
+                        }
+                    }
+                }
+            },
+            Sources = new List<SongSource>()
+            {
+                new SongSource()
+                {
+                    SongTypes = new List<SongSourceSongType>() { SongSourceSongType.Other },
+                    Links = new List<SongSourceLink>()
+                    {
+                        new SongSourceLink() { Type = SongSourceLinkType.VNDB, Url = "https://vndb.org/v0" }
+                    },
                 },
             }
         };
@@ -1271,5 +1402,34 @@ order by ms.id
 
         Assert.That(collaborations.Count > 50);
         Assert.That(collaborations.Count < 500);
+    }
+
+    [Test]
+    public async Task QuinroseMariThing()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+
+        var artists = await DbManager.SelectArtistBatch(connection,
+            new List<Song>()
+            {
+                new Song()
+                {
+                    Artists = new List<SongArtist>()
+                    {
+                        new SongArtist()
+                        {
+                            Titles = new List<Title>() { new Title() { LatinTitle = "mari" } }
+                        }
+                    }
+                }
+            }.ToList(), true);
+
+        foreach (KeyValuePair<int, Dictionary<int, SongArtist>> keyValuePair in artists)
+        {
+            foreach (KeyValuePair<int, SongArtist> songArtist in keyValuePair.Value)
+            {
+                Assert.That(songArtist.Value.Titles.Count == 1);
+            }
+        }
     }
 }

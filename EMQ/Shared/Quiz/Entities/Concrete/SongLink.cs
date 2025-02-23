@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -28,6 +28,8 @@ public class SongLink
     public MediaAnalyserResult? AnalysisRaw { get; set; }
 
     public SongReport? LastUnhandledReport { get; set; }
+
+    public override string ToString() => Url;
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
     {

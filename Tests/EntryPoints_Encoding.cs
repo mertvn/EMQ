@@ -20,6 +20,7 @@ using Npgsql;
 using NUnit.Framework;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
 namespace Tests;
 
@@ -1439,5 +1440,41 @@ public class EntryPoints_Encoding
     public async Task RunAnalysis()
     {
         await ServerUtils.RunAnalysis();
+    }
+
+    [Test, Explicit]
+    public async Task GenerateMissingSpectrograms()
+    {
+        const string baseDownloadDir = "K:/emq/emqsongsbackup2";
+        Directory.SetCurrentDirectory(baseDownloadDir);
+        string[] filePaths = Directory.GetFiles(baseDownloadDir, "*.*",
+            new EnumerationOptions() { RecurseSubdirectories = true });
+
+        var connectionInfo =
+            new Renci.SshNet.ConnectionInfo(UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                new Renci.SshNet.PasswordAuthenticationMethod(UploadConstants.SftpUsername,
+                    UploadConstants.SftpPassword));
+        using var client = new Renci.SshNet.SftpClient(connectionInfo);
+        client.Connect();
+        string[] remoteFiles = client.ListDirectory($"{UploadConstants.SftpUserUploadDir}sox".Replace("\\", "/"))
+            .Where(x => !x.FullName.EndsWith('.'))
+            .Select(x => x.FullName[(x.FullName.LastIndexOf('/') + 1)..].Replace(".png", ""))
+            .ToArray();
+        client.Disconnect();
+
+        foreach (string filePath in filePaths.Where(x => !remoteFiles.Contains(x.LastSegment())))
+        {
+            bool? isVideoOverride = null;
+            if (filePath.EndsWith(".weba"))
+            {
+                isVideoOverride = false;
+            }
+
+            var res = await MediaAnalyser.Analyse(filePath, false, isVideoOverride, int.MaxValue);
+            if (res.Warnings.Contains(MediaAnalyserWarningKind.UnknownError))
+            {
+                throw new Exception();
+            }
+        }
     }
 }

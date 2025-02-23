@@ -13,7 +13,7 @@ public class MusicVote
     [Key]
     public int user_id { get; set; }
 
-    public short? vote { get; set; }
+    public short? vote { get; set; } // todo this is not nullable..............
 
     public DateTime updated_at { get; set; }
 }

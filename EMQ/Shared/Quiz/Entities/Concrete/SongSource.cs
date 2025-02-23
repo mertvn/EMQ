@@ -83,7 +83,9 @@ public enum SongSourceType
 {
     Unknown,
     VN,
-    Other
+    Other,
+    // Anime,
+    // Touhou,
 }
 
 public class SongSourceDeveloper
@@ -91,4 +93,6 @@ public class SongSourceDeveloper
     public string VndbId { get; set; } = "";
 
     public Title Title { get; set; } = new();
+
+    public override string ToString() => $"{VndbId} {Title}";
 }
