@@ -221,6 +221,7 @@ public static class ServerUtils
             client.Connect();
             Console.WriteLine(client.ConnectionInfo.CurrentClientEncryption);
             Console.WriteLine(client.ConnectionInfo.CurrentServerEncryption);
+            Console.WriteLine(remotePath);
             client.UploadFile(stream, remotePath);
             client.Disconnect();
         }
