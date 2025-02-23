@@ -23,7 +23,7 @@ public static class MediaAnalyser
 
     // todo detect bad transcodes
     public static async Task<MediaAnalyserResult> Analyse(string filePath, bool returnEarlyIfInvalidFormat = false,
-        bool? isVideoOverride = null, int rqId = 0)
+        bool? isVideoOverride = null, string guid = "")
     {
         string[] validAudioFormats = { "ogg", "mp3" };
         string[] validVideoFormats = { "mp4", "webm" };
@@ -213,11 +213,10 @@ public static class MediaAnalyser
                 Console.WriteLine(e);
             }
 
-            if (rqId > 0)
+            if (!string.IsNullOrEmpty(guid))
             {
                 try
                 {
-                    string guid = filePath.LastSegment();
                     string soxFilename = $"{guid}.png";
                     string soxOut = $"{Path.GetTempPath()}{soxFilename}";
                     var process = new Process()

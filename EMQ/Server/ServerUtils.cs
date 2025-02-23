@@ -238,7 +238,8 @@ public static class ServerUtils
             if (!string.IsNullOrEmpty(existingPath))
             {
                 analyserResult =
-                    await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride, rqId: rqId);
+                    await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride,
+                        guid: songLink.Url.LastSegment());
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                     analyserResult: analyserResult);
             }
@@ -249,7 +250,7 @@ public static class ServerUtils
                 if (dlSuccess)
                 {
                     analyserResult =
-                        await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride, rqId: rqId);
+                        await MediaAnalyser.Analyse(filePath, isVideoOverride: isVideoOverride);
                     System.IO.File.Delete(filePath);
                     await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                         analyserResult: analyserResult);
