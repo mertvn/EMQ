@@ -167,7 +167,7 @@ public enum PermissionKind
 
     Delete = 7001,
 
-    EditUsers = 8001,
+    EditUser = 8001,
 
     Admin = 9000,
 }

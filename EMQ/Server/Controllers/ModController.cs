@@ -4,13 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Dapper;
 using Dapper.Database.Extensions;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.MusicBrainz;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -253,5 +256,46 @@ public class ModController : ControllerBase
         }
 
         return success ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.EditUser)]
+    [HttpPost]
+    [Route("EditUser")]
+    public async Task<ActionResult> EditUser(ResGetPublicUserInfo req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connectionAuth.OpenAsync();
+        await using var transactionAuth = await connectionAuth.BeginTransactionAsync();
+        int rows = await connectionAuth.ExecuteAsync(
+            "UPDATE users set (roles, ign_mv, inc_perm, exc_perm) = (@roles, @ign_mv, @inc, @exc) where id = @uid",
+            new
+            {
+                roles = (int)req.UserRoleKind,
+                ign_mv = req.IgnMv,
+                inc = req.IncludedPermissions.Select(x=> (int)x).ToArray(),
+                exc = req.ExcludedPermissions.Select(x=> (int)x).ToArray(),
+                uid = req.UserId
+            }, transactionAuth);
+
+        bool success = rows == 1;
+        if (!success)
+        {
+            return StatusCode(500);
+        }
+
+        Console.WriteLine($"{session.Player.Username} EditUser {JsonSerializer.Serialize(req, Utils.Jso)}");
+        await transactionAuth.CommitAsync();
+        return Ok();
     }
 }

@@ -4793,7 +4793,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     {
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var user = await connectionAuth.QuerySingleOrDefaultAsync<User>(
-            "SELECT username, roles, created_at, avatar, skin from users where id = @userId", new { userId });
+            "SELECT username, roles, created_at, avatar, skin, ign_mv, inc_perm, exc_perm from users where id = @userId",
+            new { userId });
 
         if (user is null)
         {
@@ -4836,9 +4837,12 @@ ORDER BY type";
             GuessRate = (float)Math.Round(gr, 2),
             Username = user.username,
             Avatar = new Avatar(user.avatar, user.skin),
-            UserRoleKind = (UserRoleKind)user.roles,
+            UserRoleKind = user.roles,
             CreatedAt = user.created_at,
             SSST = getPublicUserInfoSSST,
+            IgnMv = user.ign_mv,
+            IncludedPermissions = user.inc_perm?.ToList() ?? new List<PermissionKind>(),
+            ExcludedPermissions = user.exc_perm?.ToList() ?? new List<PermissionKind>(),
         };
 
         return res;

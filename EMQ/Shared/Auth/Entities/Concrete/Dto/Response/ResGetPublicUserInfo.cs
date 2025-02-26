@@ -21,6 +21,12 @@ public class ResGetPublicUserInfo
     public DateTime CreatedAt { get; set; }
 
     public Dictionary<SongSourceSongType, GetPublicUserInfoSSST> SSST { get; set; } = new();
+
+    public bool IgnMv { get; set; }
+
+    public List<PermissionKind> IncludedPermissions { get; set; } = new();
+
+    public List<PermissionKind> ExcludedPermissions { get; set; } = new();
 }
 
 public class GetPublicUserInfoSSST

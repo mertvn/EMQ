@@ -3,10 +3,12 @@
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using System.Globalization
+@using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
 
 <a class="link link-primary" href="/eu/all">Browse users</a>
 <br/>
@@ -37,6 +39,62 @@
         </ul>
     </ul>
     <br/>
+
+    // todo roles
+    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))
+    {
+        <details>
+            <summary>Edit user</summary>
+
+            <label>
+                <input type="checkbox" class="form-check-input"
+                       @bind:get="@PublicUserInfo.IgnMv"
+                       @bind:set="@(new Func<bool, Task>(async value => { PublicUserInfo.IgnMv = value; await SendEditUserReq(); }))"/>
+                Ignore song votes
+            </label>
+            <br/>
+
+            <details open>
+                <summary>Included permissions</summary>
+                <div>
+                    @foreach (var key in Enum.GetValues<PermissionKind>())
+                    {
+                        if (key is not PermissionKind.None)
+                        {
+                            string id = $"checkbox-EditUserIncludedPermissions-{UserId}-{key}";
+                            <input type="checkbox" id="@id" class="form-check-input"
+                                   @bind:get="@PublicUserInfo.IncludedPermissions.Contains(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnPermCheckboxClick(value, key, true)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            <label for="@id">@key.ToString()</label>
+                            <br/>
+                        }
+                    }
+                </div>
+            </details>
+
+            <details open>
+                <summary>Excluded permissions</summary>
+                <div>
+                    @foreach (var key in Enum.GetValues<PermissionKind>())
+                    {
+                        if (key is not PermissionKind.None)
+                        {
+                            string id = $"checkbox-EditUserExcludedPermissions-{UserId}-{key}";
+                            <input type="checkbox" id="@id" class="form-check-input"
+                                   @bind:get="@PublicUserInfo.ExcludedPermissions.Contains(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnPermCheckboxClick(value, key, false)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            <label for="@id">@key.ToString()</label>
+                            <br/>
+                        }
+                    }
+                </div>
+            </details>
+        </details>
+    }
 }
 
 @if (UserMusicVotes != null && UserMusicVotes.Any())
@@ -163,6 +221,44 @@
     {
         await Task.Yield();
         StateHasChanged();
+    }
+
+    private async Task SendEditUserReq()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/EditUser", PublicUserInfo);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    private async Task OnPermCheckboxClick(bool value, PermissionKind key, bool isInclude)
+    {
+        if (value)
+        {
+            if (isInclude)
+            {
+                PublicUserInfo!.IncludedPermissions.Add(key);
+            }
+            else
+            {
+                PublicUserInfo!.ExcludedPermissions.Add(key);
+            }
+        }
+        else
+        {
+            if (isInclude)
+            {
+                PublicUserInfo!.IncludedPermissions.Remove(key);
+            }
+            else
+            {
+                PublicUserInfo!.ExcludedPermissions.Remove(key);
+            }
+        }
+
+        await SendEditUserReq();
     }
 
 }
