@@ -222,7 +222,8 @@ public static class MediaAnalyser
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = "ffmpeg",
-                        Arguments = $"-i \"{filePath}\" -map a:0 -af aeval='if(gte(abs(val(ch)),0.9999),print(n))' -f null -",
+                        Arguments =
+                            $"-i \"{filePath}\" -map a:0 -af aeval='if(gte(abs(val(ch)),0.9999),print(7878787))' -f null -",
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -236,7 +237,7 @@ public static class MediaAnalyser
                 {
                     // Console.WriteLine(err);
                     string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-                    if (lines.Any(x => x.Contains(".000000")))
+                    if (lines.Any(x => x.Contains("7878787.000000")))
                     {
                         result.Warnings.Add(MediaAnalyserWarningKind.Clipping);
                     }
