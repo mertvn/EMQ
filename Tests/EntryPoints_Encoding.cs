@@ -1473,7 +1473,7 @@ public class EntryPoints_Encoding
             var res = await MediaAnalyser.Analyse(filePath, false, isVideoOverride, filePath.LastSegment());
             if (res.Warnings.Contains(MediaAnalyserWarningKind.UnknownError))
             {
-                throw new Exception();
+                //throw new Exception();
             }
         }
     }

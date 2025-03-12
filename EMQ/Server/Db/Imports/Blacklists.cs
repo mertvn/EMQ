@@ -285,5 +285,6 @@ public static class Blacklists
         "2c7a8a2e-48c7-4f4c-ba5a-3ae3e7a03a28", // CHAOS;HEAD Audio Series Complete Box
         "04f0b83f-48fe-4e61-ab61-fac7ed2d05f1", // 「少女☆歌劇 レヴュースタァライト 舞台奏像劇 遙かなるエルドラド」劇中歌アルバム
         "3ff2d390-f6eb-4c86-a2a1-c07500b4c522", // ティンクル☆くるせいだーす ボーカルコレクション
+        "274ca7f1-9d5e-429a-b77c-ae48b281b727", // Songs
     };
 }

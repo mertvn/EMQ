@@ -112,8 +112,8 @@ public class MbWork
 public class MbUrl
 {
     [JsonPropertyName("id")]
-    public string id { get; set; }
+    public string id { get; set; } = "";
 
     [JsonPropertyName("resource")]
-    public string resource { get; set; }
+    public string resource { get; set; } = "";
 }
