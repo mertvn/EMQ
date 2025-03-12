@@ -86,4 +86,6 @@ public class MediaAnalyserResult
     public string? Sha256 { get; set; }
 
     public DateTime? Timestamp { get; set; }
+
+    public bool? EncodedByEmq { get; set; }
 }

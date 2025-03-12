@@ -128,6 +128,7 @@ public sealed class UploadQueueService : BackgroundService
             return value;
         }
 
+        bool encodedByEmq = false;
         string extension = mediaTypeInfo.Extension;
         string untrustedFileName = file.FileName;
         uploadResult.FileName = WebUtility.HtmlEncode(untrustedFileName);
@@ -161,6 +162,7 @@ public sealed class UploadQueueService : BackgroundService
                         encodedPath =
                             await MediaAnalyser.EncodeIntoWebm(tempPath, 2, value.UploadOptions,
                                 cancellationTokenSource.Token);
+                        encodedByEmq = true;
                     }
                     finally
                     {
@@ -202,6 +204,7 @@ public sealed class UploadQueueService : BackgroundService
                         transcodedPath =
                             await MediaAnalyser.TranscodeInto192KMp3(tempPath,
                                 value.UploadOptions, cancellationTokenSource.Token);
+                        encodedByEmq = true;
                     }
                     finally
                     {
@@ -284,7 +287,7 @@ public sealed class UploadQueueService : BackgroundService
 
             await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
             (MediaAnalyserResult? extractedAnalysis, _) =
-                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null);
+                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null, encodedByEmq);
 
             // todo cleanup
             if (songLink.IsVideo && extractedAnalysis != null)
@@ -354,8 +357,7 @@ public sealed class UploadQueueService : BackgroundService
 
                             await fs.DisposeAsync();
                             await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
+                                extractedOutputFinal, false, encodedByEmq);
                             break;
                         }
                     case "vorbis":
@@ -418,8 +420,7 @@ public sealed class UploadQueueService : BackgroundService
 
                             await fs.DisposeAsync();
                             await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
+                                extractedOutputFinal, false, encodedByEmq);
                             break;
                         }
                     case "mp3":
@@ -483,8 +484,7 @@ public sealed class UploadQueueService : BackgroundService
 
                             await fs.DisposeAsync();
                             await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal,
-                                false);
+                                extractedOutputFinal, false, encodedByEmq);
                             break;
                         }
                     default:

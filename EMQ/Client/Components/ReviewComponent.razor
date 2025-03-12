@@ -104,6 +104,17 @@
                                     <li>@line</li>
                                 }
                             }
+
+                            @if (reviewingItem.analysis_raw.EncodedByEmq != null)
+                            {
+                                <br/>
+                                <li>
+                                    Encoded by EMQ:
+                                    <span style="color: @UiHelpers.Bool2Color(reviewingItem.analysis_raw.EncodedByEmq, "green", "inherit");">
+                                        @reviewingItem.analysis_raw.EncodedByEmq
+                                    </span>
+                                </li>
+                            }
                         </ul>
 
                         @if (true)

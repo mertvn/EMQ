@@ -651,7 +651,7 @@ public class EntryPoints_Encoding
 
                             await fs.DisposeAsync();
                             (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal, false);
+                                extractedOutputFinal, false, null);
                             if (rqId > 0)
                             {
                                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
@@ -719,7 +719,7 @@ public class EntryPoints_Encoding
 
                             await fs.DisposeAsync();
                             (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal, false);
+                                extractedOutputFinal, false, null);
                             if (rqId > 0)
                             {
                                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
@@ -788,7 +788,7 @@ public class EntryPoints_Encoding
 
                             await fs.DisposeAsync();
                             (_, int rqId) = await ServerUtils.ImportSongLinkInner(mId, songLinkExtracted,
-                                extractedOutputFinal, false);
+                                extractedOutputFinal, false, null);
                             if (rqId > 0)
                             {
                                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
