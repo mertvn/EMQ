@@ -213,6 +213,45 @@ public static class MediaAnalyser
                 Console.WriteLine(e);
             }
 
+            try
+            {
+                // idk if this is good
+                // https://sound.stackexchange.com/questions/52819/how-to-use-ffmpeg-to-detect-clipping
+                var process = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "ffmpeg",
+                        Arguments = $"-i \"{filePath}\" -map a:0 -af aeval='if(gte(abs(val(ch)),0.9999),print(n))' -f null -",
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    }
+                };
+
+                process.Start();
+                string err = await process.StandardError.ReadToEndAsync();
+                if (err.Any())
+                {
+                    // Console.WriteLine(err);
+                    string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+                    if (lines.Any(x => x.Contains(".000000")))
+                    {
+                        result.Warnings.Add(MediaAnalyserWarningKind.Clipping);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(await process.StandardOutput.ReadToEndAsync());
+                    throw new Exception("failed to detect clipping");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
             if (!string.IsNullOrEmpty(guid))
             {
                 try

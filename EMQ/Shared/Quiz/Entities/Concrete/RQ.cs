@@ -49,6 +49,7 @@ public enum MediaAnalyserWarningKind
     FakeVideo,
     WrongExtension,
     OverallBitrateTooHigh,
+    Clipping,
 }
 
 public class MediaAnalyserResult

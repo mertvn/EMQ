@@ -46,7 +46,8 @@
 
             @if (reviewingItem != null && !string.IsNullOrEmpty(reviewingItem.analysis) && reviewingItem.analysis != Constants.AnalysisOkStr)
             {
-                <span>Analysis: @reviewingItem.analysis</span>
+                <br/>
+                <span style="color: red;">Analysis: @reviewingItem.analysis</span>
             }
 
             <br/>
