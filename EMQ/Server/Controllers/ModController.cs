@@ -23,7 +23,6 @@ using Npgsql;
 
 namespace EMQ.Server.Controllers;
 
-[CustomAuthorize(PermissionKind.Moderator)]
 [ApiController]
 [Route("[controller]")]
 public class ModController : ControllerBase
@@ -106,7 +105,7 @@ public class ModController : ControllerBase
         return Ok();
     }
 
-    [CustomAuthorize(PermissionKind.ReviewSongLink)] // todo perm
+    [CustomAuthorize(PermissionKind.ReviewEdit)]
     [HttpPost]
     [Route("UpdateEditQueueItem")]
     public async Task<ActionResult> UpdateEditQueueItem([FromBody] ReqUpdateReviewQueueItem req)

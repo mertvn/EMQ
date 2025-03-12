@@ -1,4 +1,4 @@
-﻿@using Microsoft.Extensions.Logging
+@using Microsoft.Extensions.Logging
 @using EMQ.Shared.Core.UI
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
@@ -15,7 +15,7 @@
 @inject IJSRuntime _jsRuntime
 
 @{
-    bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink);
+    bool isEditMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit);
 }
 
 @if (IsLibraryPage)
@@ -114,7 +114,7 @@
                     }
                 </div>
 
-                @if (isReviewModerator && IsLibraryPage)
+                @if (isEditMod && IsLibraryPage)
                 {
                     <textarea id="note_mod"
                          rows="1" cols="35" maxlength="780" placeholder="Notes" disabled="@isReadonly"
@@ -139,7 +139,7 @@
                     }
                 }
 
-                @if (isReviewModerator)
+                @if (isEditMod)
                 {
                     <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
                 }

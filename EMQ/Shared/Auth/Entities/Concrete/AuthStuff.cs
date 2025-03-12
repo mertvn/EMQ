@@ -164,6 +164,7 @@ public enum PermissionKind
 
     ReviewSongLink = 6001,
     DeleteSongLink = 6002,
+    ReviewEdit = 6003,
 
     Delete = 7001,
 

@@ -327,7 +327,7 @@ public class LibraryController : ControllerBase
         }
 
         var eq = await DbManager.FindEQ(id);
-        if (AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) ||
+        if (AuthStuff.HasPermission(session, PermissionKind.ReviewEdit) ||
             string.Equals(eq.submitted_by, session.Player.Username, StringComparison.InvariantCultureIgnoreCase))
         {
             if (eq.status == ReviewQueueStatus.Pending)
