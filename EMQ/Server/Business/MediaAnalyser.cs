@@ -528,6 +528,7 @@ public static class MediaAnalyser
             volumeAdjust += targetVolumeMax - maxVolume;
         }
 
+        volumeAdjust -= 0.1f;
         Console.WriteLine($"volumeAdjust: {volumeAdjust}");
         return volumeAdjust;
     }
