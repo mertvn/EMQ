@@ -311,25 +311,14 @@ public static class ServerUtils
             new List<Song> { new() { Artists = new List<SongArtist> { new() { Id = aId2 } } } },
             false)).Single().Value.Single().Value;
 
-        bool a1HasVndb = a1.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
-        bool a2HasVndb = a2.Links.FirstOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff) is not null;
-        if (!a1HasVndb && !a2HasVndb)
-        {
-            throw new Exception("neither artist has a vndb link");
-        }
-
-        if (a1HasVndb && a2HasVndb)
-        {
-            throw new Exception("both artists have vndb links");
-        }
-
         if (a1.Id == a2.Id)
         {
             throw new Exception("Selfcest is once again not allowed.");
         }
 
-        var source = a1HasVndb ? a2 : a1;
-        var target = a1HasVndb ? a1 : a2;
+        // merge into lower id
+        var source = a1.Id < a2.Id ? a2 : a1;
+        var target = a1.Id < a2.Id ? a1 : a2;
         return await MergeArtists_Inner(source, target, transaction);
     }
 
@@ -353,6 +342,8 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
             Console.WriteLine("failed to delete am");
         }
 
+        await connection.ExecuteScalarAsync<int>("update artist_alias set is_main_name = false where artist_id = @sAid",
+            new { sAid = source.Id }, transaction);
         foreach (Title sourceTitle in source.Titles)
         {
             int existingAaId =
