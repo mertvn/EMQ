@@ -237,7 +237,7 @@ public static class MediaAnalyser
                 {
                     // Console.WriteLine(err);
                     string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-                    if (lines.Any(x => x.Contains("7878787.000000")))
+                    if (lines.Count(x => x.Contains("7878787.000000")) > 2)
                     {
                         result.Warnings.Add(MediaAnalyserWarningKind.Clipping);
                     }
