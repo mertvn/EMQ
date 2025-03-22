@@ -315,6 +315,7 @@ public class ModController : ControllerBase
         }
 
         bool success = await DbManager.DeleteArtistAlias(req.Id, req.Titles.Single().ArtistAliasId);
+        Console.WriteLine($"{session.Player.Username} DeleteArtistAlias {JsonSerializer.Serialize(req, Utils.Jso)}");
         return success ? Ok() : StatusCode(500);
     }
 }
