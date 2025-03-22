@@ -100,7 +100,7 @@ public class AuthController : ControllerBase
                 if (existingSession != null)
                 {
                     // todo db (if necessary in the future)
-                    ServerState.RemoveSession(existingSession, "CreateSession");
+                    await ServerState.RemoveSession(existingSession, "CreateSession");
                 }
             }
             else
@@ -129,7 +129,7 @@ public class AuthController : ControllerBase
                     if (existingSession != null)
                     {
                         // todo db (if necessary in the future)
-                        ServerState.RemoveSession(existingSession, "CreateSession");
+                        await ServerState.RemoveSession(existingSession, "CreateSession");
                     }
                 }
                 else
@@ -189,7 +189,7 @@ public class AuthController : ControllerBase
             await DbManager_Auth.DeleteEntity_Auth(secret);
         }
 
-        ServerState.RemoveSession(session, "RemoveSession");
+        await ServerState.RemoveSession(session, "RemoveSession");
     }
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]

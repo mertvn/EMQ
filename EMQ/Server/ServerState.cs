@@ -141,22 +141,17 @@ public static class ServerState
         }
     }
 
-    public static void RemoveSession(Session session, string source)
+    public static async Task RemoveSession(Session session, string source)
     {
         Console.WriteLine($"Removing session for p{session.Player.Id} {session.Player.Username}. Source: {source}");
+        Room? oldRoomPlayer;
         lock (s_serverStateLock)
         {
-            var oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+            oldRoomPlayer = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
             var oldRoomSpec = ServerState.Rooms.SingleOrDefault(x => x.Spectators.Any(y => y.Id == session.Player.Id));
             if (oldRoomPlayer is not null)
             {
                 oldRoomPlayer.RemovePlayer(session.Player);
-                oldRoomPlayer.Log($"{session.Player.Username} left the room.", -1, true);
-
-                if (!oldRoomPlayer.Players.Any())
-                {
-                    ServerState.RemoveRoom(oldRoomPlayer, "RemoveSession");
-                }
             }
             else if (oldRoomSpec is not null)
             {
@@ -180,6 +175,11 @@ public static class ServerState
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 // throw new Exception();
             }
+        }
+
+        if (oldRoomPlayer != null)
+        {
+            await OnPlayerLeaving(oldRoomPlayer, session.Player);
         }
     }
 
@@ -233,6 +233,46 @@ public static class ServerState
                 Console.WriteLine("concurrency warning (session2)");
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 // throw new Exception();
+            }
+        }
+    }
+
+    public static async Task OnPlayerLeaving(Room room, Player player)
+    {
+        room.Log($"{player.Username} left the room.", player.Id, true);
+        if (room.Quiz != null && room.Quiz.QuizState.QuizStatus is not QuizStatus.Ended or QuizStatus.Canceled)
+        {
+            if (room.QuizSettings.GamemodeKind is GamemodeKind.NGMC or GamemodeKind.EruMode)
+            {
+                var quizManager = QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                if (quizManager != null)
+                {
+                    room.Log("This gamemode cannot continue if a player leaves.", -1, true);
+                    await quizManager.EndQuiz();
+                }
+            }
+        }
+
+        if (!room.Players.Any(x => !x.IsBot))
+        {
+            if (room.Quiz != null)
+            {
+                var quizManager = QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
+                if (quizManager != null)
+                {
+                    await quizManager.EndQuiz();
+                }
+            }
+
+            RemoveRoom(room, "OnPlayerLeaving");
+        }
+        else
+        {
+            if (room.Owner.Id == player.Id)
+            {
+                var newOwner = room.Players.First(x => !x.IsBot);
+                room.Owner = newOwner;
+                room.Log($"{newOwner.Username} is the new owner.", -1, true);
             }
         }
     }

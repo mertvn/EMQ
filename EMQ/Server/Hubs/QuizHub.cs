@@ -137,45 +137,7 @@ public class QuizHub : Hub
                 if (player != null)
                 {
                     room.RemovePlayer(player);
-                    room.Log($"{player.Username} left the room.", player.Id, true);
-
-                    if (room.Quiz != null &&
-                        room.Quiz.QuizState.QuizStatus is not QuizStatus.Ended or QuizStatus.Canceled)
-                    {
-                        if (room.QuizSettings.GamemodeKind is GamemodeKind.NGMC or GamemodeKind.EruMode)
-                        {
-                            var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                            if (quizManager != null)
-                            {
-                                room.Log("This gamemode cannot continue if a player leaves.", -1, true);
-                                await quizManager.EndQuiz();
-                            }
-                        }
-                    }
-
-                    if (!room.Players.Any(x => !x.IsBot))
-                    {
-                        if (room.Quiz != null)
-                        {
-                            var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
-                            if (quizManager != null)
-                            {
-                                await quizManager.EndQuiz();
-                            }
-                        }
-
-                        ServerState.RemoveRoom(room, "SendPlayerLeaving");
-                        return;
-                    }
-                    else
-                    {
-                        if (room.Owner.Id == player.Id)
-                        {
-                            var newOwner = room.Players.First(x => !x.IsBot);
-                            room.Owner = newOwner;
-                            room.Log($"{newOwner.Username} is the new owner.", -1, true);
-                        }
-                    }
+                    await ServerState.OnPlayerLeaving(room, player);
                 }
                 else
                 {

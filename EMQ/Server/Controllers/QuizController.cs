@@ -246,21 +246,7 @@ public class QuizController : ControllerBase
             {
                 _logger.LogInformation($"Removed player {player.Id} from room " + oldRoomPlayer.Id);
                 oldRoomPlayer.RemovePlayer(player);
-                oldRoomPlayer.Log($"{player.Username} left the room.", -1, true);
-
-                if (!oldRoomPlayer.Players.Any())
-                {
-                    ServerState.RemoveRoom(oldRoomPlayer, "JoinRoom");
-                }
-                else
-                {
-                    if (oldRoomPlayer.Owner.Id == player.Id)
-                    {
-                        var newOwner = oldRoomPlayer.Players.First();
-                        oldRoomPlayer.Owner = newOwner;
-                        oldRoomPlayer.Log($"{newOwner.Username} is the new owner.", -1, true);
-                    }
-                }
+                await ServerState.OnPlayerLeaving(oldRoomPlayer, player);
             }
             else if (oldRoomSpec is not null)
             {

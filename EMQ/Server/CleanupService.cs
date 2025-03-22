@@ -25,11 +25,11 @@ public sealed class CleanupService : BackgroundService
         var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            DoWork();
+            await DoWork();
         }
     }
 
-    private static void DoWork()
+    private static async Task DoWork()
     {
         // _logger.LogInformation("CleanupService is working. Count: {Count}", count);
         foreach (Room room in ServerState.Rooms)
@@ -69,19 +69,7 @@ public sealed class CleanupService : BackgroundService
                     else
                     {
                         room.RemovePlayer(inactiveSession.Player);
-                        if (!room.Players.Any(x => !x.IsBot))
-                        {
-                            ServerState.RemoveRoom(room, "CleanupService2");
-                        }
-                        else
-                        {
-                            if (room.Owner.Id == inactiveSession.Player.Id)
-                            {
-                                var newOwner = room.Players.First(x => !x.IsBot);
-                                room.Owner = newOwner;
-                                room.Log($"{newOwner.Username} is the new owner.", -1, true);
-                            }
-                        }
+                        await ServerState.OnPlayerLeaving(room, inactiveSession.Player);
                     }
                 }
                 // todo make players spectators if they are connected but AFK
@@ -116,7 +104,7 @@ public sealed class CleanupService : BackgroundService
             {
                 Console.WriteLine(
                     $"Evicting inactive session from memory p{session.Player.Id} {session.Player.Username}");
-                ServerState.RemoveSession(session, "CleanupService3");
+                await ServerState.RemoveSession(session, "CleanupService3");
             }
         }
     }
