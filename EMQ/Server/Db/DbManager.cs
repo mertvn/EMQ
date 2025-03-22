@@ -1653,7 +1653,7 @@ GROUP BY artist_id";
         int newAaId = await connection.ExecuteScalarAsync<int>(
             "select id from artist_alias where artist_id = @aId AND is_main_name",
             new { aId }, transaction);
-        if (newAaId > 0)
+        if (newAaId > 0 && newAaId != aaId)
         {
             await connection.ExecuteAsync(
                 "UPDATE artist_music am SET artist_alias_id = @newAaId where artist_alias_id = @aaId",
