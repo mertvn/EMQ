@@ -56,7 +56,7 @@
 
             <details open>
                 <summary>Included permissions</summary>
-                <div>
+                <div style="columns: 4">
                     @foreach (var key in Enum.GetValues<PermissionKind>())
                     {
                         if (key is not PermissionKind.None)
@@ -76,7 +76,7 @@
 
             <details open>
                 <summary>Excluded permissions</summary>
-                <div>
+                <div style="columns: 4">
                     @foreach (var key in Enum.GetValues<PermissionKind>())
                     {
                         if (key is not PermissionKind.None)
