@@ -297,4 +297,24 @@ public class ModController : ControllerBase
         await transactionAuth.CommitAsync();
         return Ok();
     }
+
+    [CustomAuthorize(PermissionKind.ReviewEdit)]
+    [HttpPost]
+    [Route("DeleteArtistAlias")]
+    public async Task<ActionResult> DeleteArtistAlias(SongArtist req)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        bool success = await DbManager.DeleteArtistAlias(req.Id, req.Titles.Single().ArtistAliasId);
+        return success ? Ok() : StatusCode(500);
+    }
 }

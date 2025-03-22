@@ -9,6 +9,7 @@
 @using EMQ.Shared.MusicBrainz.Business
 @using EMQ.Shared.VNDB.Business
 @inject HttpClient _client
+@inject IJSRuntime _jsRuntime
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
     @if (IsNew)
@@ -28,7 +29,7 @@
             <summary>Guidelines for editing artists</summary>
             <ul>
                 <li>Follow VNDB's guidelines on name order and romanization.</li>
-                <li>Deleting aliases is currently not supported.</li>
+                <li>Ask a mod if you want to delete an existing alias.</li>
             </ul>
             <br/>
         </details>
@@ -67,6 +68,12 @@
                     int indexCopy = index;
                     <div style="border: 1px black solid; padding: 10px;">
                         <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))">🗑</span>
+                        @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit))
+                        {
+                            <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeleteAAFromDb(Artist.Id, alias.ArtistAliasId); })">
+                                Delete artist alias from the database
+                            </button>
+                        }
                         <br/>
 
                         <label style="padding: 4px;">
@@ -628,4 +635,25 @@
         Artist = artist;
     }
 
+    private async Task Onclick_DeleteAAFromDb(int aId, int aaId)
+    {
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
+            "Songs linked to this alias will be transferred over to the primary alias. This action is IRREVERSIBLE. Are you sure you want to delete this alias?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var req = new SongArtist() { Id = aId, Titles = new List<Title>() { new() { ArtistAliasId = aaId } } };
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/DeleteArtistAlias", req);
+        if (res.IsSuccessStatusCode)
+        {
+            Artist.Titles.RemoveAll(x => x.ArtistAliasId == aaId);
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
 }

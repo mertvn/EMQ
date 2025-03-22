@@ -2696,4 +2696,23 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             await Task.Delay(TimeSpan.FromSeconds(10));
         }
     }
+
+    [Test, Explicit]
+    public async Task ListArtistAliasesThatDifferOnlyInIsMainAliasFlag()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var aas = (await connection.GetListAsync<ArtistAlias>()).ToArray();
+        foreach (ArtistAlias aa in aas)
+        {
+            var dup = aas.Where(x =>
+                x.artist_id == aa.artist_id &&
+                x.latin_alias == aa.latin_alias &&
+                x.non_latin_alias == aa.non_latin_alias).ToList();
+            if (dup.Count > 1)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(dup, Utils.JsoIndented));
+                Console.WriteLine("-------------------------------------------------------");
+            }
+        }
+    }
 }

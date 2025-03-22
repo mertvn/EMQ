@@ -1610,6 +1610,7 @@ GROUP BY artist_id";
             }
 
             // todo delete aliases that exist in the db but not in the argument -- might be easier to use UpsertList
+            // actually don't because we will have erroneous deletes when editing
             aaIds.Add(aaId);
         }
 
@@ -1641,6 +1642,30 @@ GROUP BY artist_id";
 
         Console.WriteLine($"Inserted aId {aId} aaIds {string.Join(",", aaIds)}");
         return (aId, aaIds);
+    }
+
+    public static async Task<bool> DeleteArtistAlias(int aId, int aaId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        int newAaId = await connection.ExecuteScalarAsync<int>(
+            "select id from artist_alias where artist_id = @aId AND is_main_name",
+            new { aId }, transaction);
+        if (newAaId > 0)
+        {
+            await connection.ExecuteAsync(
+                "UPDATE artist_music am SET artist_alias_id = @newAaId where artist_alias_id = @aaId",
+                new { aaId, newAaId }, transaction);
+            if (await connection.DeleteAsync(new ArtistAlias() { id = aaId }, transaction))
+            {
+                await transaction.CommitAsync();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // todo take QuizSettings as a required param instead of all this crap
