@@ -3969,7 +3969,7 @@ and not user_id = any(@ign)
 GROUP BY music_id
 HAVING count(*) >= 3
 ORDER BY avg(vote) DESC
-LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
+LIMIT 34", new { validMids, ign = IgnoredMusicVotes }));
 
             var mvCount = (await connection.QueryAsync<int>(
                 @"SELECT music_id FROM music_vote mv
@@ -3977,7 +3977,7 @@ WHERE music_id = ANY(@validMids)
 and not user_id = any(@ign)
 GROUP BY music_id
 ORDER BY count(*) DESC
-LIMIT 25", new { validMids, ign = IgnoredMusicVotes }));
+LIMIT 34", new { validMids, ign = IgnoredMusicVotes }));
 
             var highlyRatedSongs = (await SelectSongsMIds(mvAvg.ToArray(), false))
                 .OrderByDescending(x => x.VoteAverage).ThenByDescending(x => x.VoteCount).ToArray();
