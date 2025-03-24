@@ -7,6 +7,7 @@
 @using EMQ.Shared.Core.UI
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
+@inject NavigationManager _navigation
 
 <GenericModal @ref="@_shSongStatsModalRef"
               Title="@(Song?.Id > 0 ? Song.ToStringLatin() : "")"
@@ -84,29 +85,6 @@
     }
 
     <div class="songInfoCard card">
-        <span class="songInfoCardDataSourceKind"
-              style="position: absolute; right: 10px; bottom: 5px;"
-              title="Data source">
-            @if (true)
-            {
-                string src = Song.DataSource switch
-                {
-                    DataSourceKind.VNDB => "assets/favicon/vndb.ico",
-                    DataSourceKind.MusicBrainz => "assets/favicon/musicbrainz.png",
-                    DataSourceKind.EMQ => "favicon.ico",
-                    // _ => "assets/question-circle.svg"
-                    _ => ""
-                    };
-
-                @if (!string.IsNullOrEmpty(src))
-                {
-                    <img width="16px" height="16px"
-                         src="@src" alt="Data source"
-                         style="margin-left: 8px; scale: 1.2;">
-                }
-            }
-        </span>
-
         @if (ClientState.Session != null && Song.Id > 0 && Song.Links.Any(x => x.IsFileLink))
         {
             <span class="songInfoCardReportButton link-danger"
@@ -116,21 +94,10 @@
             </span>
         }
 
-        <div class="songInfoCardBody card-body">
+        <div class="songInfoCardBody card-body" style="padding-bottom: 0;">
             <div class="songInfo">
                 @if (isDebugMode)
                 {
-                    @if (Song.Id > 0)
-                    {
-                        @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Delete))
-                        {
-                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
-                            <br/>
-                        }
-
-                        <span> @Song.Id </span>
-                    }
-
                     @if (Song.MusicBrainzRecordingGid != null)
                     {
                         <br/>
@@ -425,6 +392,46 @@
             }
             </div>
 
+        </div>
+
+        <div class="songInfoCard bottom" style="display: flex; justify-content: space-between; margin: 0 10px 4px 6px;">
+            <span class="songInfoCardMusicId"
+                  style="cursor: pointer;"
+                  title="Id (click to copy share link)">
+                @if (Song.Id > 0)
+                {
+                    string link = $"{_navigation.BaseUri}LibraryPage?mId={Song.Id}";
+                    <span @onclick="@(async () => await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", link))">
+                        @Song.Id
+                    </span>
+                    @if (isDebugMode && ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Delete))
+                    {
+                        <span style="display: inline-block; cursor: pointer; margin-left: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
+                    }
+                }
+            </span>
+
+            <span class="songInfoCardDataSourceKind"
+                  title="Data source">
+                @if (true)
+                {
+                    string src = Song.DataSource switch
+                    {
+                        DataSourceKind.VNDB => "assets/favicon/vndb.ico",
+                        DataSourceKind.MusicBrainz => "assets/favicon/musicbrainz.png",
+                        DataSourceKind.EMQ => "favicon.ico",
+                        // _ => "assets/question-circle.svg"
+                        _ => ""
+                        };
+
+                    @if (!string.IsNullOrEmpty(src))
+                    {
+                        <img width="16px" height="16px"
+                             src="@src" alt="Data source"
+                             style="margin-left: 8px; scale: 1.2;">
+                    }
+                }
+            </span>
         </div>
     </div>
 }

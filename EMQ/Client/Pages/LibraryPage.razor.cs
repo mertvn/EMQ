@@ -58,6 +58,9 @@ public partial class LibraryPage
 
     private QuizSettingsComponent? _quizSettingsComponent;
 
+    [SupplyParameterFromQuery(Name = "mId")]
+    private int QueryMId { get; set; }
+
     private async Task StateHasChangedAsync()
     {
         if (_scheduledRenderTcs == null)
@@ -79,6 +82,11 @@ public partial class LibraryPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        if (QueryMId > 0)
+        {
+            selectedMusicSourceTitle = QueryMId.ToString();
+            await SelectedResultChangedMst();
+        }
     }
 
     public async Task SelectedResultChangedMst()
