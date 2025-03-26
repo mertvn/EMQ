@@ -735,7 +735,17 @@ public partial class QuizPage
                 }
 
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
+                if (Room?.QuizSettings.GamemodeKind == GamemodeKind.Radio && _correctAnswer != null)
+                {
+                    PageState.ProgressDivisor = (float)SongLink
+                        .GetShortestLink(_correctAnswer.Links, Room.QuizSettings.Filters.IsPreferLongLinks).Duration
+                        .TotalMilliseconds;
+                }
+                else
+                {
+                    PageState.ProgressDivisor = Room!.QuizSettings.ResultsMs;
+                }
+
                 PageState.VideoPlayerVisibility = true;
                 StateHasChanged();
 
@@ -750,7 +760,8 @@ public partial class QuizPage
                     // todo request
                 }
 
-                if (ClientState.Preferences.AutoSkipResultsPhase)
+                if (ClientState.Preferences.AutoSkipResultsPhase ||
+                    Room?.QuizSettings.GamemodeKind == GamemodeKind.Radio)
                 {
                     await SendToggleSkip();
                 }
