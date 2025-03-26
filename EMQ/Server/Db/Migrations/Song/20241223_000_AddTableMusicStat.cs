@@ -22,7 +22,7 @@ public class AddTableMusicStat : Migration
     stat_played               bigint  default 0 not null,
     stat_guessed              bigint  default 0 not null,
     stat_totalguessms         bigint  default 0 not null,
-    stat_correctpercentage    real generated always as ((((1.0 * (stat_correct)::numeric) / (COALESCE(NULLIF(stat_played, 0), (1)::bigint))::numeric) * (100)::numeric)) stored,
+    stat_correctpercentage    NUMERIC(5,2) generated always as ((1.0 * stat_correct / COALESCE(NULLIF(stat_played, 0), 1)) * 100) stored,
     stat_averageguessms       integer generated always as ((stat_totalguessms / COALESCE(NULLIF(stat_guessed, 0), (1)::bigint))) stored,
     stat_uniqueusers          integer default 0 not null,
     constraint ""PK_music_stat""
