@@ -95,6 +95,10 @@
                         <label for="IsNoSoundMode">No sound mode</label>
                         <br/>
 
+                        <InputCheckbox id="IsPreferLongLinks" class="form-check-input" @bind-Value="ClientQuizSettings.Filters.IsPreferLongLinks" style="margin: 5px"/>
+                        <label for="IsPreferLongLinks">Prefer long links</label>
+                        <br/>
+
                         <InputSelect id="SongSelectionKind" @bind-Value="ClientQuizSettings.SongSelectionKind" style="margin: 5px">
                             @foreach (SongSelectionKind songSelectionKind in Enum.GetValues<SongSelectionKind>())
                             {

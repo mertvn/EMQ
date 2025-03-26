@@ -166,7 +166,8 @@ public class QuizManager
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio && Quiz.QuizState.sp >= 0)
         {
             Quiz.QuizState.RemainingMs = (float)((PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
-                                                      .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp].Links).Duration
+                                                      .GetShortestLink(Quiz.Songs[Quiz.QuizState.sp].Links,
+                                                          Quiz.Room.QuizSettings.Filters.IsPreferLongLinks).Duration
                                                       .TotalMilliseconds) -
                                                   DateTime.UtcNow).TotalMilliseconds +
                                                  TimeSpan.FromSeconds(3).TotalMilliseconds);
@@ -2482,7 +2483,7 @@ public class QuizManager
 
         foreach (Song dbSong in dbSongs)
         {
-            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links, Quiz.Room.QuizSettings.Filters.IsPreferLongLinks);
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
@@ -2827,7 +2828,7 @@ public class QuizManager
 
         foreach (Song dbSong in dbSongs)
         {
-            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links);
+            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links, Quiz.Room.QuizSettings.Filters.IsPreferLongLinks);
 
             // todo merge this with ValidSourcesForLooting and get rid of this
             var currentSongSourceVndbUrls = dbSong.Sources

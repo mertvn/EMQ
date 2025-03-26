@@ -178,6 +178,11 @@ public class QuizFilters
             { SongType.Cover, LabelKind.Maybe },
         };
 
+    [ProtoMember(28)]
+    [Required]
+    [DefaultValue(false)]
+    public bool IsPreferLongLinks { get; set; } = false;
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

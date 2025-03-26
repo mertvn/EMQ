@@ -25,7 +25,8 @@ public class QuizSettings
         !Filters.CategoryFilters.Any() &&
         !Filters.ArtistFilters.Any() &&
         !Filters.VndbAdvsearchFilter.Any() &&
-        !Filters.OnlyOwnUploads;
+        !Filters.OnlyOwnUploads &&
+        !Filters.IsPreferLongLinks;
 
     // todo 1v1s?
     public bool IsSharedGuessesTeams =>
@@ -701,6 +702,11 @@ public class QuizSettings
                 .Select(y => y.Key.GetDescription());
 
             diff.Add($"MC options: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+        }
+
+        if (o.Filters.IsPreferLongLinks != n.Filters.IsPreferLongLinks)
+        {
+            diff.Add($"Prefer long links: {o.Filters.IsPreferLongLinks} → {n.Filters.IsPreferLongLinks}");
         }
 
         return diff;

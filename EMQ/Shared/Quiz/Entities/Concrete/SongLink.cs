@@ -31,7 +31,7 @@ public class SongLink
 
     public override string ToString() => Url;
 
-    public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks)
+    public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks, bool preferLong)
     {
         IEnumerable<SongLink> enumerable = songLinks.ToArray();
         if (!enumerable.Any())
@@ -39,25 +39,36 @@ public class SongLink
             return new SongLink();
         }
 
-        return enumerable.Where(x => x.IsFileLink).OrderBy(x => x.Duration).First();
+        return preferLong
+            ? enumerable.Where(x => x.IsFileLink).OrderByDescending(x => x.Duration).First()
+            : enumerable.Where(x => x.IsFileLink).OrderBy(x => x.Duration).First();
     }
 
     // todo: write tests for this
-    public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks)
+    public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks, bool preferLong = false)
     {
         var res = new List<SongLink>();
-
         var links = dbSongLinks.Where(x => x.IsFileLink).ToList();
-        var shortestVideoLink = links.OrderBy(x => x.Duration).FirstOrDefault(x => x.IsVideo);
-        var shortestSoundLink = links.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
+
+        SongLink? targetVideoLink;
+        SongLink? targetSoundLink;
+        if (preferLong)
+        {
+            targetVideoLink = links.OrderByDescending(x => x.Duration).FirstOrDefault(x => x.IsVideo);
+            targetSoundLink = links.OrderByDescending(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
+        }
+        else
+        {
+            targetVideoLink = links.OrderBy(x => x.Duration).FirstOrDefault(x => x.IsVideo);
+            targetSoundLink = links.OrderBy(x => x.Duration).FirstOrDefault(x => !x.IsVideo);
+        }
 
         var allValidVideoLinks = new List<SongLink>();
         var allValidSoundLinks = new List<SongLink>();
         foreach (SongLink songLink in links.Where(x => x.IsVideo))
         {
             bool sameDuration =
-                Math.Abs(shortestVideoLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
-
+                Math.Abs(targetVideoLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
             if (sameDuration)
             {
                 allValidVideoLinks.Add(songLink);
@@ -67,21 +78,19 @@ public class SongLink
         foreach (SongLink songLink in links.Where(x => !x.IsVideo))
         {
             bool sameDuration =
-                Math.Abs(shortestSoundLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
-
+                Math.Abs(targetSoundLink!.Duration.TotalMilliseconds - songLink.Duration.TotalMilliseconds) < 500;
             if (sameDuration)
             {
                 allValidSoundLinks.Add(songLink);
             }
         }
 
-        if (shortestVideoLink != null && shortestSoundLink != null)
+        if (targetVideoLink != null && targetSoundLink != null)
         {
             bool sameDuration =
                 Math.Abs(
-                    shortestVideoLink.Duration.TotalSeconds - shortestSoundLink.Duration.TotalSeconds) <
+                    targetVideoLink.Duration.TotalSeconds - targetSoundLink.Duration.TotalSeconds) <
                 Constants.LinkToleranceSeconds;
-
             if (sameDuration)
             {
                 res.AddRange(allValidVideoLinks);
@@ -89,11 +98,21 @@ public class SongLink
             }
             else
             {
-                List<SongLink> shortest =
-                    shortestVideoLink.Duration.TotalSeconds < shortestSoundLink.Duration.TotalSeconds
+                List<SongLink> targetLinks;
+                if (preferLong)
+                {
+                    targetLinks = targetVideoLink.Duration > targetSoundLink.Duration
                         ? allValidVideoLinks
                         : allValidSoundLinks;
-                res.AddRange(shortest);
+                }
+                else
+                {
+                    targetLinks = targetVideoLink.Duration < targetSoundLink.Duration
+                        ? allValidVideoLinks
+                        : allValidSoundLinks;
+                }
+
+                res.AddRange(targetLinks);
             }
         }
         else

@@ -326,7 +326,9 @@ public static class ExtensionMethods
 
     public static int DetermineSongStartTime(this Song song, QuizFilters? filters)
     {
-        int duration = (int)SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink)).Duration.TotalSeconds;
+        int duration = (int)SongLink
+            .GetShortestLink(song.Links.Where(x => x.IsFileLink), filters?.IsPreferLongLinks ?? false)
+            .Duration.TotalSeconds;
         int startTimeStart = 0;
         int startTimeEnd = duration;
         const int leeway = 40;
