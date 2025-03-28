@@ -136,6 +136,13 @@ public static class Api
             cancellationToken);
     }
 
+    public static async Task<List<ResPOST<ResPOST_character>>?> POST_character(ParamPOST_character param,
+        CancellationToken? cancellationToken = null)
+    {
+        return await POST_Generic<FieldPOST_character, ResPOST_character>(param, new Uri("character", UriKind.Relative),
+            cancellationToken);
+    }
+
     public static async Task<List<ResPOST<ResPOST_staff>>?> POST_staff(ParamPOST_staff param,
         CancellationToken? cancellationToken = null)
     {
