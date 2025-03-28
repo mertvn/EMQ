@@ -80,6 +80,8 @@ public static class ServerState
 
     public static CountdownInfo CountdownInfo { get; set; } = new();
 
+    public static readonly SemaphoreSlim SemaphoreHair = new(1);
+
     public static void RemoveRoom(Room room, string source)
     {
         Console.WriteLine($"Removing r{room.Id} {room.Name}. Source: {source}");

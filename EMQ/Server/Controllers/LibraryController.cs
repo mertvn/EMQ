@@ -404,68 +404,77 @@ public class LibraryController : ControllerBase
     public async Task<ResGetCharsWithSimilarHairColor[]> GetCharsWithSimilarHairColor(
         ReqGetCharsWithSimilarHairColor req)
     {
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
-        string? screenshot =
-            (await connection.QueryAsync<string?>("SELECT c.image from chars c where c.id = @id",
-                new { id = req.TargetId })).FirstOrDefault();
-        if (string.IsNullOrEmpty(screenshot))
+        await ServerState.SemaphoreHair.WaitAsync(TimeSpan.FromMinutes(5));
+        try
         {
-            return Array.Empty<ResGetCharsWithSimilarHairColor>();
-        }
-
-        (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-        byte[] targetImgBytes = await ServerUtils.Client.GetByteArrayAsync(
-            $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg".ReplaceSelfhostLink());
-        string targetImgPath = Path.GetTempFileName();
-        await System.IO.File.WriteAllBytesAsync(targetImgPath, targetImgBytes);
-
-        var process = new Process()
-        {
-            StartInfo = new ProcessStartInfo()
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+            string? screenshot =
+                (await connection.QueryAsync<string?>("SELECT c.image from chars c where c.id = @id",
+                    new { id = req.TargetId })).FirstOrDefault();
+            if (string.IsNullOrEmpty(screenshot))
             {
-                FileName = @"python",
-                Arguments = $"hair.py {targetImgPath} {req.TopN}",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WorkingDirectory = "hair",
+                return Array.Empty<ResGetCharsWithSimilarHairColor>();
             }
-        };
-        process.Start();
-        process.BeginErrorReadLine();
-        string err = await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        if (!err.Any())
-        {
-            return Array.Empty<ResGetCharsWithSimilarHairColor>();
-        }
 
-        // Console.WriteLine(err);
-        string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-        var matches = new List<string>();
-        foreach (string line in lines)
-        {
-            var match = RegexPatterns.HairRegex.Match(line);
-            if (match.Success)
-            {
-                matches.Add($"ch{match.Groups[2].Value}");
-            }
-        }
+            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+            byte[] targetImgBytes = await ServerUtils.Client.GetByteArrayAsync(
+                $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg".ReplaceSelfhostLink());
+            string targetImgPath = Path.GetTempFileName();
+            await System.IO.File.WriteAllBytesAsync(targetImgPath, targetImgBytes);
 
-        var res =
-            (await connection.QueryAsync<ResGetCharsWithSimilarHairColor>(
-                "SELECT c.id, c.name, c.latin, c.image from chars c where c.image = ANY(@matches)", new { matches }))
-            .Where(x => !req.ValidIds.Any() || req.ValidIds.Contains(x.Id)).Select(y =>
+            var process = new Process()
             {
-                (string modStr2, int number2) = Utils.ParseVndbScreenshotStr(y.Image);
-                return y with
+                StartInfo = new ProcessStartInfo()
                 {
-                    ImageUrl = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr2}/{number2}.jpg"
-                        .ReplaceSelfhostLink()
-                };
-            }).ToArray();
-        return res;
+                    FileName = @"python",
+                    Arguments = $"hair.py {targetImgPath} {req.TopN}",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = "hair",
+                }
+            };
+            process.Start();
+            process.BeginErrorReadLine();
+            string err = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            if (!err.Any())
+            {
+                return Array.Empty<ResGetCharsWithSimilarHairColor>();
+            }
+
+            // Console.WriteLine(err);
+            string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+            var matches = new List<string>();
+            foreach (string line in lines)
+            {
+                var match = RegexPatterns.HairRegex.Match(line);
+                if (match.Success)
+                {
+                    matches.Add($"ch{match.Groups[2].Value}");
+                }
+            }
+
+            var res =
+                (await connection.QueryAsync<ResGetCharsWithSimilarHairColor>(
+                    "SELECT c.id, c.name, c.latin, c.image from chars c where c.image = ANY(@matches)",
+                    new { matches }))
+                .Where(x => !req.ValidIds.Any() || req.ValidIds.Contains(x.Id)).Select(y =>
+                {
+                    (string modStr2, int number2) = Utils.ParseVndbScreenshotStr(y.Image);
+                    return y with
+                    {
+                        ImageUrl = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr2}/{number2}.jpg"
+                            .ReplaceSelfhostLink()
+                    };
+                }).ToArray();
+            return res;
+        }
+        finally
+        {
+            ServerState.SemaphoreHair.Release();
+        }
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
