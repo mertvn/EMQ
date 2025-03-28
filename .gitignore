@@ -368,3 +368,4 @@ RoomLog
 SongHistory
 **/wwwroot/autocomplete
 .env
+hair/

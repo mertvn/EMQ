@@ -27,6 +27,9 @@ public static class RegexPatterns
 
     public static readonly Regex EmojiRegex = new(@":(.+?):", RegexOptions.Compiled);
 
+    public static readonly Regex HairRegex =
+        new(@"([0-9]+)\. ([0-9]+)\.jpg \(Distance: (.+?)\)", RegexOptions.Compiled);
+
     public static readonly Dictionary<string, string> AutocompleteStringReplacements = new()
     {
         // only 1 appearance in the DB: Δ, κ, ν, ο, π, Σ, ψ, χ

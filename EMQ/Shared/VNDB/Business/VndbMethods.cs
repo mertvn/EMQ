@@ -105,6 +105,21 @@ public static class VndbMethods
         return res?.SelectMany(x => x.Results.Select(y => y.Id.ToVndbUrl())).Distinct().ToArray();
     }
 
+    public static async Task<string[]?> GetCharacterIdsMatchingAdvsearchStr(PlayerVndbInfo? vndbInfo,
+        string advsearchStr,
+        CancellationToken? cancellationToken = null)
+    {
+        var res = await Juliet.Api.POST_character(
+            new ParamPOST_character()
+            {
+                Fields = new List<FieldPOST_character>() { FieldPOST_character.Id },
+                RawFilters = advsearchStr,
+                APIToken = vndbInfo?.VndbApiToken
+            }, cancellationToken);
+
+        return res?.SelectMany(x => x.Results.Select(y => y.Id)).Distinct().ToArray();
+    }
+
     public static async Task<SongArtist?> GetStaff(string vndbId, CancellationToken? cancellationToken = null)
     {
         static IEnumerable<Title> MapAliases(IEnumerable<Aliases> aliases)

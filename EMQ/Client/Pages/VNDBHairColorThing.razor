@@ -1,0 +1,49 @@
+﻿@page "/VNDBHairColorThing"
+@using Microsoft.AspNetCore.Components
+@using EMQ.Shared.Core
+@inject HttpClient _client
+
+@* meme thing please ignore *@
+<h1>VNDBHairColorThing</h1>
+
+<p>Finds characters with similar hair color given a certain character. Image data was last updated on 2024-07-26, won't include new chars.</p>
+
+<div>
+    <label>
+        <input type="text" @bind="InputText"/>
+        VNDB Character Id or URL
+    </label>
+
+    <details>
+        <summary>VNDB search filter (optional)</summary>
+        <div>
+            <p>Enter either full VNDB search URL or just the f parameter. Only Character search is supported at the moment.</p>
+            <p>Example: "https://vndb.org/c?q=&ch=&f=03N483gja02d0O2d0X4b4wf-&s=a" or "03N483gja02d0O2d0X4b4wf-" </p>
+            <input @bind="VndbAdvsearchStr" type="text" name="VndbAdvsearchStr" style="margin: 5px; width: 700px;"/><br/>
+            <button type="button" id="ButtonFetchByVndbAdvsearch" class="btn btn-primary" style="margin: 5px" @onclick="OnclickButtonFetchByVndbAdvsearchStr" disabled="@(!IsReady)">
+                Apply filter
+            </button>
+        </div>
+    </details>
+
+    <span>Search space: @(ValidIds.Any() ? $"{ValidIds.Count}" : "~125k") characters</span>
+    <br/>
+    <button type="button" class="btn btn-primary" @onclick="Onclick_Search" disabled="@(!IsReady)">
+        Search
+    </button>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-evenly;">
+        @foreach (var result in Res)
+        {
+            (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(result.Name, result.Latin);
+            string href = $"https://vndb.org/{result.Id}";
+            <a href="@href" target="_blank" title="@nonLatinTitle"
+               style="background-image: url(@result.ImageUrl); height: 300px; max-width: 256px;
+                text-align: center; flex: 1 0 200px; background-repeat: no-repeat; background-size: cover; background-position: top;">
+                <span style="display: block; background-color: rgba(0,0,0,0.4); color: var(--bs-body-color);">
+                    @latinTitle
+                </span>
+            </a>
+        }
+    </div>
+</div>
