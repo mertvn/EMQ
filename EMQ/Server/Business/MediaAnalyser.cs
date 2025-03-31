@@ -354,6 +354,18 @@ public static class MediaAnalyser
         {
             (ss, to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken);
         }
+        else
+        {
+            if (uploadOptions.Ss != 0)
+            {
+                ss = uploadOptions.Ss.ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (uploadOptions.To != 0)
+            {
+                to = uploadOptions.To.ToString(CultureInfo.InvariantCulture);
+            }
+        }
 
         if (encodeAudioSeparately)
         {
@@ -471,6 +483,18 @@ public static class MediaAnalyser
         if (uploadOptions.ShouldCropSilence)
         {
             (ss, to) = await GetSsAndTo(filePath, cancellationToken);
+        }
+        else
+        {
+            if (uploadOptions.Ss != 0)
+            {
+                ss = uploadOptions.Ss.ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (uploadOptions.To != 0)
+            {
+                to = uploadOptions.To.ToString(CultureInfo.InvariantCulture);
+            }
         }
 
         var process = new Process()

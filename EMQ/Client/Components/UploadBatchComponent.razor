@@ -45,11 +45,15 @@ else
         2-pass encoding
     </label>
     <br/>
+
     <label>
         <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldCropSilence" style="margin: 5px"></InputCheckbox>
         Crop silence
     </label>
     <br/>
+
+    @* manual cropping is not available here on purpose *@
+
     <label>
         <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldAdjustVolume" style="margin: 5px"></InputCheckbox>
         Adjust volume

@@ -74,6 +74,11 @@ public class UploadController : ControllerBase
             return BadRequest("uploadOptions is null");
         }
 
+        if (uploadOptions.To != 0 && uploadOptions.To < uploadOptions.Ss)
+        {
+            return BadRequest("Start time cannot be greater than End time");
+        }
+
         if (song.Attributes.HasFlag(SongAttributes.Locked) &&
             !AuthStuff.HasPermission(session, PermissionKind.Moderator))
         {

@@ -94,6 +94,12 @@ public partial class UploadComponent
                 continue;
             }
 
+            if (UploadOptions.To != 0 && UploadOptions.To <= UploadOptions.Ss)
+            {
+                uploadResult.ErrorStr = "Start time cannot be greater than End time";
+                continue;
+            }
+
             string filename = WebUtility.HtmlEncode(file.Name);
             string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size};{filename}";
             ClientState.UploadResults[tempUploadId] = uploadResult;

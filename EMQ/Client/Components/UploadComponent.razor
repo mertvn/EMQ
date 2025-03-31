@@ -17,10 +17,24 @@
         2-pass encoding
     </label>
     <br/>
+
     <label>
         <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldCropSilence" style="margin: 5px"></InputCheckbox>
         Crop silence
     </label>
+
+    <label style="margin-left: 16px;">
+        <InputNumber @bind-Value="UploadOptions.Ss" style="margin: 5px; width: 100px;" disabled="@UploadOptions.ShouldCropSilence" min="0" max="1800"/>
+        Start time (seconds)
+    </label>
+    <br/>
+
+    <label style="margin-left: 16px;">
+        <InputNumber @bind-Value="UploadOptions.To" style="margin: 5px; width: 100px;" disabled="@UploadOptions.ShouldCropSilence" min="0" max="1800"/>
+        End time (seconds, leave as 0 for no cropping)
+    </label>
+    <br/>
+
     <br/>
     <label>
         <InputCheckbox class="form-check-input" @bind-Value="UploadOptions.ShouldAdjustVolume" style="margin: 5px"></InputCheckbox>
