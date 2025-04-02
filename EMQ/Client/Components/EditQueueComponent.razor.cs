@@ -35,6 +35,24 @@ public partial class EditQueueComponent
 
     public bool IsShowAutomatedEdits { get; set; } = true;
 
+    private string SubmittedByFilter { get; set; } = "";
+
+    private IQueryable<EditQueue>? FilteredEQs
+    {
+        get
+        {
+            SubmittedByFilter = SubmittedByFilter.Trim();
+            var result = CurrentEQs?.AsQueryable(); // deep-copy
+            if (!string.IsNullOrWhiteSpace(SubmittedByFilter))
+            {
+                result = result?.Where(x =>
+                    x.submitted_by.Contains(SubmittedByFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return result;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshEQs();
