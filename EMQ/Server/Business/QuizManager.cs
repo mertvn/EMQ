@@ -1420,13 +1420,6 @@ public class QuizManager
                     bool shouldAdd = true;
                     switch (guessKind)
                     {
-                        case GuessKind.Mt: // todo bgm autocomplete
-                            if (isBGM)
-                            {
-                                shouldAdd = false;
-                            }
-
-                            break;
                         case GuessKind.Rigger: // not much point tracking this
                             shouldAdd = false;
                             break;
@@ -1460,6 +1453,7 @@ public class QuizManager
                             break;
                         case GuessKind.Mst:
                         case GuessKind.A:
+                        case GuessKind.Mt:
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
