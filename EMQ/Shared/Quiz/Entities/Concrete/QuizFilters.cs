@@ -193,6 +193,11 @@ public class QuizFilters
 
     public bool ListReadKindFiltersHasUnread =>
         ListReadKindFilters.TryGetValue(ListReadKind.Unread, out var val) && val.Value > 0;
+
+    public bool CanHaveBGM =>
+        SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.BGM, out var b) && b.Value > 0 ||
+        (SongSourceSongTypeRandomEnabledSongTypes.TryGetValue(SongSourceSongType.BGM, out bool rb) && rb &&
+         SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out var r) && r.Value > 0);
 }
 
 public enum ListReadKind // todo? find a better name

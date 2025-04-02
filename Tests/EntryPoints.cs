@@ -64,7 +64,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateAutocompleteMtJson()
     {
-        await File.WriteAllTextAsync("mt.json", await DbManager.SelectAutocompleteMt());
+        await File.WriteAllTextAsync("mt.json", await DbManager.SelectAutocompleteMt(SongSourceSongTypeMode.Vocals));
     }
 
     [Test, Explicit]
@@ -1571,7 +1571,7 @@ WHERE s.lang = 'ja'"))
         var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
         Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-        string dumpFileName = "pgdump_2025-02-14_EMQ@erogemusicquiz.com.tar";
+        string dumpFileName = "pgdump_2025-04-02_EMQ@erogemusicquiz.com.tar";
         // dumpFileName = "pgdump_2024-02-19_vndbforemq@localhost.tar";
         var proc = new Process()
         {

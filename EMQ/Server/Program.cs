@@ -276,7 +276,7 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         var maxAge = TimeSpan.FromDays(30);
-        if (ctx.File.Name is "mst.json" or "c.json" or "a.json" or "mt.json" or "developer.json")
+        if (ctx.File.Name is "mst.json" or "c.json" or "a.json" or "mt.json" or "mt_all.json" or "developer.json")
         {
             maxAge = TimeSpan.FromHours(1);
         }

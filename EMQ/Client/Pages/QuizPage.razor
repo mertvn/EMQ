@@ -515,7 +515,8 @@ else
                                              Placeholder="Enter song title here"
                                              IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
-                                             @bind-Guess="@PageState.Guess.Dict[GuessKind.Mt]">
+                                             @bind-Guess="@PageState.Guess.Dict[GuessKind.Mt]"
+                                             UseBGM="Room.QuizSettings.Filters.CanHaveBGM">
                     </AutocompleteMtComponent>
                 }
 
@@ -549,7 +550,8 @@ else
                                              Placeholder="Enter song title here"
                                              IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                              IsQuizPage="true"
-                                             @bind-Guess="@PageState.Guess.Dict[GuessKind.Mt]">
+                                             @bind-Guess="@PageState.Guess.Dict[GuessKind.Mt]"
+                                             UseBGM="Room.QuizSettings.Filters.CanHaveBGM">
                     </AutocompleteMtComponent>
                 }
             }

@@ -153,16 +153,16 @@ ORDER BY music_id;";
     public static async Task RefreshAutocompleteFiles()
     {
         string autocompleteFolder = ServerState.AutocompleteFolder;
-        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
-            await DbManager.SelectAutocompleteMst());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/c.json",
-            await DbManager.SelectAutocompleteC());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/a.json",
-            await DbManager.SelectAutocompleteA());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json", await SelectAutocompleteMst());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/c.json", await SelectAutocompleteC());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/a.json", await SelectAutocompleteA());
+
         await File.WriteAllTextAsync($"{autocompleteFolder}/mt.json",
-            await DbManager.SelectAutocompleteMt());
-        await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json",
-            await DbManager.SelectAutocompleteDeveloper());
+            await SelectAutocompleteMt(SongSourceSongTypeMode.Vocals));
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mt_all.json",
+            await SelectAutocompleteMt(SongSourceSongTypeMode.All));
+
+        await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json", await SelectAutocompleteDeveloper());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
@@ -2504,7 +2504,7 @@ GROUP BY artist_id";
         }
     }
 
-    public static async Task<string> SelectAutocompleteMt()
+    public static async Task<string> SelectAutocompleteMt(SongSourceSongTypeMode ssstm)
     {
         const string sqlAutocompleteMt =
             @"SELECT DISTINCT music_id AS mId, mt.latin_title AS mtLatinTitle, '' AS mtLatinTitleNormalized
@@ -2520,7 +2520,7 @@ GROUP BY artist_id";
                 .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
 
             List<int> validMids = mids
-                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Where(x => x.Value.Any(y => ssstm.ToSongSourceSongTypes().Contains(y)))
                 .Select(z => z.Key)
                 .ToList();
 

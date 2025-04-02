@@ -52,11 +52,16 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
+    [Parameter]
+    public bool UseBGM { get; set; }
+
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt.json"))!;
+        AutocompleteData = UseBGM
+            ? (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt_all.json"))!
+            : (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt.json"))!;
     }
 
     public void CallStateHasChanged()
