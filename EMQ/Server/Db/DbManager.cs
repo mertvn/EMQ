@@ -4558,6 +4558,23 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
                     break;
                 }
+            case ScreenshotKind.VNCoverBlurredText:
+                {
+                    const string sql = "SELECT image from vn where id = @id";
+                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    {
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                            .Shuffle().FirstOrDefault();
+                        if (!string.IsNullOrEmpty(screenshot))
+                        {
+                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv_blurredtext/{modStr}/{number}.jpg"
+                                .ReplaceSelfhostLink();
+                        }
+                    }
+
+                    break;
+                }
             default:
                 throw new ArgumentOutOfRangeException(nameof(screenshotKind), screenshotKind, null);
         }

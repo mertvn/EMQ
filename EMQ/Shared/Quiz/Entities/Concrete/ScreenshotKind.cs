@@ -13,4 +13,7 @@ public enum ScreenshotKind
 
     [Description("VN (prefer explicit)")]
     VNPreferExplicit,
+
+    [Description("VN cover (blurred text)")]
+    VNCoverBlurredText,
 }
