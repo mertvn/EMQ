@@ -85,6 +85,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         Answered = false;
         StateHasChanged();
 
+        // todo? remove because it's unused
         if (raiseValueChanged)
         {
             await OnValueChanged.InvokeAsync(SelectedValue);
@@ -124,7 +125,6 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
                 }
             case "Enter":
             case "NumpadEnter":
-            // case "Tab":
                 {
                     await SelectValue();
                     break;
@@ -190,7 +190,6 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         }
     }
 
-    // todo investigate artist only showing mb names
     private void OnFocus(FocusEventArgs obj)
     {
         ShowDropdown = true;
