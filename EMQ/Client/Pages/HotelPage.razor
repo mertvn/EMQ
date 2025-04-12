@@ -66,10 +66,14 @@
                             int botCount = room.Players.Count(x => x.IsBot);
                         }
                         <p> Owner: @room.Owner.Username</p>
-                        <p> Players: @(room.Players.Count - botCount)</p>
+                        <p title="@(string.Join(", ", room.Players.Select(x => x.Username)))">
+                            Players: @(room.Players.Count - botCount)
+                        </p>
                         @if (room.Spectators.Count > 0)
                         {
-                            <p> Spectators: @(room.Spectators.Count)</p>
+                            <p title="@(string.Join(", ", room.Spectators.Select(x => x.Username)))">
+                                Spectators: @(room.Spectators.Count)
+                            </p>
                         }
 
                         @if (botCount > 0)

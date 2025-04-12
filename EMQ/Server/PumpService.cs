@@ -31,12 +31,12 @@ public sealed class PumpService : BackgroundService
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            DoWork();
+            DoWork(stoppingToken);
         }
     }
 
     // Starts a dedicated thread for each player with a session in order to send Server -> Client messages.
-    private void DoWork()
+    private void DoWork(CancellationToken ct)
     {
         foreach (Session session in ServerState.Sessions)
         {
@@ -46,11 +46,7 @@ public sealed class PumpService : BackgroundService
                 continue;
             }
 
-            // this might cause a memory leak, but there's really no good way to dispose it the way we're using it
-            // todo? remove it because we're not using it
-            var tokenSource = new CancellationTokenSource();
-
-            Thread thread = new(() => Pump(playerId, tokenSource.Token))
+            Thread thread = new(() => Pump(playerId, ct))
             {
                 CurrentCulture = CultureInfo.InvariantCulture,
                 CurrentUICulture = CultureInfo.InvariantCulture,
@@ -69,11 +65,11 @@ public sealed class PumpService : BackgroundService
         }
     }
 
-    private void Pump(int playerId, CancellationToken token)
+    private void Pump(int playerId, CancellationToken ct)
     {
         try
         {
-            while (!token.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 Session? session = null;
                 foreach (Session x in ServerState.Sessions)
@@ -111,7 +107,7 @@ public sealed class PumpService : BackgroundService
 
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         var task = _hubContext.Clients.Clients(validConnectionIds)
-                            .SendCoreAsync(message.Target, message.Arguments, token);
+                            .SendCoreAsync(message.Target, message.Arguments, ct);
 
                         int timeoutSeconds = message.Target switch
                         {
