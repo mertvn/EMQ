@@ -1,12 +1,13 @@
-SELECT v.id AS "VNID", s.id AS "StaffID", vs.aid AS "ArtistAliasID", sa.name, vs.role, vs.note AS "MusicName", json_agg(p.id) AS "ProducerIds"
+SELECT v.id AS "VNID", s.id AS "StaffID", vs.aid AS "ArtistAliasID", sa.name, vs.role, vs.note AS "MusicName",
+  CASE WHEN bool_or(p.id IS NOT NULL) THEN json_agg(p.id ORDER BY p.id) ELSE '[]' END AS "ProducerIds"
 FROM vn_staff vs
 JOIN vn v ON v.id = vs.id
 JOIN staff_alias sa ON sa.aid = vs.aid
 JOIN staff s ON s.id = sa.id
 JOIN releases_vn rv ON rv.vid = v.id
 JOIN releases r ON r.id = rv.id
-JOIN releases_producers rp ON rp.id = r.id
-JOIN producers p ON p.id = rp.pid
+LEFT JOIN releases_producers rp ON rp.id = r.id
+LEFT JOIN producers p ON p.id = rp.pid
 WHERE vs.role::text ~* 'songs'
 AND vs.note ~* '(")|(“)|(”)|('')'
 AND vs.note !~* '[\x3040-\x309A]' --No Hiragana
