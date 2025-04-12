@@ -3818,22 +3818,22 @@ order by type";
             // todo important do this in a single query
             stopWatch.StartSection("SelectLibraryStats_Artist");
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     null);
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableUnknown) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     SongArtistRole.Unknown);
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableVocals) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     SongArtistRole.Vocals);
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableComposer) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     SongArtistRole.Composer);
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableArranger) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     SongArtistRole.Arranger);
             (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableLyricist) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes, fileLinkTypesStr,
+                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
                     SongArtistRole.Lyricist);
 
             var amAvailableDict = new Dictionary<string, List<LibraryStatsAm>>()
@@ -4069,33 +4069,65 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
     }
 
     public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
-        IDbConnection connection, int limit, IEnumerable<SongSourceSongType> songSourceSongTypes,
-        string fileLinkTypesStr, SongArtistRole? role)
+        IDbConnection connection, int limit, SongSourceSongType[] songSourceSongTypes, SongArtistRole? role)
     {
-        string sqlArtistMusic =
-            @"SELECT a.id AS AId, COUNT(DISTINCT m.id) AS MusicCount, json_agg(DISTINCT ael.*) as LinksJson
-FROM music m
-LEFT JOIN music_source_music msm ON msm.music_id = m.id
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-LEFT JOIN artist_music am ON am.music_id = m.id
-LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
-LEFT JOIN artist a ON a.id = aa.artist_id
-LEFT JOIN artist_external_link ael ON ael.artist_id = aa.artist_id
-/**where**/
-group by a.id ORDER BY COUNT(DISTINCT m.id) desc";
+        int[] ssst = songSourceSongTypes.Cast<int>().ToArray();
+        const string sqlArtistMusic = @"WITH filtered_music AS (
+    SELECT DISTINCT m.id
+    FROM music m
+    JOIN music_source_music msm ON msm.music_id = m.id
+    WHERE msm.type = ANY(@ssst)
+),
+artist_music_links AS (
+    SELECT a.id AS artist_id,
+           COUNT(DISTINCT fm.id) AS music_count
+    FROM filtered_music fm
+    JOIN artist_music am ON am.music_id = fm.id
+    JOIN artist_alias aa ON aa.id = am.artist_alias_id
+    JOIN artist a ON a.id = aa.artist_id
+    WHERE ((@role::int IS NULL) or am.role = @role::int)
+    GROUP BY a.id
+)
+SELECT aml.artist_id AS AId,
+       aml.music_count AS MusicCount,
+       json_agg(DISTINCT ael.*) as LinksJson
+FROM artist_music_links aml
+LEFT JOIN artist_external_link ael ON ael.artist_id = aml.artist_id
+GROUP BY aml.artist_id, aml.music_count
+ORDER BY aml.music_count DESC
+";
 
-        var qAm = connection.QueryBuilder($"{sqlArtistMusic:raw}");
-        qAm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
-        if (role != null)
-        {
-            qAm.Where($"am.role = {role}");
-        }
+        const string sqlArtistMusicAvailable = @"WITH filtered_music AS (
+    SELECT DISTINCT m.id
+    FROM music m
+    JOIN music_source_music msm ON msm.music_id = m.id
+    WHERE msm.type = ANY(@ssst)
+),
+artist_music_links AS (
+    SELECT a.id AS artist_id,
+           COUNT(DISTINCT fm.id) AS music_count
+    FROM filtered_music fm
+    JOIN music_external_link mel ON mel.music_id = fm.id
+    JOIN artist_music am ON am.music_id = fm.id
+    JOIN artist_alias aa ON aa.id = am.artist_alias_id
+    JOIN artist a ON a.id = aa.artist_id
+    WHERE ((@role::int IS NULL) or am.role = @role::int)
+    AND mel.type = ANY(@melType)
+    GROUP BY a.id
+)
+SELECT aml.artist_id AS AId,
+       aml.music_count AS MusicCount,
+       json_agg(DISTINCT ael.*) as LinksJson
+FROM artist_music_links aml
+LEFT JOIN artist_external_link ael ON ael.artist_id = aml.artist_id
+GROUP BY aml.artist_id, aml.music_count
+ORDER BY aml.music_count DESC
+LIMIT @limit
+";
 
-        var am = (await qAm.QueryAsync<LibraryStatsAm>()).ToList(); // todo get rid of this
-        qAm.Where($"mel.url is not null");
-        qAm.Where($"mel.type IN ({fileLinkTypesStr:raw})");
-        qAm.Append($"LIMIT {limit:raw}");
-        var amAvailable = (await qAm.QueryAsync<LibraryStatsAm>()).ToList();
+        var am = (await connection.QueryAsync<LibraryStatsAm>(sqlArtistMusic, new { ssst, role })).ToList();
+        var amAvailable = (await connection.QueryAsync<LibraryStatsAm>(sqlArtistMusicAvailable,
+            new { ssst, role, melType = SongLink.FileLinkTypes, limit })).ToList();
 
         var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
                 "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
