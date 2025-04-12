@@ -89,7 +89,6 @@ public partial class GuessInputComponent : IAutocompleteComponent
 #pragma warning restore CS4014
         Guess = "";
         GuessT = null;
-        await Task.Delay(100);
         StateHasChanged();
     }
 

@@ -91,7 +91,6 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
 #pragma warning disable CS4014
         AutocompleteComponent.Clear(false); // awaiting this causes signalr messages not to be processed in time (???)
 #pragma warning restore CS4014
-        await Task.Delay(100);
         StateHasChanged();
     }
 
