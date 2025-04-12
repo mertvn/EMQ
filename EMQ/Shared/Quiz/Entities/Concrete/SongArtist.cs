@@ -14,8 +14,6 @@ public class SongArtist : IEditQueueEntity
 
     public string? PrimaryLanguage { get; set; }
 
-    public Sex Sex { get; set; } = Sex.Unknown;
-
     // todo remove
     public string? VndbId => Links.SingleOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff)?.Url.ToVndbId()
                              ?? Links.SingleOrDefault(x => x.Type == SongArtistLinkType.MusicBrainzArtist)?.Url
@@ -47,13 +45,6 @@ public class SongArtist : IEditQueueEntity
         Roles.Sort();
         return this;
     }
-}
-
-public enum Sex
-{
-    Unknown,
-    Female,
-    Male
 }
 
 public enum SongArtistRole

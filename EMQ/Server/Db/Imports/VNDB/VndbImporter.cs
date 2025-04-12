@@ -302,15 +302,6 @@ public static class VndbImporter
                 _ => throw new Exception($"Invalid artist role: {dynArtist.role}")
             };
 
-            // Console.WriteLine((string)dynArtist.gender);
-            Sex sex = (string)dynArtist.gender switch
-            {
-                "f" => Sex.Female,
-                "m" => Sex.Male,
-                "" => Sex.Unknown,
-                _ => throw new Exception($"Invalid artist sex: {(string)dynArtist.gender}")
-            };
-
             (string artistLatinTitle, string? artistNonLatinTitle) = Utils.VndbTitleToEmqTitle((string)dynArtistAlias.name,
                 (string?)dynArtistAlias.latin);
 
@@ -329,7 +320,6 @@ public static class VndbImporter
                             IsMainTitle = artistAliasIsMain
                         },
                     },
-                Sex = sex
             };
 
             songArtist.Links.Add(new SongArtistLink

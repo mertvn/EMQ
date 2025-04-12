@@ -948,7 +948,6 @@ public class DbTests
                                 IsMainTitle = true
                             }
                         },
-                    Sex = Sex.Female,
                     Links = new List<SongArtistLink>()
                     {
                         new SongArtistLink
@@ -1099,7 +1098,6 @@ public class DbTests
                                 IsMainTitle = true
                             }
                         },
-                    Sex = Sex.Female,
                     Links = new List<SongArtistLink>()
                     {
                         new SongArtistLink

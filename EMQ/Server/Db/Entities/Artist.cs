@@ -10,7 +10,5 @@ public class Artist
     [Required]
     public int id { get; set; }
 
-    public int? sex { get; set; }
-
     public string? primary_language { get; set; }
 }

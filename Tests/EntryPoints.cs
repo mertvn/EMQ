@@ -739,17 +739,9 @@ WHERE s.lang = 'ja'"))
                 });
             }
 
-            Sex sex = (string)dynArtist.gender switch
-            {
-                "f" => Sex.Female,
-                "m" => Sex.Male,
-                "" => Sex.Unknown,
-                _ => throw new Exception($"Invalid artist sex: {(string)dynArtist.gender}")
-            };
-
             SongArtist songArtist = new()
             {
-                Roles = new List<SongArtistRole>(), PrimaryLanguage = dynArtist.lang, Titles = titles, Sex = sex
+                Roles = new List<SongArtistRole>(), PrimaryLanguage = dynArtist.lang, Titles = titles,
             };
             songArtists.Add(songArtist);
 

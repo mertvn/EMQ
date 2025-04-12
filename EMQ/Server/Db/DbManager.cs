@@ -947,11 +947,6 @@ ORDER BY music_id;";
                     };
                     songArtists[artist.id] = songArtist;
 
-                    if (artist.sex.HasValue)
-                    {
-                        songArtist.Sex = (Sex)artist.sex.Value;
-                    }
-
                     songArtist.Roles = new List<SongArtistRole> { (SongArtistRole)artistMusic.role };
 
                     if (artistExternalLink is not null)
@@ -1121,11 +1116,6 @@ ORDER BY music_id;";
                         PrimaryLanguage = artist.primary_language,
                         Titles = new List<Title> { title },
                     };
-
-                    if (artist.sex.HasValue)
-                    {
-                        songArtist.Sex = (Sex)artist.sex.Value;
-                    }
 
                     songArtists[artist.id] = songArtist;
 
@@ -1535,7 +1525,6 @@ GROUP BY artist_id";
                     new
                     {
                         id = songArtist.Id,
-                        sex = (int)songArtist.Sex,
                         primary_language = songArtist.PrimaryLanguage,
                     }, transaction);
                 if (aId != songArtist.Id)
@@ -1551,7 +1540,7 @@ GROUP BY artist_id";
                 new { urls = songArtist.Links.Select(x => x.Url).ToArray() }, transaction)).SingleOrDefault();
             if (aId < 1)
             {
-                var artist = new Artist { sex = (int)songArtist.Sex, primary_language = songArtist.PrimaryLanguage, };
+                var artist = new Artist { primary_language = songArtist.PrimaryLanguage, };
                 if (!await connection.InsertAsync(artist, transaction))
                 {
                     throw new Exception("Failed to insert a");

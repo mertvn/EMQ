@@ -511,7 +511,6 @@ public static class MusicBrainzImporter
                                     IsMainTitle = false // todo?
                                 },
                             },
-                        Sex = (Sex)(artist.gender ?? 0) // todo str
                     };
                     songArtists.Add(songArtist);
                 }
