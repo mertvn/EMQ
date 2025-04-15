@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -181,6 +182,86 @@ public static class VndbMethods
             {
                 new() { Type = SongArtistLinkType.VNDBStaff, Url = vndbId.ToVndbUrl() }
             }).ToList(),
+        };
+    }
+
+    public static async Task<SongSource?> GetVN(string vndbId, CancellationToken? cancellationToken = null)
+    {
+        static IEnumerable<Title> MapAliases(IEnumerable<Titles> titles)
+        {
+            return titles.Select(x =>
+            {
+                var emqTitle = Utils.VndbTitleToEmqTitle(x.Title, x.Latin);
+                return new Title
+                {
+                    Language = x.Lang.Replace("-", ""), // for Chinese enum compatibility
+                    LatinTitle = emqTitle.latinTitle,
+                    NonLatinTitle = emqTitle.nonLatinTitle,
+                    IsMainTitle = x.Main,
+                };
+            });
+        }
+
+        static IEnumerable<SongSourceLink> MapExtlinks(IEnumerable<Extlinks> extlinks)
+        {
+            return extlinks.Select(x =>
+            {
+                var type = x.Name switch
+                {
+                    "wikidata" => SongSourceLinkType.WikidataItem,
+                    _ => SongSourceLinkType.Unknown
+                };
+                return new SongSourceLink { Url = x.Url, Type = type, };
+            });
+        }
+
+        var res = await Juliet.Api.POST_vn(
+            new ParamPOST_vn()
+            {
+                Fields = new List<FieldPOST_vn>()
+                {
+                    FieldPOST_vn.Id,
+                    FieldPOST_vn.TitlesLang,
+                    FieldPOST_vn.TitlesTitle,
+                    FieldPOST_vn.TitlesLatin,
+                    FieldPOST_vn.TitlesMain,
+                    FieldPOST_vn.Olang,
+                    FieldPOST_vn.Released,
+                    FieldPOST_vn.Average,
+                    FieldPOST_vn.Rating,
+                    FieldPOST_vn.VoteCount,
+                    FieldPOST_vn.ExtlinksName,
+                    FieldPOST_vn.ExtlinksUrl
+                },
+                Filters = new Predicate(FilterField.Id, FilterOperator.Equal, vndbId),
+            }, cancellationToken);
+        if (res == null)
+        {
+            return null;
+        }
+
+        var single = res.Single().Results.Single();
+
+        DateTime date = DateTime.UnixEpoch;
+        if (DateTime.TryParseExact(single.Released, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None,
+                out var parsed))
+        {
+            date = parsed;
+        }
+
+        return new SongSource
+        {
+            AirDateStart = date,
+            LanguageOriginal = single.OLang,
+            RatingAverage = (int)(single.Average * 10),
+            RatingBayesian = (int)(single.Rating * 10),
+            VoteCount = single.VoteCount,
+            Titles = MapAliases(single.Titles).ToList(),
+            Links = MapExtlinks(single.Extlinks).Concat(new List<SongSourceLink>()
+            {
+                new() { Type = SongSourceLinkType.VNDB, Url = vndbId.ToVndbUrl() }
+            }).ToList(),
+            Type = SongSourceType.VN,
         };
     }
 }

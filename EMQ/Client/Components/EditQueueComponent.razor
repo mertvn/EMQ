@@ -1,4 +1,4 @@
-﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core.UI
@@ -84,6 +84,9 @@
                     {
                         case EntityKind.Song:
                             str = JsonSerializer.Deserialize<Song>(context.entity_json)!.ToString();
+                            break;
+                        case EntityKind.SongSource:
+                            str = JsonSerializer.Deserialize<SongSource>(context.entity_json)!.ToString();
                             break;
                         case EntityKind.SongArtist:
                             str = JsonSerializer.Deserialize<SongArtist>(context.entity_json)!.ToString();

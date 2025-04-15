@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Song;
 
@@ -11,8 +12,8 @@ public class AddTableMusic_Source_Category : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id")
-            .WithColumn("category_id").AsInt32().PrimaryKey().ForeignKey("category", "id");
+            .WithColumn("music_source_id").AsInt32().PrimaryKey().ForeignKey("music_source", "id").OnDelete(Rule.Cascade)
+            .WithColumn("category_id").AsInt32().PrimaryKey().ForeignKey("category", "id").OnDelete(Rule.Cascade);
 
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("category_id");
     }

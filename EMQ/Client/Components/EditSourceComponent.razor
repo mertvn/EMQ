@@ -1,0 +1,489 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Client.Pages
+@using System.Linq
+@using System.Text.RegularExpressions
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.VNDB.Business
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+
+<div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
+    @if (IsNew)
+    {
+        <details style="padding: 5px;">
+            <summary>Guidelines for adding sources</summary>
+            <ul>
+                <li>Follow VNDB's guidelines on name order and romanization.</li>
+                <li>Currently we're only accepting Japanese works.</li>
+            </ul>
+            <br/>
+        </details>
+    }
+    else
+    {
+        <details style="padding: 5px;">
+            <summary>Guidelines for editing sources</summary>
+            <ul>
+                <li>Follow VNDB's guidelines on name order and romanization.</li>
+            </ul>
+            <br/>
+        </details>
+    }
+
+    @if (IsNew)
+    {
+        <details style="padding: 5px;">
+            <summary>VNDB seeder</summary>
+            <p>Enter a VNDB VN id or URL to fill information automatically.</p>
+            <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 540px;"/>
+            <br/>
+        </details>
+
+        <details style="padding: 5px;">
+            <summary>MAL seeder</summary>
+            <p>Enter a MAL anime id to fill information automatically.</p>
+            <input type="text" @bind:get="@MalSeederInputText" @bind:set="@SeedFromMal" style="width: 540px;"/>
+            <br/>
+        </details>
+
+        <br/>
+    }
+
+    <div style="display: flex; flex-wrap: wrap">
+        <div style="border: 1px black solid; padding: 10px; width: 970px;">
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>Aliases</h5>
+                <button type="button" class="btn btn-primary" @onclick="AddAlias">Add alias</button>
+                <br/>
+                <br/>
+
+                @for (int index = 0; index < Source.Titles.Count; index++)
+                {
+                    var alias = Source.Titles[index];
+                    int indexCopy = index;
+                    <div style="border: 1px black solid; padding: 10px;">
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))">🗑</span>
+                        <br/>
+                        <label style="padding: 4px;">
+                            <select id="AddTitleLang" style="margin: 5px" @bind="alias.Language">
+                                @foreach (var language in Enum.GetValues<Language>())
+                                {
+                                    @if (language != Language.allLanguages)
+                                    {
+                                        <option value="@language">@language.GetDisplayName()</option>
+                                    }
+                                }
+                            </select>
+                            Language
+                        </label>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.LatinTitle"/>
+                            Latin name
+                        </label>
+                        <br/>
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.NonLatinTitle"/>
+                            Non-Latin name
+                        </label>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="radio" class="form-check-input" name="radioIsMainTitle"
+                                   checked="@alias.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitle(indexCopy))"/>
+                            Primary alias
+                        </label>
+                        <br/>
+                    </div>
+                }
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>General info</h5>
+                <label style="padding: 4px;">
+                    <select id="SongSourceType" style="margin: 5px" @bind="Source.Type">
+                        @foreach (var type in Enum.GetValues<SongSourceType>())
+                        {
+                            @if (type != SongSourceType.Unknown)
+                            {
+                                <option value="@type">@type.GetDisplayName()</option>
+                            }
+                        }
+                    </select>
+                    Type
+                </label>
+                <br/>
+
+                <div id="AirDateStart" style="max-width: 112px; display: inline-block; margin-right: 5px;">
+                    <Blazorise.DatePicker TValue="DateTime" @bind-Date="@Source.AirDateStart" min="@DateTime.Parse("1970-01-01")" max="@DateTime.Parse(Constants.QFDateMax)"/>
+                </div>
+                <label for="AirDateStart">Start date</label>
+            </div>
+            <br/>
+
+            <div style="border: 1px black solid; padding: 10px;">
+                <h5>External links</h5>
+                <details>
+                    <summary>
+                        Allowed link types
+                    </summary>
+                    <ul>
+                        @foreach ((SongSourceLinkType key, Regex value) in RegexPatterns.SourceLinkRegex)
+                        {
+                            if (key != SongSourceLinkType.Unknown)
+                            {
+                                <li>
+                                    @key.GetDescription(): @value.ToString()
+                                </li>
+                            }
+                        }
+                    </ul>
+                </details>
+                <table>
+                    @foreach (var link in Source.Links)
+                    {
+                        <tr>
+                            <td>
+                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(_ => Source.Links.Remove(link))">🗑</span>
+                            </td>
+                            <td>
+                                <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
+                            </td>
+                            <td>
+                                @link.Url
+                            </td>
+                        </tr>
+                    }
+                </table>
+                <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
+            </div>
+            <br/>
+
+            <textarea id="note_user"
+                      rows="2"
+                      cols="34"
+                      maxlength="780"
+                      placeholder="Summarize the changes you have made, including links to source(s)."
+                      @bind="NoteUser">
+            </textarea>
+            <br/>
+
+            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+            <ul>
+                @foreach (string validationMessage in ValidationMessages)
+                {
+                    string color = validationMessage.StartsWith("Added") ? "green" : "red";
+                    <li style="color: @color;">@validationMessage</li>
+                }
+            </ul>
+            <br/>
+        </div>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <div style="margin: 16px; width: 330px; min-height:200px;">
+                <h4>Preview</h4>
+                @* todo? *@
+                <pre>@JsonSerializer.Serialize(Source, Utils.JsoIndented)</pre>
+                @* <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent> *@
+            </div>
+            <br/>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public SongSource Source { get; set; } = null!;
+
+    [Parameter]
+    public bool IsNew { get; set; }
+
+    public List<string> ValidationMessages { get; } = new();
+
+    private static SongSource GetNewSource => new() { Titles = new List<Title> { new() { IsMainTitle = true, Language = "ja", } }, AirDateStart = new DateTime(1970, 1, 1), };
+
+    public string NoteUser { get; set; } = "";
+
+    public bool Ready { get; set; } = true;
+
+    public string ExternalLinksInputText { get; set; } = "";
+
+    private string VndbSeederInputText { get; set; } = "";
+
+    private string MalSeederInputText { get; set; } = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsNew)
+        {
+            Source = GetNewSource;
+        }
+
+        Ready = true;
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+    private void AddAlias()
+    {
+        Source.Titles.Add(new Title() { Language = "ja", });
+    }
+
+    private async Task RemoveAlias(int index)
+    {
+    // if (!IsNew)
+    // {
+    //     return;
+    // }
+
+        if (Source.Titles.Count <= 1)
+        {
+            return;
+        }
+
+        Source.Titles.RemoveAt(index);
+        await CallStateHasChanged();
+    }
+
+    private async Task OnclickSubmit()
+    {
+        if (Ready)
+        {
+            Ready = false;
+            StateHasChanged();
+            bool isValid = await ValidateSource(Source, IsNew);
+            if (isValid)
+            {
+                var req = new ReqEditSource(Source, IsNew, NoteUser);
+                var res = await _client.PostAsJsonAsync("Library/EditSource", req);
+                if (res.IsSuccessStatusCode)
+                {
+                    ValidationMessages.Add("Added to the edit queue.");
+                    if (IsNew)
+                    {
+                        Source = GetNewSource;
+                        NoteUser = "";
+                    }
+                    else
+                    {
+                        Ready = false;
+                        StateHasChanged();
+                        return; // prevent submitting more than one edit at a time
+                    }
+                }
+                else
+                {
+                    ValidationMessages.Add($"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                }
+            }
+            Ready = true;
+        }
+    }
+
+    public async Task<bool> ValidateSource(SongSource source, bool isNew)
+    {
+        ValidationMessages.Clear();
+        bool isValid = true;
+
+        if (!source.Titles.Any())
+        {
+            ValidationMessages.Add("There must be at least one alias.");
+            isValid = false;
+        }
+        else
+        {
+            foreach (Title title in source.Titles)
+            {
+                if (string.IsNullOrWhiteSpace(title.LatinTitle))
+                {
+                    ValidationMessages.Add("Latin name must not be empty.");
+                    isValid = false;
+                }
+            }
+
+            if (isNew && source.Titles.Count(x => x.IsMainTitle) != 1)
+            {
+                ValidationMessages.Add("There must be exactly one primary alias.");
+                isValid = false;
+            }
+        }
+
+        if (!source.Links.Any())
+        {
+            ValidationMessages.Add("There must be at least one external link.");
+            isValid = false;
+        }
+        else
+        {
+    // todo important validate link regex
+            if (source.Links.GroupBy(x => x.Type).Any(y => y.Count() > 1))
+            {
+                ValidationMessages.Add("Only one external link of each type is allowed.");
+                isValid = false;
+            }
+
+            if (source.Links.Any(x => x.Type <= SongSourceLinkType.Unknown ||
+                                      (isNew && x.Type is SongSourceLinkType.MusicBrainzRelease or SongSourceLinkType.VGMdbAlbum)))
+            {
+                ValidationMessages.Add("Invalid link type.");
+                isValid = false;
+            }
+
+            if (source.Type == SongSourceType.VN && !source.Links.Any(x => x.Type == SongSourceLinkType.VNDB))
+            {
+                ValidationMessages.Add("VNs must have a VNDB link.");
+                isValid = false;
+            }
+
+            SongSourceLinkType[] validLinkTypes = Constants.ValidLinkTypesForSourceTypeDict[source.Type];
+            foreach (SongSourceLink link in source.Links)
+            {
+                if (!validLinkTypes.Contains(link.Type))
+                {
+                    ValidationMessages.Add("Invalid link type for the source type.");
+                    isValid = false;
+                }
+            }
+        }
+
+        if (source.Type <= SongSourceType.Unknown)
+        {
+            ValidationMessages.Add("Type must be set.");
+            isValid = false;
+        }
+
+        if (source.AirDateStart <= DateTime.UnixEpoch)
+        {
+            ValidationMessages.Add("Start date must be greater than 1970-01-01.");
+            isValid = false;
+        }
+
+        source.LanguageOriginal = source.Titles.FirstOrDefault(x => x.IsMainTitle)?.Language ?? ""; // todo?
+        if (string.IsNullOrWhiteSpace(source.LanguageOriginal))
+        {
+            ValidationMessages.Add("Original language must be set.");
+            isValid = false;
+        }
+        else
+        {
+            if (source.LanguageOriginal != "ja")
+            {
+                ValidationMessages.Add("Currently we're only accepting Japanese works.");
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    // todo convert all links in db to end with / (except anison.info)
+    private async Task AddNewExternalLink(string value)
+    {
+        ExternalLinksInputText = value;
+        if (Source.Links.Any(x => x.Url == value))
+        {
+            return;
+        }
+
+        if (!value.EndsWith('/'))
+        {
+            value += '/';
+        }
+
+        foreach ((SongSourceLinkType key, Regex regex) in RegexPatterns.SourceLinkRegex)
+        {
+            if (Source.Links.Any(x => x.Type == key))
+            {
+                continue;
+            }
+
+            string str = value;
+            if (regex.IsMatch(str))
+            {
+                Source.Links.Add(new SongSourceLink { Type = key, Url = value.TrimEnd('/') });
+                ExternalLinksInputText = "";
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnChangeRadioIsMainTitle(int selectedIndex)
+    {
+        for (int index = 0; index < Source.Titles.Count; index++)
+        {
+            var title = Source.Titles[index];
+            title.IsMainTitle = index == selectedIndex;
+        }
+    }
+
+    // todo devs for both seeders
+    private async Task SeedFromVndb(string value)
+    {
+        VndbSeederInputText = value;
+        string vndbId = value.ToVndbId();
+        if (!vndbId.StartsWith("v") || vndbId.Length < 2 || !int.TryParse(vndbId[1..], out _))
+        {
+            VndbSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var vn = await VndbMethods.GetVN(vndbId);
+        if (vn == null)
+        {
+            VndbSeederInputText = "Error fetching information.";
+            return;
+        }
+
+        vn.Links = vn.Links.Where(x => x.Type != SongSourceLinkType.Unknown).ToList();
+        Source = vn;
+    }
+
+    private async Task SeedFromMal(string value)
+    {
+        MalSeederInputText = value;
+        if (!int.TryParse(value, out int malId))
+        {
+            MalSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var data = (await JikanApi.GetAnime(ClientState.ExternalClient, malId))?.data;
+        if (data == null)
+        {
+            MalSeederInputText = "Error fetching information.";
+            return;
+        }
+
+        var anime = new SongSource()
+        {
+            AirDateStart = data.aired?.from ?? DateTime.UnixEpoch,
+            LanguageOriginal = "ja",
+            RatingAverage = (int)((data.score ?? 0) * 100),
+            RatingBayesian = (int)((data.score ?? 0) * 100),
+            VoteCount = data.scored_by ?? 0,
+            Titles = new List<Title>()
+            {
+                new() { LatinTitle = data.title ?? "", NonLatinTitle = data.title_japanese, Language = "ja", IsMainTitle = true, },
+                new() { LatinTitle = data.title_english ?? "", NonLatinTitle = null, Language = "en", IsMainTitle = false, },
+            },
+            Links = new List<SongSourceLink>()
+            {
+                new() { Type = SongSourceLinkType.MyAnimeListAnime, Url = $"https://myanimelist.net/anime/{malId}" }
+            },
+            Type = SongSourceType.Anime,
+        };
+
+        Source = anime;
+    }
+
+}

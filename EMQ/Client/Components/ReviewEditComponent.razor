@@ -4,6 +4,7 @@
 @using EMQ.Shared.Core
 @using System.Collections.Generic
 @using EMQ.Client.Pages
+@using EMQ.Shared
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Library.Entities.Concrete
@@ -75,6 +76,17 @@
                                     }
 
                                     <SongInfoCardComponent Song="@(song)" IsEditing="true"></SongInfoCardComponent>
+                                    break;
+                                }
+                            case SongSource songSource:
+                                {
+                                    if (OldEntity != null)
+                                    {
+                                        <pre>@JsonSerializer.Serialize((SongSource)OldEntity, Utils.JsoIndented)</pre>
+                                        <span style="align-self: center; margin: 10px;">=></span>
+                                    }
+
+                                    <pre>@JsonSerializer.Serialize(songSource, Utils.JsoIndented)</pre>
                                     break;
                                 }
                             case SongArtist songArtist:

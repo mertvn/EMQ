@@ -138,6 +138,17 @@
         <p>Insufficient permissions.</p>
     }
 </details>
+<details>
+    <summary>Add new source</summary>
+    @if (ClientUtils.HasEditPerms())
+    {
+        <EditSourceComponent IsNew="true"></EditSourceComponent>
+    }
+    else
+    {
+        <p>Insufficient permissions.</p>
+    }
+</details>
 
 <QuizSettingsComponent @ref="_quizSettingsComponent"
                        Room="@Room"
@@ -149,7 +160,7 @@
 <div style="border: 1px solid #ddd; padding: 5px">
     <Blazorise.Tabs @ref="@TabsComponent" @bind-SelectedTab="@_selectedTab" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
         <Items>
-            <Blazorise.Tab Name="TabAutocompleteMst">Search by VN</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteMst">Search by source</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteMt">Search by song title</Blazorise.Tab>
             <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
@@ -159,7 +170,7 @@
         </Items>
         <Content>
             <Blazorise.TabPanel Name="TabAutocompleteMst">
-                <GuessInputComponent Placeholder="Enter VN title here"
+                <GuessInputComponent Placeholder="Enter source title here"
                                      IsDisabled="false"
                                      IsQuizPage="false"
                                      @bind-Guess="@selectedMusicSourceTitle"

@@ -16,6 +16,33 @@ public enum FieldPOST_vn
     [Description("released")]
     Released,
 
+    [Description("olang")]
+    Olang,
+
+    [Description("average")]
+    Average,
+
+    [Description("rating")]
+    Rating,
+
+    [Description("votecount")]
+    VoteCount,
+
+    [Description("titles.lang")]
+    TitlesLang,
+
+    [Description("titles.title")]
+    TitlesTitle,
+
+    [Description("titles.latin")]
+    TitlesLatin,
+
+    [Description("titles.main")]
+    TitlesMain,
+
+    [Description("aliases")]
+    Aliases,
+
     [Description("developers.id")]
     DevelopersId,
 
@@ -36,4 +63,16 @@ public enum FieldPOST_vn
 
     [Description("developers.description")]
     DevelopersDescription,
+
+    [Description("extlinks.url")]
+    ExtlinksUrl,
+
+    [Description("extlinks.label")]
+    ExtlinksLabel,
+
+    [Description("extlinks.name")]
+    ExtlinksName,
+
+    [Description("extlinks.id")]
+    ExtlinksId,
 }

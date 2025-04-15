@@ -1,4 +1,6 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Core;
 
@@ -57,6 +59,18 @@ public static class Constants
     public const int EntityVersionArtist = 1;
 
     public const int EntityVersionMergeArtists = 1;
+
+    public const int EntityVersionSongSource = 1;
+
+    public static readonly Dictionary<SongSourceType, SongSourceLinkType[]> ValidLinkTypesForSourceTypeDict = new()
+    {
+        { SongSourceType.Unknown, Array.Empty<SongSourceLinkType>() },
+        { SongSourceType.VN, new[] { SongSourceLinkType.VNDB, SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
+        { SongSourceType.Other, Array.Empty<SongSourceLinkType>() },
+        { SongSourceType.Anime, new[] { SongSourceLinkType.MyAnimeListAnime, SongSourceLinkType.AniListAnime, SongSourceLinkType.AniDBAnime } },
+        { SongSourceType.Touhou, new[] { SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
+        { SongSourceType.Game, new[] { SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
+    };
 
     public const string QFDateMin = "1987-01-01";
 

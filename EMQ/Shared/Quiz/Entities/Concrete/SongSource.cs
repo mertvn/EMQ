@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EMQ.Shared.Quiz.Entities.Abstract;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class SongSource
+public class SongSource : IEditQueueEntity
 {
     public int Id { get; set; }
 
@@ -84,8 +85,9 @@ public enum SongSourceType
     Unknown,
     VN,
     Other,
-    // Anime,
-    // Touhou,
+    Anime,
+    Touhou,
+    Game,
 }
 
 public class SongSourceDeveloper

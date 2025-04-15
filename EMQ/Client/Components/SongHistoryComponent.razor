@@ -102,40 +102,9 @@
                     <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @if (song.Sources.Count == 1)
                         {
-                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-
-                            foreach (var link in song.Sources.First().Links.OrderBy(x => x.Type))
-                            {
-                                string src;
-                                if (link.Url.Contains("vndb.org")) // todo
-                                {
-                                    src = "assets/favicon/vndb.ico";
-                                }
-                                else if (link.Url.Contains("musicbrainz.org"))
-                                {
-                                    src = "assets/favicon/musicbrainz.png";
-                                }
-                                else if (link.Url.Contains("vgmdb.net"))
-                                {
-                                    src = "assets/favicon/vgmdb.ico";
-                                }
-                                else
-                                {
-                                    // todo?
-                                    src = "";
-                                }
-
-                                @if (!string.IsNullOrEmpty(src))
-                                {
-                                    <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                        <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
-                                            <img width="16px" height="16px"
-                                                 src="@src" alt="link"
-                                                 style="margin-left: 8px; scale: 1.2;">
-                                        </a>
-                                    </Blazorise.Tooltip>
-                                }
-                            }
+                            var firstSource = song.Sources.First();
+                            <span>@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
+                            <SourceFaviconsComponent Links="@(firstSource.Links)"/>
                         }
                         else
                         {
@@ -143,40 +112,9 @@
                             string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
                             string tooltipText = $"<ul>{joined}</ul>";
 
-                            <span>@Converters.GetSingleTitle(song.Sources.First().Titles).LatinTitle</span>
-
-                            foreach (var link in song.Sources.First().Links.OrderBy(x => x.Type))
-                            {
-                                string src;
-                                if (link.Url.Contains("vndb.org")) // todo
-                                {
-                                    src = "assets/favicon/vndb.ico";
-                                }
-                                else if (link.Url.Contains("musicbrainz.org"))
-                                {
-                                    src = "assets/favicon/musicbrainz.png";
-                                }
-                                else if (link.Url.Contains("vgmdb.net"))
-                                {
-                                    src = "assets/favicon/vgmdb.ico";
-                                }
-                                else
-                                {
-                                    // todo?
-                                    src = "";
-                                }
-
-                                @if (!string.IsNullOrEmpty(src))
-                                {
-                                    <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                        <a class="songSourceVNID link-primary" href="@link.Url" target="_blank">
-                                            <img width="16px" height="16px"
-                                                 src="@src" alt="link"
-                                                 style="margin-left: 8px; scale: 1.2;">
-                                        </a>
-                                    </Blazorise.Tooltip>
-                                }
-                            }
+                            var firstSource = song.Sources.First();
+                            <span>@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
+                            <SourceFaviconsComponent Links="@(firstSource.Links)"/>
 
                             <Blazorise.Tooltip
                                 Inline="true"

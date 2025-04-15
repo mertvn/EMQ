@@ -18,4 +18,9 @@ public enum SongSourceLinkType
     VNDB,
     MusicBrainzRelease,
     VGMdbAlbum,
+    ErogamescapeGame,
+    MyAnimeListAnime,
+    AniListAnime,
+    AniDBAnime,
+    WikidataItem,
 }

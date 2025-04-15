@@ -132,19 +132,19 @@
                             // }
 
                             // couldn't get distinct to work
-                            List<string> displayedIds = new();
+                            HashSet<string?> displayedIds = new();
 
                             // foreach ((List<string> songSourceVNIDs, List<SongSourceSongType>? songTypes) in songSourceVNIDSongTypes)
                             foreach (var songSource in Song.Sources)
                             {
-                                var vndbLink = songSource.Links.Single(x => x.Type == SongSourceLinkType.VNDB);
+                                var vndbLink = songSource.Links.SingleOrDefault(x => x.Type == SongSourceLinkType.VNDB);
                                 // var otherLinks = songSource.Links.Where(x => x.Type != SongSourceLinkType.VNDB);
                                 var songTypes = songSource.SongTypes;
                                 // foreach (string songSourceVNID in songSourceVNIDs)
                                 // {
-                                if (!displayedIds.Contains(vndbLink.Url))
+                                if (vndbLink is null || !displayedIds.Contains(vndbLink.Url))
                                 {
-                                    displayedIds.Add(vndbLink.Url);
+                                    displayedIds.Add(vndbLink?.Url);
 
                                     string final = "";
                                     for (int index = 0; index < songTypes.Count; index++)
@@ -157,44 +157,7 @@
 
                                     @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                     {
-                                        foreach (var link in songSource.Links.OrderBy(x => x.Type))
-                                        {
-                                            string src;
-                                            if (link.Url.Contains("vndb.org")) // todo
-                                            {
-                                                src = "assets/favicon/vndb.ico";
-                                            }
-                                            else if (link.Url.Contains("musicbrainz.org"))
-                                            {
-                                                src = "assets/favicon/musicbrainz.png";
-                                            }
-                                            else if (link.Url.Contains("vgmdb.net"))
-                                            {
-                                                src = "assets/favicon/vgmdb.ico";
-                                            }
-                                            else
-                                            {
-                                                // todo?
-                                                src = "";
-                                            }
-
-                                            @if (!string.IsNullOrEmpty(src))
-                                            {
-                                                string href = link.Url;
-                                                @if (IsModPage && link.Url.Contains("vndb.org/v") && !Song.IsBGM)
-                                                {
-                                                    href += "/hist?cfv=12";
-                                                }
-
-                                                <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
-                                                    <a class="songSourceVNID link-primary" href="@href" target="_blank">
-                                                        <img width="16px" height="16px"
-                                                             src="@src" alt="link"
-                                                             style="margin-left: 8px; scale: 1.2;">
-                                                    </a>
-                                                </Blazorise.Tooltip>
-                                            }
-                                        }
+                                        <SourceFaviconsComponent Links="@(songSource.Links)" IsModPage="IsModPage" IsBGM="Song.IsBGM"/>
                                     }
 
                                     <br/>

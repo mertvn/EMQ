@@ -605,7 +605,7 @@
         }
 
     // todo important validate link regex
-        if (song.Links.Any(x => x.Type == SongLinkType.Unknown))
+        if (song.Links.Any(x => x.Type <= SongLinkType.Unknown))
         {
             ValidationMessages.Add("Unknown link types are not allowed.");
             isValid = false;

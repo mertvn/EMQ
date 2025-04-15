@@ -1,0 +1,74 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+
+@if (LinksOrdered != null)
+{
+    @foreach (var link in LinksOrdered)
+    {
+        string iconSrc;
+        switch (link.Type)
+        {
+            case SongSourceLinkType.VNDB:
+                iconSrc = "assets/favicon/vndb.ico";
+                break;
+            case SongSourceLinkType.MusicBrainzRelease:
+                iconSrc = "assets/favicon/musicbrainz.png";
+                break;
+            case SongSourceLinkType.VGMdbAlbum:
+                iconSrc = "assets/favicon/vgmdb.ico";
+                break;
+            case SongSourceLinkType.ErogamescapeGame:
+                iconSrc = "assets/favicon/egs.ico";
+                break;
+            case SongSourceLinkType.MyAnimeListAnime:
+                iconSrc = "assets/favicon/mal.ico";
+                break;
+            case SongSourceLinkType.AniListAnime:
+                iconSrc = "assets/favicon/anilist.png";
+                break;
+            case SongSourceLinkType.AniDBAnime:
+                iconSrc = "assets/favicon/anidb.png";
+                break;
+            case SongSourceLinkType.WikidataItem:
+                iconSrc = "assets/favicon/wikidata.ico";
+                break;
+            case SongSourceLinkType.Unknown:
+            default:
+                iconSrc = "assets/question-circle.svg";
+                break;
+        }
+
+        string href = link.Url;
+        @if (IsModPage && link.Type == SongSourceLinkType.VNDB && !IsBGM)
+        {
+            href += "/hist?cfv=12";
+        }
+
+        <Blazorise.Tooltip Text="@(link.Name)" Inline="true">
+            <a class="songSourceVNID link-primary" href="@href" target="_blank">
+                <img width="16px" height="16px"
+                     src="@iconSrc" alt="link"
+                     style="margin-left: 8px; scale: 1.2;">
+            </a>
+        </Blazorise.Tooltip>
+    }
+}
+
+@code {
+
+    [Parameter]
+    public List<SongSourceLink> Links { get; set; } = null!;
+
+    [Parameter]
+    public bool IsBGM { get; set; }
+
+    [Parameter]
+    public bool IsModPage { get; set; }
+
+    private SongSourceLink[]? LinksOrdered { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        LinksOrdered = Links.OrderBy(x => x.Type).ToArray();
+    }
+
+}

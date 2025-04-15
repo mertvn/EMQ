@@ -232,7 +232,7 @@ app.UseHttpsRedirection();
 string csp = @$"
                base-uri 'self';
                default-src 'self';
-               connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com musicbrainz.org;
+               connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com musicbrainz.org api.jikan.moe;
                font-src 'self' fonts.gstatic.com;
                media-src 'self' blob: *.catbox.moe {Constants.SelfhostAddress};
                img-src data: https: blob:;

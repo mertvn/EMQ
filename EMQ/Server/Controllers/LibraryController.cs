@@ -751,6 +751,109 @@ public class LibraryController : ControllerBase
         return eqId > 0 ? Ok() : StatusCode(500);
     }
 
+    [CustomAuthorize(PermissionKind.Edit)]
+    [HttpPost]
+    [Route("EditSource")]
+    public async Task<ActionResult> EditSource([FromBody] ReqEditSource req)
+    {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        foreach (var title in req.Source.Titles)
+        {
+            title.LatinTitle = title.LatinTitle.Trim();
+            title.NonLatinTitle = title.NonLatinTitle?.Trim();
+        }
+
+        foreach (var link in req.Source.Links)
+        {
+            link.Url = link.Url.Trim();
+        }
+
+        SongSource? source = null;
+        if (!req.IsNew)
+        {
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            var song = new Song { Sources = new List<SongSource> { new() { Id = req.Source.Id } } };
+            var res = await DbManager.SelectSongSourceBatchNoMSM(connection, new List<Song> { song }, false);
+            Dictionary<int, SongSource>? single = res.Single().Value;
+            if (single != null)
+            {
+                source = single.Single().Value;
+            }
+        }
+
+        var comp = new EditSourceComponent(); // todo move this method to somewhere better
+        bool isValid = await comp.ValidateSource(req.Source, req.IsNew);
+        if (!isValid)
+        {
+            return BadRequest($"source object failed validation: {comp.ValidationMessages.First()}");
+        }
+
+        var content = await DbManager.GetSongSource(
+            new SongSource
+            {
+                Links = req.Source.Links.ExceptBy(
+                        (source?.Links.ToArray() ?? Array.Empty<SongSourceLink>()).Select(x => x.Url), x => x.Url)
+                    .ToList()
+            },
+            session);
+        if (content.SongSource.Id > 0)
+        {
+            return BadRequest(
+                $"A source linked to at least one of the external links you've added already exists in the database: ems{content.SongSource.Id}");
+        }
+
+        // todo important set unrequired stuff to null/empty for safety reasons
+        // todo? extra validation for safety reasons
+
+        string? oldEntityJson = null;
+        if (req.Source.Id <= 0)
+        {
+            int nextVal = await DbManager.SelectNextVal("public.music_source_id_seq");
+            req.Source.Id = nextVal;
+        }
+        else
+        {
+            if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(source!.Sort()),
+                    JsonSerializer.SerializeToNode(req.Source.Sort())))
+            {
+                return BadRequest("No changes detected.");
+            }
+
+            oldEntityJson = JsonSerializer.Serialize(source, Utils.JsoCompact);
+        }
+
+        const EntityKind entityKind = EntityKind.SongSource;
+        var editQueue = new EditQueue
+        {
+            submitted_by = session.Player.Username,
+            submitted_on = DateTime.UtcNow,
+            status = ReviewQueueStatus.Pending,
+            entity_kind = entityKind,
+            entity_json = JsonSerializer.Serialize(req.Source, Utils.JsoCompact),
+            entity_version = Constants.EntityVersionSongSource,
+            old_entity_json = oldEntityJson,
+            note_user = req.NoteUser,
+        };
+
+        long eqId = await DbManager.InsertEntity(editQueue);
+        if (eqId > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} EditSource {req.Source}");
+        }
+
+        return eqId > 0 ? Ok() : StatusCode(500);
+    }
+
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByQuizSettings")]

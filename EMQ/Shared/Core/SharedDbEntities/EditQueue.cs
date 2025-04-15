@@ -95,3 +95,21 @@ public class ReqEditArtist
 
     public string? NoteUser { get; }
 }
+
+public class ReqEditSource
+{
+    public ReqEditSource(SongSource source, bool isNew, string? noteUser)
+    {
+        Source = source;
+        IsNew = isNew;
+        NoteUser = noteUser;
+    }
+
+    [Required]
+    public SongSource Source { get; }
+
+    [Required]
+    public bool IsNew { get; }
+
+    public string? NoteUser { get; }
+}

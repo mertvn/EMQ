@@ -88,6 +88,21 @@ public partial class ReviewEditComponent
                                 Entity.Id);
                             break;
                         }
+                    case EntityKind.SongSource:
+                        {
+                            Entity = JsonSerializer.Deserialize<SongSource>(reviewingItem.entity_json)!;
+                            if (!string.IsNullOrEmpty(reviewingItem.old_entity_json))
+                            {
+                                OldEntity = JsonSerializer.Deserialize<SongSource>(reviewingItem.old_entity_json)!;
+                            }
+
+                            // todo
+                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
+                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
+                                JsonSerializer.Deserialize<SongSource>(x.entity_json, Utils.JsoCompact)!.Id ==
+                                Entity.Id);
+                            break;
+                        }
                     case EntityKind.SongArtist:
                         {
                             Entity = JsonSerializer.Deserialize<SongArtist>(reviewingItem.entity_json)!;

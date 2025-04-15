@@ -438,7 +438,7 @@
                 isValid = false;
             }
 
-            if (artist.Links.Any(x => x.Type == SongArtistLinkType.Unknown))
+            if (artist.Links.Any(x => x.Type <= SongArtistLinkType.Unknown))
             {
                 ValidationMessages.Add("Unknown link types are not allowed.");
                 isValid = false;

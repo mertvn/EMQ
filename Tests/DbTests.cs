@@ -1334,6 +1334,19 @@ order by ms.id
     }
 
     [Test]
+    public async Task Test_GetSongSourceByUrl()
+    {
+        const string url = "https://vndb.org/v2002";
+        var res = await DbManager.GetSongSource(
+            new SongSource
+            {
+                Links = new List<SongSourceLink>() { new() { Type = SongSourceLinkType.VNDB, Url = url, } }
+            }, null);
+
+        Assert.That(res.SongSource.Id == 1240);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_TooManyBGM()
     {
         var code =
