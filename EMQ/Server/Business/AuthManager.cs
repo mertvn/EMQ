@@ -77,6 +77,7 @@ public static class AuthManager
         return totalRandomDelayMs;
     }
 
+    // todo important don't refresh while player is in a room
     // This method must only be called by an user-initiated request that
     // ends with them replacing their session token with the new one, like ValidateSession().
     // Otherwise clients may not acquire their newest token, and be logged out unexpectedly.

@@ -266,6 +266,7 @@ public static class ServerState
                 }
             }
 
+            // todo ensure room hasn't been removed already by CleanupService1
             RemoveRoom(room, "OnPlayerLeaving");
         }
         else

@@ -641,7 +641,13 @@ public static class Program
         if (input.Any(c => c == '"'))
         {
             // check for unclosed quotes
-            if ((input.Count(c => c == '"') % 2) != 0)
+            int quoteCount = input.Count(c => c == '"') ;
+            if (quoteCount == 1)
+            {
+                Console.WriteLine($"qc1: {input}");
+            }
+
+            if (quoteCount % 2 != 0)
             {
                 return false;
             }

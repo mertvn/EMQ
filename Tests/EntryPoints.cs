@@ -2145,7 +2145,7 @@ WHERE ael.artist_id NOT IN (SELECT artist_id FROM artist_external_link ael2 WHER
 AND ael.artist_id IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 1)
 GROUP BY ael.artist_id
 HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1 --todo
-")).Select(x=> (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
+")).Select(x => (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
 
         var mbArtistsWithoutVndb = (await connection.QueryAsync<(int, string[])>(@"
 SELECT ael.artist_id, array_agg(DISTINCT aa.latin_alias) FROM artist_external_link ael
@@ -2154,7 +2154,7 @@ WHERE ael.artist_id IN (SELECT artist_id FROM artist_external_link ael2 WHERE TY
 AND ael.artist_id NOT IN (SELECT artist_id FROM artist_external_link ael2 WHERE TYPE = 1)
 GROUP BY ael.artist_id
 HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
-")).Select(x=> (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
+")).Select(x => (x.Item1, x.Item2.Single().NormalizeForAutocomplete())).ToArray();
 
         foreach ((int aid, string latinTitle) in mbArtistsWithoutVndb)
         {
@@ -2708,5 +2708,32 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 Console.WriteLine("-------------------------------------------------------");
             }
         }
+    }
+
+    [Test, Explicit]
+    public async Task CalculateSizeOfLinks()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var links = await connection.QueryAsync<string?>(
+            $@"select analysis_raw from music_external_link where type = {(int)SongLinkType.Self} and
+ not is_video and music_id not in (select music_id from music_source_music where type = {(int)SongSourceSongType.BGM})");
+
+        decimal total = 0;
+        foreach (string? link in links)
+        {
+            if (link is null or "null")
+            {
+                Console.WriteLine("null");
+                continue;
+            }
+
+            var d = JsonSerializer.Deserialize<MediaAnalyserResult>(link);
+            if (d != null)
+            {
+                total += (decimal)(d.FilesizeMb ?? 0);
+            }
+        }
+
+        Console.WriteLine(total);
     }
 }
