@@ -117,12 +117,26 @@
             <PropertyColumn Property="@(x => x.analysis)" Title="Analysis" Sortable="true"/>
             <PropertyColumn Property="@(x => x.duration)" Title="Duration" Format="mm\:ss" Sortable="true"/>
             <TemplateColumn Title="Status" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.status))">
-                @if (true)
-                {
-                    <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
-                        @context.status
-                    </span>
-                }
+                <ColumnOptions>
+                    <label style="width: 100px;">
+                        @foreach (var key in StatusFilter.Keys.ToList())
+                        {
+                            <input type="checkbox" id="@key" class="form-check-input" @bind="@(StatusFilter[key])" style="margin: 5px"/>
+                            <label for="@key">
+                                <span style="float: left"> @key.GetDisplayName()</span>
+                            </label>
+                            <br/>
+                        }
+                    </label>
+                </ColumnOptions>
+                <ChildContent>
+                    @if (true)
+                    {
+                        <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
+                            @context.status
+                        </span>
+                    }
+                </ChildContent>
             </TemplateColumn>
             <TemplateColumn Title="Notes" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.reason))">
                 @if (true)

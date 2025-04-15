@@ -38,6 +38,9 @@ public partial class ReviewQueueComponent
 
     private string SubmittedByFilter { get; set; } = "";
 
+    public Dictionary<ReviewQueueStatus, bool> StatusFilter { get; set; } =
+        Enum.GetValues<ReviewQueueStatus>().ToDictionary(x => x, _ => true);
+
     private IQueryable<RQ>? FilteredRQs
     {
         get
@@ -67,7 +70,13 @@ public partial class ReviewQueueComponent
 
     public async Task RefreshRQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter, true);
+        if (!StatusFilter.Any(x => x.Value))
+        {
+            StatusFilter[ReviewQueueStatus.Approved] = true;
+        }
+
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter, true,
+            StatusFilter.Where(x => x.Value).Select(x => x.Key).ToArray());
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)
         {

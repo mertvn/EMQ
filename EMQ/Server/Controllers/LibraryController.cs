@@ -152,7 +152,7 @@ public class LibraryController : ControllerBase
     [Route("FindRQs")]
     public async Task<List<RQ>> FindRQs([FromBody] ReqFindRQs req)
     {
-        var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate, req.SSSTM);
+        var rqs = await DbManager.FindRQs(req.StartDate, req.EndDate, req.SSSTM, req.Status);
         return rqs.Count > 7800 ? new List<RQ>() : rqs;
     }
 
@@ -170,7 +170,7 @@ public class LibraryController : ControllerBase
     [Route("FindEQs")]
     public async Task<IEnumerable<EditQueue>> FindEQs([FromBody] ReqFindRQs req)
     {
-        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate, req.SSSTM, req.IsShowAutomatedEdits);
+        var eqs = await DbManager.FindEQs(req.StartDate, req.EndDate, req.SSSTM, req.IsShowAutomatedEdits, req.Status);
         return eqs;
     }
 

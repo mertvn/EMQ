@@ -1,4 +1,4 @@
-@using EMQ.Shared.Quiz.Entities.Concrete
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Core.UI
@@ -107,12 +107,26 @@
             </PropertyColumn>
             <PropertyColumn Property="@(x => x.submitted_on)" Title="Submitted On" Format="s" Sortable="true"/>
             <TemplateColumn Title="Status" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.status))">
-                @if (true)
-                {
-                    <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
-                        @context.status
-                    </span>
-                }
+                <ColumnOptions>
+                    <label style="width: 100px;">
+                        @foreach (var key in StatusFilter.Keys.ToList())
+                        {
+                            <input type="checkbox" id="@key" class="form-check-input" @bind="@(StatusFilter[key])" style="margin: 5px"/>
+                            <label for="@key">
+                                <span style="float: left"> @key.GetDisplayName()</span>
+                            </label>
+                            <br/>
+                        }
+                    </label>
+                </ColumnOptions>
+                <ChildContent>
+                    @if (true)
+                    {
+                        <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
+                            @context.status
+                        </span>
+                    }
+                </ChildContent>
             </TemplateColumn>
             <TemplateColumn Title="Notes (User)" Sortable="true" SortBy="@(GridSort<EditQueue>.ByAscending(x => x.note_user))">
                 @if (true)

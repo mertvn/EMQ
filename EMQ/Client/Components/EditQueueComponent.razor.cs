@@ -37,6 +37,9 @@ public partial class EditQueueComponent
 
     private string SubmittedByFilter { get; set; } = "";
 
+    public Dictionary<ReviewQueueStatus, bool> StatusFilter { get; set; } =
+        Enum.GetValues<ReviewQueueStatus>().ToDictionary(x => x, _ => true);
+
     private IQueryable<EditQueue>? FilteredEQs
     {
         get
@@ -60,7 +63,13 @@ public partial class EditQueueComponent
 
     public async Task RefreshEQs()
     {
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All, IsShowAutomatedEdits);
+        if (!StatusFilter.Any(x => x.Value))
+        {
+            StatusFilter[ReviewQueueStatus.Approved] = true;
+        }
+
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All, IsShowAutomatedEdits,
+            StatusFilter.Where(x => x.Value).Select(x => x.Key).ToArray());
         var res = await _client.PostAsJsonAsync("Library/FindEQs", req);
         if (res.IsSuccessStatusCode)
         {

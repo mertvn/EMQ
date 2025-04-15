@@ -3550,14 +3550,14 @@ AND msm.type = ANY(@msmType)";
     // }
 
     public static async Task<List<RQ>> FindRQs(DateTime startDate, DateTime endDate,
-        SongSourceSongTypeMode ssstm)
+        SongSourceSongTypeMode ssstm, ReviewQueueStatus[] status)
     {
         var rqs = new List<RQ>(777);
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var reviewQueues =
             (await connection.QueryAsync<ReviewQueue>(
-                "select * from review_queue where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
-                new { startDate, endDate }))
+                "select * from review_queue where submitted_on >= @startDate AND submitted_on <= @endDate AND status = ANY(@status) order by id",
+                new { startDate, endDate, status = status.Cast<int>().ToArray(), }))
             .ToList();
         var songs = (await SelectSongsMIdsCached(reviewQueues.Select(x => x.music_id).Distinct().ToArray()))
             .ToDictionary(x => x.Id, x => x);
@@ -3647,7 +3647,7 @@ AND msm.type = ANY(@msmType)";
     }
 
     public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate,
-        SongSourceSongTypeMode ssstm, bool isShowAutomatedEdits)
+        SongSourceSongTypeMode ssstm, bool isShowAutomatedEdits, ReviewQueueStatus[] status)
     {
         // todo? ssstm
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -3656,13 +3656,15 @@ AND msm.type = ANY(@msmType)";
                 @"select * from edit_queue where
                              submitted_on >= @startDate AND
                              submitted_on <= @endDate AND
-                             (@submittedBy::text is null or submitted_by != @submittedBy::text)
+                             (@submittedBy::text is null or submitted_by != @submittedBy::text) AND
+                             status = ANY(@status)
                              order by id",
                 new
                 {
                     startDate,
                     endDate,
-                    submittedBy = isShowAutomatedEdits ? null : Constants.RobotName.Replace(" ", "")
+                    submittedBy = isShowAutomatedEdits ? null : Constants.RobotName.Replace(" ", ""),
+                    status = status.Cast<int>().ToArray(),
                 }))
             .ToList();
         return eqs;
