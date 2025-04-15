@@ -1516,17 +1516,13 @@ GROUP BY artist_id";
                     transaction))
             {
                 aId = songArtist.Id;
-                // todo update stuff like primary_language and sex?
+                // todo update primary_language?
             }
             else
             {
                 aId = await connection.ExecuteScalarAsync<int>(
-                    "INSERT INTO artist (id, sex, primary_language) VALUES (@id, @sex, @primary_language) RETURNING id;",
-                    new
-                    {
-                        id = songArtist.Id,
-                        primary_language = songArtist.PrimaryLanguage,
-                    }, transaction);
+                    "INSERT INTO artist (id, primary_language) VALUES (@id, @primary_language) RETURNING id;",
+                    new { id = songArtist.Id, primary_language = songArtist.PrimaryLanguage, }, transaction);
                 if (aId != songArtist.Id)
                 {
                     throw new Exception($"aId mismatch: expected {songArtist.Id}, got {aId}");
