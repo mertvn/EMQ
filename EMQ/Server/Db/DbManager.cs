@@ -145,7 +145,7 @@ ORDER BY music_id;";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var musicIdsRecordingGids =
-                await connection.QueryAsync<(int, Guid?)>("select id, musicbrainz_recording_gid from music");
+                await connection.QueryAsync<(int, Guid?)>($"select music_id, replace(url, 'https://musicbrainz.org/recording/', '')::uuid from music_external_link where type = {(int)SongLinkType.MusicBrainzRecording}");
             MusicIdsRecordingGids = musicIdsRecordingGids.ToFrozenDictionary(x => x.Item1, x => x.Item2);
         }
     }
@@ -291,7 +291,6 @@ ORDER BY music_id;";
                     song.Type = (SongType)music.type;
                     song.Attributes = (SongAttributes)music.attributes;
                     song.DataSource = music.data_source;
-                    song.MusicBrainzRecordingGid = music.musicbrainz_recording_gid;
 
                     if (musicStat != null)
                     {
@@ -394,7 +393,11 @@ ORDER BY music_id;";
         {
             if (song.MusicBrainzRecordingGid is not null)
             {
-                song.MusicBrainzReleases = MusicBrainzRecordingReleases[song.MusicBrainzRecordingGid.Value];
+                if (MusicBrainzRecordingReleases.TryGetValue(song.MusicBrainzRecordingGid.Value, out var releases))
+                {
+                    song.MusicBrainzReleases = releases;
+                }
+
                 if (MusicBrainzRecordingTracks.TryGetValue(song.MusicBrainzRecordingGid.Value, out var tracks))
                 {
                     song.MusicBrainzTracks = tracks;
@@ -585,7 +588,10 @@ ORDER BY music_id;";
                 {
                     if (recording is not null && recording != Guid.Empty)
                     {
-                        musicBrainzReleases = MusicBrainzRecordingReleases[recording.Value];
+                        if (MusicBrainzRecordingReleases.TryGetValue(recording.Value, out var releases))
+                        {
+                            musicBrainzReleases = releases;
+                        }
                     }
                 }
 
@@ -1499,12 +1505,11 @@ GROUP BY artist_id";
             else
             {
                 mId = await connection.ExecuteScalarAsync<int>(
-                    "INSERT INTO music (id, type, musicbrainz_recording_gid, attributes, data_source) VALUES (@id, @type, @recgid, @attributes, @datasource) RETURNING id;",
+                    "INSERT INTO music (id, type, attributes, data_source) VALUES (@id, @type, @attributes, @datasource) RETURNING id;",
                     new
                     {
                         id = song.Id,
                         type = (int)song.Type,
-                        recgid = song.MusicBrainzRecordingGid,
                         attributes = (int)song.Attributes,
                         datasource = song.DataSource
                     }, transaction);
@@ -1519,7 +1524,6 @@ GROUP BY artist_id";
             var music = new Music
             {
                 type = song.Type,
-                musicbrainz_recording_gid = song.MusicBrainzRecordingGid,
                 attributes = song.Attributes,
                 data_source = song.DataSource
             };
@@ -4664,7 +4668,7 @@ LIMIT @limit
     public static async Task<Dictionary<string, int>> GetRecordingMids()
     {
         string sql =
-            "SELECT musicbrainz_recording_gid::text, id from music where musicbrainz_recording_gid is not null";
+            $"select replace(url, 'https://musicbrainz.org/recording/', ''), music_id from music_external_link where type = {(int)SongLinkType.MusicBrainzRecording}";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             return (await connection.QueryAsync<(string, int)>(sql)).ToDictionary(x => x.Item1, x => x.Item2);
@@ -4932,7 +4936,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     {
         if (isImport && newSong.MusicBrainzRecordingGid != null)
         {
-            // need to update musicbrainz_recording_gid in music and maybe the musicbrainz_release_recording table at least
+            // need to update musicbrainz_recording_gid in mel and maybe the musicbrainz_release_recording table at least
             throw new NotImplementedException();
         }
 

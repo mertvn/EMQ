@@ -49,7 +49,19 @@ public partial class Song : IEditQueueEntity
 
     public Dictionary<GuessKind, SongStats> Stats { get; set; } = new();
 
-    public Guid? MusicBrainzRecordingGid { get; set; }
+    public Guid? MusicBrainzRecordingGid
+    {
+        get
+        {
+            var link = Links.FirstOrDefault(x => x.Type == SongLinkType.MusicBrainzRecording);
+            if (link == null)
+            {
+                return null;
+            }
+
+            return Guid.TryParse(link.Url.Replace("https://musicbrainz.org/recording/", ""), out Guid g) ? g : null;
+        }
+    }
 
     public List<Guid> MusicBrainzReleases { get; set; } = new();
 

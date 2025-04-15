@@ -149,6 +149,7 @@ public static class MusicBrainzImporter
                             new NpgsqlConnection(ConnectionHelper.GetConnectionString());
                         Console.WriteLine($"updating merged recording {oldGid} => {newGid}");
 
+                        // todo mel
                         bool success = true;
                         int rowsMusic = await connectionEmq.ExecuteAsync(
                             "UPDATE music SET musicbrainz_recording_gid = @newGid WHERE musicbrainz_recording_gid = @oldGid",
@@ -173,7 +174,8 @@ public static class MusicBrainzImporter
                             await transaction.CommitAsync(ct);
                             foreach (Song song in incomingSongs.Where(x => x.MusicBrainzRecordingGid == oldGid))
                             {
-                                song.MusicBrainzRecordingGid = newGid;
+                                song.Links.Single(x => x.Type == SongLinkType.MusicBrainzRecording).Url =
+                                    $"https://musicbrainz.org/recording/{newGid}";
                             }
                         }
                         else
@@ -522,7 +524,6 @@ public static class MusicBrainzImporter
 
                 var song = new Song()
                 {
-                    MusicBrainzRecordingGid = data.recording.gid,
                     Type = SongType.Standard, // todo? detect karaoke songs
                     DataSource = DataSourceKind.MusicBrainz,
                     Titles =

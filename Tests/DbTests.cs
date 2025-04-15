@@ -1139,6 +1139,7 @@ public class DbTests
     [Test, Explicit]
     public async Task ListMultipleMusicBrainzReleases()
     {
+        // todo broken since the removal of music.musicbrainz_recording_gid
         string sql = @"
 with cte as (
 select distinct ms.id, mrr.release

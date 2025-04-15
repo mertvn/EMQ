@@ -394,7 +394,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
         var recMidDict =
             (await connection.QueryAsync<(Guid, int)>(
-                "select musicbrainz_recording_gid, id from music where musicbrainz_recording_gid is not null"))
+                $"select replace(url, 'https://musicbrainz.org/recording/', '')::uuid, music_id from music_external_link where type = {(int)SongLinkType.MusicBrainzRecording}"))
             .ToFrozenDictionary(x => x.Item1, x => x.Item2);
         var midsWithSoundLinks = await DbManager.FindMidsWithSoundLinks();
         var songMatchInnerResults = new ConcurrentBag<SongMatchInnerResult>();

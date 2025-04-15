@@ -17,7 +17,6 @@ public class AddTableMusic : Migration
             .WithColumn("stat_played").AsInt64().NotNullable().WithDefaultValue(0)
             .WithColumn("stat_guessed").AsInt64().NotNullable().WithDefaultValue(0)
             .WithColumn("stat_totalguessms").AsInt64().NotNullable().WithDefaultValue(0)
-            .WithColumn("musicbrainz_recording_gid").AsGuid().Nullable()
             .WithColumn("attributes").AsInt32().NotNullable().WithDefaultValue(0);
 
         Execute.Sql(

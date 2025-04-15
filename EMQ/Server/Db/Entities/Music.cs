@@ -16,8 +16,6 @@ public class Music
     [Required]
     public SongType type { get; set; }
 
-    public Guid? musicbrainz_recording_gid { get; set; } // todo remove because mel
-
     [Required]
     public SongAttributes attributes { get; set; }
 
