@@ -17,7 +17,7 @@
             <summary>Guidelines for adding sources</summary>
             <ul>
                 <li>Follow VNDB's guidelines on name order and romanization.</li>
-                <li>Currently we're only accepting Japanese works.</li>
+                <li>Currently we're only accepting Japanese sources.</li>
             </ul>
             <br/>
         </details>
@@ -109,9 +109,11 @@
                     <select id="SongSourceType" style="margin: 5px" @bind="Source.Type">
                         @foreach (var type in Enum.GetValues<SongSourceType>())
                         {
-                            @if (type != SongSourceType.Unknown)
+                            @if (type is not SongSourceType.Unknown)
                             {
-                                <option value="@type">@type.GetDisplayName()</option>
+                                <option value="@type" disabled="@(type == SongSourceType.Other)">
+                                    @type.GetDisplayName()
+                                </option>
                             }
                         }
                     </select>
@@ -377,7 +379,7 @@
         {
             if (source.LanguageOriginal != "ja")
             {
-                ValidationMessages.Add("Currently we're only accepting Japanese works.");
+                ValidationMessages.Add("Currently we're only accepting Japanese sources.");
                 isValid = false;
             }
         }

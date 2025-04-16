@@ -480,7 +480,7 @@ public class QuizSettings
                 .Where(x => x.Value)
                 .Select(y => y.Key.GetDisplayName());
 
-            diff.Add($"VN original languages: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+            diff.Add($"Source original languages: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         if (JsonSerializer.Serialize(o.Filters.SongSourceSongTypeFilters) !=
@@ -528,28 +528,28 @@ public class QuizSettings
             o.Filters.EndDateFilter != n.Filters.EndDateFilter)
         {
             diff.Add(
-                $"VN date: {o.Filters.StartDateFilter:yyyy-MM-dd} - {o.Filters.EndDateFilter:yyyy-MM-dd} → {n.Filters.StartDateFilter:yyyy-MM-dd} - {n.Filters.EndDateFilter:yyyy-MM-dd}");
+                $"Source date: {o.Filters.StartDateFilter:yyyy-MM-dd} - {o.Filters.EndDateFilter:yyyy-MM-dd} → {n.Filters.StartDateFilter:yyyy-MM-dd} - {n.Filters.EndDateFilter:yyyy-MM-dd}");
         }
 
         if (o.Filters.RatingAverageStart != n.Filters.RatingAverageStart ||
             o.Filters.RatingAverageEnd != n.Filters.RatingAverageEnd)
         {
             diff.Add(
-                $"VN rating (average): {o.Filters.RatingAverageStart / 100f:N2} - {o.Filters.RatingAverageEnd / 100f:N2} → {n.Filters.RatingAverageStart / 100f:N2} - {n.Filters.RatingAverageEnd / 100f:N2}");
+                $"Source rating (average): {o.Filters.RatingAverageStart / 100f:N2} - {o.Filters.RatingAverageEnd / 100f:N2} → {n.Filters.RatingAverageStart / 100f:N2} - {n.Filters.RatingAverageEnd / 100f:N2}");
         }
 
         if (o.Filters.RatingBayesianStart != n.Filters.RatingBayesianStart ||
             o.Filters.RatingBayesianEnd != n.Filters.RatingBayesianEnd)
         {
             diff.Add(
-                $"VN rating (bayesian): {o.Filters.RatingBayesianStart / 100f:N2} - {o.Filters.RatingBayesianEnd / 100f:N2} → {n.Filters.RatingBayesianStart / 100f:N2} - {n.Filters.RatingBayesianEnd / 100f:N2}");
+                $"Source rating (bayesian): {o.Filters.RatingBayesianStart / 100f:N2} - {o.Filters.RatingBayesianEnd / 100f:N2} → {n.Filters.RatingBayesianStart / 100f:N2} - {n.Filters.RatingBayesianEnd / 100f:N2}");
         }
 
         if (o.Filters.VoteCountStart != n.Filters.VoteCountStart ||
             o.Filters.VoteCountEnd != n.Filters.VoteCountEnd)
         {
             diff.Add(
-                $"VN vote count: {o.Filters.VoteCountStart} - {o.Filters.VoteCountEnd} → {n.Filters.VoteCountStart} - {n.Filters.VoteCountEnd}");
+                $"Source vote count: {o.Filters.VoteCountStart} - {o.Filters.VoteCountEnd} → {n.Filters.VoteCountStart} - {n.Filters.VoteCountEnd}");
         }
 
         if (o.Filters.OnlyOwnUploads != n.Filters.OnlyOwnUploads)
@@ -675,13 +675,13 @@ public class QuizSettings
         if (o.IsPreventSameVNSpam != n.IsPreventSameVNSpam)
         {
             diff.Add(
-                $"Prevent same VN spam: {o.IsPreventSameVNSpam} → {n.IsPreventSameVNSpam}");
+                $"Prevent same source spam: {o.IsPreventSameVNSpam} → {n.IsPreventSameVNSpam}");
         }
 
         if (o.PreventSameVNSpamMinutes != n.PreventSameVNSpamMinutes)
         {
             diff.Add(
-                $"Prevent same VN spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
+                $"Prevent same source spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
         }
 
         if (o.Filters.OwnersMusicVoteStatus != n.Filters.OwnersMusicVoteStatus)
@@ -707,6 +707,20 @@ public class QuizSettings
         if (o.Filters.IsPreferLongLinks != n.Filters.IsPreferLongLinks)
         {
             diff.Add($"Prefer long links: {o.Filters.IsPreferLongLinks} → {n.Filters.IsPreferLongLinks}");
+        }
+
+        if (JsonSerializer.Serialize(o.Filters.SongSourceTypeFilter) !=
+            JsonSerializer.Serialize(n.Filters.SongSourceTypeFilter))
+        {
+            var ol = o.Filters.SongSourceTypeFilter
+                .Where(x => x.Value)
+                .Select(y => y.Key);
+
+            var ne = n.Filters.SongSourceTypeFilter
+                .Where(x => x.Value)
+                .Select(y => y.Key);
+
+            diff.Add($"Source types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
         }
 
         return diff;

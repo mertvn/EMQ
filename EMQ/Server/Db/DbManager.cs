@@ -2011,6 +2011,8 @@ RETURNING id;",
             // Apply filters
             if (filters != null)
             {
+                queryMusicIds.AppendLine(
+                    $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
                 if (filters.CategoryFilters.Any())
                 {
                     Console.WriteLine(
@@ -2030,6 +2032,8 @@ RETURNING id;",
 
                     var queryCategories = connection.QueryBuilder($"{sqlCategories:raw}");
                     queryCategories.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
+                    queryCategories.AppendLine(
+                        $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
 
                     var validCategories = filters.CategoryFilters;
                     var trileans = validCategories.Select(x => x.Trilean).ToArray();
@@ -2115,6 +2119,8 @@ RETURNING id;",
 
                     var queryArtists = connection.QueryBuilder($"{sqlArtists:raw}");
                     queryArtists.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
+                    queryArtists.AppendLine(
+                        $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
 
                     var validArtists = filters.ArtistFilters;
                     var trileans = validArtists.Select(x => x.Trilean);

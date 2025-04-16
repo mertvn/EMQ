@@ -183,6 +183,17 @@ public class QuizFilters
     [DefaultValue(false)]
     public bool IsPreferLongLinks { get; set; } = false;
 
+    [ProtoMember(29)]
+    public Dictionary<SongSourceType, bool> SongSourceTypeFilter { get; set; } =
+        new()
+        {
+            { SongSourceType.VN , true},
+            { SongSourceType.Other , true},
+            { SongSourceType.Anime , false},
+            { SongSourceType.Touhou , false},
+            { SongSourceType.Game , false},
+        };
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);
