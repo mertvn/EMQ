@@ -565,6 +565,12 @@
                     ValidationMessages.Add("Other songs cannot have other song source song types.");
                     isValid = false;
                 }
+
+                if (isOther && !song.Attributes.HasFlag(SongAttributes.NonCanon))
+                {
+                    ValidationMessages.Add("If a song is Other, it must also be Non-canon.");
+                    isValid = false;
+                }
             }
         }
 
