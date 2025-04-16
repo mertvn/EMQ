@@ -956,8 +956,12 @@ public class QuizManager
             {
                 foreach (SongSource source in song.Sources)
                 {
-                    player.VNLastPlayedAtDict[source.Links.Single(x => x.Type == SongSourceLinkType.VNDB).Url] =
-                        DateTime.UtcNow;
+                    // todo make this work for non-VNDB
+                    var vndbLink = source.Links.SingleOrDefault(x => x.Type == SongSourceLinkType.VNDB);
+                    if (vndbLink != null)
+                    {
+                        player.VNLastPlayedAtDict[vndbLink.Url] = DateTime.UtcNow;
+                    }
                 }
             }
 
@@ -2393,7 +2397,9 @@ public class QuizManager
                     foreach (var dbSongSource in dbSong.Sources)
                     {
                         // todo songs with multiple vns overriding each other
-                        validSourcesLooting[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                        validSourcesLooting[
+                                (dbSongSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB) ??
+                                 dbSongSource.Links.First()).Url] =
                             dbSongSource.Titles;
                     }
                 }

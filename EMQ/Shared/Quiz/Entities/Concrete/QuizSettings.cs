@@ -675,13 +675,13 @@ public class QuizSettings
         if (o.IsPreventSameVNSpam != n.IsPreventSameVNSpam)
         {
             diff.Add(
-                $"Prevent same source spam: {o.IsPreventSameVNSpam} → {n.IsPreventSameVNSpam}");
+                $"Prevent same VN spam: {o.IsPreventSameVNSpam} → {n.IsPreventSameVNSpam}");
         }
 
         if (o.PreventSameVNSpamMinutes != n.PreventSameVNSpamMinutes)
         {
             diff.Add(
-                $"Prevent same source spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
+                $"Prevent same VN spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
         }
 
         if (o.Filters.OwnersMusicVoteStatus != n.Filters.OwnersMusicVoteStatus)

@@ -820,7 +820,9 @@ public class DbTests
             foreach (var dbSongSource in dbSong.Sources)
             {
                 // todo songs with multiple vns overriding each other
-                validSourcesLooting[dbSongSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url] =
+                validSourcesLooting[
+                        (dbSongSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB) ??
+                         dbSongSource.Links.First()).Url] =
                     dbSongSource.Titles;
             }
         }

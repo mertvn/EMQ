@@ -82,7 +82,8 @@
                 {
                     @* todo link might be different from what's displayed *@
                     string title = Converters.GetSingleTitle(context.Song.Sources.First().Titles).LatinTitle;
-                    <a href="@context.Song.Sources.First().Links.First(x => x.Type == SongSourceLinkType.VNDB).Url" target="_blank">
+                    string href = (context.Song.Sources.First().Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB) ?? context.Song.Sources.First().Links.First()).Url;
+                    <a href="@href" target="_blank">
                         <span style="@CellStyleInlineBlock" title="@title">@(title)</span>
                     </a>
                 }

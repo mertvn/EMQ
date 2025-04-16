@@ -334,7 +334,7 @@
             }
 
             if (source.Links.Any(x => x.Type <= SongSourceLinkType.Unknown ||
-                                      (isNew && x.Type is SongSourceLinkType.MusicBrainzRelease or SongSourceLinkType.VGMdbAlbum)))
+                                      (isNew && !SongSourceLink.ProperLinkTypes.Contains((int)x.Type))))
             {
                 ValidationMessages.Add("Invalid link type.");
                 isValid = false;

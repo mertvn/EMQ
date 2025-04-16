@@ -9,11 +9,11 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class SongLink
 {
+    public static readonly int[] FileLinkTypes = { (int)SongLinkType.Catbox, (int)SongLinkType.Self };
+
     public string Url { get; set; } = "";
 
     public SongLinkType Type { get; set; } = SongLinkType.Unknown;
-
-    public static readonly int[] FileLinkTypes = { (int)SongLinkType.Catbox, (int)SongLinkType.Self };
 
     public bool IsFileLink => Type is SongLinkType.Catbox or SongLinkType.Self;
 

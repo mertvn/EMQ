@@ -844,6 +844,15 @@ ORDER BY music_id;";
             }
         }
 
+        // sort source links for looting to work correctly
+        foreach ((int _, Dictionary<int, SongSource>? value) in mIdSongSources)
+        {
+            foreach ((int _, SongSource? songSource) in value)
+            {
+                songSource.Links = songSource.Links.OrderBy(x => x.Type).ToList();
+            }
+        }
+
         return mIdSongSources;
     }
 
@@ -1700,8 +1709,7 @@ RETURNING id;",
                 new
                 {
                     urls = songSource.Links
-                        .Where(x => x.Type is not
-                            (SongSourceLinkType.MusicBrainzRelease or SongSourceLinkType.VGMdbAlbum))
+                        .Where(x => SongSourceLink.ProperLinkTypes.Contains((int)x.Type))
                         .Select(x => x.Url).ToArray()
                 }, transaction)).SingleOrDefault();
             if (msId < 1)
@@ -1999,10 +2007,10 @@ RETURNING id;",
                                      JOIN music_source ms on msm.music_source_id = ms.id
                                      JOIN music_source_external_link msel on ms.id = msel.music_source_id
                                      WHERE 1=1
-                                     AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
 
             var queryMusicIds = connection.QueryBuilder($"{sqlMusicIds:raw}");
+            queryMusicIds.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
             queryMusicIds.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
 
             var excludedArtistIds = new List<int>();
@@ -2027,10 +2035,10 @@ RETURNING id;",
                                      JOIN music_source_category msc on msc.music_source_id = ms.id
                                      JOIN category c on c.id = msc.category_id
                                      WHERE 1=1
-                                     AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
 
                     var queryCategories = connection.QueryBuilder($"{sqlCategories:raw}");
+                    queryCategories.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
                     queryCategories.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
                     queryCategories.AppendLine(
                         $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
@@ -2114,10 +2122,10 @@ RETURNING id;",
                                      JOIN artist_music am ON am.music_id = m.id
                                      JOIN artist a ON a.id = am.artist_id
                                      WHERE 1=1
-                                     AND msel.type={(int)SongSourceLinkType.VNDB}
                                      ";
 
                     var queryArtists = connection.QueryBuilder($"{sqlArtists:raw}");
+                    queryArtists.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
                     queryArtists.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
                     queryArtists.AppendLine(
                         $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
@@ -4379,7 +4387,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
 
         var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
         qMsm.Where($"mst.is_main_title = true");
-        qMsm.Where($"msel.type = {(int)SongSourceLinkType.VNDB}");
+        qMsm.Where($"msel.type = ANY({SongSourceLink.ProperLinkTypes})");
         qMsm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
         // Console.WriteLine(
@@ -4836,7 +4844,13 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     public static async Task<string> GetRandomScreenshotUrl(SongSource songSource, ScreenshotKind screenshotKind)
     {
         string ret = "";
-        string sourceVndbId = songSource.Links.First(x => x.Type == SongSourceLinkType.VNDB).Url.ToVndbId();
+        var vndbLink = songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB);
+        if (vndbLink == null)
+        {
+            return ret;
+        }
+
+        string sourceVndbId = vndbLink.Url.ToVndbId();
         switch (screenshotKind)
         {
             case ScreenshotKind.None:

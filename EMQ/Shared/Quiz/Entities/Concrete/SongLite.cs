@@ -57,9 +57,12 @@ public class SongLite
                 SourceVndbIds[key] = value.Distinct().OrderBy(x => x).ToList();
             }
 
-            string titles = Titles.Single().LatinTitle.ToLowerInvariant();
-            string sources =
-                JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => Convert.ToInt32(x.Key.Replace("v", ""))));
+            string titles = JsonSerializer.Serialize(Titles.OrderBy(x => x.LatinTitle)
+                .ThenBy(x => x.NonLatinTitle)
+                .ThenBy(x => x.Language)
+                .ThenBy(x => x.IsMainTitle)
+                .Select(x => x.LatinTitle.ToLowerInvariant()));
+            string sources = JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => x.Key));
             string artists =
                 JsonSerializer.Serialize(Artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals))
                     .Select(artist => artist.VndbId ?? "").OrderBy(x => x).ToList());

@@ -195,7 +195,10 @@ public static class ExtensionMethods
         var sourcesDict = new Dictionary<string, List<SongSourceSongType>>();
         foreach (SongSource source in song.Sources)
         {
-            sourcesDict[source.Links.Single(x => x.Type == SongSourceLinkType.VNDB).Url.ToVndbId()] = source.SongTypes;
+            foreach (SongSourceLink songSourceLink in source.Links)
+            {
+                sourcesDict[songSourceLink.Url] = source.SongTypes;
+            }
         }
 
         var songLite = new SongLite(
