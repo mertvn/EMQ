@@ -285,22 +285,32 @@
 
             <label>
                 <input type="checkbox" class="form-check-input" style="margin: 5px" @bind="IsMergeBGMTabs"/>
-                Merge BGM tabs
+                Merge MusicBrainz tabs
             </label>
         </div>
 
         @{
             var bgms = CurrentSongs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
+            var mbBgms = bgms.Where(x => x.DataSource == DataSourceKind.MusicBrainz).ToList();
+            var emqBgms = bgms.Where(x => x.DataSource == DataSourceKind.EMQ).ToList();
+
             var tabs = new Dictionary<string, List<Song>>();
+            if (emqBgms.Any())
+            {
+                tabs["EMQ (BGM)"] = emqBgms;
+            }
 
             @if (IsMergeBGMTabs)
             {
-                tabs["MusicBrainz"] = bgms;
+                if (mbBgms.Any())
+                {
+                    tabs["MusicBrainz"] = mbBgms;
+                }
             }
             else
             {
                 // todo don't show releases that are not what's entered in the input box?
-                var releases = bgms.SelectMany(x =>
+                var releases = mbBgms.SelectMany(x =>
                     x.Sources.SelectMany(y =>
                         y.Links.Where(z =>
                             z.Type == SongSourceLinkType.MusicBrainzRelease))).DistinctBy(x => x.Url);
@@ -312,7 +322,7 @@
                         tabs[release.Name] = new List<Song>();
                     }
 
-                    foreach (Song bgm in bgms)
+                    foreach (Song bgm in mbBgms)
                     {
                         var songReleases = bgm.Sources.SelectMany(y => y.Links.Where(a => a.Type == SongSourceLinkType.MusicBrainzRelease).Select(z => z.Url)).Distinct();
                         // var songReleases = bgm.MusicBrainzReleases;
@@ -328,7 +338,7 @@
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
         <Blazorise.Tabs @ref="TabsComponentVndb" @bind-SelectedTab="@_selectedTabVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
-                <Blazorise.Tab Name="TabVNDB">VNDB & EMQ</Blazorise.Tab>
+                <Blazorise.Tab Name="TabVNDB">VNDB & EMQ (Vocals)</Blazorise.Tab>
                 @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
                 @foreach ((string key, _) in tabs)
                 {

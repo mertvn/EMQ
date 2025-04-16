@@ -18,9 +18,10 @@
         <h5>What can be added</h5>
         <ol>
             <li>Follow VNDB's guidelines on romanization.</li>
-            <li>Currently we're only accepting non-BGM Non-canon song submissions. Canon songs should be added to VNDB instead.</li>
+            <li>Currently we're only accepting Non-canon song submissions for vocal songs, and Canon BGM tracks. Canon vocal songs should be added to VNDB instead.</li>
             <li>Currently it's possible to add songs only to sources already existing in the database.</li>
             <li>Do not add Non-canon songs if you don't have a good quality source file for them.</li>
+            <li>Do not add songs that are on AMQ.</li>
             <li>All Official submissions are accepted.</li>
             <li>Unofficial submissions may be rejected if they are too obscure/low-quality.</li>
 
@@ -140,7 +141,7 @@
                             if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
                             {
                                 string id = $"checkbox-SSST-{source.Id}-{key}";
-                                <input type="checkbox" id="@id" class="form-check-input" disabled="@(!ClientUtils.HasAdminPerms())"
+                                <input type="checkbox" id="@id" class="form-check-input" disabled="@(Song.DataSource != DataSourceKind.EMQ)"
                                        @bind:get="@source.SongTypes.Contains(key)"
                                        @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
                                        @bind:event="oninput"

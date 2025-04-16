@@ -426,7 +426,6 @@
         }
     }
 
-    // todo devs for both seeders
     private async Task SeedFromVndb(string value)
     {
         VndbSeederInputText = value;
@@ -481,6 +480,8 @@
                 new() { Type = SongSourceLinkType.MyAnimeListAnime, Url = $"https://myanimelist.net/anime/{malId}" }
             },
             Type = SongSourceType.Anime,
+    // todo
+    // Developers = data.studios?.Select(x => new SongSourceDeveloper { VndbId =, Title = }).ToList() ?? new List<SongSourceDeveloper>()
         };
 
         Source = anime;

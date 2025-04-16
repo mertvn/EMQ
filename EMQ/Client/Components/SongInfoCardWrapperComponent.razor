@@ -322,7 +322,7 @@
 
                                 if (ClientUtils.HasUploadPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
                                 {
-                                    @if (song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
+                                    @if (song.DataSource == DataSourceKind.MusicBrainz && song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
                                         <span>Use the batch uploader to upload BGM.</span>
                                     }

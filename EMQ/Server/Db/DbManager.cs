@@ -1818,6 +1818,8 @@ RETURNING id;",
             }
         }
 
+        // todo insert devs
+
         Console.WriteLine($"Inserted msId {msId}");
         return msId;
     }

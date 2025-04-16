@@ -72,7 +72,9 @@ public partial class ReviewComponent
 
             return CurrentRQs.Where(x =>
                 x.submitted_by == reviewingItem.submitted_by &&
-                x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y)) &&
+                ((x.Song.DataSource == DataSourceKind.MusicBrainz &&
+                  x.Song.MusicBrainzReleases.Any(y => reviewingItem.Song.MusicBrainzReleases.Contains(y))) ||
+                 x.Song.DataSource == DataSourceKind.EMQ && x.Song.IsBGM) &&
                 (x.submitted_on - reviewingItem.submitted_on > TimeSpan.FromMinutes(0) &&
                  x.submitted_on - reviewingItem.submitted_on < TimeSpan.FromMinutes(60))).ToArray();
         }

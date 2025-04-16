@@ -230,6 +230,9 @@ public static class VndbMethods
                     FieldPOST_vn.Average,
                     FieldPOST_vn.Rating,
                     FieldPOST_vn.VoteCount,
+                    FieldPOST_vn.DevelopersId,
+                    FieldPOST_vn.DevelopersName,
+                    FieldPOST_vn.DevelopersOriginal,
                     FieldPOST_vn.ExtlinksName,
                     FieldPOST_vn.ExtlinksUrl
                 },
@@ -262,6 +265,10 @@ public static class VndbMethods
                 new() { Type = SongSourceLinkType.VNDB, Url = vndbId.ToVndbUrl() }
             }).ToList(),
             Type = SongSourceType.VN,
+            Developers = single.Developers.Select(x => new SongSourceDeveloper
+            {
+                VndbId = x.Id, Title = new Title() { LatinTitle = x.Name, NonLatinTitle = x.Original }
+            }).ToList()
         };
     }
 }
