@@ -255,6 +255,12 @@
 
         @if (IsNew)
         {
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="BGMSeedingMode" disabled="@(!Song.Sources.Any())"/>
+                BGM seeding mode
+            </label>
+            <br/>
+
             <details>
                 <summary>Persist after submitting</summary>
                 @foreach (var key in PersistAfterSubmittingDict.Keys.ToList())
@@ -347,6 +353,8 @@
     public bool Ready { get; set; } = true;
 
     public string ExternalLinksInputText { get; set; } = "";
+
+    public bool BGMSeedingMode { get; set; }
 
     public Dictionary<string, bool> PersistAfterSubmittingDict { get; } = new()
     {
@@ -778,6 +786,15 @@
             return;
         }
 
+        if (BGMSeedingMode)
+        {
+            PersistAfterSubmittingDict["Sources"] = true;
+            foreach (SongSource songSource in Song.Sources)
+            {
+                songSource.SongTypes = new List<SongSourceSongType>() { SongSourceSongType.BGM };
+            }
+        }
+
         var oldSources = Song.Sources;
         Song = GetNewSong;
         if (PersistAfterSubmittingDict["Sources"])
@@ -808,7 +825,7 @@
         }
 
         var firstTitle = Song.Titles.First();
-        if (Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
+        if (BGMSeedingMode || Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
         {
             firstTitle.LatinTitle = mbTrack.title;
             firstTitle.NonLatinTitle = "";
@@ -823,5 +840,29 @@
         {
             new() { Url = $"https://musicbrainz.org/recording/{mbRecording.id}", Type = SongLinkType.MusicBrainzRecording }
         };
+
+        if (BGMSeedingMode)
+        {
+            if (Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+            {
+    // skip vocal tracks, with special handling for the last track
+                if ((MBTracksIndex + 1) < MBTracks.Count)
+                {
+                    await SetMBTracksIndex(MBTracksIndex + 1);
+                    return;
+                }
+                else
+                {
+                    Song = GetNewSong;
+                    return;
+                }
+            }
+
+            foreach (SongArtist songArtist in Song.Artists)
+            {
+                songArtist.Roles = new List<SongArtistRole>() { SongArtistRole.Composer };
+            }
+        }
     }
+
 }
