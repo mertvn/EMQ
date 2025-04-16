@@ -18,6 +18,7 @@ public class AddTableMusic_Source_External_Link : Migration
             .WithColumn("type").AsInt32().NotNullable()
             .WithColumn("name").AsString().NotNullable();
 
+        Execute.Sql("CREATE INDEX idx_music_source_external_link_type ON music_source_external_link(type);");
         Execute.Sql($@"CREATE UNIQUE INDEX UC_{tableName}_url ON {tableName}(url) where (type != {(int)SongSourceLinkType.MusicBrainzRelease} AND type != {(int)SongSourceLinkType.VGMdbAlbum})");
     }
 
