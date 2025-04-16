@@ -36,11 +36,11 @@ public class LibraryController : ControllerBase
     public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
     {
         // todo
-        int mId = int.TryParse(req.SongSourceTitle, out mId) ? mId : 0;
-        if (mId > 0)
+        int msId = int.TryParse(req.SongSourceTitle, out msId) ? msId : 0;
+        if (msId > 0)
         {
-            var songs = await DbManager.SelectSongsMIds(new[] { mId }, false);
-            return songs;
+            var songsSource = await DbManager.GetSongSource(new SongSource(){Id = msId}, null);
+            return await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle);
         }
         else
         {
@@ -54,8 +54,18 @@ public class LibraryController : ControllerBase
     [Route("FindSongsBySongTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongTitle([FromBody] ReqFindSongsBySongTitle req)
     {
-        var songs = await DbManager.FindSongsBySongTitle(req.SongTitle);
-        return songs;
+        // todo
+        int mId = int.TryParse(req.SongTitle, out mId) ? mId : 0;
+        if (mId > 0)
+        {
+            var songs = await DbManager.SelectSongsMIds(new[] { mId }, false);
+            return songs;
+        }
+        else
+        {
+            var songs = await DbManager.FindSongsBySongTitle(req.SongTitle);
+            return songs;
+        }
     }
 
     // todo this is actually unused right now

@@ -104,6 +104,17 @@ public partial class GuessInputComponent : IAutocompleteComponent
 
     private TValue[] OnSearch<TValue>(string value)
     {
+        if (value.StartsWith("id:"))
+        {
+            string replaced = value.Replace("id:", "");
+            if (string.IsNullOrWhiteSpace(replaced))
+            {
+                return Array.Empty<TValue>();
+            }
+
+            return (TValue[])(object)new AutocompleteMst[] { new(Convert.ToInt32(replaced), replaced) };
+        }
+
         value = value.NormalizeForAutocomplete();
         if (string.IsNullOrWhiteSpace(value))
         {
