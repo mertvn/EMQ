@@ -256,8 +256,8 @@ public static class VndbMethods
         {
             AirDateStart = date,
             LanguageOriginal = single.OLang,
-            RatingAverage = (int)(single.Average * 10),
-            RatingBayesian = (int)(single.Rating * 10),
+            RatingAverage = (int)((single.Average ?? 0) * 10),
+            RatingBayesian = (int)((single.Rating ?? 0) * 10),
             VoteCount = single.VoteCount,
             Titles = MapAliases(single.Titles).ToList(),
             Links = MapExtlinks(single.Extlinks).Concat(new List<SongSourceLink>()

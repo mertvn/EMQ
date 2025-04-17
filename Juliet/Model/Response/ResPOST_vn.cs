@@ -21,10 +21,10 @@ public class ResPOST_vn
     public string OLang { get; set; } = "";
 
     [JsonPropertyName("average")]
-    public float Average { get; set; }
+    public float? Average { get; set; }
 
     [JsonPropertyName("rating")]
-    public float Rating { get; set; }
+    public float? Rating { get; set; }
 
     [JsonPropertyName("votecount")]
     public int VoteCount { get; set; }
