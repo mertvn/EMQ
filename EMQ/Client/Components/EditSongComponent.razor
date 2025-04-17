@@ -143,8 +143,8 @@
                                 string id = $"checkbox-SSST-{source.Id}-{key}";
                                 <input type="checkbox" id="@id" class="form-check-input"
                                        disabled="@(Song.DataSource != DataSourceKind.EMQ ||
-                                                   (source.SongTypes.Contains(SongSourceSongType.BGM) && key != SongSourceSongType.BGM) ||
-                                                   (source.SongTypes.Contains(SongSourceSongType.Other) && key != SongSourceSongType.Other))"
+                                                   (source.SongTypes.Contains(SongSourceSongType.BGM) && key is not (SongSourceSongType.BGM or SongSourceSongType.Other)) ||
+                                                   (source.SongTypes.Contains(SongSourceSongType.Other) && key is not (SongSourceSongType.BGM or SongSourceSongType.Other)))"
                                        @bind:get="@source.SongTypes.Contains(key)"
                                        @bind:set="@(new Func<bool, Task>(async value => await OnSSSTCheckboxClick(value, key, source)))"
                                        @bind:event="oninput"

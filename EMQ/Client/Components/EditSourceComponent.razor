@@ -121,8 +121,8 @@
                 </label>
                 <br/>
 
-                <div id="AirDateStart" style="max-width: 112px; display: inline-block; margin-right: 5px;">
-                    <Blazorise.DatePicker TValue="DateTime" @bind-Date="@Source.AirDateStart" min="@DateTime.Parse("1970-01-01")" max="@DateTime.Parse(Constants.QFDateMax)"/>
+                <div id="AirDateStart" style="max-width: 130px; display: inline-block; margin-right: 5px;">
+                    <Blazorise.DatePicker TValue="DateTime" @bind-Date="@Source.AirDateStart" min="@DateTime.UnixEpoch" max="@DateTime.Parse(Constants.QFDateMax)"/>
                 </div>
                 <label for="AirDateStart">Start date</label>
             </div>
@@ -208,7 +208,7 @@
 
     public List<string> ValidationMessages { get; } = new();
 
-    private static SongSource GetNewSource => new() { Titles = new List<Title> { new() { IsMainTitle = true, Language = "ja", } }, AirDateStart = new DateTime(1970, 1, 1), };
+    private static SongSource GetNewSource => new() { Titles = new List<Title> { new() { IsMainTitle = true, Language = "ja", } }, AirDateStart = DateTime.UnixEpoch, };
 
     public string NoteUser { get; set; } = "";
 
