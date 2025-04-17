@@ -572,7 +572,7 @@
                     isValid = false;
                 }
 
-                if (!isOther && song.Attributes.HasFlag(SongAttributes.NonCanon))
+                if (!isOther && song.Attributes.HasFlag(SongAttributes.NonCanon) && !isBgm)
                 {
                     ValidationMessages.Add("If a song is Non-canon, it must also be Other.");
                     isValid = false;
