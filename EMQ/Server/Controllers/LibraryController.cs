@@ -39,8 +39,10 @@ public class LibraryController : ControllerBase
         int msId = int.TryParse(req.SongSourceTitle, out msId) ? msId : 0;
         if (msId > 0)
         {
-            var songsSource = await DbManager.GetSongSource(new SongSource(){Id = msId}, null);
-            return await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle);
+            var songsSource = await DbManager.GetSongSource(new SongSource() { Id = msId }, null);
+            return songsSource.SongSource.Id > 0
+                ? await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle)
+                : Array.Empty<Song>();
         }
         else
         {
