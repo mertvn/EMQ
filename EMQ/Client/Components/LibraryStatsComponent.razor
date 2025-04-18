@@ -14,10 +14,10 @@
         <Blazorise.Tab Name="TabSong">Song</Blazorise.Tab>
         <Blazorise.Tab Name="TabSongDifficulty">Song difficulty</Blazorise.Tab>
         <Blazorise.Tab Name="TabSongRating">Song rating</Blazorise.Tab>
-        <Blazorise.Tab Name="TabVNYear">VN year</Blazorise.Tab>
-        <Blazorise.Tab Name="TabVN">VN</Blazorise.Tab>
+        <Blazorise.Tab Name="TabVNYear">Source year</Blazorise.Tab>
+        <Blazorise.Tab Name="TabVN">Source</Blazorise.Tab>
         <Blazorise.Tab Name="TabArtist">Artist</Blazorise.Tab>
-        <Blazorise.Tab Name="TabUploaders">Uploaders</Blazorise.Tab>
+        <Blazorise.Tab Name="TabUploaders">Uploader</Blazorise.Tab>
     </Items>
     <Content>
     @if (true)
@@ -36,7 +36,7 @@
                 <p>Total:</p>
                 <ul>
                     <li>Songs: @libraryStats.TotalMusicCount</li>
-                    <li>VNs: @libraryStats.TotalMusicSourceCount</li>
+                    <li>Sources: @libraryStats.TotalMusicSourceCount</li>
                     <li>Artists: @libraryStats.TotalArtistCount</li>
                 </ul>
             </div>
@@ -45,7 +45,7 @@
                 <p>Available:</p>
                 <ul>
                     <li>Songs: @libraryStats.AvailableMusicCount (@(Utils.PercentageStr(libraryStats.AvailableMusicCount, libraryStats.TotalMusicCount)))</li>
-                    <li>VNs: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
+                    <li>Sources: @libraryStats.AvailableMusicSourceCount (@(Utils.PercentageStr(libraryStats.AvailableMusicSourceCount, libraryStats.TotalMusicSourceCount)))</li>
                     <li>Artists: @libraryStats.AvailableArtistCount (@(Utils.PercentageStr(libraryStats.AvailableArtistCount, libraryStats.TotalArtistCount)))</li>
                 </ul>
             </div>
@@ -197,7 +197,7 @@
                     <table>
                         <tr class="libraryStatsHeaders">
                             <th class="libraryStatsHeader">#</th>
-                            <th class="libraryStatsHeader">VN</th>
+                            <th class="libraryStatsHeader">Source</th>
                             <th class="libraryStatsHeader">Songs</th>
                             <th class="libraryStatsHeader">Percentage</th>
                         </tr>
