@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1148,38 +1148,7 @@ public class QuizManager
                 }
             case GamemodeKind.EruMode:
                 {
-                    var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
-                    var team1 = teams.ElementAt(0).ToArray();
-                    var team2 = teams.ElementAt(1).ToArray();
-
-                    for (int i = 0; i < team1.Length; i++)
-                    {
-                        Player team1Player = team1[i];
-                        Player team2Player = team2[i];
-
-                        if (team1Player.PlayerStatus == PlayerStatus.Correct)
-                        {
-                            if (team2Player.PlayerStatus != PlayerStatus.Correct)
-                            {
-                                foreach (Player player in team2)
-                                {
-                                    player.Lives -= 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (team2Player.PlayerStatus == PlayerStatus.Correct)
-                            {
-                                foreach (Player player in team1)
-                                {
-                                    player.Lives -= 1;
-                                }
-                            }
-                        }
-                    }
-
-                    Quiz.Room.Log($"{team1.First().Lives}-{team2.First().Lives}", writeToChat: true);
+                    EruModeTick();
                     break;
                 }
             case GamemodeKind.Default:
@@ -1187,6 +1156,54 @@ public class QuizManager
             default:
                 break;
         }
+    }
+
+    public void EruModeTick()
+    {
+        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        for (int i = 0; i < teams.Length; i++)
+        {
+            var currentTeam = teams[i].ToArray();
+            for (int j = i + 1; j < teams.Length; j++)
+            {
+                var opposingTeam = teams[j].ToArray();
+                int minPlayerCount = Math.Min(currentTeam.Length, opposingTeam.Length); // todo option to use max?
+                for (int k = 0; k < minPlayerCount; k++)
+                {
+                    Player currentPlayer = currentTeam[k];
+                    Player opposingPlayer = opposingTeam[k];
+
+                    if (currentPlayer.Lives <= 0)
+                    {
+                        // dead players can't take lives
+                        continue;
+                    }
+
+                    if (currentPlayer.PlayerStatus == PlayerStatus.Correct &&
+                        opposingPlayer.PlayerStatus != PlayerStatus.Correct)
+                    {
+                        Quiz.Room.Log($"{currentPlayer.Username} took a life from {opposingPlayer.Username}.",
+                            writeToChat: true);
+                        foreach (Player player in opposingTeam)
+                        {
+                            player.Lives -= 1;
+                        }
+                    }
+                    else if (currentPlayer.PlayerStatus != PlayerStatus.Correct &&
+                             opposingPlayer.PlayerStatus == PlayerStatus.Correct)
+                    {
+                        Quiz.Room.Log($"{opposingPlayer.Username} took a life from {currentPlayer.Username}.",
+                            writeToChat: true);
+                        foreach (Player player in currentTeam)
+                        {
+                            player.Lives -= 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        Quiz.Room.Log($"{string.Join("-", teams.Select(x => x.First().Lives))}", writeToChat: true);
     }
 
     public async Task NGMCBurnPlayer(Player burnedPlayer, Player requestingPlayer)
@@ -1934,21 +1951,21 @@ public class QuizManager
                 return false;
             }
 
-            if (Quiz.Room.Players.Any(x => x.TeamId is < 1 or > 2))
+            if (Quiz.Room.QuizSettings.GamemodeKind is GamemodeKind.NGMC &&
+                Quiz.Room.Players.Any(x => x.TeamId is < 1 or > 2))
             {
                 Quiz.Room.Log($"Gamemode: The teams must use the team ids 1 and 2.", writeToChat: true);
                 return false;
             }
 
-            bool saw2 = false;
+            int highestTeamIdSeen = 0;
             foreach (Player player in Quiz.Room.Players)
             {
-                if (player.TeamId == 2)
+                if (player.TeamId > highestTeamIdSeen)
                 {
-                    saw2 = true;
+                    highestTeamIdSeen = player.TeamId;
                 }
-
-                if (player.TeamId == 1 && saw2)
+                else if (player.TeamId < highestTeamIdSeen)
                 {
                     Quiz.Room.Log($"Gamemode: The teams must be in sequential order.", writeToChat: true);
                     return false;

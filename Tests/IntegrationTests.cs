@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Client;
 using EMQ.Server;
+using EMQ.Server.Business;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -224,5 +225,35 @@ public class IntegrationTests
         }
 
         // ReSharper disable once FunctionNeverReturns
+    }
+
+    [Test, Explicit]
+    public async Task EruModeTick()
+    {
+        var players = new List<Player>()
+        {
+            new(Random.Shared.Next(), Guid.NewGuid().ToString(), Avatar.DefaultAvatar) { TeamId = 1 },
+            new(Random.Shared.Next(), Guid.NewGuid().ToString(), Avatar.DefaultAvatar) { TeamId = 1 },
+            new(Random.Shared.Next(), Guid.NewGuid().ToString(), Avatar.DefaultAvatar) { TeamId = 2 },
+            new(Random.Shared.Next(), Guid.NewGuid().ToString(), Avatar.DefaultAvatar) { TeamId = 2 },
+            new(Random.Shared.Next(), Guid.NewGuid().ToString(), Avatar.DefaultAvatar) { TeamId = 3 },
+        };
+
+        var qs = new QuizSettings() { GamemodeKind = GamemodeKind.EruMode, MaxLives = 15, };
+        var room = new Room(Guid.NewGuid(), "", players[0]) { QuizSettings = qs, };
+        foreach (Player player in players)
+        {
+            room.Players.Enqueue(player);
+        }
+
+        var quiz = new Quiz(room, Guid.NewGuid());
+        var qm = new QuizManager(quiz);
+        if (await qm.PrimeQuiz())
+        {
+            _ = qm.StartQuiz();
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            qm.EruModeTick();
+            Console.WriteLine();
+        }
     }
 }
