@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -748,7 +748,7 @@ public class QuizManager
                     }
                     else
                     {
-                        var titles =songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
+                        var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => x != null)!);
@@ -1645,9 +1645,9 @@ public class QuizManager
                         var msIds = (await connection.QueryAsync<int>(
                                 "select distinct music_source_id from music_source_music where music_id = any(@mIds)",
                                 new
-                                    {
-                                        mIds = labelMids.Any() ? collabMids.Intersect(labelMids).ToArray() : collabMids
-                                    }))
+                                {
+                                    mIds = labelMids.Any() ? collabMids.Intersect(labelMids).ToArray() : collabMids
+                                }))
                             .ToList();
 
                         // todo batch
