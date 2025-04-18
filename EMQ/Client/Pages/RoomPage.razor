@@ -248,7 +248,27 @@ else
                         </span>
                     }
 
-                    <span style="color: white; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @{
+                        string usernameColor = "white";
+                    }
+
+                    @if (Room != null && Room.QuizSettings.TeamSize > 1 && !Room.QuizSettings.IsSharedGuessesTeams)
+                    {
+                        usernameColor = player.TeamId switch
+                        {
+                            1 => "orange",
+                            2 => "#db00db",
+                            3 => "#5f5fff",
+                            4 => "red",
+                            5 => "yellow",
+                            6 => "green",
+                            7 => "cyan",
+                            8 => "#f7a6b4",
+                            _ => usernameColor
+                            };
+                    }
+
+                    <span style="color: @usernameColor; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @player.Username
                     </span>
                 </div>
