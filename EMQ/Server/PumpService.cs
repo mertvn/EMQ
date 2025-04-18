@@ -88,6 +88,15 @@ public sealed class PumpService : BackgroundService
 
                 if (ServerState.PumpMessages.TryGetValue(playerId, out var queue))
                 {
+                    var validConnectionIds = new List<string>(2);
+                    foreach (var connectionInfo in session.PlayerConnectionInfos)
+                    {
+                        if (Pong.QuizPages.Contains(connectionInfo.Value.Page))
+                        {
+                            validConnectionIds.Add(connectionInfo.Key);
+                        }
+                    }
+
                     while (queue.MessagesToSend.TryDequeue(out var message))
                     {
                         // if (message.Target == "ReceiveCorrectAnswer")
@@ -95,15 +104,6 @@ public sealed class PumpService : BackgroundService
                         //     Console.WriteLine(
                         //         $"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         // }
-
-                        var validConnectionIds = new List<string>();
-                        foreach (var connectionInfo in session.PlayerConnectionInfos)
-                        {
-                            if (Pong.QuizPages.Contains(connectionInfo.Value.Page))
-                            {
-                                validConnectionIds.Add(connectionInfo.Key);
-                            }
-                        }
 
                         // Console.WriteLine($"{DateTime.UtcNow:O} attempting to send {message.Target} message for {playerId}");
                         var task = _hubContext.Clients.Clients(validConnectionIds)
