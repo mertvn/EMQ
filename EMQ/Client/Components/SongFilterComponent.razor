@@ -1,0 +1,206 @@
+@using System.Collections.Generic;
+@using System.Linq;
+@using EMQ.Shared.Core
+@using EMQ.Shared.Quiz.Entities.Concrete
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2 mb-2">
+                <label for="filterLogic" class="form-label">Combine Filters:</label>
+                <select class="form-select form-select-sm" id="filterLogic" @bind="UseAndString" @bind:after="DirtyFilters">
+                    <option value="True">AND (All)</option>
+                    <option value="False">OR (Any)</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 mb-2">
+                <label class="form-label">Media Availability:</label>
+                <div class="d-flex gap-2">
+                    <div class="flex-grow-1">
+                        <select class="form-select form-select-sm" @bind="VideoStatus" @bind:after="DirtyFilters">
+                            <option value="Any">Video: Any</option>
+                            <option value="Present">Video: Present</option>
+                            <option value="Missing">Video: Missing</option>
+                        </select>
+                    </div>
+                    <div class="flex-grow-1">
+                        <select class="form-select form-select-sm" @bind="SoundStatus" @bind:after="DirtyFilters">
+                            <option value="Any">Sound: Any</option>
+                            <option value="Present">Sound: Present</option>
+                            <option value="Missing">Sound: Missing</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <label class="form-label">My Vote Status:</label>
+                <select class="form-select form-select-sm" @bind="VoteStatus" @bind:after="DirtyFilters">
+                    <option value="Any">Any</option>
+                    <option value="Voted">Voted</option>
+                    <option value="Unvoted">Unvoted</option>
+                </select>
+            </div>
+
+            <br/>
+
+            <div class="col-md-5 mb-2">
+                <label class="form-label">Missing Artist Roles:</label>
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach ((SongArtistRole key, bool _) in MissingArtistRoles)
+                    {
+                        <div class="form-check form-check-inline me-1">
+                            <input class="form-check-input" type="checkbox"
+                                   id="missing-artist-@key"
+                                   @bind="@(MissingArtistRoles[key])"
+                                   @bind:after="DirtyFilters"/>
+                            <label class="form-check-label small" for="missing-artist-@key">
+                                @key.GetDescription()
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-12">
+                <label class="form-label">Missing External Links:</label>
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach ((SongLinkType key, bool _) in MissingExternalLinks)
+                    {
+                        <div class="form-check form-check-inline me-1">
+                            <input class="form-check-input" type="checkbox"
+                                   id="missing-link-@key"
+                                   @bind="@(MissingExternalLinks[key])"
+                                   @bind:after="DirtyFilters"/>
+                            <label class="form-check-label small" for="missing-link-@key">
+                                @key.GetDescription()
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    @* <div class="card-footer"> *@
+    @*     <button class="btn btn-outline-secondary ms-2" @onclick="ResetFilters">Reset</button> *@
+    @* </div> *@
+</div>
+
+@code {
+
+    private bool UseAnd
+    {
+        get => UseAndString == "True";
+        set => UseAndString = value.ToString();
+    }
+
+    private string UseAndString { get; set; } = "True";
+
+    private bool ApplyNot { get; set; }
+
+    private string VideoStatus { get; set; } = "Any";
+
+    private string SoundStatus { get; set; } = "Any";
+
+    private string VoteStatus { get; set; } = "Any";
+
+    private Dictionary<SongArtistRole, bool> MissingArtistRoles { get; set; } =
+        Enum.GetValues<SongArtistRole>().Where(x => x != SongArtistRole.Unknown).ToDictionary(x => x, _ => false);
+
+    private Dictionary<SongLinkType, bool> MissingExternalLinks { get; set; } =
+        Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown).ToDictionary(x => x, _ => false);
+
+    [Parameter]
+    public Func<Task>? ParentStateHasChangedCallback { get; set; }
+
+    private void DirtyFilters()
+    {
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+    private bool HasActiveFilters()
+    {
+        return VideoStatus != "Any" ||
+               SoundStatus != "Any" ||
+               VoteStatus != "Any" ||
+               MissingArtistRoles.Any(r => r.Value) ||
+               MissingExternalLinks.Any(l => l.Value);
+    }
+
+    // todo? make static
+    public IEnumerable<Song> ApplyFilters(IEnumerable<Song> songs)
+    {
+        if (!HasActiveFilters())
+        {
+            return songs;
+        }
+
+        return songs.Where(song =>
+        {
+            List<bool> results = new List<bool>();
+            var songFileLinks = song.Links.Where(x => x.IsFileLink).ToList();
+
+            if (VideoStatus != "Any")
+            {
+                bool hasVideo = songFileLinks.Any(x => x.IsVideo);
+                bool videoMatches = VideoStatus == "Missing" ? !hasVideo : hasVideo;
+                results.Add(ApplyNot ? !videoMatches : videoMatches);
+            }
+
+            if (SoundStatus != "Any")
+            {
+                bool hasSound = songFileLinks.Any(x => !x.IsVideo);
+                bool soundMatches = SoundStatus == "Missing" ? !hasSound : hasSound;
+                results.Add(ApplyNot ? !soundMatches : soundMatches);
+            }
+
+            foreach ((SongArtistRole key, bool _) in MissingArtistRoles.Where(x => x.Value))
+            {
+                bool hasRole = song.Artists.Any(x => x.Roles.Contains(key));
+                bool roleMatches = !hasRole;
+                results.Add(ApplyNot ? !roleMatches : roleMatches);
+            }
+
+            foreach ((SongLinkType key, bool _) in MissingExternalLinks.Where(x => x.Value))
+            {
+                bool hasLink = song.Links.Any(x => x.Type == key);
+                bool linkMatches = !hasLink;
+                results.Add(ApplyNot ? !linkMatches : linkMatches);
+            }
+
+            if (VoteStatus != "Any")
+            {
+                bool isVoted = ClientState.MusicVotes.ContainsKey(song.Id);
+                bool voteMatches = VoteStatus == "Voted" ? isVoted : !isVoted;
+                results.Add(ApplyNot ? !voteMatches : voteMatches);
+            }
+
+            return UseAnd ? results.All(r => r) : results.Any(r => r);
+        }).ToList();
+    }
+
+    private void ResetFilters()
+    {
+        UseAnd = true;
+        ApplyNot = false;
+        VideoStatus = "Any";
+        SoundStatus = "Any";
+        VoteStatus = "Any";
+
+        foreach ((SongArtistRole key, bool _) in MissingArtistRoles)
+        {
+            MissingArtistRoles[key] = false;
+        }
+
+        foreach ((SongLinkType key, bool _) in MissingExternalLinks)
+        {
+            MissingExternalLinks[key] = false;
+        }
+
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+}

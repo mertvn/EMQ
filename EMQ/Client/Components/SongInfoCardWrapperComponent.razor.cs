@@ -22,9 +22,6 @@ public partial class SongInfoCardWrapperComponent
     public IEnumerable<Song> CurrentSongs { get; set; } = new List<Song>();
 
     [Parameter]
-    public LibrarySongFilterKind LibrarySongFilter { get; set; }
-
-    [Parameter]
     public string NoSongsText { get; set; } = "";
 
     [Parameter]
@@ -35,7 +32,7 @@ public partial class SongInfoCardWrapperComponent
 
     // private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
 
-    private int VisibleSongsCount { get; set; }
+    private int VisibleSongsCount => CurrentSongs.Count();
 
     private string _batchSetSubmittedByText = "";
 

@@ -264,14 +264,10 @@
 
     <div id="songsWrapper" style="border: 1px solid #ddd;">
         <div>
-            <select id="SongSelectionKind" style="margin: 5px" @oninput="OnLibrarySongFilterChanged">
-                @foreach (LibrarySongFilterKind librarySongFilter in Enum.GetValues<LibrarySongFilterKind>())
-                {
-                    <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
-                }
-            </select>
-            <label for="SongSelectionKind">Filter</label>
-            <br/>
+            <details style="margin: 5px;">
+                <summary>Filters</summary>
+                <SongFilterComponent @ref="songFilterComponentRef" ParentStateHasChangedCallback="@StateHasChangedAsync"/>
+            </details>
 
             <select id="SongOrderKind" style="margin: 5px" @oninput="OnLibrarySongOrderChanged">
                 @foreach (LibrarySongOrderKind orderKind in Enum.GetValues<LibrarySongOrderKind>())
@@ -347,8 +343,7 @@
             <Content>
                 <Blazorise.TabPanel Name="TabVNDB">
                     <SongInfoCardWrapperComponent
-                        CurrentSongs="@CurrentSongs.Except(bgms)"
-                        LibrarySongFilter="@LibrarySongFilter"
+                        CurrentSongs="@(songFilterComponentRef.ApplyFilters(CurrentSongs.Except(bgms)))"
                         NoSongsText="@NoSongsText"
                         IsLibraryPage="true">
                     </SongInfoCardWrapperComponent>
@@ -381,8 +376,7 @@
                         <br/>
 
                         <SongInfoCardWrapperComponent
-                            CurrentSongs="value"
-                            LibrarySongFilter="@LibrarySongFilter"
+                            CurrentSongs="@(songFilterComponentRef.ApplyFilters(value))"
                             NoSongsText="@NoSongsText"
                             IsLibraryPage="true">
                         </SongInfoCardWrapperComponent>

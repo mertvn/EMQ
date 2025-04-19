@@ -80,7 +80,7 @@
 
                     @if (IsLibraryPage)
                     {
-                        <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem.Song })" LibrarySongFilter="LibrarySongFilterKind.All" IsLibraryPage="false"/>
+                        <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem.Song })" IsLibraryPage="false"/>
                     }
 
                     @if (reviewingItem.analysis_raw != null)

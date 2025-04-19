@@ -38,8 +38,6 @@ public partial class LibraryPage
 
     private string _selectedTabQueue { get; set; } = "TabReviewQueue";
 
-    public LibrarySongFilterKind LibrarySongFilter { get; set; }
-
     public string VndbAdvsearchStr { get; set; } = "";
 
     public Tabs? TabsComponent { get; set; }
@@ -60,6 +58,8 @@ public partial class LibraryPage
 
     [SupplyParameterFromQuery(Name = "mId")]
     private int QueryMId { get; set; }
+
+    public SongFilterComponent songFilterComponentRef { get; set; } = null!;
 
     private async Task StateHasChangedAsync()
     {
@@ -288,14 +288,7 @@ public partial class LibraryPage
         await TabsComponentVndb!.SelectTab("TabVNDB");
     }
 
-    private async Task OnLibrarySongFilterChanged(ChangeEventArgs arg)
-    {
-        LibrarySongFilter = Enum.Parse<LibrarySongFilterKind>((string)arg.Value!);
-
-        // count doesn't update correctly unless we do this (???)
-        await StateHasChangedAsync();
-    }
-
+    // todo reapply this after searching
     private async Task OnLibrarySongOrderChanged(ChangeEventArgs arg)
     {
         // Console.WriteLine("sorting");
@@ -365,45 +358,6 @@ public partial class LibraryPage
             await TabsComponentVndb!.SelectTab("TabVNDB");
         }
     }
-}
-
-public enum LibrarySongFilterKind
-{
-    [Description("All")]
-    All,
-
-    [Description("Missing only video link")]
-    MissingOnlyVideo,
-
-    [Description("Missing only sound link")]
-    MissingOnlySound,
-
-    [Description("Missing video link")]
-    MissingVideo,
-
-    [Description("Missing sound link")]
-    MissingSound,
-
-    [Description("Missing both links")]
-    MissingBoth,
-
-    [Description("Missing composer info")]
-    MissingComposer,
-
-    [Description("Missing arranger info")]
-    MissingArranger,
-
-    [Description("Missing lyricist info")]
-    MissingLyricist,
-
-    [Description("Missing ErogameScape music link")]
-    MissingErogameScapeMusic,
-
-    [Description("Voted")]
-    Voted,
-
-    [Description("Unvoted")]
-    Unvoted,
 }
 
 public enum LibrarySongOrderKind

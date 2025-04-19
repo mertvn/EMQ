@@ -63,10 +63,6 @@ public partial class LibraryStatsComponent
         {
             await LibraryPage.TabsComponent!.SelectTab("TabAutocompleteMst");
             LibraryPage.selectedMusicSourceTitle = null;
-            // LibraryPage.OnLibrarySongFilterChanged(new ChangeEventArgs()
-            // {
-            //     Value = LibrarySongFilterKind.All.ToString()
-            // });
             await LibraryPage.SelectedResultChangedUploader(uploader);
         }
     }

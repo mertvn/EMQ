@@ -5,9 +5,9 @@
 
 <div>
     <select id="SongSelectionKind" style="margin: 5px" @oninput="OnSongHistoryFilterChanged">
-        @foreach (SongHistoryFilterKind librarySongFilter in Enum.GetValues<SongHistoryFilterKind>())
+        @foreach (SongHistoryFilterKind songHistoryFilterKind in Enum.GetValues<SongHistoryFilterKind>())
         {
-            <option value="@librarySongFilter">@librarySongFilter.GetDescription()</option>
+            <option value="@songHistoryFilterKind">@songHistoryFilterKind.GetDescription()</option>
         }
     </select>
     <label for="SongSelectionKind">Filter</label>

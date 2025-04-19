@@ -85,9 +85,6 @@
 }
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
-    @{
-        VisibleSongsCount = 0;
-    }
     @foreach (Song song in CurrentSongs)
     {
         @if (true)
@@ -96,27 +93,8 @@
             bool hasVideo = songFileLinks.Any(x => x.IsVideo);
             bool hasSound = songFileLinks.Any(x => !x.IsVideo);
 
-            bool shouldDisplay = LibrarySongFilter switch
+            @if (true)
             {
-                LibrarySongFilterKind.All => true,
-                LibrarySongFilterKind.MissingOnlyVideo => hasSound && !hasVideo,
-                LibrarySongFilterKind.MissingOnlySound => hasVideo && !hasSound,
-                LibrarySongFilterKind.MissingVideo => !hasVideo,
-                LibrarySongFilterKind.MissingSound => !hasSound,
-                LibrarySongFilterKind.MissingBoth =>  !hasVideo && !hasSound,
-                LibrarySongFilterKind.MissingComposer => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer)),
-                LibrarySongFilterKind.MissingArranger => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger)),
-                LibrarySongFilterKind.MissingLyricist => !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist)),
-                LibrarySongFilterKind.MissingErogameScapeMusic => !song.Links.Any(x => x.Type == SongLinkType.ErogameScapeMusic),
-                LibrarySongFilterKind.Voted => ClientState.MusicVotes.ContainsKey(song.Id),
-                LibrarySongFilterKind.Unvoted => !ClientState.MusicVotes.ContainsKey(song.Id),
-                _ => throw new ArgumentOutOfRangeException()
-                };
-
-            @if (shouldDisplay)
-            {
-                VisibleSongsCount += 1;
-
                 var validUrls = SongLink.FilterSongLinks(songFileLinks).Select(x => x.Url).ToList();
 
                 // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
