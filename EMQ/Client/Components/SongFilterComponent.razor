@@ -121,65 +121,110 @@
         ParentStateHasChangedCallback?.Invoke();
     }
 
-    private bool HasActiveFilters()
-    {
-        return VideoStatus != "Any" ||
-               SoundStatus != "Any" ||
-               VoteStatus != "Any" ||
-               MissingArtistRoles.Any(r => r.Value) ||
-               MissingExternalLinks.Any(l => l.Value);
-    }
+    // private bool HasActiveFilters()
+    // {
+    //     return VideoStatus != "Any" ||
+    //            SoundStatus != "Any" ||
+    //            VoteStatus != "Any" ||
+    //            MissingArtistRoles.Any(r => r.Value) ||
+    //            MissingExternalLinks.Any(l => l.Value);
+    // }
 
     // todo? make static
     public IEnumerable<Song> ApplyFilters(IEnumerable<Song> songs)
     {
-        if (!HasActiveFilters())
+        var activeArtistRoles = MissingArtistRoles.Where(x => x.Value).Select(x => x.Key).ToHashSet();
+        var activeExternalLinks = MissingExternalLinks.Where(x => x.Value).Select(x => x.Key).ToHashSet();
+        bool checkVideo = VideoStatus != "Any";
+        bool checkSound = SoundStatus != "Any";
+        bool checkVote = VoteStatus != "Any";
+        bool checkArtistRoles = activeArtistRoles.Any();
+        bool checkExternalLinks = activeExternalLinks.Any();
+
+        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkArtistRoles || checkExternalLinks;
+        if (!hasActiveFilters)
         {
             return songs;
         }
 
         return songs.Where(song =>
         {
-            List<bool> results = new List<bool>();
-            var songFileLinks = song.Links.Where(x => x.IsFileLink).ToList();
-
-            if (VideoStatus != "Any")
+            if (checkVideo)
             {
-                bool hasVideo = songFileLinks.Any(x => x.IsVideo);
+                bool hasVideo = song.Links.Any(x => x.IsVideo);
                 bool videoMatches = VideoStatus == "Missing" ? !hasVideo : hasVideo;
-                results.Add(ApplyNot ? !videoMatches : videoMatches);
+                bool result = ApplyNot ? !videoMatches : videoMatches;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
+                }
             }
 
-            if (SoundStatus != "Any")
+            if (checkSound)
             {
-                bool hasSound = songFileLinks.Any(x => !x.IsVideo);
+                bool hasSound = song.Links.Any(x => !x.IsVideo && x.IsFileLink);
                 bool soundMatches = SoundStatus == "Missing" ? !hasSound : hasSound;
-                results.Add(ApplyNot ? !soundMatches : soundMatches);
+                bool result = ApplyNot ? !soundMatches : soundMatches;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
+                }
             }
 
-            foreach ((SongArtistRole key, bool _) in MissingArtistRoles.Where(x => x.Value))
-            {
-                bool hasRole = song.Artists.Any(x => x.Roles.Contains(key));
-                bool roleMatches = !hasRole;
-                results.Add(ApplyNot ? !roleMatches : roleMatches);
-            }
-
-            foreach ((SongLinkType key, bool _) in MissingExternalLinks.Where(x => x.Value))
-            {
-                bool hasLink = song.Links.Any(x => x.Type == key);
-                bool linkMatches = !hasLink;
-                results.Add(ApplyNot ? !linkMatches : linkMatches);
-            }
-
-            if (VoteStatus != "Any")
+            if (checkVote)
             {
                 bool isVoted = ClientState.MusicVotes.ContainsKey(song.Id);
                 bool voteMatches = VoteStatus == "Voted" ? isVoted : !isVoted;
-                results.Add(ApplyNot ? !voteMatches : voteMatches);
+                bool result = ApplyNot ? !voteMatches : voteMatches;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
+                }
             }
 
-            return UseAnd ? results.All(r => r) : results.Any(r => r);
-        }).ToList();
+            if (checkArtistRoles)
+            {
+                foreach (SongArtistRole key in activeArtistRoles)
+                {
+                    bool hasRole = song.Artists.Any(x => x.Roles.Contains(key));
+                    bool result = ApplyNot ? hasRole : !hasRole;
+                    switch (UseAnd)
+                    {
+                        case true when !result:
+                            return false;
+                        case false when result:
+                            return true;
+                    }
+                }
+            }
+
+            if (checkExternalLinks)
+            {
+                foreach (SongLinkType key in activeExternalLinks)
+                {
+                    bool hasLink = song.Links.Any(x => x.Type == key);
+                    bool result = ApplyNot ? hasLink : !hasLink;
+                    switch (UseAnd)
+                    {
+                        case true when !result:
+                            return false;
+                        case false when result:
+                            return true;
+                    }
+                }
+            }
+
+            return UseAnd;
+        });
     }
 
     private void ResetFilters()
