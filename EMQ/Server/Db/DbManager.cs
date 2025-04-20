@@ -5651,7 +5651,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var musicVotes = (await connection.QueryAsync<MusicVote>(
-            "select * from music_vote where not user_id = any(@ign) order by updated_at desc limit 250",
+            "select * from music_vote where not user_id = any(@ign) order by updated_at desc limit 500",
             new { ign = IgnoredMusicVotes })).ToArray();
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
