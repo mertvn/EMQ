@@ -101,7 +101,7 @@
                                     }
 
                                     <InputSelect id="LinkHost" @bind-Value="ClientState.Preferences.LinkHost" style="margin: 5px">
-                                        @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown))
+                                        @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => SongLink.FileLinkTypes.Contains((int)x)))
                                         {
                                             <option value="@songLinkType">@songLinkType</option>
                                         }
