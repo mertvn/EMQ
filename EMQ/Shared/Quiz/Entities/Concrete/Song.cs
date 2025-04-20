@@ -111,7 +111,8 @@ public partial class Song : IEditQueueEntity
     /// NOT [Pure]
     public Song Sort()
     {
-        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ToList();
+        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ThenBy(x => x.Language)
+            .ThenBy(x => x.IsMainTitle).ToList();
         Links = Links.OrderBy(x => x.Url).ToList();
         Artists = Artists.OrderBy(x => x.Id).ToList();
         Sources = Sources.OrderBy(x => x.Id).ToList();

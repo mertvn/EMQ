@@ -11,7 +11,9 @@ using Dapper.Database.Extensions;
 using DapperQueryBuilder;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
 namespace EMQ.Server.Db.Imports.EGS;
@@ -353,59 +355,62 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         var matchedResults = egsImporterInnerResults.Where(x => x.ResultKind == EgsImporterInnerResultKind.Matched)
             .ToArray();
 
+        int[] mIds = matchedResults.Select(x => x.mIds.Single()).ToArray();
         HashSet<int> mIdsWithExistingMels =
             (await new NpgsqlConnection(ConnectionHelper.GetConnectionString()).QueryAsync<int>(
                 $"select music_id from music_external_link where type = {(int)SongLinkType.ErogameScapeMusic} AND music_id = ANY(@mIds)",
-                new { mIds = matchedResults.Select(x => x.mIds.Single()).ToArray() })).ToHashSet();
+                new { mIds })).ToHashSet();
+
+        var songs = (await DbManager.SelectSongsMIds(mIds, false)).ToDictionary(x => x.Id, x => x);
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         foreach (EgsImporterInnerResult innerResult in matchedResults)
         {
-            // todo important use ServerUtils.BotEditSong()
             int mId = innerResult.mIds.Single();
-            // todo? don't insert if latin title is the same after normalization
-            int rowsUpdate = await connection.ExecuteAsync(
-                @"UPDATE music_title mt SET non_latin_title = @mtNonLatinTitle
-WHERE (mt.non_latin_title IS NULL OR mt.non_latin_title = '') AND mt.music_id = @mId AND mt.language='ja' AND mt.is_main_title=true",
-                new { mtNonLatinTitle = innerResult.EgsData.MusicName, mId });
-            if (rowsUpdate <= 0)
+            var song = songs[mId];
+            bool addedSomething = false;
+
+            var title = song.Titles.SingleOrDefault(x =>
+                string.IsNullOrWhiteSpace(x.NonLatinTitle) && x.Language == "ja" && x.IsMainTitle);
+            if (title != null && !title.LatinTitle.Equals(innerResult.EgsData.MusicName,
+                    StringComparison.InvariantCultureIgnoreCase))
             {
-                // Console.WriteLine($"Error updating music_title for mId {mId} {innerResult.EgsData.MusicName}");
-            }
-            else
-            {
-                Console.WriteLine($"updated music_title for mId {mId} {innerResult.EgsData.MusicName}");
+                addedSomething = true;
+                title.NonLatinTitle = innerResult.EgsData.MusicName;
             }
 
             if (!mIdsWithExistingMels.Contains(mId))
             {
-                // todo important use ServerUtils.BotEditSong()
-                bool success = await connection.InsertAsync(new MusicExternalLink
+                string url =
+                    $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}";
+                var songLink = new SongLink
                 {
-                    music_id = mId,
-                    url =
-                        $"https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}",
-                    type = SongLinkType.ErogameScapeMusic,
-                    is_video = false,
-                    duration = default,
-                    submitted_by = "Cookie4IS",
-                    sha256 = "",
-                    analysis_raw = null
-                });
-                if (!success)
-                {
-                    Console.WriteLine(
-                        $"Error inserting music_external_link for mId {mId} https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}");
-                }
-                else
-                {
-                    Console.WriteLine(
-                        $"inserted music_external_link for mId {mId} https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}");
-                    mIdsWithExistingMels.Add(mId);
-                }
+                    Url = url,
+                    Type = SongLinkType.ErogameScapeMusic,
+                    IsVideo = false,
+                    Duration = default,
+                    SubmittedBy = "Cookie4IS",
+                    Sha256 = "",
+                    AnalysisRaw = null
+                };
+
+                addedSomething = true;
+                song.Links.Add(songLink);
+                mIdsWithExistingMels.Add(mId);
             }
 
             // todo? insert egs game links
+
+            if (addedSomething)
+            {
+                var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, false, "EgsImporter"));
+                if (actionResult is not OkResult)
+                {
+                    var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                    Console.WriteLine(
+                        $"Error inserting music_external_link for mId {mId} https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/music.php?music={innerResult.EgsData.MusicId}: actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+                }
+            }
         }
     }
 }

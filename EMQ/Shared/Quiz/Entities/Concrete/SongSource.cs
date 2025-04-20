@@ -52,7 +52,8 @@ public class SongSource : IEditQueueEntity
     /// NOT [Pure]
     public SongSource Sort()
     {
-        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ToList();
+        Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ThenBy(x => x.Language)
+            .ThenBy(x => x.IsMainTitle).ToList();
         Links = Links.OrderBy(x => x.Url).ToList();
         Categories = Categories.OrderBy(x => x.Id).ToList();
         Developers = Developers.OrderBy(x => x.VndbId).ToList();
