@@ -842,7 +842,15 @@
         if (PersistAfterSubmittingDict["Sources"])
         {
             Song.Sources = oldSources;
+        }
+
+        if (PersistAfterSubmittingDict["Song types"])
+        {
             Song.Type = oldTypes;
+        }
+
+        if (PersistAfterSubmittingDict["Song attributes"])
+        {
             Song.Attributes = oldAttributes;
         }
 
