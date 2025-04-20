@@ -1905,6 +1905,7 @@ order by user_id";
         string[] validFilenames =
             (await connection.QueryAsync<string>("select url from music_external_link where type = 2"))
             .Select(x => x.Replace("https://emqselfhost/selfhoststorage/", "")
+                .Replace("https://erogemusicquiz.com/selfhoststorage/", "")
                 .Replace("catbox/", "")
                 .Replace("userup/", "")
                 .Replace("weba/", "")).ToArray();
@@ -2360,7 +2361,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
 
-        string date = "2025-02-09";
+        string date = "2025-04-20";
         string basePath = @$"C:\emq\vndbdumps\{date}\vndb-db-{date}\db";
         Dictionary<string, string[]> extlinks = (await File.ReadAllLinesAsync($"{basePath}/extlinks"))
             .Select(x => x.Split("\t"))
