@@ -88,9 +88,11 @@
 
 @code
 {
+    // todo? invert this
     public List<string> SidebarPages { get; } = new()
     {
-        "/", "HotelPage", "LibraryPage", "ErodlePage", "ModPage", "ImportPage", "RegisterPage", "ForgottenPasswordPage", "ServerStatsPage", "all",
+        "/", "HotelPage", "LibraryPage", "ErodlePage", "ModPage", "ImportPage", "RegisterPage",
+        "ForgottenPasswordPage", "ServerStatsPage", "all", "votes",
     };
 
     private PlayerPreferencesComponent? _playerPreferencesComponent;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -813,5 +813,13 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResGetMusicVotes>> GetMusicVotes([FromBody] int musicId)
     {
         return await DbManager.GetMusicVotes(musicId);
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetRecentMusicVotes")]
+    public async Task<ActionResult<ResGetRecentMusicVotes>> GetRecentMusicVotes()
+    {
+        return await DbManager.GetRecentMusicVotes();
     }
 }

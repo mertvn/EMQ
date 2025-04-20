@@ -5647,6 +5647,30 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
         return new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes };
     }
 
+    public static async Task<ResGetRecentMusicVotes> GetRecentMusicVotes()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var musicVotes = (await connection.QueryAsync<MusicVote>(
+            "select * from music_vote where not user_id = any(@ign) order by updated_at desc limit 250",
+            new { ign = IgnoredMusicVotes })).ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = musicVotes.Select(x => x.user_id).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+        var songs = await SelectSongsMIds(musicVotes.Select(x => x.music_id).ToArray(), false);
+        var songsDict = songs.ToDictionary(x => x.Id, x => x.ToStringLatin());
+
+        return new ResGetRecentMusicVotes()
+        {
+            ResGetMusicVotes = new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes },
+            SongsDict = songsDict
+        };
+    }
+
     public static async Task<ResGetSongSource> GetSongSource(SongSource req, Session? session)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());

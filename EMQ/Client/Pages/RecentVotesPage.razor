@@ -1,0 +1,50 @@
+﻿@page "/eu/all/votes"
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using System.Globalization
+@inject HttpClient _client
+
+<a class="link link-primary" href="/eu/all">Browse users</a>
+<br/>
+
+<h3>Recent votes</h3>
+<br/>
+
+@if (MusicVotes != null && ResGetRecentMusicVotes != null)
+{
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@MusicVotes">
+            <PropertyColumn Property="@(x => x.updated_at)" Title="Vote date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+            <TemplateColumn Title="Username" Sortable="true">
+                @Utils.UserIdToUsername(ResGetRecentMusicVotes.ResGetMusicVotes.UsernamesDict, context.user_id)
+            </TemplateColumn>
+            <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => x.vote))">
+                @(((float)context.vote! / 10).ToString(CultureInfo.InvariantCulture))
+            </TemplateColumn>
+            <TemplateColumn Title="Song">
+                @(ResGetRecentMusicVotes.SongsDict[context.music_id])
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+}
+
+@code {
+
+    private IQueryable<MusicVote>? MusicVotes { get; set; }
+
+    public ResGetRecentMusicVotes? ResGetRecentMusicVotes { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage res1 =
+            await _client.PostAsJsonAsync("Auth/GetRecentMusicVotes", "");
+        if (res1.IsSuccessStatusCode)
+        {
+            ResGetRecentMusicVotes = (await res1.Content.ReadFromJsonAsync<ResGetRecentMusicVotes>())!;
+            MusicVotes = ResGetRecentMusicVotes.ResGetMusicVotes.MusicVotes.AsQueryable();
+        }
+    }
+
+}
