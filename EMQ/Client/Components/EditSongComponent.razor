@@ -369,6 +369,12 @@
         {
             "Song title", false
         },
+        {
+            "Song types", false
+        },
+        {
+            "Song attributes", false
+        },
     };
 
     private string MusicBrainzSeederInputText { get; set; } = "";
@@ -490,6 +496,8 @@
                         var oldSources = Song.Sources;
                         var oldArtists = Song.Artists;
                         var oldTitles = Song.Titles;
+                        var oldTypes = Song.Type;
+                        var oldAttributes = Song.Attributes;
 
                         Song = GetNewSong;
                         if (PersistAfterSubmittingDict["Sources"])
@@ -505,6 +513,16 @@
                         if (PersistAfterSubmittingDict["Song title"])
                         {
                             Song.Titles = oldTitles;
+                        }
+
+                        if (PersistAfterSubmittingDict["Song types"])
+                        {
+                            Song.Type = oldTypes;
+                        }
+
+                        if (PersistAfterSubmittingDict["Song attributes"])
+                        {
+                            Song.Attributes = oldAttributes;
                         }
 
                         NoteUser = "";
@@ -818,10 +836,14 @@
         }
 
         var oldSources = Song.Sources;
+        var oldTypes = Song.Type;
+        var oldAttributes = Song.Attributes;
         Song = GetNewSong;
         if (PersistAfterSubmittingDict["Sources"])
         {
             Song.Sources = oldSources;
+            Song.Type = oldTypes;
+            Song.Attributes = oldAttributes;
         }
 
         await _autocompleteAComponentRef.ClearInputField();
