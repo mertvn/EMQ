@@ -1095,33 +1095,31 @@ ORDER BY music_id;";
                 {
                     // fix SongTypes for mIds
                     mIdSongSources[mId]![msId].SongTypes = songSource.MusicIds[mId].ToList();
+                }
 
-                    // fill developers
-                    var songSourceDevelopers = new List<SongSourceDeveloper>();
-                    foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
-                                 .Select(z => z.Url.ToVndbId()))
+                // fill developers
+                var songSourceDevelopers = new List<SongSourceDeveloper>();
+                foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
+                             .Select(z => z.Url.ToVndbId()))
+                {
+                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
                     {
-                        if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                        foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
-                            foreach ((string? _, string? pId, string? name, string? latin) in developers)
+                            (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
+                            songSourceDevelopers.Add(new SongSourceDeveloper
                             {
-                                (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                                songSourceDevelopers.Add(new SongSourceDeveloper
+                                VndbId = pId,
+                                Title = new Title
                                 {
-                                    VndbId = pId,
-                                    Title = new Title
-                                    {
-                                        LatinTitle = latinTitle,
-                                        NonLatinTitle = nonLatinTitle,
-                                        IsMainTitle = true
-                                    }
-                                });
-                            }
+                                    LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                }
+                            });
                         }
                     }
-
-                    mIdSongSources[mId]![msId].Developers = songSourceDevelopers;
                 }
+
+                mIdSongSources[mId]![msId].Developers = songSourceDevelopers;
             }
         }
 
