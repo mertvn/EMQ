@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EMQ.Client.Pages;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -157,10 +158,14 @@ public partial class ReviewEditComponent
 
                 if (isReadonly && reviewingItem.status == ReviewQueueStatus.Pending)
                 {
-                    // todo do this on the server, and in a smarter way
-                    await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!,
-                        "Automatically rejected due to an edit conflict.",
-                        ReviewQueueStatus.Rejected);
+                    if (ClientState.Session != null &&
+                        AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit))
+                    {
+                        // todo do this on the server, and in a smarter way
+                        await EditQueueComponent!.SendUpdateEditQueueItem(reviewingItem!,
+                            "Automatically rejected due to an edit conflict.",
+                            ReviewQueueStatus.Rejected);
+                    }
                 }
             }
 

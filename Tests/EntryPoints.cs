@@ -2735,6 +2735,6 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             }
         }
 
-        Console.WriteLine(total);
+        Console.WriteLine(total / 1024);
     }
 }
