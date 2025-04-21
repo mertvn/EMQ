@@ -557,6 +557,7 @@ public class LibraryController : ControllerBase
         req.Song.Stats = null!;
         // todo? extra validation for safety reasons
 
+        req.Song.Sort();
         string? oldEntityJson = null;
         if (req.Song.Id <= 0)
         {
@@ -568,7 +569,7 @@ public class LibraryController : ControllerBase
             var res = await DbManager.SelectSongsMIds(new[] { req.Song.Id }, false);
             Song song = res.Single();
             if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(song.Sort()),
-                    JsonSerializer.SerializeToNode(req.Song.Sort())))
+                    JsonSerializer.SerializeToNode(req.Song)))
             {
                 return BadRequest("No changes detected.");
             }
@@ -666,6 +667,7 @@ public class LibraryController : ControllerBase
         // todo important set unrequired stuff to null/empty for safety reasons
         // todo? extra validation for safety reasons
 
+        req.Artist.Sort();
         string? oldEntityJson = null;
         if (req.Artist.Id <= 0)
         {
@@ -675,7 +677,7 @@ public class LibraryController : ControllerBase
         else
         {
             if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(artist!.Sort()),
-                    JsonSerializer.SerializeToNode(req.Artist.Sort())))
+                    JsonSerializer.SerializeToNode(req.Artist)))
             {
                 return BadRequest("No changes detected.");
             }
@@ -829,6 +831,7 @@ public class LibraryController : ControllerBase
         // todo important set unrequired stuff to null/empty for safety reasons
         // todo? extra validation for safety reasons
 
+        req.Source.Sort();
         string? oldEntityJson = null;
         if (req.Source.Id <= 0)
         {
@@ -838,7 +841,7 @@ public class LibraryController : ControllerBase
         else
         {
             if (JsonNode.DeepEquals(JsonSerializer.SerializeToNode(source!.Sort()),
-                    JsonSerializer.SerializeToNode(req.Source.Sort())))
+                    JsonSerializer.SerializeToNode(req.Source)))
             {
                 return BadRequest("No changes detected.");
             }
