@@ -82,11 +82,8 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<Song>(reviewingItem.old_entity_json)!;
                             }
 
-                            // todo
-                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
-                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
-                                JsonSerializer.Deserialize<Song>(x.entity_json, Utils.JsoCompact)!.Id ==
-                                Entity.Id);
+                            isReadonly = CurrentEQs!.Any(x =>
+                                x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }
                     case EntityKind.SongSource:
@@ -97,11 +94,8 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<SongSource>(reviewingItem.old_entity_json)!;
                             }
 
-                            // todo
-                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
-                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
-                                JsonSerializer.Deserialize<SongSource>(x.entity_json, Utils.JsoCompact)!.Id ==
-                                Entity.Id);
+                            isReadonly = CurrentEQs!.Any(x =>
+                                x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }
                     case EntityKind.SongArtist:
@@ -112,11 +106,8 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<SongArtist>(reviewingItem.old_entity_json)!;
                             }
 
-                            // todo
-                            isReadonly = reviewingItem.submitted_by != "Cookie4IS" && CurrentEQs!.Any(x =>
-                                x.id > reviewingItem.id && x.submitted_by != "Cookie4IS" &&
-                                JsonSerializer.Deserialize<SongArtist>(x.entity_json, Utils.JsoCompact)!.Id ==
-                                Entity.Id);
+                            isReadonly = CurrentEQs!.Any(x =>
+                                x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }
                     case EntityKind.MergeArtists:

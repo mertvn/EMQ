@@ -37,6 +37,9 @@ public class EditQueue
     public string? note_user { get; set; }
 
     public string? note_mod { get; set; }
+
+    [Required]
+    public int entity_id { get; set; }
 }
 
 public class ResGetSongSource

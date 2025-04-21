@@ -145,7 +145,8 @@ ORDER BY music_id;";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var musicIdsRecordingGids =
-                await connection.QueryAsync<(int, Guid?)>($"select music_id, replace(url, 'https://musicbrainz.org/recording/', '')::uuid from music_external_link where type = {(int)SongLinkType.MusicBrainzRecording}");
+                await connection.QueryAsync<(int, Guid?)>(
+                    $"select music_id, replace(url, 'https://musicbrainz.org/recording/', '')::uuid from music_external_link where type = {(int)SongLinkType.MusicBrainzRecording}");
             MusicIdsRecordingGids = musicIdsRecordingGids.ToFrozenDictionary(x => x.Item1, x => x.Item2);
         }
     }
@@ -1528,12 +1529,7 @@ GROUP BY artist_id";
         }
         else
         {
-            var music = new Music
-            {
-                type = song.Type,
-                attributes = song.Attributes,
-                data_source = song.DataSource
-            };
+            var music = new Music { type = song.Type, attributes = song.Attributes, data_source = song.DataSource };
             if (!await connection.InsertAsync(music, transaction))
             {
                 throw new Exception("Failed to insert m");
@@ -3875,7 +3871,7 @@ AND msm.type = ANY(@msmType)";
                         {
                             case EntityKind.Song:
                                 {
-                                    var music = await connection.GetAsync<Music>(entity.Id, transaction);
+                                    var music = await connection.GetAsync<Music>(eq.entity_id, transaction);
                                     if (await connection.DeleteAsync(music!, transaction))
                                     {
                                         Console.WriteLine($"deleted music {JsonSerializer.Serialize(music)}");
@@ -3888,7 +3884,7 @@ AND msm.type = ANY(@msmType)";
                                     break;
                                 }
                             case EntityKind.SongSource:
-                                var source = await connection.GetAsync<MusicSource>(entity.Id, transaction);
+                                var source = await connection.GetAsync<MusicSource>(eq.entity_id, transaction);
                                 if (await connection.DeleteAsync(source!, transaction))
                                 {
                                     Console.WriteLine($"deleted source {JsonSerializer.Serialize(source)}");
@@ -3901,7 +3897,7 @@ AND msm.type = ANY(@msmType)";
                                 break;
                             case EntityKind.SongArtist:
                                 {
-                                    var artist = await connection.GetAsync<Artist>(entity.Id, transaction);
+                                    var artist = await connection.GetAsync<Artist>(eq.entity_id, transaction);
                                     if (await connection.DeleteAsync(artist!, transaction))
                                     {
                                         Console.WriteLine($"deleted artist {JsonSerializer.Serialize(artist)}");
@@ -3927,19 +3923,19 @@ AND msm.type = ANY(@msmType)";
                             case EntityKind.Song:
                                 {
                                     var oldEntity = JsonSerializer.Deserialize<Song>(eq.old_entity_json!)!;
-                                    success = await OverwriteMusic(entity.Id, oldEntity, false, transaction);
+                                    success = await OverwriteMusic(eq.entity_id, oldEntity, false, transaction);
                                     break;
                                 }
                             case EntityKind.SongSource:
                                 {
                                     var oldEntity = JsonSerializer.Deserialize<SongSource>(eq.old_entity_json!)!;
-                                    success = await OverwriteSource(entity.Id, oldEntity, false, transaction);
+                                    success = await OverwriteSource(eq.entity_id, oldEntity, false, transaction);
                                     break;
                                 }
                             case EntityKind.SongArtist:
                                 {
                                     var oldEntity = JsonSerializer.Deserialize<SongArtist>(eq.old_entity_json!)!;
-                                    success = await OverwriteArtist(entity.Id, oldEntity, false, transaction);
+                                    success = await OverwriteArtist(eq.entity_id, oldEntity, false, transaction);
                                     break;
                                 }
                             case EntityKind.MergeArtists:
@@ -3970,19 +3966,19 @@ AND msm.type = ANY(@msmType)";
                         case EntityKind.Song:
                             {
                                 int newMid = await InsertSong((Song)entity, connection, transaction);
-                                success = newMid > 0 && newMid == entity.Id;
+                                success = newMid > 0 && newMid == eq.entity_id;
                                 break;
                             }
                         case EntityKind.SongSource:
                             {
                                 int newMsid = await InsertSource((SongSource)entity, transaction);
-                                success = newMsid > 0 && newMsid == entity.Id;
+                                success = newMsid > 0 && newMsid == eq.entity_id;
                                 break;
                             }
                         case EntityKind.SongArtist:
                             {
                                 (int aId, _) = await InsertArtist((SongArtist)entity, transaction);
-                                success = aId > 0 && aId == entity.Id;
+                                success = aId > 0 && aId == eq.entity_id;
                                 break;
                             }
                         case EntityKind.MergeArtists:
@@ -4001,13 +3997,13 @@ AND msm.type = ANY(@msmType)";
                     switch (eq.entity_kind)
                     {
                         case EntityKind.Song:
-                            success = await OverwriteMusic(entity.Id, (Song)entity, false, transaction);
+                            success = await OverwriteMusic(eq.entity_id, (Song)entity, false, transaction);
                             break;
                         case EntityKind.SongSource:
-                            success = await OverwriteSource(entity.Id, (SongSource)entity, false, transaction);
+                            success = await OverwriteSource(eq.entity_id, (SongSource)entity, false, transaction);
                             break;
                         case EntityKind.SongArtist:
-                            success = await OverwriteArtist(entity.Id, (SongArtist)entity, false, transaction);
+                            success = await OverwriteArtist(eq.entity_id, (SongArtist)entity, false, transaction);
                             break;
                         case EntityKind.MergeArtists:
                             throw new InvalidOperationException();

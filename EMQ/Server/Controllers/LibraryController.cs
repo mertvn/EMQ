@@ -595,6 +595,7 @@ public class LibraryController : ControllerBase
             entity_version = Constants.EntityVersionSong,
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
+            entity_id = req.Song.Id,
         };
 
         long eqId = await DbManager.InsertEntity(editQueue);
@@ -694,6 +695,7 @@ public class LibraryController : ControllerBase
             entity_version = Constants.EntityVersionArtist,
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
+            entity_id = req.Artist.Id,
         };
 
         long eqId = await DbManager.InsertEntity(editQueue);
@@ -752,6 +754,7 @@ public class LibraryController : ControllerBase
             entity_version = Constants.EntityVersionMergeArtists,
             old_entity_json = null,
             note_user = "",
+            entity_id = req.Id,
         };
 
         long eqId = await DbManager.InsertEntity(editQueue);
@@ -855,6 +858,7 @@ public class LibraryController : ControllerBase
             entity_version = Constants.EntityVersionSongSource,
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
+            entity_id = req.Source.Id,
         };
 
         long eqId = await DbManager.InsertEntity(editQueue);
