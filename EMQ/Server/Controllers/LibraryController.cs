@@ -897,4 +897,17 @@ public class LibraryController : ControllerBase
     {
         return await DbManager.GetMBArtists();
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetEntityHistory")]
+    public async Task<EditQueue[]> GetEntityHistory([FromBody] ReqGetEntityHistory req)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var res =
+            await connection.QueryAsync<EditQueue>(
+                $"select * from edit_queue where status = {(int)ReviewQueueStatus.Approved} and entity_kind = @entityKind and entity_id = @entityId order by id desc",
+                new { entityKind = req.EntityKind, entityId = req.EntityId });
+        return res.ToArray();
+    }
 }

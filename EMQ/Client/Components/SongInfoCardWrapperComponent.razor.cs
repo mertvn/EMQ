@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EMQ.Client.Pages;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -30,56 +31,19 @@ public partial class SongInfoCardWrapperComponent
     [Parameter]
     public Dictionary<int, Func<Task>>? BatchUploaderCallbacks { get; set; }
 
-    // private Dictionary<int, AddSongLinkModel> _addSongLinkModel { get; set; } = new();
-
     private int VisibleSongsCount => CurrentSongs.Count();
 
     private string _batchSetSubmittedByText = "";
 
     private IQueryable<RQ>? CurrentRQs { get; set; }
 
-    public EditSongComponent editSongModalRef { get; set; } = null!;
+    private IQueryable<EditQueue>? CurrentEQs { get; set; }
+
+    // public EditSongComponent editSongModalRef { get; set; } = null!;
 
     private ReviewComponent _reviewComponent = null!;
 
-    // private async Task SubmitSongUrl(int mId, string url)
-    // {
-    //     if (ClientState.Session?.Player.Username is null)
-    //     {
-    //         return;
-    //     }
-    //
-    //     _addSongLinkModel[mId].Url = "";
-    //     StateHasChanged();
-    //
-    //     url = url.Trim().ToLowerInvariant();
-    //     bool isVideo = url.IsVideoLink();
-    //     SongLinkType songLinkType = url.Contains("catbox") ? SongLinkType.Catbox : SongLinkType.Unknown;
-    //
-    //     string submittedBy = ClientState.Session.Player.Username;
-    //     var req = new ReqImportSongLink(mId,
-    //         new SongLink() { Url = url, IsVideo = isVideo, Type = songLinkType, SubmittedBy = submittedBy });
-    //     var res = await _client.PostAsJsonAsync("Library/ImportSongLink", req);
-    //     if (res.IsSuccessStatusCode)
-    //     {
-    //         var isSuccess = await res.Content.ReadFromJsonAsync<bool>();
-    //         if (isSuccess)
-    //         {
-    //             Console.WriteLine("Imported song link!");
-    //             // await _reviewQueueComponent!.RefreshRQs(); // todo
-    //         }
-    //         else
-    //         {
-    //             _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
-    //             Console.WriteLine("Error importing song link");
-    //         }
-    //     }
-    //     else
-    //     {
-    //         _addSongLinkModel[mId].Url = "Failed to submit."; // todo hack
-    //         Console.WriteLine("Error importing song link");
-    //     }
-    // }
+    private ReviewEditComponent _reviewEditComponent = null!;
 
     private async Task BatchSetSubmittedBy()
     {
@@ -152,11 +116,19 @@ public partial class SongInfoCardWrapperComponent
 
         _reviewComponent.Show();
     }
-}
 
-// public class AddSongLinkModel
-// {
-//     [Required]
-//     [RegularExpression(RegexPatterns.CatboxRegex, ErrorMessage = "Invalid Url")]
-//     public string Url { get; set; } = "";
-// }
+    private async Task OnclickEntityHistory(int songId)
+    {
+        var req = new ReqGetEntityHistory(EntityKind.Song, songId);
+        var res = await _client.PostAsJsonAsync("Library/GetEntityHistory", req);
+        if (res.IsSuccessStatusCode)
+        {
+            CurrentEQs = (await res.Content.ReadFromJsonAsync<EditQueue[]>())!.AsQueryable();
+            if (CurrentEQs.Any())
+            {
+                _reviewEditComponent.reviewingId = CurrentEQs.First().id;
+                _reviewEditComponent.Show();
+            }
+        }
+    }
+}

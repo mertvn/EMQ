@@ -51,18 +51,37 @@
                 @if (IsLibraryPage)
                 {
                     <div style="margin: 5px;">
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))" @onclick="@(() => { reviewingId -= 1; })">←Previous</button>
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))" @onclick="@(() => { reviewingId += 1; })">Next→</button>
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))"
+                                @onclick="@(() => { reviewingId -= 1; })">
+                            ←Previous
+                        </button>
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))"
+                                @onclick="@(() => { reviewingId += 1; })">
+                            Next→
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div style="margin: 5px;">
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))"
+                                @onclick="@(() => { reviewingId = CurrentEQs.Where(x => x.id < reviewingId).MaxBy(x => x.id)!.id; })">
+                            ←Previous
+                        </button>
+                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))"
+                                @onclick="@(() => { reviewingId = CurrentEQs.Where(x => x.id > reviewingId).MinBy(x => x.id)!.id; })">
+                            Next→
+                        </button>
                     </div>
                 }
 
-                <span>Notes (User): </span>
+                <span>Notes (@reviewingItem.submitted_by) @@ @reviewingItem.submitted_on.ToString("s"): </span>
                 <span>
                     <LinkifierComponent Text="@reviewingItem.note_user"/>
                 </span>
 
                 <div style="display: @UiHelpers.Bool2Flex(reviewingItem.entity_kind != EntityKind.MergeArtists); flex-wrap: wrap; margin: 5px;">
-                    @if (IsLibraryPage)
+                    @if (true)
                     {
                         switch (Entity)
                         {

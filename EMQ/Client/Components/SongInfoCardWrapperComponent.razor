@@ -7,6 +7,7 @@
 @inject IJSRuntime _jsRuntime
 
 <ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
+<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewEditComponent>
 
 @{
     bool isDebugMode = ClientState.Preferences.DebugMode;
@@ -101,6 +102,12 @@
                 <div class="song card" style="margin: 16px; width: 330px; min-height:200px;" @key="@song.Id">
                     <SongInfoCardComponent Song="@song"/>
                     <div class="songInfoCardSongLinks" style="padding: 16px">
+
+                        <span style="float: right; cursor: pointer;" title="History"
+                                              @onclick="@(async () => await OnclickEntityHistory(song.Id))">
+                                            ⟲
+                        </span>
+
                         <div>
                             Video links:
                             @if (hasVideo)
@@ -321,7 +328,7 @@
                                     }
                                 }
 
-                                if (rqId == 0)
+                                if (rqId == 0 && eqId == 0)
                                 {
                                     if (ClientUtils.HasEditPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
                                     {

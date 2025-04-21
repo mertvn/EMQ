@@ -70,6 +70,11 @@ public partial class ReviewEditComponent
             Entity = null;
             OldEntity = null;
 
+            while (!IsLibraryPage && reviewingId > 0 && reviewingItem == null) // idk
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
+
             if (reviewingItem != null)
             {
                 switch (reviewingItem.entity_kind)
@@ -82,7 +87,7 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<Song>(reviewingItem.old_entity_json)!;
                             }
 
-                            isReadonly = CurrentEQs!.Any(x =>
+                            isReadonly = IsLibraryPage && CurrentEQs!.Any(x =>
                                 x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }
@@ -94,7 +99,7 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<SongSource>(reviewingItem.old_entity_json)!;
                             }
 
-                            isReadonly = CurrentEQs!.Any(x =>
+                            isReadonly = IsLibraryPage && CurrentEQs!.Any(x =>
                                 x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }
@@ -106,7 +111,7 @@ public partial class ReviewEditComponent
                                 OldEntity = JsonSerializer.Deserialize<SongArtist>(reviewingItem.old_entity_json)!;
                             }
 
-                            isReadonly = CurrentEQs!.Any(x =>
+                            isReadonly = IsLibraryPage && CurrentEQs!.Any(x =>
                                 x.entity_id == reviewingItem.entity_id && x.id > reviewingItem.id);
                             break;
                         }

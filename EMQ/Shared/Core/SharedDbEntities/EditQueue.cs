@@ -116,3 +116,16 @@ public class ReqEditSource
 
     public string? NoteUser { get; }
 }
+
+public class ReqGetEntityHistory
+{
+    public ReqGetEntityHistory(EntityKind entityKind, int entityId)
+    {
+        EntityKind = entityKind;
+        EntityId = entityId;
+    }
+
+    public EntityKind EntityKind { get; }
+
+    public int EntityId { get; }
+}
