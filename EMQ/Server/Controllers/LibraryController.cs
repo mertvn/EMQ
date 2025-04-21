@@ -205,14 +205,13 @@ public class LibraryController : ControllerBase
             await connection.QueryAsync<(int, int)>(
                 $"select distinct on (music_id) music_id, id from review_queue where status = {(int)ReviewQueueStatus.Pending}");
 
-        // todo add entity_id to edit_queue
-        // var pendingEQs =
-        //     await connection.QueryAsync<int>(
-        //         $"select entity_id from edit_queue where status = {(int)ReviewQueueStatus.Pending}");
+        var pendingEQs =
+            await connection.QueryAsync<(int, int)>(
+                $"select distinct on (entity_id) entity_id, id from edit_queue where status = {(int)ReviewQueueStatus.Pending}");
         return new ResFindQueueItemsWithPendingChanges
         {
             RQs = pendingRQs.ToDictionary(x => x.Item1, x => x.Item2),
-            // EQs = pendingEQs.ToArray(),
+            EQs = pendingEQs.ToDictionary(x => x.Item1, x => x.Item2),
         };
     }
 

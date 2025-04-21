@@ -22,8 +22,6 @@ public partial class ReviewQueueComponent
 
     public IQueryable<RQ>? CurrentRQs { get; set; }
 
-    public static Dictionary<int, int> CurrentPendingRQsMIds { get; set; } = new();
-
     public string CellStyleInlineBlock { get; set; } =
         "max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;";
 
@@ -63,8 +61,8 @@ public partial class ReviewQueueComponent
         var res = await _client.PostAsJsonAsync("Library/FindQueueItemsWithPendingChanges", "");
         if (res.IsSuccessStatusCode)
         {
-            var content = await res.Content.ReadFromJsonAsync<ResFindQueueItemsWithPendingChanges>();
-            CurrentPendingRQsMIds = content!.RQs;
+            ClientState.ResFindQueueItemsWithPendingChanges =
+                (await res.Content.ReadFromJsonAsync<ResFindQueueItemsWithPendingChanges>())!;
         }
     }
 

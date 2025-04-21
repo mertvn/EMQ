@@ -290,11 +290,17 @@
                             }
                             else
                             {
-                                // todo editq
-                                @if (ReviewQueueComponent.CurrentPendingRQsMIds.TryGetValue(song.Id, out int rqId))
+                                @if (ClientState.ResFindQueueItemsWithPendingChanges.RQs.TryGetValue(song.Id, out int rqId))
                                 {
                                     <br/>
                                     <span style="color: red">Pending in the review queue: @rqId</span>
+                                    <br/>
+                                }
+
+                                @if (ClientState.ResFindQueueItemsWithPendingChanges.EQs.TryGetValue(song.Id, out int eqId))
+                                {
+                                    <br/>
+                                    <span style="color: red">Pending in the edit queue: @eqId</span>
                                     <br/>
                                 }
 

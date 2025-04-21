@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Client;
@@ -36,5 +37,7 @@ public static class ClientState
     public static HttpClient ExternalClient { get; } = new();
 
     public static Dictionary<string, int> MBArtistDict { get; set; } = new();
+
+    public static ResFindQueueItemsWithPendingChanges ResFindQueueItemsWithPendingChanges { get; set; } = new();
 
 }
