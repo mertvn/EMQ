@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ATL;
@@ -141,17 +142,45 @@ public partial class UploadBatchComponent
                         }
                     }
 
-                    if (!IsBGMMode && !metadataMBRecordingOrTrackIds.Any())
+                    if (!metadataMBRecordingOrTrackIds.Any())
                     {
-                        string? metadataTitle = tFile.Title;
-                        List<string> metadataArtists = new() { tFile.Artist, tFile.AlbumArtist };
-
-                        if (!string.IsNullOrWhiteSpace(metadataTitle))
+                        if (!IsBGMMode)
                         {
-                            title = metadataTitle;
+                            string? metadataTitle = tFile.Title;
+                            List<string> metadataArtists = new() { tFile.Artist, tFile.AlbumArtist };
+
+                            if (!string.IsNullOrWhiteSpace(metadataTitle))
+                            {
+                                title = metadataTitle;
+                            }
+
+                            artists = metadataArtists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
                         }
 
-                        artists = metadataArtists.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                        if (ClientUtils.HasAdminPerms())
+                        {
+                            byte[] buffer = ms.GetBuffer();
+                            byte[] searchPattern = Encoding.UTF8.GetBytes("MUSICBRAINZ_TRACKID");
+                            int length = Math.Min((int)stream.Length, 3000);
+                            for (int i = 0; i <= length - searchPattern.Length; i++)
+                            {
+                                bool found = true;
+                                for (int j = 0; j < searchPattern.Length; j++)
+                                {
+                                    if (buffer[i + j] != searchPattern[j])
+                                    {
+                                        found = false;
+                                        break;
+                                    }
+                                }
+
+                                if (found)
+                                {
+                                    metadataMBRecordingOrTrackIds.Add(
+                                        Encoding.UTF8.GetString(buffer[(i + 20)..(i + 20 + 36)]));
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception atlException)
