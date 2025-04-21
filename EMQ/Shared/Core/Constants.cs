@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Core;
@@ -54,13 +55,13 @@ public static class Constants
 
     public const bool IsChristmasMode = false;
 
-    public const int EntityVersionSong = 2;
-
-    public const int EntityVersionArtist = 1;
-
-    public const int EntityVersionMergeArtists = 1;
-
-    public const int EntityVersionSongSource = 1;
+    public static readonly Dictionary<EntityKind, int> EntityVersionsDict = new()
+    {
+        { EntityKind.Song, 2 },
+        { EntityKind.SongArtist, 1 },
+        { EntityKind.MergeArtists, 1 },
+        { EntityKind.SongSource, 1 },
+    };
 
     public static readonly Dictionary<SongSourceType, SongSourceLinkType[]> ValidLinkTypesForSourceTypeDict = new()
     {

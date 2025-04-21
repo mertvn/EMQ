@@ -75,6 +75,11 @@
                     </div>
                 }
 
+                @if (reviewingItem.entity_version < Constants.EntityVersionsDict[reviewingItem.entity_kind])
+                {
+                    <p style="color: red;">Viewing entity saved with an older schema version, things may look very wrong.</p>
+                }
+
                 <span>Notes (@reviewingItem.submitted_by) @@ @reviewingItem.submitted_on.ToString("s"): </span>
                 <span>
                     <LinkifierComponent Text="@reviewingItem.note_user"/>
