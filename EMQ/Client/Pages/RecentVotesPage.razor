@@ -23,7 +23,7 @@
             <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => x.vote))">
                 @(((float)context.vote! / 10).ToString(CultureInfo.InvariantCulture))
             </TemplateColumn>
-            <TemplateColumn Title="Song">
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => ResGetRecentMusicVotes.SongsDict[x.music_id]))">
                 @(ResGetRecentMusicVotes.SongsDict[context.music_id])
             </TemplateColumn>
         </QuickGrid>
