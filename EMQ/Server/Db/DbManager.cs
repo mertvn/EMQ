@@ -4046,7 +4046,17 @@ AND msm.type = ANY(@msmType)";
 
         if (success)
         {
-            await RefreshAutocompleteFiles();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await RefreshAutocompleteFiles().ConfigureAwait(false);
+                }
+                catch (Exception ex) // Don't let exceptions from unobserved task crash the application
+                {
+                    Console.WriteLine(ex);
+                }
+            });
         }
 
         return success;
