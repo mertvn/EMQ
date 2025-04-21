@@ -17,7 +17,7 @@
     <div class="grid" tabindex="-1">
         <QuickGrid Items="@MusicVotes">
             <PropertyColumn Property="@(x => x.updated_at)" Title="Vote date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-            <TemplateColumn Title="Username" Sortable="true">
+            <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => Utils.UserIdToUsername(ResGetRecentMusicVotes.ResGetMusicVotes.UsernamesDict, x.user_id)))">
                 @Utils.UserIdToUsername(ResGetRecentMusicVotes.ResGetMusicVotes.UsernamesDict, context.user_id)
             </TemplateColumn>
             <TemplateColumn Title="Vote" Sortable="true" SortBy="@(GridSort<MusicVote>.ByAscending(x => x.vote))">
