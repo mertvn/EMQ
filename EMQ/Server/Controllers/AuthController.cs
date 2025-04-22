@@ -592,7 +592,7 @@ public class AuthController : ControllerBase
         return session;
     }
 
-    // todo important publicly shared quiz settings presets
+    // todo publicly shared quiz settings presets
     [CustomAuthorize(PermissionKind.StoreQuizSettings)]
     [HttpGet]
     [Route("GetUserQuizSettings")]

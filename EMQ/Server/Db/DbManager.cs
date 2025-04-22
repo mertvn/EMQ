@@ -5648,7 +5648,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
             (await connectionAuth.QueryAsync<(int, string)>(
                 "select id, username from users where id = ANY(@userIds)",
                 new { userIds = musicVotes.Select(x => x.user_id).ToArray() }))
-            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo cache this
 
         return new ResGetMusicVotes { UsernamesDict = usernamesDict, MusicVotes = musicVotes };
     }
@@ -5665,7 +5665,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
             (await connectionAuth.QueryAsync<(int, string)>(
                 "select id, username from users where id = ANY(@userIds)",
                 new { userIds = musicVotes.Select(x => x.user_id).ToArray() }))
-            .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo cache this
 
         var songs = await SelectSongsMIds(musicVotes.Select(x => x.music_id).ToArray(), false);
         var songsDict = songs.ToDictionary(x => x.Id, x => x.ToStringLatin());

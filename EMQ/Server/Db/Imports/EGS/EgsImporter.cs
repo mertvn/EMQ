@@ -181,7 +181,7 @@ where type = {(int)SongLinkType.ErogameScapeMusic} and submitted_by is null -- f
         await File.WriteAllTextAsync($"{folder}/egsData.json", serialized);
         // Console.WriteLine(serialized);
 
-        // todo important batch
+        // todo batch
         // Attempt to match EGS songs with VNDB songs
         var egsImporterInnerResults = new ConcurrentBag<EgsImporterInnerResult>();
         var egsDataEmq = egsDataList.Where(x => emq.Any(y => y.Item2 == x.MusicId)).ToArray();

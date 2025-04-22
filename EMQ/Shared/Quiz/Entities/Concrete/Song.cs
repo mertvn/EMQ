@@ -153,7 +153,7 @@ public enum SongType
 
     // Chanting = 4,
 
-    [Display(Name = "Also known as character songs.")]
+    [Display(Name = "Character songs also go here.")]
     Image = 8,
 
     [Display(Name = "Self-explanatory.")]
