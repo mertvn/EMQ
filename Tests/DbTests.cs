@@ -1156,6 +1156,14 @@ public class DbTests
             Enum.GetValues<ReviewQueueStatus>());
     }
 
+    [Test, Explicit]
+    public async Task FindRQs_SubmittedByNullBug()
+    {
+        var _ = await DbManager.FindRQs(new DateTime(2025, 02, 20), new DateTime(2025, 02, 21),
+            SongSourceSongTypeMode.Vocals,
+            Enum.GetValues<ReviewQueueStatus>());
+    }
+
     [Test]
     public async Task FindSongReports()
     {

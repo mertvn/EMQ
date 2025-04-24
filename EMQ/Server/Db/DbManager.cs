@@ -5552,7 +5552,7 @@ ORDER BY ""QuizCount"" DESC;
                 resMostPlayedSongs.Select(x => x.MusicId)
                     .Concat(musicVotesVocals.Concat(musicVotesBgm).Select(x => x.music_id)).Distinct()
                     .ToArray()))
-            .ToDictionary(x => x.Id, x => x);
+            .ToDictionary(x => x.Id, x => x.Clone());
         foreach ((_, Song value) in songs)
         {
             value.Links = value.Links.Where(x => x.IsFileLink).ToList();
