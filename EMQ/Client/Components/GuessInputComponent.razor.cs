@@ -17,7 +17,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteMst> AutocompleteComponent { get; set; } = null!;
 
-    private AutocompleteMst[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMst>();
+    public AutocompleteMst[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMst>();
 
     [Parameter]
     public string Placeholder { get; set; } = "";

@@ -24,6 +24,7 @@ public class QuizSettings
         !EnabledSongHintKinds.Any(x => x.Value) &&
         !Filters.CategoryFilters.Any() &&
         !Filters.ArtistFilters.Any() &&
+        !Filters.SongSourceFilters.Any() &&
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads &&
         !Filters.IsPreferLongLinks;
@@ -453,16 +454,23 @@ public class QuizSettings
         }
 
         // todo
+        if (JsonSerializer.Serialize(o.Filters.CategoryFilters) != JsonSerializer.Serialize(n.Filters.CategoryFilters))
+        {
+            // todo non-tag categories may be added in the future
+            diff.Add($"Tags were modified.");
+        }
+
+        // todo
         if (JsonSerializer.Serialize(o.Filters.ArtistFilters) != JsonSerializer.Serialize(n.Filters.ArtistFilters))
         {
             diff.Add($"Artists were modified.");
         }
 
         // todo
-        if (JsonSerializer.Serialize(o.Filters.CategoryFilters) != JsonSerializer.Serialize(n.Filters.CategoryFilters))
+        if (JsonSerializer.Serialize(o.Filters.SongSourceFilters) !=
+            JsonSerializer.Serialize(n.Filters.SongSourceFilters))
         {
-            // todo non-tag categories may be added in the future
-            diff.Add($"Tags were modified.");
+            diff.Add($"Sources were modified.");
         }
 
         if (o.Filters.VndbAdvsearchFilter != n.Filters.VndbAdvsearchFilter)

@@ -43,9 +43,13 @@ public partial class QuizSettingsComponent
 
     private AutocompleteA? SelectedArtist { get; set; }
 
+    private AutocompleteMst? SelectedSource { get; set; }
+
     private AutocompleteCComponent AutocompleteCComponent { get; set; } = null!;
 
     private AutocompleteAComponent AutocompleteAComponent { get; set; } = null!;
+
+    private GuessInputComponent GuessInputComponent { get; set; } = null!;
 
     private Blazorise.Modal _modalRef = null!;
 
@@ -210,13 +214,12 @@ public partial class QuizSettingsComponent
             return;
         }
 
-        var rng = Random.Shared;
-
         var categoryFilters = new List<CategoryFilter>();
-        for (int i = 1; i <= rng.Next(1, 6); i++)
+        for (int i = 1; i <= Random.Shared.Next(1, 6); i++)
         {
             var songSourceCategory =
-                AutocompleteCComponent.AutocompleteData[rng.Next(AutocompleteCComponent.AutocompleteData.Length)];
+                AutocompleteCComponent.AutocompleteData[
+                    Random.Shared.Next(AutocompleteCComponent.AutocompleteData.Length)];
 
             LabelKind trilean;
             if (i == 1)
@@ -227,7 +230,7 @@ public partial class QuizSettingsComponent
             else
             {
                 // we don't want Include here
-                trilean = (LabelKind)rng.Next(-1, 1);
+                trilean = (LabelKind)Random.Shared.Next(-1, 1);
             }
 
             if (trilean is LabelKind.Exclude)
@@ -254,13 +257,12 @@ public partial class QuizSettingsComponent
             return;
         }
 
-        var rng = Random.Shared;
-
-        var categoryFilters = new List<ArtistFilter>();
-        for (int i = 1; i <= rng.Next(1, 6); i++)
+        var artistFilters = new List<ArtistFilter>();
+        for (int i = 1; i <= Random.Shared.Next(1, 6); i++)
         {
-            var songSourceCategory =
-                AutocompleteAComponent.AutocompleteData[rng.Next(AutocompleteAComponent.AutocompleteData.Length)];
+            var artist =
+                AutocompleteAComponent.AutocompleteData[
+                    Random.Shared.Next(AutocompleteAComponent.AutocompleteData.Length)];
 
             LabelKind trilean;
             if (i == 1)
@@ -271,14 +273,47 @@ public partial class QuizSettingsComponent
             else
             {
                 // we don't want Include here
-                trilean = (LabelKind)rng.Next(-1, 1);
+                trilean = (LabelKind)Random.Shared.Next(-1, 1);
             }
 
-            var categoryFilter = new ArtistFilter(songSourceCategory, trilean, SongArtistRole.Vocals, false);
-            categoryFilters.Add(categoryFilter);
+            var artistFilter = new ArtistFilter(artist, trilean, SongArtistRole.Vocals, false);
+            artistFilters.Add(artistFilter);
         }
 
-        ClientQuizSettings.Filters.ArtistFilters = categoryFilters;
+        ClientQuizSettings.Filters.ArtistFilters = artistFilters;
+    }
+
+    private async Task RandomizeSources()
+    {
+        if (!GuessInputComponent.AutocompleteData.Any())
+        {
+            return;
+        }
+
+        var sourceFilters = new List<SongSourceFilter>();
+        for (int i = 1; i <= Random.Shared.Next(1, 51); i++)
+        {
+            var source =
+                GuessInputComponent.AutocompleteData[
+                    Random.Shared.Next(GuessInputComponent.AutocompleteData.Length)];
+
+            LabelKind trilean;
+            if (i == 1)
+            {
+                // we want at least 1 Maybe
+                trilean = LabelKind.Maybe;
+            }
+            else
+            {
+                // we don't want Include here
+                trilean = (LabelKind)Random.Shared.Next(-1, 1);
+            }
+
+            var categoryFilter = new SongSourceFilter(source, trilean);
+            sourceFilters.Add(categoryFilter);
+        }
+
+        ClientQuizSettings.Filters.SongSourceFilters = sourceFilters;
     }
 
     private async Task ClearTags()
@@ -291,18 +326,20 @@ public partial class QuizSettingsComponent
         ClientQuizSettings.Filters.ArtistFilters = new List<ArtistFilter>();
     }
 
+    private async Task ClearSources()
+    {
+        ClientQuizSettings.Filters.SongSourceFilters = new List<SongSourceFilter>();
+    }
+
     private async Task SelectedResultChangedC()
     {
-        // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
         if (SelectedTag != null)
         {
             SelectedTag.SpoilerLevel = SpoilerLevel.None;
             SelectedTag.Rating = 1f;
-
             ClientQuizSettings.Filters.CategoryFilters.Add(new CategoryFilter(SelectedTag, LabelKind.Maybe));
-            // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
 
-            // need to call it twice for it to work
+            // need to call it twice for it to work // todo test if this is still the case
             await AutocompleteCComponent.ClearInputField();
             await AutocompleteCComponent.ClearInputField();
         }
@@ -310,16 +347,24 @@ public partial class QuizSettingsComponent
 
     private async Task SelectedResultChangedA()
     {
-        // Console.WriteLine("st:" + JsonSerializer.Serialize(selectedTag));
         if (SelectedArtist != null)
         {
             ClientQuizSettings.Filters.ArtistFilters.Add(new ArtistFilter(SelectedArtist, LabelKind.Maybe,
                 SongArtistRole.Vocals, false));
-            // Console.WriteLine("cf:" + JsonSerializer.Serialize(ClientQuizSettings.Filters.CategoryFilters));
 
-            // need to call it twice for it to work
             await AutocompleteAComponent.ClearInputField();
             await AutocompleteAComponent.ClearInputField();
+        }
+    }
+
+    private async Task SelectedResultChangedMst()
+    {
+        if (SelectedSource != null)
+        {
+            ClientQuizSettings.Filters.SongSourceFilters.Add(new SongSourceFilter(SelectedSource, LabelKind.Maybe));
+
+            await GuessInputComponent.ClearInputField();
+            await GuessInputComponent.ClearInputField();
         }
     }
 
@@ -331,6 +376,11 @@ public partial class QuizSettingsComponent
     private async Task RemoveArtist(int artistId)
     {
         ClientQuizSettings.Filters.ArtistFilters.RemoveAll(x => x.Artist.AId == artistId);
+    }
+
+    private async Task RemoveSource(int sourceId)
+    {
+        ClientQuizSettings.Filters.SongSourceFilters.RemoveAll(x => x.AutocompleteMst.MSId == sourceId);
     }
 
     private void RecalculateNumSongsAndSongTypeFilters()

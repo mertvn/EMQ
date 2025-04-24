@@ -79,6 +79,7 @@
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabFilters2">Filters 2</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabTags">Tags</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabArtists">Artists</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabSources">Sources</Blazorise.Tab>
                 @if (!IsLibraryPage)
                 {
                     <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabVndbAdvsearch">VNDB search</Blazorise.Tab>
@@ -843,6 +844,51 @@
                         <div style="margin: 5px;">
                             <button type="button" class="btn btn-primary" @onclick="RandomizeArtists" disabled="@(IsReadOnly)">Randomize artists</button>
                             <button type="button" class="btn btn-primary" @onclick="ClearArtists" disabled="@(IsReadOnly)">Clear artists</button>
+                        </div>
+                    </div>
+                </Blazorise.TabPanel>
+
+                <Blazorise.TabPanel Name="TabSources">
+                    <div id="sourceEdit" style="margin: 5px; padding: 5px;">
+                        <GuessInputComponent @ref="GuessInputComponent"
+                                                Placeholder="Enter source name here"
+                                                IsDisabled="false"
+                                                IsQuizPage="false"
+                                                @bind-GuessT="@SelectedSource"
+                                                Callback="SelectedResultChangedMst">
+                        </GuessInputComponent>
+
+                        <table class="table" style="width: 65%; text-align: center">
+                            <tr>
+                                <th></th>
+                                <th>Selection</th>
+                                <th>Source Name</th>
+                            </tr>
+                            @foreach (var af in ClientQuizSettings.Filters.SongSourceFilters)
+                            {
+                                <tr class="tag" @key="@af" style="text-align: center">
+                                    <th>
+                                        <button type="button" @onclick="@(() => RemoveSource(af.AutocompleteMst.MSId))">X</button>
+                                    </th>
+
+                                    <th>
+                                        <InputSelect @bind-Value="@af.Trilean" style="margin: 5px">
+                                            @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                            {
+                                                <option value="@labelKind">@labelKind</option>
+                                            }
+                                        </InputSelect>
+                                    </th>
+
+                                    <th>
+                                        <span>@($"{af.AutocompleteMst.MSTLatinTitle}" + (!string.IsNullOrWhiteSpace(af.AutocompleteMst.MSTNonLatinTitle) ? $" ({af.AutocompleteMst.MSTNonLatinTitle})" : ""))</span>
+                                    </th>
+                                </tr>
+                            }
+                        </table>
+                        <div style="margin: 5px;">
+                            <button type="button" class="btn btn-primary" @onclick="RandomizeSources" disabled="@(IsReadOnly)">Randomize sources</button>
+                            <button type="button" class="btn btn-primary" @onclick="ClearSources" disabled="@(IsReadOnly)">Clear sources</button>
                         </div>
                     </div>
                 </Blazorise.TabPanel>

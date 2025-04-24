@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -187,12 +187,15 @@ public class QuizFilters
     public Dictionary<SongSourceType, bool> SongSourceTypeFilter { get; set; } =
         new()
         {
-            { SongSourceType.VN , true},
-            { SongSourceType.Other , true},
-            { SongSourceType.Anime , false},
-            { SongSourceType.Touhou , false},
-            { SongSourceType.Game , false},
+            { SongSourceType.VN, true },
+            { SongSourceType.Other, true },
+            { SongSourceType.Anime, false },
+            { SongSourceType.Touhou, false },
+            { SongSourceType.Game, false },
         };
+
+    [ProtoMember(30)]
+    public List<SongSourceFilter> SongSourceFilters { get; set; } = new();
 
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&

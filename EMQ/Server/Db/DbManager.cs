@@ -1991,6 +1991,7 @@ RETURNING id;",
         // 1. Find all valid music ids
         var ret = new List<Song>();
 
+        // todo important take into account new msel types (especially for dupe checking)
         List<(int, string)>? ids = null;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
@@ -2007,8 +2008,9 @@ RETURNING id;",
             queryMusicIds.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
             queryMusicIds.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
 
-            var excludedArtistIds = new List<int>();
             var excludedCategoryVndbIds = new List<string>();
+            var excludedArtistIds = new List<int>();
+            var excludedSourceIds = new List<int>();
 
             // Apply filters
             if (filters != null)
@@ -2196,6 +2198,99 @@ RETURNING id;",
                     else
                     {
                         ids = resArtist;
+                    }
+                }
+
+                if (filters.SongSourceFilters.Any())
+                {
+                    Console.WriteLine(
+                        $"StartSection GetRandomSongs_sources: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                    string sqlSources =
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     JOIN artist_music am ON am.music_id = m.id
+                                     JOIN artist a ON a.id = am.artist_id
+                                     WHERE 1=1
+                                     ";
+
+                    var querySources = connection.QueryBuilder($"{sqlSources:raw}");
+                    querySources.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
+                    querySources.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
+                    querySources.AppendLine(
+                        $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
+
+                    var validSourcesInner = filters.SongSourceFilters;
+                    var trileans = validSourcesInner.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validSourcesInner.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        SongSourceFilter sourceFilter = ordered[index];
+
+                        if (sourceFilter.Trilean is LabelKind.Exclude)
+                        {
+                            // needs to be handled at the end
+                            excludedSourceIds.Add(sourceFilter.AutocompleteMst.MSId);
+                            continue;
+                        }
+
+                        if (index > 0)
+                        {
+                            switch (sourceFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    querySources.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    querySources.AppendLine($"INTERSECT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            querySources.Append($"{sqlSources:raw}");
+                        }
+
+                        querySources.Append((FormattableString)$@" AND ms.id = {sourceFilter.AutocompleteMst.MSId}");
+                    }
+
+                    if (printSql)
+                    {
+                        Console.WriteLine(querySources.Sql);
+                        Console.WriteLine(JsonSerializer.Serialize(querySources.Parameters, Utils.JsoIndented));
+                    }
+
+                    var resSource =
+                        (await connection.QueryAsync<(int, string)>(querySources.Sql, querySources.Parameters))
+                        .Shuffle().ToList();
+
+                    if (ids != null && ids.Any())
+                    {
+                        bool and = true; // todo? option
+                        if (and)
+                        {
+                            ids = ids.Intersect(resSource).ToList();
+                        }
+                        else
+                        {
+                            ids = ids.Union(resSource).ToList();
+                        }
+                    }
+                    else
+                    {
+                        ids = resSource;
                     }
                 }
 
@@ -2474,9 +2569,18 @@ RETURNING id;",
             if (excludedArtistIds.Any())
             {
                 var allMidsOfExcluded = await connection.QueryAsync<int>(
-                    @"select distinct music_id from artist_music am
-    join artist a on am.artist_id = a.id
-    where a.id = ANY(@excludedArtistIds)", new { excludedArtistIds });
+                    @"select distinct music_id from artist_music where artist_id = ANY(@excludedArtistIds)",
+                    new { excludedArtistIds });
+
+                invalidMids ??= new List<int>();
+                invalidMids.AddRange(allMidsOfExcluded);
+            }
+
+            if (excludedSourceIds.Any())
+            {
+                var allMidsOfExcluded = await connection.QueryAsync<int>(
+                    @"select distinct music_id from music_source_music where music_source_id = ANY(@excludedSourceIds)",
+                    new { excludedSourceIds });
 
                 invalidMids ??= new List<int>();
                 invalidMids.AddRange(allMidsOfExcluded);

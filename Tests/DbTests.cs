@@ -480,6 +480,33 @@ public class DbTests
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_SourceFilter_Maybe()
+    {
+        List<SongSourceFilter> sources = new() { new SongSourceFilter(new AutocompleteMst(1, ""), LabelKind.Maybe), };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongSourceFilters = sources }, printSql: true);
+        GenericSongsAssert(songs);
+
+        Assert.That(songs.Count > 1);
+        Assert.That(songs.Count < 5);
+    }
+
+    [Test]
+    public async Task Test_GetRandomSongs_SourceFilter_Exclude()
+    {
+        List<SongSourceFilter> sources = new() { new SongSourceFilter(new AutocompleteMst(1, ""), LabelKind.Exclude), };
+
+        var songs = await DbManager.GetRandomSongs(int.MaxValue, true,
+            filters: new QuizFilters { SongSourceFilters = sources }, printSql: true);
+        GenericSongsAssert(songs);
+
+        var sourceIds = songs.SelectMany(x => x.Sources.Select(y => y.Id));
+        Assert.That(!sourceIds.Any(x => x == 1));
+        Assert.That(songs.Count > 1);
+    }
+
+    [Test]
     public async Task Test_GetRandomSongs_SongSourceSongTypeFilter_OPOrED()
     {
         Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes =
@@ -1016,10 +1043,7 @@ public class DbTests
             LanguageOriginal = "ja",
             Type = SongSourceType.Other,
             Titles = new List<Title>() { new() { LatinTitle = "[other]", Language = "ja", IsMainTitle = true, } },
-            Links = new List<SongSourceLink>()
-            {
-                new() { Url = "v0".ToVndbUrl(), Type = SongSourceLinkType.VNDB, }
-            },
+            Links = new List<SongSourceLink>() { new() { Url = "v0".ToVndbUrl(), Type = SongSourceLinkType.VNDB, } },
         };
 
         var ms = new MusicSource()
