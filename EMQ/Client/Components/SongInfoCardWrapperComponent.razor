@@ -85,7 +85,10 @@
     </details>
 }
 
-<div class="songs d-flex flex-row flex-wrap" style="max-width: 1500px;">
+<div class="songs d-flex flex-row flex-wrap" style="max-width: 78vw;">
+@{
+    var borderDict = new Dictionary<string, bool>();
+}
     @foreach (Song song in CurrentSongs)
     {
         @if (true)
@@ -98,8 +101,16 @@
             {
                 var validUrls = SongLink.FilterSongLinks(songFileLinks).Select(x => x.Url).ToList();
 
-                // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
-                <div class="song card" style="margin: 16px; width: 330px; min-height:200px;" @key="@song.Id">
+                string url = song.Sources.First().Links.First().Url;
+                if (!borderDict.TryGetValue(url, out bool isRedBorder))
+                {
+                    isRedBorder = borderDict.Count % 2 == 0;
+                    borderDict[url] = isRedBorder;
+                }
+
+                string border = isRedBorder ? "1px solid rgba(0, 191, 255, 0.7)": "1px solid rgba(178, 34, 34, 0.7)";
+
+                <div class="song card" style="margin: 16px; width: 330px; min-height:200px; border: @border;" @key="@song.Id">
                     <SongInfoCardComponent Song="@song"/>
                     <div class="songInfoCardSongLinks" style="padding: 16px">
 
