@@ -37,6 +37,11 @@ public static class Utils
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    public static JsonSerializerOptions JsoNoStringEnum { get; } = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     public static string PercentageStr(int dividend, int divisor)
     {
         return $"{(((double)dividend / divisor) * 100):N2}%";

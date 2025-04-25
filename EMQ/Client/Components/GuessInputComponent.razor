@@ -6,9 +6,11 @@
                          MaxMenuHeight="325px"
                          HighlightMatch="ClientState.Preferences.AutocompleteHighlightMatch"
                          RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
+                         ShowIcons="ClientState.Preferences.AutocompleteShowIcons"
                          Disabled="IsDisabled"
                          Placeholder="@Placeholder"
                          GuessStr="@Guess"
                          TextField="@((item) => item.MSTLatinTitle)"
+                         IconField="@(x => OnIconField(x))"
                          OnSearch="@(x => OnSearch<AutocompleteMst>(x))"
                          OnValueChanged="OnValueChanged"/>

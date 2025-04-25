@@ -2837,8 +2837,9 @@ RETURNING id;",
     {
         const string sqlAutocompleteMst =
             @"SELECT DISTINCT music_source_id AS msId, mst.latin_title AS mstLatinTitle, COALESCE(mst.non_latin_title, '') AS mstNonLatinTitle,
-                '' AS mstLatinTitleNormalized, '' AS mstNonLatinTitleNormalized
+                '' AS mstLatinTitleNormalized, '' AS mstNonLatinTitleNormalized, ms.type as songSourceType
             FROM music_source_title mst
+            join music_source ms on mst.music_source_id = ms.id
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -2854,7 +2855,7 @@ RETURNING id;",
                 re.MSTNonLatinTitleNormalized = re.MSTNonLatinTitle.NormalizeForAutocomplete();
             }
 
-            string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
+            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
             return autocomplete;
         }
     }

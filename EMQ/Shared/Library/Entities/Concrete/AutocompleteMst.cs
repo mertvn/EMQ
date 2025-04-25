@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using ProtoBuf;
 
 namespace EMQ.Shared.Library.Entities.Concrete;
@@ -14,13 +15,15 @@ public class AutocompleteMst
 
     [JsonConstructor]
     public AutocompleteMst(int msId, string mstLatinTitle, string mstNonLatinTitle = "",
-        string mstLatinTitleNormalized = "", string mstNonLatinTitleNormalized = "")
+        string mstLatinTitleNormalized = "", string mstNonLatinTitleNormalized = "",
+        SongSourceType songSourceType = SongSourceType.Unknown)
     {
         MSId = msId;
         MSTLatinTitle = mstLatinTitle;
         MSTNonLatinTitle = mstNonLatinTitle;
         MSTLatinTitleNormalized = mstLatinTitleNormalized;
         MSTNonLatinTitleNormalized = mstNonLatinTitleNormalized;
+        SongSourceType = songSourceType;
     }
 
     [ProtoMember(1)]
@@ -42,4 +45,8 @@ public class AutocompleteMst
     [ProtoMember(5)]
     [JsonPropertyName("5")]
     public string MSTNonLatinTitleNormalized { get; set; } = null!;
+
+    [ProtoMember(6)]
+    [JsonPropertyName("6")]
+    public SongSourceType SongSourceType { get; set; }
 }

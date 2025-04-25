@@ -64,6 +64,12 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     [Parameter]
     public string? GuessStr { get; set; }
 
+    [Parameter]
+    public Func<TValue, string?>? IconField { get; set; }
+
+    [Parameter]
+    public bool ShowIcons { get; set; } = true;
+
     public void Close()
     {
         ShowDropdown = false;

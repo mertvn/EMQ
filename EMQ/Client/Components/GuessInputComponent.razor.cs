@@ -102,6 +102,20 @@ public partial class GuessInputComponent : IAutocompleteComponent
         await AutocompleteComponent.Focus();
     }
 
+    private static string? OnIconField(AutocompleteMst t)
+    {
+        string? str = t.SongSourceType switch
+        {
+            SongSourceType.VN => "assets/favicon/vndb.ico",
+            SongSourceType.Anime => "assets/favicon/anison.ico",
+            SongSourceType.Touhou => "assets/favicon/touhoudb.ico",
+            SongSourceType.Game => null, // todo
+            _ => null
+        };
+
+        return str;
+    }
+
     private TValue[] OnSearch<TValue>(string value)
     {
         if (value.StartsWith("id:"))
@@ -112,7 +126,10 @@ public partial class GuessInputComponent : IAutocompleteComponent
                 return Array.Empty<TValue>();
             }
 
-            return (TValue[])(object)new AutocompleteMst[] { new(Convert.ToInt32(replaced), replaced) };
+            return (TValue[])(object)new AutocompleteMst[]
+            {
+                new(Convert.ToInt32(replaced), replaced)
+            };
         }
 
         value = value.NormalizeForAutocomplete();

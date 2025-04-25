@@ -37,7 +37,13 @@
             string divClass = i == CurrentFocus ? "autocomplete-active" : "";
             string divId = $"autocomplete-item-{i}";
             string textField = TextField.Invoke(searchResult);
+            string? iconField = ShowIcons ? IconField?.Invoke(searchResult) : null;
             <div id="@divId" class="@divClass" @onclick="@(async args => await Onclick_AutocompleteItem(args, indexCopy))" @onmousedown="@Onmousedown" @onmousedown:preventDefault="true">
+                @if (iconField != null)
+                {
+                    <img src="@iconField" alt="" style="margin-right: 6px; width: 12px; height: 12px;"/>
+                }
+
                 @if (HighlightMatch)
                 {
                     int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);

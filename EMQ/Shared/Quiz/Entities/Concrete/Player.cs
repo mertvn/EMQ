@@ -232,4 +232,7 @@ public class PlayerPreferences
 
     [Required]
     public bool MuteWhenDuca { get; set; } = false;
+
+    [Required]
+    public bool AutocompleteShowIcons { get; set; } = true;
 }
