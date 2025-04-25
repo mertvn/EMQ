@@ -12,5 +12,6 @@
                          GuessStr="@(Guess == null ? "" : $"{Guess.AALatinAlias}")"
                          TextField="@((item) => $"{item.AALatinAlias}{(!string.IsNullOrWhiteSpace(item.AANonLatinAlias) ? $" ({item.AANonLatinAlias})" : "")}")"
                          TextFieldForSelectedText="@(item => item.AALatinAlias)"
+                         IconField="@(x => OnIconField(x))"
                          OnSearch="@(x => OnSearch<AutocompleteA>(x))"
                          OnValueChanged="OnValueChanged"/>

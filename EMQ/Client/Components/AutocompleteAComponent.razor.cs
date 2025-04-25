@@ -104,6 +104,21 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         await AutocompleteComponent.Focus();
     }
 
+    private static string? OnIconField(AutocompleteA t)
+    {
+        string? str = t.MainRole switch
+        {
+            SongArtistRole.Unknown => "assets/text/U.svg",
+            SongArtistRole.Vocals => "assets/text/V.svg",
+            SongArtistRole.Composer => "assets/text/C.svg",
+            SongArtistRole.Arranger => "assets/text/A.svg",
+            SongArtistRole.Lyricist => "assets/text/L.svg",
+            _ => null
+        };
+
+        return str;
+    }
+
     private TValue[] OnSearch<TValue>(string value)
     {
         if (value.StartsWith("id:"))

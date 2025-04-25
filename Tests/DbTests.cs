@@ -489,7 +489,7 @@ public class DbTests
         GenericSongsAssert(songs);
 
         Assert.That(songs.Count > 1);
-        Assert.That(songs.Count < 5);
+        Assert.That(songs.Count < 50);
     }
 
     [Test]

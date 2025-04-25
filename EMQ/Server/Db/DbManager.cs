@@ -41,6 +41,7 @@ public static class DbManager
     public static async Task Init()
     {
         // return;
+        Console.WriteLine("Initializing DbManager");
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
         SqlMapper.AddTypeHandler(new GenericArrayHandler<int>());
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -2883,16 +2884,37 @@ RETURNING id;",
 
     public static async Task<string> SelectAutocompleteA()
     {
-        const string sqlAutocompleteA =
-            @"SELECT DISTINCT a.id, aa.latin_alias, aa.non_latin_alias, aa.is_main_name
+        const string sqlAutocompleteA = @"SELECT DISTINCT a.id, aa.latin_alias, aa.non_latin_alias, aa.is_main_name
             FROM artist_alias aa
             LEFT JOIN artist a ON a.id = aa.artist_id
             ";
+
+        const string sqlArtistRoles = @"WITH RoleCounts AS (
+  SELECT artist_id, role, COUNT(*) AS role_count,
+         RANK() OVER (PARTITION BY artist_id ORDER BY COUNT(*) DESC) AS role_rank
+  FROM artist_music
+  GROUP BY artist_id, role
+)
+SELECT DISTINCT ON(a.artist_id) a.artist_id,
+  CASE
+    WHEN EXISTS (
+      SELECT 1 FROM RoleCounts rc
+      WHERE rc.artist_id = a.artist_id AND rc.role = 1 AND rc.role_count > 10
+    ) THEN 1
+    ELSE a.role
+  END AS role
+FROM RoleCounts a
+JOIN artist art ON a.artist_id = art.id
+WHERE a.role_rank = 1
+ORDER BY artist_id";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var res = (await connection.QueryAsync<(int, string, string?, bool)>(sqlAutocompleteA))
                 .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "", x.Item4)).ToArray();
+
+            var artistRolesDict = (await connection.QueryAsync<(int, SongArtistRole)>(sqlArtistRoles))
+                .ToDictionary(x => x.Item1, x => x.Item2);
 
             foreach (var re in res)
             {
@@ -2906,9 +2928,14 @@ RETURNING id;",
                 re.AANonLatinAliasNormalizedReversed = string.Join("", re.AANonLatinAlias
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Reverse()).NormalizeForAutocomplete();
+
+                if (artistRolesDict.TryGetValue(re.AId, out var role))
+                {
+                    re.MainRole = role;
+                }
             }
 
-            string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
+            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
             return autocomplete;
         }
     }

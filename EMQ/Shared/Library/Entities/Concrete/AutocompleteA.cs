@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using ProtoBuf;
 
 namespace EMQ.Shared.Library.Entities.Concrete;
@@ -18,13 +19,15 @@ public class AutocompleteA
         string aaLatinAlias,
         // int aaId,
         string aaNonLatinAlias = "",
-        bool isMain = true)
+        bool isMain = true,
+        SongArtistRole mainRole = SongArtistRole.Unknown)
     {
         AId = aId;
         // VndbId = vndbId;
         AALatinAlias = aaLatinAlias;
         AANonLatinAlias = aaNonLatinAlias;
         IsMain = isMain;
+        MainRole = mainRole;
         // AAId = aaId;
     }
 
@@ -67,4 +70,8 @@ public class AutocompleteA
     [ProtoMember(10)]
     [JsonPropertyName("10")]
     public bool IsMain { get; set; }
+
+    [ProtoMember(11)]
+    [JsonPropertyName("11")]
+    public SongArtistRole MainRole { get; set; }
 }
