@@ -2985,7 +2985,7 @@ ORDER BY artist_id";
                         latinTitle.NormalizeForAutocomplete(), nonLatinTitle?.NormalizeForAutocomplete() ?? "");
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
-        string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
         return autocomplete;
     }
 
