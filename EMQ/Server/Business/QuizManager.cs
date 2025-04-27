@@ -889,7 +889,6 @@ public class QuizManager
                 false);
         }
 
-        // todo ignore spaces for every box
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
         {
             // bot picks/burns
@@ -945,6 +944,7 @@ public class QuizManager
             await DbManager.GetSHPlayerSongStats(new List<int> { song.Id },
                 Quiz.Room.Players.Select(x => x.Id).ToList());
 
+        int enabledGuessKindsCount = Quiz.Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value);
         foreach (var player in Quiz.Room.Players)
         {
             if (Quiz.Room.QuizSettings.IsPreventSameSongSpam)
@@ -982,33 +982,33 @@ public class QuizManager
                 }
             }
 
-            if (correctCount > 0)
-            {
-                player.Score += correctCount;
-                player.PlayerStatus = PlayerStatus.Correct;
-            }
-            else
-            {
-                player.PlayerStatus = PlayerStatus.Wrong;
+            player.Score += correctCount;
+            player.PlayerStatus = correctCount > 0 ? PlayerStatus.Correct : PlayerStatus.Wrong;
 
-                if (Quiz.Room.QuizSettings.MaxLives > 0 && player.Lives >= 0)
+            int wrongCount = enabledGuessKindsCount - correctCount;
+            if (wrongCount > 0 && Quiz.Room.QuizSettings.MaxLives > 0 && player.Lives >= 0)
+            {
+                switch (Quiz.Room.QuizSettings.GamemodeKind)
                 {
-                    switch (Quiz.Room.QuizSettings.GamemodeKind)
-                    {
-                        case GamemodeKind.NGMC:
-                        case GamemodeKind.EruMode:
-                            break;
-                        case GamemodeKind.Default:
-                        case GamemodeKind.Radio:
-                        default:
-                            player.Lives -= 1; // todo? reduce by wrongCount
-                            break;
-                    }
+                    case GamemodeKind.NGMC:
+                    case GamemodeKind.EruMode:
+                        break;
+                    case GamemodeKind.Default:
+                    case GamemodeKind.Radio:
+                    default:
+                        player.Lives -= Quiz.Room.QuizSettings.LivesScoringKind switch
+                        {
+                            LivesScoringKind.Default => 1,
+                            LivesScoringKind.EachGuessTypeTakesOneLife => wrongCount,
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
 
-                    if (player.Lives <= 0)
-                    {
-                        player.PlayerStatus = PlayerStatus.Dead;
-                    }
+                        break;
+                }
+
+                if (player.Lives <= 0)
+                {
+                    player.PlayerStatus = PlayerStatus.Dead;
                 }
             }
 
@@ -1160,6 +1160,8 @@ public class QuizManager
 
     public void EruModeTick()
     {
+        var enabledGuessKinds =
+            Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Value).Select(x => x.Key).ToHashSet();
         var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
         for (int i = 0; i < teams.Length; i++)
         {
@@ -1179,24 +1181,45 @@ public class QuizManager
                         continue;
                     }
 
+                    int currentPlayerWrongCount = currentPlayer.IsGuessKindCorrectDict?
+                        .Where(x => enabledGuessKinds.Contains(x.Key))
+                        .Count(x => !x.Value!.Value) ?? 0;
+                    int opposingPlayerWrongCount = opposingPlayer.IsGuessKindCorrectDict?
+                        .Where(x => enabledGuessKinds.Contains(x.Key))
+                        .Count(x => !x.Value!.Value) ?? 0;
+
                     if (currentPlayer.PlayerStatus == PlayerStatus.Correct &&
                         opposingPlayer.PlayerStatus != PlayerStatus.Correct)
                     {
-                        Quiz.Room.Log($"{currentPlayer.Username} took a life from {opposingPlayer.Username}.",
+                        int livesToTake = opposingPlayerWrongCount - currentPlayerWrongCount;
+                        Quiz.Room.Log(
+                            $"{currentPlayer.Username} took {livesToTake} lives from {opposingPlayer.Username}.",
                             writeToChat: true);
                         foreach (Player player in opposingTeam)
                         {
-                            player.Lives -= 1;
+                            player.Lives -= Quiz.Room.QuizSettings.LivesScoringKind switch
+                            {
+                                LivesScoringKind.Default => 1,
+                                LivesScoringKind.EachGuessTypeTakesOneLife => livesToTake,
+                                _ => throw new ArgumentOutOfRangeException()
+                            };
                         }
                     }
                     else if (currentPlayer.PlayerStatus != PlayerStatus.Correct &&
                              opposingPlayer.PlayerStatus == PlayerStatus.Correct)
                     {
-                        Quiz.Room.Log($"{opposingPlayer.Username} took a life from {currentPlayer.Username}.",
+                        int livesToTake = currentPlayerWrongCount - opposingPlayerWrongCount;
+                        Quiz.Room.Log(
+                            $"{opposingPlayer.Username} took {livesToTake} lives from {currentPlayer.Username}.",
                             writeToChat: true);
                         foreach (Player player in currentTeam)
                         {
-                            player.Lives -= 1;
+                            player.Lives -= Quiz.Room.QuizSettings.LivesScoringKind switch
+                            {
+                                LivesScoringKind.Default => 1,
+                                LivesScoringKind.EachGuessTypeTakesOneLife => livesToTake,
+                                _ => throw new ArgumentOutOfRangeException()
+                            };
                         }
                     }
                 }

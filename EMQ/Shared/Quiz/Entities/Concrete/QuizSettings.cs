@@ -303,6 +303,11 @@ public class QuizSettings
             { MCOptionKind.Qsh, true },
         };
 
+    [ProtoMember(36)]
+    [Required]
+    [DefaultValue(LivesScoringKind.Default)]
+    public LivesScoringKind LivesScoringKind { get; set; } = LivesScoringKind.Default;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -729,6 +734,12 @@ public class QuizSettings
                 .Select(y => y.Key);
 
             diff.Add($"Source types: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+        }
+
+        if (o.LivesScoringKind != n.LivesScoringKind)
+        {
+            diff.Add(
+                $"Lives scoring method: {o.LivesScoringKind.GetDescription()} → {n.LivesScoringKind.GetDescription()}");
         }
 
         return diff;

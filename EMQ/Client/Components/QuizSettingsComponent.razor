@@ -288,6 +288,24 @@
                         <label for="MaxLives">Lives (0 for unlimited)</label>
                         <br/>
 
+                        <InputSelect id="LivesScoringKind" @bind-Value="ClientQuizSettings.LivesScoringKind" style="margin: 5px">
+                            @foreach (LivesScoringKind livesScoringKind in Enum.GetValues<LivesScoringKind>())
+                            {
+                                <option value="@livesScoringKind">
+                                    @if (!string.IsNullOrEmpty(livesScoringKind.GetDescription()))
+                                    {
+                                        @livesScoringKind.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @livesScoringKind
+                                    }
+                                </option>
+                            }
+                        </InputSelect>
+                        <label for="LivesScoringKind">Lives scoring method</label>
+                        <br/>
+
                         <InputNumber id="GuessMs" @bind-Value="ClientQuizSettings.UI_GuessMs" style="margin: 5px"></InputNumber>
                         <label for="GuessMs">Guess time (seconds)</label>
                         <br/>
