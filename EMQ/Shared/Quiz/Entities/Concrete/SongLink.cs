@@ -7,7 +7,8 @@ using EMQ.Shared.Library.Entities.Concrete;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public class SongLink
+[Cloneable.Cloneable]
+public partial class SongLink
 {
     public static readonly int[] FileLinkTypes = { (int)SongLinkType.Catbox, (int)SongLinkType.Self };
 
