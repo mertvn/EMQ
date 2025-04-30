@@ -21,47 +21,6 @@
         <Blazorise.ModalBody>
             @if (IsOpen)
             {
-                <details>
-                    <summary>Add new comment</summary>
-
-                    <select id="SongCommentKind" @bind="ClientComment.kind" style="margin: 5px">
-                        @foreach (SongCommentKind songCommentKind in Enum.GetValues<SongCommentKind>())
-                        {
-                            <option value="@songCommentKind">@songCommentKind.GetDisplayName()</option>
-                        }
-                    </select>
-                    <label for="SongCommentKind">Comment type</label>
-                    <br/>
-
-                    @if (Song.Links.Any(x => x.IsFileLink))
-                    {
-                        <div style="margin: 5px; padding: 5px;">
-                            <span>Please select the URLs that apply (optional)</span>
-                            <br/>
-                            @foreach (var songLink in Song.Links.Where(x => x.IsFileLink))
-                            {
-                                <input type="checkbox" id="@songLink.Url" class="form-check-input" style="margin: 5px"
-                                       @bind:get="@ClientComment.urls.Contains(songLink.Url)" @bind:set="@((bool value) => SetUrl(value, songLink.Url)))"/>
-                                <label for="@songLink.Url">
-                                    <a href="@songLink.Url" target="_blank">
-                                        @songLink.Url
-                                    </a>
-                                    @songLink.Duration.ToString("mm\\:ss")
-                                    by @songLink.SubmittedBy
-                                </label>
-                                <br/>
-                            }
-                        </div>
-                    }
-
-                    <textarea rows="4" cols="45" maxlength="4096" placeholder="Comment" type="text" @bind="ClientComment.comment" @bind:event="oninput"></textarea>
-                    <br/>
-
-                    <button type="button" class="btn btn-primary" @onclick="Onclick_SubmitComment" disabled="@(string.IsNullOrWhiteSpace(ClientComment.comment))">
-                        Submit
-                    </button>
-                </details>
-
                 @if (ResGetMusicComments != null)
                 {
                     <div class="grid" tabindex="-1">
@@ -102,6 +61,49 @@
                         </QuickGrid>
                     </div>
                 }
+
+                <br/>
+                <details open>
+                    <summary>Add new comment</summary>
+
+                    <select id="SongCommentKind" @bind="ClientComment.kind" style="margin: 5px">
+                        @foreach (SongCommentKind songCommentKind in Enum.GetValues<SongCommentKind>())
+                        {
+                            <option value="@songCommentKind">@songCommentKind.GetDisplayName()</option>
+                        }
+                    </select>
+                    <label for="SongCommentKind">Comment type</label>
+                    <br/>
+
+                    @if (Song.Links.Any(x => x.IsFileLink))
+                    {
+                        <div style="margin: 5px; padding: 5px;">
+                            <span>Please select the URLs that apply (optional)</span>
+                            <br/>
+                            @foreach (var songLink in Song.Links.Where(x => x.IsFileLink))
+                            {
+                                // todo show warning if url no longer exists
+                                <input type="checkbox" id="@songLink.Url" class="form-check-input" style="margin: 5px"
+                                       @bind:get="@ClientComment.urls.Contains(songLink.Url)" @bind:set="@((bool value) => SetUrl(value, songLink.Url)))"/>
+                                <label for="@songLink.Url">
+                                    <a href="@songLink.Url" target="_blank">
+                                        @songLink.Url
+                                    </a>
+                                    @songLink.Duration.ToString("mm\\:ss")
+                                    by @songLink.SubmittedBy
+                                </label>
+                                <br/>
+                            }
+                        </div>
+                    }
+
+                    <textarea rows="4" cols="45" maxlength="4096" placeholder="Comment" type="text" @bind="ClientComment.comment" @bind:event="oninput"></textarea>
+                    <br/>
+
+                    <button type="button" class="btn btn-primary" @onclick="Onclick_SubmitComment" disabled="@(string.IsNullOrWhiteSpace(ClientComment.comment))">
+                        Submit
+                    </button>
+                </details>
             }
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>

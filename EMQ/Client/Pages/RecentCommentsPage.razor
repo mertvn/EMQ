@@ -1,0 +1,64 @@
+﻿@page "/eu/all/comments"
+@using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using System.Globalization
+@inject HttpClient _client
+
+<a class="link link-primary" href="/eu/all">Browse users</a>
+<br/>
+
+<h3>Recent comments</h3>
+<br/>
+
+@if (MusicComments != null && ResGetRecentMusicComments != null)
+{
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@MusicComments">
+            <PropertyColumn Property="@(x => x.created_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+            <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<MusicComment>.ByAscending(x => Utils.UserIdToUsername(ResGetRecentMusicComments.ResGetMusicComments.UsernamesDict, x.user_id)))">
+                @Utils.UserIdToUsername(ResGetRecentMusicComments.ResGetMusicComments.UsernamesDict, context.user_id)
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.kind)" Title="Type" Sortable="true"/>
+            <TemplateColumn Title="URLs">
+                @foreach (string url in context.urls)
+                {
+                    <span style="display: block;">
+                        <a href="@url" target="_blank">
+                            @url.LastSegment()
+                        </a>
+                    </span>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Comment">
+                <span style="white-space: normal;">
+                    <LinkifierComponent Text="@(context.comment)"/>
+                </span>
+            </TemplateColumn>
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<MusicComment>.ByAscending(x => ResGetRecentMusicComments.SongsDict[x.music_id]))">
+                @(ResGetRecentMusicComments.SongsDict[context.music_id])
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+}
+
+@code {
+
+    private IQueryable<MusicComment>? MusicComments { get; set; }
+
+    public ResGetRecentMusicComments? ResGetRecentMusicComments { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage res1 =
+            await _client.PostAsJsonAsync("Library/GetRecentMusicComments", "");
+        if (res1.IsSuccessStatusCode)
+        {
+            ResGetRecentMusicComments = (await res1.Content.ReadFromJsonAsync<ResGetRecentMusicComments>())!;
+            MusicComments = ResGetRecentMusicComments.ResGetMusicComments.MusicComments.AsQueryable();
+        }
+    }
+
+}

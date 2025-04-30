@@ -924,7 +924,7 @@ public class LibraryController : ControllerBase
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var musicComments =
             (await connection.QueryAsync<MusicComment>(
-                $"select * from music_comment where (@musicId::int is null or music_id = @musicId::int)",
+                $"select * from music_comment where music_id = @musicId order by id desc",
                 new { musicId })).ToArray();
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
@@ -1005,5 +1005,32 @@ public class LibraryController : ControllerBase
             $"{session.Player.Username} is deleting MC {id} mId {mc.music_id} {mc.comment} by {mc.user_id}");
         bool success = await DbManager.DeleteEntity(new MusicComment() { id = mc.id });
         return success ? Ok() : StatusCode(520);
+    }
+
+    [CustomAuthorize(PermissionKind.ViewStats)]
+    [HttpPost]
+    [Route("GetRecentMusicComments")]
+    public async Task<ActionResult<ResGetRecentMusicComments>> GetRecentMusicComments()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var musicComments =
+            (await connection.QueryAsync<MusicComment>("select * from music_comment order by id desc")).ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = musicComments.Select(x => x.user_id).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo cache this
+
+        var songs = await DbManager.SelectSongsMIds(musicComments.Select(x => x.music_id).ToArray(), false);
+        var songsDict = songs.ToDictionary(x => x.Id, x => x.ToStringLatin());
+
+        return new ResGetRecentMusicComments()
+        {
+            ResGetMusicComments =
+                new ResGetMusicComments { UsernamesDict = usernamesDict, MusicComments = musicComments },
+            SongsDict = songsDict
+        };
     }
 }
