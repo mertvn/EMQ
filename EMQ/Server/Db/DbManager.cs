@@ -139,7 +139,12 @@ ORDER BY music_id;";
 
     private static ConcurrentDictionary<string, LibraryStats?> CachedLibraryStats { get; } = new();
 
+    /// array of user ids
     private static int[] IgnoredMusicVotes { get; set; } = Array.Empty<int>();
+
+    // todo
+    /// array of user ids
+    private static int[] IgnoredMusicComments { get; set; } = Array.Empty<int>();
 
     private static async Task RefreshMusicIdsRecordingGidsCache()
     {
@@ -474,7 +479,7 @@ ORDER BY music_id;";
         var musicComments =
             (await connection.QueryAsync<MusicComment>(
                 "select * from music_comment where music_id = ANY(@mIds) and not user_id = any(@ign)",
-                new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }, transaction))
+                new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicComments }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
         foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
