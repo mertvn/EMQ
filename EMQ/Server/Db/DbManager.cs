@@ -2948,7 +2948,7 @@ ORDER BY artist_id";
     public static async Task<string> SelectAutocompleteMt(SongSourceSongTypeMode ssstm)
     {
         const string sqlAutocompleteMt =
-            @"SELECT DISTINCT music_id AS mId, mt.latin_title AS mtLatinTitle, '' AS mtLatinTitleNormalized
+            @"SELECT DISTINCT music_id AS mId, mt.latin_title AS mtLatinTitle, '' AS mtLatinTitleNormalized, false as isBGM
             FROM music_title mt
             WHERE music_id = ANY(@validMids)
             ";
@@ -2973,6 +2973,7 @@ ORDER BY artist_id";
             foreach (var re in res)
             {
                 re.MTLatinTitleNormalized = re.MTLatinTitle.NormalizeForAutocomplete();
+                re.IsBGM = mids[re.MId].Contains(SongSourceSongType.BGM);
             }
 
             string autocomplete = JsonSerializer.Serialize(res, Utils.Jso);

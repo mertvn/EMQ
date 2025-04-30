@@ -1,7 +1,8 @@
-﻿@inject HttpClient _client
+﻿@using EMQ.Shared.Library.Entities.Concrete
+@inject HttpClient _client
 
 <MyAutocompleteComponent @ref="AutocompleteComponent"
-                         TValue="string"
+                         TValue="AutocompleteMt"
                          MaxMenuHeight="325px"
                          HighlightMatch="ClientState.Preferences.AutocompleteHighlightMatch"
                          RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
@@ -9,6 +10,7 @@
                          Disabled="IsDisabled"
                          Placeholder="@Placeholder"
                          GuessStr="@Guess"
-                         TextField="@((item) => item)"
-                         OnSearch="@(x => OnSearch<string>(x))"
+                         TextField="@((item) => item.MTLatinTitle)"
+                         IconField="@(x => OnIconField(x))"
+                         OnSearch="@(x => OnSearch<AutocompleteMt>(x))"
                          OnValueChanged="OnValueChanged"/>

@@ -4,11 +4,12 @@ namespace EMQ.Shared.Library.Entities.Concrete;
 
 public class AutocompleteMt
 {
-    public AutocompleteMt(int mId, string mtLatinTitle, string mtLatinTitleNormalized = "")
+    public AutocompleteMt(int mId, string mtLatinTitle, string mtLatinTitleNormalized = "", bool? isBGM = null)
     {
         MId = mId;
         MTLatinTitle = mtLatinTitle;
         MTLatinTitleNormalized = mtLatinTitleNormalized;
+        IsBGM = isBGM;
     }
 
     [JsonPropertyName("1")]
@@ -19,4 +20,7 @@ public class AutocompleteMt
 
     [JsonPropertyName("3")]
     public string MTLatinTitleNormalized { get; set; }
+
+    [JsonPropertyName("4")]
+    public bool? IsBGM { get; set; }
 }

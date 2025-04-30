@@ -17,7 +17,7 @@ namespace EMQ.Client.Components;
 
 public partial class AutocompleteMtComponent : IAutocompleteComponent
 {
-    public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
+    public MyAutocompleteComponent<AutocompleteMt> AutocompleteComponent { get; set; } = null!;
 
     public AutocompleteMt[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMt>();
 
@@ -87,6 +87,18 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
         await AutocompleteComponent.Focus();
     }
 
+    private static string? OnIconField(AutocompleteMt t)
+    {
+        string? str = t.IsBGM switch
+        {
+            true => "assets/text/B.svg",
+            false => "assets/text/V.svg",
+            _ => null
+        };
+
+        return str;
+    }
+
     private TValue[] OnSearch<TValue>(string value)
     {
         if (value.StartsWith("id:"))
@@ -133,13 +145,13 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
             .OrderByDescending(x => x.Value)
             .DistinctBy(x => x.Key.MTLatinTitle)
             .Take(maxResults)
-            .Select(x => x.Key.MTLatinTitle)
+            .Select(x => x.Key)
             .ToArray();
     }
 
-    private async Task OnValueChanged(string? value)
+    private async Task OnValueChanged(AutocompleteMt? value)
     {
-        string s = value ?? AutocompleteComponent.SelectedText;
+        string s = value?.MTLatinTitle ?? AutocompleteComponent.SelectedText;
         if (string.IsNullOrEmpty(Guess) && string.IsNullOrEmpty(s))
         {
             return;
