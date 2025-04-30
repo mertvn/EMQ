@@ -45,6 +45,8 @@ public partial class MusicCommentComponent
 
     private async Task RefreshComments()
     {
+        ResGetMusicComments = null;
+        CurrentMusicComments = null;
         var res = await _client.PostAsJsonAsync("Library/GetMusicComments", Song.Id);
         if (res.IsSuccessStatusCode)
         {
