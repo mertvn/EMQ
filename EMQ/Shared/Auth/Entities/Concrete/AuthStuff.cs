@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
 namespace EMQ.Shared.Auth.Entities.Concrete;
 
-public static class AuthStuff // todo? find better name. maybe AuthConstants?
+public static class AuthStuff // todo? find better name
 {
     public const int MinPasswordLength = 20;
 

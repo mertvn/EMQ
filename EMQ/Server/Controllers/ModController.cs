@@ -10,6 +10,7 @@ using Dapper;
 using Dapper.Database.Extensions;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
+using EMQ.Server.Db.Entities.Auth;
 using EMQ.Server.Db.Imports.MusicBrainz;
 using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -295,6 +296,15 @@ public class ModController : ControllerBase
 
         Console.WriteLine($"{session.Player.Username} EditUser {JsonSerializer.Serialize(req, Utils.Jso)}");
         await transactionAuth.CommitAsync();
+        var userSession = ServerState.Sessions.FirstOrDefault(x => x.Player.Id == req.UserId);
+        if (userSession != null)
+        {
+            var dbUser = await connectionAuth.GetAsync<User>(req.UserId);
+            userSession.UserRoleKind = dbUser.roles;
+            userSession.IncludedPermissions = dbUser.inc_perm?.ToList();
+            userSession.ExcludedPermissions = dbUser.exc_perm?.ToList();
+        }
+
         return Ok();
     }
 
