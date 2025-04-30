@@ -49,6 +49,8 @@ public partial class Song : IEditQueueEntity
 
     public Dictionary<GuessKind, SongStats> Stats { get; set; } = new();
 
+    public int CommentCount { get; set; }
+
     public Guid? MusicBrainzRecordingGid
     {
         get

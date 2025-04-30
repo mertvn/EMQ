@@ -123,6 +123,7 @@
 
                     <span style="float: right; cursor: pointer; margin-right: 10px;" title="Comments"
                           @onclick="@(async () => await OnclickSongComments(song))">
+                        <span style="margin-right: 2px;">@song.CommentCount</span>
                         💬
                     </span>
 

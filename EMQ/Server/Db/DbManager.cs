@@ -471,10 +471,21 @@ ORDER BY music_id;";
                 new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
+        var musicComments =
+            (await connection.QueryAsync<MusicComment>(
+                "select * from music_comment where music_id = ANY(@mIds) and not user_id = any(@ign)",
+                new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }, transaction))
+            .GroupBy(x => x.music_id).ToArray();
+
         foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
         {
             songs[musicVote.Key].VoteAverage = (float)Math.Round(musicVote.Average(x => x.vote!.Value), 2) / 10;
             songs[musicVote.Key].VoteCount = musicVote.Count();
+        }
+
+        foreach (IGrouping<int, MusicComment> musicComment in musicComments)
+        {
+            songs[musicComment.Key].CommentCount = musicComment.Count();
         }
 
         if (ownConnection)
@@ -5918,5 +5929,11 @@ ORDER BY
         return (await connection.QueryAsync<(string, int)>(
                 "SELECT replace(url, 'https://musicbrainz.org/artist/', ''), artist_id FROM artist_external_link ael WHERE type = 2"))
             .ToDictionary(x => x.Item1, x => x.Item2);
+    }
+
+    public static async Task<List<Song>> GetAllSongs()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return await SelectSongsMIds((await connection.QueryAsync<int>("select id from music")).ToArray(), false);
     }
 }
