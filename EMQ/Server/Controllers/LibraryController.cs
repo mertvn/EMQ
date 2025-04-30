@@ -919,7 +919,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("GetMusicComments")]
-    public async Task<ResGetMusicComments> GetMusicComments([FromBody] int? musicId)
+    public async Task<ResGetMusicComments> GetMusicComments([FromBody] int musicId)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var musicComments =
