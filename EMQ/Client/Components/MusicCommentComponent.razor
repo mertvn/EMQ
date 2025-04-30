@@ -16,7 +16,7 @@
                  Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
     <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
         <Blazorise.ModalHeader>
-            <Blazorise.ModalTitle>Song Comments</Blazorise.ModalTitle>
+            <Blazorise.ModalTitle>Song comments</Blazorise.ModalTitle>
         </Blazorise.ModalHeader>
         <Blazorise.ModalBody>
             @if (IsOpen)
@@ -87,7 +87,7 @@
                             <TemplateColumn Title="URLs">
                                 @foreach (string url in context.urls)
                                 {
-                                    <span>
+                                    <span style="display: block;">
                                         <a href="@url" target="_blank">
                                             @url.LastSegment()
                                         </a>
@@ -96,7 +96,7 @@
                             </TemplateColumn>
                             <TemplateColumn Title="Comment">
                                 <span style="white-space: normal;">
-                                    @(context.comment)
+                                    <LinkifierComponent Text="@(context.comment)"/>
                                 </span>
                             </TemplateColumn>
                         </QuickGrid>
