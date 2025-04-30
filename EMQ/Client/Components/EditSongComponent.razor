@@ -126,7 +126,8 @@
                                  IsDisabled="@(Song.DataSource == DataSourceKind.VNDB)"
                                  IsQuizPage="false"
                                  @bind-GuessT="@SelectedMusicSourceTitle"
-                                 Callback="SelectedResultChangedMst">
+                                 Callback="SelectedResultChangedMst"
+                                 UseAll="true">
             </GuessInputComponent>
             @foreach (var source in Song.Sources)
             {

@@ -104,7 +104,8 @@ else
                          IsDisabled="@(Status > ErodleStatus.Playing)"
                          IsQuizPage="false"
                          @bind-GuessT="@SelectedMusicSourceTitle"
-                         Callback="SelectedResultChangedMst">
+                         Callback="SelectedResultChangedMst"
+                         UseAll="false">
     </GuessInputComponent>
 
     <table style="width: 1270px; margin: 4px;">
