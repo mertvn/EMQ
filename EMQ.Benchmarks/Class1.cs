@@ -29,7 +29,8 @@ public class Md5VsSha256
         //     .Select(x => x.music_id).ToArray();
 
         AutocompleteData =
-            JsonSerializer.Deserialize<AutocompleteMst[]>(DbManager.SelectAutocompleteMst().GetAwaiter().GetResult())!;
+            JsonSerializer.Deserialize<AutocompleteMst[]>(DbManager
+                .SelectAutocompleteMst(new[] { SongSourceType.VN, SongSourceType.Other }).GetAwaiter().GetResult())!;
     }
 
     // [Benchmark]

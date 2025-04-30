@@ -155,7 +155,11 @@ ORDER BY music_id;";
     public static async Task RefreshAutocompleteFiles()
     {
         string autocompleteFolder = ServerState.AutocompleteFolder;
-        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json", await SelectAutocompleteMst());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mst.json",
+            await SelectAutocompleteMst(new[] { SongSourceType.VN, SongSourceType.Other }));
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mst_all.json",
+            await SelectAutocompleteMst(null));
+
         await File.WriteAllTextAsync($"{autocompleteFolder}/c.json", await SelectAutocompleteC());
         await File.WriteAllTextAsync($"{autocompleteFolder}/a.json", await SelectAutocompleteA());
 
@@ -2834,18 +2838,20 @@ RETURNING id;",
         return ret.Shuffle().ToList();
     }
 
-    public static async Task<string> SelectAutocompleteMst()
+    public static async Task<string> SelectAutocompleteMst(IEnumerable<SongSourceType>? sst)
     {
         const string sqlAutocompleteMst =
             @"SELECT DISTINCT music_source_id AS msId, mst.latin_title AS mstLatinTitle, COALESCE(mst.non_latin_title, '') AS mstNonLatinTitle,
                 '' AS mstLatinTitleNormalized, '' AS mstNonLatinTitleNormalized, ms.type as songSourceType
             FROM music_source_title mst
             join music_source ms on mst.music_source_id = ms.id
+            where ((@sst::int[] IS NULL) or type = ANY(@sst::int[]))
             ";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            AutocompleteMst[] res = (await connection.QueryAsync<AutocompleteMst>(sqlAutocompleteMst))
+            AutocompleteMst[] res = (await connection.QueryAsync<AutocompleteMst>(sqlAutocompleteMst,
+                    new { sst = sst?.Cast<int>().ToArray() }))
                 .Where(x => x != null!)
                 .OrderBy(x => x.MSTLatinTitle)
                 .ToArray();

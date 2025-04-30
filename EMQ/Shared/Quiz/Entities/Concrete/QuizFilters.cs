@@ -212,6 +212,9 @@ public class QuizFilters
         SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.BGM, out var b) && b.Value > 0 ||
         (SongSourceSongTypeRandomEnabledSongTypes.TryGetValue(SongSourceSongType.BGM, out bool rb) && rb &&
          SongSourceSongTypeFilters.TryGetValue(SongSourceSongType.Random, out var r) && r.Value > 0);
+
+    public bool CanHaveNonVN =>
+        SongSourceTypeFilter.Any(x => x.Value && x.Key is not (SongSourceType.VN or SongSourceType.Other));
 }
 
 public enum ListReadKind // todo? find a better name

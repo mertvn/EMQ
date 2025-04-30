@@ -69,11 +69,16 @@ public partial class GuessInputComponent : IAutocompleteComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
+    [Parameter]
+    public bool UseAll { get; set; }
+
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
+        AutocompleteData = UseAll
+            ? (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst_all.json"))!
+            : (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
     }
 
     public void CallStateHasChanged()

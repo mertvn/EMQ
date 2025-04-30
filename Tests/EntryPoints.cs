@@ -46,7 +46,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateAutocompleteMstJson()
     {
-        await File.WriteAllTextAsync("mst.json", await DbManager.SelectAutocompleteMst());
+        await File.WriteAllTextAsync("mst.json",
+            await DbManager.SelectAutocompleteMst(new[] { SongSourceType.VN, SongSourceType.Other }));
     }
 
     [Test, Explicit]
