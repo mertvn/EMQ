@@ -109,7 +109,7 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
                 return Array.Empty<TValue>();
             }
 
-            return (TValue[])(object)new string[] { new(replaced) };
+            return (TValue[])(object)new AutocompleteMt[] { new(Convert.ToInt32(replaced), replaced) };
         }
 
         value = value.NormalizeForAutocomplete();
