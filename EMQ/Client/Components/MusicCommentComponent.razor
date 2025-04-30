@@ -1,0 +1,113 @@
+﻿@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
+@using System.Collections.Generic
+@using System.Globalization
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Library.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject ClientUtils _clientUtils
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+
+@* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
+<Blazorise.Modal @ref="_modalRef" style="z-index: 4000" RenderMode="Blazorise.ModalRenderMode.LazyReload"
+                 Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
+    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.ExtraLarge">
+        <Blazorise.ModalHeader>
+            <Blazorise.ModalTitle>Song Comments</Blazorise.ModalTitle>
+        </Blazorise.ModalHeader>
+        <Blazorise.ModalBody>
+            @if (IsOpen)
+            {
+                <details>
+                    <summary>Add new comment</summary>
+
+                    <select id="SongCommentKind" @bind="ClientComment.kind" style="margin: 5px">
+                        @foreach (SongCommentKind songCommentKind in Enum.GetValues<SongCommentKind>())
+                        {
+                            <option value="@songCommentKind">@songCommentKind.GetDisplayName()</option>
+                        }
+                    </select>
+                    <label for="SongCommentKind">Comment type</label>
+                    <br/>
+
+                    @if (Song.Links.Any(x => x.IsFileLink))
+                    {
+                        <div style="margin: 5px; padding: 5px;">
+                            <span>Please select the URLs that apply (optional)</span>
+                            <br/>
+                            @foreach (var songLink in Song.Links.Where(x => x.IsFileLink))
+                            {
+                                <input type="checkbox" id="@songLink.Url" class="form-check-input" style="margin: 5px"
+                                       @bind:get="@ClientComment.urls.Contains(songLink.Url)" @bind:set="@((bool value) => SetUrl(value, songLink.Url)))"/>
+                                <label for="@songLink.Url">
+                                    <a href="@songLink.Url" target="_blank">
+                                        @songLink.Url
+                                    </a>
+                                    @songLink.Duration.ToString("mm\\:ss")
+                                    by @songLink.SubmittedBy
+                                </label>
+                                <br/>
+                            }
+                        </div>
+                    }
+
+                    <textarea rows="4" cols="45" maxlength="4096" placeholder="Comment" type="text" @bind="ClientComment.comment" @bind:event="oninput"></textarea>
+                    <br/>
+
+                    <button type="button" class="btn btn-primary" @onclick="Onclick_SubmitComment" disabled="@(string.IsNullOrWhiteSpace(ClientComment.comment))">
+                        Submit
+                    </button>
+                </details>
+
+                @if (ResGetMusicComments != null)
+                {
+                    <div class="grid" tabindex="-1">
+                        <QuickGrid Items="@CurrentMusicComments">
+                            <TemplateColumn Title="">
+                                @if (ClientState.Session != null)
+                                {
+                                    bool canDelete =
+                                        AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink) ||
+                                        ClientState.Session.Player.Id == context.user_id;
+
+                                    @if (canDelete)
+                                    {
+                                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteComment(context.id))">🗑</span>
+                                    }
+                                }
+                            </TemplateColumn>
+                            <PropertyColumn Property="@(x => x.created_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                            <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<MusicComment>.ByAscending(x => Utils.UserIdToUsername(ResGetMusicComments.UsernamesDict, x.user_id)))">
+                                @Utils.UserIdToUsername(ResGetMusicComments.UsernamesDict, context.user_id)
+                            </TemplateColumn>
+                            <PropertyColumn Property="@(x => x.kind)" Title="Type" Sortable="true"/>
+                            <TemplateColumn Title="URLs">
+                                @foreach (string url in context.urls)
+                                {
+                                    <span>
+                                        <a href="@url" target="_blank">
+                                            @url.LastSegment()
+                                        </a>
+                                    </span>
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Comment">
+                                <span style="white-space: normal;">
+                                    @(context.comment)
+                                </span>
+                            </TemplateColumn>
+                        </QuickGrid>
+                    </div>
+                }
+            }
+        </Blazorise.ModalBody>
+        <Blazorise.ModalFooter>
+            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+                Close
+            </button>
+        </Blazorise.ModalFooter>
+    </Blazorise.ModalContent>
+</Blazorise.Modal>

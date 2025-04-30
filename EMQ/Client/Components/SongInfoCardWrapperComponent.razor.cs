@@ -45,6 +45,10 @@ public partial class SongInfoCardWrapperComponent
 
     private ReviewEditComponent _reviewEditComponent = null!;
 
+    private MusicCommentComponent _musicCommentComponent = null!;
+
+    private Song CurrentSong { get; set; } = new();
+
     private async Task BatchSetSubmittedBy()
     {
         var links = CurrentSongs.SelectMany(x => x.Links.Where(y => y.IsFileLink && y.SubmittedBy == "[unknown]"));
@@ -130,5 +134,11 @@ public partial class SongInfoCardWrapperComponent
                 _reviewEditComponent.Show();
             }
         }
+    }
+
+    private async Task OnclickSongComments(Song song)
+    {
+        CurrentSong = song;
+        _musicCommentComponent.Show();
     }
 }

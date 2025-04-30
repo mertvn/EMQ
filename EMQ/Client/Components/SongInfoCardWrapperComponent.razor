@@ -6,8 +6,9 @@
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 
-<ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewComponent>
-<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"></ReviewEditComponent>
+<ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
+<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
+<MusicCommentComponent @ref="_musicCommentComponent" Song="@CurrentSong" ParentStateHasChangedCallback="@CallStateHasChanged" />
 
 @{
     bool isDebugMode = ClientState.Preferences.DebugMode;
@@ -115,12 +116,17 @@
                     <SongInfoCardComponent Song="@song"/>
                     <div class="songInfoCardSongLinks" style="padding: 16px">
 
-                        <span style="float: right; cursor: pointer;" title="History"
-                                              @onclick="@(async () => await OnclickEntityHistory(song.Id))">
-                                            ⟲
-                        </span>
+                    <span style="float: right; cursor: pointer;" title="History"
+                          @onclick="@(async () => await OnclickEntityHistory(song.Id))">
+                        ⟲
+                    </span>
 
-                        <div>
+                    <span style="float: right; cursor: pointer; margin-right: 10px;" title="Comments"
+                          @onclick="@(async () => await OnclickSongComments(song))">
+                        💬
+                    </span>
+
+                    <div>
                             Video links:
                             @if (hasVideo)
                             {

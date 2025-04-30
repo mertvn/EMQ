@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -43,7 +43,8 @@ public static class AuthStuff // todo? find better name. maybe AuthConstants?
             PermissionKind.ReportSongLink,
             PermissionKind.StoreQuizSettings,
             PermissionKind.Vote,
-            PermissionKind.Edit
+            PermissionKind.Edit,
+            PermissionKind.Comment,
         }).ToHashSet();
 
     public static HashSet<PermissionKind> DefaultImportHelperPermissions { get; } =
@@ -155,6 +156,7 @@ public enum PermissionKind
     StoreQuizSettings = 3004,
     Vote = 3005,
     Edit = 3006,
+    Comment = 3007,
 
     ImportHelper = 3700,
 

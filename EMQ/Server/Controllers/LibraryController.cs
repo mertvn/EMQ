@@ -8,11 +8,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Dapper;
+using Dapper.Database.Extensions;
 using EMQ.Client.Components;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -912,5 +914,96 @@ public class LibraryController : ControllerBase
                 $"select * from edit_queue where status = {(int)ReviewQueueStatus.Approved} and entity_kind = @entityKind and entity_id = @entityId order by id desc",
                 new { entityKind = req.EntityKind, entityId = req.EntityId });
         return res.ToArray();
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetMusicComments")]
+    public async Task<ResGetMusicComments> GetMusicComments([FromBody] int? musicId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var musicComments =
+            (await connection.QueryAsync<MusicComment>(
+                $"select * from music_comment where (@musicId::int is null or music_id = @musicId::int)",
+                new { musicId })).ToArray();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = musicComments.Select(x => x.user_id).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2); // todo cache this
+
+        return new ResGetMusicComments { UsernamesDict = usernamesDict, MusicComments = musicComments, };
+    }
+
+    [CustomAuthorize(PermissionKind.Comment)]
+    [HttpPost]
+    [Route("InsertMusicComment")]
+    public async Task<ActionResult> InsertMusicComment([FromBody] MusicComment req)
+    {
+        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        req.comment = req.comment.Trim();
+        if (req.comment.Length is <= 0 or > 4096)
+        {
+            return StatusCode(520);
+        }
+
+        req.id = 0;
+        req.user_id = session.Player.Id;
+        req.created_at = DateTime.UtcNow;
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        bool success = await connection.InsertAsync(req);
+        if (!success)
+        {
+            return StatusCode(500);
+        }
+
+        Console.WriteLine(
+            $"p{session.Player.Id} {session.Player.Username} inserted music comment {req.music_id} = {req.comment}");
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.Comment)]
+    [HttpPost]
+    [Route("DeleteMusicComment")]
+    public async Task<ActionResult> DeleteMusicComment([FromBody] int id)
+    {
+        if (ServerState.IsServerReadOnly)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var mc = await DbManager.GetEntity<MusicComment>(id);
+        if (mc is null)
+        {
+            return StatusCode(409);
+        }
+
+        if (!AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) && session.Player.Id != mc.user_id)
+        {
+            return Unauthorized();
+        }
+
+        Console.WriteLine(
+            $"{session.Player.Username} is deleting MC {id} mId {mc.music_id} {mc.comment} by {mc.user_id}");
+        bool success = await DbManager.DeleteEntity(new MusicComment() { id = mc.id });
+        return success ? Ok() : StatusCode(520);
     }
 }
