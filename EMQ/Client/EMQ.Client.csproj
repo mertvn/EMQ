@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <NuGetAuditLevel>critical</NuGetAuditLevel>
+    <NoWarn>CS1998</NoWarn>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>

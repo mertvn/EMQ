@@ -2892,8 +2892,7 @@ RETURNING id;",
     {
         const string sqlAutocompleteA = @"SELECT DISTINCT a.id, aa.latin_alias, aa.non_latin_alias, aa.is_main_name
             FROM artist_alias aa
-            LEFT JOIN artist a ON a.id = aa.artist_id
-            ";
+            LEFT JOIN artist a ON a.id = aa.artist_id";
 
         const string sqlArtistRoles = @"WITH RoleCounts AS (
   SELECT artist_id, role, COUNT(*) AS role_count,
@@ -2905,7 +2904,7 @@ SELECT DISTINCT ON(a.artist_id) a.artist_id,
   CASE
     WHEN EXISTS (
       SELECT 1 FROM RoleCounts rc
-      WHERE rc.artist_id = a.artist_id AND rc.role = 1 AND rc.role_count > 10
+      WHERE rc.artist_id = a.artist_id AND rc.role = 1 AND rc.role_count >= 9
     ) THEN 1
     ELSE a.role
   END AS role
