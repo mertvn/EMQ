@@ -84,8 +84,8 @@ public partial class LibraryPage
         await _clientUtils.TryRestoreSession();
         if (QueryMId > 0)
         {
-            selectedMusicSourceTitle = QueryMId.ToString();
-            await SelectedResultChangedMst();
+            selectedMusicTitle = QueryMId.ToString();
+            await SelectedResultChangedMt();
         }
     }
 
