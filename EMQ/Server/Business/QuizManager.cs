@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1162,64 +1162,68 @@ public class QuizManager
     {
         var enabledGuessKinds =
             Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Value).Select(x => x.Key).ToHashSet();
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
+        var teams = Quiz.Room.Players
+            .Where(p => p.Lives > 0) // dead players can't take lives
+            .GroupBy(x => x.TeamId)
+            .Select(g => g.ToArray())
+            .ToArray();
         for (int i = 0; i < teams.Length; i++)
         {
-            var currentTeam = teams[i].ToArray();
+            var currentTeam = teams[i];
             for (int j = i + 1; j < teams.Length; j++)
             {
-                var opposingTeam = teams[j].ToArray();
+                var opposingTeam = teams[j];
                 int minPlayerCount = Math.Min(currentTeam.Length, opposingTeam.Length); // todo option to use max?
                 for (int k = 0; k < minPlayerCount; k++)
                 {
                     Player currentPlayer = currentTeam[k];
                     Player opposingPlayer = opposingTeam[k];
 
-                    if (currentPlayer.Lives <= 0)
-                    {
-                        // dead players can't take lives
-                        continue;
-                    }
+                    var currentWrong = currentPlayer.IsGuessKindCorrectDict?
+                        .Where(x => enabledGuessKinds.Contains(x.Key) && x.Value.HasValue && !x.Value.Value)
+                        .Select(x => x.Key)
+                        .ToHashSet() ?? new HashSet<GuessKind>();
 
-                    int currentPlayerWrongCount = currentPlayer.IsGuessKindCorrectDict?
-                        .Where(x => enabledGuessKinds.Contains(x.Key))
-                        .Count(x => !x.Value!.Value) ?? 0;
-                    int opposingPlayerWrongCount = opposingPlayer.IsGuessKindCorrectDict?
-                        .Where(x => enabledGuessKinds.Contains(x.Key))
-                        .Count(x => !x.Value!.Value) ?? 0;
+                    var opposingWrong = opposingPlayer.IsGuessKindCorrectDict?
+                        .Where(x => enabledGuessKinds.Contains(x.Key) && x.Value.HasValue && !x.Value.Value)
+                        .Select(x => x.Key)
+                        .ToHashSet() ?? new HashSet<GuessKind>();
 
-                    if (currentPlayer.PlayerStatus == PlayerStatus.Correct &&
-                        opposingPlayer.PlayerStatus != PlayerStatus.Correct)
+                    var currentTakes = opposingWrong.Except(currentWrong).ToList();
+                    if (currentTakes.Count > 0)
                     {
-                        int livesToTake = opposingPlayerWrongCount - currentPlayerWrongCount;
+                        int livesToTake = Quiz.Room.QuizSettings.LivesScoringKind switch
+                        {
+                            LivesScoringKind.Default => 1,
+                            LivesScoringKind.EachGuessTypeTakesOneLife => currentTakes.Count,
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+
                         Quiz.Room.Log(
-                            $"{currentPlayer.Username} took {livesToTake} lives from {opposingPlayer.Username}.",
+                            $"{currentPlayer.Username} took {livesToTake} lives from {opposingPlayer.Username} for: {string.Join(", ", currentTakes.Select(x => x.GetDescription()))}.",
                             writeToChat: true);
                         foreach (Player player in opposingTeam)
                         {
-                            player.Lives -= Quiz.Room.QuizSettings.LivesScoringKind switch
-                            {
-                                LivesScoringKind.Default => 1,
-                                LivesScoringKind.EachGuessTypeTakesOneLife => livesToTake,
-                                _ => throw new ArgumentOutOfRangeException()
-                            };
+                            player.Lives -= livesToTake;
                         }
                     }
-                    else if (currentPlayer.PlayerStatus != PlayerStatus.Correct &&
-                             opposingPlayer.PlayerStatus == PlayerStatus.Correct)
+
+                    var opposingTakes = currentWrong.Except(opposingWrong).ToList();
+                    if (opposingTakes.Count > 0)
                     {
-                        int livesToTake = currentPlayerWrongCount - opposingPlayerWrongCount;
+                        int livesToTake = Quiz.Room.QuizSettings.LivesScoringKind switch
+                        {
+                            LivesScoringKind.Default => 1,
+                            LivesScoringKind.EachGuessTypeTakesOneLife => opposingTakes.Count,
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+
                         Quiz.Room.Log(
-                            $"{opposingPlayer.Username} took {livesToTake} lives from {currentPlayer.Username}.",
+                            $"{opposingPlayer.Username} took {livesToTake} lives from {currentPlayer.Username} for: {string.Join(", ", opposingTakes.Select(x => x.GetDescription()))}.",
                             writeToChat: true);
                         foreach (Player player in currentTeam)
                         {
-                            player.Lives -= Quiz.Room.QuizSettings.LivesScoringKind switch
-                            {
-                                LivesScoringKind.Default => 1,
-                                LivesScoringKind.EachGuessTypeTakesOneLife => livesToTake,
-                                _ => throw new ArgumentOutOfRangeException()
-                            };
+                            player.Lives -= livesToTake;
                         }
                     }
                 }
