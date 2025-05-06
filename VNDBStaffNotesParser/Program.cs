@@ -57,7 +57,7 @@ public static class Program
                         "OP 1",
                         "OP 2",
                         "ED chorus, PSV OP", // YOLO
-                        "OP (Ballad ver.)", // YOLO
+                        "Insert song (Ballad ver.)", // YOLO
                         "start theme",
                         "Main menu theme:",
                         "Title BGM", // https://vndb.org/v2322

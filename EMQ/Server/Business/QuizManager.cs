@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -433,7 +433,7 @@ public class QuizManager
                     correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
                         .Select(x => x.LatinTitle).ToList();
                     correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Titles)
-                        .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                        .Select(x => x.NonLatinTitle).Where(x => !string.IsNullOrWhiteSpace(x))!);
                     correctAnswers = correctAnswers.Select(x => x.Replace(" ", "").Replace("　", ""))
                         .Distinct().ToList();
 
@@ -496,7 +496,7 @@ public class QuizManager
                         var titles = artists.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
-                            .Where(x => x != null)!);
+                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();
@@ -527,7 +527,7 @@ public class QuizManager
                     correctAnswers = Quiz.Songs[Quiz.QuizState.sp].Titles
                         .Select(x => x.LatinTitle).ToList();
                     correctAnswers.AddRange(Quiz.Songs[Quiz.QuizState.sp].Titles
-                        .Select(x => x.NonLatinTitle).Where(x => x != null)!);
+                        .Select(x => x.NonLatinTitle).Where(x => !string.IsNullOrWhiteSpace(x))!);
                     correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
 
                     CorrectAnswersDicts[GuessKind.Mt].Add(Quiz.QuizState.sp, correctAnswers);
@@ -588,7 +588,7 @@ public class QuizManager
                     foreach (var developer in Quiz.Songs[Quiz.QuizState.sp].Sources.SelectMany(x => x.Developers))
                     {
                         correctAnswers.Add(developer.Title.LatinTitle);
-                        if (developer.Title.NonLatinTitle != null)
+                        if (!string.IsNullOrWhiteSpace(developer.Title.NonLatinTitle))
                         {
                             correctAnswers.Add(developer.Title.NonLatinTitle);
                         }
@@ -645,7 +645,7 @@ public class QuizManager
                         var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
-                            .Where(x => x != null)!);
+                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();
@@ -698,7 +698,7 @@ public class QuizManager
                         var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
-                            .Where(x => x != null)!);
+                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();
@@ -751,7 +751,7 @@ public class QuizManager
                         var titles = songArtistsWithRole.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
-                            .Where(x => x != null)!);
+                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();

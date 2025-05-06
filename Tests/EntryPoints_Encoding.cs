@@ -39,10 +39,10 @@ public class EntryPoints_Encoding
     {
         string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "webm" };
 
-        string inputDir = @"M:\!emqraw\!auto";
+        string inputDir = @"N:\!emqraw\!auto";
         // inputDir = @"N:\!checkedsorted";
 
-        string baseOutputDir = @"M:\!emqvideos\!auto";
+        string baseOutputDir = @"N:\!emqvideos\!auto";
 
         var filePaths = new List<string>();
         foreach (string extension in searchForVideoExtensions)
@@ -864,7 +864,7 @@ public class EntryPoints_Encoding
     [Test, Explicit]
     public async Task DoPSP_Step1_ExtractFromISO()
     {
-        string isoDumpDir = @"M:\!emqraw\!psp\!isodump";
+        string isoDumpDir = @"N:\!emqraw\!psp\!isodump";
         string inputDir = @"";
         var isoFiles = Directory.EnumerateFiles(inputDir, $"*.iso", SearchOption.AllDirectories);
         foreach (string isoFile in isoFiles)
@@ -1021,7 +1021,7 @@ public class EntryPoints_Encoding
 
         foreach (Platform platform in platforms)
         {
-            string inputDir = $@"M:\!emqraw\!{platform.Name}\!isodump";
+            string inputDir = $@"N:\!emqraw\!{platform.Name}\!isodump";
             Directory.SetCurrentDirectory(inputDir);
 
             bool doCpk = !string.IsNullOrEmpty(platform.Cpk) && true;
@@ -1288,7 +1288,7 @@ public class EntryPoints_Encoding
     [Test, Explicit]
     public async Task DoPSP_Step2_Encode()
     {
-        string inputDir = @"M:\!emqraw\!psp\!isodump";
+        string inputDir = @"N:\!emqraw\!psp\!isodump";
         Directory.SetCurrentDirectory(inputDir);
 
         bool doCpk = true;

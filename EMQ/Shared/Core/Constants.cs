@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -17,7 +17,7 @@ public static class Constants
 
     public const string LocalMusicLibraryPath = @"G:\Music";
 
-    public const string ImportDateVndb = "2025-01-25";
+    public const string ImportDateVndb = "2025-05-06";
 
     public const string ImportDateEgs = "2024-09-25";
 

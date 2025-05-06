@@ -119,11 +119,11 @@ public static class VndbImporter
         }
 
         HashSet<string> dbHashes = dbSongs
-            .Select(x => x.ToSongLite())
+            .Select(x => x.Sort().ToSongLite())
             .Select(y => y.EMQSongHash).ToHashSet();
 
         HashSet<string> incomingHashes = incomingSongs
-            .Select(x => x.ToSongLite())
+            .Select(x => x.Sort().ToSongLite())
             .Select(y => y.EMQSongHash).ToHashSet();
 
         foreach (Song song in dbSongs)
@@ -151,7 +151,7 @@ public static class VndbImporter
                 Console.WriteLine($"new/modified song: {song}");
                 if (!isIncremental)
                 {
-                    int _ = await DbManager.InsertSong(song);
+                    int _ = await DbManager.InsertSong(song, isImport: true);
                 }
                 else
                 {
@@ -188,7 +188,7 @@ public static class VndbImporter
             foreach (Song song in canInsertDirectly)
             {
                 Console.WriteLine($"inserting non-existing-source song: {song}");
-                int _ = await DbManager.InsertSong(song, connection, transaction);
+                int _ = await DbManager.InsertSong(song, connection, transaction, isImport: true);
             }
 
             await transaction.CommitAsync();
@@ -302,7 +302,8 @@ public static class VndbImporter
                 _ => throw new Exception($"Invalid artist role: {dynArtist.role}")
             };
 
-            (string artistLatinTitle, string? artistNonLatinTitle) = Utils.VndbTitleToEmqTitle((string)dynArtistAlias.name,
+            (string artistLatinTitle, string? artistNonLatinTitle) = Utils.VndbTitleToEmqTitle(
+                (string)dynArtistAlias.name,
                 (string?)dynArtistAlias.latin);
 
             SongArtist songArtist = new SongArtist()
@@ -324,9 +325,7 @@ public static class VndbImporter
 
             songArtist.Links.Add(new SongArtistLink
             {
-                Url = ((string)dynArtist.id).ToVndbUrl(),
-                Type = SongArtistLinkType.VNDBStaff,
-                Name = "",
+                Url = ((string)dynArtist.id).ToVndbUrl(), Type = SongArtistLinkType.VNDBStaff, Name = "",
             });
 
             var existingSong = songs.LastOrDefault(x =>
@@ -390,7 +389,8 @@ public static class VndbImporter
                     continue;
                 }
 
-                (string latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle((string)dynMusicSourceTitle.title,
+                (string latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(
+                    (string)dynMusicSourceTitle.title,
                     (string?)dynMusicSourceTitle.latin);
 
                 // we don't want titles that are exactly the same
@@ -470,16 +470,44 @@ public static class VndbImporter
                         .Contains(y.LatinTitle.ToLowerInvariant())) &&
                 x.ProducerIds.Any(y => song.ProducerIds.Contains(y)));
 
-            // if (song.Titles.Any(x=> x.LatinTitle == "Unmei -SADAME-"))
+            // if (song.Titles.Any(x => x.LatinTitle == "Complex Image"))
             // {
-            //     Console.WriteLine("here");
             // }
 
             if (sameSong is not null)
             {
                 Console.WriteLine(
                     $"Same song! {dynData.VNID} <-> {sameSong.Sources.First().Titles.First().LatinTitle}");
-                sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
+
+                SongSource? sameSource = null;
+                foreach (SongSource sameSongSource in sameSong.Sources)
+                {
+                    foreach (SongSourceLink sameSongSourceLink in
+                             sameSongSource.Links.Where(x => x.Type == SongSourceLinkType.VNDB))
+                    {
+                        if (dynData.VNID == sameSongSourceLink.Url.ToVndbId())
+                        {
+                            if (sameSource != null)
+                            {
+                                throw new Exception();
+                            }
+
+                            sameSource = sameSongSource;
+                            break;
+                        }
+                    }
+                }
+
+                if (sameSource != null)
+                {
+                    // can happen when the same artist is added twice to the same VN under different editions
+                    sameSource.SongTypes = sameSource.SongTypes.Concat(song.Sources.Single().SongTypes).OrderBy(x => x)
+                        .Distinct().ToList();
+                }
+                else
+                {
+                    sameSong.Sources.AddRange(song.Sources.Except(sameSong.Sources));
+                }
             }
             else
             {

@@ -104,7 +104,7 @@
                         <span> @Song.MusicBrainzRecordingGid </span>
                     }
 
-                    @if (false && ClientUtils.HasAdminPerms())
+                    @if (true && ClientUtils.HasAdminPerms())
                     {
                         <br/>
                         <span>@(Song.ToSongLite().EMQSongHash)</span>

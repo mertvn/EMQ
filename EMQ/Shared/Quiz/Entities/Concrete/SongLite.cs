@@ -37,11 +37,6 @@ public class SongLite
     {
         get
         {
-            if (Titles.Count != 1)
-            {
-                throw new Exception();
-            }
-
             if (SourceVndbIds.Count < 1)
             {
                 throw new Exception();
@@ -58,9 +53,6 @@ public class SongLite
             }
 
             string titles = JsonSerializer.Serialize(Titles.OrderBy(x => x.LatinTitle)
-                .ThenBy(x => x.NonLatinTitle)
-                .ThenBy(x => x.Language)
-                .ThenBy(x => x.IsMainTitle)
                 .Select(x => x.LatinTitle.ToLowerInvariant()));
             string sources = JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => x.Key));
             string artists =
@@ -69,10 +61,6 @@ public class SongLite
 
             string str = $"{titles};|;{sources};|;{artists}";
             return str;
-
-            // byte[] utf8Bytes = Encoding.UTF8.GetBytes(str);
-            // byte[] sha1 = SHA1.HashData(utf8Bytes);
-            // return Convert.ToHexString(sha1);
         }
     }
 }

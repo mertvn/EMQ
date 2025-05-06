@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -16,11 +16,11 @@ public enum SongDifficultyLevel
     [Display(Name = "Medium")]
     Medium,
 
-    [Range(7.01d, 19d)]
+    [Range(8.01d, 19d)]
     [Display(Name = "Hard")]
     Hard,
 
-    [Range(0.01d, 7d)]
+    [Range(0.01d, 8d)]
     [Display(Name = "Very Hard")]
     VeryHard,
 

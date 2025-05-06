@@ -321,7 +321,7 @@ public static class MusicBrainzImporter
                 {
                     try
                     {
-                        int _ = await DbManager.InsertSong(song);
+                        int _ = await DbManager.InsertSong(song, isImport: true);
                     }
                     catch (Exception)
                     {

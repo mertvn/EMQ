@@ -1479,4 +1479,19 @@ order by ms.id
             }
         }
     }
+
+    [Test, Explicit]
+    public async Task Test_EMQSongHash()
+    {
+        // var dbSongs = await DbManager.SelectSongsMIds(new[] { 4, 5, 6, 7, 8, 42319, }, false);
+        var dbSongs = await DbManager.SelectSongsMIds(new[] { 9455 }, false);
+        HashSet<string> dbHashes = dbSongs
+            .Select(x => x.Sort().ToSongLite())
+            .Select(y => y.EMQSongHash).ToHashSet();
+        foreach (string dbHash in dbHashes)
+        {
+            Console.WriteLine(dbHash);
+            Console.WriteLine();
+        }
+    }
 }

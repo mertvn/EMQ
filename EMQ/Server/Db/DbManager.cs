@@ -1501,7 +1501,7 @@ GROUP BY artist_id";
     }
 
     public static async Task<int> InsertSong(Song song, NpgsqlConnection? connection = null,
-        NpgsqlTransaction? transaction = null, bool updateMusicTable = false)
+        NpgsqlTransaction? transaction = null, bool updateMusicTable = false, bool isImport = false)
     {
         // Console.WriteLine(JsonSerializer.Serialize(song, Utils.Jso));
 
@@ -1639,7 +1639,7 @@ GROUP BY artist_id";
                 throw new Exception("Artists must have one artist_alias per song");
             }
 
-            (int aId, List<int> aaIds) = await InsertArtist(songArtist, transaction!);
+            (int aId, List<int> aaIds) = await InsertArtist(songArtist, transaction!, isImport);
             int aaId = aaIds.Single();
 
             foreach (SongArtistRole songArtistRole in songArtist.Roles)
@@ -1848,7 +1848,7 @@ RETURNING id;",
     }
 
     private static async Task<(int aId, List<int> aaIds)> InsertArtist(SongArtist songArtist,
-        IDbTransaction transaction)
+        IDbTransaction transaction, bool isImport)
     {
         var connection = transaction.Connection!;
         int aId;
@@ -1888,6 +1888,12 @@ RETURNING id;",
 
                 aId = artist.id;
             }
+        }
+
+        if (isImport && songArtist.Titles.Any(x => x.IsMainTitle))
+        {
+            await connection.ExecuteAsync("UPDATE artist_alias set is_main_name = false where artist_id = @aId",
+                new { aId }, transaction);
         }
 
         foreach (Title title in songArtist.Titles)
@@ -4131,7 +4137,7 @@ AND msm.type = ANY(@msmType)";
                             }
                         case EntityKind.SongArtist:
                             {
-                                (int aId, _) = await InsertArtist((SongArtist)entity, transaction);
+                                (int aId, _) = await InsertArtist((SongArtist)entity, transaction, false);
                                 success = aId > 0 && aId == eq.entity_id;
                                 break;
                             }
@@ -5165,7 +5171,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         newSong.Id = oldMid;
-        int mId = await InsertSong(newSong, connection, transaction, !isImport);
+        int mId = await InsertSong(newSong, connection, transaction, !isImport, isImport);
         if (mId <= 0 || mId != oldMid)
         {
             throw new Exception($"Failed to insert song: {newSong}");
@@ -5273,7 +5279,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             new { aId = oldAid }, transaction);
 
         newArtist.Id = oldAid;
-        (int aId, List<int> aaIds) = await InsertArtist(newArtist, transaction!);
+        (int aId, List<int> aaIds) = await InsertArtist(newArtist, transaction!, isImport);
         if ((aId <= 0 || aId != oldAid) || aaIds.Any(x => x <= 0))
         {
             throw new Exception($"Failed to insert artist: {newArtist}");

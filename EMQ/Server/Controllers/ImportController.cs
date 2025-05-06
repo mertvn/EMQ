@@ -135,7 +135,7 @@ public class ImportController : ControllerBase
                 return StatusCode(409);
             }
 
-            int mId = await DbManager.InsertSong(song);
+            int mId = await DbManager.InsertSong(song, isImport: true);
             if (mId > 0)
             {
                 if (song.MusicBrainzRecordingGid != null)

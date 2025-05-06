@@ -80,7 +80,8 @@ public static class Program
                 Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
                 string prelude = isPublicDump ? "public_" : "";
-                string dumpFileName = $"{prelude}pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
+                string dumpFileName =
+                    $"{prelude}pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
                 var proc = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
@@ -95,10 +96,25 @@ public static class Program
                     }
                 };
 
+                var includedTables = new List<string>()
+                {
+                    "",
+                    "artist*",
+                    "category",
+                    "edit_queue",
+                    "erodle*",
+                    "music*",
+                    "quiz",
+                    "report",
+                    "review_queue",
+                    "room",
+                };
+
+                var excludedTables = new List<string>() { "", "*user*", "quiz_song_history", };
                 if (isPublicDump)
                 {
-                    proc.StartInfo.Arguments +=
-                        " -t \"artist*\" -t category -t edit_queue -t \"erodle*\" -t \"music*\" -t quiz -t report -t review_queue -t room -T \"*user*\" -T quiz_song_history";
+                    proc.StartInfo.Arguments += string.Join(" -t ", includedTables);
+                    proc.StartInfo.Arguments += string.Join(" -T ", excludedTables);
                 }
 
                 proc.Start();
