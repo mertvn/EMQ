@@ -1912,11 +1912,11 @@ RETURNING id;",
                 if (mId > 0)
                 {
                     aaId = (await connection.QueryAsync<int>(
-                        @"select am.artist_alias_id from artist_music am where artist_id = @aId and music_id = @mId",
+                        @"select distinct am.artist_alias_id from artist_music am where artist_id = @aId and music_id = @mId",
                         new { aId, mId }, transaction)).SingleOrDefault();
                 }
 
-                if (aId <= 0)
+                if (aaId <= 0)
                 {
                     aaId = artistAliases.FirstOrDefault(x => x.is_main_name)?.id ??
                            artistAliases.FirstOrDefault()?.id ?? 0;
