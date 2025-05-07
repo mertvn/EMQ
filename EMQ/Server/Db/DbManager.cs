@@ -1639,7 +1639,7 @@ GROUP BY artist_id";
                 throw new Exception("Artists must have one artist_alias per song");
             }
 
-            (int aId, List<int> aaIds) = await InsertArtist(songArtist, transaction!, isImport);
+            (int aId, List<int> aaIds) = await InsertArtist(songArtist, transaction!, isImport, mId);
             int aaId = aaIds.Single();
 
             foreach (SongArtistRole songArtistRole in songArtist.Roles)
@@ -1848,7 +1848,7 @@ RETURNING id;",
     }
 
     private static async Task<(int aId, List<int> aaIds)> InsertArtist(SongArtist songArtist,
-        IDbTransaction transaction, bool isImport)
+        IDbTransaction transaction, bool isImport, int mId)
     {
         var connection = transaction.Connection!;
         int aId;
@@ -1902,12 +1902,25 @@ RETURNING id;",
                 new { aaId = title.ArtistAliasId }, transaction)).ToList().SingleOrDefault();
             if (aaId < 1)
             {
-                aaId = (await connection.QueryAsync<int>(
-                        @"select aa.id from artist_alias aa join artist a on a.id = aa.artist_id
-                        where a.id=@aId AND aa.latin_alias=@latinAlias and ((@nonLatinAlias::text IS NULL) or aa.non_latin_alias = @nonLatinAlias::text)",
+                var artistAliases = (await connection.QueryAsync<ArtistAlias>(
+                        @"select aa.id, is_main_name from artist_alias aa join artist a on a.id = aa.artist_id
+                        where a.id=@aId AND aa.latin_alias=@latinAlias and ((@nonLatinAlias::text IS NULL) or aa.non_latin_alias = @nonLatinAlias::text or @nonLatinAlias::text = aa.latin_alias)",
                         new { aId, latinAlias = title.LatinTitle, nonLatinAlias = title.NonLatinTitle },
                         transaction))
-                    .ToList().FirstOrDefault();
+                    .ToList();
+
+                if (mId > 0)
+                {
+                    aaId = (await connection.QueryAsync<int>(
+                        @"select am.artist_alias_id from artist_music am where artist_id = @aId and music_id = @mId",
+                        new { aId, mId }, transaction)).SingleOrDefault();
+                }
+
+                if (aId <= 0)
+                {
+                    aaId = artistAliases.FirstOrDefault(x => x.is_main_name)?.id ??
+                           artistAliases.FirstOrDefault()?.id ?? 0;
+                }
             }
 
             if (aaId < 1)
@@ -4137,7 +4150,7 @@ AND msm.type = ANY(@msmType)";
                             }
                         case EntityKind.SongArtist:
                             {
-                                (int aId, _) = await InsertArtist((SongArtist)entity, transaction, false);
+                                (int aId, _) = await InsertArtist((SongArtist)entity, transaction, false, 0);
                                 success = aId > 0 && aId == eq.entity_id;
                                 break;
                             }
@@ -5279,7 +5292,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             new { aId = oldAid }, transaction);
 
         newArtist.Id = oldAid;
-        (int aId, List<int> aaIds) = await InsertArtist(newArtist, transaction!, isImport);
+        (int aId, List<int> aaIds) = await InsertArtist(newArtist, transaction!, isImport, 0);
         if ((aId <= 0 || aId != oldAid) || aaIds.Any(x => x <= 0))
         {
             throw new Exception($"Failed to insert artist: {newArtist}");

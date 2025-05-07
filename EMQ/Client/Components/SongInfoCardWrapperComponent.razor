@@ -88,7 +88,7 @@
 
 <div class="songs d-flex flex-row flex-wrap" style="max-width: 78vw;">
 @{
-    string lastUrl = "";
+    List<string> lastUrls = new();
     bool isRedBorder = false;
 }
     @foreach (Song song in CurrentSongs)
@@ -103,11 +103,11 @@
             {
                 var validUrls = SongLink.FilterSongLinks(songFileLinks).Select(x => x.Url).ToList();
 
-                string url = song.Sources.First().Links.First().Url;
-                if (lastUrl != url)
+                List<string> urls = song.Sources.Select(x => x.Links.First().Url).ToList();
+                if (!lastUrls.Any(x=> urls.Contains(x)))
                 {
                     isRedBorder = !isRedBorder;
-                    lastUrl = url;
+                    lastUrls = urls;
                 }
 
                 string border = isRedBorder ? "1px solid rgba(0, 191, 255, 0.7)": "1px solid rgba(178, 34, 34, 0.7)";

@@ -17,6 +17,8 @@ public static class Blacklists
         ("v1115", "days"),
         ("v1115", "beloved ~Sakura no Kanata e~"),
         ("v3", "Unmei -SADAME-"),
+        ("v3", "Towa ni"),
+        ("v18717", "Towa ni"),
         ("v20", "Heart to Heart"),
         ("v32", "Mirai kono hoshi de"),
         ("v238", "Until"),
@@ -53,7 +55,7 @@ public static class Blacklists
         ("v15641", "hallucinate"),
         ("v15641", "Let Us Cling Together"),
         ("v16974", "Resolve!"),
-        ("v29066", "Meguriaetane"),
+        ("v29066", "Meguriaeta ne"),
         ("v29936", "Destiny"),
         ("v30616", "Feeling Heart"),
         ("v31469", "Half to Whole -Vocal Solo-"), // Half to Whole -Grand Finale- also needs to be split 14x1 + 14x1

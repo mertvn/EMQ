@@ -42,6 +42,7 @@ public partial class ImportPage
         {
             ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         }
+
         Ready = true;
     }
 
@@ -60,6 +61,7 @@ public partial class ImportPage
         {
             ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         }
+
         Ready = true;
     }
 
@@ -74,7 +76,13 @@ public partial class ImportPage
     private async Task InsertSong(Song song)
     {
         Ready = false;
-        var _ = await _client.PostAsJsonAsync("Import/InsertSong", song);
+        var res = await _client.PostAsJsonAsync("Import/InsertSong", song);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+
         ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         Ready = true;
     }
@@ -88,7 +96,12 @@ public partial class ImportPage
 
         foreach (Song song1 in allSongsInTheSameMusicBrainzRelease)
         {
-            _ = await _client.PostAsJsonAsync("Import/InsertSong", song1);
+            var res = await _client.PostAsJsonAsync("Import/InsertSong", song1);
+            if (!res.IsSuccessStatusCode)
+            {
+                await _jsRuntime.InvokeVoidAsync("alert",
+                    $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+            }
         }
 
         ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
@@ -101,7 +114,14 @@ public partial class ImportPage
         string? promptResult = await _jsRuntime.InvokeAsync<string?>("prompt", "Enter music id to overwrite");
         if (int.TryParse(promptResult?.Trim(), out int oldMid))
         {
-            var _ = await _client.PostAsJsonAsync("Import/OverwriteMusic", new ReqOverwriteMusic(oldMid, newSong));
+            var res =
+                await _client.PostAsJsonAsync("Import/OverwriteMusic", new ReqOverwriteMusic(oldMid, newSong));
+            if (!res.IsSuccessStatusCode)
+            {
+                await _jsRuntime.InvokeVoidAsync("alert",
+                    $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+            }
+
             ImporterPendingSongs =
                 (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         }
@@ -112,7 +132,13 @@ public partial class ImportPage
     private async Task RemoveFromPendingSongs(Song song)
     {
         Ready = false;
-        var _ = await _client.PostAsJsonAsync("Import/RemoveFromPendingSongs", song);
+        var res = await _client.PostAsJsonAsync("Import/RemoveFromPendingSongs", song);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+
         ImporterPendingSongs = (await _client.GetFromJsonAsync<List<Song>>("Import/GetImporterPendingSongs"))!;
         Ready = true;
     }

@@ -47,6 +47,7 @@ public static class RegexPatterns
         { "Я", "R" },
         { "×", "x" },
         { "∃", "E" },
+        { "γ", "y" },
     };
 
     public static readonly Dictionary<SongArtistLinkType, Regex> ArtistLinkRegex = new()

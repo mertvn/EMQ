@@ -111,7 +111,8 @@ public static class VndbImporter
                 .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
 
             List<int> validMids = mids
-                .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+                .Where(x => x.Value.Any(y =>
+                    y != SongSourceSongType.Other && SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
                 .Select(z => z.Key)
                 .ToList();
 
