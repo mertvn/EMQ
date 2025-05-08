@@ -304,6 +304,7 @@ public partial class LibraryPage
             LibrarySongOrderKind.MyVote => CurrentSongs
                 .OrderByDescending(x => ClientState.MusicVotes.GetValueOrDefault(x.Id)?.vote ?? 0).ToList(),
             LibrarySongOrderKind.SSST => CurrentSongs.OrderBy(x => x.Sources.First().SongTypes.First()).ToList(),
+            LibrarySongOrderKind.CommentCount => CurrentSongs.OrderByDescending(x => x.CommentCount).ToList(),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -380,4 +381,7 @@ public enum LibrarySongOrderKind
 
     [Description("Song source song type")]
     SSST,
+
+    [Description("Comment count")]
+    CommentCount,
 }

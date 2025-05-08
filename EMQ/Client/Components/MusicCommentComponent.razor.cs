@@ -38,11 +38,6 @@ public partial class MusicCommentComponent
 
     private ResGetMusicComments? ResGetMusicComments { get; set; }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        await RefreshComments();
-    }
-
     private async Task RefreshComments()
     {
         ResGetMusicComments = null;
@@ -60,6 +55,7 @@ public partial class MusicCommentComponent
     {
         // Console.WriteLine("OnOpened");
         IsOpen = true;
+        await RefreshComments();
     }
 
     private async Task OnClosed()

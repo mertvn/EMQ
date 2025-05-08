@@ -23,7 +23,7 @@ public static class Blacklists
         ("v32", "Mirai kono hoshi de"),
         ("v238", "Until"),
         ("v273", "Eien no Negai"),
-        ("v273", "Futari Dake no Ongakkai"),
+        ("v273", "Futari Dake no Ongakukai"),
         ("v273", "White Season"),
         ("v318", "Sow"),
         ("v418", "ROSE! ROSE! ROSE!"),
