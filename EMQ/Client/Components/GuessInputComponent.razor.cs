@@ -72,6 +72,9 @@ public partial class GuessInputComponent : IAutocompleteComponent
     [Parameter]
     public bool UseAll { get; set; }
 
+    [Parameter]
+    public bool AllowTypingId { get; set; }
+
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
     protected override async Task OnInitializedAsync()
@@ -123,7 +126,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
 
     private TValue[] OnSearch<TValue>(string value)
     {
-        if (value.StartsWith("id:"))
+        if (AllowTypingId && value.StartsWith("id:"))
         {
             string replaced = value.Replace("id:", "");
             if (string.IsNullOrWhiteSpace(replaced))

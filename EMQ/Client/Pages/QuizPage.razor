@@ -504,7 +504,8 @@ else
                                      IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
                                      IsQuizPage="true"
                                      @bind-Guess="@PageState.Guess.Dict[GuessKind.Mst]"
-                                     UseAll="Room.QuizSettings.Filters.CanHaveNonVN">
+                                     UseAll="Room.QuizSettings.Filters.CanHaveNonVN"
+                                     AllowTypingId="true">
                 </GuessInputComponent>
             }
 

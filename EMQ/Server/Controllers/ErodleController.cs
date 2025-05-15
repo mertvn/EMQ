@@ -84,20 +84,24 @@ public class ErodleController : ControllerBase
 
                 var previousAnswers = erodleHistories.Select(x =>
                 {
-                    var songSource = songSourcesDict[int.Parse(x.guess)]; // todo? tryget
-                    var title = songSource.Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ??
+                    Title title = new() { LatinTitle = "[unknown]" };
+                    if (songSourcesDict.TryGetValue(int.Parse(x.guess), out var songSource))
+                    {
+                        title = songSource.Titles.FirstOrDefault(y => y.Language == "ja" && y.IsMainTitle) ??
                                 songSource.Titles.First();
+                    }
+
                     return new ErodleAnswer
                     {
                         ErodleId = x.erodle_id,
                         GuessNumber = x.sp,
-                        AutocompleteMst = new AutocompleteMst(songSource.Id, title.LatinTitle),
-                        Date = songSource.AirDateStart.Date,
-                        Tags = songSource.Categories.Where(y => y.SpoilerLevel == SpoilerLevel.None)
-                            .OrderByDescending(y => y.Rating).ToList(),
-                        Developers = songSource.Developers,
-                        Rating = songSource.RatingAverage,
-                        VoteCount = songSource.VoteCount
+                        AutocompleteMst = new AutocompleteMst(songSource?.Id ?? 0, title.LatinTitle),
+                        Date = songSource?.AirDateStart.Date ?? default,
+                        Tags = songSource?.Categories.Where(y => y.SpoilerLevel == SpoilerLevel.None)
+                            .OrderByDescending(y => y.Rating).ToList() ?? new List<SongSourceCategory>(),
+                        Developers = songSource?.Developers ?? new List<SongSourceDeveloper>(),
+                        Rating = songSource?.RatingAverage,
+                        VoteCount = songSource?.VoteCount
                     };
                 });
                 erodleContainer.PreviousAnswers = previousAnswers.ToList();

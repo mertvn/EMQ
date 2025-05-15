@@ -127,7 +127,8 @@
                                  IsQuizPage="false"
                                  @bind-GuessT="@SelectedMusicSourceTitle"
                                  Callback="SelectedResultChangedMst"
-                                 UseAll="true">
+                                 UseAll="true"
+                                 AllowTypingId="true">
             </GuessInputComponent>
             @foreach (var source in Song.Sources)
             {
