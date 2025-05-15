@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -163,7 +163,7 @@ public class QuizFilters
         new()
         {
             { SongAttributes.Spoilers, LabelKind.Maybe },
-            { SongAttributes.NonCanon, LabelKind.Maybe },
+            { SongAttributes.NonCanon, LabelKind.Exclude },
             { SongAttributes.Unofficial, LabelKind.Maybe },
             { SongAttributes.FlashingLights, LabelKind.Maybe },
         };

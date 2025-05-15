@@ -185,7 +185,6 @@
                 <div>
                     @if (Song.Artists.Any())
                     {
-                        <span>by</span>
                         @foreach (SongArtist songArtist in Song.Artists)
                         {
                             Title songArtistTitle = Converters.GetSingleTitle(songArtist.Titles);
