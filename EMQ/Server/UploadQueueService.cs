@@ -160,7 +160,7 @@ public sealed class UploadQueueService : BackgroundService
                     {
                         uploadResult.ErrorStr = "Encoding...";
                         encodedPath =
-                            await MediaAnalyser.EncodeIntoWebm(tempPath, 2, value.UploadOptions,
+                            await MediaAnalyser.EncodeIntoWebm(tempPath, 4, value.UploadOptions,
                                 cancellationTokenSource.Token);
                         encodedByEmq = true;
                     }

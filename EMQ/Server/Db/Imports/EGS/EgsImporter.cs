@@ -198,7 +198,7 @@ where type = {(int)SongLinkType.ErogameScapeMusic} and submitted_by is null -- f
             });
         }
 
-        var opt = new ParallelOptions { MaxDegreeOfParallelism = calledFromApi ? 1 : Environment.ProcessorCount };
+        var opt = new ParallelOptions { MaxDegreeOfParallelism = calledFromApi ? 4 : Environment.ProcessorCount };
         await Parallel.ForEachAsync(egsDataList, opt, async (egsData, _) =>
         {
             var innerResult = new EgsImporterInnerResult { EgsData = egsData };
