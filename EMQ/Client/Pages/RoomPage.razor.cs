@@ -286,9 +286,12 @@ public partial class RoomPage
         await ClientState.Session!.hubConnection!.SendAsync("SendConvertSpectatorToPlayerInRoom");
     }
 
-    private async Task SendConvertPlayerToSpectatorInRoom()
+    private async Task SendConvertPlayerToSpectatorInRoom(int? playerId)
     {
-        await ClientState.Session!.hubConnection!.SendAsync("SendConvertPlayerToSpectatorInRoom");
+        if (playerId != null)
+        {
+            await ClientState.Session!.hubConnection!.SendAsync("SendConvertPlayerToSpectatorInRoom", playerId);
+        }
     }
 
     private async Task OnclickTransferRoomOwnership(int playerId)

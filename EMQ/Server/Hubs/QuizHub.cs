@@ -302,7 +302,7 @@ public class QuizHub : Hub
         }
     }
 
-    public async Task SendConvertPlayerToSpectatorInRoom()
+    public async Task SendConvertPlayerToSpectatorInRoom(int playerId)
     {
         var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
@@ -310,14 +310,17 @@ public class QuizHub : Hub
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
             if (room != null)
             {
-                var player = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
-                if (player != null)
+                var requestingPlayer = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
+                var targetPlayer = room.Players.SingleOrDefault(player => player.Id == playerId);
+                if (requestingPlayer != null && targetPlayer != null &&
+                    (requestingPlayer.Id == room.Owner.Id || requestingPlayer.Id == targetPlayer.Id))
                 {
-                    room.Spectators.Enqueue(player);
-                    room.RemovePlayer(player);
-                    room.Log($"{player.Username} converted to spectator.", player.Id, true);
-
-                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+                    room.Spectators.Enqueue(targetPlayer);
+                    room.RemovePlayer(targetPlayer);
+                    string byStr = requestingPlayer.Id == targetPlayer.Id ? "" : $" by {requestingPlayer.Username}";
+                    room.Log($"{targetPlayer.Username} converted to spectator{byStr}.", targetPlayer.Id, true);
+                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id),
+                        room);
                 }
             }
         }
