@@ -445,11 +445,12 @@ ORDER BY music_id;";
         foreach (IGrouping<int, Report> grouping in reportsLookup)
         {
             var song = songs[grouping.Key];
-            foreach (SongLink songLink in song.Links)
+            foreach (SongLink songLink in song.Links.Where(x => x.IsFileLink))
             {
                 foreach (Report value in grouping)
                 {
-                    if (value.status == ReviewQueueStatus.Pending && songLink.Url == value.url)
+                    if (value.status == ReviewQueueStatus.Pending &&
+                        songLink.Url.ReplaceSelfhostLink() == value.url.ReplaceSelfhostLink())
                     {
                         songLink.LastUnhandledReport = new SongReport
                         {

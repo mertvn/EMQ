@@ -495,6 +495,11 @@ public class QuizController : ControllerBase
                             room.Quiz.QuizState.Phase == QuizPhaseKind.Results)
                         {
                             room.Log($"{room.Owner.Username} used \"Return to room\".", -1, true);
+                            if (Random.Shared.Next(0, 78) == 0)
+                            {
+                                room.Log("It's super effective!", -1, true);
+                            }
+
                             TypedQuizHub.ReceiveUpdateRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room,
                                 false);
                             await qm.EndQuiz();
