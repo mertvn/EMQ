@@ -368,12 +368,12 @@ async Task Init()
         Console.WriteLine($"UnobservedTaskException: {args.Exception}");
     };
 
-    string wwwrootFolder = app.Environment.IsDevelopment() ? "../Client/wwwroot" : "wwwroot";
+    ServerState.WwwRootFolder = app.Environment.IsDevelopment() ? "../Client/wwwroot" : "wwwroot";
 
     // test ffMPEG install
     try
     {
-        var mediaInfo = await FFProbe.AnalyseAsync($"{wwwrootFolder}/soft-piano-100-bpm-121529.mp3");
+        var mediaInfo = await FFProbe.AnalyseAsync($"{ServerState.WwwRootFolder}/soft-piano-100-bpm-121529.mp3");
         Console.WriteLine(JsonSerializer.Serialize(mediaInfo.Duration, Utils.JsoIndented));
     }
     catch (Exception e)
@@ -412,7 +412,6 @@ async Task Init()
         // var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
         // Environment.Exit(0);
 
-        ServerState.AutocompleteFolder = $"{wwwrootFolder}/autocomplete";
         Directory.CreateDirectory(ServerState.AutocompleteFolder);
         await DbManager.RefreshAutocompleteFiles();
 

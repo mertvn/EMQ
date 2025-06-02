@@ -39,7 +39,7 @@ public static class AuthStuff // todo? find better name
         {
             PermissionKind.User,
             PermissionKind.JoinRanked,
-            PermissionKind.UploadSongLink,
+            // PermissionKind.UploadSongLink,
             PermissionKind.ReportSongLink,
             PermissionKind.StoreQuizSettings,
             PermissionKind.Vote,

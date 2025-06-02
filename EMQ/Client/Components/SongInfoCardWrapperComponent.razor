@@ -314,6 +314,10 @@
                             {
                                 <span>Submissions are currently disabled.</span>
                             }
+                            else if (!ClientUtils.HasUploadPerms())
+                            {
+                                <span>You do not have upload permissions.</span>
+                            }
                             else
                             {
                                 @if (ClientState.ResFindQueueItemsWithPendingChanges.RQs.TryGetValue(song.Id, out int rqId))
@@ -357,20 +361,24 @@
                             }
                         }
 
-                        @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && ClientUtils.HasUploadPerms())
+                    @if (!ClientUtils.HasUploadPerms())
+                    {
+                        <span>You do not have upload permissions.</span>
+                    }
+                    else if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && ClientUtils.HasUploadPerms())
+                    {
+                        <br/>
+                        @if (hasVideo && hasSound)
                         {
-                            <br/>
-                            @if (hasVideo && hasSound)
-                            {
-                                <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
-                            }
-
-                            <button type="button"
-                                    class="btn btn-primary"
-                                    @onclick="@(async () => await BatchUploaderCallbacks?[song.Id].Invoke()!)">
-                                Choose and upload
-                            </button>
+                            <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
                         }
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                @onclick="@(async () => await BatchUploaderCallbacks?[song.Id].Invoke()!)">
+                            Choose and upload
+                        </button>
+                    }
                     </div>
 
                 </div>

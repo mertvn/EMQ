@@ -26,11 +26,27 @@
         <li>MUST be from an official, untranslated release.</li>
         <li>SHOULD NOT have any unrelated content or excess silence at the start or end (MUST NOT have more than 1 second of silence at the start).</li>
         <li>Overall bitrate of the file MUST NOT exceed 3400 kbps.</li>
+        <li>There are only three acceptable sources for uploads:</li>
+        <ol>
+            <li>Extracted from the VN's files (preferred)</li>
+            <li>Screen recordings</li>
+            <li>Albums (for sound uploads)</li>
+        </ol>
+        <li>You MUST NOT upload files downloaded from video streaming websites.</li>
     </ol>
     <h5>Video</h5>
     <ol>
         <li>The video file MUST be .webm, and you SHOULD use VP9 over VP8.</li>
-        <li>Resolution SHOULD be 720p or less. If the native game resolution is higher than 720p you may upload it as is, but downscaling to around 720p, while maintaining the aspect ratio of the source video, is preferred. </li>
+        <li>
+            Resolution SHOULD be
+            <ul>
+                <li>at most 1280&times;720 for the 16:9 aspect ratio;</li>
+                <li>at most 1024&times;768 for the 4:3 aspect ratio;</li>
+                <li>at most 983040 in terms of the total video area (width&times;height) for all other aspect ratios.</li>
+            </ul>
+            If the native game resolution is higher than what is listed above, you may upload it as is, but downscaling while maintaining the aspect ratio of the source video is preferred.
+        </li>
+        <li>Video MUST NOT be upscaled from the original resolution.</li>
         <li>Framerate SHOULD be between 23.976-30 FPS. </li>
         <li>Average bitrate of the video stream SHOULD NOT exceed 2500 kbps. </li>
         <li>There SHOULD NOT be any subtitles on the video. </li>
@@ -43,6 +59,7 @@
         <li>If transcoding from a lossless source, you MUST use a bitrate between 192 and 320 kbps (192 kbps is preferred). In general, refrain from doing lossy -&gt; lossy transcodes. If you have to do a lossy -&gt; lossy transcode, you MUST use a bitrate of 320 kbps.</li>
         <li>The mean volume SHOULD be around -15dB. The maximum volume SHOULD be under -0.5dB.</li>
         <li>If a song contains dialogue in the middle of it, you MUST keep the dialogue. If a song contains dialogue before the music starts or after the music ends, you MUST crop the dialogue away. </li>
+        <li>You MUST NOT crop off the ending abruptly. Leave at least half a second of silence (below -55 dB) at the end. This does not apply if the source file is cropped like that.</li>
     </ol>
 </details>
 

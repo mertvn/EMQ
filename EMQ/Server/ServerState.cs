@@ -76,7 +76,9 @@ public static class ServerState
         }
     }
 
-    public static string AutocompleteFolder { get; set; } = "";
+    public static string WwwRootFolder { get; set; } = "";
+
+    public static string AutocompleteFolder => $"{WwwRootFolder}/autocomplete";
 
     public static CountdownInfo CountdownInfo { get; set; } = new();
 
