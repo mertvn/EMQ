@@ -232,6 +232,7 @@ public class MusicBrainzMethods
                 }
                 else // normal
                 {
+                    // todo this fails when typing id:
                     artist = content.SongArtists.First(x => x.Titles.Any(y =>
                         y.LatinTitle == selectedArtist.AALatinAlias &&
                         ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
