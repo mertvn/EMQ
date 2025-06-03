@@ -22,7 +22,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EMQ.Server.Controllers;
 
-[CustomAuthorize(PermissionKind.UploadSongLink)]
+[CustomAuthorize(PermissionKind.User)]
 [ApiController]
 [Route("[controller]")]
 public class UploadController : ControllerBase
@@ -108,6 +108,7 @@ public class UploadController : ControllerBase
         return new CreatedResult(uploadResult.ResultUrl ?? "", uploadResult);
     }
 
+    [CustomAuthorize(PermissionKind.User)]
     [HttpPost]
     [Route("GetUploadResult")]
     public async Task<ActionResult<UploadResult>> GetUploadResult([FromBody] string uploadId)
