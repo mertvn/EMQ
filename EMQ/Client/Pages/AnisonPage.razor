@@ -1,0 +1,52 @@
+﻿@page "/AnisonPage"
+@using Microsoft.AspNetCore.Components
+@using EMQ.Shared.Core.UI
+@using EMQ.Client.Components
+@inject HttpClient _client
+@inject ClientUtils _clientUtils
+
+<h1>AnisonPage</h1>
+
+<div>
+    <p>Data is from January 2025.</p>
+
+    <input type="text" @bind="@InputText" style="width: 500px;"/>
+    <br/>
+
+    <button class="btn btn-primary" @onclick="SearchSourceTitle">Search by source title (case ignored exact match, slow)</button>
+    <br/>
+    <button class="btn btn-primary" @onclick="SearchArtistName">Search by artist name (case ignored exact match, slow)</button>
+    <br/>
+    <button class="btn btn-primary" @onclick="SearchSongTitle">Search by song title (EMQ-like, fast)</button>
+    <br/>
+</div>
+<br/>
+
+<div>
+    @foreach (var song in CurrentSearchResults)
+    {
+        string hrefSong = $"http://anison.info/data/song/{song.Id}.html";
+        <div style="border: 1px solid black; margin:5px; padding: 5px;">
+            <h2>
+                <a style="color: var(--bs-body-color); text-decoration: inherit;" href="@hrefSong" target="_blank">@song.Title</a>
+            </h2>
+            <div>
+                <h3>Artists</h3>
+                @foreach ((int _, AnisonSongArtist? artist) in song.Artists)
+                {
+                    string hrefArtist = $"http://anison.info/data/person/{artist.Id}.html";
+                    <div>@(string.Join(", ", artist.Roles)): <a style="color: var(--bs-body-color); text-decoration: inherit;" href="@hrefArtist" target="_blank">@artist.Title</a></div>
+                }
+            </div>
+            <div>
+                <h3>Sources</h3>
+                @foreach (AnisonSongSource? source in song.Sources)
+                {
+                    string hrefSource = $"http://anison.info/data/program/{source.Id}.html";
+                    <div>@(source.Genre): <a style="color: var(--bs-body-color); text-decoration: inherit;" href="@hrefSource" target="_blank">@source.Title (@source.Type)</a></div>
+                }
+            </div>
+        </div>
+        <br/>
+    }
+</div>
