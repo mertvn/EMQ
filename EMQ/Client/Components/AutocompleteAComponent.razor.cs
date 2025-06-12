@@ -74,6 +74,10 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
     [Parameter]
     public GuessKind GuessKind { get; set; }
 
+    private string LastSearch { get; set; } = "";
+
+    private const string ShowAllResultsStr = "[Show all results]";
+
     protected override async Task OnInitializedAsync()
     {
         AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/a.json"))!;
@@ -138,9 +142,19 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
             return Array.Empty<TValue>();
         }
 
+        int maxResults = 30;
+        if (value == ShowAllResultsStr.NormalizeForAutocomplete())
+        {
+            maxResults = int.MaxValue;
+            value = LastSearch;
+        }
+        else
+        {
+            LastSearch = value;
+        }
+
         var valueSpan = value.AsSpan();
         bool hasNonAscii = !Ascii.IsValid(valueSpan);
-        const int maxResults = 30; // todo
         var dictLT = new Dictionary<AutocompleteA, StringMatch>();
         var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
         foreach (AutocompleteA d in AutocompleteData)
@@ -152,8 +166,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
                 dictLT[d] = matchLT;
             }
             else if (d.AALatinAliasNormalizedReversed.AsSpan()
-                         .StartsWithContains(valueSpan, StringComparison.Ordinal) >
-                     0)
+                         .StartsWithContains(valueSpan, StringComparison.Ordinal) > 0)
             {
                 dictLT[d] = matchLT;
             }
@@ -174,10 +187,16 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
             }
         }
 
-        return (TValue[])(object)dictLT.Concat(dictNLT)
+        var res = dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value).ThenByDescending(x => x.Key.IsMain)
-            .DistinctBy(x => x.Key.AId)
-            .Take(maxResults)
+            .DistinctBy(x => x.Key.AId).Take(maxResults).ToList();
+        if (res.Count == maxResults)
+        {
+            res.Add(new KeyValuePair<AutocompleteA, StringMatch>(
+                new AutocompleteA() { AALatinAlias = ShowAllResultsStr }, StringMatch.StartsWith));
+        }
+
+        return (TValue[])(object)res
             .Select(x => x.Key)
             .ToArray();
     }

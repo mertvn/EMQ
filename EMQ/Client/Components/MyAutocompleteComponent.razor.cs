@@ -194,6 +194,11 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
         {
             Close();
         }
+
+        if (CurrentSearchResults.Length > 30) // todo... (must be kept in sync with the one in AutocompleteAComponent)
+        {
+            ShowDropdown = true;
+        }
     }
 
     private void OnFocus(FocusEventArgs obj)
