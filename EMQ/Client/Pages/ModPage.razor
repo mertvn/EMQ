@@ -30,7 +30,7 @@
     <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunGc(); })">
         Run GC
     </button>
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_RunAnalysis(); })">
+    <button type="button" class="btn btn-primary" disabled @onclick="@(async () => { await Onclick_RunAnalysis(); })">
         Run Analysis
     </button>
     <br/>

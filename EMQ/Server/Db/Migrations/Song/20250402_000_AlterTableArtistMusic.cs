@@ -23,8 +23,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER enforce_consistent_artist_alias
-BEFORE INSERT OR UPDATE ON public.artist_music
+CREATE CONSTRAINT TRIGGER enforce_consistent_artist_alias
+AFTER INSERT OR UPDATE ON public.artist_music
+DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION check_consistent_artist_alias();");
     }
 

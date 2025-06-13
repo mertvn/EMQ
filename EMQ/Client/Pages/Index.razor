@@ -23,7 +23,7 @@
     {
         bool isUserOrGreater = AuthStuff.HasPermission(ClientState.Session, PermissionKind.User);
         <div>
-            @if (true)
+            @if (isUserOrGreater)
             {
                 string myProfileHref = $"eu{ClientState.Session.Player.Id}";
                 <a href="@myProfileHref">My profile page</a>

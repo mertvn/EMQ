@@ -316,7 +316,10 @@
                             }
                             else if (!ClientUtils.HasUploadPerms())
                             {
-                                <span>You do not have upload permissions.</span>
+                                @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
+                                {
+                                    <span>You do not have upload permissions.</span>
+                                }
                             }
                             else
                             {
@@ -361,11 +364,7 @@
                             }
                         }
 
-                    @if (!ClientUtils.HasUploadPerms())
-                    {
-                        <span>You do not have upload permissions.</span>
-                    }
-                    else if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && ClientUtils.HasUploadPerms())
+                    @if (BatchUploaderCallbacks != null && BatchUploaderCallbacks.Any() && ClientUtils.HasUploadPerms())
                     {
                         <br/>
                         @if (hasVideo && hasSound)
