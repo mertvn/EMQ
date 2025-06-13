@@ -323,21 +323,23 @@
                             }
                             else
                             {
-                                @if (ClientState.ResFindQueueItemsWithPendingChanges.RQs.TryGetValue(song.Id, out int rqId))
+                                bool isInRQ = ClientState.ResFindQueueItemsWithPendingChanges.RQs.TryGetValue(song.Id, out int rqId);
+                                @if (isInRQ)
                                 {
                                     <br/>
                                     <span style="color: red">Pending in the review queue: @rqId</span>
                                     <br/>
                                 }
 
-                                @if (ClientState.ResFindQueueItemsWithPendingChanges.EQs.TryGetValue(song.Id, out int eqId))
+                                bool isInEQ = ClientState.ResFindQueueItemsWithPendingChanges.EQs.TryGetValue(song.Id, out int eqId);
+                                @if (isInEQ)
                                 {
                                     <br/>
                                     <span style="color: red">Pending in the edit queue: @eqId</span>
                                     <br/>
                                 }
 
-                                if (ClientUtils.HasUploadPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
+                                if (!isInEQ && ClientUtils.HasUploadPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
                                 {
                                     @if (song.DataSource == DataSourceKind.MusicBrainz && song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                     {
@@ -354,7 +356,7 @@
                                     }
                                 }
 
-                                if (rqId == 0 && eqId == 0)
+                                if (!isInRQ && !isInEQ)
                                 {
                                     if (ClientUtils.HasEditPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
                                     {
