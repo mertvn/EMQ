@@ -448,19 +448,21 @@
             int vw = (16 / div) + 5;
         }
 
-        <div id="MultipleChoiceContainer"
-             style="width: 50vw; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, min(100%/1, max(@(vw)vw, 100%/@(div + 1))))); row-gap: 5px; justify-items: center;">
-            @if (Room!.Quiz?.MultipleChoiceOptions != null && Room.Quiz.QuizState.sp >= 0)
+        @if (Room!.Quiz?.MultipleChoiceOptions != null && Room.Quiz.QuizState.sp >= 0)
+        {
+            @foreach ((GuessKind guessKind, Dictionary<int, List<Title>>? value) in Room.Quiz.MultipleChoiceOptions)
             {
-                if (Room.Quiz.MultipleChoiceOptions.TryGetValue(Room.Quiz.QuizState.sp, out var current))
-                {
-                    foreach (var title in current)
+                <div class="MultipleChoiceContainer"
+                     style="width: 50vw; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, min(100%/1, max(@(vw)vw, 100%/@(div + 1))))); row-gap: 5px; justify-items: center;">
+                    @if (value.TryGetValue(Room.Quiz.QuizState.sp, out var current))
                     {
-                        string displayTitle = ClientState.Preferences.WantsOriginalTitle ? (title.NonLatinTitle ?? title.LatinTitle) : title.LatinTitle;
-                        bool selected = PageState.Guess?.Dict[GuessKind.Mst] == title.LatinTitle;
-                        <div class="MultipleChoiceOption" title="@(title.ToString())"
-                             @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Dict = { [GuessKind.Mst] = title.LatinTitle } }); })"
-                             style="
+                        foreach (var title in current)
+                        {
+                            string displayTitle = ClientState.Preferences.WantsOriginalTitle ? (title.NonLatinTitle ?? title.LatinTitle) : title.LatinTitle;
+                            bool selected = PageState.Guess?.Dict[guessKind] == title.LatinTitle;
+                            <div class="MultipleChoiceOption" title="@(title.ToString())"
+                                 @onclick="@(async () => { if (!IsSpectator) await SetGuess(new PlayerGuess { Dict = { [guessKind] = title.LatinTitle } }); })"
+                                 style="
 cursor: @UiHelpers.Bool2CursorPointer(!IsSpectator);
 color: @UiHelpers.Bool2Color(selected, "deepskyblue", "white");
 width: @(vw)vw;
@@ -480,13 +482,15 @@ text-align: center;
 /*align-items: center;*/
 word-wrap: break-word;
 ">
-                            @displayTitle
-                        </div>
+                                @displayTitle
+                            </div>
+                        }
                     }
-                }
+                </div>
+                <br/>
             }
-        </div>
-        <br/>
+        }
+
     </div>
 }
 else

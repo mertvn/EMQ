@@ -1565,23 +1565,28 @@ public class QuizManager
     // todo don't use SelectSongSourceBatch, create new method that returns msid and Title object
     // todo weights, and maybe min/max
     public static async Task<Dictionary<int, List<Title>>> GenerateMultipleChoiceOptions(List<Song> songs,
-        List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms)
+        List<Session> sessions, QuizSettings quizSettings, TreasureRoom[][] treasureRooms, GuessKind guessKind)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
         var ret = new Dictionary<int, List<Title>>();
-        Dictionary<int, Title> globalTitles = new();
-        HashSet<int> globalAddedSourceIds = new();
+        // using SongArtist here is a terrible hack to get Title + Roles without having to create a new type
+        Dictionary<int, SongArtist> globalTitles = new();
+        HashSet<int> globalAddedIds = new();
+
         Dictionary<int, Dictionary<MCOptionKind, List<Title>>> validTitlesForSongDict = songs.Select(x => x.Id)
             .ToDictionary(x => x, _ => new Dictionary<MCOptionKind, List<Title>>());
         var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
-        var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-        int[] labelMids = quizSettings.Filters.ListReadKindFiltersIsAllRandom
-            ? Array.Empty<int>()
-            : await DbManager.FindMusicIdsByLabels(allVndbInfos
+        int[] labelMids = Array.Empty<int>();
+        bool useLists = !quizSettings.Filters.ListReadKindFiltersIsAllRandom && guessKind == GuessKind.Mst;
+        if (useLists)
+        {
+            var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
+            labelMids = await DbManager.FindMusicIdsByLabels(allVndbInfos
                 .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
+        }
 
         switch (quizSettings.SongSelectionKind)
         {
@@ -1598,9 +1603,16 @@ public class QuizManager
                         {
                             foreach (SongSource songSource in song.Sources)
                             {
-                                if (globalAddedSourceIds.Add(songSource.Id))
+                                if (globalAddedIds.Add(songSource.Id))
                                 {
-                                    globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                                    globalTitles.Add(songSource.Id,
+                                        new SongArtist()
+                                        {
+                                            Titles = new List<Title>()
+                                            {
+                                                Converters.GetSingleTitle(songSource.Titles)
+                                            }
+                                        });
                                     break;
                                 }
                             }
@@ -1618,19 +1630,149 @@ public class QuizManager
 
                     foreach (Song song in randomSongsFiltered)
                     {
-                        foreach (SongSource songSource in song.Sources)
+                        switch (guessKind)
                         {
-                            if (globalAddedSourceIds.Add(songSource.Id))
-                            {
-                                globalTitles.Add(songSource.Id, Converters.GetSingleTitle(songSource.Titles));
+                            case GuessKind.Mst:
+                                foreach (SongSource songSource in song.Sources)
+                                {
+                                    if (globalAddedIds.Add(songSource.Id))
+                                    {
+                                        globalTitles.Add(songSource.Id,
+                                            new SongArtist()
+                                            {
+                                                Titles = new List<Title>()
+                                                {
+                                                    Converters.GetSingleTitle(songSource.Titles)
+                                                }
+                                            });
+                                        break;
+                                    }
+                                }
+
                                 break;
-                            }
+                            case GuessKind.A:
+                                SongArtistRole[] validRoles = song.IsBGM switch
+                                {
+                                    true => new[] { SongArtistRole.Unknown, SongArtistRole.Composer },
+                                    false => new[] { SongArtistRole.Vocals },
+                                };
+
+                                foreach (SongArtist songArtist in song.Artists.Where(x =>
+                                             validRoles.Any(y => x.Roles.Contains(y))))
+                                {
+                                    if (globalAddedIds.Add(songArtist.Id))
+                                    {
+                                        globalTitles.Add(songArtist.Id,
+                                            new SongArtist()
+                                            {
+                                                Titles = new List<Title>()
+                                                {
+                                                    Converters.GetSingleTitle(songArtist.Titles)
+                                                },
+                                                Roles = songArtist.Roles,
+                                            });
+                                        break; // todo? don't stop after first artist?
+                                    }
+                                }
+
+                                break;
+                            case GuessKind.Mt:
+                                if (globalAddedIds.Add(song.Id))
+                                {
+                                    globalTitles.Add(song.Id,
+                                        new SongArtist()
+                                        {
+                                            Titles = new List<Title>() { Converters.GetSingleTitle(song.Titles) }
+                                        });
+                                }
+
+                                break;
+                            case GuessKind.Developer:
+                                foreach (SongSourceDeveloper developer in song.Sources.SelectMany(x => x.Developers))
+                                {
+                                    if (int.TryParse(developer.VndbId.Replace("p", ""), out int id))
+                                    {
+                                        if (globalAddedIds.Add(id))
+                                        {
+                                            globalTitles.Add(id,
+                                                new SongArtist() { Titles = new List<Title>() { developer.Title } });
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            case GuessKind.Composer:
+                                foreach (SongArtist songArtist in song.Artists.Where(x =>
+                                             x.Roles.Contains(SongArtistRole.Composer)))
+                                {
+                                    if (globalAddedIds.Add(songArtist.Id))
+                                    {
+                                        globalTitles.Add(songArtist.Id,
+                                            new SongArtist()
+                                            {
+                                                Titles = new List<Title>()
+                                                {
+                                                    Converters.GetSingleTitle(songArtist.Titles)
+                                                },
+                                                Roles = songArtist.Roles,
+                                            });
+                                        break; // todo? don't stop after first artist?
+                                    }
+                                }
+
+                                break;
+                            case GuessKind.Arranger:
+                                foreach (SongArtist songArtist in song.Artists.Where(x =>
+                                             x.Roles.Contains(SongArtistRole.Arranger)))
+                                {
+                                    if (globalAddedIds.Add(songArtist.Id))
+                                    {
+                                        globalTitles.Add(songArtist.Id,
+                                            new SongArtist()
+                                            {
+                                                Titles = new List<Title>()
+                                                {
+                                                    Converters.GetSingleTitle(songArtist.Titles)
+                                                },
+                                                Roles = songArtist.Roles,
+                                            });
+                                        break; // todo? don't stop after first artist?
+                                    }
+                                }
+
+                                break;
+                            case GuessKind.Lyricist:
+                                foreach (SongArtist songArtist in song.Artists.Where(x =>
+                                             x.Roles.Contains(SongArtistRole.Lyricist)))
+                                {
+                                    if (globalAddedIds.Add(songArtist.Id))
+                                    {
+                                        globalTitles.Add(songArtist.Id,
+                                            new SongArtist()
+                                            {
+                                                Titles = new List<Title>()
+                                                {
+                                                    Converters.GetSingleTitle(songArtist.Titles)
+                                                },
+                                                Roles = songArtist.Roles,
+                                            });
+                                        break; // todo? don't stop after first artist?
+                                    }
+                                }
+
+                                break;
                         }
                     }
                 }
 
                 foreach (Song song in songs)
                 {
+                    if (guessKind != GuessKind.Mst) // todo
+                    {
+                        continue;
+                    }
+
                     if (quizSettings.EnabledMCOptionKinds.TryGetValue(MCOptionKind.Artist, out bool a) && a)
                     {
                         var msIds = (await connection.QueryAsync<int>(
@@ -1725,6 +1867,11 @@ public class QuizManager
 
                 break;
             case SongSelectionKind.Looting:
+                if (guessKind != GuessKind.Mst)
+                {
+                    throw new NotImplementedException();
+                }
+
                 // generate wrong multiple choice options from the VNs on the ground while looting
                 List<KeyValuePair<string, List<Title>>> validSources = treasureRooms
                     .SelectMany(x => x.SelectMany(y => y.Treasures.Select(z => z.ValidSource))).ToList();
@@ -1740,9 +1887,10 @@ public class QuizManager
                 validSources = validSources.DistinctBy(x => x.Key).ToList();
                 foreach ((string key, List<Title> value) in validSources)
                 {
-                    if (globalAddedSourceIds.Add(key.GetHashCode()))
+                    if (globalAddedIds.Add(key.GetHashCode()))
                     {
-                        globalTitles.Add(key.GetHashCode(), Converters.GetSingleTitle(value));
+                        globalTitles.Add(key.GetHashCode(),
+                            new SongArtist() { Titles = new List<Title>() { Converters.GetSingleTitle(value) } });
                     }
                 }
 
@@ -1758,11 +1906,29 @@ public class QuizManager
         for (int index = 0; index < songs.Count; index++)
         {
             Song dbSong = songs[index];
+            Title correctAnswerTitle = guessKind switch
+            {
+                GuessKind.Mst => Converters.GetSingleTitle(dbSong.Sources.First().Titles),
+                GuessKind.A =>
+                    Converters.GetSingleTitle(dbSong.Artists.First(x =>
+                        (!dbSong.IsBGM && x.Roles.Contains(SongArtistRole.Vocals)) ||
+                        dbSong.IsBGM && (x.Roles.Contains(SongArtistRole.Unknown) ||
+                                         x.Roles.Contains(SongArtistRole.Composer))).Titles),
+                GuessKind.Mt => Converters.GetSingleTitle(dbSong.Titles),
+                GuessKind.Developer => dbSong.Sources.First().Developers.FirstOrDefault()?.Title ?? new Title(),
+                GuessKind.Composer => Converters.GetSingleTitle(
+                    dbSong.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Composer))?.Titles ??
+                    new List<Title>() { new() }),
+                GuessKind.Arranger => Converters.GetSingleTitle(
+                    dbSong.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Arranger))?.Titles ??
+                    new List<Title>() { new() }),
+                GuessKind.Lyricist => Converters.GetSingleTitle(
+                    dbSong.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Lyricist))?.Titles ??
+                    new List<Title>() { new() }),
+                _ => new Title()
+            };
 
-            var correctAnswer = dbSong.Sources.First();
-            var correctAnswerTitle = Converters.GetSingleTitle(correctAnswer.Titles);
             seenCorrectAnswerLatinTitles.Add(correctAnswerTitle.LatinTitle);
-
             List<Title> list = new() { correctAnswerTitle };
 
             // process the advanced option kinds first
@@ -1799,13 +1965,57 @@ public class QuizManager
             // then top-up
             if (list.Count < quizSettings.NumMultipleChoiceOptions)
             {
-                foreach ((int _, Title? title) in globalTitles.Shuffle())
+                foreach ((int _, SongArtist a) in globalTitles.Shuffle())
                 {
                     if (list.Count >= quizSettings.NumMultipleChoiceOptions)
                     {
                         break;
                     }
 
+                    switch (guessKind)
+                    {
+                        case GuessKind.A:
+                            if (dbSong.IsBGM)
+                            {
+                                if (!a.Roles.Contains(SongArtistRole.Unknown) &&
+                                    !a.Roles.Contains(SongArtistRole.Composer))
+                                {
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                if (!a.Roles.Contains(SongArtistRole.Vocals))
+                                {
+                                    continue;
+                                }
+                            }
+
+                            break;
+                        case GuessKind.Composer:
+                            if (!a.Roles.Contains(SongArtistRole.Composer))
+                            {
+                                continue;
+                            }
+
+                            break;
+                        case GuessKind.Arranger:
+                            if (!a.Roles.Contains(SongArtistRole.Arranger))
+                            {
+                                continue;
+                            }
+
+                            break;
+                        case GuessKind.Lyricist:
+                            if (!a.Roles.Contains(SongArtistRole.Lyricist))
+                            {
+                                continue;
+                            }
+
+                            break;
+                    }
+
+                    var title = a.Titles.Single();
                     if (quizSettings.Duplicates || !seenCorrectAnswerLatinTitles.Contains(title.LatinTitle))
                     {
                         if (!list.Any(x => x.LatinTitle == title.LatinTitle))
@@ -1839,9 +2049,15 @@ public class QuizManager
             case AnsweringKind.Mixed:
                 var playerSessions =
                     ServerState.Sessions.Where(x => Quiz.Room.Players.Any(y => y.Id == x.Player.Id)).ToList();
-                Quiz.MultipleChoiceOptions =
-                    await GenerateMultipleChoiceOptions(Quiz.Songs, playerSessions,
-                        Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms);
+                foreach ((GuessKind key, bool value) in Quiz.Room.QuizSettings.EnabledGuessKinds)
+                {
+                    if (value)
+                    {
+                        Quiz.MultipleChoiceOptions[key] = await GenerateMultipleChoiceOptions(Quiz.Songs,
+                            playerSessions, Quiz.Room.QuizSettings, Quiz.Room.TreasureRooms, key);
+                    }
+                }
+
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -2025,24 +2241,14 @@ public class QuizManager
 
         if (!Quiz.Room.QuizSettings.IsOnlyMstGuessTypeEnabled)
         {
-            if (Quiz.Room.QuizSettings.AnsweringKind is AnsweringKind.MultipleChoice or AnsweringKind.Mixed)
+            if (Quiz.Room.QuizSettings.SongSelectionKind == SongSelectionKind.Looting &&
+                Quiz.Room.QuizSettings.AnsweringKind is AnsweringKind.MultipleChoice or AnsweringKind.Mixed)
             {
                 Quiz.Room.Log(
-                    $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled for the \"{AnsweringKind.MultipleChoice.GetDescription()}\" Answering method.",
+                    $"The {SongSelectionKind.Looting} Song selection method only supports the \"{GuessKind.Mst.GetDescription()}\" Guess type for the \"{AnsweringKind.MultipleChoice.GetDescription()}\" Answering method.",
                     writeToChat: true);
                 return false;
             }
-
-            // if ((Quiz.Room.QuizSettings.Filters.SongSourceSongTypeRandomEnabledSongTypes.TryGetValue(
-            //         SongSourceSongType.BGM, out bool bgmIsEnabledForRandom) && bgmIsEnabledForRandom) ||
-            //     Quiz.Room.QuizSettings.Filters.SongSourceSongTypeFilters.TryGetValue(
-            //         SongSourceSongType.BGM, out IntWrapper? bgmCount) && bgmCount.Value > 0)
-            // {
-            //     Quiz.Room.Log(
-            //         $"Only the \"{GuessKind.Mst.GetDescription()}\" Guess type may be enabled if the song type \"{SongSourceSongType.BGM}\" is enabled.",
-            //         writeToChat: true);
-            //     return false;
-            // }
         }
 
         if (Quiz.Room.QuizSettings.IsNoSoundMode)

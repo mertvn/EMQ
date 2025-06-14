@@ -44,7 +44,8 @@ public sealed class Quiz : IDisposable
     [JsonIgnore]
     public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();
 
-    public Dictionary<int, List<Title>> MultipleChoiceOptions { get; set; } = new(); // todo move into QuizState
+    // todo move into QuizState
+    public Dictionary<GuessKind, Dictionary<int, List<Title>>> MultipleChoiceOptions { get; set; } = new();
 
     [JsonIgnore]
     public Dictionary<int, SongHistory> SongsHistory { get; set; } = new();

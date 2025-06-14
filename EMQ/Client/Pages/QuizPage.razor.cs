@@ -992,11 +992,37 @@ public partial class QuizPage
             {
                 if (guess.Dict.Any(x => !string.IsNullOrWhiteSpace(x.Value)))
                 {
-                    PageState.Guess = guess;
+                    if (!guess.Dict.Any() || guess.Dict.All(x => string.IsNullOrWhiteSpace(x.Value)))
+                    {
+                        PageState.Guess = guess;
+                    }
+                    else
+                    {
+                        foreach ((GuessKind key, string? value) in guess.Dict)
+                        {
+                            if (!string.IsNullOrWhiteSpace(value))
+                            {
+                                PageState.Guess.Dict[key] = value;
+                            }
+                        }
+
+                        foreach ((GuessKind key, int value) in guess.DictFirstGuessMs)
+                        {
+                            if (value > 0)
+                            {
+                                PageState.Guess.DictFirstGuessMs[key] = value;
+                            }
+                        }
+                    }
+
                     if (Room.Quiz.MultipleChoiceOptions.Any())
                     {
-                        await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged",
-                            PageState.Guess.Dict[GuessKind.Mst], GuessKind.Mst);
+                        foreach ((GuessKind key, Dictionary<int, List<Title>>? _) in Room.Quiz.MultipleChoiceOptions)
+                        {
+                            // todo batch
+                            await ClientState.Session!.hubConnection!.SendAsync("SendGuessChanged",
+                                PageState.Guess.Dict[key], key);
+                        }
                     }
                     else
                     {

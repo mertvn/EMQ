@@ -877,7 +877,7 @@ public class DbTests
         var ret =
             await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
                 new QuizSettings { SongSelectionKind = SongSelectionKind.Looting, NumMultipleChoiceOptions = 4 },
-                treasureRooms);
+                treasureRooms, GuessKind.Mst);
 
         Assert.That(ret.Any());
     }
@@ -896,9 +896,52 @@ public class DbTests
         var ret =
             await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
                 new QuizSettings { SongSelectionKind = SongSelectionKind.Random, NumMultipleChoiceOptions = 4 },
-                Array.Empty<TreasureRoom[]>());
+                Array.Empty<TreasureRoom[]>(), GuessKind.Mst);
 
         Assert.That(ret.Any());
+    }
+
+    [Test]
+    public async Task Test_GenerateMultipleChoiceOptions_ArtistOnly()
+    {
+        var songs = await DbManager.GetRandomSongs(100, false);
+        GenericSongsAssert(songs);
+
+        var sessions = new List<Session>()
+        {
+            new(new Player(7, "t", new Avatar(AvatarCharacter.Auu)) { }, "", UserRoleKind.User, null)
+        };
+
+        var ret =
+            await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
+                new QuizSettings { SongSelectionKind = SongSelectionKind.Random, NumMultipleChoiceOptions = 4 },
+                Array.Empty<TreasureRoom[]>(), GuessKind.A);
+
+        // todo? check if name is an artist name
+        Assert.That(ret.Any());
+    }
+
+    [Test]
+    public async Task Test_GenerateMultipleChoiceOptions_AllGuessKinds()
+    {
+        var songs = await DbManager.GetRandomSongs(100, false);
+        GenericSongsAssert(songs);
+
+        var sessions = new List<Session>()
+        {
+            new(new Player(7, "t", new Avatar(AvatarCharacter.Auu)) { }, "", UserRoleKind.User, null)
+        };
+
+        foreach (GuessKind guessKind in Enum.GetValues<GuessKind>())
+        {
+            var ret =
+                await QuizManager.GenerateMultipleChoiceOptions(songs, sessions,
+                    new QuizSettings { SongSelectionKind = SongSelectionKind.Random, NumMultipleChoiceOptions = 4 },
+                    Array.Empty<TreasureRoom[]>(), guessKind);
+
+            // todo? more checks
+            Assert.That(ret.Any());
+        }
     }
 
     [Test]
