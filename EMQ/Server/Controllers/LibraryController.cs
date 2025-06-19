@@ -1042,7 +1042,10 @@ public class LibraryController : ControllerBase
     [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
     public async Task<IEnumerable<string>> GetUploadQueue()
     {
-        return ServerState.UploadQueue.Where(x => x.Value.UploadResult.IsProcessing ?? true).Select(x =>
-            $"{x.Value.CreatedAt:s} by {x.Value.Session.Player.Username} {x.Value.UploadResult.FileName} ({x.Value.Song.ToStringLatin()}) {x.Value.UploadResult.ErrorStr}");
+        return ServerState.UploadQueue
+            .Where(x => x.Value.UploadResult.IsProcessing ?? true)
+            .OrderBy(x => x.Value.CreatedAt)
+            .Select(x =>
+                $"{x.Value.CreatedAt:s} by {x.Value.Session.Player.Username} {x.Value.UploadResult.FileName} ({x.Value.Song.ToStringLatin()}) {x.Value.UploadResult.ErrorStr}");
     }
 }
