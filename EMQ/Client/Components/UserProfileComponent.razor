@@ -41,13 +41,13 @@
     <br/>
 
     // todo roles
-    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))
+    @if (ClientState.Session != null)
     {
         <details>
-            <summary>Edit user</summary>
+            <summary>Permissions</summary>
 
             <label>
-                <input type="checkbox" class="form-check-input"
+                <input type="checkbox" class="form-check-input" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))"
                        @bind:get="@PublicUserInfo.IgnMv"
                        @bind:set="@(new Func<bool, Task>(async value => { PublicUserInfo.IgnMv = value; await SendEditUserReq(); }))"/>
                 Ignore song votes
@@ -62,7 +62,7 @@
                         if (key is not PermissionKind.None)
                         {
                             string id = $"checkbox-EditUserIncludedPermissions-{UserId}-{key}";
-                            <input type="checkbox" id="@id" class="form-check-input"
+                            <input type="checkbox" id="@id" class="form-check-input" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))"
                                    @bind:get="@PublicUserInfo.IncludedPermissions.Contains(key)"
                                    @bind:set="@(new Func<bool, Task>(async value => await OnPermCheckboxClick(value, key, true)))"
                                    @bind:event="oninput"
@@ -82,7 +82,7 @@
                         if (key is not PermissionKind.None)
                         {
                             string id = $"checkbox-EditUserExcludedPermissions-{UserId}-{key}";
-                            <input type="checkbox" id="@id" class="form-check-input"
+                            <input type="checkbox" id="@id" class="form-check-input" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))"
                                    @bind:get="@PublicUserInfo.ExcludedPermissions.Contains(key)"
                                    @bind:set="@(new Func<bool, Task>(async value => await OnPermCheckboxClick(value, key, false)))"
                                    @bind:event="oninput"

@@ -3885,12 +3885,12 @@ AND msm.type = ANY(@msmType)";
         var songReports = new List<SongReport>();
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            // todo date filter
-            var reports = (await connection.GetListAsync<Report>()).ToList();
+            var reports = (await connection.QueryAsync<Report>(
+                    @"select * from report where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                    new { startDate, endDate, })).ToList();
             var songs =
                 (await SelectSongsMIds(reports.Select(x => x.music_id).ToArray(), false)).ToDictionary(x => x.Id,
                     x => x);
-
             foreach (Report report in reports)
             {
                 var song = songs[report.music_id];

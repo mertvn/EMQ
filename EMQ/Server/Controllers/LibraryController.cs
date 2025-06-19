@@ -222,7 +222,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongReports")]
-    public async Task<IEnumerable<SongReport>> FindRQs([FromBody] ReqFindSongReports req)
+    public async Task<IEnumerable<SongReport>> FindSongReports([FromBody] ReqFindSongReports req)
     {
         var songReports = await DbManager.FindSongReports(req.StartDate, req.EndDate);
         return songReports;

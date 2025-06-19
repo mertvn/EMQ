@@ -35,7 +35,7 @@ public partial class ModPage
         }
 
         ClientServerConfig = (await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats"))!.Config;
-        var req = new ReqFindSongReports(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+        var req = new ReqFindSongReports(DateTime.UtcNow.AddDays(-78), DateTime.UtcNow.AddDays(1));
         var res = await _client.PostAsJsonAsync("Library/FindSongReports", req);
         if (res.IsSuccessStatusCode)
         {
