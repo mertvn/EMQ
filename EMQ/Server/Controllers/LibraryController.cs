@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -123,7 +123,9 @@ public class LibraryController : ControllerBase
     [Route("FindSongsByWarnings")]
     public async Task<IEnumerable<Song>> FindSongsByWarnings([FromBody] ReqFindSongsByWarnings req)
     {
-        var songs = await DbManager.FindSongsByWarnings(req.Warnings, req.Mode.ToSongSourceSongTypes());
+        var songs =
+            (await DbManager.FindSongsByWarnings(req.Warnings, req.Mode.ToSongSourceSongTypes()))
+            .SelectMany(x => x.Value);
         return songs;
     }
 

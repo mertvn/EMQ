@@ -227,6 +227,14 @@ ORDER BY music_id;";
     public static async Task<List<Song>> SelectSongsBatch(List<Song> input, bool selectCategories,
         NpgsqlTransaction? transaction = null)
     {
+        var stopWatch = new Utils.MyStopwatch();
+        bool useStopWatch = false;
+        if (useStopWatch)
+        {
+            stopWatch.Start();
+        }
+
+        stopWatch.StartSection("init connection");
         NpgsqlConnection? connection = transaction?.Connection;
         bool ownConnection = false;
         if (connection is null)
@@ -237,6 +245,7 @@ ORDER BY music_id;";
             transaction = await connection.BeginTransactionAsync();
         }
 
+        stopWatch.StartSection("filters");
         var mIds = input.Select(x => x.Id).Where(x => x > 0).ToArray();
         var latinTitles = input.SelectMany(y => y.Titles.Select(x => x.LatinTitle)).ToList();
         var links = input.SelectMany(y => y.Links.Select(x => x.Url)).ToList();
@@ -282,6 +291,7 @@ ORDER BY music_id;";
 
         // Console.WriteLine(queryMusic.Sql);
 
+        stopWatch.StartSection("select music");
         var songs = new Dictionary<int, Song>();
         await connection.QueryAsync(queryMusic.Sql,
             new[] { typeof(Music), typeof(MusicTitle), typeof(MusicExternalLink), typeof(MusicStat), }, (objects) =>
@@ -400,6 +410,7 @@ ORDER BY music_id;";
             splitOn:
             "music_id,music_id", param: queryMusic.Parameters, transaction: transaction);
 
+        stopWatch.StartSection("process music");
         foreach ((int _, Song? song) in songs)
         {
             if (song.MusicBrainzRecordingGid is not null)
@@ -425,9 +436,12 @@ ORDER BY music_id;";
             }
         }
 
+        stopWatch.StartSection("select music_source");
         var sourcesDict = await SelectSongSourceBatch(connection, songs.Values.ToList(), selectCategories, transaction);
+        stopWatch.StartSection("select artist");
         var artistsDict = await SelectArtistBatch(connection, songs.Values.ToList(), false, transaction);
 
+        stopWatch.StartSection("process music_source+artist");
         foreach ((int _, Song? song) in songs)
         {
             song.Sources = sourcesDict[song.Id].Values.ToList();
@@ -439,6 +453,7 @@ ORDER BY music_id;";
             // }
         }
 
+        stopWatch.StartSection("reports");
         var reportsLookup = (await connection.QueryAsync<Report>(
             "select * from report where music_id = any(@mIds) order by submitted_on",
             new { mIds = songs.Keys.ToArray() })).ToLookup(x => x.music_id, x => x);
@@ -470,6 +485,7 @@ ORDER BY music_id;";
             }
         }
 
+        stopWatch.StartSection("musicVotes");
         // TOSCALE
         var musicVotes =
             (await connection.QueryAsync<MusicVote>(
@@ -477,12 +493,14 @@ ORDER BY music_id;";
                 new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
+        stopWatch.StartSection("musicComments");
         var musicComments =
             (await connection.QueryAsync<MusicComment>(
                 "select * from music_comment where music_id = ANY(@mIds) and not user_id = any(@ign)",
                 new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicComments }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
+        stopWatch.StartSection("process musicVotes+musicComments");
         foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
         {
             songs[musicVote.Key].VoteAverage = (float)Math.Round(musicVote.Average(x => x.vote!.Value), 2) / 10;
@@ -494,6 +512,7 @@ ORDER BY music_id;";
             songs[musicComment.Key].CommentCount = musicComment.Count();
         }
 
+        stopWatch.StartSection("dispose");
         if (ownConnection)
         {
             await transaction!.CommitAsync();
@@ -501,6 +520,7 @@ ORDER BY music_id;";
             await transaction.DisposeAsync();
         }
 
+        stopWatch.Stop();
         // Console.WriteLine("songs: " + JsonSerializer.Serialize(songs, Utils.JsoIndented));
         return songs.Values.ToList();
     }
@@ -3230,37 +3250,39 @@ AND msm.type = ANY(@msmType)";
         return songs;
     }
 
-    public static async Task<IEnumerable<Song>> FindSongsByWarnings(MediaAnalyserWarningKind[] warnings,
-        SongSourceSongType[] songSourceSongTypes)
+    public static async Task<Dictionary<MediaAnalyserWarningKind, List<Song>>> FindSongsByWarnings(
+        MediaAnalyserWarningKind[] warnings, SongSourceSongType[] songSourceSongTypes)
     {
-        List<Song> songs = new();
-        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-        {
-            const string sql = @"SELECT DISTINCT mel.music_id
+        var warningsDict = new Dictionary<MediaAnalyserWarningKind, List<Song>>();
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        const string sql = @"SELECT DISTINCT mel.music_id
 FROM music_external_link mel
 JOIN music_source_music msm on mel.music_id = msm.music_id
 WHERE mel.type = ANY(@types) and mel.analysis_raw NOT LIKE '%Warnings"":[]%'
 AND msm.type = ANY(@msmType)";
-
-            var mids = (await connection.QueryAsync<int>(sql,
-                new { msmType = songSourceSongTypes.Cast<int>().ToArray(), types = SongLink.FileLinkTypes })).ToList();
-
-            var ret = await SelectSongsMIds(mids.ToArray(), false);
-            foreach (Song song in ret)
+        var mids = (await connection.QueryAsync<int>(sql,
+            new { msmType = songSourceSongTypes.Cast<int>().ToArray(), types = SongLink.FileLinkTypes })).ToList();
+        var songsWithWarnings = await SelectSongsMIds(mids.ToArray(), false);
+        foreach (MediaAnalyserWarningKind warningKind in warnings)
+        {
+            var list = new List<Song>();
+            foreach (Song song in songsWithWarnings)
             {
                 var filtered = SongLink.FilterSongLinks(song.Links); // todo? option to not filter
                 foreach (SongLink songLink in filtered.Where(x => x.IsFileLink))
                 {
-                    if (songLink.AnalysisRaw?.Warnings.Any(x => warnings.Contains(x)) ?? false)
+                    if (songLink.AnalysisRaw?.Warnings.Contains(warningKind) ?? false)
                     {
-                        songs.Add(song);
+                        list.Add(song);
                         break;
                     }
                 }
             }
+
+            warningsDict[warningKind] = list;
         }
 
-        return songs;
+        return warningsDict;
     }
 
     public static async Task<bool> InsertSongLink(int mId, SongLink songLink, IDbTransaction? transaction)
@@ -4403,8 +4425,7 @@ order by year";
             }
 
 
-            // Console.WriteLine(
-            //     $"StartSection uploaderCounts: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+            stopWatch.StartSection("uploaderCounts");
             var uploaderCountsTotal = (await connection.QueryAsync<(string, int)>($@"
 select lower(submitted_by), count(music_id) from music_external_link mel
 where submitted_by is not null
@@ -4463,14 +4484,10 @@ order by count(*) desc
             stopWatch.StartSection("songDifficultyLevels");
             var songDifficultyLevels = await GetSongDifficultyLevelCounts(validMids.ToArray());
 
-            // todo batch
             stopWatch.StartSection("warningsDict");
-            var warningsDict = new Dictionary<MediaAnalyserWarningKind, int>();
-            foreach (MediaAnalyserWarningKind warningKind in Enum.GetValues<MediaAnalyserWarningKind>())
-            {
-                warningsDict[warningKind] =
-                    (await FindSongsByWarnings(new[] { warningKind }, songSourceSongTypes)).Count();
-            }
+            var warningsDict =
+                (await FindSongsByWarnings(Enum.GetValues<MediaAnalyserWarningKind>(), songSourceSongTypes))
+                .ToDictionary(x => x.Key, x => x.Value.Count);
 
             stopWatch.StartSection("mv");
             var mvAvg = (await connection.QueryAsync<int>(

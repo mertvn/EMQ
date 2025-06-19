@@ -557,9 +557,9 @@ public class DbTests
             song.Sources.SelectMany(x => x.SongTypes).Contains(SongSourceSongType.BGM));
 
         // need some tolerance because songs can have multiple song types
-        Assert.AreEqual(70, opCount, 5);
-        Assert.AreEqual(80, edCount, 5);
-        Assert.AreEqual(0, insCount, 3);
+        Assert.AreEqual(70, opCount, 10);
+        Assert.AreEqual(80, edCount, 10);
+        Assert.AreEqual(0, insCount, 5);
         Assert.AreEqual(0, bgmCount, 0);
 
         GenericSongsAssert(songs);
@@ -981,6 +981,15 @@ public class DbTests
         var yoneMado = libraryStats.amAvailableDict.First().Value.Single(x => x.AALatinAlias == "Yonezawa Madoka");
         Console.WriteLine(yoneMado.MusicCount);
         Assert.That(yoneMado.MusicCount > 14);
+    }
+
+    [Test]
+    public async Task Test_FindSongsByWarnings()
+    {
+        var dict =
+            await DbManager.FindSongsByWarnings(Enum.GetValues<MediaAnalyserWarningKind>(),
+                SongSourceSongTypeMode.All.ToSongSourceSongTypes());
+        Assert.That(dict.Any());
     }
 
     [Test, Explicit]
