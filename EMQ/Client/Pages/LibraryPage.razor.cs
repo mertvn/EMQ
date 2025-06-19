@@ -61,6 +61,8 @@ public partial class LibraryPage
 
     public SongFilterComponent songFilterComponentRef { get; set; } = null!;
 
+    private string[] ServerUploadQueue { get; set; } = Array.Empty<string>();
+
     private async Task StateHasChangedAsync()
     {
         if (_scheduledRenderTcs == null)
@@ -359,6 +361,11 @@ public partial class LibraryPage
             await StateHasChangedAsync();
             await TabsComponentVndb!.SelectTab("TabVNDB");
         }
+    }
+
+    private async Task GetUploadQueue()
+    {
+        ServerUploadQueue = (await _client.GetFromJsonAsync<string[]>("Library/GetUploadQueue"))!;
     }
 }
 

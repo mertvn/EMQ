@@ -94,6 +94,19 @@
 
 <details>
     <summary>Upload status</summary>
+    <details>
+        <summary>Upload queue (server)</summary>
+        <button type="button" id="ButtonRefreshUploadQueue" class="btn btn-primary" style="margin: 5px" @onclick="@GetUploadQueue">
+            Refresh
+        </button>
+        <ul>
+            @foreach (string item in ServerUploadQueue)
+            {
+                <li>@item</li>
+            }
+        </ul>
+    </details>
+
     <button type="button" id="ButtonRefreshUploadStatus" class="btn btn-primary" style="margin: 5px" @onclick="@StateHasChanged">
         Refresh
     </button>

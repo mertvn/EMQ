@@ -11,8 +11,7 @@ public static class UploadConstants
 
     public const int MaxFilesBatchUpload = 200;
 
-    // todo? might need to apply this on the server as well
-    public const int TimeoutSeconds = 30 * 60; // 30 minutes
+    public const int TimeoutSeconds = 300 * 60; // 300 minutes
 
     public const int MaxConcurrentTranscodes = 3;
 

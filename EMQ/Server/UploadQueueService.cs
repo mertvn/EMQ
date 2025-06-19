@@ -99,7 +99,6 @@ public sealed class UploadQueueService : BackgroundService
     private static async Task<UploadQueueItem> DoWork_Inner(UploadQueueItem value)
     {
         int mId = value.Song.Id;
-        Song song = value.Song;
         var file = value.MyFormFile;
         var uploadResult = value.UploadResult;
         var session = value.Session;
@@ -114,7 +113,6 @@ public sealed class UploadQueueService : BackgroundService
             case 0:
                 uploadResult.ErrorStr = "File length is 0";
                 return value;
-
             case > maxFileSize:
                 uploadResult.ErrorStr = "File is too large";
                 return value;
@@ -152,7 +150,7 @@ public sealed class UploadQueueService : BackgroundService
                 try
                 {
                     var cancellationTokenSource = new CancellationTokenSource();
-                    cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(55));
+                    cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(UploadConstants.TimeoutSeconds));
 
                     uploadResult.ErrorStr = "Queued for encoding";
                     await MediaAnalyser.SemaphoreEncode.WaitAsync(cancellationTokenSource.Token);
@@ -194,6 +192,8 @@ public sealed class UploadQueueService : BackgroundService
                 try
                 {
                     var cancellationTokenSource = new CancellationTokenSource();
+
+                    // not using UploadConstants.TimeoutSeconds here because transcodes should be finishing quickly
                     cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(25));
 
                     uploadResult.ErrorStr = "Queued for transcoding";

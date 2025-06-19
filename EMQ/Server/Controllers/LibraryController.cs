@@ -1035,4 +1035,13 @@ public class LibraryController : ControllerBase
             SongsDict = songsDict
         };
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpGet]
+    [Route("GetUploadQueue")]
+    public async Task<IEnumerable<string>> GetUploadQueue()
+    {
+        return ServerState.UploadQueue.Where(x => x.Value.UploadResult.IsProcessing ?? true).Select(x =>
+            $"{x.Value.CreatedAt:s} by {x.Value.Session.Player.Username} {x.Value.UploadResult.FileName} ({x.Value.Song.ToStringLatin()}) {x.Value.UploadResult.ErrorStr}");
+    }
 }

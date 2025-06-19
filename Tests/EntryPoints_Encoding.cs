@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -100,7 +100,6 @@ public class EntryPoints_Encoding
     public async Task SearchArchivesExtractIsoFromRar()
     {
         string inputDir = @"N:\!checkedsorted\";
-        string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "mkv", "webm" };
         string extractToDir = @"O:\!rarextract";
         Directory.CreateDirectory(extractToDir);
 
@@ -195,7 +194,7 @@ public class EntryPoints_Encoding
     {
         string inputDir = @"O:\!rarextract";
         string[] searchForVideoExtensions = { "mpg", "wmv", "avi", "mp4", "ogv", "mkv", "webm" };
-        string extractToDir = @"M:\!!tempisofromrar";
+        string extractToDir = @"O:\!!tempisofromrar";
         Directory.CreateDirectory(extractToDir);
 
         var isoFiles = new List<string>();
