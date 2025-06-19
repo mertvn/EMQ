@@ -190,7 +190,7 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -308,7 +308,7 @@ public class QuizController : ControllerBase
             // TODO: Check that quiz is not in the process of being started already
             if (room.Owner.Id == player.Id)
             {
-                if (!ServerState.IsServerReadOnly)
+                if (!ServerState.Config.IsServerReadOnly)
                 {
                     if (room.Quiz != null)
                     {

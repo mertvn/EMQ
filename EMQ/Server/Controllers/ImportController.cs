@@ -114,7 +114,7 @@ public class ImportController : ControllerBase
     [Route("InsertSong")]
     public async Task<ActionResult> InsertSong([FromBody] Song song)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -170,7 +170,7 @@ public class ImportController : ControllerBase
     [Route("OverwriteMusic")]
     public async Task<ActionResult> OverwriteMusic([FromBody] ReqOverwriteMusic req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -226,7 +226,7 @@ public class ImportController : ControllerBase
     [Route("RemoveFromPendingSongs")]
     public async Task<ActionResult> RemoveFromPendingSongs([FromBody] Song song)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }

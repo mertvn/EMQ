@@ -1,19 +1,18 @@
 ﻿@using Microsoft.Extensions.Logging
 @using EMQ.Shared.Quiz.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.UI
 @inject HttpClient _client
 @inject ILogger<ChatComponent> _logger
 @inject IJSRuntime _jsRuntime
 @implements IDisposable
 
-@code {
-
-    public void Dispose()
-    {
-        Timer.Dispose();
-    }
-
+@{
+    bool isChatMod = AuthStuff.HasPermission(ClientState.Session, PermissionKind.ModerateChat);
 }
+
+<ChatUserDetailComponent @ref="_modalRef" PlayerId="@(SelectedPlayer?.Id ?? 0)"></ChatUserDetailComponent>
 
 @* do not change the id because auto-focus code relies on it *@
 <div id="chat" style="display: grid;
@@ -35,7 +34,7 @@
                 @* <span class="chatMessageTimestamp">@(chatMessage.Timestamp.ToString("O"))</span> *@
                 @if (chatMessage.Sender != null)
                 {
-                    <span class="chatMessageSenderName">
+                    <span class="chatMessageSenderName" style="cursor: @UiHelpers.Bool2CursorPointer(isChatMod);" @onclick="@(e => Onclick_Sender(chatMessage.Sender, e))">
                         <b>@(chatMessage.Sender.Username): </b>
                     </span>
                 }
@@ -48,7 +47,7 @@
 
     @* HACK: https://stackoverflow.com/a/72419307 *@
     <textarea
- id="chatInput"
+ id="chatInput" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.SendChatMessage))"
  rows="4" cols="50" maxlength="@Constants.MaxChatMessageLength" placeholder="Chat"
  @bind="ChatInputText" @bind:event="oninput"
  @onkeydown="OnKeyDown" @onkeydown:preventDefault="_preventDefault"

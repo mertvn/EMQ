@@ -35,13 +35,7 @@ public static class ServerState
     // TODO: would be better if this was a ConcurrentQueue
     public static ImmutableList<Session> Sessions { get; private set; } = ImmutableList<Session>.Empty;
 
-    public static bool AllowGuests { get; set; } = true;
-
-    public static bool RememberGuestsBetweenServerRestarts { get; set; } = false;
-
-    public static bool IsServerReadOnly { get; set; } = false; // todo check this in more places
-
-    public static bool IsSubmissionDisabled { get; set; } = false;
+    public static ServerConfig Config { get; set; } = new();
 
     public static ConcurrentQueue<EmailQueueItem> EmailQueue { get; set; } = new();
 

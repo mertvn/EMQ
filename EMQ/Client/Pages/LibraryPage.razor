@@ -66,11 +66,11 @@
 
 <details>
     <summary>Batch uploader</summary>
-    @if (ClientState.ServerStats.IsServerReadOnly)
+    @if (ClientState.ServerStats.Config.IsServerReadOnly)
     {
         <span>Server is in read-only mode.</span>
     }
-    else if (ClientState.ServerStats.IsSubmissionDisabled)
+    else if (ClientState.ServerStats.Config.IsSubmissionDisabled)
     {
         <span>Submissions are currently disabled.</span>
     }
@@ -373,11 +373,11 @@
                     <Blazorise.TabPanel @key="@key" Name="@key">
                         <details style="margin: 5px;">
                             <summary>Batch uploader (BGM mode)</summary>
-                            @if (ClientState.ServerStats.IsServerReadOnly)
+                            @if (ClientState.ServerStats.Config.IsServerReadOnly)
                             {
                                 <span>Server is in read-only mode.</span>
                             }
-                            else if (ClientState.ServerStats.IsSubmissionDisabled)
+                            else if (ClientState.ServerStats.Config.IsSubmissionDisabled)
                             {
                                 <span>Submissions are currently disabled.</span>
                             }

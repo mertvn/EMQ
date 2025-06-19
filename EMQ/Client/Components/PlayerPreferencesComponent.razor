@@ -93,7 +93,7 @@
                                     <label for="MuteWhenDuca">Mute when Duca</label>
                                     <br/>
 
-                                    @if (Constants.IsChristmasMode)
+                                    @if (ClientState.ServerStats.Config.IsChristmasMode)
                                     {
                                         <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>
                                         <label for="ShowSnowflakes">Show snowflakes</label>

@@ -56,6 +56,13 @@ public static class ServerUtils
 
     public static async Task RunAnalysis()
     {
+        // broken because reasons
+        bool b = true;
+        if (b)
+        {
+            return;
+        }
+
         var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All, Enum.GetValues<ReviewQueueStatus>());
         foreach (RQ rq in rqs)
         {

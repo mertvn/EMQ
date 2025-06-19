@@ -34,8 +34,9 @@
         Run Analysis
     </button>
     <br/>
+    <br/>
 
-    <div>
+    <div style="border: 1px black solid; padding: 10px;">
         <h5>Countdown</h5>
         <label style="padding: 4px;">
             <input type="text" @bind="CountdownMessage"/>
@@ -51,16 +52,48 @@
     </div>
     <br/>
 
-    @ClientState.ServerStats.IsServerReadOnly
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsServerReadOnly(); })">
-        Toggle IsServerReadOnly
-    </button>
-    <br/>
-    @ClientState.ServerStats.IsSubmissionDisabled
-    <button type="button" class="btn btn-primary" @onclick="@(async () => { await Onclick_ToggleIsSubmissionDisabled(); })">
-        Toggle IsSubmissionDisabled
-    </button>
-    <br/>
+    <div style="border: 1px black solid; padding: 10px;">
+        <h5>ServerConfig</h5>
+        @if (ClientServerConfig != null)
+        {
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.AllowRegistration" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.AllowRegistration))
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.AllowGuests" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.AllowGuests))
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.RememberGuestsBetweenServerRestarts" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.RememberGuestsBetweenServerRestarts))
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.IsServerReadOnly" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.IsServerReadOnly))
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.IsSubmissionDisabled" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.IsSubmissionDisabled))
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.IsChristmasMode" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.IsChristmasMode))
+            </label>
+            <br/>
+        }
+
+    </div>
 }
 
 <pre>

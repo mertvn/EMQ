@@ -53,8 +53,6 @@ public static class Constants
 
     public const int PlayerIdBotMin = 2_000_000_000;
 
-    public const bool IsChristmasMode = false;
-
     public static readonly Dictionary<EntityKind, int> EntityVersionsDict = new()
     {
         { EntityKind.Song, 2 },

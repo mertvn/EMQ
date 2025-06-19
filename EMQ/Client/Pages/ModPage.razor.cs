@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
@@ -21,6 +22,8 @@ public partial class ModPage
 
     public int CountdownMinutes { get; set; }
 
+    public ServerConfig? ClientServerConfig { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -31,6 +34,7 @@ public partial class ModPage
             return;
         }
 
+        ClientServerConfig = (await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats"))!.Config;
         var req = new ReqFindSongReports(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
         var res = await _client.PostAsJsonAsync("Library/FindSongReports", req);
         if (res.IsSuccessStatusCode)
@@ -43,21 +47,30 @@ public partial class ModPage
 
             SongReports = songReports;
         }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
     }
 
     private async Task Onclick_RunGc()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunGc", "");
-        if (res.IsSuccessStatusCode)
+        if (!res.IsSuccessStatusCode)
         {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
 
     private async Task Onclick_RunAnalysis()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/RunAnalysis", "");
-        if (res.IsSuccessStatusCode)
+        if (!res.IsSuccessStatusCode)
         {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
 
@@ -65,8 +78,10 @@ public partial class ModPage
     {
         var req = new ReqStartCountdown(CountdownMessage, DateTime.UtcNow.AddMinutes(CountdownMinutes));
         HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/StartCountdown", req);
-        if (res.IsSuccessStatusCode)
+        if (!res.IsSuccessStatusCode)
         {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
 
@@ -84,19 +99,16 @@ public partial class ModPage
         await _jsRuntime.InvokeVoidAsync("downloadFile", "SongLite_MB.json", "application/json", file);
     }
 
-    private async Task Onclick_ToggleIsServerReadOnly()
+    private async Task SendSetServerConfigReq()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ToggleIsServerReadOnly", "");
-        if (res.IsSuccessStatusCode)
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/SetServerConfig", ClientServerConfig);
+        if (!res.IsSuccessStatusCode)
         {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
-    }
 
-    private async Task Onclick_ToggleIsSubmissionDisabled()
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ToggleIsSubmissionDisabled", "");
-        if (res.IsSuccessStatusCode)
-        {
-        }
+        ClientServerConfig = (await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats"))!.Config;
+        StateHasChanged();
     }
 }

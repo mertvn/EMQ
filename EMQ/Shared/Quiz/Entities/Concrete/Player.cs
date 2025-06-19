@@ -228,7 +228,7 @@ public class PlayerPreferences
     public bool AutocompleteRequireConfirmation { get; set; } = false;
 
     [Required]
-    public bool ShowSnowflakes { get; set; } = Constants.IsChristmasMode;
+    public bool ShowSnowflakes { get; set; } = true;
 
     [Required]
     public bool MuteWhenDuca { get; set; } = false;

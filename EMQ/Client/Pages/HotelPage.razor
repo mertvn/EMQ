@@ -1,6 +1,7 @@
 ﻿@page "/HotelPage"
 @using Microsoft.Extensions.Logging
 @using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete
 @inject HttpClient _client
 @inject ILogger<HotelPage> _logger
 @inject NavigationManager _navigation
@@ -23,18 +24,19 @@
         <DataAnnotationsValidator/>
         <ValidationSummary/>
 
-        <InputText id="RoomName" @bind-Value="_createNewRoomModel.RoomName" style="margin: 5px" maxlength="100"></InputText>
+        <InputText id="RoomName" @bind-Value="_createNewRoomModel.RoomName" style="margin: 5px" maxlength="100"
+                   disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.SendChatMessage))"/>
         <label for="RoomName">Room name</label>
         <br/>
 
         @* todo type= password | text toggle *@
-        <InputText id="RoomPassword" type="text" @bind-Value="_createNewRoomModel.RoomPassword" style="margin: 5px" maxlength="16"></InputText>
+        <InputText id="RoomPassword" type="text" @bind-Value="_createNewRoomModel.RoomPassword" style="margin: 5px" maxlength="16"/>
         <label for="RoomPassword">Room password</label>
         <br/>
 
         @if (ClientState.Session != null)
         {
-            @if (ClientState.ServerStats.IsServerReadOnly)
+            @if (ClientState.ServerStats.Config.IsServerReadOnly)
             {
                 <p>Server is in read-only mode.</p>
             }

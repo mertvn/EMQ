@@ -1,0 +1,86 @@
+﻿@using System.Globalization
+@if (IsVisible)
+{
+    <div class="draggable-div"
+         style="@DivStyle"
+         @onmousedown="OnMouseDown"
+         @onmousemove="OnMouseMove"
+         @onmouseup="OnMouseUp"
+         @onmouseleave="OnMouseUp">
+
+        <span style="position: absolute; top: 0; right: 2%; cursor: pointer;" @onclick="@(() => IsVisible = false)">X</span>
+        @ChildContent
+    </div>
+}
+
+@code {
+
+    public bool IsVisible { get; set; } = false;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool isDragging = false;
+
+    private double currentX = 400;
+
+    private double currentY = 300;
+
+    // The position of the mouse click relative to the div's top-left corner
+    private double offsetX;
+    private double offsetY;
+
+    private string DivStyle => $@"
+z-index: 99999;
+border: 2px solid #2d2d2d;
+border-radius: 8px;
+padding: 10px;
+text-align: center;
+user-select: none;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+position: absolute;
+top: {currentY.ToString(CultureInfo.InvariantCulture)}px;
+left: {currentX.ToString(CultureInfo.InvariantCulture)}px;
+cursor: {(isDragging ? "grabbing" : "move")};";
+
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        isDragging = true;
+
+    // Calculate the offset from the div's top-left corner to the mouse-click position
+    // This prevents the div from "jumping" to the cursor's location
+        offsetX = e.ClientX - currentX;
+        offsetY = e.ClientY - currentY;
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (isDragging)
+        {
+            currentX = e.ClientX - offsetX;
+            currentY = e.ClientY - offsetY;
+        }
+    }
+
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        isDragging = false;
+    }
+
+    public void Show(double x, double y)
+    {
+        currentX = x;
+        currentY = y;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+}

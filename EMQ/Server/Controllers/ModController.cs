@@ -19,7 +19,6 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace EMQ.Server.Controllers;
@@ -28,13 +27,6 @@ namespace EMQ.Server.Controllers;
 [Route("[controller]")]
 public class ModController : ControllerBase
 {
-    public ModController(ILogger<ModController> logger)
-    {
-        _logger = logger;
-    }
-
-    private readonly ILogger<ModController> _logger;
-
     [CustomAuthorize(PermissionKind.Moderator)]
     [HttpGet]
     [Route("ExportSongLite")]
@@ -67,7 +59,7 @@ public class ModController : ControllerBase
     [Route("RunAnalysis")]
     public async Task<ActionResult> RunAnalysis()
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -81,7 +73,7 @@ public class ModController : ControllerBase
     [Route("StartCountdown")]
     public async Task<ActionResult> StartCountdown(ReqStartCountdown req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -95,7 +87,7 @@ public class ModController : ControllerBase
     [Route("UpdateReviewQueueItem")]
     public async Task<ActionResult> UpdateReviewQueueItem([FromBody] ReqUpdateReviewQueueItem req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -111,7 +103,7 @@ public class ModController : ControllerBase
     [Route("UpdateEditQueueItem")]
     public async Task<ActionResult> UpdateEditQueueItem([FromBody] ReqUpdateReviewQueueItem req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -132,21 +124,18 @@ public class ModController : ControllerBase
 
     [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]
-    [Route("ToggleIsServerReadOnly")]
-    public async Task<ActionResult> ToggleIsServerReadOnly()
+    [Route("SetServerConfig")]
+    public async Task<ActionResult> ToggleIsSubmissionDisabled(ServerConfig req)
     {
-        ServerState.IsServerReadOnly = !ServerState.IsServerReadOnly;
-        Console.WriteLine($"IsServerReadOnly: {ServerState.IsServerReadOnly}");
-        return Ok();
-    }
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
 
-    [CustomAuthorize(PermissionKind.Admin)]
-    [HttpPost]
-    [Route("ToggleIsSubmissionDisabled")]
-    public async Task<ActionResult> ToggleIsSubmissionDisabled()
-    {
-        ServerState.IsSubmissionDisabled = !ServerState.IsSubmissionDisabled;
-        Console.WriteLine($"IsSubmissionDisabled: {ServerState.IsSubmissionDisabled}");
+        Console.WriteLine(
+            $"{session.Player.Username} SetServerConfig {JsonSerializer.Serialize(ServerState.Config)} -> {JsonSerializer.Serialize(req)}");
+        ServerState.Config = req;
         return Ok();
     }
 
@@ -155,7 +144,7 @@ public class ModController : ControllerBase
     [Route("SetSubmittedBy")]
     public async Task<ActionResult> SetSubmittedBy([FromBody] ReqSetSubmittedBy req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -182,7 +171,7 @@ public class ModController : ControllerBase
     [Route("DeleteSongLink")]
     public async Task<ActionResult<int>> DeleteSongLink([FromBody] ReqDeleteSongLink req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -208,7 +197,7 @@ public class ModController : ControllerBase
     [Route("DeleteSong")]
     public async Task<ActionResult> DeleteSong([FromBody] int mId)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -235,7 +224,7 @@ public class ModController : ControllerBase
     [Route("DeleteArtist")]
     public async Task<ActionResult> DeleteArtist([FromBody] int aId)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -263,7 +252,7 @@ public class ModController : ControllerBase
     [Route("EditUser")]
     public async Task<ActionResult> EditUser(ResGetPublicUserInfo req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -313,7 +302,7 @@ public class ModController : ControllerBase
     [Route("DeleteArtistAlias")]
     public async Task<ActionResult> DeleteArtistAlias(SongArtist req)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }

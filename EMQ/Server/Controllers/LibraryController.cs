@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -135,7 +135,7 @@ public class LibraryController : ControllerBase
     // [Route("ImportSongLink")]
     // public async Task<bool> ImportSongLink([FromBody] ReqImportSongLink req)
     // {
-    //     if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+    //     if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
     //     {
     //         return false;
     //     }
@@ -148,7 +148,7 @@ public class LibraryController : ControllerBase
     [Route("SongReport")]
     public async Task<ActionResult> SongReport([FromBody] ReqSongReport req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -296,7 +296,7 @@ public class LibraryController : ControllerBase
     [Route("DeleteReviewQueueItem")]
     public async Task<ActionResult<bool>> DeleteReviewQueueItem([FromBody] int id)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -332,7 +332,7 @@ public class LibraryController : ControllerBase
     [Route("DeleteEditQueueItem")]
     public async Task<ActionResult<bool>> DeleteEditQueueItem([FromBody] int id)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }
@@ -528,7 +528,7 @@ public class LibraryController : ControllerBase
     [Route("EditSong")]
     public async Task<ActionResult> EditSong([FromBody] ReqEditSong req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -616,7 +616,7 @@ public class LibraryController : ControllerBase
     [Route("EditArtist")]
     public async Task<ActionResult> EditArtist([FromBody] ReqEditArtist req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -737,7 +737,7 @@ public class LibraryController : ControllerBase
     [Route("EditMergeArtists")]
     public async Task<ActionResult> EditMergeArtists([FromBody] MergeArtists req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -776,7 +776,7 @@ public class LibraryController : ControllerBase
     [Route("EditSource")]
     public async Task<ActionResult> EditSource([FromBody] ReqEditSource req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -944,7 +944,7 @@ public class LibraryController : ControllerBase
     [Route("InsertMusicComment")]
     public async Task<ActionResult> InsertMusicComment([FromBody] MusicComment req)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }
@@ -981,7 +981,7 @@ public class LibraryController : ControllerBase
     [Route("DeleteMusicComment")]
     public async Task<ActionResult> DeleteMusicComment([FromBody] int id)
     {
-        if (ServerState.IsServerReadOnly)
+        if (ServerState.Config.IsServerReadOnly)
         {
             return Unauthorized();
         }

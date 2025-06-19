@@ -1,0 +1,101 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Auth.Entities.Concrete
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+
+<GenericDraggableDiv @ref="_modalRef">
+    @if (ResGetPublicUserInfo != null)
+    {
+        @ResGetPublicUserInfo.Username
+        @if (!AuthStuff.HasPermission(new Session(new Player(0, "", Avatar.DefaultAvatar), "", ResGetPublicUserInfo.UserRoleKind, null)
+        {
+            IncludedPermissions = ResGetPublicUserInfo.IncludedPermissions,
+            ExcludedPermissions = ResGetPublicUserInfo.ExcludedPermissions,
+        }, PermissionKind.SendChatMessage))
+        {
+            <p>Chat-banned.</p>
+        }
+
+        <br/>
+        <div>
+            <h4>Timeout</h4>
+            <button type="button" class="btn btn-success" @onclick="@(() => SendEditUserReq(PlayerId, null))">Remove timeout</button>
+            @* <button>1m</button> *@
+            @* <button>10m</button> *@
+            @* <button>1h</button> *@
+            @* <button>24h</button> *@
+            @* <button>1w</button> *@
+            <button type="button" class="btn btn-danger" @onclick="@(() => SendEditUserReq(PlayerId, TimeSpan.MaxValue))">Forever</button>
+        </div>
+    }
+    else
+    {
+        <p>User not found.</p>
+    }
+</GenericDraggableDiv>
+
+@code {
+    private GenericDraggableDiv _modalRef = null!;
+
+    [Parameter]
+    public int PlayerId { get; set; }
+
+    public ResGetPublicUserInfo? ResGetPublicUserInfo { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        @if (PlayerId > 0)
+        {
+            HttpResponseMessage res =
+                await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", PlayerId);
+            ResGetPublicUserInfo = res.IsSuccessStatusCode
+                ? (await res.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!
+                : null;
+        }
+    }
+
+    public void Show(double x, double y)
+    {
+        StateHasChanged();
+        _modalRef.Show(x, y);
+    }
+
+    public void Hide()
+    {
+        StateHasChanged();
+        _modalRef.Hide();
+    }
+
+    private async Task SendEditUserReq(int playerId, TimeSpan? timeSpan)
+    {
+        if (timeSpan is null)
+        {
+            ResGetPublicUserInfo!.ExcludedPermissions.RemoveAll(x => x == PermissionKind.SendChatMessage);
+        }
+        else
+        {
+            if (!ResGetPublicUserInfo!.ExcludedPermissions.Contains(PermissionKind.SendChatMessage))
+            {
+                ResGetPublicUserInfo.ExcludedPermissions.Add(PermissionKind.SendChatMessage);
+            }
+
+            ResGetPublicUserInfo!.IncludedPermissions.RemoveAll(x => x == PermissionKind.SendChatMessage);
+        }
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/EditUser", ResGetPublicUserInfo);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+            HttpResponseMessage res1 =
+                await _client.PostAsJsonAsync("Auth/GetPublicUserInfo", PlayerId);
+            ResGetPublicUserInfo = res1.IsSuccessStatusCode
+                ? (await res1.Content.ReadFromJsonAsync<ResGetPublicUserInfo>())!
+                : null;
+        }
+    }
+
+}
+
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,13 +32,11 @@ namespace EMQ.Server.Controllers;
 [Route("[controller]")]
 public class AuthController : ControllerBase
 {
-    public AuthController(ILogger<AuthController> logger, IOutputCacheStore outputCache)
+    public AuthController(IOutputCacheStore outputCache)
     {
-        _logger = logger;
         _outputCache = outputCache;
     }
 
-    private readonly ILogger<AuthController> _logger;
     private readonly IOutputCacheStore _outputCache;
 
     public async Task EvictFromOutputCache(string tag)
@@ -65,7 +63,7 @@ public class AuthController : ControllerBase
 
         if (req.IsGuest)
         {
-            if (!ServerState.AllowGuests)
+            if (!ServerState.Config.AllowGuests)
             {
                 return Unauthorized();
             }
@@ -157,7 +155,7 @@ public class AuthController : ControllerBase
 
         ServerState.AddSession(session);
 
-        _logger.LogInformation(
+        Console.WriteLine(
             $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} ({vndbInfo.VndbId}) @ {ip}");
 
         return new ResCreateSession(session, vndbInfo);
@@ -170,12 +168,12 @@ public class AuthController : ControllerBase
     public async Task RemoveSession([FromBody] ReqRemoveSession req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.Token);
-        _logger.LogInformation("Removing session " + session?.Token);
         if (session == null)
         {
             return;
         }
 
+        Console.WriteLine($"Removing session {session.Token}");
         var secret = await DbManager_Auth.GetSecret(session.Player.Id, new Guid(session.Token));
 
         // enable if guest sessions are ever written to DB
@@ -218,17 +216,17 @@ public class AuthController : ControllerBase
             {
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous secret");
                 var reqCreateSession = new ReqCreateSession(secret.user_id, secret.token.ToString());
-                var res = (await CreateSession(reqCreateSession)).Value!;
-                session = res.Session;
-                vndbInfo = res.VndbInfo;
+                var res = (await CreateSession(reqCreateSession)).Value;
+                session = res?.Session;
+                vndbInfo = res?.VndbInfo;
             }
-            else if (ServerState.RememberGuestsBetweenServerRestarts)
+            else if (ServerState.Config.RememberGuestsBetweenServerRestarts)
             {
                 Console.WriteLine($"Creating new session for {req.Player.Username} using previous session");
                 var reqCreateSession = new ReqCreateSession(req.Player.Username, "", true);
-                var res = (await CreateSession(reqCreateSession)).Value!;
-                session = res.Session;
-                vndbInfo = res.VndbInfo;
+                var res = (await CreateSession(reqCreateSession)).Value;
+                session = res?.Session;
+                vndbInfo = res?.VndbInfo;
             }
         }
 
@@ -368,8 +366,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        _logger.LogInformation($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
-
+        Console.WriteLine($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
         if (string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
         {
             return StatusCode(520);
@@ -415,7 +412,7 @@ public class AuthController : ControllerBase
                 !serialized.Contains("chrome-extension") &&
                 !serialized.Contains("google-analytics"))
             {
-                _logger.LogError("CSP violation: " + serialized);
+                Console.WriteLine($"CSP violation: {serialized}");
             }
         }
 
@@ -434,8 +431,7 @@ public class AuthController : ControllerBase
             QuizManagersCount = ServerState.QuizManagers.Count,
             ActiveSessionsCount = ServerState.Sessions.Count(x => x.Player.HasActiveConnection),
             SessionsCount = ServerState.Sessions.Count,
-            IsServerReadOnly = ServerState.IsServerReadOnly,
-            IsSubmissionDisabled = ServerState.IsSubmissionDisabled,
+            Config = ServerState.Config,
             GitHash = ServerState.GitHash,
             CountdownInfo = ServerState.CountdownInfo,
         };
@@ -491,7 +487,10 @@ public class AuthController : ControllerBase
     [Route("StartRegistration")]
     public async Task<ActionResult> StartRegistration(ReqStartRegistration req)
     {
-        // Console.WriteLine(JsonSerializer.Serialize(req, Utils.Jso));
+        if (!ServerState.Config.AllowRegistration)
+        {
+            return Unauthorized();
+        }
 
         bool isValid = await AuthManager.RegisterStep1SendEmail(req.Username, req.Email);
         if (!isValid)

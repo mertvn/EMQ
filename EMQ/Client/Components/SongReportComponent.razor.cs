@@ -42,7 +42,7 @@ public partial class SongReportComponent
 
     private async Task SendSongReportReq(SongReport clientSongReport, Dictionary<string, bool> selectedUrls)
     {
-        if (ClientState.ServerStats.IsServerReadOnly || ClientState.ServerStats.IsSubmissionDisabled)
+        if (ClientState.ServerStats.Config.IsServerReadOnly || ClientState.ServerStats.Config.IsSubmissionDisabled)
         {
             return;
         }

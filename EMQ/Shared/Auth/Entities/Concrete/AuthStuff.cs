@@ -162,6 +162,7 @@ public enum PermissionKind
 
     Moderator = 4000,
 
+    // ChatModerator = 5000,
     ModerateChat = 5001,
 
     ReviewSongLink = 6001,

@@ -12,9 +12,7 @@ public class ServerStats
 
     public int SessionsCount { get; set; }
 
-    public bool IsServerReadOnly { get; set; }
-
-    public bool IsSubmissionDisabled { get; set; }
+    public ServerConfig Config { get; set; } = new();
 
     public string GitHash { get; set; } = "";
 

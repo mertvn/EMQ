@@ -10,7 +10,7 @@
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
 
-@if (Constants.IsChristmasMode)
+@if (ClientState.ServerStats.Config.IsChristmasMode)
 {
     <Snow NumberOfSnowflakes="34"/>
 }

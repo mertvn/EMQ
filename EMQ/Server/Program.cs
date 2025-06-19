@@ -52,51 +52,31 @@ builder.Services.AddRateLimiter(options =>
         partitionKey: ServerUtils.GetIpAddress(context),
         factory: _ => new TokenBucketRateLimiterOptions()
         {
-            TokenLimit = 4,
-            ReplenishmentPeriod = TimeSpan.FromSeconds(15),
-            TokensPerPeriod = 1,
+            TokenLimit = 4, ReplenishmentPeriod = TimeSpan.FromSeconds(15), TokensPerPeriod = 1,
         }));
 
     options.AddPolicy(RateLimitKind.Register, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 2,
-            Window = TimeSpan.FromDays(1),
-        }));
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 2, Window = TimeSpan.FromDays(1), }));
 
     options.AddPolicy(RateLimitKind.ForgottenPassword, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 2,
-            Window = TimeSpan.FromDays(1),
-        }));
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 2, Window = TimeSpan.FromDays(1), }));
 
     options.AddPolicy(RateLimitKind.ValidateSession, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 30,
-            Window = TimeSpan.FromMinutes(1),
-        }));
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), }));
 
     options.AddPolicy(RateLimitKind.UploadFile, context => RateLimitPartition.GetTokenBucketLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
         factory: _ => new TokenBucketRateLimiterOptions()
         {
-            TokenLimit = 500,
-            ReplenishmentPeriod = TimeSpan.FromMinutes(30),
-            TokensPerPeriod = 25,
+            TokenLimit = 500, ReplenishmentPeriod = TimeSpan.FromMinutes(30), TokensPerPeriod = 25,
         }));
 
     options.AddPolicy(RateLimitKind.OnceEvery5Seconds, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 1,
-            Window = TimeSpan.FromSeconds(5),
-        }));
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 1, Window = TimeSpan.FromSeconds(5), }));
 
     options.OnRejected = async (context, token) =>
     {

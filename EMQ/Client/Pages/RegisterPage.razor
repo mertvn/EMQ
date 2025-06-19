@@ -5,6 +5,12 @@
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 
+@if (!ClientState.ServerStats.Config.AllowRegistration)
+{
+    <p>Registrations are currently disabled.</p>
+    return;
+}
+
 <h3>Register new account</h3>
 
 @if (!Done)

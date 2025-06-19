@@ -1005,14 +1005,6 @@ public partial class QuizPage
                                 PageState.Guess.Dict[key] = value;
                             }
                         }
-
-                        foreach ((GuessKind key, int value) in guess.DictFirstGuessMs)
-                        {
-                            if (value > 0)
-                            {
-                                PageState.Guess.DictFirstGuessMs[key] = value;
-                            }
-                        }
                     }
 
                     if (Room.Quiz.MultipleChoiceOptions.Any())

@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Timers;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
@@ -34,11 +35,20 @@ public partial class ChatComponent
 
     private Dictionary<string, string> EmojiData { get; set; } = new();
 
+    public Player? SelectedPlayer { get; set; }
+
+    private ChatUserDetailComponent _modalRef = null!;
+
     protected override async Task OnInitializedAsync()
     {
         SetTimer();
         await SyncChat();
         EmojiData = (await _client.GetFromJsonAsync<Dictionary<string, string>>("emoji.json"))!;
+    }
+
+    public void Dispose()
+    {
+        Timer.Dispose();
     }
 
     public void SetTimer()
@@ -216,5 +226,17 @@ public partial class ChatComponent
         StateHasChanged();
         await ScrollToEnd();
         StateHasChanged();
+    }
+
+    private async Task Onclick_Sender(Player sender, MouseEventArgs e)
+    {
+        bool isChatMod = AuthStuff.HasPermission(ClientState.Session, PermissionKind.ModerateChat);
+        if (!isChatMod)
+        {
+            return;
+        }
+
+        SelectedPlayer = sender;
+        _modalRef.Show(e.ClientX, e.ClientY + 30);
     }
 }

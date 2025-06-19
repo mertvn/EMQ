@@ -44,7 +44,7 @@ public class UploadController : ControllerBase
     public async Task<ActionResult<UploadResult>> PostFile([FromForm] IEnumerable<IFormFile> files, [FromForm] int mId,
         [FromForm] string uploadOptionsStr)
     {
-        if (ServerState.IsServerReadOnly || ServerState.IsSubmissionDisabled)
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
         {
             return Unauthorized();
         }

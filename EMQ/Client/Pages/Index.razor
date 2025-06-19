@@ -75,7 +75,8 @@
                 <br/>
 
                 <input style="margin-top: 5px" type="submit" class="btn btn-primary" value="Login" disabled="@(ClientState.Session != null || LoginInProgress)"/>
-                <input style="margin-top: 5px; margin-left: 5px;" type="button" class="btn btn-primary" value="Play as Guest" @onclick="@(Onclick_PlayAsGuest)" disabled="@(ClientState.Session != null || LoginInProgress)"/>
+                <input style="margin-top: 5px; margin-left: 5px;" type="button" class="btn btn-primary" value="Play as Guest" @onclick="@(Onclick_PlayAsGuest)"
+                       disabled="@(ClientState.Session != null || LoginInProgress || !ClientState.ServerStats.Config.AllowGuests)"/>
             </EditForm>
         </div>
 

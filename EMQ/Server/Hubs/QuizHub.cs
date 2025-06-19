@@ -27,20 +27,37 @@ public class QuizHub : Hub
                 .Replace("Bearer ", "");
         }
 
-        var session = ServerState.Sessions.SingleOrDefault(x => accessToken == x.Token);
-        if (session != null)
+        var sessions = ServerState.Sessions.Where(x => accessToken == x.Token).ToArray();
+        switch (sessions.Length)
         {
-            string newConnectionId = Context.ConnectionId;
-            Console.WriteLine($"new ConnectionId for p{session.Player.Id} = {newConnectionId}");
-            while (!session.PlayerConnectionInfos.ContainsKey(newConnectionId))
-            {
-                session.PlayerConnectionInfos.TryAdd(newConnectionId,
-                    new PlayerConnectionInfo { LastHeartbeatTimestamp = DateTime.UtcNow });
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Player session wasn't found for token {accessToken}");
+            case < 1:
+                {
+                    Console.WriteLine($"Player session wasn't found for token {accessToken}");
+                    break;
+                }
+            case 1:
+                {
+                    var session = sessions.First();
+                    string newConnectionId = Context.ConnectionId;
+                    Console.WriteLine($"new ConnectionId for p{session.Player.Id} = {newConnectionId}");
+                    while (!session.PlayerConnectionInfos.ContainsKey(newConnectionId))
+                    {
+                        session.PlayerConnectionInfos.TryAdd(newConnectionId,
+                            new PlayerConnectionInfo { LastHeartbeatTimestamp = DateTime.UtcNow });
+                    }
+
+                    break;
+                }
+            case > 1:
+                {
+                    // invalid state, remove all sessions
+                    foreach (Session session1 in sessions)
+                    {
+                        await ServerState.RemoveSession(session1, "OnConnectedAsync");
+                    }
+
+                    break;
+                }
         }
     }
 
