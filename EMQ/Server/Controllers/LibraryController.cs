@@ -1039,6 +1039,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpGet]
     [Route("GetUploadQueue")]
+    [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
     public async Task<IEnumerable<string>> GetUploadQueue()
     {
         return ServerState.UploadQueue.Where(x => x.Value.UploadResult.IsProcessing ?? true).Select(x =>
