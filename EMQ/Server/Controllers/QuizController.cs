@@ -233,7 +233,8 @@ public class QuizController : ControllerBase
         }
 
         var player = session.Player;
-        if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password || room.Owner == player)
+        if (string.IsNullOrWhiteSpace(room.Password) || room.Password == req.Password || room.Owner == player ||
+            AuthStuff.HasPermission(session, PermissionKind.Admin))
         {
             if (room.Players.Any(x => x.Id == player.Id) || room.Spectators.Any(x => x.Id == player.Id))
             {
