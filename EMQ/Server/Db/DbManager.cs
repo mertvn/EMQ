@@ -2981,14 +2981,8 @@ ORDER BY artist_id";
             {
                 re.AALatinAliasNormalized = re.AALatinAlias.NormalizeForAutocomplete();
                 re.AANonLatinAliasNormalized = re.AANonLatinAlias.NormalizeForAutocomplete();
-
-                // todo handle mb names (, )
-                re.AALatinAliasNormalizedReversed = string.Join("", re.AALatinAlias
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Reverse()).NormalizeForAutocomplete();
-                re.AANonLatinAliasNormalizedReversed = string.Join("", re.AANonLatinAlias
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Reverse()).NormalizeForAutocomplete();
+                re.AALatinAliasNormalizedReversed = Utils.GetReversedArtistName(re.AALatinAlias);
+                re.AANonLatinAliasNormalizedReversed =  Utils.GetReversedArtistName(re.AANonLatinAlias);
 
                 if (artistRolesDict.TryGetValue(re.AId, out var role))
                 {

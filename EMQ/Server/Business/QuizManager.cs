@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -475,12 +475,15 @@ public class QuizManager
                         foreach (int aId in aIds)
                         {
                             correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => x.NormalizeForAutocomplete()));
+                            correctAnswers.AddRange(ArtistAliasesDict[aId].Select(x => Utils.GetReversedArtistName(x)));
                             if (ArtistBandsDict != null)
                             {
                                 if (ArtistBandsDict.TryGetValue(aId, out string[]? bandMemberAliases))
                                 {
                                     correctAnswers.AddRange(bandMemberAliases.Select(x =>
                                         x.NormalizeForAutocomplete()));
+                                    correctAnswers.AddRange(bandMemberAliases.Select(x =>
+                                        Utils.GetReversedArtistName(x)));
                                 }
                             }
                         }
@@ -497,6 +500,10 @@ public class QuizManager
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
                         correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
                             .Where(x => !string.IsNullOrWhiteSpace(x))!);
+
+                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.LatinTitle)));
+                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.NonLatinTitle))
+                            .Where(x => !string.IsNullOrWhiteSpace(x)));
                     }
 
                     correctAnswers = correctAnswers.Distinct().ToList();

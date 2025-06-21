@@ -99,6 +99,15 @@ public static class Utils
         return (latinTitle, nonLatinTitle);
     }
 
+    public static string GetReversedArtistName(string? x)
+    {
+        return string.IsNullOrEmpty(x)
+            ? ""
+            : string.Join("", x
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Reverse()).NormalizeForAutocomplete();
+    }
+
     public class MyStopwatchSection
     {
         public string Name { get; set; } = "";
