@@ -45,7 +45,7 @@ public class AuthController : ControllerBase
     }
 
     [EnableRateLimiting(RateLimitKind.Login)]
-    [CustomAuthorize(PermissionKind.Login)]
+    [CustomAuthorize(PermissionKind.Visitor)] // can't use PermissionKind.Login here because Session will be null
     [HttpPost]
     [Route("CreateSession")]
     public async Task<ActionResult<ResCreateSession>> CreateSession([FromBody] ReqCreateSession req)
@@ -152,6 +152,11 @@ public class AuthController : ControllerBase
         {
             IncludedPermissions = includedPermissions, ExcludedPermissions = excludedPermissions
         };
+
+        if (!AuthStuff.HasPermission(session, PermissionKind.Login))
+        {
+            return StatusCode((int)HttpStatusCode.Gone);
+        }
 
         ServerState.AddSession(session);
 

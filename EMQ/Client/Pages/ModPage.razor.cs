@@ -34,7 +34,8 @@ public partial class ModPage
             return;
         }
 
-        ClientServerConfig = (await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats"))!.Config;
+        ClientServerConfig =
+            (await _client.GetFromJsonAsync<ServerStats>($"Auth/GetServerStats?nocache={Guid.NewGuid()}"))!.Config;
         var req = new ReqFindSongReports(DateTime.UtcNow.AddDays(-78), DateTime.UtcNow.AddDays(1));
         var res = await _client.PostAsJsonAsync("Library/FindSongReports", req);
         if (res.IsSuccessStatusCode)
@@ -108,7 +109,8 @@ public partial class ModPage
                 $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
 
-        ClientServerConfig = (await _client.GetFromJsonAsync<ServerStats>("Auth/GetServerStats"))!.Config;
+        ClientServerConfig =
+            (await _client.GetFromJsonAsync<ServerStats>($"Auth/GetServerStats?nocache={Guid.NewGuid()}"))!.Config;
         StateHasChanged();
     }
 }

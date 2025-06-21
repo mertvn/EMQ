@@ -64,6 +64,11 @@
                         <h5 class="roomName card-title">@room.Name</h5>
                     </div>
                     <div>
+                        @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
+                        {
+                            <span style="position: absolute; top: 0; right: 2%; cursor: pointer;" @onclick="@(() => ForceRemoveRoom(room.Id))">🗑</span>
+                        }
+
                         @{
                             int botCount = room.Players.Count(x => x.IsBot);
                         }

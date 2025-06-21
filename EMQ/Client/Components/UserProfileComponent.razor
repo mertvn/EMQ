@@ -40,11 +40,23 @@
     </ul>
     <br/>
 
-    // todo roles
+    // todo role editing
     @if (ClientState.Session != null)
     {
         <details>
             <summary>Permissions</summary>
+            <details>
+                <summary>Default permissions from roles</summary>
+                <ul>
+                    @foreach (var role in Enum.GetValues<UserRoleKind>())
+                    {
+                        @if (PublicUserInfo.UserRoleKind.HasFlag(role))
+                        {
+                            <li>@role: @string.Join(", ", AuthStuff.DefaultRolePermissionsDict[role].Select(x => x.ToString()))</li>
+                        }
+                    }
+                </ul>
+            </details>
 
             <label>
                 <input type="checkbox" class="form-check-input" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.EditUser))"

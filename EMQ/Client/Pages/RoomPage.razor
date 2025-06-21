@@ -4,6 +4,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.UI
 @using EMQ.Client.Components
+@using EMQ.Shared.Auth.Entities.Concrete
 @using Microsoft.AspNetCore.SignalR.Client
 @inject ILogger<RoomPage> _logger
 @inject NavigationManager _navigation
@@ -272,7 +273,8 @@ else
                         @player.Username
                     </span>
                 </div>
-                @if (Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id)
+                @if ((Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id) ||
+                     (AuthStuff.HasPermission(ClientState.Session, PermissionKind.Moderator) && Room?.Owner.Id != ClientState.Session?.Player.Id && player.Id != Room?.Owner.Id))
                 {
                     <div style="display: flex; justify-content:center; align-items:center;">
                         @if (player.IsBot)

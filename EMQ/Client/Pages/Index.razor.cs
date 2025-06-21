@@ -141,6 +141,9 @@ public partial class Index
             {
                 switch (res.StatusCode)
                 {
+                    case HttpStatusCode.Gone:
+                        LoginProgressDisplay.Add("You are banned.");
+                        break;
                     case HttpStatusCode.TooManyRequests:
                         LoginProgressDisplay.Add(
                             $"You have been rate-limited. Try again in {res.Headers.RetryAfter} seconds.");

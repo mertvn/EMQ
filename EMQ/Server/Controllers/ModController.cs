@@ -272,8 +272,8 @@ public class ModController : ControllerBase
             {
                 roles = (int)req.UserRoleKind,
                 ign_mv = req.IgnMv,
-                inc = req.IncludedPermissions.Select(x=> (int)x).ToArray(),
-                exc = req.ExcludedPermissions.Select(x=> (int)x).ToArray(),
+                inc = req.IncludedPermissions.Select(x => (int)x).ToArray(),
+                exc = req.ExcludedPermissions.Select(x => (int)x).ToArray(),
                 uid = req.UserId
             }, transactionAuth);
 
@@ -316,5 +316,28 @@ public class ModController : ControllerBase
         bool success = await DbManager.DeleteArtistAlias(req.Id, req.Titles.Single().ArtistAliasId);
         Console.WriteLine($"{session.Player.Username} DeleteArtistAlias {JsonSerializer.Serialize(req, Utils.Jso)}");
         return success ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("ForceRemoveRoom")]
+    public async Task<ActionResult> ForceRemoveRoom([FromBody] Guid roomId)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Id == roomId);
+        if (room == null)
+        {
+            return StatusCode(500);
+        }
+
+        ServerState.RemoveRoom(room, "ForceRemoveRoom");
+        Console.WriteLine(
+            $"{session.Player.Username} ForceRemoveRoom r{roomId} {room.Name} {string.Join(", ", room.Players.Select(x => x.Username))}");
+        return Ok();
     }
 }

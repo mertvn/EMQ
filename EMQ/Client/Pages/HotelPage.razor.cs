@@ -15,9 +15,19 @@ using Microsoft.JSInterop;
 
 namespace EMQ.Client.Pages;
 
+public class CreateNewRoomModel
+{
+    [Required]
+    [MaxLength(78)]
+    public string RoomName { get; set; } = "Room";
+
+    [MaxLength(16)]
+    public string RoomPassword { get; set; } = "";
+}
+
 public partial class HotelPage
 {
-    private QuizSettings QuizSettings { get; set; } = new() { };
+    private QuizSettings QuizSettings { get; set; } = new();
 
     private List<Room> Rooms { get; set; } = new();
 
@@ -121,13 +131,20 @@ public partial class HotelPage
         StateHasChanged();
     }
 
-    public class CreateNewRoomModel
+    private async Task ForceRemoveRoom(Guid roomId)
     {
-        [Required]
-        [MaxLength(78)]
-        public string RoomName { get; set; } = "Room";
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
+            "This will ungracefully remove the room. Are you sure you want to continue?");
+        if (!confirmed)
+        {
+            return;
+        }
 
-        [MaxLength(16)]
-        public string RoomPassword { get; set; } = "";
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Mod/ForceRemoveRoom", roomId);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
     }
 }

@@ -330,7 +330,8 @@ public class QuizHub : Hub
                 var requestingPlayer = room.Players.SingleOrDefault(player => player.Id == session.Player.Id);
                 var targetPlayer = room.Players.SingleOrDefault(player => player.Id == playerId);
                 if (requestingPlayer != null && targetPlayer != null &&
-                    (requestingPlayer.Id == room.Owner.Id || requestingPlayer.Id == targetPlayer.Id))
+                    (requestingPlayer.Id == room.Owner.Id || requestingPlayer.Id == targetPlayer.Id ||
+                     AuthStuff.HasPermission(session, PermissionKind.Moderator)))
                 {
                     room.Spectators.Enqueue(targetPlayer);
                     room.RemovePlayer(targetPlayer);
@@ -349,13 +350,14 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Owner.Id == session.Player.Id)
+            if (room != null && (room.Owner.Id == session.Player.Id ||
+                                 AuthStuff.HasPermission(session, PermissionKind.Moderator)))
             {
                 var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
                 if (targetPlayer != null)
                 {
                     room.Owner = targetPlayer;
-                    room.Log($"{targetPlayer.Username} is the new owner.", -1, true);
+                    room.Log($"{targetPlayer.Username} is the new owner (by {session.Player.Username}).", -1, true);
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                 }
                 else
@@ -373,13 +375,15 @@ public class QuizHub : Hub
         if (session != null)
         {
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
-            if (room?.Owner.Id == session.Player.Id)
+            if (room != null && (room.Owner.Id == session.Player.Id ||
+                                 AuthStuff.HasPermission(session, PermissionKind.Moderator)))
             {
                 var targetPlayer = room.Players.SingleOrDefault(x => x.Id == playerId);
                 if (targetPlayer != null)
                 {
                     room.RemovePlayer(targetPlayer);
-                    room.Log($"{targetPlayer.Username} was kicked from the room.", targetPlayer.Id, true);
+                    room.Log($"{targetPlayer.Username} was kicked from the room by {session.Player.Username}.",
+                        targetPlayer.Id, true);
 
                     TypedQuizHub.ReceiveKickedFromRoom(new[] { targetPlayer.Id });
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
