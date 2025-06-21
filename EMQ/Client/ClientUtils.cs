@@ -231,7 +231,7 @@ public class ClientUtils
                 var res = await response.Content.ReadFromJsonAsync<UploadResult>();
                 if (res is not null)
                 {
-                    uploadResult.Uploaded = res.Uploaded;
+                    uploadResult.IsSuccess = res.IsSuccess;
                     uploadResult.FileName = res.FileName;
                     uploadResult.ResultUrl = res.ResultUrl;
                     uploadResult.ErrorStr = res.ErrorStr;

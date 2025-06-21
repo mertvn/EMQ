@@ -63,7 +63,7 @@
             <li>
                 @file.FileName
                 <br>
-                @if (file.Uploaded)
+                @if (file.IsSuccess)
                 {
                     <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
                         <span>@file.ResultUrl</span>

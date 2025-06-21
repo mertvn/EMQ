@@ -300,7 +300,7 @@ public partial class UploadBatchComponent
                 if (res.IsSuccessStatusCode)
                 {
                     var content = (await res.Content.ReadFromJsonAsync<UploadResult>())!;
-                    uploadResult.Uploaded = content.Uploaded;
+                    uploadResult.IsSuccess = content.IsSuccess;
                     uploadResult.FileName = content.FileName;
                     uploadResult.ResultUrl = content.ResultUrl;
                     uploadResult.ErrorStr = content.ErrorStr;

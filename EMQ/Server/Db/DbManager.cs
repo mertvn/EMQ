@@ -5654,26 +5654,30 @@ ORDER BY ""QuizCount"" DESC;
         // todo only convert to songmini once?
         foreach (ResMostPlayedSongs resMostPlayedSong in resMostPlayedSongs)
         {
-            var song = songs[resMostPlayedSong.MusicId];
-            resMostPlayedSong.SongMini = new SongMini
+            if (songs.TryGetValue(resMostPlayedSong.MusicId, out var song))
             {
-                Id = song.Id,
-                S = song.ToStringLatin(),
-                L = song.Links,
-                A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
-            };
+                resMostPlayedSong.SongMini = new SongMini
+                {
+                    Id = song.Id,
+                    S = song.ToStringLatin(),
+                    L = song.Links,
+                    A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
+                };
+            }
         }
 
         foreach (ResUserMusicVotes resUserMusicVote in resUserMusicVotesVocals.Concat(resUserMusicVotesBgm))
         {
-            var song = songs[resUserMusicVote.MusicVote.music_id];
-            resUserMusicVote.SongMini = new SongMini
+            if (songs.TryGetValue(resUserMusicVote.MusicVote.music_id, out var song))
             {
-                Id = song.Id,
-                S = song.ToStringLatin(),
-                L = song.Links,
-                A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
-            };
+                resUserMusicVote.SongMini = new SongMini
+                {
+                    Id = song.Id,
+                    S = song.ToStringLatin(),
+                    L = song.Links,
+                    A = Converters.GetSingleTitle(song.Artists.First().Titles).LatinTitle
+                };
+            }
         }
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());

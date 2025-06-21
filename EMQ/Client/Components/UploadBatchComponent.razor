@@ -95,7 +95,7 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
                     <br>
                 }
 
-                @if (file.Uploaded)
+                @if (file.IsSuccess)
                 {
                     <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
                         <span>@file.ResultUrl</span>

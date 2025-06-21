@@ -116,7 +116,7 @@
             <li>
                 @file.FileName (@file.ChosenMatch?.ToStringLatin())
                 <br>
-                @if (file.Uploaded)
+                @if (file.IsSuccess)
                 {
                     <a class="link-primary" href="@(file.ResultUrl)" target="_blank" style="display: inline-block;">
                         <span>@file.ResultUrl</span>

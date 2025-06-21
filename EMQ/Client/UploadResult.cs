@@ -8,7 +8,7 @@ namespace EMQ.Client;
 
 public class UploadResult
 {
-    public bool Uploaded { get; set; }
+    public bool IsSuccess { get; set; }
 
     public string? FileName { get; set; }
 

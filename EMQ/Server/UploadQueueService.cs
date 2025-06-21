@@ -275,7 +275,7 @@ public sealed class UploadQueueService : BackgroundService
                 }
             }
 
-            uploadResult.Uploaded = true;
+            uploadResult.IsSuccess = true;
             var songLink = new SongLink
             {
                 Url = uploadResult.ResultUrl.UnReplaceSelfhostLink(),
