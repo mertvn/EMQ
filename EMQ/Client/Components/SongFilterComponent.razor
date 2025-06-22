@@ -43,7 +43,18 @@
                 </select>
             </div>
 
-            <button class="btn btn-outline-secondary col-md-1" @onclick="ResetFilters">Reset filters</button>
+            <div class="col-md-2 mb-2">
+                <label class="form-label">Link Lineage:</label>
+                <select class="form-select form-select-sm" @bind="LineageStatus" @bind:after="DirtyFilters">
+                    <option value="Any">Any</option>
+                    @foreach (var lineage in Enum.GetValues<SongLinkLineage>())
+                    {
+                        <option value="@lineage.ToString()">@lineage.GetDescription()</option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn btn-secondary col-md-1" @onclick="ResetFilters">Reset filters</button>
 
             <br/>
 
@@ -106,6 +117,8 @@
 
     private string VoteStatus { get; set; } = "Any";
 
+    private string LineageStatus { get; set; } = "Any";
+
     private Dictionary<SongArtistRole, bool> MissingArtistRoles { get; set; } =
         Enum.GetValues<SongArtistRole>().Where(x => x != SongArtistRole.Unknown).ToDictionary(x => x, _ => false);
 
@@ -120,15 +133,6 @@
         ParentStateHasChangedCallback?.Invoke();
     }
 
-    // private bool HasActiveFilters()
-    // {
-    //     return VideoStatus != "Any" ||
-    //            SoundStatus != "Any" ||
-    //            VoteStatus != "Any" ||
-    //            MissingArtistRoles.Any(r => r.Value) ||
-    //            MissingExternalLinks.Any(l => l.Value);
-    // }
-
     // todo? make static
     public IEnumerable<Song> ApplyFilters(IEnumerable<Song> songs)
     {
@@ -137,10 +141,11 @@
         bool checkVideo = VideoStatus != "Any";
         bool checkSound = SoundStatus != "Any";
         bool checkVote = VoteStatus != "Any";
+        bool checkLineage = LineageStatus != "Any";
         bool checkArtistRoles = activeArtistRoles.Any();
         bool checkExternalLinks = activeExternalLinks.Any();
 
-        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkArtistRoles || checkExternalLinks;
+        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkLineage || checkArtistRoles || checkExternalLinks;
         if (!hasActiveFilters)
         {
             return songs;
@@ -181,6 +186,19 @@
                 bool isVoted = ClientState.MusicVotes.ContainsKey(song.Id);
                 bool voteMatches = VoteStatus == "Voted" ? isVoted : !isVoted;
                 bool result = ApplyNot ? !voteMatches : voteMatches;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
+                }
+            }
+
+            if (checkLineage)
+            {
+                bool lineageMatches = song.Links.Any(x => x.IsFileLink && x.Lineage.ToString() == LineageStatus);
+                bool result = ApplyNot ? !lineageMatches : lineageMatches;
                 switch (UseAnd)
                 {
                     case true when !result:
@@ -233,6 +251,7 @@
         VideoStatus = "Any";
         SoundStatus = "Any";
         VoteStatus = "Any";
+        LineageStatus = "Any";
 
         foreach ((SongArtistRole key, bool _) in MissingArtistRoles)
         {
