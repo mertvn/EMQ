@@ -944,6 +944,7 @@ public class LibraryController : ControllerBase
 
         await transaction.CommitAsync();
         await DbManager.EvictFromSongsCache(req.MId);
+        Console.WriteLine($"{session.Player.Username} EditSongLinkDetails {JsonSerializer.Serialize(req, Utils.Jso)}");
         return Ok();
     }
 

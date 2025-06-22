@@ -34,6 +34,8 @@ public struct LibraryStats
 
     public int AvailableLyricistCount { get; set; }
 
+    public int KnownLineageCount { get; set; }
+
     public List<LibraryStatsMsm> msmAvailable { get; set; }
 
     public Dictionary<string, List<LibraryStatsAm>> amAvailableDict { get; set; }

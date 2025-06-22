@@ -4363,6 +4363,11 @@ order by type";
                 "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
                 new { validMids, types = SongLink.FileLinkTypes }));
 
+            int knownLineageCount = (await connection.ExecuteScalarAsync<int>(
+                "SELECT count(distinct music_id) FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and lineage > 0",
+                new { validMids, types = SongLink.FileLinkTypes }));
+
+            stopWatch.StartSection("CAL");
             int composerCount = (await connection.ExecuteScalarAsync<int>(
                 $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Composer} and music_id = ANY(@validMids)",
                 new { validMids }));
@@ -4550,6 +4555,7 @@ LIMIT 34", new { validMids, ign = IgnoredMusicVotes }));
                 AvailableComposerCount = composerCount,
                 AvailableArrangerCount = arrangerCount,
                 AvailableLyricistCount = lyricistCount,
+                KnownLineageCount = knownLineageCount,
 
                 // VN
                 msmAvailable = msmAvailable,
