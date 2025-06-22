@@ -116,7 +116,7 @@
                         int divisor = libraryStats.LineageDict.Sum(x => x.Value);
                         @foreach ((SongLinkLineage key, int value) in libraryStats.LineageDict)
                         {
-                            <li>@key: @value (@(Utils.PercentageStr(value, divisor)))</li>
+                            <li>@key.GetDescription(): @value (@(Utils.PercentageStr(value, divisor)))</li>
                         }
                     }
                 </ul>
