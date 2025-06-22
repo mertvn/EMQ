@@ -4363,9 +4363,31 @@ order by type";
                 "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
                 new { validMids, types = SongLink.FileLinkTypes }));
 
-            int knownLineageCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and lineage > 0",
+            stopWatch.StartSection("lineage select");
+            var lineages = (await connection.QueryAsync<int>(
+                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids)",
                 new { validMids, types = SongLink.FileLinkTypes }));
+
+            stopWatch.StartSection("lineage process");
+            var lineageValues = Enum.GetValues<SongLinkLineage>();
+            var lineageDict = lineageValues.ToDictionary(x => x, _ => 0);
+            foreach (int lineage in lineages)
+            {
+                if (lineage == 0)
+                {
+                    lineageDict[(SongLinkLineage)lineage]++;
+                    continue;
+                }
+
+                int bits = lineage;
+                while (bits != 0)
+                {
+                    int low = bits & -bits;
+                    var flag = (SongLinkLineage)low;
+                    lineageDict[flag]++;
+                    bits &= bits - 1;
+                }
+            }
 
             stopWatch.StartSection("CAL");
             int composerCount = (await connection.ExecuteScalarAsync<int>(
@@ -4555,7 +4577,7 @@ LIMIT 34", new { validMids, ign = IgnoredMusicVotes }));
                 AvailableComposerCount = composerCount,
                 AvailableArrangerCount = arrangerCount,
                 AvailableLyricistCount = lyricistCount,
-                KnownLineageCount = knownLineageCount,
+                LineageDict = lineageDict,
 
                 // VN
                 msmAvailable = msmAvailable,
