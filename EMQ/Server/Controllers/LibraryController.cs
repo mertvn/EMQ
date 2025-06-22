@@ -892,12 +892,29 @@ public class LibraryController : ControllerBase
             return Unauthorized();
         }
 
+        string sh = Constants.SelfhostAddress!;
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
 
+        string submittedBy = (await connection.ExecuteScalarAsync<string>(
+            "select submitted_by from music_external_link where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url ",
+            new { req.MId, sh, Url = req.SongLink.Url.UnReplaceSelfhostLink() }, transaction))!;
+        if (string.IsNullOrWhiteSpace(submittedBy))
+        {
+            submittedBy = (await connection.ExecuteScalarAsync<string>(
+                "select submitted_by from review_queue where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url ",
+                new { req.MId, sh, Url = req.SongLink.Url.UnReplaceSelfhostLink() }, transaction))!;
+        }
+
+        bool canEditDetails = AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) ||
+                              string.Equals(submittedBy, session.Player.Username, StringComparison.OrdinalIgnoreCase);
+        if (!canEditDetails)
+        {
+            return Unauthorized();
+        }
+
         req.SongLink.Comment = req.SongLink.Comment.Trim();
-        string sh = Constants.SelfhostAddress!;
         int rows = await connection.ExecuteAsync(
             "UPDATE music_external_link SET attributes = @Attributes, lineage = @Lineage, comment = @Comment where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url",
             new
