@@ -42,7 +42,9 @@
             }
             else
             {
-                <input style="margin: 5px" type="submit" class="btn btn-primary" value="Reserve Room"/>
+                <button style="margin: 5px" type="submit" class="btn btn-primary" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.PlayQuiz))">
+                    Reserve Room
+                </button>
             }
         }
 
@@ -101,7 +103,7 @@
             <button type="button"
                     class="btn btn-primary"
                     style="margin: 16px"
-                    disabled="@(ClientState.Session == null || IsJoiningRoom)"
+                    disabled="@(ClientState.Session == null || IsJoiningRoom || !AuthStuff.HasPermission(ClientState.Session, PermissionKind.PlayQuiz))"
                     @onclick="@(async () => { SelectedRoomId = room.Id; SelectedRoomPassword = ""; await JoinRoom(SelectedRoomId, SelectedRoomPassword); })">
                 @(room.IsPrivate ? "🔒" : "") Join
             </button>
