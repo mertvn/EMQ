@@ -5,7 +5,7 @@ using FluentMigrator;
 namespace EMQ.Server.Db.Migrations.Song;
 
 [Tags("SONG")]
-[Migration(20252604_000)]
+[Migration(20252604_000)] // oops
 public class AddTableMusicComment : Migration
 {
     private string tableName = "music_comment";

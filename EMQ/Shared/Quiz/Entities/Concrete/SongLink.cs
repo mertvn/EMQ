@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -29,6 +30,13 @@ public partial class SongLink
     public MediaAnalyserResult? AnalysisRaw { get; set; }
 
     public SongReport? LastUnhandledReport { get; set; }
+
+    public SongLinkAttributes Attributes { get; set; }
+
+    public SongLinkLineage Lineage { get; set; }
+
+    [MaxLength(4096)]
+    public string Comment { get; set; } = "";
 
     public override string ToString() => Url;
 
@@ -148,4 +156,55 @@ public enum SongLinkType
 
     [Description("AniDB song")]
     AniDBSong,
+}
+
+[Flags]
+public enum SongLinkAttributes
+{
+    None = 0,
+
+    [Description("Audio edited")]
+    AudioEdited = 1,
+
+    [Description("Audio replaced")]
+    AudioReplaced = 2,
+
+    [Description("Two-pass encoding")]
+    TwoPassEncoding = 4,
+}
+
+[Flags]
+public enum SongLinkLineage
+{
+    Unknown = 0,
+
+    [Description("Game files")]
+    GameFiles = 1,
+
+    [Description("Official download")]
+    OfficialDownload = 2,
+
+    [Description("Screen recording")]
+    ScreenRecording = 4,
+
+    [Description("Album")]
+    Album = 8,
+
+    [Description("Other (explain)")]
+    Other = 1048576,
+}
+
+public class ReqEditSongLinkDetails
+{
+    public ReqEditSongLinkDetails(SongLink songLink, int mId)
+    {
+        SongLink = songLink;
+        MId = mId;
+    }
+
+    [Required]
+    public SongLink SongLink { get; }
+
+    [Required]
+    public int MId { get; }
 }

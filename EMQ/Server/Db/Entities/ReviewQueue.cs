@@ -43,4 +43,14 @@ public class ReviewQueue
     public MediaAnalyserResult? analysis_raw { get; set; }
 
     public string? sha256 { get; set; }
+
+    [Required]
+    public SongLinkAttributes attributes { get; set; }
+
+    [Required]
+    public SongLinkLineage lineage { get; set; }
+
+    [Required]
+    [MaxLength(4096)]
+    public string comment { get; set; } = "";
 }

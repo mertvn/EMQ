@@ -347,6 +347,9 @@ ORDER BY music_id;";
                             SubmittedBy = musicExternalLink.submitted_by,
                             Sha256 = musicExternalLink.sha256,
                             AnalysisRaw = musicExternalLink.analysis_raw,
+                            Attributes = musicExternalLink.attributes,
+                            Lineage = musicExternalLink.lineage,
+                            Comment = musicExternalLink.comment,
                         });
                     }
 
@@ -382,6 +385,9 @@ ORDER BY music_id;";
                                 SubmittedBy = musicExternalLink.submitted_by,
                                 Sha256 = musicExternalLink.sha256,
                                 AnalysisRaw = musicExternalLink.analysis_raw,
+                                Attributes = musicExternalLink.attributes,
+                                Lineage = musicExternalLink.lineage,
+                                Comment = musicExternalLink.comment,
                             });
                         }
                     }
@@ -1609,6 +1615,9 @@ GROUP BY artist_id";
                     submitted_by = songLink.SubmittedBy,
                     sha256 = songLink.Sha256,
                     analysis_raw = songLink.AnalysisRaw,
+                    attributes = songLink.Attributes,
+                    lineage = songLink.Lineage,
+                    comment = songLink.Comment,
                 }, transaction))
             {
                 throw new Exception("Failed to insert mel");
@@ -3294,6 +3303,9 @@ AND msm.type = ANY(@msmType)";
                 submitted_by = songLink.SubmittedBy,
                 sha256 = songLink.Sha256,
                 analysis_raw = songLink.AnalysisRaw,
+                attributes = songLink.Attributes,
+                lineage = songLink.Lineage,
+                comment = songLink.Comment,
             };
 
             if (mel.duration == default)
@@ -3397,6 +3409,9 @@ AND msm.type = ANY(@msmType)";
                     status = (int)ReviewQueueStatus.Pending,
                     reason = null,
                     sha256 = songLink.Sha256,
+                    attributes = songLink.Attributes,
+                    lineage = songLink.Lineage,
+                    comment = songLink.Comment,
                 };
 
                 rq.analysis_raw ??= songLink.AnalysisRaw;
@@ -3804,6 +3819,9 @@ AND msm.type = ANY(@msmType)";
                 duration = reviewQueue.duration,
                 analysis_raw = reviewQueue.analysis_raw,
                 sha256 = reviewQueue.sha256,
+                attributes = reviewQueue.attributes,
+                lineage = reviewQueue.lineage,
+                comment = reviewQueue.comment,
             };
 
             rqs.Add(rq);
@@ -3835,6 +3853,9 @@ AND msm.type = ANY(@msmType)";
                 duration = reviewQueue.duration,
                 analysis_raw = reviewQueue.analysis_raw,
                 sha256 = reviewQueue.sha256,
+                attributes = reviewQueue.attributes,
+                lineage = reviewQueue.lineage,
+                comment = reviewQueue.comment,
             };
 
             return rq;
@@ -3965,6 +3986,9 @@ AND msm.type = ANY(@msmType)";
                         SubmittedBy = rq.submitted_by,
                         Sha256 = rq.sha256,
                         AnalysisRaw = rq.analysis_raw,
+                        Attributes = rq.attributes,
+                        Lineage = rq.lineage,
+                        Comment = rq.comment,
                     };
                     success = await InsertSongLink(rq.music_id, songLink, null);
                     break;

@@ -95,14 +95,14 @@ public partial class SongInfoCardWrapperComponent
         StateHasChanged();
     }
 
-    private async Task OnclickAnalysis(SongLink soundLink)
+    private async Task OnclickAnalysis(int mId, SongLink soundLink)
     {
         CurrentRQs = new List<RQ>
         {
             new()
             {
                 id = 1,
-                music_id = 0,
+                music_id = mId,
                 url = soundLink.Url,
                 type = soundLink.Type,
                 is_video = soundLink.IsVideo,
@@ -114,7 +114,10 @@ public partial class SongInfoCardWrapperComponent
                 Song = new Song(),
                 duration = soundLink.Duration,
                 analysis_raw = soundLink.AnalysisRaw,
-                sha256 = soundLink.Sha256
+                sha256 = soundLink.Sha256,
+                attributes = soundLink.Attributes,
+                lineage = soundLink.Lineage,
+                comment = soundLink.Comment,
             }
         }.AsQueryable();
 

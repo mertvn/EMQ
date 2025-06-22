@@ -40,23 +40,11 @@ public partial class ReviewComponent
 
     private RQ? reviewingItem => CurrentRQs?.FirstOrDefault(x => x.id == reviewingId);
 
-    private string? videoSrc
-    {
-        get
-        {
-            if (reviewingItem is null)
-            {
-                return null;
-            }
-
-            string url = reviewingItem.url;
-            return url;
-        }
-    }
-
     private bool IsOpen;
 
     private bool controls = true;
+
+    private bool IsReady { get; set; } = true;
 
     private bool ApplyToBGMBatch { get; set; }
 
@@ -80,79 +68,95 @@ public partial class ReviewComponent
         }
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-    }
-
     public async Task Onclick_Reject()
     {
-        await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
-            ReviewQueueStatus.Rejected);
-        if (reviewingItem.is_video)
+        if (IsReady)
         {
-            var weba = CurrentRQs!.FirstOrDefault(x =>
-                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
-                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
-            if (weba != null)
+            IsReady = false;
+            await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
+                ReviewQueueStatus.Rejected);
+            if (reviewingItem.is_video)
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Rejected);
+                var weba = CurrentRQs!.FirstOrDefault(x =>
+                    x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
+                    x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+                if (weba != null)
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason,
+                        ReviewQueueStatus.Rejected);
+                }
             }
-        }
 
-        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-        {
-            foreach (RQ rq in BGMBatch.Reverse())
+            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Rejected);
+                foreach (RQ rq in BGMBatch.Reverse())
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Rejected);
+                }
             }
+
+            IsReady = true;
         }
     }
 
     public async Task Onclick_Pending()
     {
-        await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
-            ReviewQueueStatus.Pending);
-        if (reviewingItem.is_video)
+        if (IsReady)
         {
-            var weba = CurrentRQs!.FirstOrDefault(x =>
-                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
-                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
-            if (weba != null)
+            IsReady = false;
+            await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
+                ReviewQueueStatus.Pending);
+            if (reviewingItem.is_video)
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Pending);
+                var weba = CurrentRQs!.FirstOrDefault(x =>
+                    x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
+                    x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+                if (weba != null)
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Pending);
+                }
             }
-        }
 
-        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-        {
-            foreach (RQ rq in BGMBatch.Reverse())
+            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Pending);
+                foreach (RQ rq in BGMBatch.Reverse())
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Pending);
+                }
             }
+
+            IsReady = true;
         }
     }
 
     public async Task Onclick_Approve()
     {
-        await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
-            ReviewQueueStatus.Approved);
-        if (reviewingItem.is_video)
+        if (IsReady)
         {
-            var weba = CurrentRQs!.FirstOrDefault(x =>
-                x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
-                x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
-            if (weba != null)
+            IsReady = false;
+            await ReviewQueueComponent!.SendUpdateReviewQueueItem(reviewingItem!, reviewingItem!.reason,
+                ReviewQueueStatus.Approved);
+            if (reviewingItem.is_video)
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason, ReviewQueueStatus.Approved);
+                var weba = CurrentRQs!.FirstOrDefault(x =>
+                    x.music_id == reviewingItem.music_id && x.id > reviewingItem.id &&
+                    x.url.Replace("weba/", "").EndsWith($"{reviewingItem.url.Replace(".webm", ".weba")}"));
+                if (weba != null)
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(weba, weba.reason,
+                        ReviewQueueStatus.Approved);
+                }
             }
-        }
 
-        if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-        {
-            foreach (RQ rq in BGMBatch.Reverse())
+            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
-                await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Approved);
+                foreach (RQ rq in BGMBatch.Reverse())
+                {
+                    await ReviewQueueComponent!.SendUpdateReviewQueueItem(rq, rq.reason, ReviewQueueStatus.Approved);
+                }
             }
+
+            IsReady = true;
         }
     }
 
@@ -176,5 +180,67 @@ public partial class ReviewComponent
     {
         StateHasChanged();
         _modalRef!.Show();
+    }
+
+    // todo? changes made after clicking on analysis in the library will not be reflected in the review queue
+    private async Task SendEditSongLinkDetailsReq()
+    {
+        if (IsReady)
+        {
+            IsReady = false;
+            var req = new ReqEditSongLinkDetails(new SongLink()
+            {
+                Url = reviewingItem!.url,
+                Attributes = reviewingItem.attributes,
+                Lineage = reviewingItem.lineage,
+                Comment = reviewingItem.comment,
+            }, reviewingItem.music_id);
+            var res = await _client.PostAsJsonAsync("Library/EditSongLinkDetails", req);
+            if (!res.IsSuccessStatusCode)
+            {
+                await _jsRuntime.InvokeVoidAsync("alert",
+                    $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+            }
+
+            IsReady = true;
+        }
+    }
+
+    private async Task OnAttributesCheckboxClick(bool value, SongLinkAttributes attribute)
+    {
+        if (value)
+        {
+            if (!reviewingItem!.is_video &&
+                attribute is SongLinkAttributes.AudioReplaced or SongLinkAttributes.TwoPassEncoding)
+            {
+                return;
+            }
+
+            reviewingItem!.attributes |= attribute;
+        }
+        else
+        {
+            reviewingItem!.attributes ^= attribute;
+        }
+
+        await SendEditSongLinkDetailsReq();
+        StateHasChanged();
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+    private async Task OnLineageCheckboxClick(bool value, SongLinkLineage lineage)
+    {
+        if (value)
+        {
+            reviewingItem!.lineage |= lineage;
+        }
+        else
+        {
+            reviewingItem!.lineage ^= lineage;
+        }
+
+        await SendEditSongLinkDetailsReq();
+        StateHasChanged();
+        ParentStateHasChangedCallback?.Invoke();
     }
 }

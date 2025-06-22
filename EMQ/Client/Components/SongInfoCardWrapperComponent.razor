@@ -144,7 +144,7 @@
                                             @if (videoLink.AnalysisRaw != null)
                                             {
                                                 string analysisColor = videoLink.AnalysisRaw.Warnings.Any() ? "red" : "green";
-                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(videoLink))">?</span>
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(song.Id, videoLink))">?</span>
                                             }
 
                                             @if (videoLink.LastUnhandledReport != null)
@@ -232,7 +232,7 @@
                                             @if (soundLink.AnalysisRaw != null)
                                             {
                                                 string analysisColor = soundLink.AnalysisRaw.Warnings.Any() ? "red" : "green";
-                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(soundLink))">?</span>
+                                                <span style="display: inline-block; cursor: pointer; margin-right: 4px; color: @analysisColor" @onclick="@(async () => await OnclickAnalysis(song.Id, soundLink))">?</span>
                                             }
 
                                             @if (soundLink.LastUnhandledReport != null)

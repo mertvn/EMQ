@@ -876,6 +876,60 @@ public class LibraryController : ControllerBase
         return eqId > 0 ? Ok() : StatusCode(500);
     }
 
+    [CustomAuthorize(PermissionKind.UploadSongLink)]
+    [HttpPost]
+    [Route("EditSongLinkDetails")]
+    public async Task<ActionResult> EditSongLinkDetails(ReqEditSongLinkDetails req)
+    {
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        req.SongLink.Comment = req.SongLink.Comment.Trim();
+        string sh = Constants.SelfhostAddress!;
+        int rows = await connection.ExecuteAsync(
+            "UPDATE music_external_link SET attributes = @Attributes, lineage = @Lineage, comment = @Comment where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url",
+            new
+            {
+                req.SongLink.Attributes,
+                req.SongLink.Lineage,
+                req.SongLink.Comment,
+                req.MId,
+                sh,
+                Url = req.SongLink.Url.UnReplaceSelfhostLink()
+            }, transaction);
+        rows += await connection.ExecuteAsync(
+            "UPDATE review_queue SET attributes = @Attributes, lineage = @Lineage, comment = @Comment where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url",
+            new
+            {
+                req.SongLink.Attributes,
+                req.SongLink.Lineage,
+                req.SongLink.Comment,
+                req.MId,
+                sh,
+                Url = req.SongLink.Url.UnReplaceSelfhostLink()
+            }, transaction);
+        if (rows is <= 0 or >= 1000)
+        {
+            return StatusCode(410);
+        }
+
+        await transaction.CommitAsync();
+        await DbManager.EvictFromSongsCache(req.MId);
+        return Ok();
+    }
+
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindSongsByQuizSettings")]

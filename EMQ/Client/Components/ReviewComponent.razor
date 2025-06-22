@@ -23,146 +23,222 @@
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000" RenderMode="Blazorise.ModalRenderMode.LazyReload"
                  Opened="@(async () => await OnOpened())" Closed="@(async () => await OnClosed())">
-    <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Fullscreen">
-        <Blazorise.ModalHeader>
-            <Blazorise.ModalTitle>Review</Blazorise.ModalTitle>
-        </Blazorise.ModalHeader>
-        <Blazorise.ModalBody>
+<Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Fullscreen">
+<Blazorise.ModalBody>
 
-            @if (IsLibraryPage)
+@if (IsLibraryPage)
+{
+    <button type="button" class="btn btn-primary" disabled="@(!IsReady)"
+            @onclick="@(() => { reviewingId = CurrentRQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">
+        Seek to pending
+    </button>
+
+    <span>ID: </span>
+    <input type="number" id="input_reviewingId" disabled="@(!IsReady)" @bind="reviewingId"/>
+
+    <span>Status: </span>
+    <span style="color: @UiHelpers.Bools2Color(reviewingItem?.status == ReviewQueueStatus.Approved, reviewingItem?.status == ReviewQueueStatus.Rejected, "green", "red")">
+        @reviewingItem?.status.ToString()
+    </span>
+}
+
+URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @reviewingItem?.url</a>
+
+@if (reviewingItem != null && !string.IsNullOrEmpty(reviewingItem.analysis) && reviewingItem.analysis != Constants.AnalysisOkStr)
+{
+    <br/>
+    <span style="color: red;">Analysis: @reviewingItem.analysis</span>
+}
+
+<br/>
+@if ((CurrentRQs?.Any() ?? false) && IsOpen && reviewingItem != null)
+{
+    <div style="margin: 5px;">
+        @if (IsLibraryPage)
+        {
+            <button type="button" class="btn btn-primary" disabled="@(!IsReady || !(reviewingId > CurrentRQs.MinBy(x => x.id)!.id))"
+                    @onclick="@(() => { reviewingId -= 1; })">
+                ←Previous
+            </button>
+            <button type="button" class="btn btn-primary" disabled="@(!IsReady || !(reviewingId + 1 <= CurrentRQs.MaxBy(x => x.id)!.id))"
+                    @onclick="@(() => { reviewingId += 1; })">
+                Next→
+            </button>
+        }
+
+        <div class="songLinkDetails" style="display: inline-flex;">
+            @if (!reviewingItem.url.EndsWith(".weba"))
             {
-                <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentRQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
+                bool canEditDetails = isReviewModerator || string.Equals(reviewingItem.submitted_by, ClientState.Session?.Player.Username, StringComparison.OrdinalIgnoreCase);
+                <textarea id="note_user" disabled="@(!IsReady || !canEditDetails)"
+                                 rows="1" cols="35" maxlength="4096" placeholder="Notes (User)"
+                                 @bind="reviewingItem.comment" @bind:after="@SendEditSongLinkDetailsReq" style="margin-left: 15px; height: 100px; resize: both;"></textarea>
 
-                <span>ID: </span>
-                <input type="number" id="input_reviewingId" @bind="reviewingId"/>
+                <details open style="margin-left: 15px;">
+                    <summary>Attributes</summary>
+                    @foreach (SongLinkAttributes key in Enum.GetValues<SongLinkAttributes>())
+                    {
+                        if (key == SongLinkAttributes.None)
+                        {
+                            continue;
+                        }
 
-                <span>Status: </span>
-                <span style="color: @UiHelpers.Bools2Color(reviewingItem?.status == ReviewQueueStatus.Approved, reviewingItem?.status == ReviewQueueStatus.Rejected, "green", "red")">
-                    @reviewingItem?.status.ToString()
-                </span>
+                        <label>
+                            <input type="checkbox" class="form-check-input" disabled="@(!IsReady || !canEditDetails)"
+                                   @bind:get="@reviewingItem.attributes.HasFlag(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnAttributesCheckboxClick(value, key)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            @if (!string.IsNullOrEmpty(key.GetDescription()))
+                            {
+                                @key.GetDescription()
+                            }
+                            else
+                            {
+                                @key.ToString()
+                            }
+                        </label>
+                        <br/>
+                    }
+                </details>
+
+                <details open style="margin-left: 15px;">
+                    <summary>Lineage</summary>
+                    @foreach (SongLinkLineage key in Enum.GetValues<SongLinkLineage>())
+                    {
+                        if (key == SongLinkLineage.Unknown)
+                        {
+                            continue;
+                        }
+
+                        <label>
+                            <input type="checkbox" class="form-check-input" disabled="@(!IsReady || !canEditDetails)"
+                                   @bind:get="@reviewingItem.lineage.HasFlag(key)"
+                                   @bind:set="@(new Func<bool, Task>(async value => await OnLineageCheckboxClick(value, key)))"
+                                   @bind:event="oninput"
+                                   style="margin: 5px"/>
+                            @if (!string.IsNullOrEmpty(key.GetDescription()))
+                            {
+                                @key.GetDescription()
+                            }
+                            else
+                            {
+                                @key.ToString()
+                            }
+                        </label>
+                        <br/>
+                    }
+                </details>
             }
+        </div>
+    </div>
 
-            URL: <a class="link-primary" href="@videoSrc" target="_blank"> @videoSrc</a>
+    <button type="button" class="btn btn-secondary" @onclick="@(() => controls = !controls)">Toggle controls</button>
 
-            @if (reviewingItem != null && !string.IsNullOrEmpty(reviewingItem.analysis) && reviewingItem.analysis != Constants.AnalysisOkStr)
+    <div style="display: flex; flex-wrap: wrap; margin: 5px;">
+        <div style="position: relative; width: 720px; height: 400px;">
+            <video src="@reviewingItem.url"
+                   id="@VideoElementId" width="720px" height="400px" autoplay controls="@controls"
+                   style="background: black; margin: 5px 20px 5px 5px;">
+            </video>
+
+            @if (!reviewingItem.is_video)
             {
+                <p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: xxx-large; color: white; z-index: 3000; margin: 0;">
+                    Sound only
+                </p>
+            }
+        </div>
+
+        @if (IsLibraryPage)
+        {
+            <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem.Song })" IsLibraryPage="false"/>
+        }
+
+        @if (reviewingItem.analysis_raw != null)
+        {
+            <ul>
+                <li>Resolution: @reviewingItem.analysis_raw.Width x @reviewingItem.analysis_raw.Height</li>
+                <li>Average FPS: @Math.Round(reviewingItem.analysis_raw.AvgFramerate ?? 0, 2)</li>
+                <li>Video bitrate (kbps): @reviewingItem.analysis_raw.VideoBitrateKbps</li>
+                <li>Audio bitrate (kbps): @reviewingItem.analysis_raw.AudioBitrateKbps</li>
+                <li>
+                    @{
+                        double overallBitrate = Math.Round(reviewingItem.analysis_raw.OverallBitrateKbps ?? 0, 2);
+                        <span style="color: @UiHelpers.Bool2Color(overallBitrate > 3000, "red", "inherit");"> Overall bitrate (kbps): @overallBitrate</span>
+                    }
+                </li>
+                <li>Filesize: @Math.Round(reviewingItem.analysis_raw.FilesizeMb ?? 0, 2) MB</li>
                 <br/>
-                <span style="color: red;">Analysis: @reviewingItem.analysis</span>
-            }
-
-            <br/>
-            @if ((CurrentRQs?.Any() ?? false) && IsOpen && reviewingItem != null)
-            {
-                @if (IsLibraryPage)
+                @if (reviewingItem.analysis_raw.VolumeDetect != null)
                 {
-                    <div style="margin: 5px;">
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentRQs.MinBy(x => x.id)!.id))" @onclick="@(() => { reviewingId -= 1; })">←Previous</button>
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentRQs.MaxBy(x => x.id)!.id))" @onclick="@(() => { reviewingId += 1; })">Next→</button>
-                    </div>
+                    @foreach (string line in reviewingItem.analysis_raw.VolumeDetect)
+                    {
+                        <li>@line</li>
+                    }
                 }
 
-                <button type="button" class="btn btn-secondary" @onclick="@(() => controls = !controls)">Toggle controls</button>
-
-                <div style="display: flex; flex-wrap: wrap; margin: 5px;">
-                        <div style="position: relative; width: 720px; height: 400px;">
-                        <video src="@videoSrc"
-                               id="@VideoElementId" width="720px" height="400px" autoplay controls="@controls"
-                               style="background: black; margin: 5px 20px 5px 5px;">
-                        </video>
-
-                            @if (!reviewingItem.is_video)
-                            {
-                                <p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: xxx-large; color: white; z-index: 3000; margin: 0;">
-                                    Sound only
-                                </p>
-                            }
-                        </div>
-
-                    @if (IsLibraryPage)
-                    {
-                        <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem.Song })" IsLibraryPage="false"/>
-                    }
-
-                    @if (reviewingItem.analysis_raw != null)
-                    {
-                        <ul>
-                            <li>Resolution: @reviewingItem.analysis_raw.Width x @reviewingItem.analysis_raw.Height</li>
-                            <li>Average FPS: @Math.Round(reviewingItem.analysis_raw.AvgFramerate ?? 0, 2)</li>
-                            <li>Video bitrate (kbps): @reviewingItem.analysis_raw.VideoBitrateKbps</li>
-                            <li>Audio bitrate (kbps): @reviewingItem.analysis_raw.AudioBitrateKbps</li>
-                            <li>
-                                @{
-                                    double overallBitrate = Math.Round(reviewingItem.analysis_raw.OverallBitrateKbps ?? 0, 2);
-                                    <span style="color: @UiHelpers.Bool2Color(overallBitrate > 3000, "red", "inherit");"> Overall bitrate (kbps): @overallBitrate</span>
-                                }
-                            </li>
-                            <li>Filesize: @Math.Round(reviewingItem.analysis_raw.FilesizeMb ?? 0, 2) MB</li>
-                            <br/>
-                            @if (reviewingItem.analysis_raw.VolumeDetect != null)
-                            {
-                                @foreach (string line in reviewingItem.analysis_raw.VolumeDetect)
-                                {
-                                    <li>@line</li>
-                                }
-                            }
-
-                            @if (reviewingItem.analysis_raw.EncodedByEmq != null)
-                            {
-                                <br/>
-                                <li>
-                                    Encoded by EMQ:
-                                    <span style="color: @UiHelpers.Bool2Color(reviewingItem.analysis_raw.EncodedByEmq, "green", "inherit");">
-                                        @reviewingItem.analysis_raw.EncodedByEmq
-                                    </span>
-                                </li>
-                            }
-                        </ul>
-
-                        @if (true)
-                        {
-                            string src = $"{Constants.WebsiteDomain}/selfhoststorage/userup/sox/{reviewingItem.url.LastSegment()}.png";
-                            <ul>
-                                <img src="@src" alt="Spectrogram"/>
-                            </ul>
-                        }
-                    }
-                </div>
-
-                @if (isReviewModerator && IsLibraryPage)
+                @if (reviewingItem.analysis_raw.EncodedByEmq != null)
                 {
-                    @if (reviewingItem.duration is null)
-                    {
-                        <span>Cannot modify item without duration.</span>
-                    }
-                    else
-                    {
-                        <textarea id="note_mod"
-                         rows="1" cols="35" maxlength="780" placeholder="Notes"
+                    <br/>
+                    <li>
+                        Encoded by EMQ:
+                        <span style="color: @UiHelpers.Bool2Color(reviewingItem.analysis_raw.EncodedByEmq, "green", "inherit");">
+                            @reviewingItem.analysis_raw.EncodedByEmq
+                        </span>
+                    </li>
+                }
+            </ul>
+
+            @if (true)
+            {
+                string src = $"{Constants.WebsiteDomain}/selfhoststorage/userup/sox/{reviewingItem.url.LastSegment()}.png";
+                <ul>
+                    <img src="@src" alt="Spectrogram"/>
+                </ul>
+            }
+        }
+    </div>
+
+    @if (isReviewModerator && IsLibraryPage)
+    {
+        @if (reviewingItem.duration is null)
+        {
+            <span>Cannot modify item without duration.</span>
+        }
+        else
+        {
+            <textarea id="note_mod"
+                         rows="1" cols="35" maxlength="780" placeholder="Notes (Mod)"
                          @bind="reviewingItem.reason" style="margin-right: 5px;"></textarea>
 
-                        <button type="button" class="btn btn-danger" disabled="@(reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="Onclick_Reject">Rejected</button>
-                        <button type="button" class="btn btn-secondary" disabled="@(reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="Onclick_Pending">Pending</button>
-                        <button type="button" class="btn btn-success" disabled="@(reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">Approved</button>
-
-                        @if (reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
-                        {
-                            <br/>
-                            <input type="checkbox" id="checkbox-ApplyToBGMBatch" class="form-check-input" @bind="@ApplyToBGMBatch"/>
-                            <label for="checkbox-ApplyToBGMBatch">Apply to BGM batch</label>
-                        }
-                    }
-                }
-
-                @if (isReviewModerator)
-                {
-                    <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
-                }
-            }
-        </Blazorise.ModalBody>
-        <Blazorise.ModalFooter>
-            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
-                Close
+            <button type="button" class="btn btn-danger" disabled="@(!IsReady || reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="Onclick_Reject">
+                Rejected
             </button>
-        </Blazorise.ModalFooter>
-    </Blazorise.ModalContent>
+            <button type="button" class="btn btn-secondary" disabled="@(!IsReady || reviewingItem.status == ReviewQueueStatus.Pending)" @onclick="Onclick_Pending">
+                Pending
+            </button>
+            <button type="button" class="btn btn-success" disabled="@(!IsReady || reviewingItem.status == ReviewQueueStatus.Approved)" @onclick="Onclick_Approve">
+                Approved
+            </button>
+
+            @if (reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            {
+                <br/>
+                <input type="checkbox" id="checkbox-ApplyToBGMBatch" class="form-check-input" @bind="@ApplyToBGMBatch"/>
+                <label for="checkbox-ApplyToBGMBatch">Apply to BGM batch</label>
+            }
+        }
+    }
+
+    <details>
+        <summary>JSON</summary>
+        <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
+    </details>
+}
+</Blazorise.ModalBody>
+<button type="button" class="btn btn-secondary" style="position: absolute; bottom: 2%; right: 2%;" @onclick="@(() => { _modalRef.Hide(); })">
+    Close
+</button>
+</Blazorise.ModalContent>
 </Blazorise.Modal>

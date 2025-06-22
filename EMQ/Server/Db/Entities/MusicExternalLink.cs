@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -28,7 +29,17 @@ public class MusicExternalLink
     public string? submitted_by { get; set; }
 
     // [Required] // todo
-    public string sha256 { get; set; }  = "";
+    public string sha256 { get; set; } = "";
 
     public MediaAnalyserResult? analysis_raw { get; set; }
+
+    [Required]
+    public SongLinkAttributes attributes { get; set; }
+
+    [Required]
+    public SongLinkLineage lineage { get; set; }
+
+    [Required]
+    [MaxLength(4096)]
+    public string comment { get; set; } = "";
 }

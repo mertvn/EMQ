@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -22,6 +23,7 @@ public class RQ
 
     public ReviewQueueStatus status { get; set; }
 
+    // mod note
     public string? reason { get; set; }
 
     public string? analysis { get; set; }
@@ -33,6 +35,13 @@ public class RQ
     public MediaAnalyserResult? analysis_raw { get; set; }
 
     public string? sha256 { get; set; }
+
+    public SongLinkAttributes attributes { get; set; }
+
+    public SongLinkLineage lineage { get; set; }
+
+    // user note
+    public string comment { get; set; } = "";
 }
 
 // todo move

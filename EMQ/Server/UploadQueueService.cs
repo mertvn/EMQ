@@ -276,13 +276,17 @@ public sealed class UploadQueueService : BackgroundService
             }
 
             uploadResult.IsSuccess = true;
+            bool isVideo = uploadResult.ResultUrl.IsVideoLink();
             var songLink = new SongLink
             {
                 Url = uploadResult.ResultUrl.UnReplaceSelfhostLink(),
                 Type = SongLinkType.Self,
-                IsVideo = uploadResult.ResultUrl.IsVideoLink(),
+                IsVideo = isVideo,
                 SubmittedBy = session.Player.Username,
                 Sha256 = sha256,
+                Attributes = isVideo && encodedByEmq && value.UploadOptions.DoTwoPass
+                    ? SongLinkAttributes.TwoPassEncoding
+                    : SongLinkAttributes.None,
             };
 
             await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
