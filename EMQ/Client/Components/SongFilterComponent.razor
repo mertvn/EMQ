@@ -151,6 +151,7 @@
             return songs;
         }
 
+        var parsedLineageStatus = Enum.Parse<SongLinkLineage>(LineageStatus);
         return songs.Where(song =>
         {
             if (checkVideo)
@@ -197,7 +198,7 @@
 
             if (checkLineage)
             {
-                bool lineageMatches = song.Links.Any(x => x.IsFileLink && x.Lineage.ToString() == LineageStatus);
+                bool lineageMatches = song.Links.Any(x => x.IsFileLink && x.Lineage.HasFlag(parsedLineageStatus));
                 bool result = ApplyNot ? !lineageMatches : lineageMatches;
                 switch (UseAnd)
                 {
