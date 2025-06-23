@@ -198,7 +198,10 @@
 
             if (checkLineage)
             {
-                bool lineageMatches = song.Links.Any(x => x.IsFileLink && x.Lineage.HasFlag(parsedLineageStatus));
+                bool isUnknown = parsedLineageStatus == SongLinkLineage.Unknown;
+                bool lineageMatches = isUnknown
+                    ? song.Links.Any(x => x.IsFileLink && x.Lineage == parsedLineageStatus)
+                    : song.Links.Any(x => x.IsFileLink && x.Lineage.HasFlag(parsedLineageStatus));
                 bool result = ApplyNot ? !lineageMatches : lineageMatches;
                 switch (UseAnd)
                 {
