@@ -34,18 +34,15 @@
         <label for="RoomPassword">Room password</label>
         <br/>
 
-        @if (ClientState.Session != null)
+        @if (ClientState.ServerStats.Config.IsServerReadOnly)
         {
-            @if (ClientState.ServerStats.Config.IsServerReadOnly)
-            {
-                <p>Server is in read-only mode.</p>
-            }
-            else
-            {
-                <button style="margin: 5px" type="submit" class="btn btn-primary" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.PlayQuiz))">
-                    Reserve Room
-                </button>
-            }
+            <p>Server is in read-only mode.</p>
+        }
+        else
+        {
+            <button style="margin: 5px" type="submit" class="btn btn-primary" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.CreateRoom))">
+                Reserve Room
+            </button>
         }
 
     </EditForm>
