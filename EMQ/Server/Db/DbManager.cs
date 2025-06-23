@@ -5255,6 +5255,25 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
 
         newSong.Id = oldMid;
+
+        var oldLinks = oldSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url).ToArray();
+        var newLinks = newSong.Links.Where(x => x.IsFileLink).OrderBy(x => x.Url).ToArray();
+        for (int i = 0; i < newLinks.Length; i++)
+        {
+            SongLink oldLink = oldLinks[i];
+            SongLink newLink = newLinks[i];
+            if (oldLink.Url != newLink.Url)
+            {
+                throw new Exception(
+                    $"Urls differ: {oldLink.Url} versus {newLink.Url}");
+            }
+
+            // always use what's in the database already
+            newLink.Attributes = oldLink.Attributes;
+            newLink.Lineage = oldLink.Lineage;
+            newLink.Comment = oldLink.Comment;
+        }
+
         int mId = await InsertSong(newSong, connection, transaction, !isImport, isImport);
         if (mId <= 0 || mId != oldMid)
         {
