@@ -30,7 +30,7 @@ public partial class ReviewComponent
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
 
     [Parameter]
-    public bool IsLibraryPage { get; set; }
+    public bool IsRQComp { get; set; }
 
     private Blazorise.Modal _modalRef = null!;
 

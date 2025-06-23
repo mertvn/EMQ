@@ -15,7 +15,7 @@
     bool isReviewModerator = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewSongLink);
 }
 
-@if (IsLibraryPage)
+@if (IsRQComp)
 {
     <button type="button" class="btn btn-primary" style="margin-bottom: 5px;" @onclick="@(() => { _modalRef.Show(); })">Review</button>
 }
@@ -26,7 +26,7 @@
 <Blazorise.ModalContent Centered Size="Blazorise.ModalSize.Fullscreen">
 <Blazorise.ModalBody>
 
-@if (IsLibraryPage)
+@if (IsRQComp)
 {
     <button type="button" class="btn btn-primary" disabled="@(!IsReady)"
             @onclick="@(() => { reviewingId = CurrentRQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">
@@ -54,7 +54,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
 @if ((CurrentRQs?.Any() ?? false) && IsOpen && reviewingItem != null)
 {
     <div style="margin: 5px;">
-        @if (IsLibraryPage)
+        @if (IsRQComp)
         {
             <button type="button" class="btn btn-primary" disabled="@(!IsReady || !(reviewingId > CurrentRQs.MinBy(x => x.id)!.id))"
                     @onclick="@(() => { reviewingId -= 1; })">
@@ -138,7 +138,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
     <div style="display: flex; flex-wrap: wrap; margin: 5px;">
         <div style="position: relative; width: 720px; height: 400px;">
             <video src="@reviewingItem.url"
-                   id="@VideoElementId" width="720px" height="400px" autoplay controls="@controls"
+                   id="@VideoElementId" width="720px" height="400px" autoplay="@(IsRQComp)" controls="@controls"
                    style="background: black; margin: 5px 20px 5px 5px;">
             </video>
 
@@ -150,7 +150,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
             }
         </div>
 
-        @if (IsLibraryPage)
+        @if (IsRQComp)
         {
             <SongInfoCardWrapperComponent CurrentSongs="@(new List<Song> { reviewingItem.Song })" IsLibraryPage="false"/>
         }
@@ -200,7 +200,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
         }
     </div>
 
-    @if (isReviewModerator && IsLibraryPage)
+    @if (isReviewModerator && IsRQComp)
     {
         @if (reviewingItem.duration is null)
         {
