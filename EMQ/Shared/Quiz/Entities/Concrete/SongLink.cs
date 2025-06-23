@@ -60,7 +60,7 @@ public partial class SongLink
         var links = dbSongLinks.Where(x => x.IsFileLink).ToList();
         if (!links.All(x => x.Attributes.HasFlag(SongLinkAttributes.NonCanon)))
         {
-            links = links.Where(x => x.Attributes.HasFlag(SongLinkAttributes.NonCanon)).ToList();
+            links = links.Where(x => !x.Attributes.HasFlag(SongLinkAttributes.NonCanon)).ToList();
         }
 
         SongLink? targetVideoLink;
