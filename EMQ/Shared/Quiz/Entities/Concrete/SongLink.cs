@@ -57,7 +57,11 @@ public partial class SongLink
     public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks, bool preferLong = false)
     {
         var res = new List<SongLink>();
-        var links = dbSongLinks.Where(x => x.IsFileLink && !x.Attributes.HasFlag(SongLinkAttributes.NonCanon)).ToList();
+        var links = dbSongLinks.Where(x => x.IsFileLink).ToList();
+        if (!links.All(x => x.Attributes.HasFlag(SongLinkAttributes.NonCanon)))
+        {
+            links = links.Where(x => x.Attributes.HasFlag(SongLinkAttributes.NonCanon)).ToList();
+        }
 
         SongLink? targetVideoLink;
         SongLink? targetSoundLink;
