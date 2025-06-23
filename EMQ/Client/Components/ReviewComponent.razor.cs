@@ -211,7 +211,8 @@ public partial class ReviewComponent
         if (value)
         {
             if (!reviewingItem!.is_video &&
-                attribute is SongLinkAttributes.AudioReplaced or SongLinkAttributes.TwoPassEncoding)
+                attribute is SongLinkAttributes.AudioReplaced or SongLinkAttributes.TwoPassEncoding
+                    or SongLinkAttributes.VideoReplaced)
             {
                 return;
             }
