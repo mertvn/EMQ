@@ -2713,21 +2713,28 @@ RETURNING id;",
         Console.WriteLine(
             $"enabledSongTypesForRandom: {JsonSerializer.Serialize(enabledSongTypesForRandom, Utils.Jso)}");
 
+        if (songTypesLeft != null && songTypesLeft.TryGetValue(SongSourceSongType.Random, out int _) &&
+            enabledSongTypesForRandom != null && !enabledSongTypesForRandom.Any())
+        {
+            songTypesLeft[SongSourceSongType.Random] = 0;
+        }
+
+        if (validSources != null && !validSources.Any() && doListReadKindFiltersCheck &&
+            listReadKindLeft!.TryGetValue(ListReadKind.Read, out int r) && r > 0)
+        {
+            listReadKindLeft[ListReadKind.Read] = 0;
+        }
+
         int lastIndex = 0;
         var songsDict = new Dictionary<int, Song>();
         int totalSelected = 0;
         foreach ((int mId, string? mselUrl) in ids)
         {
             if (ret.Count >= numSongs ||
-                songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0))
+                (songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0)) ||
+                (listReadKindLeft != null && !listReadKindLeft.Any(x => x.Value > 0)))
             {
                 break;
-            }
-
-            if (songTypesLeft != null && songTypesLeft.TryGetValue(SongSourceSongType.Random, out int _) &&
-                enabledSongTypesForRandom != null && !enabledSongTypesForRandom.Any())
-            {
-                songTypesLeft[SongSourceSongType.Random] = 0;
             }
 
             if (!addedMselUrls.Contains(mselUrl) || duplicates)
@@ -2758,17 +2765,17 @@ RETURNING id;",
                     bool isRead = validSources != null && songSourceVndbUrls.Any(x => validSources.Contains(x));
                     foreach ((ListReadKind key, int value) in listReadKindLeft!)
                     {
+                        // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
+                        if (value <= 0)
+                        {
+                            // Console.WriteLine("canAdd = false");
+                            canAdd = false;
+                            continue;
+                        }
+
                         if (key == ListReadKind.Random || ((key == ListReadKind.Read && isRead) ||
                                                            (key == ListReadKind.Unread && !isRead)))
                         {
-                            // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
-                            if (value <= 0)
-                            {
-                                // Console.WriteLine("canAdd = false");
-                                canAdd = false;
-                                continue;
-                            }
-
                             // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
                             // Console.WriteLine("canAdd = true");
                             canAdd = true;
@@ -2790,14 +2797,14 @@ RETURNING id;",
                     SongSourceSongType[] songTypes = song!.Sources.SelectMany(x => x.SongTypes).ToArray();
                     foreach ((SongSourceSongType key, int value) in songTypesLeft!)
                     {
+                        if (value <= 0)
+                        {
+                            canAdd = false;
+                            continue;
+                        }
+
                         if (key == SongSourceSongType.Random || songTypes.Contains(key))
                         {
-                            if (value <= 0)
-                            {
-                                canAdd = false;
-                                continue;
-                            }
-
                             if (key == SongSourceSongType.Random &&
                                 (enabledSongTypesForRandom != null &&
                                  !songTypes.Any(x => enabledSongTypesForRandom.Contains(x))))

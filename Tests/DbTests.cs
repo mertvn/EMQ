@@ -1467,6 +1467,18 @@ order by ms.id
     }
 
     [Test]
+    public async Task Test_GetRandomSongs_EmptyListPerformanceIssue()
+    {
+        string code =
+            "CBQQoJwBWAGCAaMCGgAiAggAIgQIARABIgIIAiICCAMiAggEIgIIBSoECAESACoECAISACoECAMSACoECAQSACoFCNgEEgAqBwiJBhICCBQyBAgBEAEyBAgCEAEyBAgDEAEyBAgEEAEyAwjYBDoECAAQAToECAEQAToECAIQAToECAMQAToECAQQAToECAUQAUIDCIJhSgQIttYCUGRY6AdgZGjoB3iowwGIAQGgAWSoAegHsAFkuAHoB8IBBggAEgIIBMIBBAgBEgDCAQYIAhICCBDSAQQIARAA0gEECAIQANIBBAgEEADSAQQICBAA2gEECAEQANoBBAgCEADaAQQICBAA2gEECBAQAOoBBAgBEAHqAQQIAhAB6gEECAMQAeoBBAgEEAHqAQQIBRABiAECuAEGwgEECAAQAcIBAggBwgECCALCAQIIA8IBAggEwgECCAXCAQIIBsIBAggHygECCADKAQIIAcoBAggCmgIECAAQAZoCAggBmgIECAMQAZoCBAgEEAGaAgIIBZoCBAgGEAE=";
+        var quizSettings = code.DeserializeFromBase64String_PB<QuizSettings>();
+
+        var songs = await DbManager.GetRandomSongs(quizSettings.NumSongs, quizSettings.Duplicates,
+            new List<Label>().SelectMany(x => x.VNs.Select(y => y.Key)).ToList(), quizSettings.Filters);
+        Assert.That(songs.Any());
+    }
+
+    [Test]
     public async Task Test_GetPublicUserInfoSongs()
     {
         string? resJson = await DbManager.GetPublicUserInfoSongs(2);
