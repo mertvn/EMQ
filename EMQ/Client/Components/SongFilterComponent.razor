@@ -151,7 +151,12 @@
             return songs;
         }
 
-        var parsedLineageStatus = Enum.Parse<SongLinkLineage>(LineageStatus);
+        SongLinkLineage parsedLineageStatus = SongLinkLineage.Unknown;
+        if (checkLineage)
+        {
+            parsedLineageStatus = Enum.Parse<SongLinkLineage>(LineageStatus);
+        }
+
         return songs.Where(song =>
         {
             if (checkVideo)
