@@ -69,7 +69,8 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
         <div class="songLinkDetails" style="display: inline-flex;">
             @if (!reviewingItem.url.EndsWith(".weba"))
             {
-                bool canEditDetails = isReviewModerator || string.Equals(reviewingItem.submitted_by, ClientState.Session?.Player.Username, StringComparison.OrdinalIgnoreCase);
+                bool canEditDetails = !ClientState.ResFindQueueItemsWithPendingChanges.EQs.ContainsKey(reviewingItem.music_id) &&
+                                      (isReviewModerator || string.Equals(reviewingItem.submitted_by, ClientState.Session?.Player.Username, StringComparison.OrdinalIgnoreCase));
                 <textarea id="note_user" disabled="@(!IsReady || !canEditDetails)"
                                  rows="1" cols="35" maxlength="4096" placeholder="Notes (User)"
                                  @bind="reviewingItem.comment" @bind:after="@SendEditSongLinkDetailsReq" style="margin-left: 15px; height: 100px; resize: both;"></textarea>
