@@ -2998,7 +2998,7 @@ ORDER BY artist_id";
                 re.AALatinAliasNormalized = re.AALatinAlias.NormalizeForAutocomplete();
                 re.AANonLatinAliasNormalized = re.AANonLatinAlias.NormalizeForAutocomplete();
                 re.AALatinAliasNormalizedReversed = Utils.GetReversedArtistName(re.AALatinAlias);
-                re.AANonLatinAliasNormalizedReversed =  Utils.GetReversedArtistName(re.AANonLatinAlias);
+                re.AANonLatinAliasNormalizedReversed = Utils.GetReversedArtistName(re.AANonLatinAlias);
 
                 if (artistRolesDict.TryGetValue(re.AId, out var role))
                 {
@@ -3908,8 +3908,8 @@ AND msm.type = ANY(@msmType)";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var reports = (await connection.QueryAsync<Report>(
-                    @"select * from report where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
-                    new { startDate, endDate, })).ToList();
+                @"select * from report where submitted_on >= @startDate AND submitted_on <= @endDate order by id",
+                new { startDate, endDate, })).ToList();
             var songs =
                 (await SelectSongsMIds(reports.Select(x => x.music_id).ToArray(), false)).ToDictionary(x => x.Id,
                     x => x);
