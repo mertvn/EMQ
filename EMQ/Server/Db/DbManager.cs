@@ -4372,7 +4372,7 @@ order by type";
 
             stopWatch.StartSection("lineage select");
             var lineages = (await connection.QueryAsync<int>(
-                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids)",
+                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and not url like '%.weba'",
                 new { validMids, types = SongLink.FileLinkTypes }));
 
             stopWatch.StartSection("lineage process");
