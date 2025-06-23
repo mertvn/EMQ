@@ -57,7 +57,7 @@ public partial class SongLink
     public static List<SongLink> FilterSongLinks(List<SongLink> dbSongLinks, bool preferLong = false)
     {
         var res = new List<SongLink>();
-        var links = dbSongLinks.Where(x => x.IsFileLink).ToList();
+        var links = dbSongLinks.Where(x => x.IsFileLink && !x.Attributes.HasFlag(SongLinkAttributes.NonCanon)).ToList();
 
         SongLink? targetVideoLink;
         SongLink? targetSoundLink;
@@ -171,6 +171,12 @@ public enum SongLinkAttributes
 
     [Description("Two-pass encoding")]
     TwoPassEncoding = 4,
+
+    [Description("Video replaced")]
+    VideoReplaced = 8,
+
+    [Description("Non-canon")]
+    NonCanon = 16,
 }
 
 [Flags]
