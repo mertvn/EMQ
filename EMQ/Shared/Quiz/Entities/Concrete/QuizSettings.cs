@@ -308,6 +308,12 @@ public class QuizSettings
     [DefaultValue(LivesScoringKind.Default)]
     public LivesScoringKind LivesScoringKind { get; set; } = LivesScoringKind.Default;
 
+    [ProtoMember(37)]
+    [Required]
+    [Range(1, 7777)]
+    [DefaultValue(200)]
+    public int CappedRandomLimit { get; set; } = 200;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -740,6 +746,11 @@ public class QuizSettings
         {
             diff.Add(
                 $"Lives scoring method: {o.LivesScoringKind.GetDescription()} → {n.LivesScoringKind.GetDescription()}");
+        }
+
+        if (o.CappedRandomLimit != n.CappedRandomLimit)
+        {
+            diff.Add($"CappedRandom limit: {o.CappedRandomLimit} → {n.CappedRandomLimit}");
         }
 
         return diff;

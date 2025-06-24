@@ -2465,7 +2465,20 @@ public class QuizManager
                 switch (Quiz.Room.QuizSettings.ListDistributionKind)
                 {
                     case ListDistributionKind.Random:
+                    case ListDistributionKind.CappedRandom:
                         {
+                            if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.CappedRandom)
+                            {
+                                int n = Quiz.Room.QuizSettings.CappedRandomLimit;
+                                foreach ((int key, List<string> value) in validSourcesDict)
+                                {
+                                    if (value.Count > n)
+                                    {
+                                        validSourcesDict[key] = value.Shuffle().Take(n).ToList();
+                                    }
+                                }
+                            }
+
                             dbSongs = await DbManager.GetRandomSongs(Quiz.Room.QuizSettings.NumSongs,
                                 Quiz.Room.QuizSettings.Duplicates,
                                 validSourcesDict.SelectMany(x => x.Value).Distinct().ToList(),

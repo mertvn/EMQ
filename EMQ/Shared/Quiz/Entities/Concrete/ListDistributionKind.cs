@@ -8,4 +8,5 @@ public enum ListDistributionKind
     // BalancedStrict = 1,
     Balanced = 2,
     // Unread = 3,
+    CappedRandom = 4,
 }

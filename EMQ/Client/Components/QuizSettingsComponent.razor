@@ -378,7 +378,7 @@
                             <br/>
                         </div>
 
-                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 250px;">
+                        <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 285px;">
                             @* <ValidationMessage For="@(() => ClientQuizSettings!.Filters.ListReadKindFilters)" /> *@
                             <h5>List status</h5>
 
@@ -423,6 +423,13 @@
                                 </InputSelect>
                                 <label for="ListDistributionKind">List distribution</label>
                                 <br/>
+
+                                @if (ClientQuizSettings.ListDistributionKind == ListDistributionKind.CappedRandom)
+                                {
+                                    <InputNumber id="CappedRandomLimit" @bind-Value="ClientQuizSettings.CappedRandomLimit" style="margin: 5px; width: 100px;"></InputNumber>
+                                    <label for="CappedRandomLimit">Limit per player</label>
+                                    <br/>
+                                }
 
                                 @if (!ClientQuizSettings.Filters.ListReadKindFiltersHasUnread && ClientQuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
                                 {
