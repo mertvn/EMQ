@@ -1028,11 +1028,31 @@ WHERE s.lang = 'ja'"))
         string filePath = @"N:\!anison\!anison_song.json";
         var json = JsonSerializer.Deserialize<Dictionary<int, AnisonSong>>(await File.ReadAllTextAsync(filePath),
             Utils.Jso)!;
-        var songs = (await DbManager.GetRandomSongs(int.MaxValue, true)).Where(x =>
+        var songs = (await DbManager.GetAllSongs()).Where(x =>
             !x.Sources.Any(y => y.SongTypes.Contains(SongSourceSongType.BGM))).ToArray();
+
+        // var songsTitles = songs.SelectMany(x =>
+        //         x.Titles.Where(y => y.IsMainTitle && y.Language == "ja" && y.NonLatinTitle != null)
+        //             .Select(y => (x.Id, y.NonLatinTitle!.NormalizeForAutocomplete())))
+        //     .ToLookup(x => x.Item2, x => x.Id);
+        //
+        // var songsTitles2 = songs.SelectMany(x =>
+        //         x.Titles.Where(y => y.IsMainTitle && y.Language == "ja")
+        //             .Select(y => (x.Id, y.LatinTitle.NormalizeForAutocomplete())))
+        //     .ToLookup(x => x.Item2, x => x.Id);
+        //
+        // var songsTitlesFinal = songsTitles.Concat(songsTitles2);
+
         var songsTitles = songs.SelectMany(x =>
-                x.Titles.Where(y => y.IsMainTitle && y.NonLatinTitle != null)
-                    .Select(y => (x.Id, y.NonLatinTitle!.NormalizeForAutocomplete())))
+                x.Titles.Where(y => y.IsMainTitle && y.Language == "ja")
+                    .SelectMany(y => new[]
+                    {
+                        y.NonLatinTitle != null
+                            ? (x.Id, y.NonLatinTitle.NormalizeForAutocomplete())
+                            : (default, default),
+                        (x.Id, y.LatinTitle.NormalizeForAutocomplete())
+                    })
+                    .Where(z => z.Item2 != default))
             .ToLookup(x => x.Item2, x => x.Id);
 
         SongArtistRole[] songArtistRoles =
@@ -1041,7 +1061,7 @@ WHERE s.lang = 'ja'"))
         };
 
         bool artistCheckMode = false;
-        bool tryToMatchArtistsByNames = false;
+        bool tryToMatchArtistsByNames = true;
 
         var calDict = new ConcurrentDictionary<string, List<(int, int)>>();
         var artistAliasDict = new Dictionary<int, SongArtist>();
@@ -1074,6 +1094,10 @@ WHERE s.lang = 'ja'"))
             }
 
             string norm = anison.Title.NormalizeForAutocomplete();
+            if (norm.Contains("Save the Soul".NormalizeForAutocomplete()))
+            {
+            }
+
             if (songsTitles.Contains(norm))
             {
                 // Console.WriteLine(anison.Title);
@@ -1231,7 +1255,7 @@ WHERE s.lang = 'ja'"))
                                     Console.WriteLine("addedSomething");
                                 }
 
-                                if (true && addedSomething) // todo
+                                if (addedSomething)
                                 {
                                     var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, false, url));
                                     if (actionResult is not OkResult)

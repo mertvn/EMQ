@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -111,8 +111,8 @@ public class EntryPoints_Encoding
             rarFiles.AddRange(Directory.EnumerateFiles(inputDir, $"*.{rarExtension}", SearchOption.AllDirectories));
         }
 
-        const char startChar = char.MinValue;
-        const char endChar = 'F';
+        const char startChar = 'K';
+        const char endChar = 'L';
 
         rarFiles = rarFiles.Where(x =>
         {

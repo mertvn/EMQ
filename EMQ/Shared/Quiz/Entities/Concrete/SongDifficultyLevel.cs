@@ -1,7 +1,8 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
+// todo precise diff settings (number and custom range)
 public enum SongDifficultyLevel
 {
     [Range(55.01d, 100d)]

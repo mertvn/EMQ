@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1568,6 +1568,9 @@ public class QuizManager
             Quiz.Room.Log("Not updating stats");
         }
     }
+
+    // todo generate a and mt from the wrong choices in mst
+    // also grab other a and mt from the correct choice
 
     // todo don't use SelectSongSourceBatch, create new method that returns msid and Title object
     // todo weights, and maybe min/max

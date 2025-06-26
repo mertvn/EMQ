@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -40,4 +40,5 @@ public static class ClientState
 
     public static ResFindQueueItemsWithPendingChanges ResFindQueueItemsWithPendingChanges { get; set; } = new();
 
+    // todo song lists feature
 }
