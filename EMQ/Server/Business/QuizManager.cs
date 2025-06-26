@@ -2930,7 +2930,6 @@ public class QuizManager
 
                 TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
                     Quiz.Room, false);
-                await TriggerSkipIfNecessary();
             }
             else
             {
@@ -3316,14 +3315,7 @@ public class QuizManager
                                           Quiz.QuizState.Phase is QuizPhaseKind.Guess or QuizPhaseKind.Results)))
         {
             var player = Quiz.Room.Players.Single(x => x.Id == playerId);
-            if (player.IsSkipping)
-            {
-                player.IsSkipping = false;
-            }
-            else
-            {
-                player.IsSkipping = true;
-            }
+            player.IsSkipping = !player.IsSkipping;
 
             TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
                 false);
@@ -3350,28 +3342,9 @@ public class QuizManager
         {
             if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
             {
-                bool everyoneAnsweredOrIsSkipping = true;
-                foreach (Session session in activeSessions)
+                if (activeSessions.Any(x => !x.Player.IsSkipping))
                 {
-                    if (!session.Player.IsSkipping) // don't need to check their guesses if they are skipping
-                    {
-                        bool answeredAllTypes = true;
-                        foreach ((GuessKind key, bool value) in Quiz.Room.QuizSettings.EnabledGuessKinds)
-                        {
-                            if (value)
-                            {
-                                answeredAllTypes &= !string.IsNullOrWhiteSpace(session.Player.Guess?.Dict[key]);
-                            }
-                        }
-
-                        everyoneAnsweredOrIsSkipping &= answeredAllTypes;
-                    }
-                }
-
-                if (!everyoneAnsweredOrIsSkipping)
-                {
-                    Quiz.Room.Log("not skipping because not everyone (answered || wants to skip)",
-                        writeToConsole: false);
+                    Quiz.Room.Log("not skipping because not everyone wants to skip", writeToConsole: false);
                     return;
                 }
             }
