@@ -55,10 +55,10 @@ public static class Utils
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
-    public static JsonSerializerOptions JsoNoStringEnum { get; } = new()
-    {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    };
+    // public static JsonSerializerOptions JsoNoStringEnum { get; } = new()
+    // {
+    //     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    // };
 
     public class IgnoreEmptyValuesResolver : DefaultJsonTypeInfoResolver
     {

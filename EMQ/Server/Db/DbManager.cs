@@ -2932,9 +2932,15 @@ RETURNING id;",
             {
                 re.MSTLatinTitleNormalized = re.MSTLatinTitle.NormalizeForAutocomplete();
                 re.MSTNonLatinTitleNormalized = re.MSTNonLatinTitle.NormalizeForAutocomplete();
+
+                if (re.MSTLatinTitleNormalized == re.MSTNonLatinTitleNormalized)
+                {
+                    re.MSTNonLatinTitle = "";
+                    re.MSTNonLatinTitleNormalized = "";
+                }
             }
 
-            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
+            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
     }
@@ -3004,9 +3010,16 @@ ORDER BY artist_id";
                 {
                     re.MainRole = role;
                 }
+
+                if (re.AALatinAliasNormalized == re.AANonLatinAliasNormalized)
+                {
+                    re.AANonLatinAlias = "";
+                    re.AANonLatinAliasNormalized = "";
+                    re.AANonLatinAliasNormalizedReversed = "";
+                }
             }
 
-            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
+            string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
     }
@@ -3061,11 +3074,19 @@ ORDER BY artist_id";
                 x.Value.Select(y =>
                 {
                     (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                    if (latinTitleNorm == nonLatinTitleNorm)
+                    {
+                        nonLatinTitle = "";
+                        nonLatinTitleNorm = "";
+                    }
+
                     return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
-                        latinTitle.NormalizeForAutocomplete(), nonLatinTitle?.NormalizeForAutocomplete() ?? "");
+                        latinTitleNorm, nonLatinTitleNorm);
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
-        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoNoStringEnum);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
 
