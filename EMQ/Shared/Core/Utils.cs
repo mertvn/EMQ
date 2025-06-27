@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -31,7 +32,7 @@ public static class Utils
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true,
-        TypeInfoResolver = new IgnoreEmptyStringsResolver(),
+        TypeInfoResolver = new IgnoreEmptyValuesResolver(),
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
@@ -52,7 +53,7 @@ public static class Utils
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    public class IgnoreEmptyStringsResolver : DefaultJsonTypeInfoResolver
+    public class IgnoreEmptyValuesResolver : DefaultJsonTypeInfoResolver
     {
         public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
         {
@@ -62,6 +63,10 @@ public static class Utils
                 if (property.PropertyType == typeof(string))
                 {
                     property.ShouldSerialize = (_, val) => !string.IsNullOrEmpty((string?)val);
+                }
+                else if (typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
+                {
+                    property.ShouldSerialize = (_, val) => val is IEnumerable e && e.GetEnumerator().MoveNext();
                 }
             }
 
