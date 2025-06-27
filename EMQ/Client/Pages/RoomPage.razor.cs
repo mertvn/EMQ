@@ -364,4 +364,12 @@ public partial class RoomPage
         {
         }
     }
+
+    private async Task Onclick_ShuffleTeams()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/ShuffleTeams", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
+    }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -116,6 +117,54 @@ public sealed class Room : IDisposable
             // toRemove may or may not be here
             HotjoinQueue = new ConcurrentQueue<Player>(HotjoinQueue.Where(x => x != toRemove));
         }
+    }
+
+    // public void ShufflePlayers()
+    // {
+    //     lock (_lock)
+    //     {
+    //         Players = new ConcurrentQueue<Player>(Players.Shuffle());
+    //     }
+    // }
+
+    public void SortPlayersByTeamId()
+    {
+        lock (_lock)
+        {
+            Players = new ConcurrentQueue<Player>(Players.OrderBy(x => x.TeamId));
+        }
+    }
+
+    private bool ShufflePlayerTeamIds()
+    {
+        lock (_lock)
+        {
+            if (Players.Select(x => x.TeamId).Distinct().Count() <= 1)
+            {
+                return false;
+            }
+
+            for (int i = Players.Count - 1; i > 0; i--)
+            {
+                int j = Random.Shared.Next(i + 1);
+                var playerI = Players.ElementAt(i);
+                var playerJ = Players.ElementAt(j);
+                (playerI.TeamId, playerJ.TeamId) = (playerJ.TeamId, playerI.TeamId);
+            }
+
+            return true;
+        }
+    }
+
+    public bool ShuffleTeams()
+    {
+        bool success = ShufflePlayerTeamIds();
+        if (success)
+        {
+            SortPlayersByTeamId();
+        }
+
+        return success;
     }
 
     // TODO: AddPlayer etc.

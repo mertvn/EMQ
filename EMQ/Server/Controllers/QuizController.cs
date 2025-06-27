@@ -651,7 +651,43 @@ public class QuizController : ControllerBase
         return null;
     }
 
-    // todo don't allow people to do this while playing a quiz
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
+    [Route("ShuffleTeams")]
+    public async Task<ActionResult> ShuffleTeams()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Owner.Id != session.Player.Id && !AuthStuff.HasPermission(session, PermissionKind.Moderator))
+        {
+            return Unauthorized();
+        }
+
+        if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            return StatusCode(409);
+        }
+
+        bool success = room.ShuffleTeams();
+        if (success)
+        {
+            room.Log($"{session.Player.Username} shuffled the teams.", session.Player.Id, true);
+            TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+        }
+
+        return Ok();
+    }
+
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SetTeamId")]
@@ -697,7 +733,6 @@ public class QuizController : ControllerBase
         return Unauthorized();
     }
 
-    // todo don't allow people to do this while playing a quiz
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
     [Route("SetNGMCGuessesInitial")]

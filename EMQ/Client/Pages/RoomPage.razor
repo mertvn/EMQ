@@ -160,9 +160,16 @@ else
         Change room info
     </button>
 
-    <button type="button" class="btn" style="background-color: var(--bs-emphasis-color); color: var(--bs-body-bg)" @onclick="@(async () => { await Onclick_InviteLink(); })">
+    <button type="button" class="btn" style="background-color: var(--bs-emphasis-color); color: var(--bs-body-bg)" @onclick="@Onclick_InviteLink">
         @InviteLinkButtonText
     </button>
+
+    @if (Room != null && Room.QuizSettings.TeamSize > 1)
+    {
+        <button type="button" class="btn btn-primary" @onclick="@Onclick_ShuffleTeams" style="margin:5px; padding: 5px;">
+            Shuffle teams
+        </button>
+    }
 }
 
 <div id="playersDiv" style="display:flex; margin: auto; align-items:flex-end; max-width: 65vw; overflow-x: auto;">
