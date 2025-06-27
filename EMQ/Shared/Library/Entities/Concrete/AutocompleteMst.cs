@@ -38,15 +38,15 @@ public class AutocompleteMst
     [JsonPropertyName("3")]
     public string MSTNonLatinTitle { get; set; } = null!;
 
-    [ProtoMember(4)]
+    // [ProtoMember(4)]
     [JsonPropertyName("4")]
     public string MSTLatinTitleNormalized { get; set; } = null!;
 
-    [ProtoMember(5)]
+    // [ProtoMember(5)]
     [JsonPropertyName("5")]
     public string MSTNonLatinTitleNormalized { get; set; } = null!;
 
-    [ProtoMember(6)]
+    // [ProtoMember(6)]
     [JsonPropertyName("6")]
     public SongSourceType SongSourceType { get; set; }
 }

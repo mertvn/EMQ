@@ -51,27 +51,27 @@ public class AutocompleteA
     // [JsonPropertyName("5")]
     // public int AAId { get; set; }
 
-    [ProtoMember(6)]
+    // [ProtoMember(6)]
     [JsonPropertyName("6")]
     public string AALatinAliasNormalized { get; set; } = null!;
 
-    [ProtoMember(7)]
+    // [ProtoMember(7)]
     [JsonPropertyName("7")]
     public string AANonLatinAliasNormalized { get; set; } = null!;
 
-    [ProtoMember(8)]
+    // [ProtoMember(8)]
     [JsonPropertyName("8")]
     public string AALatinAliasNormalizedReversed { get; set; } = null!;
 
-    [ProtoMember(9)]
+    // [ProtoMember(9)]
     [JsonPropertyName("9")]
     public string AANonLatinAliasNormalizedReversed { get; set; } = null!;
 
-    [ProtoMember(10)]
+    // [ProtoMember(10)]
     [JsonPropertyName("10")]
     public bool IsMain { get; set; }
 
-    [ProtoMember(11)]
+    // [ProtoMember(11)]
     [JsonPropertyName("11")]
     public SongArtistRole MainRole { get; set; }
 }
