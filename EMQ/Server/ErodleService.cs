@@ -26,7 +26,7 @@ public sealed class ErodleService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("ErodleService is starting");
-        var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        var timer = new PeriodicTimer(TimeSpan.FromMinutes(3));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             await DoWork();
@@ -63,6 +63,11 @@ public sealed class ErodleService : BackgroundService
                             "select id from music_source where votecount >= @minVotes and not id = ANY(@previous)",
                             new { minVotes = Constants.ErodleMinVotes, previous })).ToArray();
                         Console.WriteLine($"possible erodle remaining: {possible.Length}");
+                        if (!possible.Any())
+                        {
+                            continue;
+                        }
+
                         correctAnswer = possible.Shuffle().First().ToString();
                         break;
                     case ErodleKind.None:
