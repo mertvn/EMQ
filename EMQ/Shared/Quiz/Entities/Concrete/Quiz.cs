@@ -84,7 +84,7 @@ public class SongHistory
     // public int AverageGuessMs => PlayerGuessInfos.Count(x => todo);
 }
 
-public readonly struct GuessInfo
+public readonly record struct GuessInfo
 {
     public string Username { get; init; }
 

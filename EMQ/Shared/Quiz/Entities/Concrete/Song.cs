@@ -79,6 +79,7 @@ public partial class Song : IEditQueueEntity
 
     public DataSourceKind DataSource { get; set; }
 
+    [JsonIgnore]
     public bool IsBGM => Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
 
     public override string ToString()

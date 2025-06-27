@@ -42,7 +42,7 @@ public class SongArtist : IEditQueueEntity
     {
         Titles = Titles.OrderBy(x => x.LatinTitle).ThenBy(x => x.NonLatinTitle).ThenBy(x => x.Language)
             .ThenBy(x => x.IsMainTitle).ToList();
-        Links = Links.OrderBy(x => x.Url).ToList();
+        Links = Links.OrderBy(x => x.Type).ThenBy(x => x.Url).ToList();
         ArtistArtists = ArtistArtists.OrderBy(x => x.source).ThenBy(x => x.target).ThenBy(x => x.rel).ToList();
         Roles.Sort();
         return this;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 
@@ -17,6 +18,7 @@ public partial class SongLink
 
     public SongLinkType Type { get; set; } = SongLinkType.Unknown;
 
+    [JsonIgnore]
     public bool IsFileLink => Type is SongLinkType.Catbox or SongLinkType.Self;
 
     public bool IsVideo { get; set; }

@@ -2,7 +2,7 @@
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
-public readonly struct PlayerStats
+public readonly record struct PlayerStats
 {
     public string Username { get; init; }
 

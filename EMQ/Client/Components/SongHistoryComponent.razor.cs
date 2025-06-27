@@ -75,9 +75,59 @@ public partial class SongHistoryComponent
 
     private async Task DownloadSongHistoryJson()
     {
-        string json = JsonSerializer.Serialize(SongsHistory, Utils.JsoIndented);
+        var clone = JsonSerializer.Deserialize<Dictionary<int, SongHistory>?>(JsonSerializer.Serialize(SongsHistory));
+        if (clone == null)
+        {
+            return;
+        }
+
+        var enabledGuessTypes = new HashSet<GuessKind>();
+        foreach ((int _, SongHistory value) in clone)
+        {
+            value.Song.Sort();
+            foreach (SongLink link in value.Song.Links)
+            {
+                link.AnalysisRaw = null;
+                link.LastUnhandledReport = null;
+            }
+
+            // foreach (SongArtist songArtist in value.Song.Artists)
+            // {
+            //     songArtist.Links = songArtist.Links.Take(2).ToList();
+            // }
+
+            // foreach (SongSource songSource in value.Song.Sources)
+            // {
+            //     var mainTitles = songSource.Titles.Where(x => x.IsMainTitle).ToList();
+            //     if (mainTitles.Any())
+            //     {
+            //         songSource.Titles = mainTitles;
+            //     }
+            // }
+
+            foreach ((int _, Dictionary<GuessKind, GuessInfo> pgis) in value.PlayerGuessInfos)
+            {
+                foreach ((GuessKind guessKind, GuessInfo guessInfo) in pgis)
+                {
+                    enabledGuessTypes.Add(guessKind);
+                    pgis[guessKind] = guessInfo with
+                    {
+                        CurrentUserSpacedRepetition = null, PreviousUserSpacedRepetition = null,
+                    };
+                }
+            }
+        }
+
+        foreach ((int _, SongHistory value) in clone)
+        {
+            value.Song.Stats = value.Song.Stats.Where(x => enabledGuessTypes.Contains(x.Key))
+                .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        string json = JsonSerializer.Serialize(clone, Utils.JsoIndentedNotDefault);
         byte[] file = System.Text.Encoding.UTF8.GetBytes(json);
-        await _jsRuntime.InvokeVoidAsync("downloadFile", $"EMQ_SongHistory_{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss}.json",
+        await _jsRuntime.InvokeVoidAsync("downloadFile",
+            $"EMQ_SongHistory_{DateTime.UtcNow:yyyy-MM-ddTHH_mm_ss}.json",
             "application/json", file);
     }
 

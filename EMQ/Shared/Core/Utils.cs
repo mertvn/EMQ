@@ -25,6 +25,14 @@ public static class Utils
         WriteIndented = true
     };
 
+    public static JsonSerializerOptions JsoIndentedNotDefault { get; } = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter() },
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
+    };
+
     public static JsonSerializerOptions JsoNotNull { get; } = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
