@@ -119,10 +119,10 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
         }
 
         var valueSpan = value.AsSpan();
-        // bool hasNonAscii = !Ascii.IsValid(valueSpan);
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 25; // todo
         var dictLT = new Dictionary<AutocompleteMt, StringMatch>();
-        // var dictNLT = new Dictionary<AutocompleteMt, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMt, StringMatch>();
         foreach (AutocompleteMt d in AutocompleteData)
         {
             var matchLT = d.MTLatinTitleNormalized.AsSpan().StartsWithContains(valueSpan, StringComparison.Ordinal);
@@ -131,17 +131,17 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
                 dictLT[d] = matchLT;
             }
 
-            // if (hasNonAscii)
-            // {
-            //     var matchNLT = d.MTNonLatinTitleNormalized.StartsWithContains(value, StringComparison.Ordinal);
-            //     if (matchNLT > 0)
-            //     {
-            //         dictNLT[d] = matchNLT;
-            //     }
-            // }
+            if (hasNonAscii)
+            {
+                var matchNLT = d.MTNonLatinTitleNormalized.AsSpan().StartsWithContains(value, StringComparison.Ordinal);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+            }
         }
 
-        return (TValue[])(object)dictLT
+        return (TValue[])(object)dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value)
             .DistinctBy(x => x.Key.MTLatinTitle)
             .Take(maxResults)
