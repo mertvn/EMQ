@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace EMQ.Shared.Core;
@@ -30,6 +31,7 @@ public static class Utils
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Converters = { new JsonStringEnumConverter() },
         WriteIndented = true,
+        TypeInfoResolver = new IgnoreEmptyStringsResolver(),
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
@@ -49,6 +51,23 @@ public static class Utils
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
+
+    public class IgnoreEmptyStringsResolver : DefaultJsonTypeInfoResolver
+    {
+        public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            JsonTypeInfo typeInfo = base.GetTypeInfo(type, options);
+            foreach (JsonPropertyInfo property in typeInfo.Properties)
+            {
+                if (property.PropertyType == typeof(string))
+                {
+                    property.ShouldSerialize = (_, val) => !string.IsNullOrEmpty((string?)val);
+                }
+            }
+
+            return typeInfo;
+        }
+    }
 
     public static string PercentageStr(int dividend, int divisor)
     {
