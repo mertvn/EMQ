@@ -690,6 +690,39 @@ public class QuizController : ControllerBase
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
     [HttpPost]
+    [Route("SortPlayersByTeamIds")]
+    public async Task<ActionResult> SortPlayersByTeamIds()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+        if (room is null)
+        {
+            return Unauthorized();
+        }
+
+        if (room.Owner.Id != session.Player.Id && !AuthStuff.HasPermission(session, PermissionKind.Moderator))
+        {
+            return Unauthorized();
+        }
+
+        if (room.Quiz != null && room.Quiz.QuizState.QuizStatus == QuizStatus.Playing)
+        {
+            return StatusCode(409);
+        }
+
+        room.SortPlayersByTeamId();
+        room.Log($"{session.Player.Username} sorted players by team ids.", session.Player.Id, true);
+        TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [HttpPost]
     [Route("SetTeamId")]
     public async Task<ActionResult> SetTeamId(ReqSetTeamId req)
     {

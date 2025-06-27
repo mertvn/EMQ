@@ -372,4 +372,12 @@ public partial class RoomPage
         {
         }
     }
+
+    private async Task Onclick_SortPlayersByTeamIds()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/SortPlayersByTeamIds", "");
+        if (res.IsSuccessStatusCode)
+        {
+        }
+    }
 }
