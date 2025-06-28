@@ -345,6 +345,7 @@ public static class MediaAnalyser
         bool encodeAudioSeparately = !canCopyAudio && false;
         bool cropSilence = uploadOptions.ShouldCropSilence;
         bool doTwoPass = uploadOptions.DoTwoPass;
+        string vfStr = result.AvgFramerate is > 31 and < 121 ? "-vf \"fps=30\" " : "";
         float volumeAdjust = uploadOptions.ShouldAdjustVolume ? MediaAnalyser.GetVolumeAdjust(result) : 0;
         // volumeAdjust = 13;
 
@@ -379,7 +380,7 @@ public static class MediaAnalyser
                           $"-map 0:v " +
                           $"-map 0:a? " + $"-shortest " +
                           $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
-                          $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 " +
+                          $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 {vfStr}" +
                           $"-g 100 " +
                           (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
                           $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
