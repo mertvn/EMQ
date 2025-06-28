@@ -193,7 +193,7 @@ public enum SongLinkLineage
     [Description("Game files")]
     GameFiles = 1,
 
-    [Description("Official download/disc etc.")]
+    [Description("Official download/bluray etc.")]
     OfficialDownload = 2,
 
     [Description("Screen recording")]

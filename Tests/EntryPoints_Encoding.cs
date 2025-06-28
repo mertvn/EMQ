@@ -844,7 +844,6 @@ public class EntryPoints_Encoding
     {
         int end = await DbManager.SelectCountUnsafe("music");
         var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
-
         foreach (Song song in songs)
         {
             if (song.Id == 832)
@@ -856,6 +855,22 @@ public class EntryPoints_Encoding
             if (filtered.Any(x => x.Url.EndsWith(".weba") && x.SubmittedBy != "Lkyda") && !filtered.Any(x => x.IsVideo))
             {
                 Console.WriteLine($"possibly corrupt link: {song}");
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task FindValidSoundLinksFromMultipleUsers()
+    {
+        int end = await DbManager.SelectCountUnsafe("music");
+        var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
+        foreach (Song song in songs)
+        {
+            var filtered = SongLink.FilterSongLinks(song.Links.Where(x => !x.IsVideo).ToList()).Where(x => x.IsFileLink)
+                .ToArray();
+            if (filtered.Any(x => x.SubmittedBy != filtered.First().SubmittedBy))
+            {
+                Console.WriteLine($"{song}");
             }
         }
     }

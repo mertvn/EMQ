@@ -21,6 +21,7 @@ public class AddTableMusicComment : Migration
             .WithColumn("kind").AsInt32().NotNullable()
             .WithColumn("created_at").AsDateTimeOffset().NotNullable();
 
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("music_id");
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("user_id");
     }
 
