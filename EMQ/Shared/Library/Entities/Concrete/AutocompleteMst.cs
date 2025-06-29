@@ -40,11 +40,11 @@ public class AutocompleteMst
 
     // [ProtoMember(4)]
     [JsonPropertyName("4")]
-    public string MSTLatinTitleNormalized { get; set; } = null!;
+    public string? MSTLatinTitleNormalized { get; set; }
 
     // [ProtoMember(5)]
     [JsonPropertyName("5")]
-    public string MSTNonLatinTitleNormalized { get; set; } = null!;
+    public string? MSTNonLatinTitleNormalized { get; set; }
 
     // [ProtoMember(6)]
     [JsonPropertyName("6")]

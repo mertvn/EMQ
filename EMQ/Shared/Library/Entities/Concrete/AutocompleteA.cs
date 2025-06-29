@@ -53,19 +53,19 @@ public class AutocompleteA
 
     // [ProtoMember(6)]
     [JsonPropertyName("6")]
-    public string AALatinAliasNormalized { get; set; } = null!;
+    public string? AALatinAliasNormalized { get; set; }
 
     // [ProtoMember(7)]
     [JsonPropertyName("7")]
-    public string AANonLatinAliasNormalized { get; set; } = null!;
+    public string? AANonLatinAliasNormalized { get; set; }
 
     // [ProtoMember(8)]
     [JsonPropertyName("8")]
-    public string AALatinAliasNormalizedReversed { get; set; } = null!;
+    public string? AALatinAliasNormalizedReversed { get; set; }
 
     // [ProtoMember(9)]
     [JsonPropertyName("9")]
-    public string AANonLatinAliasNormalizedReversed { get; set; } = null!;
+    public string? AANonLatinAliasNormalizedReversed { get; set; }
 
     // [ProtoMember(10)]
     [JsonPropertyName("10")]
