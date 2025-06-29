@@ -81,13 +81,14 @@ public partial class UploadComponent
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(file.ContentType))
+            string fileContentType = file.Name.EndsWith(".mkv") ? "video/x-matroska" : file.ContentType;
+            if (string.IsNullOrWhiteSpace(fileContentType))
             {
                 uploadResult.ErrorStr = "Unknown file format";
                 continue;
             }
 
-            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == file.ContentType);
+            var mediaTypeInfo = UploadConstants.ValidMediaTypes.FirstOrDefault(x => x.MimeType == fileContentType);
             if (mediaTypeInfo is null)
             {
                 uploadResult.ErrorStr = $"Invalid file format: {file.ContentType}";
@@ -103,7 +104,8 @@ public partial class UploadComponent
             string filename = WebUtility.HtmlEncode(file.Name);
             string tempUploadId = $"{ClientState.Session!.Player.Id};{mId.ToString()};{file.Size};{filename}";
             ClientState.UploadResults[tempUploadId] = uploadResult;
-            bool success = await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId, UploadOptions);
+            bool success =
+                await ClientUtils.SendPostFileReq(_client, uploadResult, file, mId, UploadOptions, fileContentType);
             if (success)
             {
                 await Utils.WaitWhile(async () =>

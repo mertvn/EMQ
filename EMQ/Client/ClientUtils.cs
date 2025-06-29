@@ -213,13 +213,13 @@ public class ClientUtils
     }
 
     public static async Task<bool> SendPostFileReq(HttpClient client, UploadResult uploadResult, IBrowserFile file,
-        int mId, UploadOptions uploadOptions)
+        int mId, UploadOptions uploadOptions, string fileContentType)
     {
         try
         {
             using var content = new MultipartFormDataContent();
             var fileContent = new StreamContent(file.OpenReadStream(UploadConstants.MaxFilesizeBytes));
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(fileContentType);
             content.Add(fileContent, "\"files\"", file.Name);
             content.Add(new StringContent(mId.ToString()), "\"mId\"");
             content.Add(new StringContent(JsonSerializer.Serialize(uploadOptions)), "\"uploadOptionsStr\"");
