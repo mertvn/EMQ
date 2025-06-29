@@ -307,11 +307,14 @@ else
                             🥾
                         </button>
 
-                        <button type="button" class="btn btn-primary" title="Convert to spectator"
-                                disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
-                                @onclick="@(() => SendConvertPlayerToSpectatorInRoom(player.Id))" style="margin:5px; padding: 5px;">
-                            👁
-                        </button>
+                        @if (!player.IsBot)
+                        {
+                            <button type="button" class="btn btn-primary" title="Convert to spectator"
+                                    disabled="@(Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing)"
+                                    @onclick="@(() => SendConvertPlayerToSpectatorInRoom(player.Id))" style="margin:5px; padding: 5px;">
+                                👁
+                            </button>
+                        }
                     </div>
                 }
             </div>
