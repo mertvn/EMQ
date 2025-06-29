@@ -307,6 +307,30 @@ public partial class LibraryPage
                 .OrderByDescending(x => ClientState.MusicVotes.GetValueOrDefault(x.Id)?.vote ?? 0).ToList(),
             LibrarySongOrderKind.SSST => CurrentSongs.OrderBy(x => x.Sources.First().SongTypes.First()).ToList(),
             LibrarySongOrderKind.CommentCount => CurrentSongs.OrderByDescending(x => x.CommentCount).ToList(),
+            LibrarySongOrderKind.MyVNDBVote => CurrentSongs
+                .OrderByDescending(x =>
+                {
+                    int vote = 0;
+                    if (ClientState.VndbInfo.Labels != null)
+                    {
+                        string[] vndbUrls = x.Sources
+                            .Select(y => y.Links.FirstOrDefault(z => z.Type == SongSourceLinkType.VNDB))
+                            .Select(y => y?.Url ?? "").ToArray();
+                        foreach (var label in ClientState.VndbInfo.Labels.TakeWhile(_ => vote <= 0))
+                        {
+                            foreach ((string? key, int value) in label.VNs)
+                            {
+                                if (vndbUrls.Contains(key))
+                                {
+                                    vote = value;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    return vote;
+                }).ToList(),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -391,4 +415,7 @@ public enum LibrarySongOrderKind
 
     [Description("Comment count")]
     CommentCount,
+
+    [Description("My VNDB vote")]
+    MyVNDBVote,
 }
