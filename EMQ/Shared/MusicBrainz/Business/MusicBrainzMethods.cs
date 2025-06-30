@@ -232,15 +232,27 @@ public class MusicBrainzMethods
                 }
                 else // normal
                 {
-                    // todo this fails when typing id:
-                    artist = content.SongArtists.First(x => x.Titles.Any(y =>
-                        y.LatinTitle == selectedArtist.AALatinAlias &&
-                        ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
-                         (y.NonLatinTitle == selectedArtist.AANonLatinAlias))));
-                    artist.Titles = artist.Titles.Where(y =>
+                    artist = content.SongArtists.FirstOrDefault(x => x.Titles.Any(y =>
+                                 y.LatinTitle == selectedArtist.AALatinAlias &&
+                                 ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
+                                  (y.NonLatinTitle == selectedArtist.AANonLatinAlias))))
+                             ?? content.SongArtists.FirstOrDefault(x => x.Titles.Any(y => y.IsMainTitle))
+                             ?? content.SongArtists.First();
+
+                    var newTitles = artist.Titles.Where(y =>
                         y.LatinTitle == selectedArtist.AALatinAlias &&
                         ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
                          (y.NonLatinTitle == selectedArtist.AANonLatinAlias))).ToList();
+
+                    if (!newTitles.Any())
+                    {
+                        artist.Titles = new List<Title>
+                        {
+                            artist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? artist.Titles.First()
+                        };
+                    }
+
+                    artist.Titles = newTitles;
                 }
             }
 
