@@ -46,7 +46,7 @@ public partial class ReviewComponent
 
     private bool IsReady { get; set; } = true;
 
-    private bool ApplyToBGMBatch { get; set; }
+    private bool ApplyStatusToBGMBatch { get; set; }
 
     private RQ[] BGMBatch
     {
@@ -87,7 +87,8 @@ public partial class ReviewComponent
                 }
             }
 
-            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            if (ApplyStatusToBGMBatch &&
+                reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
                 foreach (RQ rq in BGMBatch.Reverse())
                 {
@@ -117,7 +118,8 @@ public partial class ReviewComponent
                 }
             }
 
-            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            if (ApplyStatusToBGMBatch &&
+                reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
                 foreach (RQ rq in BGMBatch.Reverse())
                 {
@@ -148,7 +150,8 @@ public partial class ReviewComponent
                 }
             }
 
-            if (ApplyToBGMBatch && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            if (ApplyStatusToBGMBatch &&
+                reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
                 foreach (RQ rq in BGMBatch.Reverse())
                 {
@@ -183,27 +186,29 @@ public partial class ReviewComponent
     }
 
     // todo? changes made after clicking on analysis in the library will not be reflected in the review queue
-    private async Task SendEditSongLinkDetailsReq()
+    private async Task<bool> SendEditSongLinkDetailsReq(RQ rq)
     {
         if (IsReady)
         {
             IsReady = false;
-            var req = new ReqEditSongLinkDetails(new SongLink()
-            {
-                Url = reviewingItem!.url,
-                Attributes = reviewingItem.attributes,
-                Lineage = reviewingItem.lineage,
-                Comment = reviewingItem.comment,
-            }, reviewingItem.music_id);
+            var req = new ReqEditSongLinkDetails(
+                new SongLink()
+                {
+                    Url = rq.url, Attributes = rq.attributes, Lineage = rq.lineage, Comment = rq.comment,
+                }, rq.music_id);
             var res = await _client.PostAsJsonAsync("Library/EditSongLinkDetails", req);
             if (!res.IsSuccessStatusCode)
             {
                 await _jsRuntime.InvokeVoidAsync("alert",
                     $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                return false;
             }
 
             IsReady = true;
+            return true;
         }
+
+        return false;
     }
 
     private async Task OnAttributesCheckboxClick(bool value, SongLinkAttributes attribute)
@@ -224,7 +229,7 @@ public partial class ReviewComponent
             reviewingItem!.attributes ^= attribute;
         }
 
-        await SendEditSongLinkDetailsReq();
+        await SendEditSongLinkDetailsReq(reviewingItem);
         StateHasChanged();
         ParentStateHasChangedCallback?.Invoke();
     }
@@ -240,7 +245,32 @@ public partial class ReviewComponent
             reviewingItem!.lineage ^= lineage;
         }
 
-        await SendEditSongLinkDetailsReq();
+        await SendEditSongLinkDetailsReq(reviewingItem);
+        StateHasChanged();
+        ParentStateHasChangedCallback?.Invoke();
+    }
+
+    private async Task ApplyDetailsToBGMBatch()
+    {
+        foreach (RQ rq in BGMBatch.Reverse())
+        {
+            bool success = await SendEditSongLinkDetailsReq(new RQ()
+            {
+                url = rq.url,
+                music_id = rq.music_id,
+                attributes = reviewingItem!.attributes,
+                lineage = reviewingItem.lineage,
+                comment = reviewingItem.comment,
+            });
+
+            if (success)
+            {
+                rq.attributes = reviewingItem.attributes;
+                rq.lineage = reviewingItem.lineage;
+                rq.comment = reviewingItem.comment;
+            }
+        }
+
         StateHasChanged();
         ParentStateHasChangedCallback?.Invoke();
     }
