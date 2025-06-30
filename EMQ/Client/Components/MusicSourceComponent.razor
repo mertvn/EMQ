@@ -4,16 +4,40 @@
 @using EMQ.Client.Pages
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.VNDB.Business
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
 
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId + 1}"))">Next</button>
+<br/>
 
-<pre>
-@JsonSerializer.Serialize(ResGetSongSource, Utils.JsoIndented)
-</pre>
+@if (ResGetSongSource != null)
+{
+    <span style="font-size: x-large">@Converters.GetSingleTitle(ResGetSongSource.SongSource.Titles).ToString()</span>
+    <SourceFaviconsComponent Links="ResGetSongSource.SongSource.Links"/>
+    <br/>
+
+    @if (ClientUtils.HasEditPerms())
+    {
+        <details>
+            <summary>Edit source</summary>
+            <EditSourceComponent Source="ResGetSongSource.SongSource" IsNew="false"></EditSourceComponent>
+        </details>
+
+        @if (ResGetSongSource.SongSource.Links.Any(x => x.Type == SongSourceLinkType.VNDB))
+        {
+            <details>
+                <summary>Sync with VNDB</summary>
+                <button type="button" class="btn btn-primary" @onclick="OnClick_ButtonSyncWithVndb">
+                    Create sync edit
+                </button>
+            </details>
+        }
+    }
+}
 
 @code {
 
@@ -30,6 +54,55 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
             ResGetSongSource = content;
+        }
+    }
+
+    private async Task OnClick_ButtonSyncWithVndb()
+    {
+        SongSourceLink? vndbLink = ResGetSongSource!.SongSource.Links.SingleOrDefault(x => x.Type == SongSourceLinkType.VNDB);
+        string vndbId = vndbLink?.Url.ToVndbId() ?? "";
+        if (!vndbId.StartsWith("v") || vndbId.Length < 2 || !int.TryParse(vndbId[1..], out _))
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", "Invalid input.");
+            return;
+        }
+
+        var vn = await VndbMethods.GetVN(vndbId);
+        if (vn == null)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", "Error fetching information from VNDB.");
+            return;
+        }
+
+        ResGetSongSource.SongSource.AirDateStart = vn.AirDateStart;
+        ResGetSongSource.SongSource.LanguageOriginal = vn.LanguageOriginal;
+        ResGetSongSource.SongSource.RatingBayesian = vn.RatingBayesian;
+        ResGetSongSource.SongSource.RatingAverage = vn.RatingAverage;
+        ResGetSongSource.SongSource.VoteCount = vn.VoteCount;
+        ResGetSongSource.SongSource.Titles = vn.Titles; // todo don't keep unofficial titles
+        ResGetSongSource.SongSource.Developers = vn.Developers;
+
+        var possibleMainTitles = vn.Titles.Where(x => x.IsMainTitle && x.Language == vn.LanguageOriginal).ToArray();
+        if (possibleMainTitles.Length == 1)
+        {
+            var mainTitle = possibleMainTitles.First();
+            vndbLink!.Name = mainTitle.LatinTitle;
+            if (!string.IsNullOrWhiteSpace(mainTitle.NonLatinTitle))
+            {
+                vndbLink!.Name += $" ({mainTitle.NonLatinTitle})";
+            }
+        }
+
+        var req = new ReqEditSource(ResGetSongSource.SongSource, false, "VNDB sync.");
+        var res = await _client.PostAsJsonAsync("Library/EditSource", req);
+        if (res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", "Added to the edit queue.");
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
 

@@ -153,7 +153,10 @@
                                         final += $"{songType}{(index + 1 != songTypes.Count ? ", " : "")}";
                                     }
 
-                                    <span>@(final)</span>
+                                    string href = $"ems{songSource.Id}";
+                                    <a href="@href" target="_blank" style="color: inherit; text-decoration-line: inherit;">
+                                        @(final)
+                                    </a>
 
                                     @if (Song.Id > 0 || IsModPage || IsEditing) // don't show links when playing with Hints
                                     {

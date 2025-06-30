@@ -1632,7 +1632,7 @@ GROUP BY artist_id";
                 throw new Exception("Songs must have at least one song source song type.");
             }
 
-            int msId = await InsertSource(songSource, transaction!);
+            int msId = await InsertSource(songSource, transaction!, false);
             if (msId < 1)
             {
                 throw new Exception("msId is invalid");
@@ -1711,7 +1711,8 @@ GROUP BY artist_id";
         return mId;
     }
 
-    private static async Task<int> InsertSource(SongSource songSource, IDbTransaction transaction)
+    private static async Task<int> InsertSource(SongSource songSource, IDbTransaction transaction,
+        bool updateMusicSourceTable)
     {
         var connection = transaction.Connection!;
         int msId;
@@ -1722,7 +1723,26 @@ GROUP BY artist_id";
                     transaction))
             {
                 msId = songSource.Id;
-                // todo update stuff?
+                if (updateMusicSourceTable)
+                {
+                    int rows = await connection.ExecuteScalarAsync<int>(
+                        "UPDATE music_source SET air_date_start = @AirDateStart, language_original = @LanguageOriginal, rating_average = @RatingAverage," +
+                        "rating_bayesian = @RatingBayesian, votecount = @VoteCount, type = @Type WHERE id = @id;",
+                        new
+                        {
+                            id = msId,
+                            songSource.AirDateStart,
+                            songSource.LanguageOriginal,
+                            songSource.RatingAverage,
+                            songSource.RatingBayesian,
+                            songSource.VoteCount,
+                            songSource.Type,
+                        });
+                    if (rows < 0)
+                    {
+                        throw new Exception("Failed to update music_source");
+                    }
+                }
             }
             else
             {
@@ -4221,7 +4241,7 @@ AND msm.type = ANY(@msmType)";
                             }
                         case EntityKind.SongSource:
                             {
-                                int newMsid = await InsertSource((SongSource)entity, transaction);
+                                int newMsid = await InsertSource((SongSource)entity, transaction, false);
                                 success = newMsid > 0 && newMsid == eq.entity_id;
                                 break;
                             }
@@ -5367,7 +5387,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             new { msId = oldMsid }, transaction);
 
         newSource.Id = oldMsid;
-        int msId = await InsertSource(newSource, transaction!);
+        int msId = await InsertSource(newSource, transaction!, true);
         if (msId <= 0 || msId != oldMsid)
         {
             throw new Exception($"Failed to insert source: {newSource}");
