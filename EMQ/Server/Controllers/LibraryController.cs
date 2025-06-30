@@ -900,11 +900,12 @@ public class LibraryController : ControllerBase
         string submittedBy = (await connection.ExecuteScalarAsync<string>(
             "select submitted_by from music_external_link where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url ",
             new { req.MId, sh, Url = req.SongLink.Url.UnReplaceSelfhostLink() }, transaction))!;
+        RQ? rq = await connection.QueryFirstOrDefaultAsync<RQ>(
+            "select * from review_queue where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url ",
+            new { req.MId, sh, Url = req.SongLink.Url.UnReplaceSelfhostLink() }, transaction);
         if (string.IsNullOrWhiteSpace(submittedBy))
         {
-            submittedBy = (await connection.ExecuteScalarAsync<string>(
-                "select submitted_by from review_queue where music_id = @MId and REPLACE(url, @sh, 'https://emqselfhost') = @Url ",
-                new { req.MId, sh, Url = req.SongLink.Url.UnReplaceSelfhostLink() }, transaction))!;
+            submittedBy = rq?.submitted_by ?? "";
         }
 
         bool canEditDetails = AuthStuff.HasPermission(session, PermissionKind.ReviewSongLink) ||
@@ -943,6 +944,12 @@ public class LibraryController : ControllerBase
         }
 
         await transaction.CommitAsync();
+        if (req.SongLink.Lineage > SongLinkLineage.Unknown &&
+            rq is { status: ReviewQueueStatus.Rejected } && rq.reason == ReviewQueueService.UnknownLineageRejectMessage)
+        {
+            await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending, "-");
+        }
+
         await DbManager.EvictFromSongsCache(req.MId);
         Console.WriteLine($"{session.Player.Username} EditSongLinkDetails {JsonSerializer.Serialize(req, Utils.Jso)}");
         return Ok();

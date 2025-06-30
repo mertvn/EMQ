@@ -168,6 +168,7 @@ builder.Services.AddHostedService<AuthDatabaseCleanupService>();
 builder.Services.AddHostedService<EmailQueueService>();
 builder.Services.AddHostedService<UploadQueueService>();
 builder.Services.AddHostedService<ErodleService>();
+builder.Services.AddHostedService<ReviewQueueService>();
 
 builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information)
     .AddFilter("Microsoft.AspNetCore.Http.Connections", LogLevel.Information);

@@ -12,6 +12,9 @@ public sealed class ReviewQueueService : BackgroundService
 {
     public const int ToleranceMinutes = 120;
 
+    public static string UnknownLineageRejectMessage { get; } =
+        $"Automatically rejected for having unknown lineage {ToleranceMinutes} minutes after upload time.";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Console.WriteLine("ReviewQueueService is starting");
@@ -32,8 +35,7 @@ public sealed class ReviewQueueService : BackgroundService
                                              x.lineage == SongLinkLineage.Unknown &&
                                              DateTime.UtcNow > x.submitted_on.AddMinutes(ToleranceMinutes)))
             {
-                await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Rejected,
-                    $"Automatically rejected for having unknown lineage {ToleranceMinutes} minutes after upload time.");
+                await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Rejected, UnknownLineageRejectMessage);
             }
         }
         catch (Exception e)
