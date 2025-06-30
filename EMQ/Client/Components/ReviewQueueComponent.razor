@@ -74,7 +74,10 @@
                         }
                     }
 
-                    <span style="cursor:pointer;" @onclick="@(() => Onclick_Id(context.id))">@context.id</span>
+                    <span style="cursor:pointer; color: @UiHelpers.Bool2Color(!context.url.EndsWith(".weba") && context.lineage == SongLinkLineage.Unknown, "orange", "inherit")"
+                          @onclick="@(() => Onclick_Id(context.id))">
+                        @context.id
+                    </span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Source Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">
@@ -133,7 +136,7 @@
                 <ChildContent>
                     @if (true)
                     {
-                        <span style="color: @UiHelpers.Bools2Color(@context.status == ReviewQueueStatus.Approved, @context.status == ReviewQueueStatus.Rejected, "green", "red")">
+                        <span style="color: @UiHelpers.Bools2Color(context.status == ReviewQueueStatus.Approved, context.status == ReviewQueueStatus.Rejected, "green", "red")">
                             @context.status
                         </span>
                     }

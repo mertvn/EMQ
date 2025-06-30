@@ -937,7 +937,7 @@ public class LibraryController : ControllerBase
                 sh,
                 Url = req.SongLink.Url.UnReplaceSelfhostLink()
             }, transaction);
-        if (rows is <= 0 or >= 1000)
+        if (rows is <= 0 or >= 10)
         {
             return StatusCode(410);
         }
