@@ -1569,6 +1569,7 @@ public class QuizManager
         }
     }
 
+    // todo exclude sources without uploaded bgm for quizzes that have bgm enabled
     // todo generate a and mt from the wrong choices in mst
     // also grab other a and mt from the correct choice
 

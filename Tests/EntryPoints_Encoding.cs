@@ -876,6 +876,32 @@ public class EntryPoints_Encoding
     }
 
     [Test, Explicit]
+    public async Task FindValidLinkCombinationFromMultipleUsers()
+    {
+        int end = await DbManager.SelectCountUnsafe("music");
+        var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
+        foreach (Song song in songs)
+        {
+            var filtered = SongLink.FilterSongLinks(song.Links).Where(x => x.IsFileLink).ToArray();
+            var validVideoLinks = filtered.Where(x => x.IsVideo).ToArray();
+            var validSoundLinks = filtered.Where(x => !x.IsVideo).ToArray();
+            string[] videoUploaders = validVideoLinks.Select(x => x.SubmittedBy ?? "").ToArray();
+            string[] soundUploaders = validSoundLinks.Select(x => x.SubmittedBy ?? "").ToArray();
+
+            // todo
+            if (videoUploaders.Length != 1 || soundUploaders.Length != 1)
+            {
+                continue;
+            }
+
+            if (videoUploaders.First().NormalizeForAutocomplete() != soundUploaders.First().NormalizeForAutocomplete())
+            {
+                Console.WriteLine($"{song}");
+            }
+        }
+    }
+
+    [Test, Explicit]
     public async Task DoPSP_Step1_ExtractFromISO()
     {
         string isoDumpDir = @"N:\!emqraw\!psp\!isodump";
