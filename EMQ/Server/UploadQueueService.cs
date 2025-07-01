@@ -290,8 +290,9 @@ public sealed class UploadQueueService : BackgroundService
             };
 
             await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
-            (MediaAnalyserResult? extractedAnalysis, _) =
-                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null, encodedByEmq);
+            (MediaAnalyserResult? extractedAnalysis, int rqId) =
+                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null, encodedByEmq,
+                    originalExtension: extension);
 
             // todo cleanup
             if (songLink.IsVideo && extractedAnalysis != null)
@@ -495,6 +496,26 @@ public sealed class UploadQueueService : BackgroundService
                         Console.WriteLine(
                             $"unsupported codec when extracting audio: {extractedAnalysis.PrimaryAudioStreamCodecName}");
                         break;
+                }
+            }
+
+            if (encodedByEmq && extractedAnalysis != null)
+            {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                if (storageMode == 1)
+                {
+                    file.FileStream.Position = 0;
+                    ServerUtils.SftpFileUpload(
+                        UploadConstants.SftpHost, UploadConstants.SftpUsername,
+                        UploadConstants.SftpPassword,
+                        file.FileStream,
+                        Path.Combine(UploadConstants.SftpUserUploadDir, "raw/",
+                            // not using the local variable "extension" here to avoid somehow desyncing
+                            $"{rqId}.{extractedAnalysis.OriginalExtension}"));
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
             }
         }

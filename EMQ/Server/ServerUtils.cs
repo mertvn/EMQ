@@ -235,7 +235,7 @@ public static class ServerUtils
     }
 
     public static async Task<(MediaAnalyserResult?, int rqId)> ImportSongLinkInner(int mId, SongLink songLink,
-        string existingPath, bool? isVideoOverride, bool? encodedByEmq)
+        string existingPath, bool? isVideoOverride, bool? encodedByEmq, string? originalExtension = null)
     {
         int rqId = await DbManager.InsertReviewQueue(mId, songLink, "Pending");
         MediaAnalyserResult? analyserResult = null;
@@ -248,6 +248,7 @@ public static class ServerUtils
                     await MediaAnalyser.Analyse(existingPath, isVideoOverride: isVideoOverride,
                         guid: songLink.Url.LastSegment());
                 analyserResult.EncodedByEmq = encodedByEmq;
+                analyserResult.OriginalExtension = originalExtension;
                 await DbManager.UpdateReviewQueueItem(rqId, ReviewQueueStatus.Pending,
                     analyserResult: analyserResult);
             }

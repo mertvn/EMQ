@@ -98,4 +98,6 @@ public class MediaAnalyserResult
     public DateTime? Timestamp { get; set; }
 
     public bool? EncodedByEmq { get; set; }
+
+    public string? OriginalExtension { get; set; }
 }
