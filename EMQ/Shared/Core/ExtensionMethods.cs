@@ -399,8 +399,7 @@ public static class ExtensionMethods
         {
             < 0 => StringMatch.None,
             0 when str.Length != search.Length => StringMatch.StartsWith,
-            0 when str.Equals(search, stringComparison) => StringMatch.ExactMatch,
-            0 => StringMatch.StartsWith,
+            0 => StringMatch.ExactMatch,
             _ => StringMatch.Contains
         };
     }

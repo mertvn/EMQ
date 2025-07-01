@@ -26,6 +26,62 @@ public static class StartsWithContainsImpl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch BaselineNoLength(this ReadOnlySpan<char> str, ReadOnlySpan<char> search,
+        StringComparison stringComparison)
+    {
+        if (str.IsEmpty || search.IsEmpty)
+        {
+            return StringMatch.None;
+        }
+
+        int result = str.IndexOf(search, stringComparison);
+        return result switch
+        {
+            < 0 => StringMatch.None,
+            0 when str.Equals(search, stringComparison) => StringMatch.ExactMatch,
+            0 => StringMatch.StartsWith,
+            _ => StringMatch.Contains
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch rampaa(this ReadOnlySpan<char> text, ReadOnlySpan<char> searchText,
+        StringComparison stringComparison)
+    {
+        if (text.IsEmpty || searchText.IsEmpty)
+        {
+            return StringMatch.None;
+        }
+
+        int index = text.IndexOf(searchText, stringComparison);
+        return index < 0
+            ? StringMatch.None
+            : index is 0
+                ? text.Length != searchText.Length
+                    ? StringMatch.StartsWith
+                    : StringMatch.ExactMatch
+                : StringMatch.Contains;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch rampaa2(this ReadOnlySpan<char> text, ReadOnlySpan<char> searchText)
+    {
+        if (searchText.IsEmpty)
+        {
+            return StringMatch.None;
+        }
+
+        int index = text.IndexOf(searchText);
+        return index < 0
+            ? StringMatch.None
+            : index is 0
+                ? text.Length != searchText.Length
+                    ? StringMatch.StartsWith
+                    : StringMatch.ExactMatch
+                : StringMatch.Contains;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static StringMatch Claude4Sonnet(this ReadOnlySpan<char> str, ReadOnlySpan<char> search,
         StringComparison stringComparison)
     {
