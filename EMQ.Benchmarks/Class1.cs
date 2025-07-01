@@ -189,6 +189,6 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        _ = BenchmarkRunner.Run<Md5VsSha256>();
+        _ = BenchmarkRunner.Run<StartsWithContainsBenchmarks>();
     }
 }

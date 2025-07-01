@@ -221,7 +221,6 @@ public static class ExtensionMethods
         return songLite;
     }
 
-    // todo search exact match on unnormalized input first for e.g. ONE.
     public static string NormalizeForAutocomplete(this string input)
     {
         foreach ((string? key, string? value) in RegexPatterns.AutocompleteStringReplacements)
@@ -396,12 +395,14 @@ public static class ExtensionMethods
         }
 
         int result = str.IndexOf(search, stringComparison);
-        if (result < 0)
+        return result switch
         {
-            return StringMatch.None;
-        }
-
-        return result == 0 ? StringMatch.StartsWith : StringMatch.Contains;
+            < 0 => StringMatch.None,
+            0 when str.Length != search.Length => StringMatch.StartsWith,
+            0 when str.Equals(search, stringComparison) => StringMatch.ExactMatch,
+            0 => StringMatch.StartsWith,
+            _ => StringMatch.Contains
+        };
     }
 
     [Pure]
