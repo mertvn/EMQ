@@ -74,7 +74,7 @@
                         }
                     }
 
-                    <span style="cursor:pointer; color: @UiHelpers.Bool2Color(!context.url.EndsWith(".weba") && context.lineage == SongLinkLineage.Unknown, "orange", "inherit")"
+                    <span style="cursor:pointer; color: @UiHelpers.Bool2Color(context.ShouldCheckLineage() && context.lineage == SongLinkLineage.Unknown, "orange", "inherit")"
                           @onclick="@(() => Onclick_Id(context.id))">
                         @context.id
                     </span>

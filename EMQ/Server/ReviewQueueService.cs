@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Server.Db;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Hosting;
 
@@ -31,7 +32,7 @@ public sealed class ReviewQueueService : BackgroundService
         {
             var rqs = await DbManager.FindRQs(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1),
                 SongSourceSongTypeMode.All, new[] { ReviewQueueStatus.Pending });
-            foreach (RQ rq in rqs.Where(x => !x.url.EndsWith(".weba") &&
+            foreach (RQ rq in rqs.Where(x => x.ShouldCheckLineage() &&
                                              x.lineage == SongLinkLineage.Unknown &&
                                              DateTime.UtcNow > x.submitted_on.AddMinutes(ToleranceMinutes)))
             {

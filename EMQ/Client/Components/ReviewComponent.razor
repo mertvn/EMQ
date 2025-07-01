@@ -67,7 +67,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
         }
 
         <div class="songLinkDetails" style="display: inline-flex;">
-            @if (!reviewingItem.url.EndsWith(".weba"))
+            @if (reviewingItem.ShouldCheckLineage())
             {
                 bool canEditDetails = !ClientState.ResFindQueueItemsWithPendingChanges.EQs.ContainsKey(reviewingItem.music_id) &&
                                       (isReviewModerator || string.Equals(reviewingItem.submitted_by, ClientState.Session?.Player.Username, StringComparison.OrdinalIgnoreCase));

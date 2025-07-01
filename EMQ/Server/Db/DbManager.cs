@@ -4421,8 +4421,8 @@ order by type";
 
             stopWatch.StartSection("lineage select");
             var lineages = (await connection.QueryAsync<int>(
-                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and not url like '%.weba'",
-                new { validMids, types = SongLink.FileLinkTypes }));
+                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and not (url like '%.weba' or submitted_by = @botName)",
+                new { validMids, types = SongLink.FileLinkTypes, botName = Constants.RobotName }));
 
             stopWatch.StartSection("lineage process");
             var lineageValues = Enum.GetValues<SongLinkLineage>();

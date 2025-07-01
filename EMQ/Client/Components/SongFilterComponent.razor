@@ -205,7 +205,7 @@
             {
                 bool isUnknown = parsedLineageStatus == SongLinkLineage.Unknown;
                 bool lineageMatches = isUnknown
-                    ? song.Links.Any(x => x.IsFileLink && x.Lineage == 0 && !x.Url.EndsWith(".weba"))
+                    ? song.Links.Any(x => x.IsFileLink && x.Lineage == 0 && x.ShouldCheckLineage())
                     : song.Links.Any(x => x.IsFileLink && x.Lineage.HasFlag(parsedLineageStatus));
                 bool result = ApplyNot ? !lineageMatches : lineageMatches;
                 switch (UseAnd)

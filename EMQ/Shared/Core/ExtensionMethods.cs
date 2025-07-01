@@ -474,4 +474,14 @@ public static class ExtensionMethods
         using var enumerator = source.GetEnumerator();
         return enumerator.MoveNext() ? enumerator.Current : null;
     }
+
+    public static bool ShouldCheckLineage(this SongLink o)
+    {
+        return !o.Url.EndsWith(".weba") && o.SubmittedBy != Constants.RobotName;
+    }
+
+    public static bool ShouldCheckLineage(this RQ o)
+    {
+        return !o.url.EndsWith(".weba") && o.submitted_by != Constants.RobotName;
+    }
 }
