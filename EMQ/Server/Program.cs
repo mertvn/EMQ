@@ -332,7 +332,7 @@ static IServiceProvider CreateServices(string cnnStr, string[] tags)
             // Define the assembly containing the migrations
             .ScanIn(Assembly.GetExecutingAssembly()).For.Migrations())
         .Configure<RunnerOptions>(opt => { opt.Tags = tags; })
-        .Configure<ProcessorOptions>(opt => { opt.Timeout = TimeSpan.MaxValue; })
+        .Configure<ProcessorOptions>(opt => { opt.Timeout = TimeSpan.FromMinutes(10); })
         // Enable logging to console in the FluentMigrator way
         .AddLogging(lb => lb.AddFluentMigratorConsole())
         // Build the service provider
