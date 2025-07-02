@@ -5503,6 +5503,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                                         IsGuessCorrect = h.is_correct,
                                         Labels = null,
                                         IsOnList = h.is_on_list,
+                                        StartTime = h.start_time,
+                                        Duration = h.duration,
                                     }
                                 )
                             )
@@ -5659,7 +5661,8 @@ group by sq.user_id, sq.music_id, sq.guess_kind
         string sql =
             @$"select *
 from (
-select qsh.music_id as MusicId, qsh.user_id as UserId, qsh.is_correct as IsCorrect, qsh.first_guess_ms as FirstGuessMs, NULLIF(qsh.guess, '') as Guess, qsh.played_at as PlayedAt, qsh.guess_kind as GuessKind,
+select qsh.music_id as MusicId, qsh.user_id as UserId, qsh.is_correct as IsCorrect, qsh.first_guess_ms as FirstGuessMs, NULLIF(qsh.guess, '') as Guess,
+       qsh.played_at as PlayedAt, qsh.guess_kind as GuessKind, qsh.start_time as StartTime, qsh.duration as Duration,
        row_number() over (partition by qsh.user_id, qsh.guess_kind order by qsh.played_at desc) as RowNumber
 from quiz q
 join quiz_song_history qsh on qsh.quiz_id = q.id

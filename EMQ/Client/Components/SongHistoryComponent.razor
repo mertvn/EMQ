@@ -48,7 +48,7 @@
     @if (SongsHistory != null)
     {
         int selectedPlayerId = !string.IsNullOrEmpty(SelectedPlayerUsername)
-            ? PlayerStatsDict.FirstOrDefault(x=> x.Value.Username == SelectedPlayerUsername).Key
+            ? PlayerStatsDict.FirstOrDefault(x => x.Value.Username == SelectedPlayerUsername).Key
             : 0;
 
         @for (int index = 0; index < SongsHistory.Count; index++)
@@ -204,10 +204,11 @@
                             }
 
                             <ul>
-                                @foreach (var link in song.Links)
+                                @foreach (var link in song.Links.Where(x => x.IsFileLink))
                                 {
+                                    string href = $"{link.Url}#t={song.StartTime}";
                                     <li>
-                                        <a href="@link.Url" target="_blank">@link.Url</a>
+                                        <a href="@href" target="_blank">@href</a>
                                     </li>
                                 }
                             </ul>

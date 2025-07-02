@@ -1456,11 +1456,15 @@ public class QuizManager
         foreach ((int sp, SongHistory? songHistory) in Quiz.SongsHistory)
         {
             // Console.WriteLine(JsonSerializer.Serialize(songHistory.PlayerGuessInfos, Utils.JsoIndented));
-            bool isBGM = songHistory.Song.IsBGM;
             bool hasDeveloper = songHistory.Song.Sources.Any(x => x.Developers.Any());
             bool hasComposer = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer));
             bool hasArranger = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Arranger));
             bool hasLyricist = songHistory.Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist));
+
+            var startTime = TimeSpan.FromSeconds(songHistory.Song.StartTime);
+            var duration = new Song() { Links = SongLink.FilterSongLinks(songHistory.Song.Links) }
+                .DetermineSongStartTimeGetDuration(null);
+
             foreach ((int userId, Dictionary<GuessKind, GuessInfo> guessInfoDict) in songHistory.PlayerGuessInfos)
             {
                 // todo? guests
@@ -1528,6 +1532,8 @@ public class QuizManager
                             is_correct = guessInfo.IsGuessCorrect,
                             is_on_list = guessInfo.IsOnList,
                             played_at = songHistory.Song.PlayedAt,
+                            start_time = startTime,
+                            duration = duration,
                         };
 
                         quizSongHistories.Add(quizSongHistory);

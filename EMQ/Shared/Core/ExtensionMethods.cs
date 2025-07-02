@@ -328,9 +328,7 @@ public static class ExtensionMethods
 
     public static int DetermineSongStartTime(this Song song, QuizFilters? filters)
     {
-        int duration = (int)SongLink
-            .GetShortestLink(song.Links.Where(x => x.IsFileLink), filters?.IsPreferLongLinks ?? false)
-            .Duration.TotalSeconds;
+        int duration = (int)DetermineSongStartTimeGetDuration(song, filters).TotalSeconds;
         int startTimeStart = 0;
         int startTimeEnd = duration;
         const int leeway = 40;
@@ -342,6 +340,13 @@ public static class ExtensionMethods
         }
 
         return Random.Shared.Next(startTimeStart, Math.Clamp(duration - leeway, startTimeStart, startTimeEnd));
+    }
+
+    public static TimeSpan DetermineSongStartTimeGetDuration(this Song song, QuizFilters? filters)
+    {
+        return SongLink
+            .GetShortestLink(song.Links.Where(x => x.IsFileLink), filters?.IsPreferLongLinks ?? false)
+            .Duration;
     }
 
     public static UserSpacedRepetition DoSM2(this UserSpacedRepetition previous, bool isCorrect)

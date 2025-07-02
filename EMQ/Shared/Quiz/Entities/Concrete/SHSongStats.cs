@@ -21,4 +21,8 @@ public class SHSongStats
     public string Username { get; set; } = "";
 
     public GuessKind GuessKind { get; set; }
+
+    public TimeSpan? StartTime { get; set; }
+
+    public TimeSpan? Duration { get; set; }
 }

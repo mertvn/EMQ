@@ -99,6 +99,10 @@ public readonly record struct GuessInfo
 
     public bool IsOnList { get; init; }
 
+    public TimeSpan? StartTime { get; init; }
+
+    public TimeSpan? Duration { get; init; }
+
     public UserSpacedRepetition? PreviousUserSpacedRepetition { get; init; }
 
     public UserSpacedRepetition? CurrentUserSpacedRepetition { get; init; }

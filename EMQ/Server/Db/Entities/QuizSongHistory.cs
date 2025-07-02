@@ -31,4 +31,8 @@ public class QuizSongHistory
     public bool is_on_list { get; set; }
 
     public DateTime played_at { get; set; }
+
+    public TimeSpan? start_time { get; set; }
+
+    public TimeSpan? duration { get; set; }
 }

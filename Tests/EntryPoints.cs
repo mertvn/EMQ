@@ -1593,6 +1593,8 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                                 is_correct = false,
                                 is_on_list = false,
                                 played_at = date,
+                                // start_time = , // todo?
+                                // duration = , // todo?
                             };
 
                             quizSongHistories.Add(quizSongHistory);

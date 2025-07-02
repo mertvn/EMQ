@@ -48,6 +48,13 @@
                                     }
                                 </TemplateColumn>
                                 <PropertyColumn Property="@(x => x.Guess)" Title="Guess" Sortable="true"/>
+                                <TemplateColumn Title="Sample">
+                                    @if (context.StartTime != null && context.Duration != null)
+                                    {
+                                        <span>@(context.StartTime.Value.ToString("mm\\:ss"))/@(context.Duration.Value.ToString("mm\\:ss"))</span>
+                                    }
+
+                                </TemplateColumn>
                             </QuickGrid>
                         </div>
                     </Blazorise.TabPanel>
