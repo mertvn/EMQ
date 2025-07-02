@@ -21,6 +21,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using FFMpegCore;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
+using FluentMigrator.Runner.Processors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
