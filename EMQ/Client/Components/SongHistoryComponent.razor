@@ -206,7 +206,13 @@
                             <ul>
                                 @foreach (var link in song.Links.Where(x => x.IsFileLink))
                                 {
-                                    string href = $"{link.Url}#t={song.StartTime}";
+                                    string href = link.Url;
+                                    var startTime = songHistory.PlayerGuessInfos.FirstOrNull()?.Value.FirstOrNull()?.Value.StartTime;
+                                    @if (startTime is not null)
+                                    {
+                                        href += $"#t={startTime.Value.TotalSeconds}";
+                                    }
+
                                     <li>
                                         <a href="@href" target="_blank">@href</a>
                                     </li>

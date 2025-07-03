@@ -945,6 +945,8 @@ public class QuizManager
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
+        int startTime = song.StartTime;
+        var duration = song.DetermineSongStartTimeGetDuration(Quiz.Room.QuizSettings.Filters);
 
         // todo? take guesskinds as a param to avoid selecting unnecessary information
         var userSongStatsLookup =
@@ -1062,6 +1064,8 @@ public class QuizManager
                         PreviousUserSpacedRepetition = key == GuessKind.Mst ? previous : null,
                         CurrentUserSpacedRepetition = key == GuessKind.Mst ? current : null,
                         PlayerSongStats = userSongStats,
+                        StartTime = startTime,
+                        Duration = duration,
                     };
 
                     if (!songHistory.PlayerGuessInfos.TryGetValue(player.Id, out var dict))
@@ -1463,7 +1467,7 @@ public class QuizManager
 
             var startTime = TimeSpan.FromSeconds(songHistory.Song.StartTime);
             var duration = new Song() { Links = SongLink.FilterSongLinks(songHistory.Song.Links) }
-                .DetermineSongStartTimeGetDuration(null);
+                .DetermineSongStartTimeGetDuration(Quiz.Room.QuizSettings.Filters);
 
             foreach ((int userId, Dictionary<GuessKind, GuessInfo> guessInfoDict) in songHistory.PlayerGuessInfos)
             {
