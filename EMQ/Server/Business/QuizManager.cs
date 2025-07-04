@@ -885,9 +885,9 @@ public class QuizManager
                     Quiz.Room.RemoveSpectator(player);
                     Quiz.Room.Log($"{player.Username} hotjoined.", player.Id, true);
 
-                    if (Quiz.Room.QuizSettings.TeamSize > 1)
+                    if (Quiz.Room.QuizSettings.IsSharedGuessesTeams)
                     {
-                        Quiz.Room.QuizSettings.TeamSize += 1;
+                        Quiz.Room.QuizSettings.TeamSize = Math.Clamp(1, Quiz.Room.QuizSettings.TeamSize + 1, 777);
                     }
                 }
             }
@@ -945,7 +945,7 @@ public class QuizManager
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
-        int startTime = song.StartTime;
+        var startTime = TimeSpan.FromSeconds(song.StartTime);
         var duration = song.DetermineSongStartTimeGetDuration(Quiz.Room.QuizSettings.Filters);
 
         // todo? take guesskinds as a param to avoid selecting unnecessary information
