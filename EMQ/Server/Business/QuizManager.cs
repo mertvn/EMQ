@@ -199,7 +199,12 @@ public class QuizManager
                timeoutMs > 0)
         {
             // Console.WriteLine("in while " + isBufferedCount + "/" + waitNumber);
-            await Task.Delay(1000);
+
+            if (!Quiz.Room.QuizSettings.IsNoWaitMode)
+            {
+                await Task.Delay(1000);
+            }
+
             timeoutMs -= 1000;
 
             isBufferedCount = Quiz.Room.Players.Count(x => x.IsBuffered);
@@ -262,7 +267,12 @@ public class QuizManager
 
         if (Quiz.Room.QuizSettings.IsSharedGuessesTeams)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(500)); // wait for late guesses (especially non-Entered guesses)
+            if (!Quiz.Room.QuizSettings.IsNoWaitMode)
+            {
+                await Task.Delay(TimeSpan
+                    .FromMilliseconds(500)); // wait for late guesses (especially non-Entered guesses)
+            }
+
             DetermineTeamGuesses();
         }
 
@@ -817,14 +827,20 @@ public class QuizManager
             Quiz.Songs[Quiz.QuizState.sp].PlayerVotes);
 
         // wait a little for these messages to reach players, otherwise it looks really janky
-        await Task.Delay(TimeSpan.FromMilliseconds(160));
+        if (!Quiz.Room.QuizSettings.IsNoWaitMode)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(160));
+        }
 
         // send answers again to make sure everyone receives late answers
         TypedQuizHub.ReceivePlayerGuesses(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
             Quiz.Room.PlayerGuesses);
 
         // wait a little for these messages to reach players, otherwise it looks really janky
-        await Task.Delay(TimeSpan.FromMilliseconds(160));
+        if (!Quiz.Room.QuizSettings.IsNoWaitMode)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(160));
+        }
 
         Quiz.QuizState.Phase = QuizPhaseKind.Results;
         Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.ResultsMs;
@@ -941,7 +957,10 @@ public class QuizManager
     private async Task JudgeGuesses()
     {
         // don't make this delay configurable (at least not for regular users)
-        await Task.Delay(TimeSpan.FromMilliseconds(900)); // add suspense & wait for late guesses
+        if (!Quiz.Room.QuizSettings.IsNoWaitMode)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(900)); // add suspense & wait for late guesses
+        }
 
         var song = Quiz.Songs[Quiz.QuizState.sp];
         var songHistory = new SongHistory { Song = song };
@@ -2187,6 +2206,7 @@ public class QuizManager
         await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
+    // todo important pressing start with default settings doesnt work (list read kind filter prob)
     // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
@@ -2765,9 +2785,158 @@ public class QuizManager
                 throw new ArgumentOutOfRangeException();
         }
 
-        foreach (Song dbSong in dbSongs)
+        // todo important for all of these: make sure link duration matches, and batch
+        ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>? shPlayerSongStats = null;
+        var filters = Quiz.Room.QuizSettings.Filters;
+        if (filters.StartTimeKind is StartTimeKind.Easy or StartTimeKind.Hard)
         {
-            dbSong.Links = SongLink.FilterSongLinks(dbSong.Links, Quiz.Room.QuizSettings.Filters.IsPreferLongLinks);
+            shPlayerSongStats =
+                await DbManager.GetSHPlayerSongStats(dbSongs.Select(x => x.Id).ToList(), null);
+        }
+
+        int failedToDetermineStartTimeCount = 0;
+        for (int i = 0; i < dbSongs.Count; i++)
+        {
+            Song song = dbSongs[i];
+            song.Links = SongLink.FilterSongLinks(song.Links, Quiz.Room.QuizSettings.Filters.IsPreferLongLinks);
+
+            int? startTime = null;
+            switch (filters.StartTimeKind)
+            {
+                case StartTimeKind.Random:
+                    break;
+                case StartTimeKind.Easy:
+                    throw new NotImplementedException();
+                case StartTimeKind.Hard:
+                    {
+                        // find players who usually hit this song
+                        var hittingPlayers = new List<int>();
+                        foreach (IGrouping<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>
+                                     shPlayerSongStat in shPlayerSongStats!)
+                        {
+                            foreach (Dictionary<GuessKind, Dictionary<int, PlayerSongStats>> dict in shPlayerSongStat)
+                            {
+                                var mst = dict.GetValueOrDefault(GuessKind.Mst);
+                                if (mst == null)
+                                {
+                                    continue;
+                                }
+
+                                foreach ((int key, PlayerSongStats? value) in mst)
+                                {
+                                    if (key != song.Id)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (value.TimesPlayed >= 2 && value.CorrectPercentage is >= 60 and < 100 &&
+                                        value.UserId < Constants.PlayerIdBotMin)
+                                    {
+                                        // Console.WriteLine(
+                                        //     $"usually hits {song}: {value.UserId} {value.TimesCorrect}/{value.TimesPlayed}");
+                                        hittingPlayers.Add(value.UserId);
+                                    }
+                                }
+                            }
+                        }
+
+                        // find start times where those players did not hit the song
+                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        var startTimes = (await connection.QueryAsync<(TimeSpan timeSpan, int count)>(
+                            @$"
+SELECT start_time, count(*) FROM quiz_song_history qsh
+JOIN quiz q ON q.id = qsh.quiz_id
+WHERE q.should_update_stats
+AND qsh.start_time IS NOT NULL
+AND qsh.guess_kind = {(int)GuessKind.Mst}
+AND NOT qsh.is_correct
+AND qsh.music_id = @mId
+AND qsh.user_id = ANY(@uIds)
+GROUP BY start_time",
+                            new { mId = song.Id, uIds = hittingPlayers })).ToArray();
+                        if (startTimes.Any())
+                        {
+                            // Console.WriteLine(
+                            //     $"{song}: {JsonSerializer.Serialize(startTimes, new JsonSerializerOptions() { IncludeFields = true })}");
+
+                            // cluster start times within 10 seconds of each other; todo go down to 5 in 6 months
+                            // and require at least 3 plays
+                            var clustered = Utils.ClusterTimeSpans(startTimes, TimeSpan.FromSeconds(10))
+                                .Where(x => x.count >= 3).ToArray();
+                            if (clustered.Any())
+                            {
+                                // Quiz.Room.Log(
+                                //     $"Determined {filters.StartTimeKind} sample time for song #{i + 1}.",
+                                //     writeToChat: true);
+                                startTime = (int)Math.Ceiling(clustered.Shuffle().First().timeSpans
+                                    .Average(x => x.TotalSeconds));
+                            }
+                        }
+
+                        break;
+                    }
+                case StartTimeKind.Vocals:
+                    throw new NotImplementedException();
+                case StartTimeKind.NoVocals:
+                    {
+                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink),
+                            filters.IsPreferLongLinks);
+                        var ranges = await connection.QueryFirstOrDefaultAsync<TimeRange[]>(
+                            @"
+SELECT multirange_minus(tsmultirange(tsrange('[1970-01-01 00:00:00, infinity)')), vocals_ranges)
+FROM music_external_link mel WHERE vocals_ranges IS NOT null and url like @url",
+                            new { url = $"%{shortestLink.Url}%" });
+                        ranges = ranges?.Where(x =>
+                                     x.Duration >= Quiz.Room.QuizSettings.Filters.StartTimeSectionMinimumSeconds &&
+                                     x.Duration <= 10 * 60).ToArray() ??
+                                 Array.Empty<TimeRange>();
+                        if (ranges.Any())
+                        {
+                            // Quiz.Room.Log(
+                            //     $"Determined {filters.StartTimeKind} sample time for song #{i + 1}.",
+                            //     writeToChat: true);
+                            var range = ranges.Shuffle().First();
+                            // todo make sure we're not selecting too close to end
+                            // todo randomize within range, but make sure there is at least N seconds before next vocals section
+                            startTime = (int)Math.Ceiling(range.Start);
+                        }
+
+                        break;
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (startTime == null)
+            {
+                if (filters.StartTimeKind != StartTimeKind.Random)
+                {
+                    Quiz.Room.Log(
+                        $"Failed to determine {filters.StartTimeKind} sample time for song #{i + 1}, falling back to {StartTimeKind.Random}.",
+                        writeToChat: false);
+                    failedToDetermineStartTimeCount += 1;
+                }
+
+                startTime = Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio
+                    ? 0
+                    : song.DetermineSongStartTime(filters.StartTimeKind == StartTimeKind.Random ? filters : null);
+            }
+
+            song.StartTime = startTime.Value;
+        }
+
+        // if (failedToDetermineStartTimeCount >= Quiz.Room.QuizSettings.NumSongs)
+        // {
+        //     return false;
+        // }
+
+        if (failedToDetermineStartTimeCount > Quiz.Room.QuizSettings.NumSongs / 2)
+        {
+            Quiz.Room.Log(
+                $"Failed to determine {filters.StartTimeKind} sample time for over half of the songs. Canceling quiz.",
+                writeToChat: true);
+            return false;
         }
 
         // Console.WriteLine(JsonSerializer.Serialize(Quiz.Songs));
@@ -3363,7 +3532,7 @@ public class QuizManager
                 }
             }
 
-            Quiz.QuizState.RemainingMs = 500;
+            Quiz.QuizState.RemainingMs = Quiz.Room.QuizSettings.IsNoWaitMode ? 0 : 500;
             Quiz.QuizState.ExtraInfo = "Skipping...";
             Quiz.Room.Log($"Skipping...");
 

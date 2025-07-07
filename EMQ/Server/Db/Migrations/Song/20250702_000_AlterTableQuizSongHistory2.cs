@@ -14,6 +14,7 @@ public class AlterTableQuizSongHistory2 : Migration
         Execute.Sql(@"
 ALTER TABLE quiz_song_history ADD COLUMN start_time time NULL;
 ALTER TABLE quiz_song_history ADD COLUMN duration time NULL;
+CREATE INDEX idx_quiz_song_history_start_time ON quiz_song_history(start_time);
 
 DROP TABLE IF EXISTS unique_quiz_plays;
 CREATE TABLE unique_quiz_plays (

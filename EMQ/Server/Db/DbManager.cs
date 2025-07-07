@@ -44,6 +44,8 @@ public static class DbManager
         Console.WriteLine("Initializing DbManager");
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
         SqlMapper.AddTypeHandler(new GenericArrayHandler<int>());
+        SqlMapper.AddTypeHandler(new TimeMultiRangeHandler());
+
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
 
@@ -2875,8 +2877,7 @@ RETURNING id;",
                         song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
                     }
 
-                    song!.StartTime = gamemodeKind == GamemodeKind.Radio ? 0 : song.DetermineSongStartTime(filters);
-                    ret.Add(song);
+                    ret.Add(song!);
                     addedMselUrls.Add(mselUrl);
                 }
             }
@@ -3377,25 +3378,7 @@ AND msm.type = ANY(@msmType)";
         return success;
     }
 
-//     public static async Task<bool> SetSongStats(int mId, SongStats songStats, IDbTransaction? transaction)
-//     {
-//         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
-//         {
-//             var querySongStats = connection.QueryBuilder($@"UPDATE music SET
-//                  stat_correct = {songStats.TimesCorrect},
-//                  stat_played = {songStats.TimesPlayed},
-//                  stat_guessed = {songStats.TimesGuessed},
-//                  stat_totalguessms = {songStats.TotalGuessMs}
-// WHERE id = {mId};
-//                  ");
-//
-//             Console.WriteLine(
-//                 $"Attempting to set SongStats for mId {mId}: " + JsonSerializer.Serialize(songStats, Utils.Jso));
-//             return await connection.ExecuteAsync(querySongStats.Sql, querySongStats.Parameters, transaction) > 0;
-//         }
-//     }
-
-    public static async Task<bool> RecalculateSongStats(HashSet<int> mIds)
+    public static async Task RecalculateSongStats(HashSet<int> mIds)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connection.OpenAsync();
@@ -3443,9 +3426,30 @@ AND msm.type = ANY(@msmType)";
         {
             CachedLibraryStats[key] = null;
         }
-
-        return true;
     }
+
+//     public static async Task RecalculateStartTimeDifficulty(HashSet<int> mIds)
+//     {
+//         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+//         await connection.OpenAsync();
+//         await using (var transaction = await connection.BeginTransactionAsync())
+//         {
+//             const string sql = @"
+//                 SELECT quiz_id, music_id, user_id, is_correct, start_time, duration FROM quiz_song_history qsh
+// JOIN quiz q ON q.id = qsh.quiz_id
+// WHERE created_at > '2025-07-01'
+// AND start_time IS NOT NULL
+// AND q.should_update_stats
+// AND guess_kind = 0
+// AND music_id = ANY(@mIds)
+// ORDER BY music_id";
+//
+//             var qsh = (await connection.QueryAsync<QuizSongHistory>(sql,
+//                 new { mIds = mIds.ToArray(), })).ToArray();
+//
+//             // todo
+//         }
+//     }
 
     public static async Task<int> InsertReviewQueue(int mId, SongLink songLink, string? analysis = null)
     {
@@ -5630,7 +5634,7 @@ ORDER BY type";
     }
 
     public static async Task<ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>>
-        GetSHPlayerSongStats(List<int> mIds, List<int> userIds)
+        GetSHPlayerSongStats(List<int> mIds, List<int>? userIds)
     {
         const string sql =
             @"select sq.user_id as userid, sq.music_id AS musicid, count(sq.is_correct) filter(where sq.is_correct) as timescorrect, count(sq.music_id) as timesplayed, count(sq.guessed) as timesguessed, sum(sq.first_guess_ms) as totalguessms, sq.guess_kind as guesskind
@@ -5638,7 +5642,7 @@ from (
 select qsh.music_id, qsh.user_id, qsh.is_correct, qsh.first_guess_ms, NULLIF(qsh.guess, '') as guessed, qsh.guess_kind
 from quiz q
 join quiz_song_history qsh on qsh.quiz_id = q.id
-where q.should_update_stats and music_id = ANY(@mIds) and user_id = ANY(@userIds)
+where q.should_update_stats and music_id = ANY(@mIds) and ((@userIds::int4[] IS NULL) or user_id = ANY(@userIds::int4[]))
 order by qsh.played_at desc
 ) sq
 group by sq.user_id, sq.music_id, sq.guess_kind
@@ -5656,7 +5660,7 @@ group by sq.user_id, sq.music_id, sq.guess_kind
         return lookup;
     }
 
-    public static async Task<Dictionary<GuessKind, SHSongStats[]>> GetSHSongStats(int mId)
+    public static async Task<Dictionary<GuessKind, SHSongStats[]>> GetSHSongStats(int mId, int lastNPlays)
     {
         string sql =
             @$"select *
@@ -5669,13 +5673,13 @@ join quiz_song_history qsh on qsh.quiz_id = q.id
 where q.should_update_stats and music_id = @mId
 order by qsh.played_at desc
 ) sq
-where RowNumber <= {Constants.SHUseLastNPlaysPerPlayer}
+where RowNumber <= @lastNPlays
 limit 2500;
 ";
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var results = await connection.QueryAsync<SHSongStats>(sql,
-            new { mId, lastNPlays = Constants.SHUseLastNPlaysPerPlayer });
+            new { mId, lastNPlays });
 
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
         var usernamesDict = (await connectionAuth.QueryAsync<(int, string)>("select id, username from users"))

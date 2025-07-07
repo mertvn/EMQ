@@ -197,6 +197,17 @@ public class QuizFilters
     [ProtoMember(30)]
     public List<SongSourceFilter> SongSourceFilters { get; set; } = new();
 
+    [ProtoMember(31)]
+    [Required]
+    [DefaultValue(StartTimeKind.Random)]
+    public StartTimeKind StartTimeKind { get; set; } = StartTimeKind.Random;
+
+    [ProtoMember(32)]
+    [Required]
+    [Range(3, 99)]
+    [DefaultValue(10)]
+    public int StartTimeSectionMinimumSeconds { get; set; } = 10;
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

@@ -147,6 +147,36 @@ public static class Utils
                 .Reverse()).NormalizeForAutocomplete();
     }
 
+    public static List<(List<TimeSpan> timeSpans, int count)> ClusterTimeSpans(
+        IEnumerable<(TimeSpan timeSpan, int count)> source, TimeSpan threshold)
+    {
+        var sorted = source.OrderBy(x => x).ToList();
+        var result = new List<(List<TimeSpan>, int)>();
+        foreach (var tuple in sorted)
+        {
+            if (result.Count == 0)
+            {
+                result.Add((new List<TimeSpan> { tuple.timeSpan }, tuple.count));
+            }
+            else
+            {
+                var lastCluster = result[^1];
+                var lastItemInCluster = lastCluster.Item1[^1];
+                if (tuple.timeSpan - lastItemInCluster <= threshold)
+                {
+                    lastCluster.Item1.Add(tuple.timeSpan);
+                    lastCluster.Item2 += tuple.count;
+                }
+                else
+                {
+                    result.Add((new List<TimeSpan> { tuple.timeSpan }, tuple.count));
+                }
+            }
+        }
+
+        return result;
+    }
+
     public class MyStopwatchSection
     {
         public string Name { get; set; } = "";

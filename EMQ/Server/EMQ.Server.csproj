@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CSCore" Version="1.2.1.2" />
     <PackageReference Include="Dapper" Version="2.1.37" />
     <PackageReference Include="Dapper-QueryBuilder" Version="1.2.9" />
     <PackageReference Include="Dapper.Database" Version="3.0.0.238" />

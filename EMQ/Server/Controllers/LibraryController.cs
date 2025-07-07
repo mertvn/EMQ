@@ -368,7 +368,7 @@ public class LibraryController : ControllerBase
     [Route("GetSHSongStats")]
     public async Task<Dictionary<GuessKind, SHSongStats[]>> GetSHSongStats([FromBody] int mId)
     {
-        var res = await DbManager.GetSHSongStats(mId);
+        var res = await DbManager.GetSHSongStats(mId, Constants.SHUseLastNPlaysPerPlayer);
         return res;
     }
 

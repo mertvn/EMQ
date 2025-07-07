@@ -636,16 +636,56 @@
                             </div>
                         </div>
 
-                    <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 220px;">
-                        <h5>Sample point %</h5>
-                        <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
-                            <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.StartTimePercentageStart"
-                                          @bind-ValueHigh="@ClientQuizSettings.Filters.StartTimePercentageEnd"
-                                          MinValue="@Constants.QFStartTimePercentageMin" MaxValue="@Constants.QFStartTimePercentageMax">
-                            </RangeControl>
-                            <div style="display: inline-block">
-                                <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageStart" style="width: 60px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageEnd" style="width: 60px;"></InputNumber>
-                            </div>
+                    <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 235px;">
+                        <h5>Sample point</h5>
+                        <InputSelect id="StartTimeKind" @bind-Value="ClientQuizSettings.Filters.StartTimeKind" style="margin: 5px">
+                            @foreach (StartTimeKind startTimeKind in Enum.GetValues<StartTimeKind>())
+                            {
+                                @if (startTimeKind is StartTimeKind.Easy or StartTimeKind.Vocals)
+                                {
+                                    continue;
+                                }
+
+                                <option value="@startTimeKind">
+                                    @if (!string.IsNullOrEmpty(startTimeKind.GetDescription()))
+                                    {
+                                        @startTimeKind.GetDescription()
+                                    }
+                                    else
+                                    {
+                                        @startTimeKind
+                                    }
+                                </option>
+                            }
+                        </InputSelect>
+                        <label for="StartTimeKind">Type</label>
+                        <br/>
+                        <div style="display: flex; align-items: center; justify-items: center;">
+                            @switch (ClientQuizSettings.Filters.StartTimeKind)
+                            {
+                                case StartTimeKind.Random:
+                                    <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                        <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.StartTimePercentageStart"
+                                                      @bind-ValueHigh="@ClientQuizSettings.Filters.StartTimePercentageEnd"
+                                                      MinValue="@Constants.QFStartTimePercentageMin" MaxValue="@Constants.QFStartTimePercentageMax">
+                                        </RangeControl>
+                                        <div style="display: inline-block">
+                                            <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageStart" style="width: 60px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.StartTimePercentageEnd" style="width: 60px;"></InputNumber>
+                                        </div>
+                                    </div>
+                                    break;
+                                case StartTimeKind.Easy:
+                                case StartTimeKind.Hard:
+                                    break;
+                                case StartTimeKind.NoVocals:
+                                case StartTimeKind.Vocals:
+                                    <InputNumber id="StartTimeSectionMinimumSeconds" @bind-Value="ClientQuizSettings.Filters.StartTimeSectionMinimumSeconds" style="margin: 5px; width: 50px;"></InputNumber>
+                                    <label for="StartTimeSectionMinimumSeconds">Minimum (seconds)</label>
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
                         </div>
                     </div>
 

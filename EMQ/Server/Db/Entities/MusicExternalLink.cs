@@ -42,4 +42,6 @@ public class MusicExternalLink
     [Required]
     [MaxLength(4096)]
     public string comment { get; set; } = "";
+
+    public TimeRange[] vocals_ranges { get; set; } = Array.Empty<TimeRange>();
 }

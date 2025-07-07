@@ -1780,4 +1780,186 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
 
         Console.WriteLine(total / 1024);
     }
+
+    // [Test, Explicit]
+    // public static async Task InsertVocalsRanges()
+    // {
+    //     const string baseOutputPath = @"M:\llm\vocals\output\htdemucs";
+    //     string[] files = Directory.GetFiles(baseOutputPath, "vocals.flac", SearchOption.AllDirectories);
+    //     foreach (string file in files)
+    //     {
+    //         var process = new Process()
+    //         {
+    //             StartInfo = new ProcessStartInfo()
+    //             {
+    //                 FileName = @"python",
+    //                 Arguments = $"detect_vocals.py {file}",
+    //                 CreateNoWindow = true,
+    //                 UseShellExecute = false,
+    //                 RedirectStandardOutput = true,
+    //                 RedirectStandardError = true,
+    //                 WorkingDirectory = @"M:\llm\vocals",
+    //             }
+    //         };
+    //         process.Start();
+    //         process.BeginErrorReadLine();
+    //         string err = await process.StandardOutput.ReadToEndAsync();
+    //         await process.WaitForExitAsync();
+    //         if (!err.Any())
+    //         {
+    //             throw new Exception();
+    //         }
+    //
+    //         // Console.WriteLine(err);
+    //         string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+    //         var matches = new List<string>();
+    //         foreach (string line in lines)
+    //         {
+    //             Console.WriteLine(line);
+    //         }
+    //     }
+    // }
+
+    [Test, Explicit]
+    public static async Task Multirangetest()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        // var newRanges = new TimeRange[] { new(1.05, 16.77), new(24.31, 85.21) };
+        //
+        // await connection.ExecuteAsync(
+        //     "update music_external_link SET vocals_ranges = @newRanges WHERE url LIKE '%00082bdf-930e-4dd3-9246-0d2095cf4f3a%'",
+        //     new { newRanges });
+
+        var results =
+            await connection.QueryAsync<TimeRange[]>(
+                "SELECT vocals_ranges FROM music_external_link where vocals_ranges is not null");
+
+        results =
+            await connection.QueryAsync<TimeRange[]>(
+                @"SELECT
+        multirange_minus(
+            tsmultirange(tsrange('[1970-01-01 00:00:00, infinity)')),
+            vocals_ranges
+        ) AS free_times
+        FROM music_external_link mel
+            WHERE vocals_ranges IS NOT null");
+        foreach (TimeRange[] timeRanges in results)
+        {
+            foreach (TimeRange timeRange in timeRanges)
+            {
+                Console.WriteLine(timeRange);
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public static async Task InsertVocalsRangesSharp()
+    {
+        const string baseOutputPath = @"O:\!demucsoutput\htdemucs";
+        string[] files = Directory.GetFiles(baseOutputPath, "vocals.flac", SearchOption.AllDirectories).OrderBy(x => x)
+            .ToArray();
+
+        var options = new VocalDetectorOptions { EnergyThreshold = 0.1, MinSilenceDurationSec = 3, };
+        await Parallel.ForEachAsync(files,
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 },
+            async (file, _) =>
+            {
+                var ranges = VocalDetector.Detect(file, options).Where(x => x.Duration > 3);
+                await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                int rows = await connection.ExecuteAsync(
+                    "update music_external_link SET vocals_ranges = @ranges WHERE url LIKE @url",
+                    new
+                    {
+                        ranges = ranges.ToArray(),
+                        url = $"%{new DirectoryInfo(file).Parent!.Name.Replace(".weba", "")}%"
+                    });
+                switch (rows)
+                {
+                    case <= 0:
+                        Console.WriteLine($"not found in db: {file}");
+                        break;
+                    case >= 3:
+                        Console.WriteLine($"rows >= 3: {file}");
+                        break;
+                }
+            });
+    }
+
+    [Test, Explicit]
+    public static async Task CopyToDemucsInputFolder()
+    {
+        const string baseDownloadDir = "K:/emq/emqsongsbackup2";
+        const string baseOutputDir = "G:/!demucsinput";
+        // Directory.SetCurrentDirectory(baseDownloadDir);
+        string[] filePaths = Directory.GetFiles(baseDownloadDir, "*.*",
+            new EnumerationOptions() { RecurseSubdirectories = true });
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+        Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
+            .GroupBy(x => x.Item1)
+            .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+        List<int> validMids = mids
+            .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+            .Select(z => z.Key)
+            .ToList();
+
+        List<Song> dbSongs = await DbManager.SelectSongsMIds(validMids.ToArray(), false);
+        var validUrls = dbSongs.SelectMany(x =>
+                x.Links.Where(y => y.IsFileLink && !y.IsVideo).Select(y => y.Url.ReplaceSelfhostLink().LastSegment()))
+            .ToHashSet();
+        foreach (string filePath in filePaths)
+        {
+            string fileName = Path.GetFileName(filePath);
+            if (validUrls.Contains(fileName))
+            {
+                // Console.WriteLine(fileName);
+                var fileInfo = new FileInfo(fileName);
+                bool isWeba = fileInfo.Extension == ".weba";
+                string finalFilename = $"{baseOutputDir}/{(isWeba ? $"{fileInfo.Name}.flac" : fileName)}";
+                if (File.Exists(finalFilename))
+                {
+                    continue;
+                }
+
+                if (isWeba)
+                {
+                    string outputFinal = $"{Path.GetTempFileName()}.flac";
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "ffmpeg",
+                            Arguments = $"-i \"{filePath}\" -nostdin \"{outputFinal}\"",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    string err = await process.StandardError.ReadToEndAsync();
+                    if (File.Exists(outputFinal))
+                    {
+                        File.Move(outputFinal, finalFilename);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"error transcoding to flac: {err}");
+                    }
+                }
+                else
+                {
+                    File.Copy(filePath, finalFilename);
+                }
+            }
+            else
+            {
+                // Console.WriteLine("b");
+            }
+        }
+    }
 }

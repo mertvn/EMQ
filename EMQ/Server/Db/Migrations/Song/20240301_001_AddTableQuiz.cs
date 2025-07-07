@@ -19,6 +19,7 @@ public class AddTableQuiz : Migration
 
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("room_id");
         Create.Index().OnTable(tableName).InSchema("public").OnColumn("should_update_stats");
+        Create.Index().OnTable(tableName).InSchema("public").OnColumn("created_at");
     }
 
     public override void Down()

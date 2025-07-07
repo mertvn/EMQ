@@ -314,6 +314,11 @@ public class QuizSettings
     [DefaultValue(200)]
     public int CappedRandomLimit { get; set; } = 200;
 
+    [ProtoMember(38)]
+    [Required]
+    [DefaultValue(false)]
+    public bool IsNoWaitMode { get; set; } = false;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -751,6 +756,18 @@ public class QuizSettings
         if (o.CappedRandomLimit != n.CappedRandomLimit)
         {
             diff.Add($"CappedRandom limit: {o.CappedRandomLimit} → {n.CappedRandomLimit}");
+        }
+
+        if (o.Filters.StartTimeKind != n.Filters.StartTimeKind)
+        {
+            diff.Add(
+                $"Sample point type: {o.Filters.StartTimeKind.GetDescription()} → {n.Filters.StartTimeKind.GetDescription()}");
+        }
+
+        if (o.Filters.StartTimeSectionMinimumSeconds != n.Filters.StartTimeSectionMinimumSeconds)
+        {
+            diff.Add(
+                $"Sample point section minimum seconds: {o.Filters.StartTimeSectionMinimumSeconds} → {n.Filters.StartTimeSectionMinimumSeconds}");
         }
 
         return diff;

@@ -566,7 +566,11 @@ public partial class QuizPage
         await SyncWithServer();
         // TODO: do endgame stuff
         await _jsRuntime.InvokeVoidAsync("removeQuizPageEventListeners");
-        await Task.Delay(TimeSpan.FromSeconds(15));
+        if (Room == null || !Room.QuizSettings.IsNoWaitMode)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(15));
+        }
+
         _navigation.NavigateTo("/RoomPage");
     }
 

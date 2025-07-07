@@ -228,6 +228,7 @@
                     <div class="card-body">
                         <h5>My song stats</h5>
 
+                        @* DbManager.GetSHPlayerSongStats *@
                         <div class="playerSongStatsGuessRate">
                             Guess rate: @(Math.Round(ownPgi.PlayerSongStats.CorrectPercentage, 2))% (@(ownPgi.PlayerSongStats.TimesCorrect)/@(ownPgi.PlayerSongStats.TimesPlayed))
                         </div>
