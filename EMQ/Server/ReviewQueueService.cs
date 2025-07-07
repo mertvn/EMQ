@@ -36,6 +36,7 @@ public sealed class ReviewQueueService : BackgroundService
                                              x.lineage == SongLinkLineage.Unknown &&
                                              DateTime.UtcNow > x.submitted_on.AddMinutes(ToleranceMinutes)))
             {
+                // todo also apply to weba of webm
                 await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Rejected, UnknownLineageRejectMessage);
             }
         }

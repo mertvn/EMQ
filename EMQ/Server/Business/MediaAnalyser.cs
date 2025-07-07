@@ -340,12 +340,22 @@ public static class MediaAnalyser
             throw new Exception("Audio codec in the source video is unprocessable.");
         }
 
-        bool requiresDownscale = result.Width * result.Height > 1280 * 768;
         bool canCopyAudio = copiableAudioFormats.Contains(result.PrimaryAudioStreamCodecName);
         bool encodeAudioSeparately = !canCopyAudio && false;
         bool cropSilence = uploadOptions.ShouldCropSilence;
         bool doTwoPass = uploadOptions.DoTwoPass;
-        string vfStr = result.AvgFramerate is > 31 and < 121 ? "-vf \"fps=30\" " : "";
+
+        string vfStr = "";
+        bool requires30Fps = result.AvgFramerate is > 31 and < 121;
+        bool requiresDownscale = result.Width * result.Height > 1280 * 768;
+        if (requires30Fps || requiresDownscale)
+        {
+            var filters = new List<string>();
+            if (requires30Fps) filters.Add("fps=30");
+            if (requiresDownscale) filters.Add("scale=-1:720,setsar=1");
+            vfStr = $"-vf \"{string.Join(',', filters)}\" ";
+        }
+
         float volumeAdjust = uploadOptions.ShouldAdjustVolume ? MediaAnalyser.GetVolumeAdjust(result) : 0;
         // volumeAdjust = 13;
 
@@ -382,7 +392,6 @@ public static class MediaAnalyser
                           $"-c:v libvpx-vp9 -b:v {maxVideoBitrateKbps}k -crf 28 -pix_fmt yuv420p " +
                           $"-deadline good -cpu-used 3 -tile-columns 2 -threads {threads} -row-mt 1 {vfStr}" +
                           $"-g 100 " +
-                          (requiresDownscale ? "-vf \"scale=-1:720,setsar=1\" " : "") +
                           $"-c:a {audioEncoderName} -b:a 320k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
                           $"-nostdin \"{outputFinal}\"";
 

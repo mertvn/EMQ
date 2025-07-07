@@ -239,20 +239,14 @@ public class MusicBrainzMethods
                              ?? content.SongArtists.FirstOrDefault(x => x.Titles.Any(y => y.IsMainTitle))
                              ?? content.SongArtists.First();
 
-                    var newTitles = artist.Titles.Where(y =>
-                        y.LatinTitle == selectedArtist.AALatinAlias &&
-                        ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
-                         (y.NonLatinTitle == selectedArtist.AANonLatinAlias))).ToList();
+                    var newTitle = artist.Titles.FirstOrDefault(y =>
+                                       y.LatinTitle == selectedArtist.AALatinAlias &&
+                                       ((y.NonLatinTitle == null && selectedArtist.AANonLatinAlias == "") ||
+                                        (y.NonLatinTitle == selectedArtist.AANonLatinAlias)))
+                                   ?? artist.Titles.FirstOrDefault(x => x.IsMainTitle)
+                                   ?? artist.Titles.First();
 
-                    if (!newTitles.Any())
-                    {
-                        artist.Titles = new List<Title>
-                        {
-                            artist.Titles.FirstOrDefault(x => x.IsMainTitle) ?? artist.Titles.First()
-                        };
-                    }
-
-                    artist.Titles = newTitles;
+                    artist.Titles = new List<Title> { newTitle };
                 }
             }
 

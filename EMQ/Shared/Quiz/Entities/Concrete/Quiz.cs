@@ -45,6 +45,7 @@ public sealed class Quiz : IDisposable
     public Dictionary<string, List<Title>> ValidSourcesForLooting { get; set; } = new();
 
     // todo move into QuizState
+    // todo only keep previous 3 and next 3 because it increases serialized size a lot
     public Dictionary<GuessKind, Dictionary<int, List<Title>>> MultipleChoiceOptions { get; set; } = new();
 
     [JsonIgnore]

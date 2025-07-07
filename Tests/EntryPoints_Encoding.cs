@@ -111,6 +111,7 @@ public class EntryPoints_Encoding
             rarFiles.AddRange(Directory.EnumerateFiles(inputDir, $"*.{rarExtension}", SearchOption.AllDirectories));
         }
 
+        // todo, this isn't processed yet
         const char startChar = 'K';
         const char endChar = 'L';
 
