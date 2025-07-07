@@ -100,4 +100,8 @@ public class MediaAnalyserResult
     public bool? EncodedByEmq { get; set; }
 
     public string? OriginalExtension { get; set; }
+
+    public TimeSpan? StartSilence { get; set; }
+
+    public TimeSpan? EndSilence { get; set; }
 }

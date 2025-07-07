@@ -178,6 +178,16 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
                     }
                 </li>
                 <li>Filesize: @Math.Round(reviewingItem.analysis_raw.FilesizeMb ?? 0, 2) MB</li>
+                <li>
+                    <span style="color: @UiHelpers.Bool2Color(reviewingItem.analysis_raw.StartSilence?.TotalSeconds > 1, "red", "inherit");">
+                        Start silence: @reviewingItem.analysis_raw.StartSilence?.ToString("s\\.fff")s
+                    </span>
+                </li>
+                <li>
+                    <span style="color: @UiHelpers.Bool2Color(reviewingItem.analysis_raw.EndSilence?.TotalSeconds > 7, "red", "inherit");">
+                        End silence: @reviewingItem.analysis_raw.EndSilence?.ToString("s\\.fff")s
+                    </span>
+                </li>
                 <br/>
                 @if (reviewingItem.analysis_raw.VolumeDetect != null)
                 {

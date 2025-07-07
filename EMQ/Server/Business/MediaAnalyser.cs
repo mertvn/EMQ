@@ -215,6 +215,20 @@ public static class MediaAnalyser
 
             try
             {
+                (string ss, string to) = await GetSsAndTo(filePath, CancellationToken.None, false);
+                result.StartSilence = TimeSpan.ParseExact(ss, "c", CultureInfo.InvariantCulture);
+                if (!string.IsNullOrWhiteSpace(to))
+                {
+                    result.EndSilence = result.Duration - TimeSpan.ParseExact(to, "c", CultureInfo.InvariantCulture);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            try
+            {
                 // idk if this is good
                 // https://sound.stackexchange.com/questions/52819/how-to-use-ffmpeg-to-detect-clipping
                 var process = new Process()
@@ -363,7 +377,7 @@ public static class MediaAnalyser
         string to = "";
         if (cropSilence)
         {
-            (ss, to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken);
+            (ss, to) = await MediaAnalyser.GetSsAndTo(filePath, cancellationToken, true);
         }
         else
         {
@@ -492,7 +506,7 @@ public static class MediaAnalyser
         string to = "";
         if (uploadOptions.ShouldCropSilence)
         {
-            (ss, to) = await GetSsAndTo(filePath, cancellationToken);
+            (ss, to) = await GetSsAndTo(filePath, cancellationToken, true);
         }
         else
         {
@@ -593,7 +607,8 @@ public static class MediaAnalyser
         return volumeAdjust;
     }
 
-    public static async Task<(string ss, string to)> GetSsAndTo(string filePath, CancellationToken cancellationToken)
+    public static async Task<(string ss, string to)> GetSsAndTo(string filePath, CancellationToken cancellationToken,
+        bool applyLeeway)
     {
         const float silenceLeewaySeconds = 0.2f;
         const float silenceStartTolerance = 0.4f;
@@ -647,12 +662,16 @@ public static class MediaAnalyser
                             if (silenceStart <= silenceStartTolerance)
                             {
                                 // start silence
-                                ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
+                                ss = TimeSpan
+                                    .FromSeconds(silenceEnd - (applyLeeway ? silenceLeewaySeconds : 0))
+                                    .ToString("c");
                             }
                             else // todo? this can produce 0s files sometimes
                             {
                                 // end silence
-                                to = TimeSpan.FromSeconds(silenceStart + silenceLeewaySeconds).ToString("c");
+                                to = TimeSpan
+                                    .FromSeconds(silenceStart + (applyLeeway ? silenceLeewaySeconds : 0))
+                                    .ToString("c");
                             }
 
                             break;
@@ -675,7 +694,9 @@ public static class MediaAnalyser
                                 }
 
                                 // silenceEnd -= silenceStart;
-                                ss = TimeSpan.FromSeconds(silenceEnd - silenceLeewaySeconds).ToString("c");
+                                ss = TimeSpan
+                                    .FromSeconds(silenceEnd - (applyLeeway ? silenceLeewaySeconds : 0))
+                                    .ToString("c");
                             }
 
                             {
@@ -689,7 +710,9 @@ public static class MediaAnalyser
                                 }
 
                                 // end silence
-                                to = TimeSpan.FromSeconds(silenceStart + silenceLeewaySeconds).ToString("c");
+                                to = TimeSpan
+                                    .FromSeconds(silenceStart + (applyLeeway ? silenceLeewaySeconds : 0))
+                                    .ToString("c");
                             }
 
                             break;
