@@ -41,7 +41,8 @@ public partial class SongLink
     public string Comment { get; set; } = "";
 
     // don't really want to put this here but we need it because we're deleting and reinserting mel when editing songs
-    public TimeRange[]? VocalsRanges { get; set; }
+    /// this is supposed to be nullable but Cloneable throws a NRE
+    public TimeRange[] VocalsRanges { get; set; } = Array.Empty<TimeRange>();
 
     public override string ToString() => Url;
 

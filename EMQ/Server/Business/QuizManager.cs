@@ -2788,6 +2788,9 @@ public class QuizManager
         var filters = Quiz.Room.QuizSettings.Filters;
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
+        var shortestLinkDict = dbSongs.ToDictionary(song => song.Id,
+            song => SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
+                filters.IsPreferLongLinks));
         ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>? shPlayerSongStats = null;
         (string, TimeRange[])[]? ranges = null;
         switch (filters.StartTimeKind)
@@ -2860,8 +2863,8 @@ public class QuizManager
                         }
 
                         // find start times where those players did not hit the song
-                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
-                            filters.IsPreferLongLinks);
+                        // not worth it to try to write this in a batched manner, increases LOC by like 3x, and it's not that much more efficient either
+                        var shortestLink = shortestLinkDict[song.Id];
                         var startTimes = (await connection.QueryAsync<(TimeSpan timeSpan, int count)>(
                             @$"
 SELECT start_time, count(*) FROM quiz_song_history qsh
@@ -2899,8 +2902,7 @@ GROUP BY start_time",
                 case StartTimeKind.Vocals:
                 case StartTimeKind.NoVocals:
                     {
-                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
-                            filters.IsPreferLongLinks);
+                        var shortestLink = shortestLinkDict[song.Id];
                         var match = ranges!.FirstOrDefault(x =>
                             x.Item1.ReplaceSelfhostLink().UnReplaceSelfhostLink() ==
                             shortestLink.Url.ReplaceSelfhostLink().UnReplaceSelfhostLink());
@@ -2946,12 +2948,12 @@ GROUP BY start_time",
             song.StartTime = startTime.Value;
         }
 
-        // if (failedToDetermineStartTimeCount >= Quiz.Room.QuizSettings.NumSongs)
+        // if (failedToDetermineStartTimeCount >= dbSongs.Count)
         // {
         //     return false;
         // }
 
-        if (failedToDetermineStartTimeCount > Quiz.Room.QuizSettings.NumSongs / 2)
+        if (failedToDetermineStartTimeCount > dbSongs.Count / 2)
         {
             Quiz.Room.Log(
                 $"Failed to determine {filters.StartTimeKind} sample time for over half of the songs. Canceling quiz.",

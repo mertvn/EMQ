@@ -352,7 +352,7 @@ ORDER BY music_id;";
                             Attributes = musicExternalLink.attributes,
                             Lineage = musicExternalLink.lineage,
                             Comment = musicExternalLink.comment,
-                            VocalsRanges = musicExternalLink.vocals_ranges,
+                            VocalsRanges = musicExternalLink.vocals_ranges ?? Array.Empty<TimeRange>(),
                         });
                     }
 
@@ -391,7 +391,7 @@ ORDER BY music_id;";
                                 Attributes = musicExternalLink.attributes,
                                 Lineage = musicExternalLink.lineage,
                                 Comment = musicExternalLink.comment,
-                                VocalsRanges = musicExternalLink.vocals_ranges,
+                                VocalsRanges = musicExternalLink.vocals_ranges ?? Array.Empty<TimeRange>(),
                             });
                         }
                     }
@@ -5329,6 +5329,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             newLink.Attributes = oldLink.Attributes;
             newLink.Lineage = oldLink.Lineage;
             newLink.Comment = oldLink.Comment;
+            newLink.VocalsRanges = oldLink.VocalsRanges;
         }
 
         int mId = await InsertSong(newSong, connection, transaction, !isImport, isImport);
