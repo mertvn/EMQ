@@ -352,6 +352,7 @@ ORDER BY music_id;";
                             Attributes = musicExternalLink.attributes,
                             Lineage = musicExternalLink.lineage,
                             Comment = musicExternalLink.comment,
+                            VocalsRanges = musicExternalLink.vocals_ranges,
                         });
                     }
 
@@ -390,6 +391,7 @@ ORDER BY music_id;";
                                 Attributes = musicExternalLink.attributes,
                                 Lineage = musicExternalLink.lineage,
                                 Comment = musicExternalLink.comment,
+                                VocalsRanges = musicExternalLink.vocals_ranges,
                             });
                         }
                     }
@@ -1620,6 +1622,7 @@ GROUP BY artist_id";
                     attributes = songLink.Attributes,
                     lineage = songLink.Lineage,
                     comment = songLink.Comment,
+                    vocals_ranges = songLink.VocalsRanges,
                 }, transaction))
             {
                 throw new Exception("Failed to insert mel");
@@ -3363,6 +3366,7 @@ AND msm.type = ANY(@msmType)";
                 attributes = songLink.Attributes,
                 lineage = songLink.Lineage,
                 comment = songLink.Comment,
+                vocals_ranges = songLink.VocalsRanges,
             };
 
             if (mel.duration == default)

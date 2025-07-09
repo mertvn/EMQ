@@ -2,6 +2,7 @@
 using System.Data;
 using System.Linq;
 using Dapper;
+using EMQ.Shared.Core;
 using NpgsqlTypes;
 
 namespace EMQ.Server.Db;

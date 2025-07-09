@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using EMQ.Shared.Core;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Server.Db.Entities;
@@ -43,5 +44,5 @@ public class MusicExternalLink
     [MaxLength(4096)]
     public string comment { get; set; } = "";
 
-    public TimeRange[] vocals_ranges { get; set; } = Array.Empty<TimeRange>();
+    public TimeRange[]? vocals_ranges { get; set; }
 }

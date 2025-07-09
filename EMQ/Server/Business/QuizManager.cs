@@ -2785,13 +2785,32 @@ public class QuizManager
                 throw new ArgumentOutOfRangeException();
         }
 
-        // todo important for all of these: make sure link duration matches, and batch
-        ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>? shPlayerSongStats = null;
         var filters = Quiz.Room.QuizSettings.Filters;
-        if (filters.StartTimeKind is StartTimeKind.Easy or StartTimeKind.Hard)
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+
+        ILookup<int, Dictionary<GuessKind, Dictionary<int, PlayerSongStats>>>? shPlayerSongStats = null;
+        (string, TimeRange[])[]? ranges = null;
+        switch (filters.StartTimeKind)
         {
-            shPlayerSongStats =
-                await DbManager.GetSHPlayerSongStats(dbSongs.Select(x => x.Id).ToList(), null);
+            case StartTimeKind.Random:
+                break;
+            case StartTimeKind.Easy:
+            case StartTimeKind.Hard:
+                shPlayerSongStats =
+                    await DbManager.GetSHPlayerSongStats(dbSongs.Select(x => x.Id).ToList(), null);
+                break;
+            case StartTimeKind.NoVocals:
+                ranges = (await connection.QueryAsync<(string, TimeRange[])>(
+                        @"SELECT url,multirange_minus(tsmultirange(tsrange('[1970-01-01 00:00:00,infinity)')),vocals_ranges) FROM music_external_link WHERE vocals_ranges IS NOT NULL"))
+                    .ToArray();
+                break;
+            case StartTimeKind.Vocals:
+                ranges = (await connection.QueryAsync<(string, TimeRange[])>(
+                        @"SELECT url,vocals_ranges FROM music_external_link WHERE vocals_ranges IS NOT NULL"))
+                    .ToArray();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         int failedToDetermineStartTimeCount = 0;
@@ -2841,7 +2860,8 @@ public class QuizManager
                         }
 
                         // find start times where those players did not hit the song
-                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
+                            filters.IsPreferLongLinks);
                         var startTimes = (await connection.QueryAsync<(TimeSpan timeSpan, int count)>(
                             @$"
 SELECT start_time, count(*) FROM quiz_song_history qsh
@@ -2850,10 +2870,11 @@ WHERE q.should_update_stats
 AND qsh.start_time IS NOT NULL
 AND qsh.guess_kind = {(int)GuessKind.Mst}
 AND NOT qsh.is_correct
+AND ABS(EXTRACT(EPOCH FROM (duration - @duration))) <= 3
 AND qsh.music_id = @mId
 AND qsh.user_id = ANY(@uIds)
 GROUP BY start_time",
-                            new { mId = song.Id, uIds = hittingPlayers })).ToArray();
+                            new { duration = shortestLink.Duration, mId = song.Id, uIds = hittingPlayers })).ToArray();
                         if (startTimes.Any())
                         {
                             // Console.WriteLine(
@@ -2876,30 +2897,29 @@ GROUP BY start_time",
                         break;
                     }
                 case StartTimeKind.Vocals:
-                    throw new NotImplementedException();
                 case StartTimeKind.NoVocals:
                     {
-                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink),
+                        var shortestLink = SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
                             filters.IsPreferLongLinks);
-                        var ranges = await connection.QueryFirstOrDefaultAsync<TimeRange[]>(
-                            @"
-SELECT multirange_minus(tsmultirange(tsrange('[1970-01-01 00:00:00, infinity)')), vocals_ranges)
-FROM music_external_link mel WHERE vocals_ranges IS NOT null and url like @url",
-                            new { url = $"%{shortestLink.Url}%" });
-                        ranges = ranges?.Where(x =>
-                                     x.Duration >= Quiz.Room.QuizSettings.Filters.StartTimeSectionMinimumSeconds &&
-                                     x.Duration <= 10 * 60).ToArray() ??
-                                 Array.Empty<TimeRange>();
-                        if (ranges.Any())
+                        var match = ranges!.FirstOrDefault(x =>
+                            x.Item1.ReplaceSelfhostLink().UnReplaceSelfhostLink() ==
+                            shortestLink.Url.ReplaceSelfhostLink().UnReplaceSelfhostLink());
+                        if (!string.IsNullOrWhiteSpace(match.Item1))
                         {
-                            // Quiz.Room.Log(
-                            //     $"Determined {filters.StartTimeKind} sample time for song #{i + 1}.",
-                            //     writeToChat: true);
-                            var range = ranges.Shuffle().First();
-                            // todo make sure we're not selecting too close to end
-                            // todo randomize within range, but make sure there is at least N seconds before next vocals section
-                            startTime = (int)Math.Ceiling(range.Start);
+                            var validRanges = match.Item2.Where(x =>
+                                x.Duration >= Quiz.Room.QuizSettings.Filters.StartTimeSectionMinimumSeconds &&
+                                x.Duration <= 10 * 60).ToArray();
+                            if (validRanges.Any())
+                            {
+                                // Quiz.Room.Log(
+                                //     $"Determined {filters.StartTimeKind} sample time for song #{i + 1}.",
+                                //     writeToChat: true);
+                                var range = validRanges.Shuffle().First();
+                                // todo? unprioritize start sample
+                                // todo make sure we're not selecting too close to end
+                                // todo randomize within range, but make sure there is at least N seconds before next opposing section
+                                startTime = (int)Math.Ceiling(range.Start);
+                            }
                         }
 
                         break;

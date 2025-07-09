@@ -40,6 +40,9 @@ public partial class SongLink
     [MaxLength(4096)]
     public string Comment { get; set; } = "";
 
+    // don't really want to put this here but we need it because we're deleting and reinserting mel when editing songs
+    public TimeRange[]? VocalsRanges { get; set; }
+
     public override string ToString() => Url;
 
     public static SongLink GetShortestLink(IEnumerable<SongLink> songLinks, bool preferLong)

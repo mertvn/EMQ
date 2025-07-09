@@ -19,6 +19,7 @@ public class QuizSettings
         AnsweringKind == AnsweringKind.Typing &&
         GamemodeKind != GamemodeKind.Radio &&
         Filters.ScreenshotKind == ScreenshotKind.None &&
+        Filters.StartTimeKind == StartTimeKind.Random &&
         !IsSharedGuessesTeams &&
         !IsNoSoundMode &&
         !EnabledSongHintKinds.Any(x => x.Value) &&

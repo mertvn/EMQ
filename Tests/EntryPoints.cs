@@ -1781,45 +1781,6 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         Console.WriteLine(total / 1024);
     }
 
-    // [Test, Explicit]
-    // public static async Task InsertVocalsRanges()
-    // {
-    //     const string baseOutputPath = @"M:\llm\vocals\output\htdemucs";
-    //     string[] files = Directory.GetFiles(baseOutputPath, "vocals.flac", SearchOption.AllDirectories);
-    //     foreach (string file in files)
-    //     {
-    //         var process = new Process()
-    //         {
-    //             StartInfo = new ProcessStartInfo()
-    //             {
-    //                 FileName = @"python",
-    //                 Arguments = $"detect_vocals.py {file}",
-    //                 CreateNoWindow = true,
-    //                 UseShellExecute = false,
-    //                 RedirectStandardOutput = true,
-    //                 RedirectStandardError = true,
-    //                 WorkingDirectory = @"M:\llm\vocals",
-    //             }
-    //         };
-    //         process.Start();
-    //         process.BeginErrorReadLine();
-    //         string err = await process.StandardOutput.ReadToEndAsync();
-    //         await process.WaitForExitAsync();
-    //         if (!err.Any())
-    //         {
-    //             throw new Exception();
-    //         }
-    //
-    //         // Console.WriteLine(err);
-    //         string[] lines = err.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-    //         var matches = new List<string>();
-    //         foreach (string line in lines)
-    //         {
-    //             Console.WriteLine(line);
-    //         }
-    //     }
-    // }
-
     [Test, Explicit]
     public static async Task Multirangetest()
     {
@@ -1955,10 +1916,6 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 {
                     File.Copy(filePath, finalFilename);
                 }
-            }
-            else
-            {
-                // Console.WriteLine("b");
             }
         }
     }

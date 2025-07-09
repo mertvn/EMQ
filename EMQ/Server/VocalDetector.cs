@@ -2,32 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json.Serialization;
 using CSCore;
 using CSCore.Codecs.FLAC;
+using EMQ.Shared.Core;
 
 namespace EMQ.Server;
-
-public readonly struct TimeRange
-{
-    public TimeRange(double start, double end)
-    {
-        Start = start;
-        End = end;
-    }
-
-    public double Start { get; }
-
-    public double End { get; }
-
-    [JsonIgnore]
-    public double Duration => End - Start;
-
-    public override string ToString()
-    {
-        return $"Start: {Start:F2}s, End: {End:F2}s, Duration: {Duration:F2}s";
-    }
-}
 
 public class VocalDetectorOptions
 {
