@@ -2910,7 +2910,8 @@ GROUP BY start_time",
                         {
                             var validRanges = match.Item2.Where(x =>
                                 x.Duration >= Quiz.Room.QuizSettings.Filters.StartTimeSectionMinimumSeconds &&
-                                x.Duration <= 10 * 60).ToArray();
+                                x.Duration <= 10 * 60 &&
+                                (shortestLink.Duration.TotalSeconds - x.Start) > 15).ToArray();
                             if (validRanges.Any())
                             {
                                 // Quiz.Room.Log(
@@ -2918,7 +2919,6 @@ GROUP BY start_time",
                                 //     writeToChat: true);
                                 var range = validRanges.Shuffle().First();
                                 // todo? unprioritize start sample
-                                // todo make sure we're not selecting too close to end
                                 // todo randomize within range, but make sure there is at least N seconds before next opposing section
                                 startTime = (int)Math.Ceiling(range.Start);
                             }
