@@ -331,7 +331,7 @@ public static class ExtensionMethods
         int duration = (int)DetermineSongStartTimeGetDuration(song, filters).TotalSeconds;
         int startTimeStart = 0;
         int startTimeEnd = duration;
-        const int leeway = 40;
+        const int leeway = 30;
 
         if (filters != null)
         {

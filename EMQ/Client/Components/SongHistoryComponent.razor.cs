@@ -89,6 +89,7 @@ public partial class SongHistoryComponent
             {
                 link.AnalysisRaw = null;
                 link.LastUnhandledReport = null;
+                link.VocalsRanges = Array.Empty<TimeRange>();
             }
 
             // foreach (SongArtist songArtist in value.Song.Artists)

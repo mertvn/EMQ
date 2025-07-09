@@ -10,8 +10,10 @@ public readonly struct TimeRange
         End = end;
     }
 
+    [JsonPropertyName("s")]
     public double Start { get; }
 
+    [JsonPropertyName("e")]
     public double End { get; }
 
     [JsonIgnore]

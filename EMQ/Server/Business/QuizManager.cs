@@ -2911,14 +2911,27 @@ GROUP BY start_time",
                             var validRanges = match.Item2.Where(x =>
                                 x.Duration >= Quiz.Room.QuizSettings.Filters.StartTimeSectionMinimumSeconds &&
                                 x.Duration <= 10 * 60 &&
-                                (shortestLink.Duration.TotalSeconds - x.Start) > 15).ToArray();
+                                (shortestLink.Duration.TotalSeconds - x.Start) > 15).Shuffle().ToList();
                             if (validRanges.Any())
                             {
                                 // Quiz.Room.Log(
                                 //     $"Determined {filters.StartTimeKind} sample time for song #{i + 1}.",
                                 //     writeToChat: true);
-                                var range = validRanges.Shuffle().First();
-                                // todo? unprioritize start sample
+
+                                if (validRanges.Count > 1)
+                                {
+                                    bool isStartSample = validRanges.First().Start <= 20;
+                                    if (isStartSample)
+                                    {
+                                        float startSampleChance = Math.Min(1f / validRanges.Count, 0.25f);
+                                        if (Random.Shared.NextDouble() > startSampleChance)
+                                        {
+                                            validRanges.RemoveAt(0);
+                                        }
+                                    }
+                                }
+
+                                var range = validRanges.First();
                                 // todo randomize within range, but make sure there is at least N seconds before next opposing section
                                 startTime = (int)Math.Ceiling(range.Start);
                             }
