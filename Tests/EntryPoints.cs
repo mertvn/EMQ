@@ -1820,6 +1820,26 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         string[] files = Directory.GetFiles(baseOutputPath, "vocals.flac", SearchOption.AllDirectories).OrderBy(x => x)
             .ToArray();
 
+        const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
+        Dictionary<int, HashSet<SongSourceSongType>> mids =
+            (await new NpgsqlConnection(ConnectionHelper.GetConnectionString()).QueryAsync<(int, int)>(sqlMids))
+            .GroupBy(x => x.Item1)
+            .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
+
+        List<int> validMids = mids
+            .Where(x => x.Value.Any(y => SongSourceSongTypeMode.Vocals.ToSongSourceSongTypes().Contains(y)))
+            .Select(z => z.Key)
+            .ToList();
+
+        List<Song> dbSongs = await DbManager.SelectSongsMIds(validMids.ToArray(), false);
+        var validUrls = dbSongs.SelectMany(x =>
+                x.Links.Where(y => y.IsFileLink && !y.IsVideo && !y.VocalsRanges.Any())
+                    .Select(y => y.Url.ReplaceSelfhostLink().LastSegment()
+                        .Replace(".weba", "").Replace(".mp3", "")
+                        .Replace(".ogg", "").Replace(".flac", "")))
+            .ToHashSet();
+
+        files = files.Where(x => validUrls.Any(y => x.Contains(y))).ToArray();
         var options = new VocalDetectorOptions { EnergyThreshold = 0.1, MinSilenceDurationSec = 3, };
         await Parallel.ForEachAsync(files,
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 },
