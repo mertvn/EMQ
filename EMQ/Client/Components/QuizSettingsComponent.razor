@@ -641,7 +641,7 @@
                         <InputSelect id="StartTimeKind" @bind-Value="ClientQuizSettings.Filters.StartTimeKind" style="margin: 5px">
                             @foreach (StartTimeKind startTimeKind in Enum.GetValues<StartTimeKind>())
                             {
-                                @if (startTimeKind is StartTimeKind.Easy)
+                                @if (startTimeKind is StartTimeKind.Easy or StartTimeKind.Hard)
                                 {
                                     continue;
                                 }
