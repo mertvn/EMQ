@@ -195,6 +195,11 @@ public class QuizController : ControllerBase
             return Unauthorized();
         }
 
+        if (!AuthStuff.HasPermission(session, PermissionKind.SendChatMessage) && req.Name != "Room")
+        {
+            return Unauthorized();
+        }
+
         var owner = session.Player;
         var room = new Room(Guid.NewGuid(), req.Name, owner)
         {
