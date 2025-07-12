@@ -73,10 +73,19 @@
             <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
                 Close
             </button>
-            <button type="button" class="btn btn-primary"
-                    @onclick="@(async () => { if (ClientState.Session != null) { await SendSongReportReq(ClientSongReport, SelectedUrls); } })">
-                Submit
-            </button>
+
+            @if (ClientSongReport.report_kind == SongReportKind.UnmarkedAttribute)
+            {
+                <p>Please edit the song in the library.</p>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary"
+                        @onclick="@(async () => { if (ClientState.Session != null) { await SendSongReportReq(ClientSongReport, SelectedUrls); } })">
+                    Submit
+                </button>
+            }
+
         </Blazorise.ModalFooter>
     </Blazorise.ModalContent>
 </Blazorise.Modal>

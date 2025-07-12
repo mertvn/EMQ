@@ -58,7 +58,7 @@
               Title="Change room name and password"
               Size="@Blazorise.ModalSize.Default"
               OkAction="@(async () => { await ChangeRoomNameAndPassword(); })">
-    <input id="RoomName" type="text" @bind="RoomName"/>
+    <input id="RoomName" type="text" @bind="RoomName" disabled="@(!AuthStuff.HasPermission(ClientState.Session, PermissionKind.SendChatMessage))"/>
     <label for="RoomName">Room name</label>
     <br/>
     <br/>

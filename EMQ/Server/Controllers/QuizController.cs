@@ -598,6 +598,11 @@ public class QuizController : ControllerBase
                     return Unauthorized();
                 }
 
+                if (!AuthStuff.HasPermission(session, PermissionKind.SendChatMessage) && req.NewName != "Room")
+                {
+                    return Unauthorized();
+                }
+
                 room.Name = req.NewName;
                 room.Password = req.NewPassword;
 
