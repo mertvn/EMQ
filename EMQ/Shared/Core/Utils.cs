@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -145,6 +146,13 @@ public static class Utils
             : string.Join("", x
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Reverse()).NormalizeForAutocomplete();
+    }
+
+    public static T MathDotClampButItsNotRetarded<T>(T value, T min, T max) where T : INumber<T>
+    {
+        if (min > max)
+            (min, max) = (max, min);
+        return T.Max(min, T.Min(value, max));
     }
 
     public static List<(List<TimeSpan> timeSpans, int count)> ClusterTimeSpans(
