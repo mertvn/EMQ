@@ -904,7 +904,7 @@ public class QuizManager
                     if (Quiz.Room.QuizSettings.IsSharedGuessesTeams)
                     {
                         Quiz.Room.QuizSettings.TeamSize =
-                            Utils.MathDotClampButItsNotRetarded(1, Quiz.Room.QuizSettings.TeamSize + 1, 777);
+                            Utils.MathDotClampButItsNotRetarded(Quiz.Room.QuizSettings.TeamSize + 1, 1, 777);
                     }
                 }
             }
