@@ -150,6 +150,7 @@ public partial class QuizPage
             { GuessKind.Composer, null },
             { GuessKind.Arranger, null },
             { GuessKind.Lyricist, null },
+            { GuessKind.Character, null },
         };
 
     private ChatComponent? _chatComponent;

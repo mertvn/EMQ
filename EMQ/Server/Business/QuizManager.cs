@@ -427,14 +427,19 @@ public class QuizManager
     private Dictionary<GuessKind, bool?> IsGuessCorrect(PlayerGuess? playerGuess)
     {
         // todo? only check enabled types
+        var song = Quiz.Songs[Quiz.QuizState.sp];
+        bool isSpecificCharMode = !string.IsNullOrWhiteSpace(song.ScreenshotUrl) &&
+                                  song.ScreenshotUrl.Contains("vndb-img/ch/");
+        bool needToFillCharacterName = isSpecificCharMode && string.IsNullOrWhiteSpace(song.CharacterName);
+
         var dict = Enum.GetValues<GuessKind>().ToDictionary<GuessKind, GuessKind, bool?>(x => x, _ => false);
-        if (playerGuess == null)
+        if (playerGuess == null && !needToFillCharacterName)
         {
             return dict;
         }
 
         {
-            string? guess = playerGuess.Dict[GuessKind.Mst];
+            string? guess = playerGuess?.Dict[GuessKind.Mst];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -466,7 +471,7 @@ public class QuizManager
         }
 
         {
-            string? guess = playerGuess.Dict[GuessKind.A];
+            string? guess = playerGuess?.Dict[GuessKind.A];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -535,7 +540,7 @@ public class QuizManager
         }
 
         {
-            string? guess = playerGuess.Dict[GuessKind.Mt];
+            string? guess = playerGuess?.Dict[GuessKind.Mt];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -565,7 +570,7 @@ public class QuizManager
         }
 
         {
-            string? guess = playerGuess.Dict[GuessKind.Rigger];
+            string? guess = playerGuess?.Dict[GuessKind.Rigger];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -595,7 +600,7 @@ public class QuizManager
         }
 
         {
-            string? guess = playerGuess.Dict[GuessKind.Developer];
+            string? guess = playerGuess?.Dict[GuessKind.Developer];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -632,7 +637,7 @@ public class QuizManager
 
         {
             const GuessKind guessKind = GuessKind.Composer;
-            string? guess = playerGuess.Dict[guessKind];
+            string? guess = playerGuess?.Dict[guessKind];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -685,7 +690,7 @@ public class QuizManager
 
         {
             const GuessKind guessKind = GuessKind.Arranger;
-            string? guess = playerGuess.Dict[guessKind];
+            string? guess = playerGuess?.Dict[guessKind];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -738,7 +743,7 @@ public class QuizManager
 
         {
             const GuessKind guessKind = GuessKind.Lyricist;
-            string? guess = playerGuess.Dict[guessKind];
+            string? guess = playerGuess?.Dict[guessKind];
             bool correct = false;
             if (!string.IsNullOrWhiteSpace(guess))
             {
@@ -782,6 +787,85 @@ public class QuizManager
                     {
                         correct = true;
                         break;
+                    }
+                }
+            }
+
+            dict[guessKind] = correct;
+        }
+
+        {
+            const GuessKind guessKind = GuessKind.Character;
+            string? guess = playerGuess?.Dict[guessKind];
+            bool correct = false;
+            if (!string.IsNullOrWhiteSpace(guess) || needToFillCharacterName)
+            {
+                if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+                {
+                    correctAnswers = new List<string>();
+                    var vndbIds = song.Sources.SelectMany(x =>
+                        x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(y => y.Url.ToVndbId()));
+                    if (isSpecificCharMode)
+                    {
+                        string str = song.ScreenshotUrl.UnReplaceSelfhostLink()
+                            .Replace("https://emqselfhost/selfhoststorage/vndb-img/ch/", "")
+                            .Replace(".jpg", "");
+                        string number = str.Split('/')[1];
+                        string imgId = $"ch{number}";
+                        foreach (string vndbId in vndbIds)
+                        {
+                            if (DbManager.VnCharacters.TryGetValue(vndbId, out var vnChars))
+                            {
+                                foreach ((string? _, string? _, string? image, string? latin, string? name) in vnChars)
+                                {
+                                    if (image == imgId)
+                                    {
+                                        var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                        correctAnswers.Add(title.latinTitle);
+                                        if (title.nonLatinTitle != null)
+                                        {
+                                            correctAnswers.Add(title.nonLatinTitle);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        song.CharacterName = string.Join(", ", correctAnswers);
+                    }
+                    else
+                    {
+                        foreach (string vndbId in vndbIds)
+                        {
+                            if (DbManager.VnCharacters.TryGetValue(vndbId, out var vnChars))
+                            {
+                                foreach ((string? _, string? _, string? _, string? latin, string? name) in vnChars)
+                                {
+                                    var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                    correctAnswers.Add(title.latinTitle);
+                                    if (title.nonLatinTitle != null)
+                                    {
+                                        correctAnswers.Add(title.nonLatinTitle);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
+                    CorrectAnswersDicts[guessKind].Add(Quiz.QuizState.sp, correctAnswers);
+                    Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+                }
+
+                if (guess != null)
+                {
+                    foreach (string correctAnswer in correctAnswers)
+                    {
+                        if (guess.NormalizeForAutocomplete() == correctAnswer)
+                        {
+                            correct = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -1503,7 +1587,9 @@ public class QuizManager
                     bool shouldAdd = true;
                     switch (guessKind)
                     {
-                        case GuessKind.Rigger: // not much point tracking this
+                        // not much point tracking these as they are dynamic data
+                        case GuessKind.Rigger:
+                        case GuessKind.Character:
                             shouldAdd = false;
                             break;
                         case GuessKind.Developer:
@@ -2293,11 +2379,6 @@ public class QuizManager
             }
         }
 
-        if (Quiz.Room.QuizSettings.IsNoSoundMode)
-        {
-            Quiz.Room.QuizSettings.TimeoutMs = 5000;
-        }
-
         if (Quiz.Room.QuizSettings.ListDistributionKind == ListDistributionKind.Balanced)
         {
             if (Quiz.Room.QuizSettings.Filters.ListReadKindFiltersHasUnread)
@@ -2324,6 +2405,11 @@ public class QuizManager
                 > 70 and <= 99 => Math.Max(20000, Quiz.Room.QuizSettings.TimeoutMs),
                 > 99 => Math.Max(25000, Quiz.Room.QuizSettings.TimeoutMs),
             };
+        }
+
+        if (Quiz.Room.QuizSettings.IsNoSoundMode)
+        {
+            Quiz.Room.QuizSettings.TimeoutMs = 5000;
         }
 
         CorrectAnswersDicts =
@@ -2961,11 +3047,6 @@ GROUP BY start_time",
 
             song.StartTime = startTime.Value;
         }
-
-        // if (failedToDetermineStartTimeCount >= dbSongs.Count)
-        // {
-        //     return false;
-        // }
 
         if (failedToDetermineStartTimeCount > dbSongs.Count / 2)
         {

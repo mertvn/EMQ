@@ -249,6 +249,15 @@
                             }
                         }
                     }
+
+                    @if (!string.IsNullOrEmpty(Song.CharacterName))
+                    {
+                        <br/>
+                        <span>Character name:</span>
+                        <br/>
+                        <span>@Song.CharacterName</span>
+                        <br/>
+                    }
                 </div>
 
             @if (true)

@@ -27,4 +27,7 @@ public enum GuessKind
 
     [Description("Lyricist Name")]
     Lyricist = 7,
+
+    [Description("Character Name")]
+    Character = 8,
 }

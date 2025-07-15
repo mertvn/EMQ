@@ -122,6 +122,7 @@ public class PlayerGuess
         { GuessKind.Composer, null },
         { GuessKind.Arranger, null },
         { GuessKind.Lyricist, null },
+        { GuessKind.Character, null },
     };
 
     public Dictionary<GuessKind, int> DictFirstGuessMs { get; set; } = new()
@@ -134,6 +135,7 @@ public class PlayerGuess
         { GuessKind.Composer, 0 },
         { GuessKind.Arranger, 0 },
         { GuessKind.Lyricist, 0 },
+        { GuessKind.Character, 0 },
     };
 
     public override string ToString()

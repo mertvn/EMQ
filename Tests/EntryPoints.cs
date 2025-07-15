@@ -75,6 +75,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateAutocompleteCharacterJson()
+    {
+        await File.WriteAllTextAsync("character.json", await DbManager.SelectAutocompleteCharacter());
+    }
+
+    [Test, Explicit]
     public async Task ImportVndbData()
     {
         const bool isIncremental = true;

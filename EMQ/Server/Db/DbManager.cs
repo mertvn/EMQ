@@ -86,6 +86,15 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         new { vnIds });
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToFrozenDictionary(y => y.Key, y => y.Select(z => z).ToArray());
+
+                string[] vids = (await connection.QueryAsync<string>(
+                    $"SELECT DISTINCT REPLACE(url,'https://vndb.org/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.VNDB}")).ToArray();
+                var vnCharacters = await connectionVndb
+                    .QueryAsync<(string vid, string cid, string image, string? latin, string name)>(
+                        "select distinct cv.vid, c.id, c.image, c.latin, c.name from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
+                        new { vids });
+                VnCharacters = vnCharacters.GroupBy(x => x.vid)
+                    .ToFrozenDictionary(x => x.Key, x => x.ToList());
             }
         }
 
@@ -136,6 +145,10 @@ ORDER BY music_id;";
         VnDevelopers { get; set; } =
         FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
 
+    public static FrozenDictionary<string, List<(string vid, string cid, string image, string? latin, string name)>>
+        VnCharacters { get; set; } =
+        FrozenDictionary<string, List<(string vid, string cid, string image, string? latin, string name)>>.Empty;
+
     public static FrozenDictionary<int, List<int>> McOptionsQshDict { get; set; } =
         FrozenDictionary<int, List<int>>.Empty;
 
@@ -176,6 +189,7 @@ ORDER BY music_id;";
             await SelectAutocompleteMt(SongSourceSongTypeMode.All));
 
         await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json", await SelectAutocompleteDeveloper());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/character.json", await SelectAutocompleteCharacter());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
@@ -3095,6 +3109,28 @@ ORDER BY artist_id";
     public static async Task<string> SelectAutocompleteDeveloper()
     {
         var res = VnDevelopers.SelectMany(x =>
+                x.Value.Select(y =>
+                {
+                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                    if (latinTitleNorm == nonLatinTitleNorm)
+                    {
+                        nonLatinTitle = "";
+                        nonLatinTitleNorm = "";
+                    }
+
+                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                        latinTitleNorm, nonLatinTitleNorm);
+                }))
+            .DistinctBy(x => x.MSTLatinTitle);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
+    }
+
+    public static async Task<string> SelectAutocompleteCharacter()
+    {
+        var res = VnCharacters.SelectMany(x =>
                 x.Value.Select(y =>
                 {
                     (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);

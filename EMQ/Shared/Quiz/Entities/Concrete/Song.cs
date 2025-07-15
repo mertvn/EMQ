@@ -28,6 +28,8 @@ public partial class Song : IEditQueueEntity
 
     public DateTime PlayedAt { get; set; } // todo move out of this class
 
+    public string CharacterName { get; set; } = ""; // todo move out of this class
+
     public List<Title> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();

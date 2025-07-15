@@ -226,6 +226,7 @@ public class QuizSettings
             { GuessKind.Composer, false },
             { GuessKind.Arranger, false },
             { GuessKind.Lyricist, false },
+            { GuessKind.Character, false },
         };
 
     [ProtoMember(25)]

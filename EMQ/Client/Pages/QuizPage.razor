@@ -616,6 +616,16 @@ else
                                         @bind-GuessLatin="@PageState.Guess.Dict[GuessKind.Lyricist]">
                 </AutocompleteAComponent>
             }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Character, out bool ch) && ch)
+            {
+                <AutocompleteCharacterComponent @ref="AutocompleteComponentDict[GuessKind.Character]"
+                                                Placeholder="Enter character name here"
+                                                IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                                IsQuizPage="true"
+                                                @bind-Guess="@PageState.Guess.Dict[GuessKind.Character]">
+                </AutocompleteCharacterComponent>
+            }
         }
 
     </div>
