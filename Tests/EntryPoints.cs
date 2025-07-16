@@ -87,6 +87,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateAutocompleteSeiyuuJson()
+    {
+        await File.WriteAllTextAsync("seiyuu.json", await DbManager.SelectAutocompleteSeiyuu());
+    }
+
+    [Test, Explicit]
     public async Task ImportVndbData()
     {
         const bool isIncremental = true;

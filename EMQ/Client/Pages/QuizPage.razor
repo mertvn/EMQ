@@ -630,11 +630,21 @@ else
             @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Illustrator, out bool ill) && ill)
             {
                 <AutocompleteIllustratorComponent @ref="AutocompleteComponentDict[GuessKind.Illustrator]"
-                                                Placeholder="Enter illustrator name here"
-                                                IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
-                                                IsQuizPage="true"
-                                                @bind-Guess="@PageState.Guess.Dict[GuessKind.Illustrator]">
+                                                  Placeholder="Enter illustrator name here"
+                                                  IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                                  IsQuizPage="true"
+                                                  @bind-Guess="@PageState.Guess.Dict[GuessKind.Illustrator]">
                 </AutocompleteIllustratorComponent>
+            }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Seiyuu, out bool seiyuu) && seiyuu)
+            {
+                <AutocompleteSeiyuuComponent @ref="AutocompleteComponentDict[GuessKind.Seiyuu]"
+                                             Placeholder="Enter seiyuu name here"
+                                             IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                             IsQuizPage="true"
+                                             @bind-Guess="@PageState.Guess.Dict[GuessKind.Seiyuu]">
+                </AutocompleteSeiyuuComponent>
             }
         }
 

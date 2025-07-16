@@ -228,6 +228,7 @@ public class QuizSettings
             { GuessKind.Lyricist, false },
             { GuessKind.Character, false },
             { GuessKind.Illustrator, false },
+            { GuessKind.Seiyuu, false },
         };
 
     [ProtoMember(25)]

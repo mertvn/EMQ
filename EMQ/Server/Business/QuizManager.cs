@@ -428,12 +428,14 @@ public class QuizManager
     {
         // todo? only check enabled types
         var song = Quiz.Songs[Quiz.QuizState.sp];
+        List<string> characterIds = new(1); // a character image very rarely can be used for multiple characters
         bool isSpecificCharMode = !string.IsNullOrWhiteSpace(song.ScreenshotUrl) &&
                                   song.ScreenshotUrl.Contains("vndb-img/ch/");
         bool needToFillCharacterName = isSpecificCharMode && string.IsNullOrWhiteSpace(song.CharacterName);
+        bool needToFillSeiyuuName = isSpecificCharMode && string.IsNullOrWhiteSpace(song.SeiyuuName);
 
         var dict = Enum.GetValues<GuessKind>().ToDictionary<GuessKind, GuessKind, bool?>(x => x, _ => false);
-        if (playerGuess == null && !needToFillCharacterName)
+        if (playerGuess == null && !needToFillCharacterName && !needToFillSeiyuuName)
         {
             return dict;
         }
@@ -816,10 +818,12 @@ public class QuizManager
                         {
                             if (DbManager.VnCharacters.TryGetValue(vndbId, out var vnChars))
                             {
-                                foreach ((string? _, string? _, string? image, string? latin, string? name) in vnChars)
+                                foreach ((string? _, string? cid, string? image, string? latin,
+                                             string? name) in vnChars)
                                 {
                                     if (image == imgId)
                                     {
+                                        characterIds.Add(cid);
                                         var title = Utils.VndbTitleToEmqTitle(name, latin);
                                         correctAnswers.Add(title.latinTitle);
                                         if (title.nonLatinTitle != null)
@@ -889,13 +893,19 @@ public class QuizManager
                     {
                         if (DbManager.VnIllustrators.TryGetValue(vndbId, out var vnIllustrators))
                         {
-                            foreach ((string? _, string? _, int _, string? latin, string? name) in vnIllustrators)
+                            foreach ((string? _, string sid, int _, string? _, string? _) in vnIllustrators)
                             {
-                                var title = Utils.VndbTitleToEmqTitle(name, latin);
-                                correctAnswers.Add(title.latinTitle);
-                                if (title.nonLatinTitle != null)
+                                if (DbManager.StaffAliases.TryGetValue(sid, out var aliases))
                                 {
-                                    correctAnswers.Add(title.nonLatinTitle);
+                                    foreach ((string? _, int _, string? latin, string? name) in aliases)
+                                    {
+                                        var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                        correctAnswers.Add(title.latinTitle);
+                                        if (title.nonLatinTitle != null)
+                                        {
+                                            correctAnswers.Add(title.nonLatinTitle);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -903,7 +913,7 @@ public class QuizManager
 
                     correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
                     CorrectAnswersDicts[guessKind].Add(Quiz.QuizState.sp, correctAnswers);
-                    Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+                    // Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
                 }
 
                 foreach (string correctAnswer in correctAnswers)
@@ -912,6 +922,100 @@ public class QuizManager
                     {
                         correct = true;
                         break;
+                    }
+                }
+            }
+
+            dict[guessKind] = correct;
+        }
+
+        {
+            const GuessKind guessKind = GuessKind.Seiyuu;
+            string? guess = playerGuess?.Dict[guessKind];
+            bool correct = false;
+            if (!string.IsNullOrWhiteSpace(guess) || needToFillSeiyuuName)
+            {
+                if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+                {
+                    correctAnswers = new List<string>();
+                    var vndbIds = song.Sources.SelectMany(x =>
+                        x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(y => y.Url.ToVndbId()));
+
+                    if (isSpecificCharMode)
+                    {
+                        foreach (string vndbId in vndbIds)
+                        {
+                            if (DbManager.VnSeiyuus.TryGetValue(vndbId, out var vnSeiyuus))
+                            {
+                                foreach ((string? _, string? sid, string? cid, int vsaid, string? _, string? _) in vnSeiyuus)
+                                {
+                                    if (characterIds.Contains(cid))
+                                    {
+                                        if (DbManager.StaffAliases.TryGetValue(sid, out var aliases))
+                                        {
+                                            foreach ((string? _, int saaid, string? latin, string? name) in aliases)
+                                            {
+                                                var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                                correctAnswers.Add(title.latinTitle);
+                                                if (title.nonLatinTitle != null)
+                                                {
+                                                    correctAnswers.Add(title.nonLatinTitle);
+                                                }
+
+                                                if (vsaid == saaid)
+                                                {
+                                                    song.SeiyuuName = title.latinTitle;
+                                                    if (title.nonLatinTitle != null)
+                                                    {
+                                                        song.SeiyuuName += $", {title.nonLatinTitle}";
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (string vndbId in vndbIds)
+                        {
+                            if (DbManager.VnSeiyuus.TryGetValue(vndbId, out var vnSeiyuus))
+                            {
+                                foreach ((string? _, string? sid, string? _, int _, string? _, string? _) in vnSeiyuus)
+                                {
+                                    if (DbManager.StaffAliases.TryGetValue(sid, out var aliases))
+                                    {
+                                        foreach ((string? _, int _, string? latin, string? name) in aliases)
+                                        {
+                                            var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                            correctAnswers.Add(title.latinTitle);
+                                            if (title.nonLatinTitle != null)
+                                            {
+                                                correctAnswers.Add(title.nonLatinTitle);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
+                    CorrectAnswersDicts[guessKind].Add(Quiz.QuizState.sp, correctAnswers);
+                    // Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+                }
+
+                if (guess != null)
+                {
+                    foreach (string correctAnswer in correctAnswers)
+                    {
+                        if (guess.NormalizeForAutocomplete() == correctAnswer)
+                        {
+                            correct = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -1633,10 +1737,11 @@ public class QuizManager
                     bool shouldAdd = true;
                     switch (guessKind)
                     {
-                        // not much point tracking these as they are dynamic data
+                        // not much point tracking these
                         case GuessKind.Rigger:
                         case GuessKind.Character:
                         case GuessKind.Illustrator:
+                        case GuessKind.Seiyuu:
                             shouldAdd = false;
                             break;
                         case GuessKind.Developer:

@@ -73,22 +73,27 @@ public static class DbManager
         {
             await using (var connectionVndb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
             {
-                const string sql = @"
+                var staffAliases = await connectionVndb
+                    .QueryAsync<(string id, int aid, string? latin, string name)>(
+                        "select id, aid, latin, name from staff_alias");
+                StaffAliases = staffAliases.GroupBy(x => x.id)
+                    .ToFrozenDictionary(x => x.Key, x => x.ToList());
+
+                var vnDevelopers =
+                    await connectionVndb.QueryAsync<(string vId, string pId, string name, string? latin)>(@"
 SELECT distinct v.id, p.id, p.name, p.latin FROM producers p
 join releases_producers rp ON rp.pid = p.id
 JOIN releases r ON r.id = rp.id
 JOIN releases_vn rv ON rv.id = r.id
 JOIN vn v ON v.id = rv.vid
-WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
-
-                var vnDevelopers =
-                    await connectionVndb.QueryAsync<(string vId, string pId, string name, string? latin)>(sql,
+WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
                         new { vnIds });
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToFrozenDictionary(y => y.Key, y => y.Select(z => z).ToArray());
 
                 string[] vids = (await connection.QueryAsync<string>(
-                    $"SELECT DISTINCT REPLACE(url,'https://vndb.org/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.VNDB}")).ToArray();
+                        $"SELECT DISTINCT REPLACE(url,'https://vndb.org/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.VNDB}"))
+                    .ToArray();
                 var vnCharacters = await connectionVndb
                     .QueryAsync<(string vid, string cid, string image, string? latin, string name)>(
                         "select distinct cv.vid, c.id, c.image, c.latin, c.name from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
@@ -99,13 +104,19 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                 var vnIllustrators = await connectionVndb
                     .QueryAsync<(string vid, string sid, int aid, string? latin, string name)>(
                         @"
-SELECT DISTINCT vs.id, s.id, sa.aid, sa.latin, sa.name FROM staff s
+SELECT DISTINCT vs.id, sa.id, sa.aid, sa.latin, sa.name FROM staff s
 JOIN staff_alias sa ON sa.id = s.id
 JOIN vn_staff vs ON vs.aid = sa.aid
-WHERE vs.role = 'art'
-AND vs.id = ANY(@vids)",
+WHERE vs.id = ANY(@vids) AND vs.role = 'art'",
                         new { vids });
                 VnIllustrators = vnIllustrators.GroupBy(x => x.vid)
+                    .ToFrozenDictionary(x => x.Key, x => x.ToList());
+
+                var vnSeiyuus = await connectionVndb
+                    .QueryAsync<(string vid, string sid, string cid, int aid, string? latin, string name)>(
+                        @"SELECT vs.id, sa.id, vs.cid, vs.aid, sa.latin, sa.name FROM vn_seiyuu vs JOIN staff_alias sa on sa.aid = vs.aid WHERE vs.id = ANY(@vids)",
+                        new { vids });
+                VnSeiyuus = vnSeiyuus.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
             }
         }
@@ -153,6 +164,10 @@ ORDER BY music_id;";
     private static FrozenDictionary<int, Guid?> MusicIdsRecordingGids { get; set; } =
         FrozenDictionary<int, Guid?>.Empty;
 
+    public static FrozenDictionary<string, List<(string id, int aid, string? latin, string name)>>
+        StaffAliases { get; set; } =
+        FrozenDictionary<string, List<(string id, int aid, string? latin, string name)>>.Empty;
+
     public static FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>
         VnDevelopers { get; set; } =
         FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
@@ -164,6 +179,11 @@ ORDER BY music_id;";
     public static FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>
         VnIllustrators { get; set; } =
         FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>.Empty;
+
+    public static FrozenDictionary<string,
+            List<(string vid, string sid, string cid, int aid, string? latin, string name)>>
+        VnSeiyuus { get; set; } =
+        FrozenDictionary<string, List<(string vid, string sid, string cid, int aid, string? latin, string name)>>.Empty;
 
     public static FrozenDictionary<int, List<int>> McOptionsQshDict { get; set; } =
         FrozenDictionary<int, List<int>>.Empty;
@@ -207,6 +227,7 @@ ORDER BY music_id;";
         await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json", await SelectAutocompleteDeveloper());
         await File.WriteAllTextAsync($"{autocompleteFolder}/character.json", await SelectAutocompleteCharacter());
         await File.WriteAllTextAsync($"{autocompleteFolder}/illustrator.json", await SelectAutocompleteIllustrator());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/seiyuu.json", await SelectAutocompleteSeiyuu());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
@@ -3170,6 +3191,28 @@ ORDER BY artist_id";
     public static async Task<string> SelectAutocompleteIllustrator()
     {
         var res = VnIllustrators.SelectMany(x =>
+                x.Value.Select(y =>
+                {
+                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                    if (latinTitleNorm == nonLatinTitleNorm)
+                    {
+                        nonLatinTitle = "";
+                        nonLatinTitleNorm = "";
+                    }
+
+                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                        latinTitleNorm, nonLatinTitleNorm);
+                }))
+            .DistinctBy(x => x.MSTLatinTitle);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
+    }
+
+    public static async Task<string> SelectAutocompleteSeiyuu()
+    {
+        var res = VnSeiyuus.SelectMany(x =>
                 x.Value.Select(y =>
                 {
                     (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);

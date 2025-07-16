@@ -258,6 +258,15 @@
                         <span>@Song.CharacterName</span>
                         <br/>
                     }
+
+                    @if (!string.IsNullOrEmpty(Song.SeiyuuName))
+                    {
+                        <br/>
+                        <span>Seiyuu name:</span>
+                        <br/>
+                        <span>@Song.SeiyuuName</span>
+                        <br/>
+                    }
                 </div>
 
             @if (true)
