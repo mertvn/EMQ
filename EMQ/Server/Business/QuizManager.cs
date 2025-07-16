@@ -831,7 +831,7 @@ public class QuizManager
                             }
                         }
 
-                        song.CharacterName = string.Join(", ", correctAnswers);
+                        song.CharacterName = string.Join(", ", correctAnswers.Distinct());
                     }
                     else
                     {
@@ -866,6 +866,52 @@ public class QuizManager
                             correct = true;
                             break;
                         }
+                    }
+                }
+            }
+
+            dict[guessKind] = correct;
+        }
+
+        {
+            const GuessKind guessKind = GuessKind.Illustrator;
+            string? guess = playerGuess?.Dict[guessKind];
+            bool correct = false;
+            if (!string.IsNullOrWhiteSpace(guess))
+            {
+                if (!CorrectAnswersDicts[guessKind].TryGetValue(Quiz.QuizState.sp, out var correctAnswers))
+                {
+                    correctAnswers = new List<string>();
+                    var vndbIds = song.Sources.SelectMany(x =>
+                        x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(y => y.Url.ToVndbId()));
+
+                    foreach (string vndbId in vndbIds)
+                    {
+                        if (DbManager.VnIllustrators.TryGetValue(vndbId, out var vnIllustrators))
+                        {
+                            foreach ((string? _, string? _, int _, string? latin, string? name) in vnIllustrators)
+                            {
+                                var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                correctAnswers.Add(title.latinTitle);
+                                if (title.nonLatinTitle != null)
+                                {
+                                    correctAnswers.Add(title.nonLatinTitle);
+                                }
+                            }
+                        }
+                    }
+
+                    correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
+                    CorrectAnswersDicts[guessKind].Add(Quiz.QuizState.sp, correctAnswers);
+                    Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+                }
+
+                foreach (string correctAnswer in correctAnswers)
+                {
+                    if (guess.NormalizeForAutocomplete() == correctAnswer)
+                    {
+                        correct = true;
+                        break;
                     }
                 }
             }
@@ -1590,6 +1636,7 @@ public class QuizManager
                         // not much point tracking these as they are dynamic data
                         case GuessKind.Rigger:
                         case GuessKind.Character:
+                        case GuessKind.Illustrator:
                             shouldAdd = false;
                             break;
                         case GuessKind.Developer:

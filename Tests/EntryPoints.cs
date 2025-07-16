@@ -81,6 +81,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateAutocompleteIllustratorJson()
+    {
+        await File.WriteAllTextAsync("illustrator.json", await DbManager.SelectAutocompleteIllustrator());
+    }
+
+    [Test, Explicit]
     public async Task ImportVndbData()
     {
         const bool isIncremental = true;

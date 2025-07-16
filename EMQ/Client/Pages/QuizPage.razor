@@ -626,6 +626,16 @@ else
                                                 @bind-Guess="@PageState.Guess.Dict[GuessKind.Character]">
                 </AutocompleteCharacterComponent>
             }
+
+            @if (Room.QuizSettings.EnabledGuessKinds.TryGetValue(GuessKind.Illustrator, out bool ill) && ill)
+            {
+                <AutocompleteIllustratorComponent @ref="AutocompleteComponentDict[GuessKind.Illustrator]"
+                                                Placeholder="Enter illustrator name here"
+                                                IsDisabled="@(Room.Quiz?.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Results || IsSpectator)"
+                                                IsQuizPage="true"
+                                                @bind-Guess="@PageState.Guess.Dict[GuessKind.Illustrator]">
+                </AutocompleteIllustratorComponent>
+            }
         }
 
     </div>

@@ -30,4 +30,7 @@ public enum GuessKind
 
     [Description("Character Name")]
     Character = 8,
+
+    [Description("Illustrator Name")]
+    Illustrator = 9,
 }

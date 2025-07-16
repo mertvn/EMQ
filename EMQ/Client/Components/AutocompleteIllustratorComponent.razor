@@ -1,0 +1,14 @@
+﻿@inject HttpClient _client
+
+<MyAutocompleteComponent @ref="AutocompleteComponent"
+                         TValue="string"
+                         MaxMenuHeight="325px"
+                         HighlightMatch="ClientState.Preferences.AutocompleteHighlightMatch"
+                         RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
+                         ShowIcons="ClientState.Preferences.AutocompleteShowIcons"
+                         Disabled="IsDisabled"
+                         Placeholder="@Placeholder"
+                         GuessStr="@Guess"
+                         TextField="@((item) => item)"
+                         OnSearch="@(x => OnSearch<string>(x))"
+                         OnValueChanged="OnValueChanged"/>

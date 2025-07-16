@@ -95,6 +95,18 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)";
                         new { vids });
                 VnCharacters = vnCharacters.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
+
+                var vnIllustrators = await connectionVndb
+                    .QueryAsync<(string vid, string sid, int aid, string? latin, string name)>(
+                        @"
+SELECT DISTINCT vs.id, s.id, sa.aid, sa.latin, sa.name FROM staff s
+JOIN staff_alias sa ON sa.id = s.id
+JOIN vn_staff vs ON vs.aid = sa.aid
+WHERE vs.role = 'art'
+AND vs.id = ANY(@vids)",
+                        new { vids });
+                VnIllustrators = vnIllustrators.GroupBy(x => x.vid)
+                    .ToFrozenDictionary(x => x.Key, x => x.ToList());
             }
         }
 
@@ -149,6 +161,10 @@ ORDER BY music_id;";
         VnCharacters { get; set; } =
         FrozenDictionary<string, List<(string vid, string cid, string image, string? latin, string name)>>.Empty;
 
+    public static FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>
+        VnIllustrators { get; set; } =
+        FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>.Empty;
+
     public static FrozenDictionary<int, List<int>> McOptionsQshDict { get; set; } =
         FrozenDictionary<int, List<int>>.Empty;
 
@@ -190,6 +206,7 @@ ORDER BY music_id;";
 
         await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json", await SelectAutocompleteDeveloper());
         await File.WriteAllTextAsync($"{autocompleteFolder}/character.json", await SelectAutocompleteCharacter());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/illustrator.json", await SelectAutocompleteIllustrator());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
@@ -3131,6 +3148,28 @@ ORDER BY artist_id";
     public static async Task<string> SelectAutocompleteCharacter()
     {
         var res = VnCharacters.SelectMany(x =>
+                x.Value.Select(y =>
+                {
+                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                    if (latinTitleNorm == nonLatinTitleNorm)
+                    {
+                        nonLatinTitle = "";
+                        nonLatinTitleNorm = "";
+                    }
+
+                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                        latinTitleNorm, nonLatinTitleNorm);
+                }))
+            .DistinctBy(x => x.MSTLatinTitle);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
+    }
+
+    public static async Task<string> SelectAutocompleteIllustrator()
+    {
+        var res = VnIllustrators.SelectMany(x =>
                 x.Value.Select(y =>
                 {
                     (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
