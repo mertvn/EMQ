@@ -107,7 +107,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
 SELECT DISTINCT vs.id, sa.id, sa.aid, sa.latin, sa.name FROM staff s
 JOIN staff_alias sa ON sa.id = s.id
 JOIN vn_staff vs ON vs.aid = sa.aid
-WHERE vs.id = ANY(@vids) AND vs.role = 'art'",
+WHERE vs.id = ANY(@vids) AND (vs.role = 'art' OR vs.role = 'chardesign')",
                         new { vids });
                 VnIllustrators = vnIllustrators.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());

@@ -858,7 +858,7 @@ public class QuizManager
 
                     correctAnswers = correctAnswers.Select(x => x.NormalizeForAutocomplete()).Distinct().ToList();
                     CorrectAnswersDicts[guessKind].Add(Quiz.QuizState.sp, correctAnswers);
-                    Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
+                    // Quiz.Room.Log($"cA-{guessKind}: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
                 }
 
                 if (guess != null)

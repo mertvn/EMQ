@@ -480,6 +480,18 @@ public static class ExtensionMethods
         return enumerator.MoveNext() ? enumerator.Current : null;
     }
 
+    public static TSource? SingleOrNull<TSource>(this IEnumerable<TSource> source) where TSource : struct
+    {
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext())
+        {
+            return null;
+        }
+
+        TSource? result = enumerator.Current;
+        return enumerator.MoveNext() ? throw new InvalidOperationException() : result;
+    }
+
     public static bool ShouldCheckLineage(this SongLink o)
     {
         return !o.Url.EndsWith(".weba") && o.SubmittedBy != Constants.RobotName;
