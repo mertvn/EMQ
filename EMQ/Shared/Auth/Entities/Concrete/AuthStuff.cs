@@ -45,6 +45,7 @@ public static class AuthStuff // todo? find better name
             PermissionKind.Vote,
             PermissionKind.Edit,
             PermissionKind.Comment,
+            PermissionKind.ManageCollections,
         }).ToHashSet();
 
     public static HashSet<PermissionKind> DefaultImportHelperPermissions { get; } =
@@ -157,6 +158,7 @@ public enum PermissionKind
     Vote = 3005,
     Edit = 3006,
     Comment = 3007,
+    ManageCollections = 3008,
 
     ImportHelper = 3700,
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -484,6 +484,15 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<bool>> IsUsernameAvailable([FromBody] string username)
     {
         return await DbManager_Auth.IsUsernameAvailable(username);
+    }
+
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("FindUserByUsername")]
+    public async Task<ActionResult<int>> FindUserByUsername([FromBody] string username)
+    {
+        return (await DbManager_Auth.FindUserByUsername(username))?.id ?? 0;
     }
 
     [EnableRateLimiting(RateLimitKind.Register)]

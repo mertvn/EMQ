@@ -34,6 +34,20 @@ public class LibraryController : ControllerBase
 {
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
+    [Route("FindSongsByIds")]
+    public async Task<IEnumerable<Song>> FindSongsByIds([FromBody] int[] mIds)
+    {
+        if (!mIds.Any())
+        {
+            return Array.Empty<Song>();
+        }
+
+        var songs = await DbManager.SelectSongsMIds(mIds, false);
+        return songs;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
     [Route("FindSongsBySongSourceTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
     {
@@ -1037,7 +1051,7 @@ public class LibraryController : ControllerBase
         req.comment = req.comment.Trim();
         if (req.comment.Length is <= 0 or > 4096)
         {
-            return StatusCode(520);
+            return StatusCode(409);
         }
 
         req.id = 0;
@@ -1047,7 +1061,7 @@ public class LibraryController : ControllerBase
         bool success = await connection.InsertAsync(req);
         if (!success)
         {
-            return StatusCode(500);
+            return StatusCode(520);
         }
 
         Console.WriteLine(
@@ -1126,5 +1140,219 @@ public class LibraryController : ControllerBase
             .OrderBy(x => x.Value.CreatedAt)
             .Select(x =>
                 $"{x.Value.CreatedAt:s} by {x.Value.Session.Player.Username} {x.Value.UploadResult.FileName} ({x.Value.Song.ToStringLatin()}) {x.Value.UploadResult.ErrorStr}");
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetUserCollections")]
+    // [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
+    public async Task<IEnumerable<int>> GetUserCollections([FromBody] int uid)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var collections = await connection.QueryAsync<int>(
+            "select c.id from collection c join collection_users cu on cu.collection_id = c.id where cu.user_id = @uid",
+            new { uid });
+        return collections;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetCollectionContainers")]
+    // [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]
+    public async Task<ResGetCollectionContainers> GetCollectionContainers([FromBody] int[] cids)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+
+        // todo? fetch everything in a single query
+        var collection =
+            await connection.QueryAsync<Collection>("select * from collection where id = ANY(@cids)", new { cids });
+
+        var collectionUsers =
+            (await connection.QueryAsync<CollectionUsers>(
+                "select * from collection_users where collection_id = ANY(@cids)",
+                new { cids })).GroupBy(x => x.collection_id).ToDictionary(x => x.Key, x => x.ToList());
+
+        var collectionEntities =
+            (await connection.QueryAsync<CollectionEntity>(
+                "select * from collection_entity where collection_id = ANY(@cids)",
+                new { cids })).GroupBy(x => x.collection_id).ToDictionary(x => x.Key, x => x.ToList());
+
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = collectionUsers.SelectMany(x => x.Value.Select(y => y.user_id)).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2);
+
+        var collectionContainers = collection.Select(x =>
+            new CollectionContainer(x, collectionUsers.GetValueOrDefault(x.id) ?? new List<CollectionUsers>(),
+                collectionEntities.GetValueOrDefault(x.id) ?? new List<CollectionEntity>()));
+        return new ResGetCollectionContainers()
+        {
+            UsernamesDict = usernamesDict, CollectionContainers = collectionContainers.ToArray()
+        };
+    }
+
+    [CustomAuthorize(PermissionKind.ManageCollections)]
+    [HttpPost]
+    [Route("UpsertCollection")]
+    public async Task<ActionResult> UpsertCollection([FromBody] CollectionContainer req)
+    {
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        req.Collection.name = req.Collection.name.Trim();
+        if (req.Collection.name.Length is <= 0 or > 128)
+        {
+            return StatusCode(409);
+        }
+
+        if (req.Collection.entity_kind is not EntityKind.Song)
+        {
+            return StatusCode(409);
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        bool success = true;
+        if (req.Collection.id == 0)
+        {
+            req.Collection.created_at = DateTime.UtcNow;
+            success &= await connection.InsertAsync(req.Collection, transaction);
+            success &= await connection.InsertAsync(
+                new CollectionUsers()
+                {
+                    collection_id = req.Collection.id,
+                    user_id = session.Player.Id,
+                    role = CollectionUsersRoleKind.Owner,
+                }, transaction);
+        }
+        else
+        {
+            var owners = req.CollectionUsers.Where(x => x.role == CollectionUsersRoleKind.Owner).ToArray();
+            if (owners.Length != 1 || owners.First().user_id != session.Player.Id) // todo? allow changing owner
+            {
+                return StatusCode(409);
+            }
+
+            if (req.CollectionUsers.Any(x => x.collection_id != req.Collection.id))
+            {
+                return StatusCode(409);
+            }
+
+            var collection = await connection.GetAsync<Collection>(req.Collection.id, transaction);
+            if (collection == null)
+            {
+                return StatusCode(409);
+            }
+
+            bool isOwner = await connection.ExecuteScalarAsync<bool>(
+                $"select 1 from collection_users where collection_id = @cid and user_id = @uid and role = {(int)CollectionUsersRoleKind.Owner}",
+                new { cid = collection.id, uid = session.Player.Id },
+            transaction);
+            if (!isOwner)
+            {
+                return StatusCode(409);
+            }
+
+            success &= await connection.ExecuteAsync("UPDATE collection SET name = @name WHERE id = @id",
+                new { req.Collection.id, req.Collection.name }, transaction) == 1;
+
+            success &= await connection.ExecuteAsync("DELETE FROM collection_users WHERE collection_id = @id",
+                new { req.Collection.id }, transaction) > 0;
+
+            success &= await connection.InsertListAsync(
+                req.CollectionUsers.Where(x => x.role > CollectionUsersRoleKind.None).ToArray(), transaction);
+        }
+
+        if (!success)
+        {
+            return StatusCode(520);
+        }
+
+        Console.WriteLine(
+            $"p{session.Player.Id} {session.Player.Username} upserted {req.Collection.entity_kind} collection {req.Collection.name}");
+        await transaction.CommitAsync();
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.ManageCollections)]
+    [HttpPost]
+    [Route("ModifyCollectionEntity")]
+    public async Task<ActionResult> ModifyCollectionEntity([FromBody] ReqModifyCollectionEntity req)
+    {
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        var collection = await connection.GetAsync<Collection>(req.CollectionId, transaction);
+        if (collection == null)
+        {
+            return StatusCode(409);
+        }
+
+        if (collection.entity_kind is not EntityKind.Song)
+        {
+            return StatusCode(409);
+        }
+
+        bool canEdit = await connection.ExecuteScalarAsync<bool>(
+            $"select 1 from collection_users where collection_id = @cid and user_id = @uid and role >= {(int)CollectionUsersRoleKind.Editor}",
+            new { cid = collection.id, uid = session.Player.Id },
+            transaction);
+        if (!canEdit)
+        {
+            return StatusCode(409);
+        }
+
+        var collectionEntity = new CollectionEntity
+        {
+            collection_id = collection.id,
+            entity_id = req.EntityId, // todo? verify this exists
+            modified_at = DateTime.UtcNow,
+            modified_by = session.Player.Id,
+        };
+
+        bool success = true;
+        if (req.IsAdded)
+        {
+            success &= await connection.InsertAsync(collectionEntity, transaction);
+        }
+        else
+        {
+            // not modifying success here because it could've been already removed
+            await connection.DeleteAsync(collectionEntity, transaction);
+        }
+
+        if (!success)
+        {
+            return StatusCode(520);
+        }
+
+        Console.WriteLine(
+            $"p{session.Player.Id} {session.Player.Username} ModifyCollectionEntity {collection.name} {collection.entity_kind} {req.EntityId} {req.IsAdded}");
+        await transaction.CommitAsync();
+        return Ok();
     }
 }

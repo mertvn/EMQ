@@ -47,6 +47,8 @@ public partial class SongInfoCardWrapperComponent
 
     private MusicCommentComponent _musicCommentComponent = null!;
 
+    // private MusicCollectionComponent _musicCollectionComponent = null!;
+
     private Song CurrentSong { get; set; } = new();
 
     private async Task BatchSetSubmittedBy()
@@ -143,5 +145,36 @@ public partial class SongInfoCardWrapperComponent
     {
         CurrentSong = song;
         _musicCommentComponent.Show();
+    }
+
+    private async Task OnclickSongCollections(Song song)
+    {
+        CurrentSong = song;
+        // _musicCollectionComponent.Show();
+    }
+
+    private async Task SendModifyCollectionEntityReq(int collectionId, int entityId, bool isAdded)
+    {
+        var req = new ReqModifyCollectionEntity(collectionId, entityId, isAdded);
+        var res = await _client.PostAsJsonAsync("Library/ModifyCollectionEntity", req);
+        if (res.IsSuccessStatusCode)
+        {
+            var collection =
+                ClientState.ResGetCollectionContainers.CollectionContainers.First(x => x.Collection.id == collectionId);
+            if (isAdded)
+            {
+                collection.CollectionEntities.Add(new CollectionEntity()
+                {
+                    collection_id = collectionId,
+                    entity_id = entityId,
+                    modified_at = DateTime.UtcNow,
+                    modified_by = ClientState.Session!.Player.Id
+                });
+            }
+            else
+            {
+                collection.CollectionEntities.RemoveAll(x => x.entity_id == entityId);
+            }
+        }
     }
 }

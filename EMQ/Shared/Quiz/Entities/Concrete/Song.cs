@@ -55,6 +55,8 @@ public partial class Song : IEditQueueEntity
 
     public int CommentCount { get; set; }
 
+    public int CollectionCount { get; set; }
+
     public Guid? MusicBrainzRecordingGid
     {
         get

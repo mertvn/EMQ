@@ -555,6 +555,7 @@ ORDER BY music_id;";
                 new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicVotes }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
+        // todo no need to select *
         stopWatch.StartSection("musicComments");
         var musicComments =
             (await connection.QueryAsync<MusicComment>(
@@ -562,16 +563,33 @@ ORDER BY music_id;";
                 new { mIds = songs.Select(x => x.Value.Id).ToArray(), ign = IgnoredMusicComments }, transaction))
             .GroupBy(x => x.music_id).ToArray();
 
-        stopWatch.StartSection("process musicVotes+musicComments");
+        stopWatch.StartSection("musicCollections");
+        var musicCollections =
+            (await connection.QueryAsync<(int mId, int count)>(
+                $@"select entity_id, count(entity_id) from collection c
+join collection_entity ce on ce.collection_id = c.id
+where entity_kind = {(int)EntityKind.Song} and entity_id = ANY(@mIds)
+group by entity_id",
+                new { mIds = songs.Select(x => x.Value.Id).ToArray() }, transaction))
+            .ToArray();
+
+        stopWatch.StartSection("process musicVotes");
         foreach (IGrouping<int, MusicVote> musicVote in musicVotes)
         {
             songs[musicVote.Key].VoteAverage = (float)Math.Round(musicVote.Average(x => x.vote!.Value), 2) / 10;
             songs[musicVote.Key].VoteCount = musicVote.Count();
         }
 
+        stopWatch.StartSection("process musicComments");
         foreach (IGrouping<int, MusicComment> musicComment in musicComments)
         {
             songs[musicComment.Key].CommentCount = musicComment.Count();
+        }
+
+        stopWatch.StartSection("process musicCollections");
+        foreach (var musicCollection in musicCollections)
+        {
+            songs[musicCollection.mId].CollectionCount = musicCollection.count;
         }
 
         stopWatch.StartSection("dispose");

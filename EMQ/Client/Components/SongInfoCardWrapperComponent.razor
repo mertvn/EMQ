@@ -2,6 +2,7 @@
 @using EMQ.Shared.Core
 @using EMQ.Client.Pages
 @using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.Library.Entities.Concrete
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
@@ -126,6 +127,47 @@
                         <span style="margin-right: 2px;">@song.CommentCount</span>
                         💬
                     </span>
+
+                    <span style="float: right; cursor: pointer; margin-right: 10px;" title="Collections"
+                          @onclick="@(async () => await OnclickSongCollections(song))">
+                        <span style="margin-right: 2px;">@song.CollectionCount</span>
+                        🗃
+                    </span>
+
+                    @if (ClientState.ResGetCollectionContainers.CollectionContainers.Any(x => x.Collection.entity_kind == EntityKind.Song))
+                    {
+                        <br/>
+                        <div>
+                            @{
+                                CollectionContainer? selectedContainer =
+                                    ClientState.ResGetCollectionContainers.CollectionContainers
+                                        .FirstOrDefault(x => x.Collection.id == ClientState.SelectedCollectionId && x.Collection.entity_kind == EntityKind.Song);
+                                bool isAdded = selectedContainer?.CollectionEntities.Any(x => x.entity_id == song.Id) ?? false;
+                            }
+
+                            @if (selectedContainer != null)
+                            {
+                                @if (isAdded)
+                                {
+                                    <button class="btn btn-danger"
+                                            @onclick="@(() => SendModifyCollectionEntityReq(selectedContainer.Collection.id, song.Id, false))">-</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-success"
+                                            @onclick="@(() => SendModifyCollectionEntityReq(selectedContainer.Collection.id, song.Id, true))">+</button>
+                                }
+                            }
+
+                            <select @bind="@ClientState.SelectedCollectionId" style="max-width: 250px; margin-left: 4px;">
+                                @foreach (CollectionContainer container in
+                                    ClientState.ResGetCollectionContainers.CollectionContainers.Where(x => x.Collection.entity_kind == EntityKind.Song))
+                                {
+                                    <option value="@container.Collection.id">@container.Collection.name</option>
+                                }
+                            </select>
+                        </div>
+                    }
 
                     <div>
                             Video links:

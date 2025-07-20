@@ -307,6 +307,7 @@ public partial class LibraryPage
                 .OrderByDescending(x => ClientState.MusicVotes.GetValueOrDefault(x.Id)?.vote ?? 0).ToList(),
             LibrarySongOrderKind.SSST => CurrentSongs.OrderBy(x => x.Sources.First().SongTypes.First()).ToList(),
             LibrarySongOrderKind.CommentCount => CurrentSongs.OrderByDescending(x => x.CommentCount).ToList(),
+            LibrarySongOrderKind.CollectionCount => CurrentSongs.OrderByDescending(x => x.CollectionCount).ToList(),
             LibrarySongOrderKind.MyVNDBVote => CurrentSongs
                 .OrderByDescending(x =>
                 {
@@ -418,4 +419,7 @@ public enum LibrarySongOrderKind
 
     [Description("My VNDB vote")]
     MyVNDBVote,
+
+    [Description("Collection count")]
+    CollectionCount,
 }

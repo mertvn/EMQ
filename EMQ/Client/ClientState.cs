@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -40,5 +41,7 @@ public static class ClientState
 
     public static ResFindQueueItemsWithPendingChanges ResFindQueueItemsWithPendingChanges { get; set; } = new();
 
-    // todo song lists feature
+    public static ResGetCollectionContainers ResGetCollectionContainers { get; set; } = new();
+
+    public static int SelectedCollectionId { get; set; }
 }

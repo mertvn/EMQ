@@ -5,6 +5,8 @@
 @using System.Globalization
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
+@using EMQ.Shared.Library.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete.Dto
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
@@ -106,6 +108,48 @@
                 </div>
             </details>
         </details>
+
+        <details>
+            <summary>Collections</summary>
+            @if (IsOwnPage)
+            {
+                <button class="btn btn-success" @onclick="Onclick_CreateNewCollection">
+                    Create new collection
+                </button>
+                <br/>
+            }
+
+            @if (CollectionContainers != null)
+            {
+                <h4>Collections</h4>
+                <div>
+                    <Paginator State="@_paginationCollections"/>
+                </div>
+                <div class="grid" tabindex="-1">
+                    <QuickGrid Items="@CollectionContainers" Pagination="@_paginationCollections">
+                        <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<CollectionContainer>.ByAscending(x => x.Collection.name))">
+                            @if (true)
+                            {
+                                string href = $"eco{context.Collection.id}";
+                                <a href="@href"> @context.Collection.name</a>
+                            }
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(x => x.Collection.created_at)" Title="Created at" Sortable="true"/>
+                        <TemplateColumn Title="Modified at" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending" SortBy="@(GridSort<CollectionContainer>.ByAscending(x => (x.CollectionEntities.MaxBy(y => y.modified_at) ?? new CollectionEntity()).modified_at))">
+                            @((context.CollectionEntities.MaxBy(x => x.modified_at) ?? new CollectionEntity()).modified_at)
+                        </TemplateColumn>
+                        <TemplateColumn Title="Count" Sortable="true" SortBy="@(GridSort<CollectionContainer>.ByAscending(x => x.CollectionEntities.Count))">
+                            @context.CollectionEntities.Count
+                        </TemplateColumn>
+                        <TemplateColumn Title="Owner">
+                            @Utils.UserIdToUsername(ResGetCollectionContainers!.UsernamesDict, context.CollectionUsers.First(x => x.role == CollectionUsersRoleKind.Owner).user_id)
+                        </TemplateColumn>
+
+                    </QuickGrid>
+                </div>
+                <br/>
+            }
+        </details>
     }
 }
 
@@ -193,9 +237,15 @@
 
     private IQueryable<ResUserMusicVotes>? UserMusicVotes { get; set; }
 
+    public ResGetCollectionContainers? ResGetCollectionContainers { get; set; }
+
+    public IQueryable<CollectionContainer>? CollectionContainers { get; set; }
+
     private readonly PaginationState _paginationMostPlayedSongs = new() { ItemsPerPage = 100 };
 
     private readonly PaginationState _paginationCommonPlayers = new() { ItemsPerPage = 25 };
+
+    private readonly PaginationState _paginationCollections = new() { ItemsPerPage = 25 };
 
     private bool IsOwnPage => ClientState.Session != null && ClientState.Session.Player.Id == UserId;
 
@@ -227,6 +277,9 @@
             CommonPlayers = content.CommonPlayers.AsQueryable();
             UserMusicVotes = content.UserMusicVotes.AsQueryable();
         }
+
+        StateHasChanged();
+        await RefreshCollections();
     }
 
     public async Task CallStateHasChanged()
@@ -271,6 +324,51 @@
         }
 
         await SendEditUserReq();
+    }
+
+    private async Task RefreshCollections()
+    {
+        HttpResponseMessage res3 = await _client.PostAsJsonAsync($"Library/GetUserCollections", UserId);
+        if (res3.IsSuccessStatusCode)
+        {
+    // todo? squash to single request
+            int[] req4 = (await res3.Content.ReadFromJsonAsync<int[]>())!;
+            var res4 = await _client.PostAsJsonAsync("Library/GetCollectionContainers", req4);
+            if (res4.IsSuccessStatusCode)
+            {
+                ResGetCollectionContainers = await res4.Content.ReadFromJsonAsync<ResGetCollectionContainers>();
+                CollectionContainers = ResGetCollectionContainers!.CollectionContainers.AsQueryable();
+            }
+        }
+    }
+
+    private async Task SendUpsertCollectionReq(CollectionContainer req)
+    {
+        var res = await _client.PostAsJsonAsync("Library/UpsertCollection", req);
+        if (!res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    private async Task Onclick_CreateNewCollection()
+    {
+        string? promptResult =
+            (await _jsRuntime.InvokeAsync<string?>("prompt", "Enter new collection name (128 chars max.)"))?.Trim();
+        if (!string.IsNullOrWhiteSpace(promptResult) && promptResult.Length is > 0 and <= 128)
+        {
+            var req = new CollectionContainer(
+                new Collection() { name = promptResult, entity_kind = EntityKind.Song }, new List<CollectionUsers>(), new List<CollectionEntity>());
+            await SendUpsertCollectionReq(req);
+            await RefreshCollections();
+            StateHasChanged();
+        }
+    }
+
+    private short? GetGridSortModifiedAt(int songId)
+    {
+        return ClientState.MusicVotes.GetValueOrDefault(songId)?.vote;
     }
 
 }

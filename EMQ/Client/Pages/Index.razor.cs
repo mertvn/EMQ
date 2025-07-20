@@ -14,6 +14,7 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
@@ -127,6 +128,25 @@ public partial class Index
                             ClientState.MusicVotes =
                                 (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
                                     x => x.music_id, x => x);
+                        }
+
+                        LoginProgressDisplay.Add($"Fetching collections...");
+                        StateHasChanged();
+                        HttpResponseMessage resCollections =
+                            await _client.PostAsJsonAsync("Library/GetUserCollections", ClientState.Session.Player.Id);
+                        if (resCollections.IsSuccessStatusCode)
+                        {
+                            HttpResponseMessage resCollectionContainers =
+                                await _client.PostAsJsonAsync("Library/GetCollectionContainers",
+                                    await resCollections.Content.ReadFromJsonAsync<int[]>());
+                            if (resCollectionContainers.IsSuccessStatusCode)
+                            {
+                                ClientState.ResGetCollectionContainers =
+                                    (await resCollectionContainers.Content
+                                        .ReadFromJsonAsync<ResGetCollectionContainers>())!;
+                                ClientState.SelectedCollectionId = ClientState.ResGetCollectionContainers
+                                    .CollectionContainers.FirstOrDefault()?.Collection.id ?? 0;
+                            }
                         }
                     }
 

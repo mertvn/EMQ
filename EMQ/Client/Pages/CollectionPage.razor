@@ -1,0 +1,11 @@
+﻿@page "/eco{CoId:int}"
+@using EMQ.Client.Components
+
+<CollectionComponent CollectionId="CoId"></CollectionComponent>
+
+@code {
+
+    [Parameter]
+    public int CoId { get; set; }
+
+}

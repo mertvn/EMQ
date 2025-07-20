@@ -1,0 +1,168 @@
+﻿@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Library.Entities.Concrete.Dto
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
+
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eco{CollectionId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eco{CollectionId + 1}"))">Next</button>
+<br/>
+
+@if (ResGetCollectionContainers != null)
+{
+    var container = ResGetCollectionContainers.CollectionContainers.First();
+    <span style="font-size: x-large"> @container.Collection.name</span>
+    <br/>
+
+    @foreach (var user in container.CollectionUsers)
+    {
+        string username = Utils.UserIdToUsername(ResGetCollectionContainers.UsernamesDict, user.user_id);
+        string href = $"eu{user.user_id}";
+        <div>
+            <select style="margin: 5px" @bind="user.role" disabled>
+                @foreach (var role in Enum.GetValues<CollectionUsersRoleKind>())
+                {
+                    <option value="@role">
+                        @role.GetDescription()
+                    </option>
+                }
+            </select>
+            <a href="@href">@username</a>
+        </div>
+    }
+
+    bool isOwner = ClientState.Session != null && container.CollectionUsers.First(x => x.role == CollectionUsersRoleKind.Owner).user_id == ClientState.Session.Player.Id;
+    @if (isOwner)
+    {
+        <details style="border: 1px solid #ddd; padding: 5px;">
+            <summary>Edit collection</summary>
+            <label>
+                <input type="text" minlength="1" maxlength="128" @bind="@container.Collection.name" style="width: 500px;"/>
+                Name
+            </label>
+            <br/>
+            <br/>
+
+            <div style="border: 1px solid #ddd; padding: 5px;">
+                <h4>Users</h4>
+                <AutocompletePlayerComponent @ref="_autocompleteRef"
+                                             Placeholder="Enter username here"
+                                             @bind-Guess="@SelectedUsername"
+                                             Callback="SelectedResultChangedUsername"
+                                             AutocompleteData="@(Array.Empty<string>())">
+                </AutocompletePlayerComponent>
+
+                @foreach (var user in container.CollectionUsers)
+                {
+                    string username = Utils.UserIdToUsername(ResGetCollectionContainers.UsernamesDict, user.user_id);
+                    <div>
+                        <select style="margin: 5px" @bind="user.role" disabled="@(user.user_id == ClientState.Session!.Player.Id)">
+                            @foreach (var role in Enum.GetValues<CollectionUsersRoleKind>())
+                            {
+                                <option value="@role" disabled="@(role == CollectionUsersRoleKind.Owner)">
+                                    @role.GetDescription()
+                                </option>
+                            }
+                        </select>
+                        <span>@username</span>
+                    </div>
+                }
+            </div>
+
+            <br/>
+            <button class="btn btn-primary" @onclick="Onclick_Submit">
+                Submit
+            </button>
+        </details>
+    }
+
+    <SongInfoCardWrapperComponent CurrentSongs="Songs"></SongInfoCardWrapperComponent>
+}
+
+@code {
+
+    [Parameter]
+    public int CollectionId { get; set; }
+
+    private ResGetCollectionContainers? ResGetCollectionContainers { get; set; }
+
+    private List<Song> Songs { get; set; } = new();
+
+    private AutocompletePlayerComponent? _autocompleteRef;
+
+    public string SelectedUsername { get; set; } = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Songs.Clear();
+        await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetCollectionContainers", new List<int>() { CollectionId });
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetCollectionContainers>())!;
+            var container = content.CollectionContainers.First();
+            ClientState.SelectedCollectionId = container.Collection.id;
+            ResGetCollectionContainers = content;
+
+            switch (container.Collection.entity_kind)
+            {
+                case EntityKind.Song:
+                    {
+                        int[] ids = container.CollectionEntities.Select(x => x.entity_id).ToArray();
+                        if (ids.Any())
+                        {
+                            HttpResponseMessage res2 = await _client.PostAsJsonAsync("Library/FindSongsByIds", ids);
+                            if (res2.IsSuccessStatusCode)
+                            {
+                                Songs = (await res2.Content.ReadFromJsonAsync<List<Song>>())!;
+                            }
+                        }
+
+                        break;
+                    }
+            }
+        }
+    }
+
+    private async Task Onclick_Submit()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/UpsertCollection", ResGetCollectionContainers!.CollectionContainers.First());
+        if (res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", "OK.");
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    private async Task SelectedResultChangedUsername()
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/FindUserByUsername", SelectedUsername);
+        if (res.IsSuccessStatusCode)
+        {
+            int userId = await res.Content.ReadFromJsonAsync<int>();
+            if (userId > 0)
+            {
+                var container = ResGetCollectionContainers!.CollectionContainers.First();
+                if (!container.CollectionUsers.Any(x => x.user_id == userId))
+                {
+                    ResGetCollectionContainers.UsernamesDict[userId] = SelectedUsername;
+                    container.CollectionUsers.Add(new CollectionUsers()
+                    {
+                        collection_id = container.Collection.id, user_id = userId, role = CollectionUsersRoleKind.Editor
+                    });
+                    SelectedUsername = "";
+                    _autocompleteRef!.CallStateHasChanged();
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+}

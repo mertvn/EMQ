@@ -13,6 +13,7 @@ using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components;
@@ -161,6 +162,7 @@ public class ClientUtils
                         await TryRestorePreferences();
                         await ClientConnectionManager.StartManagingConnection();
 
+                        // todo make these lazy somehow
                         HttpResponseMessage resMusicVote =
                             await Client.PostAsJsonAsync("Auth/GetUserMusicVotes", session.Player.Id);
                         if (resMusicVote.IsSuccessStatusCode)
@@ -168,6 +170,23 @@ public class ClientUtils
                             ClientState.MusicVotes =
                                 (await resMusicVote.Content.ReadFromJsonAsync<MusicVote[]>())!.ToDictionary(
                                     x => x.music_id, x => x);
+                        }
+
+                        HttpResponseMessage resCollections =
+                            await Client.PostAsJsonAsync("Library/GetUserCollections", ClientState.Session.Player.Id);
+                        if (resCollections.IsSuccessStatusCode)
+                        {
+                            HttpResponseMessage resCollectionContainers =
+                                await Client.PostAsJsonAsync("Library/GetCollectionContainers",
+                                    await resCollections.Content.ReadFromJsonAsync<int[]>());
+                            if (resCollectionContainers.IsSuccessStatusCode)
+                            {
+                                ClientState.ResGetCollectionContainers =
+                                    (await resCollectionContainers.Content
+                                        .ReadFromJsonAsync<ResGetCollectionContainers>())!;
+                                ClientState.SelectedCollectionId = ClientState.ResGetCollectionContainers
+                                    .CollectionContainers.FirstOrDefault()?.Collection.id ?? 0;
+                            }
                         }
                     }
                     else
