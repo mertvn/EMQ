@@ -45,11 +45,15 @@ public partial class QuizSettingsComponent
 
     private AutocompleteMst? SelectedSource { get; set; }
 
+    private AutocompleteCollection? SelectedCollection { get; set; }
+
     private AutocompleteCComponent AutocompleteCComponent { get; set; } = null!;
 
     private AutocompleteAComponent AutocompleteAComponent { get; set; } = null!;
 
     private GuessInputComponent GuessInputComponent { get; set; } = null!;
+
+    private AutocompleteCollectionComponent AutocompleteCollectionComponent { get; set; } = null!;
 
     private Blazorise.Modal _modalRef = null!;
 
@@ -309,11 +313,44 @@ public partial class QuizSettingsComponent
                 trilean = (LabelKind)Random.Shared.Next(-1, 1);
             }
 
-            var categoryFilter = new SongSourceFilter(source, trilean);
-            sourceFilters.Add(categoryFilter);
+            var filter = new SongSourceFilter(source, trilean);
+            sourceFilters.Add(filter);
         }
 
         ClientQuizSettings.Filters.SongSourceFilters = sourceFilters;
+    }
+
+    private async Task RandomizeCollections()
+    {
+        if (!AutocompleteCollectionComponent.AutocompleteData.Any())
+        {
+            return;
+        }
+
+        var collectionFilters = new List<CollectionFilter>();
+        for (int i = 1; i <= Random.Shared.Next(1, 6); i++)
+        {
+            var collection =
+                AutocompleteCollectionComponent.AutocompleteData[
+                    Random.Shared.Next(AutocompleteCollectionComponent.AutocompleteData.Length)];
+
+            LabelKind trilean;
+            if (i == 1)
+            {
+                // we want at least 1 Maybe
+                trilean = LabelKind.Maybe;
+            }
+            else
+            {
+                // we don't want Include here
+                trilean = (LabelKind)Random.Shared.Next(-1, 1);
+            }
+
+            var filter = new CollectionFilter(collection, trilean);
+            collectionFilters.Add(filter);
+        }
+
+        ClientQuizSettings.Filters.CollectionFilters = collectionFilters;
     }
 
     private async Task ClearTags()
@@ -329,6 +366,11 @@ public partial class QuizSettingsComponent
     private async Task ClearSources()
     {
         ClientQuizSettings.Filters.SongSourceFilters = new List<SongSourceFilter>();
+    }
+
+    private async Task ClearCollections()
+    {
+        ClientQuizSettings.Filters.CollectionFilters = new List<CollectionFilter>();
     }
 
     private async Task SelectedResultChangedC()
@@ -368,6 +410,17 @@ public partial class QuizSettingsComponent
         }
     }
 
+    private async Task SelectedResultChangedCollection()
+    {
+        if (SelectedCollection != null)
+        {
+            ClientQuizSettings.Filters.CollectionFilters.Add(new CollectionFilter(SelectedCollection, LabelKind.Maybe));
+
+            await AutocompleteCollectionComponent.ClearInputField();
+            await AutocompleteCollectionComponent.ClearInputField();
+        }
+    }
+
     private async Task RemoveTag(int tagId)
     {
         ClientQuizSettings.Filters.CategoryFilters.RemoveAll(x => x.SongSourceCategory.Id == tagId);
@@ -381,6 +434,11 @@ public partial class QuizSettingsComponent
     private async Task RemoveSource(int sourceId)
     {
         ClientQuizSettings.Filters.SongSourceFilters.RemoveAll(x => x.AutocompleteMst.MSId == sourceId);
+    }
+
+    private async Task RemoveCollection(int collectionId)
+    {
+        ClientQuizSettings.Filters.CollectionFilters.RemoveAll(x => x.AutocompleteCollection.CoId == collectionId);
     }
 
     private void RecalculateNumSongsAndSongTypeFilters()

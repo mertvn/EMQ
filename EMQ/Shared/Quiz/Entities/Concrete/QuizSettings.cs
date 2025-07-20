@@ -26,6 +26,7 @@ public class QuizSettings
         !Filters.CategoryFilters.Any() &&
         !Filters.ArtistFilters.Any() &&
         !Filters.SongSourceFilters.Any() &&
+        !Filters.CollectionFilters.Any() &&
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads &&
         !Filters.IsPreferLongLinks;
@@ -491,6 +492,12 @@ public class QuizSettings
             JsonSerializer.Serialize(n.Filters.SongSourceFilters))
         {
             diff.Add($"Sources were modified.");
+        }
+
+        if (JsonSerializer.Serialize(o.Filters.CollectionFilters) !=
+            JsonSerializer.Serialize(n.Filters.CollectionFilters))
+        {
+            diff.Add($"Collections were modified.");
         }
 
         if (o.Filters.VndbAdvsearchFilter != n.Filters.VndbAdvsearchFilter)

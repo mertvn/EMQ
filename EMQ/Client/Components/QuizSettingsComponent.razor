@@ -80,6 +80,7 @@
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabTags">Tags</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabArtists">Artists</Blazorise.Tab>
                 <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabSources">Sources</Blazorise.Tab>
+                <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabCollections">Collections</Blazorise.Tab>
                 @if (!IsLibraryPage)
                 {
                     <Blazorise.Tab style="pointer-events: all; cursor: pointer" Name="TabVndbAdvsearch">VNDB search</Blazorise.Tab>
@@ -959,6 +960,52 @@
                         </div>
                     </div>
                 </Blazorise.TabPanel>
+
+            <Blazorise.TabPanel Name="TabCollections">
+                <div id="collectionEdit" style="margin: 5px; padding: 5px;">
+                    <AutocompleteCollectionComponent @ref="AutocompleteCollectionComponent"
+                                                     Placeholder="Enter collection name here"
+                                                     IsDisabled="false"
+                                                     IsQuizPage="false"
+                                                     @bind-Guess="@SelectedCollection"
+                                                     Callback="SelectedResultChangedCollection">
+                    </AutocompleteCollectionComponent>
+
+                    <table class="table" style="width: 65%; text-align: center">
+                        <tr>
+                            <th></th>
+                            <th>Selection</th>
+                            <th>Collection Name</th>
+                        </tr>
+                        @foreach (var af in ClientQuizSettings.Filters.CollectionFilters)
+                        {
+                            string href = $"eco{af.AutocompleteCollection.CoId}";
+                            <tr class="tag" @key="@af" style="text-align: center">
+                                <th>
+                                    <button type="button" @onclick="@(() => RemoveCollection(af.AutocompleteCollection.CoId))">X</button>
+                                </th>
+
+                                <th>
+                                    <InputSelect @bind-Value="@af.Trilean" style="margin: 5px">
+                                        @foreach (var labelKind in Enum.GetValues<LabelKind>())
+                                        {
+                                            <option value="@labelKind">@labelKind</option>
+                                        }
+                                    </InputSelect>
+                                </th>
+
+                                <th>
+                                    <a href="@href" target="_blank">@af.AutocompleteCollection.Name</a>
+                                </th>
+                            </tr>
+                        }
+                    </table>
+                    <div style="margin: 5px;">
+                        <button type="button" class="btn btn-primary" @onclick="RandomizeCollections" disabled="@(IsReadOnly)">Randomize collections</button>
+                        <button type="button" class="btn btn-primary" @onclick="ClearCollections" disabled="@(IsReadOnly)">Clear collections</button>
+                    </div>
+                </div>
+            </Blazorise.TabPanel>
 
             @if (!IsLibraryPage)
             {

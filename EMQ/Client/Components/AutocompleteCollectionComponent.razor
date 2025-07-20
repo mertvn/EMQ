@@ -1,0 +1,16 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Library.Entities.Concrete
+@inject HttpClient _client
+
+<MyAutocompleteComponent @ref="AutocompleteComponent"
+                         TValue="AutocompleteCollection"
+                         MaxMenuHeight="325px"
+                         HighlightMatch="ClientState.Preferences.AutocompleteHighlightMatch"
+                         RequireConfirmation="ClientState.Preferences.AutocompleteRequireConfirmation"
+                         ShowIcons="ClientState.Preferences.AutocompleteShowIcons"
+                         Disabled="IsDisabled"
+                         Placeholder="@Placeholder"
+                         GuessStr="@(Guess == null ? "" : Guess.Name)"
+                         TextField="@((item) => item.Name)"
+                         OnSearch="@(x => OnSearch<AutocompleteCollection>(x))"
+                         OnValueChanged="OnValueChanged"/>

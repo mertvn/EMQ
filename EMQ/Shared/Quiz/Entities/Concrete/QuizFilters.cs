@@ -208,6 +208,9 @@ public class QuizFilters
     [DefaultValue(10)]
     public int StartTimeSectionMinimumSeconds { get; set; } = 10;
 
+    [ProtoMember(33)]
+    public List<CollectionFilter> CollectionFilters { get; set; } = new();
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

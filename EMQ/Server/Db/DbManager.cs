@@ -228,6 +228,7 @@ ORDER BY music_id;";
         await File.WriteAllTextAsync($"{autocompleteFolder}/character.json", await SelectAutocompleteCharacter());
         await File.WriteAllTextAsync($"{autocompleteFolder}/illustrator.json", await SelectAutocompleteIllustrator());
         await File.WriteAllTextAsync($"{autocompleteFolder}/seiyuu.json", await SelectAutocompleteSeiyuu());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/collection.json", await SelectAutocompleteCollection());
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
@@ -2176,6 +2177,7 @@ RETURNING id;",
             var excludedCategoryVndbIds = new List<string>();
             var excludedArtistIds = new List<int>();
             var excludedSourceIds = new List<int>();
+            var excludedCollectionIds = new List<int>();
 
             // Apply filters
             if (filters != null)
@@ -2456,6 +2458,101 @@ RETURNING id;",
                     else
                     {
                         ids = resSource;
+                    }
+                }
+
+                if (filters.CollectionFilters.Any())
+                {
+                    Console.WriteLine(
+                        $"StartSection GetRandomSongs_collections: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
+
+                    string sqlCollections =
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                                     JOIN music m on m.id = mel.music_id
+                                     JOIN music_source_music msm on msm.music_id = m.id
+                                     JOIN music_source ms on msm.music_source_id = ms.id
+                                     JOIN music_source_external_link msel on ms.id = msel.music_source_id
+                                     JOIN artist_music am ON am.music_id = m.id
+                                     JOIN artist a ON a.id = am.artist_id
+                                     JOIN collection_entity coe ON coe.entity_id = m.id
+                                     JOIN collection co ON co.id = coe.collection_id
+                                     WHERE 1=1 AND co.entity_kind = {(int)EntityKind.Song}
+                                     ";
+
+                    var queryCollections = connection.QueryBuilder($"{sqlCollections:raw}");
+                    queryCollections.AppendLine($"AND msel.type = ANY({SongSourceLink.ProperLinkTypes})");
+                    queryCollections.AppendLine($"AND mel.type = ANY({SongLink.FileLinkTypes})");
+                    queryCollections.AppendLine(
+                        $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
+
+                    var validCollectionsInner = filters.CollectionFilters;
+                    var trileans = validCollectionsInner.Select(x => x.Trilean);
+                    bool hasInclude = trileans.Any(y => y is LabelKind.Include);
+
+                    var ordered = validCollectionsInner.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                        .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
+                        .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
+                    for (int index = 0; index < ordered.Count; index++)
+                    {
+                        CollectionFilter collectionFilter = ordered[index];
+
+                        if (collectionFilter.Trilean is LabelKind.Exclude)
+                        {
+                            // needs to be handled at the end
+                            excludedCollectionIds.Add(collectionFilter.AutocompleteCollection.CoId);
+                            continue;
+                        }
+
+                        if (index > 0)
+                        {
+                            switch (collectionFilter.Trilean)
+                            {
+                                case LabelKind.Maybe:
+                                    if (hasInclude)
+                                    {
+                                        continue;
+                                    }
+
+                                    queryCollections.AppendLine($"UNION");
+                                    break;
+                                case LabelKind.Include:
+                                    queryCollections.AppendLine($"INTERSECT");
+                                    break;
+                                default:
+                                    throw new ArgumentOutOfRangeException();
+                            }
+
+                            queryCollections.Append($"{sqlCollections:raw}");
+                        }
+
+                        queryCollections.Append((FormattableString)$@" AND co.id = {collectionFilter.AutocompleteCollection.CoId}");
+                    }
+
+                    if (printSql)
+                    {
+                        Console.WriteLine(queryCollections.Sql);
+                        Console.WriteLine(JsonSerializer.Serialize(queryCollections.Parameters, Utils.JsoIndented));
+                    }
+
+                    var resCollection =
+                        (await connection.QueryAsync<(int, string)>(queryCollections.Sql, queryCollections.Parameters))
+                        .Shuffle().ToList();
+
+                    if (ids != null && ids.Any())
+                    {
+                        bool and = true; // todo? option
+                        if (and)
+                        {
+                            ids = ids.Intersect(resCollection).ToList();
+                        }
+                        else
+                        {
+                            ids = ids.Union(resCollection).ToList();
+                        }
+                    }
+                    else
+                    {
+                        ids = resCollection;
                     }
                 }
 
@@ -2746,6 +2843,17 @@ RETURNING id;",
                 var allMidsOfExcluded = await connection.QueryAsync<int>(
                     @"select distinct music_id from music_source_music where music_source_id = ANY(@excludedSourceIds)",
                     new { excludedSourceIds });
+
+                invalidMids ??= new List<int>();
+                invalidMids.AddRange(allMidsOfExcluded);
+            }
+
+            if (excludedCollectionIds.Any())
+            {
+                // todo? filter by entity_kind
+                var allMidsOfExcluded = await connection.QueryAsync<int>(
+                    @"select distinct entity_id from collection_entity where collection_id = ANY(@excludedCollectionIds)",
+                    new { excludedCollectionIds });
 
                 invalidMids ??= new List<int>();
                 invalidMids.AddRange(allMidsOfExcluded);
@@ -3246,6 +3354,15 @@ ORDER BY artist_id";
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
+    }
+
+    public static async Task<string> SelectAutocompleteCollection()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var res = await connection.QueryAsync<AutocompleteCollection>(
+            "select distinct id as coid, name from collection WHERE id IN (SELECT collection_id FROM collection_entity) order by id");
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }

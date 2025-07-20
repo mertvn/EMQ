@@ -93,6 +93,12 @@ public class EntryPoints
     }
 
     [Test, Explicit]
+    public async Task GenerateAutocompleteCollectionJson()
+    {
+        await File.WriteAllTextAsync("collection.json", await DbManager.SelectAutocompleteCollection());
+    }
+
+    [Test, Explicit]
     public async Task ImportVndbData()
     {
         const bool isIncremental = true;
