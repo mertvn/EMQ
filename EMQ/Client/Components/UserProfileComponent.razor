@@ -366,9 +366,4 @@
         }
     }
 
-    private short? GetGridSortModifiedAt(int songId)
-    {
-        return ClientState.MusicVotes.GetValueOrDefault(songId)?.vote;
-    }
-
 }
