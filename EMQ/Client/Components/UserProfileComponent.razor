@@ -131,7 +131,7 @@
                             @if (true)
                             {
                                 string href = $"eco{context.Collection.id}";
-                                <a href="@href"> @context.Collection.name</a>
+                                <a href="@href" target="_blank">@context.Collection.name</a>
                             }
                         </TemplateColumn>
                         <PropertyColumn Property="@(x => x.Collection.created_at)" Title="Created at" Sortable="true"/>

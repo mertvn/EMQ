@@ -47,7 +47,7 @@ public partial class SongInfoCardWrapperComponent
 
     private MusicCommentComponent _musicCommentComponent = null!;
 
-    // private MusicCollectionComponent _musicCollectionComponent = null!;
+    private MusicCollectionComponent _musicCollectionComponent = null!;
 
     private Song CurrentSong { get; set; } = new();
 
@@ -150,7 +150,7 @@ public partial class SongInfoCardWrapperComponent
     private async Task OnclickSongCollections(Song song)
     {
         CurrentSong = song;
-        // _musicCollectionComponent.Show();
+        _musicCollectionComponent.Show();
     }
 
     private async Task SendModifyCollectionEntityReq(int collectionId, int entityId, bool isAdded)

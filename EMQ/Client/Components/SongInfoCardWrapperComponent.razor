@@ -10,6 +10,7 @@
 <ReviewComponent @ref="_reviewComponent" CurrentRQs="@(CurrentRQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
 <ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
 <MusicCommentComponent @ref="_musicCommentComponent" Song="@CurrentSong" ParentStateHasChangedCallback="@CallStateHasChanged" />
+<MusicCollectionComponent @ref="_musicCollectionComponent" Song="@CurrentSong" ParentStateHasChangedCallback="@CallStateHasChanged" />
 
 @{
     bool isDebugMode = ClientState.Preferences.DebugMode;

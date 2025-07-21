@@ -1401,4 +1401,26 @@ public class LibraryController : ControllerBase
         await transaction.CommitAsync();
         return Ok();
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetEntityCollections")]
+    public async Task<ActionResult<int[]>> GetEntityCollections([FromBody] CollectionContainer[] containers)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var entityKind = containers.First().Collection.entity_kind;
+        if (containers.Any(x => x.Collection.entity_kind != entityKind))
+        {
+            return StatusCode(409);
+        }
+
+        var cids = await connection.QueryAsync<int>(
+            "select id from collection c join collection_entity ce on c.id = ce.collection_id where entity_kind = @kind and entity_id = ANY(@eids)",
+            new
+            {
+                kind = (int)entityKind,
+                eids = containers.SelectMany(x => x.CollectionEntities.Select(y => y.entity_id)).ToArray()
+            });
+        return cids.ToArray();
+    }
 }
