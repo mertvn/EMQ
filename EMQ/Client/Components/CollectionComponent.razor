@@ -72,11 +72,15 @@
                 }
             </div>
 
-            @* todo delete collection button *@
-
             <br/>
             <button class="btn btn-primary" @onclick="Onclick_Submit">
                 Submit
+            </button>
+
+            <br/>
+            <br/>
+            <button class="btn btn-danger" @onclick="Onclick_Delete">
+                Delete collection
             </button>
         </details>
     }
@@ -100,12 +104,19 @@
     protected override async Task OnParametersSetAsync()
     {
         Songs.Clear();
+        ResGetCollectionContainers = null;
+
         await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetCollectionContainers", new List<int>() { CollectionId });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetCollectionContainers>())!;
-            var container = content.CollectionContainers.First();
+            var container = content.CollectionContainers.FirstOrDefault();
+            if (container == null)
+            {
+                return;
+            }
+
             ClientState.SelectedCollectionId = container.Collection.id;
             ResGetCollectionContainers = content;
 
@@ -132,6 +143,27 @@
     private async Task Onclick_Submit()
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Library/UpsertCollection", ResGetCollectionContainers!.CollectionContainers.First());
+        if (res.IsSuccessStatusCode)
+        {
+            await _jsRuntime.InvokeVoidAsync("alert", "OK.");
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    private async Task Onclick_Delete()
+    {
+        var container = ResGetCollectionContainers!.CollectionContainers.First();
+        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete collection {container.Collection.name}?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/DeleteCollection", container.Collection.id);
         if (res.IsSuccessStatusCode)
         {
             await _jsRuntime.InvokeVoidAsync("alert", "OK.");

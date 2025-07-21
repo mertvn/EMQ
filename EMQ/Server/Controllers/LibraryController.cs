@@ -1259,7 +1259,7 @@ public class LibraryController : ControllerBase
             bool isOwner = await connection.ExecuteScalarAsync<bool>(
                 $"select 1 from collection_users where collection_id = @cid and user_id = @uid and role = {(int)CollectionUsersRoleKind.Owner}",
                 new { cid = collection.id, uid = session.Player.Id },
-            transaction);
+                transaction);
             if (!isOwner)
             {
                 return StatusCode(409);
@@ -1352,6 +1352,52 @@ public class LibraryController : ControllerBase
 
         Console.WriteLine(
             $"p{session.Player.Id} {session.Player.Username} ModifyCollectionEntity {collection.name} {collection.entity_kind} {req.EntityId} {req.IsAdded}");
+        await transaction.CommitAsync();
+        return Ok();
+    }
+
+    [CustomAuthorize(PermissionKind.ManageCollections)]
+    [HttpPost]
+    [Route("DeleteCollection")]
+    public async Task<ActionResult> DeleteCollection([FromBody] int cid)
+    {
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        var collection = await connection.GetAsync<Collection>(cid, transaction);
+        if (collection == null)
+        {
+            return StatusCode(409);
+        }
+
+        bool canDelete = await connection.ExecuteScalarAsync<bool>(
+            $"select 1 from collection_users where collection_id = @cid and user_id = @uid and role = {(int)CollectionUsersRoleKind.Owner}",
+            new { cid = collection.id, uid = session.Player.Id },
+            transaction);
+        if (!canDelete)
+        {
+            return StatusCode(409);
+        }
+
+        if (!await connection.DeleteAsync(collection, transaction))
+        {
+            return StatusCode(520);
+        }
+
+        Console.WriteLine(
+            $"p{session.Player.Id} {session.Player.Username} DeleteCollection {collection.name} {collection.entity_kind}");
         await transaction.CommitAsync();
         return Ok();
     }
