@@ -36,9 +36,9 @@
                                 @Utils.UserIdToUsername(ResGetCollectionContainers!.UsernamesDict, context.CollectionUsers.First(x => x.role == CollectionUsersRoleKind.Owner).user_id)
                             </TemplateColumn>
                             <TemplateColumn Title="Added by">
-                                @Utils.UserIdToUsername(ResGetCollectionContainers!.UsernamesDict, context.CollectionEntities.Single().modified_by)
+                                @Utils.UserIdToUsername(ResGetCollectionContainers!.UsernamesDict, context.CollectionEntities.First(x => x.entity_id == Song.Id).modified_by)
                             </TemplateColumn>
-                            <PropertyColumn Property="@(x => x.CollectionEntities.Single().modified_at)" Title="Added at" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                            <PropertyColumn Property="@(x => x.CollectionEntities.First(x => x.entity_id == Song.Id).modified_at)" Title="Added at" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
                         </QuickGrid>
                     </div>
                 }
