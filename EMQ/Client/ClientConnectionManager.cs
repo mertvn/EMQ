@@ -19,8 +19,6 @@ public class Pong
     public static readonly HashSet<string> QuizPages = new() { "QuizPage", "RoomPage", "PyramidPage" };
 
     public string Page { get; init; } = "";
-
-    public Guid test { get; set; }
 }
 
 public class ClientConnectionManager
