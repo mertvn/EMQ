@@ -322,7 +322,8 @@ public class ClientUtils
     {
         if (ClientState.Session?.hubConnection != null)
         {
-            await ClientState.Session.hubConnection.SendAsync("SendPong", new Pong { Page = page });
+            await ClientState.Session.hubConnection.SendAsync("SendPong",
+                new Pong { Page = page, test = Guid.NewGuid() });
         }
     }
 
