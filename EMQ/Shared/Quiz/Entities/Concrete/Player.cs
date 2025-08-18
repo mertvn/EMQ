@@ -49,10 +49,10 @@ public class Player
     public DateTime LastHeartbeatTimestampQuiz { get; set; }
 
     public bool HasActiveConnection =>
-        IsBot || (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(40);
+        IsBot || (DateTime.UtcNow - LastHeartbeatTimestamp) < TimeSpan.FromSeconds(30);
 
     public bool HasActiveConnectionQuiz =>
-        IsBot || (DateTime.UtcNow - LastHeartbeatTimestampQuiz) < TimeSpan.FromSeconds(40);
+        IsBot || (DateTime.UtcNow - LastHeartbeatTimestampQuiz) < TimeSpan.FromSeconds(30);
 
     public int NGMCGuessesInitial { get; set; }
 
