@@ -92,7 +92,7 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
         var valueSpan = value.AsSpan();
         bool hasNonAscii = !Ascii.IsValid(valueSpan);
-        const int maxResults = 25; // todo
+        const int maxResults = 50; // todo
         var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
         var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
         foreach (AutocompleteMst d in AutocompleteData)
