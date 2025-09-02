@@ -357,13 +357,6 @@
                             {
                                 <span>Submissions are currently disabled.</span>
                             }
-                            else if (!ClientUtils.HasUploadPerms())
-                            {
-                                @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
-                                {
-                                    <span>You do not have upload permissions.</span>
-                                }
-                            }
                             else
                             {
                                 bool isInRQ = ClientState.ResFindQueueItemsWithPendingChanges.RQs.TryGetValue(song.Id, out int rqId);
@@ -382,20 +375,30 @@
                                     <br/>
                                 }
 
-                                if (!isInEQ && ClientUtils.HasUploadPerms() && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
+                                if (!ClientUtils.HasUploadPerms())
                                 {
-                                    @if (song.DataSource == DataSourceKind.MusicBrainz && song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
+                                    @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
                                     {
-                                        <span>Use the batch uploader to upload BGM.</span>
+                                        <span>You do not have upload permissions.</span>
                                     }
-                                    else
+                                }
+                                else
+                                {
+                                    if (!isInEQ && (!song.Attributes.HasFlag(SongAttributes.Locked) || ClientUtils.HasModPerms()))
                                     {
-                                        @if (hasVideo && hasSound)
+                                        @if (song.DataSource == DataSourceKind.MusicBrainz && song.Sources.Any(x => x.SongTypes.Any(y => y == SongSourceSongType.BGM)))
                                         {
-                                            <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                            <span>Use the batch uploader to upload BGM.</span>
                                         }
+                                        else
+                                        {
+                                            @if (hasVideo && hasSound)
+                                            {
+                                                <span>This song already has links of both types. Please only submit a new link if it's better than the current ones.</span>
+                                            }
 
-                                        <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
+                                            <UploadComponent mId="@song.Id" ParentStateHasChangedCallback="@CallStateHasChanged"></UploadComponent>
+                                        }
                                     }
                                 }
 
