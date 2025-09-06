@@ -75,6 +75,24 @@
                     }
                 </div>
             </div>
+
+            <div class="col-md-7 mb-2">
+                <label class="form-label">Song Source Song Types:</label>
+                <div class="d-flex flex-wrap gap-1">
+                    @foreach ((SongSourceSongType key, bool _) in SelectedSongSourceSongTypes)
+                    {
+                        <div class="form-check form-check-inline me-1">
+                            <input class="form-check-input" type="checkbox"
+                                   id="song-type-@key"
+                                   @bind="@(SelectedSongSourceSongTypes[key])"
+                                   @bind:after="DirtyFilters"/>
+                            <label class="form-check-label small" for="song-type-@key">
+                                @key.ToString()
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
 
         <div class="row mt-2">
@@ -125,6 +143,11 @@
     private Dictionary<SongLinkType, bool> MissingExternalLinks { get; set; } =
         Enum.GetValues<SongLinkType>().Where(x => x != SongLinkType.Unknown).ToDictionary(x => x, _ => false);
 
+    private Dictionary<SongSourceSongType, bool> SelectedSongSourceSongTypes { get; set; } =
+        Enum.GetValues<SongSourceSongType>()
+            .Where(x => x is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
+            .ToDictionary(x => x, _ => false);
+
     [Parameter]
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
 
@@ -138,14 +161,16 @@
     {
         var activeArtistRoles = MissingArtistRoles.Where(x => x.Value).Select(x => x.Key).ToHashSet();
         var activeExternalLinks = MissingExternalLinks.Where(x => x.Value).Select(x => x.Key).ToHashSet();
+        var activeSSST = SelectedSongSourceSongTypes.Where(x => x.Value).Select(x => x.Key).ToHashSet();
         bool checkVideo = VideoStatus != "Any";
         bool checkSound = SoundStatus != "Any";
         bool checkVote = VoteStatus != "Any";
         bool checkLineage = LineageStatus != "Any";
         bool checkArtistRoles = activeArtistRoles.Any();
         bool checkExternalLinks = activeExternalLinks.Any();
+        bool checkSSST = activeSSST.Any();
 
-        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkLineage || checkArtistRoles || checkExternalLinks;
+        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkLineage || checkArtistRoles || checkExternalLinks || checkSSST;
         if (!hasActiveFilters)
         {
             return songs;
@@ -217,6 +242,19 @@
                 }
             }
 
+            if (checkSSST)
+            {
+                bool ssstMatches = song.Sources.Any(x => x.SongTypes.Any(y => activeSSST.Contains(y)));
+                bool result = ApplyNot ? !ssstMatches : ssstMatches;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
+                }
+            }
+
             if (checkArtistRoles)
             {
                 foreach (SongArtistRole key in activeArtistRoles)
@@ -270,6 +308,11 @@
         foreach ((SongLinkType key, bool _) in MissingExternalLinks)
         {
             MissingExternalLinks[key] = false;
+        }
+
+        foreach ((SongSourceSongType key, bool _) in SelectedSongSourceSongTypes)
+        {
+            SelectedSongSourceSongTypes[key] = false;
         }
 
         ParentStateHasChangedCallback?.Invoke();
