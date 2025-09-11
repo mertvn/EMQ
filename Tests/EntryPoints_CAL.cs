@@ -1284,4 +1284,56 @@ WHERE s.lang = 'ja'"))
             }
         }
     }
+
+    [Test, Explicit]
+    public async Task FixMacrons()
+    {
+        var macrons = new Dictionary<string, string>()
+        {
+            { "ā", "aa" },
+            { "ī", "ii" },
+            { "ū", "uu" },
+            { "ē", "ee" },
+            { "ō", "ou" },
+            { "Ā", "Aa" },
+            { "Ī", "Ii" },
+            { "Ū", "Uu" },
+            { "Ē", "Ee" },
+            { "Ō", "Ou" }
+        };
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var aids = (await connection.GetListAsync<Artist>()).ToArray();
+        var artists = (await DbManager.SelectArtistBatchNoAM(connection,
+            aids.Select(x => new Song() { Artists = new List<SongArtist>() { new() { Id = x.id } } }).ToList(),
+            false)).SelectMany(x => x.Value.Select(y => y.Value)).ToArray();
+
+        var final = new List<SongArtist>();
+        foreach (SongArtist artist in artists)
+        {
+            foreach (Title title in artist.Titles)
+            {
+                if (title.LatinTitle.Any(x => macrons.ContainsKey(x.ToString())))
+                {
+                    foreach ((string key, string value) in macrons)
+                    {
+                        title.LatinTitle = title.LatinTitle.Replace(key, value);
+                    }
+
+                    final.Add(artist);
+                }
+            }
+        }
+
+        foreach (SongArtist artist in final)
+        {
+            var actionResult = await ServerUtils.BotEditArtist(new ReqEditArtist(artist, false, "Fix macrons"));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine(
+                    $"actionResult is not OkResult: {artist} {badRequestObjectResult?.Value}");
+            }
+        }
+    }
 }

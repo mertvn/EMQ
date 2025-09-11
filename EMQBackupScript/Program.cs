@@ -101,6 +101,7 @@ public static class Program
                     "",
                     "artist*",
                     "category",
+                    "collection*",
                     "edit_queue",
                     "erodle*",
                     "music*",
