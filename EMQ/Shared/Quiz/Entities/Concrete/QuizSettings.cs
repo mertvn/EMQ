@@ -598,6 +598,20 @@ public class QuizSettings
                 $"Screenshots: {o.Filters.ScreenshotKind.GetDescription()} → {n.Filters.ScreenshotKind.GetDescription()}");
         }
 
+        if (JsonSerializer.Serialize(o.Filters.VndbCharRoleKindFilter) !=
+            JsonSerializer.Serialize(n.Filters.VndbCharRoleKindFilter))
+        {
+            var ol = o.Filters.VndbCharRoleKindFilter
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            var ne = n.Filters.VndbCharRoleKindFilter
+                .Where(x => x.Value)
+                .Select(y => y.Key.GetDescription());
+
+            diff.Add($"Character roles: {string.Join(", ", ol)} → {string.Join(", ", ne)}");
+        }
+
         if (o.ListDistributionKind != n.ListDistributionKind)
         {
             diff.Add(

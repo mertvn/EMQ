@@ -211,6 +211,10 @@ public class QuizFilters
     [ProtoMember(33)]
     public List<CollectionFilter> CollectionFilters { get; set; } = new();
 
+    [ProtoMember(34)]
+    public Dictionary<VndbCharRoleKind, bool> VndbCharRoleKindFilter { get; set; } =
+        Enum.GetValues<VndbCharRoleKind>().ToDictionary(x => x, _ => true);
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

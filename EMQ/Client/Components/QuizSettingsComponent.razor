@@ -195,6 +195,23 @@
                         <label for="ScreenshotKind">Random screenshots</label>
                         <br/>
 
+                        @if (ClientQuizSettings.Filters.ScreenshotKind == ScreenshotKind.Character)
+                        {
+                            <details style="pointer-events: all; cursor: pointer;">
+                                <summary>Character roles</summary>
+                                @foreach (var key in ClientQuizSettings.Filters.VndbCharRoleKindFilter.Keys.ToList())
+                                {
+                                    if (true)
+                                    {
+                                        string id = $"VndbCharRoleKindFilter-{key}";
+                                        <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.Filters.VndbCharRoleKindFilter[key])" style="margin: 5px"/>
+                                        <label for="@id">@key.GetDescription()</label>
+                                        <br/>
+                                    }
+                                }
+                            </details>
+                        }
+
                         <InputSelect id="GamemodeKind" @bind-Value="ClientQuizSettings.GamemodeKind" style="margin: 5px">
                             @foreach (GamemodeKind gamemodeKind in Enum.GetValues<GamemodeKind>())
                             {

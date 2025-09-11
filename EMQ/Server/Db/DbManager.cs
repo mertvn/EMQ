@@ -3052,10 +3052,11 @@ RETURNING id;",
                         var songSource = song!.Sources.First();
                         if (filters.ScreenshotKind != ScreenshotKind.None)
                         {
-                            song.ScreenshotUrl = await GetRandomScreenshotUrl(songSource, filters.ScreenshotKind);
+                            song.ScreenshotUrl = await GetRandomScreenshotUrl(songSource, filters.ScreenshotKind,
+                                filters.VndbCharRoleKindFilter);
                         }
 
-                        song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover);
+                        song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover, null);
                     }
 
                     ret.Add(song!);
@@ -5399,7 +5400,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         }
     }
 
-    public static async Task<string> GetRandomScreenshotUrl(SongSource songSource, ScreenshotKind screenshotKind)
+    public static async Task<string> GetRandomScreenshotUrl(SongSource songSource, ScreenshotKind screenshotKind,
+        Dictionary<VndbCharRoleKind, bool>? vndbCharRoles)
     {
         string ret = "";
         var vndbLink = songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB);
@@ -5449,12 +5451,16 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 }
             case ScreenshotKind.Character:
                 {
+                    string[]? role = vndbCharRoles?.Where(x => x.Value).Select(x => x.Key.ToString().ToLowerInvariant())
+                        .ToArray() ?? null;
                     const string sql =
-                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id";
+                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id " +
+                        "and ((@role::char_role[] IS NULL) or cv.role = ANY(@role::char_role[])) ";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
-                            .Shuffle().FirstOrDefault();
+                        string? screenshot =
+                            (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, role })).Shuffle()
+                            .FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
                             (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
@@ -5481,7 +5487,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                         }
                         else
                         {
-                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN);
+                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN, null);
                         }
                     }
 
