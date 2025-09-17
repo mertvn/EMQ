@@ -324,6 +324,12 @@ public class QuizSettings
     [DefaultValue(false)]
     public bool IsNoWaitMode { get; set; } = false;
 
+    [ProtoMember(39)]
+    [Required]
+    [Range(0, 777)]
+    [DefaultValue(180)]
+    public int PreventSameScreenshotSpamMinutes { get; set; } = 180;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -731,6 +737,12 @@ public class QuizSettings
         {
             diff.Add(
                 $"Prevent same VN spam minutes: {o.PreventSameVNSpamMinutes} → {n.PreventSameVNSpamMinutes}");
+        }
+
+        if (o.PreventSameScreenshotSpamMinutes != n.PreventSameScreenshotSpamMinutes)
+        {
+            diff.Add(
+                $"Prevent same screenshot spam minutes: {o.PreventSameScreenshotSpamMinutes} → {n.PreventSameScreenshotSpamMinutes}");
         }
 
         if (o.Filters.OwnersMusicVoteStatus != n.Filters.OwnersMusicVoteStatus)

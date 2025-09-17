@@ -2525,7 +2525,8 @@ RETURNING id;",
                             queryCollections.Append($"{sqlCollections:raw}");
                         }
 
-                        queryCollections.Append((FormattableString)$@" AND co.id = {collectionFilter.AutocompleteCollection.CoId}");
+                        queryCollections.Append(
+                            (FormattableString)$@" AND co.id = {collectionFilter.AutocompleteCollection.CoId}");
                     }
 
                     if (printSql)
@@ -3045,18 +3046,6 @@ RETURNING id;",
                     if (songSourceSongTypeKey != null)
                     {
                         songTypesLeft![songSourceSongTypeKey.Value] -= 1;
-                    }
-
-                    if (filters != null)
-                    {
-                        var songSource = song!.Sources.First();
-                        if (filters.ScreenshotKind != ScreenshotKind.None)
-                        {
-                            song.ScreenshotUrl = await GetRandomScreenshotUrl(songSource, filters.ScreenshotKind,
-                                filters.VndbCharRoleKindFilter);
-                        }
-
-                        song.CoverUrl = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover, null);
                     }
 
                     ret.Add(song!);
@@ -5401,7 +5390,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
     }
 
     public static async Task<string> GetRandomScreenshotUrl(SongSource songSource, ScreenshotKind screenshotKind,
-        Dictionary<VndbCharRoleKind, bool>? vndbCharRoles)
+        Dictionary<VndbCharRoleKind, bool>? vndbCharRoles, int preventSameImageSpamMinutes,
+        Dictionary<string, DateTime> imageLastPlayedAtDict)
     {
         string ret = "";
         var vndbLink = songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB);
@@ -5410,6 +5400,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             return ret;
         }
 
+        string[] exc = imageLastPlayedAtDict.Where(x =>
+                (DateTime.UtcNow - x.Value) < TimeSpan.FromMinutes(Math.Clamp(preventSameImageSpamMinutes, 0, 777)))
+            .Select(x => x.Key).ToArray();
+
         string sourceVndbId = vndbLink.Url.ToVndbId();
         switch (screenshotKind)
         {
@@ -5417,10 +5411,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 break;
             case ScreenshotKind.VN:
                 {
-                    const string sql = "SELECT scr from vn_screenshots where id = @id";
+                    const string sql = "SELECT scr from vn_screenshots where id = @id AND NOT scr = ANY(@exc)";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
                             .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
@@ -5434,10 +5428,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 }
             case ScreenshotKind.VNCover:
                 {
-                    const string sql = "SELECT image from vn where id = @id";
+                    const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
                             .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
@@ -5455,11 +5449,11 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                         .ToArray() ?? null;
                     const string sql =
                         "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id " +
-                        "and ((@role::char_role[] IS NULL) or cv.role = ANY(@role::char_role[])) ";
+                        "and ((@role::char_role[] IS NULL) or cv.role = ANY(@role::char_role[])) AND NOT c.image = ANY(@exc)";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
                         string? screenshot =
-                            (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, role })).Shuffle()
+                            (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, role, exc })).Shuffle()
                             .FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
@@ -5474,10 +5468,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             case ScreenshotKind.VNPreferExplicit:
                 {
                     const string sql =
-                        "SELECT scr from vn_screenshots vs join images i on i.id = vs.scr where vs.id = @id and i.c_sexual_avg > 100";
+                        "SELECT scr from vn_screenshots vs join images i on i.id = vs.scr where vs.id = @id and i.c_sexual_avg > 100 AND NOT scr = ANY(@exc)";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
                             .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {
@@ -5487,7 +5481,8 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                         }
                         else
                         {
-                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN, null);
+                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN, null,
+                                preventSameImageSpamMinutes, imageLastPlayedAtDict);
                         }
                     }
 
@@ -5495,10 +5490,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                 }
             case ScreenshotKind.VNCoverBlurredText:
                 {
-                    const string sql = "SELECT image from vn where id = @id";
+                    const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
                     await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId }))
+                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
                             .Shuffle().FirstOrDefault();
                         if (!string.IsNullOrEmpty(screenshot))
                         {

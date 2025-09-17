@@ -59,6 +59,9 @@ public sealed class Room : IDisposable
     /// Only set by the GetRooms action, do not use elsewhere.
     public bool IsPrivate { get; set; }
 
+    [JsonIgnore]
+    public Dictionary<string, DateTime> ImageLastPlayedAtDict { get; } = new();
+
     public void Dispose()
     {
         Quiz?.Dispose();

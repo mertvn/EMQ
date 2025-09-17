@@ -195,6 +195,13 @@
                         <label for="ScreenshotKind">Random screenshots</label>
                         <br/>
 
+                        @if (ClientQuizSettings.Filters.ScreenshotKind != ScreenshotKind.None)
+                        {
+                            <InputNumber id="PreventSameScreenshotSpamMinutes" @bind-Value="ClientQuizSettings.PreventSameScreenshotSpamMinutes" style="margin: 5px"></InputNumber>
+                            <label for="PreventSameScreenshotSpamMinutes">Prevent same screenshot spam minutes</label>
+                            <br/>
+                        }
+
                         @if (ClientQuizSettings.Filters.ScreenshotKind == ScreenshotKind.Character)
                         {
                             <details style="pointer-events: all; cursor: pointer;">

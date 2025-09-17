@@ -1207,6 +1207,13 @@ public class QuizManager
             await DbManager.GetSHPlayerSongStats(new List<int> { song.Id },
                 Quiz.Room.Players.Select(x => x.Id).ToList());
 
+        if (Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes > 0 && !string.IsNullOrEmpty(song.ScreenshotUrl))
+        {
+            string imagePrefix = Quiz.Room.QuizSettings.Filters.ScreenshotKind.GetDisplayName()!;
+            string imageId = $"{imagePrefix}{song.ScreenshotUrl.LastSegment().Replace(".jpg", "")}";
+            Quiz.Room.ImageLastPlayedAtDict[imageId] = DateTime.UtcNow;
+        }
+
         int enabledGuessKindsCount = Quiz.Room.QuizSettings.EnabledGuessKinds.Count(x => x.Value);
         foreach (var player in Quiz.Room.Players)
         {
@@ -2439,6 +2446,19 @@ public class QuizManager
         foreach (var song in Quiz.Songs)
         {
             song.PlayerVotes = votes.Where(x => x.music_id == song.Id).ToDictionary(x => x.user_id, x => x.vote!.Value);
+
+            var songSource = song.Sources.First();
+            if (Quiz.Room.QuizSettings.Filters.ScreenshotKind != ScreenshotKind.None)
+            {
+                song.ScreenshotUrl = await DbManager.GetRandomScreenshotUrl(songSource,
+                    Quiz.Room.QuizSettings.Filters.ScreenshotKind,
+                    Quiz.Room.QuizSettings.Filters.VndbCharRoleKindFilter,
+                    Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes,
+                    Quiz.Room.ImageLastPlayedAtDict);
+            }
+
+            song.CoverUrl = await DbManager.GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover, null,
+                Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes, Quiz.Room.ImageLastPlayedAtDict);
         }
 
         TypedQuizHub.ReceiveQuizEntered(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id));
