@@ -8,6 +8,7 @@ using Dapper.Database.Extensions;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Erodle.Entities.Concrete;
+using EMQ.Shared.Quiz.Entities.Concrete;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -60,7 +61,7 @@ public sealed class ErodleService : BackgroundService
                     case ErodleKind.Mst:
                         int[] previous = previousCorrectAnswers.Select(x => int.Parse(x)).ToArray();
                         int[] possible = (await connection.QueryAsync<int>(
-                            "select id from music_source where votecount >= @minVotes and not id = ANY(@previous)",
+                            $"select id from music_source where type = {(int)SongSourceType.VN} and votecount >= @minVotes and not id = ANY(@previous)",
                             new { minVotes = Constants.ErodleMinVotes, previous })).ToArray();
                         Console.WriteLine($"possible erodle remaining: {possible.Length}");
                         if (!possible.Any())
