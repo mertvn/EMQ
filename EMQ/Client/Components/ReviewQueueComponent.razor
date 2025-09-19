@@ -80,7 +80,7 @@
                     </span>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Source Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">
+            <TemplateColumn Title="Source" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Sources.First().Titles, "ja", "en").LatinTitle))">
                 @if (true)
                 {
                     @* todo link might be different from what's displayed *@
@@ -91,17 +91,24 @@
                     </a>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Song Title" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Titles, "ja", "en").LatinTitle))">
+            <TemplateColumn Title="Song" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Titles, "ja", "en").LatinTitle))">
                 @if (true)
                 {
                     string title = Converters.GetSingleTitle(context.Song.Titles).LatinTitle;
                     <span style="@CellStyleInlineBlock" title="@title">@(title)</span>
                 }
             </TemplateColumn>
+            <TemplateColumn Title="Artist" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => Converters.GetSingleTitle(x.Song.Artists.First().Titles, "ja", "en").LatinTitle))">
+                @if (true)
+                {
+                    string title = Converters.GetSingleTitle(context.Song.Artists.First().Titles).LatinTitle;
+                    <span style="@CellStyleInlineBlock" title="@title">@(title)</span>
+                }
+            </TemplateColumn>
             <TemplateColumn Title="Url" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.url))">
                 @if (true)
                 {
-                    <a href="@context.url" target="_blank">@context.url</a>
+                    <a href="@context.url" target="_blank">Link</a>
                 }
             </TemplateColumn>
             <TemplateColumn Title="Video?" Sortable="true" SortBy="@(GridSort<RQ>.ByAscending(x => x.is_video))">
