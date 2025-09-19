@@ -1,0 +1,56 @@
+﻿@page "/eco/all"
+@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient _client
+
+<a class="link link-primary" href="/eu/all">Browse users</a>
+<br/>
+
+<h3>Browse collections</h3>
+<br/>
+
+<div>
+    <Paginator State="@_pagination"/>
+</div>
+<div class="grid" tabindex="-1">
+    <QuickGrid Items="@UserStats" Pagination="@_pagination">
+        <PropertyColumn Property="@(x => x.Id)" Title="Id" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+        <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<CollectionStat>.ByAscending(x => x.Name))">
+            @if (true)
+            {
+                string href = $"eco{context.Id}";
+                <a href="@href">@context.Name</a>
+            }
+        </TemplateColumn>
+        <TemplateColumn Title="Owner" Sortable="true" SortBy="@(GridSort<CollectionStat>.ByAscending(x => x.OwnerUsername))">
+            @if (true)
+            {
+                string href = $"eu{context.OwnerUserId}";
+                <a href="@href">@context.OwnerUsername</a>
+            }
+        </TemplateColumn>
+        <PropertyColumn Property="@(x => x.CreatedAt)" Title="Created at" Format="s" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.ModifiedAt)" Title="Modified at" Format="s" Sortable="true"/>
+        <PropertyColumn Property="@(x => x.NumEntities)" Title="Count" Sortable="true"/>
+    </QuickGrid>
+</div>
+<br/>
+
+@code {
+
+    private IQueryable<CollectionStat>? UserStats { get; set; }
+
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 50 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResponseMessage res1 =
+            await _client.PostAsJsonAsync("Library/GetCollectionStats", "");
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<List<CollectionStat>>())!;
+            UserStats = content.AsQueryable();
+        }
+    }
+
+}

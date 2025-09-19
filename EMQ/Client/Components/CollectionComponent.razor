@@ -7,6 +7,8 @@
 @inject ClientUtils _clientUtils
 @inject IJSRuntime _jsRuntime
 
+<a class="link link-primary" href="/eco/all">Browse collections</a>
+<br/>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eco{CollectionId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}eco{CollectionId + 1}"))">Next</button>
 <br/>

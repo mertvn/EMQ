@@ -1423,4 +1423,34 @@ public class LibraryController : ControllerBase
             });
         return cids.ToArray();
     }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetCollectionStats")]
+    [OutputCache(Duration = 60, PolicyName = "MyOutputCachePolicy")]
+    public async Task<List<CollectionStat>> GetCollectionStats()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+
+        var res = (await connection.QueryAsync<CollectionStat>(
+            @$"SELECT c.id, c.name, cu.user_id as OwnerUserId, c.created_at as CreatedAt, COALESCE(MAX(ce.modified_at), c.created_at) AS ModifiedAt, COUNT(ce.entity_id) AS NumEntities
+FROM collection c
+LEFT JOIN collection_users cu ON c.id = cu.collection_id AND cu.role = {(int)CollectionUsersRoleKind.Owner}
+LEFT JOIN collection_entity ce ON c.id = ce.collection_id
+GROUP BY c.id, c.name, c.created_at, cu.user_id
+ORDER BY c.id")).ToList();
+
+        var usernamesDict =
+            (await connectionAuth.QueryAsync<(int, string)>(
+                "select id, username from users where id = ANY(@userIds)",
+                new { userIds = res.Select(x => x.OwnerUserId).ToArray() }))
+            .ToDictionary(x => x.Item1, x => x.Item2);
+        foreach (CollectionStat r in res)
+        {
+            r.OwnerUsername = Utils.UserIdToUsername(usernamesDict, r.OwnerUserId);
+        }
+
+        return res;
+    }
 }
