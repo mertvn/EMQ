@@ -143,6 +143,12 @@ public partial class PlayerPreferencesComponent
         }
     }
 
+    private async Task RefreshLabel(Label label, LabelKind newLabelKind)
+    {
+        await OnLabelKindChanged(label, LabelKind.Maybe);
+        await OnLabelKindChanged(label, newLabelKind);
+    }
+
     public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind)
     {
         if (ClientState.Session != null && ClientState.VndbInfo.Labels != null)

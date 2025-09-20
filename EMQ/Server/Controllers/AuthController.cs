@@ -674,6 +674,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetUserStats")]
+    [OutputCache(Duration = 60, PolicyName = "MyOutputCachePolicy")]
     public async Task<List<UserStat>> GetUserStats()
     {
         var userStats = await DbManager.GetUserStats();
