@@ -13,7 +13,7 @@
     <Paginator State="@_pagination"/>
 </div>
 <div class="grid" tabindex="-1">
-    <QuickGrid Items="@UserStats" Pagination="@_pagination">
+    <QuickGrid Items="@CollectionStats" Pagination="@_pagination">
         <PropertyColumn Property="@(x => x.Id)" Title="Id" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
         <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<CollectionStat>.ByAscending(x => x.Name))">
             @if (true)
@@ -38,18 +38,17 @@
 
 @code {
 
-    private IQueryable<CollectionStat>? UserStats { get; set; }
+    private IQueryable<CollectionStat>? CollectionStats { get; set; }
 
     private readonly PaginationState _pagination = new() { ItemsPerPage = 50 };
 
     protected override async Task OnInitializedAsync()
     {
-        HttpResponseMessage res1 =
-            await _client.PostAsJsonAsync("Library/GetCollectionStats", "");
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetCollectionStats", "");
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<List<CollectionStat>>())!;
-            UserStats = content.AsQueryable();
+            CollectionStats = content.AsQueryable();
         }
     }
 
