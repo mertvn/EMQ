@@ -133,7 +133,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
                 return Array.Empty<TValue>();
             }
 
-            return (TValue[])(object)new AutocompleteA[] { new(Convert.ToInt32(replaced), replaced) };
+            return (TValue[])(object)new AutocompleteA[] { new(Convert.ToInt32(replaced), value) };
         }
 
         value = value.NormalizeForAutocomplete();

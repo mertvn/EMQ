@@ -51,20 +51,21 @@ public class LibraryController : ControllerBase
     [Route("FindSongsBySongSourceTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongSourceTitle([FromBody] ReqFindSongsBySongSourceTitle req)
     {
-        // todo
-        int msId = int.TryParse(req.SongSourceTitle, out msId) ? msId : 0;
-        if (msId > 0)
+        IEnumerable<Song> songs = Array.Empty<Song>();
+        if (req.SongSourceTitle.StartsWith("id:"))
         {
-            var songsSource = await DbManager.GetSongSource(new SongSource() { Id = msId }, null);
-            return songsSource.SongSource.Id > 0
-                ? await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle)
-                : Array.Empty<Song>();
+            if (int.TryParse(req.SongSourceTitle.Replace("id:", "").Trim(), out int msId))
+            {
+                var songsSource = await DbManager.GetSongSource(new SongSource() { Id = msId }, null);
+                songs = await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle);
+            }
         }
         else
         {
-            var songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
-            return songs;
+            songs = await DbManager.FindSongsBySongSourceTitle(req.SongSourceTitle);
         }
+
+        return songs;
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
@@ -72,18 +73,20 @@ public class LibraryController : ControllerBase
     [Route("FindSongsBySongTitle")]
     public async Task<IEnumerable<Song>> FindSongsBySongTitle([FromBody] ReqFindSongsBySongTitle req)
     {
-        // todo
-        int mId = int.TryParse(req.SongTitle, out mId) ? mId : 0;
-        if (mId > 0)
+        IEnumerable<Song> songs = Array.Empty<Song>();
+        if (req.SongTitle.StartsWith("id:"))
         {
-            var songs = await DbManager.SelectSongsMIds(new[] { mId }, false);
-            return songs;
+            if (int.TryParse(req.SongTitle.Replace("id:", "").Trim(), out int mId))
+            {
+                songs = await DbManager.SelectSongsMIds(new[] { mId }, false);
+            }
         }
         else
         {
-            var songs = await DbManager.FindSongsBySongTitle(req.SongTitle);
-            return songs;
+            songs = await DbManager.FindSongsBySongTitle(req.SongTitle);
         }
+
+        return songs;
     }
 
     // todo this is actually unused right now

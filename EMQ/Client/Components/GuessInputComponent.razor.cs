@@ -136,7 +136,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
 
             return (TValue[])(object)new AutocompleteMst[]
             {
-                new(Convert.ToInt32(replaced), replaced)
+                new(Convert.ToInt32(replaced), value)
             };
         }
 
