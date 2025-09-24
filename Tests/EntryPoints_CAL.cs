@@ -233,7 +233,11 @@ public class EntryPoints_CAL
         {
             bool addedSomething = false;
             int mId = egsImporterInnerResult.mIds.Single();
-            var song = songsDict[mId];
+            if (!songsDict.TryGetValue(mId, out var song))
+            {
+                continue;
+            }
+
             // foreach (SongArtist songArtist in song.Artists)
             // {
             //     if (songArtist.VndbId == "s2384")

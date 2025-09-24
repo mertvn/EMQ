@@ -16,7 +16,7 @@ public class Setup
         "MIU", "tria", "tria+", "Ne;on", "Ne;on Otonashi", "KILA", "rie kito", "A BONE", "satsuki", "Antistar",
         "anporin", "mio", "ちづ", "SAORI", "yui", "ゆい", "masa", "yuri", "SHIKI", "momo", "ayumu", "rin", "yuki",
         "sana", "ms", "yuuka", "mao", "kana", "mayumi", "rino", "yukari", "kei", "ari", "yun", "uma", "sae",
-        "sakura", "YOSHIAKI",
+        "sakura", "YOSHIAKI", "reika",
     };
 
     [OneTimeSetUp]
