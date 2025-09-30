@@ -123,12 +123,12 @@ public partial class ChatComponent
                                     stopwatch.Stop();
                                     break;
                                 }
-                            // todo send to all players
-                            // case "shrug":
-                            //     {
-                            //         message = new ChatMessage(@"¯\_(ツ)_/¯");
-                            //         break;
-                            //     }
+                            case "shrug":
+                                {
+                                    ChatInputText = @"¯\_(ツ)_/¯";
+                                    await OnKeyDown(new KeyboardEventArgs() { Key = "Enter" });
+                                    return;
+                                }
                             default:
                                 message = new ChatMessage("Command not found.");
                                 break;

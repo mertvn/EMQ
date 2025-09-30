@@ -23,10 +23,9 @@ public class JulietTests
     [Test]
     public async Task Test_GET_user()
     {
-        var res = await Juliet.Api.GET_user(new Param() { User = "u55140" });
+        var res = await Juliet.Api.GET_user(new Param() { User = "u1" });
         Console.WriteLine(JsonSerializer.Serialize(res));
-
-        Assert.That(res!.Single().Value.Username == "rampaa");
+        Assert.That(res!.Single().Value.Username.ToLowerInvariant() == "multi");
     }
 
     [Test]

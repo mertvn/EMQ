@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -37,12 +38,13 @@ public class ResCommonPlayers
 
     public int QuizCount { get; set; }
 
+    [JsonIgnore]
     public int UserId { get; set; }
 }
 
 public class ResUserMusicVotes
 {
-    public SongMini SongMini { get; set; }= new();
+    public SongMini SongMini { get; set; } = new();
 
     public MusicVote MusicVote { get; set; } = new();
 
