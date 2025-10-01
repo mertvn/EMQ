@@ -1,4 +1,5 @@
 ﻿@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Core
 @inject IJSRuntime _jsRuntime
 @typeparam TValue
 
@@ -46,27 +47,30 @@
 
                 @if (HighlightMatch)
                 {
-                    int highlightStart = textField.IndexOf(SelectedText, StringComparison.OrdinalIgnoreCase);
-                    int highlightEnd = highlightStart + (SelectedText.Length - 1);
+                    (int origStart, int origEnd) = AutocompleteHelpers.GetOriginalMatchSpan(textField, SelectedText);
                     string beforeHighlight = "";
                     string highlight = "";
                     string afterHighlight = "";
-                    @if (highlightStart >= 0)
+
+                    if (origStart >= 0 && origEnd >= origStart)
                     {
-                        if (highlightStart > 0)
+                        if (origStart > 0)
                         {
-                            beforeHighlight = textField[..highlightStart];
+                            beforeHighlight = textField[..origStart];
                         }
 
-                        highlight = textField[highlightStart..(highlightEnd + 1)];
-                        afterHighlight = textField[(highlightEnd + 1)..];
+                        highlight = textField.Substring(origStart, origEnd - origStart + 1);
+                        if (origEnd + 1 < textField.Length)
+                        {
+                            afterHighlight = textField[(origEnd + 1)..];
+                        }
                     }
                     else
                     {
                         beforeHighlight = textField;
                     }
 
-                    // these spans must be be on the same line to be displayed correctly
+                    // these spans must be on the same line to be displayed correctly
                     <span>@beforeHighlight</span><span style="color: #418eff">@highlight</span><span>@afterHighlight</span>
                 }
                 else

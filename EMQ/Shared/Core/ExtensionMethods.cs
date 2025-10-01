@@ -221,23 +221,6 @@ public static class ExtensionMethods
         return songLite;
     }
 
-    public static string NormalizeForAutocomplete(this string input)
-    {
-        foreach ((string? key, string? value) in RegexPatterns.AutocompleteStringReplacements)
-        {
-            input = input.Replace(key, value);
-        }
-
-        return new string(input
-                .Trim()
-                .ToLowerInvariant()
-                .Normalize(NormalizationForm.FormD)
-                .Where(ch =>
-                    CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark &&
-                    char.IsLetterOrDigit(ch))
-                .ToArray())
-            .Normalize(NormalizationForm.FormC);
-    }
 
     // todo remove these 2
     public static string ReplaceSelfhostLink(this string url)
