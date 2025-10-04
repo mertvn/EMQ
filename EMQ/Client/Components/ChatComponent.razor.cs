@@ -39,8 +39,6 @@ public partial class ChatComponent
 
     private ChatUserDetailComponent _modalRef = null!;
 
-    private int LastCount { get; set; } = 0;
-
     protected override async Task OnInitializedAsync()
     {
         SetTimer();
@@ -141,7 +139,9 @@ public partial class ChatComponent
                         {
                             ClientChat.Enqueue(message);
                             await ScrollToEnd();
+                            StateHasChanged();
                             await ScrollToEnd();
+                            StateHasChanged();
                         }
                     }
                     else
@@ -200,7 +200,9 @@ public partial class ChatComponent
 
                 // need to call twice or it doesn't scroll all the way to the end /shrug
                 await ScrollToEnd();
+                StateHasChanged();
                 await ScrollToEnd();
+                StateHasChanged();
             }
         }
     }
@@ -220,13 +222,10 @@ public partial class ChatComponent
 
     public async Task CallStateHasChanged()
     {
-        int currentCount = Chat.Count;
-        if (currentCount > LastCount)
-        {
-            await ScrollToEnd();
-            await ScrollToEnd();
-            LastCount = currentCount;
-        }
+        await ScrollToEnd();
+        StateHasChanged();
+        await ScrollToEnd();
+        StateHasChanged();
     }
 
     private async Task Onclick_Sender(Player sender, MouseEventArgs e)
