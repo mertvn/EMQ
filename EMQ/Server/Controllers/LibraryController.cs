@@ -1440,7 +1440,7 @@ public class LibraryController : ControllerBase
             @$"SELECT c.id, c.name, cu.user_id as OwnerUserId, c.created_at as CreatedAt, COALESCE(MAX(ce.modified_at), c.created_at) AS ModifiedAt, COUNT(ce.entity_id) AS NumEntities
 FROM collection c
 LEFT JOIN collection_users cu ON c.id = cu.collection_id AND cu.role = {(int)CollectionUsersRoleKind.Owner}
-LEFT JOIN collection_entity ce ON c.id = ce.collection_id
+JOIN collection_entity ce ON c.id = ce.collection_id
 GROUP BY c.id, c.name, c.created_at, cu.user_id
 ORDER BY c.id")).ToList();
 
