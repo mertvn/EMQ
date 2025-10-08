@@ -39,6 +39,7 @@ public static class RegexPatterns
         { "α", "a" },
         // { "β", "B" },
         { "βίος", "Bios" },
+        { "Rë∀˥", "Real" },
         { "Λ", "A" },
         { "∀", "A" },
         { "μ", "myu" },
