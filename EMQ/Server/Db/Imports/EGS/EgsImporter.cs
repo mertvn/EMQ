@@ -234,7 +234,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
                 innerResult.aIds = aIds.ToList();
 
-                queryMusic.Where($"m.data_source={(int)DataSourceKind.VNDB}");
+                queryMusic.Where($"m.data_source={(int)DataSourceKind.VNDB}"); // todo?
                 queryMusic.Where($"msel.url={egsData.GameVndbUrl}");
                 queryMusic.Where($"msm.type={(int)egsData.GameMusicCategory}");
                 queryMusic.Where($"a.id = ANY({aIds.ToArray()})");

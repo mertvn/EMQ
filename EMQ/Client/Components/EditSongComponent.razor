@@ -18,8 +18,6 @@
         <h5>What can be added</h5>
         <ol>
             <li>Follow VNDB's guidelines on romanization.</li>
-            <li>Currently we're only accepting Non-canon song submissions for vocal songs, and Canon BGM tracks. Canon vocal songs should be added to VNDB instead.</li>
-            <li>Currently it's possible to add songs only to sources already existing in the database.</li>
             <li>Do not add Non-canon songs if you don't have a good quality source file for them.</li>
             <li>Do not add songs that are on AMQ.</li>
             <li>All Official submissions are accepted.</li>
@@ -280,22 +278,19 @@
             </details>
         }
 
-        @if (ClientUtils.HasAdminPerms())
-        {
-            <label style="padding: 4px;">
-                <select style="margin: 5px" @bind="Song.DataSource">
-                    @foreach (var dataSourceKind in Enum.GetValues<DataSourceKind>())
+        <label style="padding: 4px;">
+            <select style="margin: 5px" @bind="Song.DataSource">
+                @foreach (var dataSourceKind in Enum.GetValues<DataSourceKind>())
+                {
+                    @if (dataSourceKind != DataSourceKind.Unknown)
                     {
-                        @if (dataSourceKind != DataSourceKind.Unknown)
-                        {
-                            <option value="@dataSourceKind">@dataSourceKind</option>
-                        }
+                        <option value="@dataSourceKind">@dataSourceKind</option>
                     }
-                </select>
-                Data source
-            </label>
-            <br/>
-        }
+                }
+            </select>
+            Data source
+        </label>
+        <br/>
 
         <textarea id="note_user"
                       rows="2"
@@ -614,11 +609,11 @@
             }
             else
             {
-                if (isNew && !isBgm && !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
-                {
-                    ValidationMessages.Add("At least one artist must have the Vocals role.");
-                    isValid = false;
-                }
+                // if (isNew && !isBgm && !song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+                // {
+                //     ValidationMessages.Add("At least one artist must have the Vocals role.");
+                //     isValid = false;
+                // }
             }
 
             if (!isBgm) // songArtist.Id will be 0 in MusicBrainzImporter
