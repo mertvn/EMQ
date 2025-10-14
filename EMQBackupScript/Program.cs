@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using CommandLine;
 using EMQ.Server;
 using EMQ.Shared.Core;
 using Renci.SshNet;
@@ -8,34 +10,75 @@ namespace EMQBackupScript;
 
 public static class Program
 {
+    public class Options
+    {
+        [Option("env", Required = true, HelpText = "Path to .env file")]
+        public string Env { get; set; } = "";
+
+        [Option("out", Required = false, HelpText = "Base output directory")]
+        public string Out { get; set; } = "";
+
+        [Option("shsout", Required = false, HelpText = "SHS output directory (also determines if shs export runs)")]
+        public string ShsOut { get; set; } = "";
+
+        [Option("auth", Required = false, HelpText = "Export AUTH DB?")]
+        public bool Auth { get; set; }
+
+        [Option("song", Required = false, HelpText = "Export SONG DB?")]
+        public bool Song { get; set; }
+
+        [Option("botg", Required = false, HelpText = "Export BOTG DB?")]
+        public bool Botg { get; set; }
+
+        [Option("private", Required = false, HelpText = "Private dumps?")]
+        public bool Private { get; set; }
+    }
+
     internal static void Main(string[] args)
     {
-        DotEnv.Load(@"C:/emq/.env");
-        bool doAuth = false;
-        bool doSong = true;
-        bool doBotg = false;
-        bool doSHS = false;
+        Options? options = null!;
+        Parser.Default.ParseArguments<Options>(args).WithParsed(o => { options = o; });
 
-        bool isPublicDump = true;
+        DotEnv.Load(options.Env);
+        bool isPublicDump = !options.Private;
+        bool doAuth = options.Auth;
+        bool doSong = options.Song;
+        bool doBotg = options.Botg;
 
-        if (doAuth)
+        bool hasBaseOut = !string.IsNullOrWhiteSpace(options.Out);
+        bool hasShsOut = !string.IsNullOrWhiteSpace(options.ShsOut);
+        string baseOut = options.Out;
+        string shsOut = options.ShsOut;
+        if (!hasBaseOut && !hasShsOut)
+        {
+            throw new Exception("at least one output directory argument is required");
+        }
+
+        bool doSHS = hasShsOut;
+        if (!doAuth && !doSong && !doBotg && !doSHS)
+        {
+            throw new Exception("nothing to do");
+        }
+
+        if (doAuth && !isPublicDump)
         {
             try
             {
-                Directory.SetCurrentDirectory(@"C:/emq/dbbackups/auth");
+                Directory.CreateDirectory($"{baseOut}/auth");
+                Directory.SetCurrentDirectory($"{baseOut}/auth");
                 string envVar = "EMQ_REMOTE_AUTH_DATABASE_URL";
 
                 var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
                 Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-                string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
+                string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.txt";
                 var proc = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = "pg_dump",
                         Arguments =
-                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"t\" -f {dumpFileName} -d \"{builder.Database}\"",
+                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"p\" -f {dumpFileName} -d \"{builder.Database}\"",
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -64,7 +107,10 @@ public static class Program
             {
                 string message = $"EMQ AUTH DATABASE BACKUP SCRIPT FAILED: {e}";
                 Console.WriteLine(message);
-                Process.Start("cmd.exe", $"/C msg %username% {message}");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start("cmd.exe", $"/C msg %username% {message}");
+                }
             }
         }
 
@@ -72,8 +118,8 @@ public static class Program
         {
             try
             {
-                Directory.CreateDirectory(@"C:/emq/dbbackups/song");
-                Directory.SetCurrentDirectory(@"C:/emq/dbbackups/song");
+                Directory.CreateDirectory($"{baseOut}/song");
+                Directory.SetCurrentDirectory($"{baseOut}/song");
                 string envVar = "EMQ_REMOTE_SONG_DATABASE_URL";
 
                 var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
@@ -81,14 +127,14 @@ public static class Program
 
                 string prelude = isPublicDump ? "public_" : "";
                 string dumpFileName =
-                    $"{prelude}pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
+                    $"{prelude}pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.txt";
                 var proc = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = "pg_dump",
                         Arguments =
-                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"t\" -f {dumpFileName} -d \"{builder.Database}\"",
+                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"p\" -f {dumpFileName} -d \"{builder.Database}\"",
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -161,28 +207,32 @@ public static class Program
             {
                 string message = $"EMQ SONG DATABASE BACKUP SCRIPT FAILED: {e}";
                 Console.WriteLine(message);
-                Process.Start("cmd.exe", $"/C msg %username% {message}");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start("cmd.exe", $"/C msg %username% {message}");
+                }
             }
         }
 
-        if (doBotg)
+        if (doBotg && !isPublicDump)
         {
             try
             {
-                Directory.SetCurrentDirectory(@"C:/emq/dbbackups/botg");
+                Directory.CreateDirectory($"{baseOut}/botg");
+                Directory.SetCurrentDirectory($"{baseOut}/botg");
                 string envVar = "EMQ_REMOTE_BOTG_DATABASE_URL";
 
                 var builder = ConnectionHelper.GetConnectionStringBuilderWithEnvVar(envVar);
                 Environment.SetEnvironmentVariable("PGPASSWORD", builder.Password);
 
-                string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.tar";
+                string dumpFileName = $"pgdump_{DateTime.UtcNow:yyyy-MM-dd}_{builder.Database}@{builder.Host}.txt";
                 var proc = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = "pg_dump",
                         Arguments =
-                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"t\" -f {dumpFileName} -d \"{builder.Database}\"",
+                            $"-U \"{builder.Username}\" -h \"{builder.Host}\" -p \"{builder.Port}\" -F \"p\" -f {dumpFileName} -d \"{builder.Database}\"",
                         CreateNoWindow = true,
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -211,7 +261,10 @@ public static class Program
             {
                 string message = $"EMQ BOTG DATABASE BACKUP SCRIPT FAILED: {e}";
                 Console.WriteLine(message);
-                Process.Start("cmd.exe", $"/C msg %username% {message}");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start("cmd.exe", $"/C msg %username% {message}");
+                }
             }
         }
 
@@ -219,7 +272,8 @@ public static class Program
         {
             try
             {
-                const string baseDownloadDir = "K:\\emq\\emqsongsbackup2\\selfhoststorage";
+                string baseDownloadDir = $"{shsOut}/selfhoststorage";
+                Directory.CreateDirectory(baseDownloadDir);
                 var connectionInfo =
                     new Renci.SshNet.ConnectionInfo(UploadConstants.SftpHost, UploadConstants.SftpUsername,
                         new PasswordAuthenticationMethod(UploadConstants.SftpUsername, UploadConstants.SftpPassword));
@@ -235,7 +289,10 @@ public static class Program
             {
                 string message = $"EMQ SELFHOSTSTORAGE BACKUP SCRIPT FAILED: {e}";
                 Console.WriteLine(message);
-                Process.Start("cmd.exe", $"/C msg %username% {message}");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start("cmd.exe", $"/C msg %username% {message}");
+                }
             }
         }
     }
