@@ -150,12 +150,16 @@
                     }
                 </div>
 
+                if (IsLibraryPage)
+                {
+                    // not disabled for non-mods because links can't be clicked if disabled
+                    <textarea id="note_mod"
+                         rows="1" cols="35" maxlength="780" placeholder="Notes" disabled="@(isReadonly)"
+                         @bind="reviewingItem.note_mod" style="margin-right: 5px;"></textarea>
+                }
+
                 @if (isEditMod && IsLibraryPage)
                 {
-                    <textarea id="note_mod"
-                         rows="1" cols="35" maxlength="780" placeholder="Notes" disabled="@isReadonly"
-                         @bind="reviewingItem.note_mod" style="margin-right: 5px;"></textarea>
-
                     if (isReadonly)
                     {
                         <p>This item can no longer be modified because there are newer edits for this entity.</p>

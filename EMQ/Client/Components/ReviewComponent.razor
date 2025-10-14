@@ -219,6 +219,14 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
         }
     </div>
 
+    @if (IsRQComp && reviewingItem.duration is not null)
+    {
+        // not disabled for non-mods because links can't be clicked if disabled
+        <textarea id="note_mod"
+                         rows="1" cols="35" maxlength="780" placeholder="Notes (Mod)"
+                         @bind="reviewingItem.reason" style="margin-right: 5px;"></textarea>
+    }
+
     @if (isReviewModerator && IsRQComp)
     {
         @if (reviewingItem.duration is null)
@@ -227,10 +235,6 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
         }
         else
         {
-            <textarea id="note_mod"
-                         rows="1" cols="35" maxlength="780" placeholder="Notes (Mod)"
-                         @bind="reviewingItem.reason" style="margin-right: 5px;"></textarea>
-
             <button type="button" class="btn btn-danger" disabled="@(!IsReady || reviewingItem.status == ReviewQueueStatus.Rejected)" @onclick="Onclick_Reject">
                 Rejected
             </button>

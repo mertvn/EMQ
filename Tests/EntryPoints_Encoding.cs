@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -1515,6 +1515,35 @@ public class EntryPoints_Encoding
             if (res.Warnings.Contains(MediaAnalyserWarningKind.UnknownError))
             {
                 //throw new Exception();
+            }
+        }
+    }
+
+    [Test, Explicit]
+    public async Task GettingTrolled15YearsLater()
+    {
+        var readerOptions = new ReaderOptions();
+        var extractionOptions = new ExtractionOptions { Overwrite = true };
+        string[] strs = await File.ReadAllLinesAsync(
+                @"katakana_all_forms_combinations.txt");
+        foreach (string str in strs)
+        {
+            readerOptions.Password = str;
+            var archive = ArchiveFactory.Open(@"1.zip", readerOptions);
+            try
+            {
+                archive.Entries.First().WriteToDirectory(@"out",
+                    extractionOptions);
+                Console.WriteLine(str);
+                break;
+            }
+            catch (CryptographicException)
+            {
+                // ignored
+            }
+            catch (Exception)
+            {
+                Console.WriteLine(str);
             }
         }
     }
