@@ -109,6 +109,20 @@
     <br/>
 }
 
+<label style="padding: 4px;">
+    <select style="margin: 5px" @bind="Song.DataSource">
+        @foreach (var dataSourceKind in Enum.GetValues<DataSourceKind>())
+        {
+            @if (dataSourceKind != DataSourceKind.Unknown)
+            {
+                <option value="@dataSourceKind">@dataSourceKind</option>
+            }
+        }
+    </select>
+    Data source
+</label>
+<br/>
+
 <div style="display: flex; flex-wrap: wrap">
     <div style="border: 1px black solid; padding: 10px; width: 970px;">
         <div style="border: 1px black solid; padding: 10px;">
@@ -277,20 +291,6 @@
                 }
             </details>
         }
-
-        <label style="padding: 4px;">
-            <select style="margin: 5px" @bind="Song.DataSource">
-                @foreach (var dataSourceKind in Enum.GetValues<DataSourceKind>())
-                {
-                    @if (dataSourceKind != DataSourceKind.Unknown)
-                    {
-                        <option value="@dataSourceKind">@dataSourceKind</option>
-                    }
-                }
-            </select>
-            Data source
-        </label>
-        <br/>
 
         <textarea id="note_user"
                       rows="2"
