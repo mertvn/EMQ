@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -20,6 +21,7 @@ using Npgsql;
 using NUnit.Framework;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using SharpCompress.Readers;
 using Session = EMQ.Shared.Auth.Entities.Concrete.Session;
 
 namespace Tests;
