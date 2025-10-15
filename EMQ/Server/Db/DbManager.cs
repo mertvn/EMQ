@@ -965,6 +965,25 @@ group by entity_id",
                 }
 
                 mIdSongSources[mId][msId].Developers = songSourceDevelopers;
+
+                // fill link names if empty
+                foreach (SongSourceLink link in songSource.Links)
+                {
+                    if (string.IsNullOrEmpty(link.Name))
+                    {
+                        var possibleMainTitles = songSource.Titles
+                            .Where(x => x.IsMainTitle && x.Language == songSource.LanguageOriginal).ToArray();
+                        Title title = possibleMainTitles.Any()
+                            ? possibleMainTitles.First()
+                            : songSource.Titles.First();
+
+                        link.Name = title.LatinTitle;
+                        if (!string.IsNullOrWhiteSpace(title.NonLatinTitle))
+                        {
+                            link.Name += $" ({title.NonLatinTitle})";
+                        }
+                    }
+                }
             }
         }
 
@@ -1244,6 +1263,25 @@ group by entity_id",
                 }
 
                 mIdSongSources[mId]![msId].Developers = songSourceDevelopers;
+
+                // fill link names if empty
+                foreach (SongSourceLink link in songSource.Links)
+                {
+                    if (string.IsNullOrEmpty(link.Name))
+                    {
+                        var possibleMainTitles = songSource.Titles
+                            .Where(x => x.IsMainTitle && x.Language == songSource.LanguageOriginal).ToArray();
+                        Title title = possibleMainTitles.Any()
+                            ? possibleMainTitles.First()
+                            : songSource.Titles.First();
+
+                        link.Name = title.LatinTitle;
+                        if (!string.IsNullOrWhiteSpace(title.NonLatinTitle))
+                        {
+                            link.Name += $" ({title.NonLatinTitle})";
+                        }
+                    }
+                }
             }
         }
 
