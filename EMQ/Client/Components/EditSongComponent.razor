@@ -912,7 +912,6 @@
             await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
         }
 
-        Song.Titles = new List<Title>() { new() };
         var firstTitle = Song.Titles.First();
         if (BGMSeedingMode || Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
         {
