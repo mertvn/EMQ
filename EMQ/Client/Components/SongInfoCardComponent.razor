@@ -179,7 +179,7 @@
                     </h5>
 
                     @{
-                        Title? mainTitle = Song.Titles.Count > 0 ? Converters.GetSingleTitle(Song.Titles) : null;
+                        Title? mainTitle = Song.Titles.Count > 0 ? Song.Titles.FirstOrDefault(x => x.IsMainTitle) ?? Converters.GetSingleTitle(Song.Titles) : null;
                     }
 
                     @if (Song.Titles.Any())

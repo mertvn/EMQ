@@ -329,6 +329,7 @@ ORDER BY music_id;";
             queryMusic.Where($"m.id = ANY({mIds})");
         }
 
+        // todo, this needs to find mId from title and select that, otherwise we get bad results
         if (latinTitles.Any())
         {
             queryMusic.Where($"mt.latin_title = ANY({latinTitles})");
