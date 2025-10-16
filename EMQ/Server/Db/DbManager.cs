@@ -1699,21 +1699,18 @@ GROUP BY artist_id";
             mId = music.id;
         }
 
-        foreach (Title songTitle in song.Titles)
+        var mts = song.Titles.Select(x => new MusicTitle()
         {
-            var mt = new MusicTitle()
-            {
-                music_id = mId,
-                latin_title = songTitle.LatinTitle,
-                non_latin_title = songTitle.NonLatinTitle,
-                language = songTitle.Language,
-                is_main_title = songTitle.IsMainTitle
-            };
-
-            if (!await connection.InsertAsync(mt, transaction))
-            {
-                throw new Exception("Failed to insert mt");
-            }
+            music_id = mId,
+            latin_title = x.LatinTitle,
+            non_latin_title = x.NonLatinTitle,
+            language = x.Language,
+            is_main_title = x.IsMainTitle
+        }).ToList();
+        await connection.ExecuteAsync("delete from music_title where music_id = @mId", new { mId }, transaction);
+        if (!await connection.InsertListAsync(mts, transaction))
+        {
+            throw new Exception("Failed to insert mt");
         }
 
         foreach (SongLink songLink in song.Links)

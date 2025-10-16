@@ -370,7 +370,12 @@ LEFT JOIN artist a ON a.id = aa.artist_id
             var song = songs[mId];
             bool addedSomething = false;
 
-            var title = song.Titles.SingleOrDefault(x =>
+            if (song.Titles.Count > 1)
+            {
+                continue; // todo
+            }
+
+            var title = song.Titles.FirstOrDefault(x =>
                 string.IsNullOrWhiteSpace(x.NonLatinTitle) && x.Language == "ja" && x.IsMainTitle);
             if (title != null && !title.LatinTitle.Equals(innerResult.EgsData.MusicName,
                     StringComparison.InvariantCultureIgnoreCase))

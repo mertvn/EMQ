@@ -218,16 +218,38 @@
         <br/>
 
         <div style="border: 1px black solid; padding: 10px;">
-            <h5>Song title</h5>
-            <label style="padding: 4px;">
-                <input type="text" @bind="Song.Titles.Single().LatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
-                Latin title
-            </label>
+            <h5>Titles</h5>
+            <button type="button" class="btn btn-primary" @onclick="AddAlias" disabled="@(Song.DataSource != DataSourceKind.EMQ)">Add title</button>
             <br/>
-            <label style="padding: 4px;">
-                <input type="text" @bind="Song.Titles.Single().NonLatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
-                Non-Latin title
-            </label>
+            <br/>
+
+            @for (int index = 0; index < Song.Titles.Count; index++)
+            {
+                var alias = Song.Titles[index];
+                int indexCopy = index;
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))" disabled="@(Song.DataSource != DataSourceKind.EMQ)">🗑</span>
+                    <br/>
+
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.LatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
+                        Latin title
+                    </label>
+                    <br/>
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.NonLatinTitle" style="width: 700px;" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
+                        Non-Latin title
+                    </label>
+                    <br/>
+
+                    <label style="padding: 4px;">
+                        <input type="radio" class="form-check-input"
+                               checked="@alias.IsMainTitle" @onchange="@(() => OnChangeRadioIsAliasMainTitle(indexCopy))" disabled="@(Song.DataSource != DataSourceKind.EMQ)"/>
+                        Primary title
+                    </label>
+                    <br/>
+                </div>
+            }
         </div>
         <br/>
 
@@ -631,10 +653,27 @@
             }
         }
 
-        if (string.IsNullOrWhiteSpace(song.Titles.Single().LatinTitle))
+        if (!song.Titles.Any())
         {
-            ValidationMessages.Add("Latin title must not be empty.");
+            ValidationMessages.Add("There must be at least one title.");
             isValid = false;
+        }
+        else
+        {
+            foreach (Title title in song.Titles)
+            {
+                if (string.IsNullOrWhiteSpace(title.LatinTitle))
+                {
+                    ValidationMessages.Add("Latin title must not be empty.");
+                    isValid = false;
+                }
+            }
+
+            if (song.Titles.Count(x => x.IsMainTitle) != 1)
+            {
+                ValidationMessages.Add("There must be exactly one primary title.");
+                isValid = false;
+            }
         }
 
         if (song.Type <= SongType.Unknown)
@@ -873,6 +912,7 @@
             await _autocompleteAComponentRef.AutocompleteComponent.OnSetInputSearch(joinedArtistCredit);
         }
 
+        Song.Titles = new List<Title>() { new() };
         var firstTitle = Song.Titles.First();
         if (BGMSeedingMode || Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
         {
@@ -914,6 +954,31 @@
                     songArtist.Roles = new List<SongArtistRole>() { SongArtistRole.Composer };
                 }
             }
+        }
+    }
+
+    private void AddAlias()
+    {
+        Song.Titles.Add(new Title() { Language = "ja" }); // todo lang
+    }
+
+    private async Task RemoveAlias(int index)
+    {
+        if (Song.Titles.Count <= 1)
+        {
+            return;
+        }
+
+        Song.Titles.RemoveAt(index);
+        await CallStateHasChanged();
+    }
+
+    private void OnChangeRadioIsAliasMainTitle(int selectedIndex)
+    {
+        for (int index = 0; index < Song.Titles.Count; index++)
+        {
+            var title = Song.Titles[index];
+            title.IsMainTitle = index == selectedIndex;
         }
     }
 

@@ -177,10 +177,14 @@
                         }
 
                     </h5>
+
+                    @{
+                        Title? mainTitle = Song.Titles.Count > 0 ? Converters.GetSingleTitle(Song.Titles) : null;
+                    }
+
                     @if (Song.Titles.Any())
                     {
-                        Title mainTitle = Converters.GetSingleTitle(Song.Titles);
-                        string latinTitle = mainTitle.LatinTitle;
+                        string latinTitle = mainTitle!.LatinTitle;
                         string? nonLatinTitle = mainTitle.NonLatinTitle;
 
                         // we're not using Title.ToString() here to force a newline between the Latin and NonLatin titles
@@ -307,6 +311,33 @@
                 }
 
                 <br/>
+
+                if (Song.Titles.Count > 1)
+                {
+                    <details open="@IsEditing">
+                        <summary>Alternative titles</summary>
+                        @if (true)
+                        {
+                            foreach (Title title in Song.Titles)
+                            {
+                                if (title != mainTitle)
+                                {
+                                    string latinTitle = title!.LatinTitle;
+                                    string? nonLatinTitle = title.NonLatinTitle;
+
+                                    // we're not using Title.ToString() here to force a newline between the Latin and NonLatin titles
+                                    <h4 class="songLatinTitle card-title">@title.LatinTitle</h4>
+                                    @if (!string.IsNullOrWhiteSpace(nonLatinTitle) &&
+                                         !string.Equals(nonLatinTitle, latinTitle, StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        <h4 class="songNonLatinTitle card-title">(@title.NonLatinTitle)</h4>
+                                    }
+                                }
+                            }
+                        }
+                    </details>
+                }
+
                 bool openTypes = Song.Type > SongType.Standard || IsEditing;
                 <details open=@openTypes>
                     <summary>Types</summary>
