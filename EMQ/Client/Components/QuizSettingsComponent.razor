@@ -1043,7 +1043,7 @@
                     <p>DO NOT USE THIS FILTER WITH A QUERY THAT RETURNS MORE THAN 5000 RESULTS AS YOU WILL JUST GET THROTTLED BY THE VNDB API UNTIL THE END OF TIME.</p>
                     <div>
                         <InputText
-                            disabled="@(ClientState.Session == null || !AuthStuff.HasPermission(ClientState.Session, PermissionKind.UploadSongLink))"
+                            disabled="@(ClientState.Session == null || !AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))"
                             @bind-Value="@ClientQuizSettings.Filters.VndbAdvsearchFilter"
                             type="text"
                             name="VndbAdvsearchFilter"

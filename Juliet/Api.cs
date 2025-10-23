@@ -200,6 +200,7 @@ public static class Api
         Uri requestUri, CancellationToken? cancellationToken = null)
     {
         var final = new List<ResPOST<TReturn>>();
+        int finalCount = 0;
 
         int page = 0;
         bool more;
@@ -260,13 +261,14 @@ public static class Api
                 //     new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
 
                 final.Add(res);
+                finalCount += res.Results.Count;
                 more = res.More;
             }
             else
             {
                 more = false;
             }
-        } while (param.Exhaust && more);
+        } while (param.Exhaust && more && finalCount < Settings.MaxResults);
 
         return final;
     }
