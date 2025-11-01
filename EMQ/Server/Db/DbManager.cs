@@ -6340,8 +6340,6 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
     COALESCE(votes.VoteCount, 0) AS VoteCount
 FROM
     unique_quiz_plays uqp
-JOIN
-    artist_music am ON am.music_id = uqp.music_id
 LEFT JOIN (
     SELECT
         mv.user_id,
@@ -6349,15 +6347,25 @@ LEFT JOIN (
         COUNT(DISTINCT mv.music_id) AS VoteCount
     FROM
         music_vote mv
-    JOIN
-        artist_music am ON am.music_id = mv.music_id
-    WHERE
-        am.artist_id = @artistId and mv.user_id < {Constants.PlayerIdGuestMin}
+    -- 1. Use EXISTS to filter votes to only those for the artist's music.
+    --    This is a highly efficient, non-duplicating filter.
+    WHERE EXISTS (
+        SELECT 1
+        FROM artist_music am
+        WHERE am.music_id = mv.music_id
+          AND am.artist_id = @artistId
+    ) AND mv.user_id < {Constants.PlayerIdGuestMin}
     GROUP BY
         mv.user_id
 ) AS votes ON votes.user_id = uqp.user_id
-WHERE
-    am.artist_id = @artistId and uqp.user_id < {Constants.PlayerIdGuestMin}
+-- 2. Use the primary EXISTS clause to filter the main plays table.
+--    This should force the planner to use an index on artist_music.
+WHERE EXISTS (
+    SELECT 1
+    FROM artist_music am
+    WHERE am.music_id = uqp.music_id
+      AND am.artist_id = @artistId
+) AND uqp.user_id < {Constants.PlayerIdGuestMin}
 GROUP BY
     uqp.user_id, votes.AvgVote, votes.VoteCount
 ORDER BY
