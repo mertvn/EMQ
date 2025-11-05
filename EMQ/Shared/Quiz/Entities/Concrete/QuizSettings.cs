@@ -807,6 +807,12 @@ public class QuizSettings
                 $"Sample point section minimum seconds: {o.Filters.StartTimeSectionMinimumSeconds} → {n.Filters.StartTimeSectionMinimumSeconds}");
         }
 
+        if (o.Filters.VocalsFilter != n.Filters.VocalsFilter)
+        {
+            diff.Add(
+                $"Vocals filter: {o.Filters.VocalsFilter.GetDescription()} → {n.Filters.VocalsFilter.GetDescription()}");
+        }
+
         return diff;
     }
 }

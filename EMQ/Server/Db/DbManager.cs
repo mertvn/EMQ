@@ -3055,7 +3055,7 @@ RETURNING id;",
 
                             if (key == SongSourceSongType.Random && songTypes.Contains(SongSourceSongType.BGM))
                             {
-                                const float weight = 7f;
+                                const float weight = 10f;
                                 if (Random.Shared.NextSingle() >= (weight / 100))
                                 {
                                     canAdd = false;
@@ -3068,6 +3068,17 @@ RETURNING id;",
                             break;
                         }
                     }
+                }
+
+                if (filters != null && filters.VocalsFilter != LabelKind.Maybe)
+                {
+                    bool hasVocals = song!.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals));
+                    canAdd = filters.VocalsFilter switch
+                    {
+                        LabelKind.Include when !hasVocals => false,
+                        LabelKind.Exclude when hasVocals => false,
+                        _ => canAdd
+                    };
                 }
 
                 bool isDuplicate = addedMselUrls.Contains(mselUrl);
