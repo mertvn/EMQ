@@ -294,8 +294,27 @@
         @if (IsNew)
         {
             <label>
-                <input type="checkbox" class="form-check-input" @bind="BGMSeedingMode" disabled="@(!Song.Sources.Any())"/>
-                BGM seeding mode
+                <input type="checkbox" style="margin: 4px;" class="form-check-input" @bind="SkipVocals"/>
+               Skip vocal tracks
+            </label>
+            <br/>
+
+            <label>
+                <input type="checkbox" style="margin: 4px;" class="form-check-input" @bind="TreatAllTitlesAsLatin"/>
+                Treat all titles as Latin
+            </label>
+            <br/>
+
+            <label>
+                <select style="margin: 4px;" @bind="DefaultRole">
+                    @foreach (var role in Enum.GetValues<SongArtistRole>())
+                    {
+                        <option value="@role">
+                            @role.GetDisplayName()
+                        </option>
+                    }
+                </select>
+                 Default role
             </label>
             <br/>
 
@@ -375,7 +394,11 @@
 
     public string ExternalLinksInputText { get; set; } = "";
 
-    public bool BGMSeedingMode { get; set; }
+    public bool SkipVocals { get; set; }
+
+    public bool TreatAllTitlesAsLatin { get; set; }
+
+    public SongArtistRole DefaultRole { get; set; }
 
     public Dictionary<string, bool> PersistAfterSubmittingDict { get; } = new()
     {
@@ -862,15 +885,6 @@
             return;
         }
 
-        if (BGMSeedingMode)
-        {
-            PersistAfterSubmittingDict["Sources"] = true;
-            foreach (SongSource songSource in Song.Sources)
-            {
-                songSource.SongTypes = new List<SongSourceSongType>() { SongSourceSongType.BGM };
-            }
-        }
-
         var oldSources = Song.Sources;
         var oldTypes = Song.Type;
         var oldAttributes = Song.Attributes;
@@ -913,7 +927,7 @@
         }
 
         var firstTitle = Song.Titles.First();
-        if (BGMSeedingMode || Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
+        if (TreatAllTitlesAsLatin || Ascii.IsValid(mbTrack.title.AsSpan())) // not sure whether using track or recording title is better here
         {
             firstTitle.LatinTitle = mbTrack.title;
             firstTitle.NonLatinTitle = "";
@@ -929,7 +943,7 @@
             new() { Url = $"https://musicbrainz.org/recording/{mbRecording.id}", Type = SongLinkType.MusicBrainzRecording }
         };
 
-        if (BGMSeedingMode)
+        if (SkipVocals)
         {
             if (Song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
             {
@@ -945,13 +959,13 @@
                     return;
                 }
             }
+        }
 
-            foreach (SongArtist songArtist in Song.Artists)
+        foreach (SongArtist songArtist in Song.Artists)
+        {
+            if (!songArtist.Roles.Any())
             {
-                if (!songArtist.Roles.Any())
-                {
-                    songArtist.Roles = new List<SongArtistRole>() { SongArtistRole.Composer };
-                }
+                songArtist.Roles = new List<SongArtistRole>() { DefaultRole };
             }
         }
     }
