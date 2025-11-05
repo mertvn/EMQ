@@ -30,7 +30,7 @@ public static class AuthStuff // todo? find better name
             PermissionKind.Guest,
             PermissionKind.CreateRoom,
             PermissionKind.PlayQuiz,
-            PermissionKind.SendChatMessage,
+            // PermissionKind.SendChatMessage,
             PermissionKind.UpdatePreferences
         }).ToHashSet();
 
@@ -40,6 +40,7 @@ public static class AuthStuff // todo? find better name
             PermissionKind.User,
             PermissionKind.JoinRanked,
             // PermissionKind.UploadSongLink,
+            PermissionKind.SendChatMessage,
             PermissionKind.ReportSongLink,
             PermissionKind.StoreQuizSettings,
             PermissionKind.Vote,
