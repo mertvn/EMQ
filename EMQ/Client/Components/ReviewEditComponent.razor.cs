@@ -17,6 +17,7 @@ using EMQ.Shared.Quiz.Entities.Abstract;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
@@ -54,6 +55,11 @@ public partial class ReviewEditComponent
 
     private bool ApplyToNext500Batch { get; set; }
 
+    public void Dispose()
+    {
+        GlobalKeypressService.OnKeypress -= OnGlobalKeypress;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -62,6 +68,8 @@ public partial class ReviewEditComponent
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(50));
             }
+
+            GlobalKeypressService.OnKeypress += OnGlobalKeypress;
         }
 
         if (oldReviewingId != reviewingId)
@@ -240,5 +248,93 @@ public partial class ReviewEditComponent
     {
         StateHasChanged();
         _modalRef!.Show();
+    }
+
+    private void Onclick_Previous()
+    {
+        if (IsLibraryPage)
+        {
+            reviewingId -= 1;
+        }
+        else
+        {
+            if (CurrentEQs != null)
+            {
+                reviewingId = CurrentEQs.Where(x => x.id < reviewingId).MaxBy(x => x.id)!.id;
+            }
+        }
+    }
+
+    private void Onclick_Next()
+    {
+        if (IsLibraryPage)
+        {
+            reviewingId += 1;
+        }
+        else
+        {
+            if (CurrentEQs != null)
+            {
+                reviewingId = CurrentEQs.Where(x => x.id > reviewingId).MinBy(x => x.id)!.id;
+            }
+        }
+    }
+
+    private void Onclick_SeekToPending()
+    {
+        if (IsLibraryPage)
+        {
+            reviewingId =
+                CurrentEQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1;
+        }
+    }
+
+    private async void OnGlobalKeypress(KeyboardEventArgs arg)
+    {
+        // Console.WriteLine(arg.Code);
+        bool isEditMod = ClientState.Session != null &&
+                         AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit);
+        try
+        {
+            switch (arg.Code)
+            {
+                case "KeyA":
+                    Onclick_Previous();
+                    break;
+                case "KeyD":
+                    Onclick_Next();
+                    break;
+                case "KeyP":
+                    Onclick_SeekToPending();
+                    break;
+                case "KeyZ":
+                    if (isEditMod)
+                    {
+                        await Onclick_Reject();
+                    }
+
+                    break;
+                case "KeyX":
+                    if (isEditMod)
+                    {
+                        await Onclick_Pending();
+                    }
+
+                    break;
+                case "KeyC":
+                    if (isEditMod)
+                    {
+                        await Onclick_Approve();
+                    }
+
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        StateHasChanged();
     }
 }

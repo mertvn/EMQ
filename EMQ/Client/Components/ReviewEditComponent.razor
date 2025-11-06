@@ -14,6 +14,8 @@
 @inject ClientUtils _clientUtils
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
+@inject GlobalKeypressService GlobalKeypressService
+@implements IDisposable
 
 @{
     bool isEditMod = ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit);
@@ -34,7 +36,7 @@
         <Blazorise.ModalBody>
             @if (IsLibraryPage)
             {
-                <button type="button" class="btn btn-primary" @onclick="@(() => { reviewingId = CurrentEQs?.LastOrDefault(x => x.id > reviewingId && x.status == ReviewQueueStatus.Pending)?.id ?? 1; })">Seek to pending</button>
+                <button type="button" class="btn btn-primary" @onclick="@Onclick_SeekToPending">Seek to pending</button>
 
                 <span>ID: </span>
                 <input type="number" id="input_reviewingId" @bind="reviewingId"/>
@@ -48,32 +50,16 @@
             <br/>
             @if ((CurrentEQs?.Any() ?? false) && IsOpen && reviewingItem != null)
             {
-                @if (IsLibraryPage)
-                {
-                    <div style="margin: 5px;">
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))"
-                                @onclick="@(() => { reviewingId -= 1; })">
-                            ←Previous
-                        </button>
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))"
-                                @onclick="@(() => { reviewingId += 1; })">
-                            Next→
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div style="margin: 5px;">
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))"
-                                @onclick="@(() => { reviewingId = CurrentEQs.Where(x => x.id < reviewingId).MaxBy(x => x.id)!.id; })">
-                            ←Previous
-                        </button>
-                        <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))"
-                                @onclick="@(() => { reviewingId = CurrentEQs.Where(x => x.id > reviewingId).MinBy(x => x.id)!.id; })">
-                            Next→
-                        </button>
-                    </div>
-                }
+                <div style="margin: 5px;">
+                    <button type="button" class="btn btn-primary" disabled="@(!(reviewingId > CurrentEQs.MinBy(x => x.id)!.id))"
+                            @onclick="@Onclick_Previous">
+                        ←Previous
+                    </button>
+                    <button type="button" class="btn btn-primary" disabled="@(!(reviewingId + 1 <= CurrentEQs.MaxBy(x => x.id)!.id))"
+                            @onclick="@Onclick_Next">
+                        Next→
+                    </button>
+                </div>
 
                 @if (reviewingItem.entity_version < Constants.EntityVersionsDict[reviewingItem.entity_kind])
                 {
@@ -178,6 +164,8 @@
                         <label for="checkbox-ApplyToNext500Batch">Apply to next 500 batch</label>
                     }
                 }
+
+                <p>Keybinds: A (Prev), D (Next), P (Seek to pending), Z (Rejected), X (Pending), C (Approved)</p>
 
                 @if (isEditMod)
                 {

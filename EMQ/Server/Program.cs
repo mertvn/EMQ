@@ -221,7 +221,7 @@ string csp = @$"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-XN/WBPGu6m67KizKZd7r7gk74AuQCEjXeZmnHvdAzdY='
+                          'sha256-tZXH+qWCMqOdLLpjPCzBWqSwmkyoYPavhw3trqBGxWk='
                           ;
                style-src 'self'
                          'unsafe-inline'

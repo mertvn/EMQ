@@ -30,6 +30,7 @@ builder.Services.AddSingleton(_ => new HttpClient
 builder.Services.AddSingleton<ClientUtils>();
 builder.Services.AddSingleton<ClientConnectionManager>();
 // builder.Services.AddSingleton<PlayerPreferencesComponent>();
+builder.Services.AddSingleton<GlobalKeypressService>();
 
 builder.Services.AddBlazorise(options => { options.Immediate = true; }).AddBootstrap5Providers().AddFontAwesomeIcons();
 

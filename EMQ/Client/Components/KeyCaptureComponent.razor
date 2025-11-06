@@ -1,0 +1,103 @@
+﻿@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+@inject GlobalKeypressService GlobalKeypressService
+
+@* <style> *@
+@*     .key-capture-demo { *@
+@*         border: 2px solid steelblue; *@
+@*         padding: 20px; *@
+@*         border-radius: 8px; *@
+@*     } *@
+@*     .info-box { *@
+@*         background-color: #f0f0f0; *@
+@*         padding: 10px; *@
+@*         border-radius: 4px; *@
+@*         margin-top: 10px; *@
+@*         font-family: monospace; *@
+@*     } *@
+@*     .info-box span { *@
+@*         font-weight: bold; *@
+@*         color: crimson; *@
+@*     } *@
+@*     textarea, input { *@
+@*         width: 100%; *@
+@*         margin-top: 10px; *@
+@*         padding: 5px; *@
+@*     } *@
+@* </style> *@
+
+@* <div class="key-capture-demo"> *@
+@*     <h3>Global Key Capture is Active</h3> *@
+@*     <p>Click anywhere on the page (but not in the text areas below) and press a key.</p> *@
+@* *@
+@*     <div class="info-box"> *@
+@*         <strong>Last Key Pressed:</strong> *@
+@*         <span>@lastKeyInfo</span> *@
+@*     </div> *@
+@* *@
+@*     <hr /> *@
+@* *@
+@*     <h4>Test Text Areas</h4> *@
+@*     <p>Typing in these boxes should work normally and should <em>not</em> update the "Last Key Pressed" field above.</p> *@
+@* *@
+@*     <textarea placeholder="Type here... it should work as expected."></textarea> *@
+@*     <br/> *@
+@*     <input type="text" placeholder="This input also works normally." /> *@
+@* </div> *@
+
+@code {
+    // private string lastKeyInfo = "None";
+    private DotNetObjectReference<KeyCaptureComponent>? _dotNetObjectReference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _dotNetObjectReference = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("keyCapture.initialize", _dotNetObjectReference);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OnKeyDownFromJS(string key, string code, bool ctrlKey, bool shiftKey, bool altKey)
+    {
+    // lastKeyInfo = $"Key: '{key}', Code: '{code}', Ctrl: {ctrlKey}, Shift: {shiftKey}, Alt: {altKey}";
+    // StateHasChanged();
+
+        var args = new KeyboardEventArgs()
+        {
+            Key = key,
+            Code = code,
+            CtrlKey = ctrlKey,
+            ShiftKey = shiftKey,
+            AltKey = altKey
+        };
+        GlobalKeypressService.NotifyKeypress(args);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_dotNetObjectReference != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("keyCapture.dispose");
+            }
+            catch (JSDisconnectedException)
+            {
+    // ignored
+            }
+
+            _dotNetObjectReference.Dispose();
+            _dotNetObjectReference = null;
+        }
+    }
+
+}

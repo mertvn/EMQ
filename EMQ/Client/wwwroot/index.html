@@ -456,6 +456,44 @@
         return () => observer.disconnect();
     }
 
+    window.keyCapture = {
+        dotNetHelper: null,
+        boundKeydownHandler: null,
+
+        keydownHandler: function (e) {
+            const targetTagName = e.target.tagName;
+            if (targetTagName === 'INPUT' || targetTagName === 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+
+            // if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Tab"].includes(e.code)) {
+            //     e.preventDefault();
+            // }
+
+            if (this.dotNetHelper) {
+                this.dotNetHelper.invokeMethodAsync('OnKeyDownFromJS', e.key, e.code, e.ctrlKey, e.shiftKey, e.altKey);
+            }
+        },
+
+        initialize: function (dotNetHelper) {
+            this.dotNetHelper = dotNetHelper;
+            this.boundKeydownHandler = this.keydownHandler.bind(this);
+            document.addEventListener('keydown', this.boundKeydownHandler);
+        },
+
+        dispose: function () {
+            if (this.boundKeydownHandler) {
+                document.removeEventListener('keydown', this.boundKeydownHandler);
+                this.boundKeydownHandler = null;
+            }
+
+            if (this.dotNetHelper) {
+                this.dotNetHelper.dispose();
+                this.dotNetHelper = null;
+            }
+        }
+    };
+
 </script>
 
 </body>
