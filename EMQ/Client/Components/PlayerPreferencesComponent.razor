@@ -173,9 +173,19 @@
                                         <br/>
 
                                         <br/>
-                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
-                                            Calculate stats (vocals)
-                                        </button>
+                                        <details>
+                                            <summary>Calculate stats</summary>
+                                            <select style="margin: 5px" @bind="SelectedSSSTM">
+                                                @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
+                                                {
+                                                    <option value="@ssstm">@ssstm</option>
+                                                }
+                                            </select>
+                                            <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
+                                                Calculate
+                                            </button>
+                                        </details>
+
                                         @if (LabelStats.TryGetValue(SelectedPresetName, out var labelStats) && labelStats != null)
                                         {
                                             <ul>

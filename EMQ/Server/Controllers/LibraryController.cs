@@ -392,7 +392,7 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.ViewStats)]
     [HttpPost]
     [Route("GetLabelStats")]
-    public async Task<ActionResult<LabelStats>> GetLabelStats([FromBody] string presetName)
+    public async Task<ActionResult<LabelStats>> GetLabelStats([FromBody] ReqGetLabelStats req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
@@ -400,13 +400,13 @@ public class LibraryController : ControllerBase
             return Unauthorized();
         }
 
-        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, presetName);
+        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, req.PresetName);
         if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) || vndbInfo.Labels is null || !vndbInfo.Labels.Any())
         {
             return StatusCode(404);
         }
 
-        int[] mIds = await DbManager.FindMusicIdsByLabels(vndbInfo.Labels, SongSourceSongTypeMode.Vocals);
+        int[] mIds = await DbManager.FindMusicIdsByLabels(vndbInfo.Labels, req.SSSTM);
         var res = await DbManager.GetLabelStats(mIds);
         return res;
     }

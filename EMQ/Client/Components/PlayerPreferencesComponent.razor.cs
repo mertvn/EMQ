@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Juliet.Model.Param;
@@ -32,6 +33,8 @@ public partial class PlayerPreferencesComponent
     public List<UserLabelPreset> Presets { get; set; } = new();
 
     public string SelectedPresetName { get; set; } = "";
+
+    public SongSourceSongTypeMode SelectedSSSTM { get; set; } = SongSourceSongTypeMode.Vocals;
 
     // 1 more char. than the longest preset name allowed
     public const string CreateNewPresetValue = "-----------------------------------------------------------------";
@@ -434,7 +437,8 @@ public partial class PlayerPreferencesComponent
 
     private async Task OnclickCalculateStats()
     {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/GetLabelStats", SelectedPresetName);
+        var req = new ReqGetLabelStats(SelectedPresetName, SelectedSSSTM);
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/GetLabelStats", req);
         if (res.IsSuccessStatusCode)
         {
             LabelStats[SelectedPresetName] = await res.Content.ReadFromJsonAsync<LabelStats>();
