@@ -59,6 +59,7 @@ public static class Constants
         { EntityKind.SongArtist, 1 },
         { EntityKind.MergeArtists, 1 },
         { EntityKind.SongSource, 1 },
+        { EntityKind.DeleteSong, 1 },
     };
 
     public static readonly Dictionary<SongSourceType, SongSourceLinkType[]> ValidLinkTypesForSourceTypeDict = new()

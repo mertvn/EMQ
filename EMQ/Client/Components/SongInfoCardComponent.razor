@@ -425,10 +425,6 @@
                     <span @onclick="@(async () => await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", link))">
                         @Song.Id
                     </span>
-                    @if (ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Delete))
-                    {
-                        <span style="display: inline-block; cursor: pointer; margin-left: 4px;" @onclick="@(async () => await DeleteSong(Song))">🗑</span>
-                    }
                 }
             </span>
 

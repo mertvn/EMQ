@@ -158,6 +158,23 @@ public partial class ReviewEditComponent
                             isReadonly = false;
                             break;
                         }
+                    case EntityKind.DeleteSong:
+                        {
+                            var deleteSong = JsonSerializer.Deserialize<DeleteSong>(reviewingItem.entity_json)!;
+                            HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/FindSongsByIds",
+                                new[] { deleteSong.Id });
+                            if (res1.IsSuccessStatusCode)
+                            {
+                                var content = (await res1.Content.ReadFromJsonAsync<Song[]>())!;
+                                if (content.Any())
+                                {
+                                    Entity = content.Single();
+                                }
+                            }
+
+                            isReadonly = false;
+                            break;
+                        }
                 }
 
                 if (isReadonly && reviewingItem.status == ReviewQueueStatus.Pending)
@@ -209,7 +226,7 @@ public partial class ReviewEditComponent
 
     public async Task Onclick_Approve()
     {
-        if (reviewingItem!.entity_kind == EntityKind.MergeArtists)
+        if (reviewingItem!.entity_kind is EntityKind.MergeArtists or EntityKind.DeleteSong)
         {
             bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm",
                 "This action is IRREVERSIBLE. Are you sure you want to continue?");

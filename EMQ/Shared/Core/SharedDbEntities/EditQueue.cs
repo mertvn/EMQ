@@ -79,6 +79,7 @@ public enum EntityKind
     SongSource,
     SongArtist,
     MergeArtists,
+    DeleteSong,
 }
 
 public class ReqEditArtist

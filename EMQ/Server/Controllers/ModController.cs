@@ -194,33 +194,6 @@ public class ModController : ControllerBase
 
     [CustomAuthorize(PermissionKind.Delete)]
     [HttpPost]
-    [Route("DeleteSong")]
-    public async Task<ActionResult> DeleteSong([FromBody] int mId)
-    {
-        if (ServerState.Config.IsServerReadOnly)
-        {
-            return Unauthorized();
-        }
-
-        var session = AuthStuff.GetSession(HttpContext.Items);
-        if (session is null)
-        {
-            return Unauthorized();
-        }
-
-        var music = await DbManager.GetEntity<Music>(mId);
-        bool success = await DbManager.DeleteEntity(music!);
-        if (success)
-        {
-            Console.WriteLine($"{session.Player.Username} DeleteSong {mId}");
-            await DbManager.EvictFromSongsCache(mId);
-        }
-
-        return success ? Ok() : StatusCode(500);
-    }
-
-    [CustomAuthorize(PermissionKind.Delete)]
-    [HttpPost]
     [Route("DeleteArtist")]
     public async Task<ActionResult> DeleteArtist([FromBody] int aId)
     {

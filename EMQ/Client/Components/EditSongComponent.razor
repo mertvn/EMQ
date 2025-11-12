@@ -343,6 +343,10 @@
         <br/>
 
         <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+        <details>
+            <summary>Delete</summary>
+            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnClick_ButtonCreateDeletionEdit">Create deletion edit</button>
+        </details>
         <ul>
             @foreach (string validationMessage in ValidationMessages)
             {
@@ -993,6 +997,25 @@
             var title = Song.Titles[index];
             title.IsMainTitle = index == selectedIndex;
         }
+    }
+
+    private async Task OnClick_ButtonCreateDeletionEdit()
+    {
+        Ready = false;
+        var req = new DeleteSong()
+        {
+            Id = Song.Id,
+            StrLatin = Song.ToStringLatin(),
+            NoteUser = NoteUser,
+        };
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Library/EditDeleteSong", req);
+        if (res.IsSuccessStatusCode)
+        {
+            editSongModalRef.Hide();
+        }
+
+        Ready = true;
     }
 
 }

@@ -714,7 +714,7 @@ public class LibraryController : ControllerBase
             status = ReviewQueueStatus.Pending,
             entity_kind = entityKind,
             entity_json = JsonSerializer.Serialize(req.Artist, Utils.JsoCompact),
-            entity_version = Constants.EntityVersionsDict[EntityKind.SongArtist],
+            entity_version = Constants.EntityVersionsDict[entityKind],
             old_entity_json = oldEntityJson,
             note_user = req.NoteUser,
             entity_id = req.Artist.Id,
@@ -744,6 +744,45 @@ public class LibraryController : ControllerBase
                     }
                 }
             }
+        }
+
+        return eqId > 0 ? Ok() : StatusCode(500);
+    }
+
+    [CustomAuthorize(PermissionKind.Edit)]
+    [HttpPost]
+    [Route("EditDeleteSong")]
+    public async Task<ActionResult> EditDeleteSong([FromBody] DeleteSong req)
+    {
+        if (ServerState.Config.IsServerReadOnly || ServerState.Config.IsSubmissionDisabled)
+        {
+            return Unauthorized();
+        }
+
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        const EntityKind entityKind = EntityKind.DeleteSong;
+        var editQueue = new EditQueue
+        {
+            submitted_by = session.Player.Username,
+            submitted_on = DateTime.UtcNow,
+            status = ReviewQueueStatus.Pending,
+            entity_kind = entityKind,
+            entity_json = JsonSerializer.Serialize(req, Utils.JsoCompact),
+            entity_version = Constants.EntityVersionsDict[entityKind],
+            old_entity_json = null,
+            note_user = req.NoteUser,
+            entity_id = req.Id,
+        };
+
+        long eqId = await DbManager.InsertEntity(editQueue);
+        if (eqId > 0)
+        {
+            Console.WriteLine($"{session.Player.Username} EditDeleteSong {req}");
         }
 
         return eqId > 0 ? Ok() : StatusCode(500);

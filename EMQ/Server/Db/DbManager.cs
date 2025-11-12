@@ -4420,6 +4420,9 @@ AND msm.type = ANY(@msmType)";
             case EntityKind.MergeArtists:
                 entity = JsonSerializer.Deserialize<MergeArtists>(eq.entity_json)!;
                 break;
+            case EntityKind.DeleteSong:
+                entity = JsonSerializer.Deserialize<DeleteSong>(eq.entity_json)!;
+                break;
             case EntityKind.None:
             default:
                 throw new ArgumentOutOfRangeException();
@@ -4478,6 +4481,7 @@ AND msm.type = ANY(@msmType)";
                                     break;
                                 }
                             case EntityKind.MergeArtists:
+                            case EntityKind.DeleteSong:
                                 throw new NotImplementedException();
                             case EntityKind.None:
                             default:
@@ -4507,6 +4511,7 @@ AND msm.type = ANY(@msmType)";
                                     break;
                                 }
                             case EntityKind.MergeArtists:
+                            case EntityKind.DeleteSong:
                                 throw new InvalidOperationException();
                             case EntityKind.None:
                             default:
@@ -4555,6 +4560,13 @@ AND msm.type = ANY(@msmType)";
                                 success = await ServerUtils.MergeArtists(concrete.SourceId, concrete.Id, transaction);
                                 break;
                             }
+                        case EntityKind.DeleteSong:
+                            {
+                                var concrete = (DeleteSong)entity;
+                                var music = await connection.GetAsync(new Music() { id = concrete.Id }, transaction);
+                                success = await connection.DeleteAsync(music, transaction);
+                                break;
+                            }
                         case EntityKind.None:
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -4574,6 +4586,7 @@ AND msm.type = ANY(@msmType)";
                             success = await OverwriteArtist(eq.entity_id, (SongArtist)entity, false, transaction);
                             break;
                         case EntityKind.MergeArtists:
+                        case EntityKind.DeleteSong:
                             throw new InvalidOperationException();
                         case EntityKind.None:
                         default:
@@ -4593,14 +4606,22 @@ AND msm.type = ANY(@msmType)";
         }
 
         success &= await connection.UpdateAsync(eq, transaction);
-        Console.WriteLine($"Updated EditQueue: " + JsonSerializer.Serialize(eq, Utils.Jso));
-        if (eq.entity_kind == EntityKind.Song)
+        Console.WriteLine($"Updated EditQueue: {JsonSerializer.Serialize(eq, Utils.Jso)}");
+        switch (eq.entity_kind)
         {
-            await EvictFromSongsCache(((Song)entity).Id);
-        }
-        else
-        {
-            // todo eject from cache all songs connected to this entity
+            case EntityKind.Song:
+            case EntityKind.DeleteSong:
+                int mId = (entity as Song)?.Id ?? (entity as DeleteSong)!.Id;
+                await EvictFromSongsCache(mId);
+                break;
+            case EntityKind.SongSource:
+            case EntityKind.SongArtist:
+            case EntityKind.MergeArtists:
+                // todo eject from cache all songs connected to this entity
+                break;
+            case EntityKind.None:
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         foreach ((string key, LibraryStats? _) in CachedLibraryStats)

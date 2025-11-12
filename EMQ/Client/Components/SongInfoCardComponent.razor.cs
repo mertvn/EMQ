@@ -67,28 +67,6 @@ public partial class SongInfoCardComponent
         }
     }
 
-    private async Task DeleteSong(Song song)
-    {
-        // todo? generic confirm modal
-        bool confirmed = await _jsRuntime.InvokeAsync<bool>("confirm", $"Really delete {song}?");
-        if (!confirmed)
-        {
-            return;
-        }
-
-        var res = await _client.PostAsJsonAsync("Mod/DeleteSong", song.Id);
-        if (res.IsSuccessStatusCode)
-        {
-            // todo remove from (parent) view
-            // Song = null;
-            // StateHasChanged();
-        }
-        else
-        {
-            await _jsRuntime.InvokeVoidAsync("alert", $"Error deleting {song}");
-        }
-    }
-
     private async Task DeleteArtist(SongArtist songArtist)
     {
         // todo? generic confirm modal

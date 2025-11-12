@@ -71,7 +71,7 @@
                     <LinkifierComponent Text="@reviewingItem.note_user"/>
                 </span>
 
-                <div style="display: @UiHelpers.Bool2Flex(reviewingItem.entity_kind != EntityKind.MergeArtists); flex-wrap: wrap; margin: 5px;">
+                <div style="display: @UiHelpers.Bool2Flex(reviewingItem.entity_kind is not (EntityKind.MergeArtists or EntityKind.DeleteSong)); flex-wrap: wrap; margin: 5px;">
                     @if (true)
                     {
                         switch (Entity)
@@ -83,6 +83,11 @@
                                     {
                                         <SongInfoCardComponent Song="(Song)OldEntity" IsEditing="true"></SongInfoCardComponent>
                                         <span style="align-self: center; margin: 10px;">=></span>
+                                    }
+
+                                    @if (reviewingItem.entity_kind == EntityKind.DeleteSong)
+                                    {
+                                        <p style="color: red;">This edit will DELETE the following song:</p>
                                     }
 
                                     <SongInfoCardComponent Song="@(song)" IsEditing="true"></SongInfoCardComponent>
