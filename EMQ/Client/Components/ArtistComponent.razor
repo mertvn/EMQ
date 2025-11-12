@@ -74,13 +74,13 @@
             </button>
         </details>
     }
-
-    <span style="cursor: pointer;" title="History"
-          @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.SongArtist, ArtistId, _client, _reviewEditComponent))">
-        ⟲
-    </span>
-    <br/>
 }
+
+<span style="cursor: pointer;" title="History"
+      @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.SongArtist, ArtistId, _client, _reviewEditComponent))">
+    ⟲
+</span>
+<br/>
 
 @if (PlayerSongStats != null)
 {

@@ -10,6 +10,8 @@
 @inject ClientUtils _clientUtils
 @inject IJSRuntime _jsRuntime
 
+<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
+
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ems{MusicSourceId + 1}"))">Next</button>
 <br/>
@@ -39,12 +41,21 @@
     }
 }
 
+<span style="cursor: pointer;" title="History"
+      @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.SongSource, MusicSourceId, _client, _reviewEditComponent))">
+    ⟲
+</span>
+
 @code {
 
     [Parameter]
     public int MusicSourceId { get; set; }
 
     public ResGetSongSource? ResGetSongSource { get; set; }
+
+    private IQueryable<EditQueue>? CurrentEQs { get; set; }
+
+    public ReviewEditComponent _reviewEditComponent { get; set; } = null!;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -104,6 +115,11 @@
             await _jsRuntime.InvokeVoidAsync("alert",
                 $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
     }
 
 }
