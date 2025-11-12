@@ -74,16 +74,21 @@
                 Close
             </button>
 
-            @if (ClientSongReport.report_kind == SongReportKind.UnmarkedAttribute)
+            @switch(ClientSongReport.report_kind)
             {
-                <p>Please edit the song in the library.</p>
-            }
-            else
-            {
-                <button type="button" class="btn btn-primary"
-                        @onclick="@(async () => { if (ClientState.Session != null) { await SendSongReportReq(ClientSongReport, SelectedUrls); } })">
-                    Submit
-                </button>
+                case SongReportKind.WrongUntranslatedSongTitle:
+                case SongReportKind.VocalsUnderBgm:
+                case SongReportKind.UnmarkedAttribute:
+                    <p>Please edit the song in the library.</p>
+                    break;
+                default:
+                    {
+                        <button type="button" class="btn btn-primary"
+                                @onclick="@(async () => { if (ClientState.Session != null) { await SendSongReportReq(ClientSongReport, SelectedUrls); } })">
+                            Submit
+                        </button>
+                        break;
+                    }
             }
 
         </Blazorise.ModalFooter>

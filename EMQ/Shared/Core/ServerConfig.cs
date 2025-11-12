@@ -2,7 +2,7 @@
 
 public class ServerConfig
 {
-    public bool AllowRegistration { get; set; } = true;
+    public bool AllowRegistration { get; set; } = false;
 
     public bool AllowGuests { get; set; } = true;
 
