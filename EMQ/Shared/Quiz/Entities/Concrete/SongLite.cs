@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -57,7 +58,9 @@ public class SongLite
             string sources = JsonSerializer.Serialize(SourceVndbIds.OrderBy(x => x.Key));
             string artists =
                 JsonSerializer.Serialize(Artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals))
-                    .Select(artist => artist.VndbId ?? "").OrderBy(x => x).ToList());
+                    .Select(artist => string.Join(',',
+                        artist.Links.Where(x => x.Type == SongArtistLinkType.VNDBStaff).Select(x => x.Url.ToVndbId())))
+                    .OrderBy(x => x).ToList());
 
             string str = $"{titles};|;{sources};|;{artists}";
             return str;

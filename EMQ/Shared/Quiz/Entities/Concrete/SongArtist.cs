@@ -14,11 +14,6 @@ public class SongArtist : IEditQueueEntity
 
     public string? PrimaryLanguage { get; set; }
 
-    // todo remove
-    public string? VndbId => Links.SingleOrDefault(x => x.Type == SongArtistLinkType.VNDBStaff)?.Url.ToVndbId()
-                             ?? Links.SingleOrDefault(x => x.Type == SongArtistLinkType.MusicBrainzArtist)?.Url
-                                 .Replace("https://musicbrainz.org/artist/", "");
-
     public List<Title> Titles { get; set; } = new();
 
     public List<SongArtistRole> Roles { get; set; } = new();

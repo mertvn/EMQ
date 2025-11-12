@@ -489,7 +489,11 @@ public static class MusicBrainzImporter
                     // {
                     // }
 
-                    if (songArtists.Any(x => x.VndbId == vndbid))
+                    if (songArtists.Any(x =>
+                            x.Links.Any(y => y.Type == SongArtistLinkType.VNDBStaff && y.Url.ToVndbId() == vndbid) ||
+                            x.Links.Any(y =>
+                                y.Type == SongArtistLinkType.MusicBrainzArtist &&
+                                y.Url.Replace("https://musicbrainz.org/artist/", "") == vndbid)))
                     {
                         // https://musicbrainz.org/recording/59dbbff3-382e-4c8a-b276-df922a50e9a5
                         // Console.WriteLine($"skipping duplicate artist {JsonSerializer.Serialize(artist, Utils.Jso)}");

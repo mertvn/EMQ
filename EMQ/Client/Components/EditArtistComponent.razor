@@ -440,11 +440,11 @@
         else
         {
     // todo important validate link regex
-            if (artist.Links.GroupBy(x => x.Type).Any(y => y.Count() > 1))
-            {
-                ValidationMessages.Add("Only one external link of each type is allowed.");
-                isValid = false;
-            }
+            // if (artist.Links.GroupBy(x => x.Type).Any(y => y.Count() > 1))
+            // {
+            //     ValidationMessages.Add("Only one external link of each type is allowed.");
+            //     isValid = false;
+            // }
 
             if (artist.Links.Any(x => x.Type <= SongArtistLinkType.Unknown))
             {
@@ -505,10 +505,10 @@
 
         foreach ((SongArtistLinkType key, Regex regex) in RegexPatterns.ArtistLinkRegex)
         {
-            if (Artist.Links.Any(x => x.Type == key))
-            {
-                continue;
-            }
+            // if (Artist.Links.Any(x => x.Type == key))
+            // {
+            //     continue;
+            // }
 
             string str = value;
             if (key == SongArtistLinkType.AnisonInfoPerson)

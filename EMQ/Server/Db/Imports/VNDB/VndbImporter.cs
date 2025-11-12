@@ -350,7 +350,8 @@ public static class VndbImporter
                 else
                 {
                     var existingSongExistingArtist =
-                        existingSong.Artists.SingleOrDefault(z => z.VndbId == (string)dynArtist.id);
+                        existingSong.Artists.SingleOrDefault(z => z.Links.Any(x =>
+                            x.Type == SongArtistLinkType.VNDBStaff && x.Url.ToVndbId() == (string)dynArtist.id));
                     if (existingSongExistingArtist is not null)
                     {
                         // todo
@@ -465,7 +466,11 @@ public static class VndbImporter
             };
 
             var sameSong = songs.SingleOrDefault(x =>
-                x.Artists.Any(y => song.Artists.Select(z => z.VndbId).Contains(y.VndbId)) &&
+                x.Artists.Any(y =>
+                    song.Artists.Select(z =>
+                            z.Links.Where(a => a.Type == SongArtistLinkType.VNDBStaff).Select(a => a.Url.ToVndbId()))
+                        .Contains(y.Links.Where(a => a.Type == SongArtistLinkType.VNDBStaff)
+                            .Select(a => a.Url.ToVndbId()))) &&
                 x.Titles.Any(y =>
                     song.Titles.Select(z => z.LatinTitle.ToLowerInvariant())
                         .Contains(y.LatinTitle.ToLowerInvariant())) &&
