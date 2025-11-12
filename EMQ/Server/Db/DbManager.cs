@@ -6217,12 +6217,21 @@ SELECT count(DISTINCT artist_id) FROM artist_music
 where music_id = ANY(@mIds)
 ";
 
+        const string ssst = @"
+SELECT type, count(DISTINCT music_id) as Count
+FROM music_source_music
+WHERE music_id = ANY(@mIds)
+GROUP BY type
+";
+
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var retAvg = await connection.QuerySingleAsync<LabelStats>(sqlAvg, new { mIds });
         retAvg.TotalSongs = mIds.Length;
         retAvg.TotalSources = await connection.QuerySingleAsync<int>(sqlMs, new { mIds });
         retAvg.TotalArtists = await connection.QuerySingleAsync<int>(sqlA, new { mIds });
         retAvg.SongDifficultyLevels = await GetSongDifficultyLevelCounts(mIds);
+        retAvg.SSST = (await connection.QueryAsync<(int type, int count)>(ssst, new { mIds }))
+            .ToDictionary(x => (SongSourceSongType)x.type, x => x.count);
 
         return retAvg;
     }

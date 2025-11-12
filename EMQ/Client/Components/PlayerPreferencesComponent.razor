@@ -173,24 +173,27 @@
                                         <br/>
 
                                         <br/>
-                                        <details>
-                                            <summary>Calculate stats</summary>
-                                            <select style="margin: 5px" @bind="SelectedSSSTM">
-                                                @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
-                                                {
-                                                    <option value="@ssstm">@ssstm</option>
-                                                }
-                                            </select>
-                                            <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
-                                                Calculate
-                                            </button>
-                                        </details>
+                                        <select style="margin: 5px" @bind="SelectedSSSTM">
+                                            @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
+                                            {
+                                                <option value="@ssstm">@ssstm</option>
+                                            }
+                                        </select>
+                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
+                                            Calculate stats
+                                        </button>
 
                                         @if (LabelStats.TryGetValue(SelectedPresetName, out var labelStats) && labelStats != null)
                                         {
                                             <ul>
                                                 <li>
                                                     Total songs: @(labelStats.TotalSongs)
+                                                    <ul>
+                                                        @foreach ((SongSourceSongType key, int value) in labelStats.SSST)
+                                                        {
+                                                            <li>@key.GetDisplayName(): @value</li>
+                                                        }
+                                                    </ul>
                                                 </li>
                                                 <li>
                                                     Total VNs: @(labelStats.TotalSources)
