@@ -119,7 +119,7 @@
                     <div class="songInfoCardSongLinks" style="padding: 16px">
 
                     <span style="float: right; cursor: pointer;" title="History"
-                          @onclick="@(async () => await OnclickEntityHistory(song.Id))">
+                          @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.Song, song.Id, _client, _reviewEditComponent))">
                         ⟲
                     </span>
 

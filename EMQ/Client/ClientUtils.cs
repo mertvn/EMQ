@@ -346,4 +346,23 @@ public class ClientUtils
     {
         return ClientState.Session != null && AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin);
     }
+
+    public static async Task<IQueryable<EditQueue>?> OnclickEntityHistory(EntityKind kind, int id, HttpClient client,
+        ReviewEditComponent reviewEditComponent)
+    {
+        IQueryable<EditQueue>? currentEqs = null;
+        var req = new ReqGetEntityHistory(kind, id);
+        var res = await client.PostAsJsonAsync("Library/GetEntityHistory", req);
+        if (res.IsSuccessStatusCode)
+        {
+            currentEqs = (await res.Content.ReadFromJsonAsync<EditQueue[]>())!.AsQueryable();
+            if (currentEqs.Any())
+            {
+                reviewEditComponent.reviewingId = currentEqs.First().id;
+                reviewEditComponent.Show();
+            }
+        }
+
+        return currentEqs;
+    }
 }

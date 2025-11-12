@@ -126,21 +126,6 @@ public partial class SongInfoCardWrapperComponent
         _reviewComponent.Show();
     }
 
-    private async Task OnclickEntityHistory(int songId)
-    {
-        var req = new ReqGetEntityHistory(EntityKind.Song, songId);
-        var res = await _client.PostAsJsonAsync("Library/GetEntityHistory", req);
-        if (res.IsSuccessStatusCode)
-        {
-            CurrentEQs = (await res.Content.ReadFromJsonAsync<EditQueue[]>())!.AsQueryable();
-            if (CurrentEQs.Any())
-            {
-                _reviewEditComponent.reviewingId = CurrentEQs.First().id;
-                _reviewEditComponent.Show();
-            }
-        }
-    }
-
     private async Task OnclickSongComments(Song song)
     {
         CurrentSong = song;

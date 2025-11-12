@@ -9,6 +9,8 @@
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
 
+<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
+
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId - 1}"))">Prev</button>
 <button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}ea{ArtistId + 1}"))">Next</button>
 <br/>
@@ -73,6 +75,10 @@
         </details>
     }
 
+    <span style="cursor: pointer;" title="History"
+          @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.SongArtist, ArtistId, _client, _reviewEditComponent))">
+        ⟲
+    </span>
     <br/>
 }
 
@@ -118,6 +124,10 @@
     private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
 
     public string? InputMergeArtistText { get; set; }
+
+    private IQueryable<EditQueue>? CurrentEQs { get; set; }
+
+    public ReviewEditComponent _reviewEditComponent { get; set; } = null!;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -192,6 +202,11 @@
 
         HttpResponseMessage res = await _client.PostAsJsonAsync("Library/EditMergeArtists", req);
         InputMergeArtistText = res.IsSuccessStatusCode ? "Added to the edit queue." : "Failed.";
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
     }
 
 }
