@@ -12,8 +12,8 @@ public class AddTableArtistArtist : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("source").AsInt32().PrimaryKey().ForeignKey("artist", "id")
-            .WithColumn("target").AsInt32().PrimaryKey().ForeignKey("artist", "id")
+            .WithColumn("source").AsInt32().PrimaryKey().ForeignKey("artist", "id").OnDelete(Rule.Cascade)
+            .WithColumn("target").AsInt32().PrimaryKey().ForeignKey("artist", "id").OnDelete(Rule.Cascade)
             .WithColumn("rel").AsInt32().PrimaryKey();
 
         Execute.Sql("ALTER TABLE artist_artist ADD CHECK (source != target);");

@@ -309,6 +309,11 @@ public partial class ReviewEditComponent
     private async void OnGlobalKeypress(KeyboardEventArgs arg)
     {
         // Console.WriteLine(arg.Code);
+        if (arg.CtrlKey || arg.ShiftKey || arg.AltKey || arg.MetaKey)
+        {
+            return;
+        }
+
         bool isEditMod = ClientState.Session != null &&
                          AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit);
         try
