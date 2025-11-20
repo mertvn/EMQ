@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Runtime;
 using System.Threading.Tasks;
 using Dapper;
+using Dapper.Database.Extensions;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
 using EMQ.Server.Db;
@@ -63,7 +64,8 @@ public static class ServerUtils
             return;
         }
 
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All, Enum.GetValues<ReviewQueueStatus>());
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All,
+            Enum.GetValues<ReviewQueueStatus>());
         foreach (RQ rq in rqs)
         {
             if (rq.analysis == "Pending")
@@ -410,6 +412,18 @@ and EXISTS (SELECT 1 FROM artist_music WHERE artist_id = @tAid AND music_id = am
         {
             Console.WriteLine("failed to delete a");
         }
+
+        target.ArtistArtists = target.ArtistArtists.Concat(source.ArtistArtists)
+            .Select(x => new ArtistArtist
+            {
+                source = x.source == source.Id ? target.Id : x.source,
+                target = x.target == source.Id ? target.Id : x.target,
+                rel = x.rel,
+            })
+            .Where(x => !(x.source == target.Id && x.target == target.Id)) // *insert yet another selfcest joke here*
+            .DistinctBy(x => (x.source, x.target, x.rel))
+            .ToList();
+        await connection.UpsertListAsync(target.ArtistArtists, transaction);
 
         return true;
     }
