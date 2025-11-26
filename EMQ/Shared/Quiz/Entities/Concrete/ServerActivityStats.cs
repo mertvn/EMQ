@@ -8,6 +8,8 @@ public class ServerActivityStats
     public Dictionary<string, ServerActivityStatsDailyPlayers> DailyPlayers { get; set; } = new();
 
     public DateTime LastMugyuOrNeko { get; set; }
+
+    public DateTime LastKiss { get; set; }
 }
 
 public class ServerActivityStatsDailyPlayers

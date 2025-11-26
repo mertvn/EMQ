@@ -6282,7 +6282,13 @@ GROUP BY to_char(played_at, 'yyyy-mm-dd')
         var lastMugyuOrNeko = await connection.ExecuteScalarAsync<DateTime>(
             "SELECT played_at FROM unique_quiz_plays WHERE music_id = any('{9880,9884}') ORDER BY played_at DESC LIMIT 1");
 
-        var ret = new ServerActivityStats { DailyPlayers = resDailyPlayers, LastMugyuOrNeko = lastMugyuOrNeko, };
+        var lastKiss = await connection.ExecuteScalarAsync<DateTime>(
+            "SELECT played_at FROM unique_quiz_plays WHERE music_id = any('{8927,8928,8929,8931}') ORDER BY played_at DESC LIMIT 1");
+
+        var ret = new ServerActivityStats
+        {
+            DailyPlayers = resDailyPlayers, LastMugyuOrNeko = lastMugyuOrNeko, LastKiss = lastKiss,
+        };
         return ret;
     }
 

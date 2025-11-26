@@ -13,6 +13,11 @@
     <p>Hours since last mugyu or neko: @(((DateTime.UtcNow - ServerActivityStats.LastMugyuOrNeko).TotalHours).ToString("F1", CultureInfo.InvariantCulture))</p>
 }
 
+@if (ServerActivityStats.LastKiss != default)
+{
+    <p>Hours since last kiss: @(((DateTime.UtcNow - ServerActivityStats.LastKiss).TotalHours).ToString("F1", CultureInfo.InvariantCulture))</p>
+}
+
 <h4>Daily players (at least one song played)</h4>
 <Chart @ref="_barChart" Type="ChartType.Bar" TItem="int" Options="@Options"/>
 
