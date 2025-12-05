@@ -1187,6 +1187,11 @@ public class QuizManager
                 }
             }
         }
+
+        if (Quiz.Room.QuizSettings.IsPauseAfterResults)
+        {
+            await OnSendTogglePause();
+        }
     }
 
     private async Task JudgeGuesses()

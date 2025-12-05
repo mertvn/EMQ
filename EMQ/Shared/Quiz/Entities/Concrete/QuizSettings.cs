@@ -330,6 +330,11 @@ public class QuizSettings
     [DefaultValue(180)]
     public int PreventSameScreenshotSpamMinutes { get; set; } = 180;
 
+    [ProtoMember(40)]
+    [Required]
+    [DefaultValue(false)]
+    public bool IsPauseAfterResults { get; set; } = false;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -811,6 +816,11 @@ public class QuizSettings
         {
             diff.Add(
                 $"Vocals filter: {o.Filters.VocalsFilter.GetDescription()} → {n.Filters.VocalsFilter.GetDescription()}");
+        }
+
+        if (o.IsPauseAfterResults != n.IsPauseAfterResults)
+        {
+            diff.Add($"Pause after results: {o.IsPauseAfterResults} → {n.IsPauseAfterResults}");
         }
 
         return diff;
