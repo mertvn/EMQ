@@ -58,6 +58,10 @@ public partial class QuizPage
                 "ReceivePlayerGuesses", (new Type[] { typeof(Dictionary<int, PlayerGuess?>) },
                     async param => { await OnReceivePlayerGuesses((Dictionary<int, PlayerGuess?>)param[0]!); })
             },
+            {
+                "ReceivePlayerVote", (new Type[] { typeof(int), typeof(short?) },
+                    async param => { await OnReceivePlayerVote((int)param[0]!, (short?)param[1]); })
+            },
         };
 
         PageState.Timer.Stop();
@@ -356,6 +360,23 @@ public partial class QuizPage
         foreach ((int playerId, var playerGuess) in playerGuesses)
         {
             _playerGuesses[playerId] = playerGuess;
+        }
+    }
+
+    private async Task OnReceivePlayerVote(int id, short? vote)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        if (vote is > 0)
+        {
+            _correctAnswerPlayerVotes[id] = vote.Value;
+        }
+        else
+        {
+            _correctAnswerPlayerVotes.Remove(id);
         }
     }
 

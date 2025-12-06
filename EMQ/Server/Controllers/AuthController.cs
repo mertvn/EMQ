@@ -11,6 +11,7 @@ using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Entities.Auth;
+using EMQ.Server.Hubs;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
@@ -805,6 +806,22 @@ public class AuthController : ControllerBase
             await EvictFromOutputCache("all");
             Console.WriteLine(
                 $"p{session.Player.Id} {session.Player.Username} upserted music vote {req.MusicId} = {req.Vote}");
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    var room = ServerState.Rooms.FirstOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
+                    if (room != null)
+                    {
+                        TypedQuizHub.ReceivePlayerVote(room.Players.Concat(room.Spectators).Select(x => x.Id),
+                            session.Player.Id, musicVote.vote);
+                    }
+                }
+                catch
+                {
+                    // ignored
+                }
+            });
             return musicVote;
         }
         else

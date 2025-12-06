@@ -133,6 +133,15 @@ public static class TypedQuizHub
         }
     }
 
+    public static void ReceivePlayerVote(IEnumerable<int> playerIds, int id, short? vote)
+    {
+        foreach (int playerId in playerIds)
+        {
+            EnqueuePumpMessage(playerId, "ReceivePlayerVote",
+                new object?[] { id, vote });
+        }
+    }
+
     // ================================ Other =================================
     public static void ReceivePlayerJoinedRoom(IEnumerable<int> playerIds)
     {
