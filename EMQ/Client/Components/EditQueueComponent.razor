@@ -114,9 +114,9 @@
                     <label style="width: 100px;">
                         @foreach (var key in StatusFilter.Keys.ToList())
                         {
-                            <input type="checkbox" id="@key" class="form-check-input" @bind="@(StatusFilter[key])" style="margin: 5px"/>
                             <label for="@key">
-                                <span style="float: left"> @key.GetDisplayName()</span>
+                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(StatusFilter[key])" style="margin: 5px"/>
+                                <span>@key.GetDisplayName()</span>
                             </label>
                             <br/>
                         }
