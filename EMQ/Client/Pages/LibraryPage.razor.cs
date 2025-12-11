@@ -50,7 +50,7 @@ public partial class LibraryPage
     // Only for Search by room settings tab
     private Room Room { get; } = new(Guid.Empty, "", new Player(-1, "", Avatar.DefaultAvatar));
 
-    private bool IsMergeBGMTabs { get; set; }
+    private bool IsMergeBGMTabs { get; set; } = true;
 
     public SongSourceSongTypeMode SSSTMFilter { get; set; } = SongSourceSongTypeMode.Vocals;
 

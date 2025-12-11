@@ -1868,7 +1868,7 @@ public class QuizManager
 
         Dictionary<int, Dictionary<MCOptionKind, List<Title>>> validTitlesForSongDict = songs.Select(x => x.Id)
             .ToDictionary(x => x, _ => new Dictionary<MCOptionKind, List<Title>>());
-        var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
 
         int[] labelMids = Array.Empty<int>();
         bool useLists = !quizSettings.Filters.ListReadKindFiltersIsAllRandom && guessKind == GuessKind.Mst;

@@ -127,9 +127,7 @@ public partial class EditQueueComponent
             var resFindEQ = await _client.PostAsJsonAsync("Library/FindEQ", item.id);
             if (resFindEQ.IsSuccessStatusCode)
             {
-                EditQueue
-                    eq = (await resFindEQ.Content.ReadFromJsonAsync<EditQueue>())!;
-
+                EditQueue eq = (await resFindEQ.Content.ReadFromJsonAsync<EditQueue>())!;
                 var list = CurrentEQs!.ToList();
                 int index = list.IndexOf(item);
                 // Console.WriteLine(index);

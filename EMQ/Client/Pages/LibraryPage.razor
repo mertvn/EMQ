@@ -313,7 +313,7 @@
 
             <label>
                 <input type="checkbox" class="form-check-input" style="margin: 5px" @bind="IsMergeBGMTabs"/>
-                Merge MusicBrainz tabs
+                Merge BGM tabs
             </label>
         </div>
 
@@ -323,20 +323,20 @@
             var emqBgms = bgms.Where(x => x.DataSource == DataSourceKind.EMQ).ToList();
 
             var tabs = new Dictionary<string, List<Song>>();
-            if (emqBgms.Any())
-            {
-                tabs["EMQ (BGM)"] = emqBgms;
-            }
-
             @if (IsMergeBGMTabs)
             {
                 if (mbBgms.Any())
                 {
-                    tabs["MusicBrainz"] = mbBgms;
+                    tabs["BGM"] = bgms;
                 }
             }
             else
             {
+                if (emqBgms.Any())
+                {
+                    tabs["BGM (EMQ)"] = emqBgms;
+                }
+
                 // todo don't show releases that are not what's entered in the input box?
                 var releases = mbBgms.SelectMany(x =>
                     x.Sources.SelectMany(y =>
@@ -366,7 +366,7 @@
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
         <Blazorise.Tabs @ref="TabsComponentVndb" @bind-SelectedTab="@_selectedTabVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
-                <Blazorise.Tab Name="TabVNDB">VNDB & EMQ (Vocals)</Blazorise.Tab>
+                <Blazorise.Tab Name="TabVNDB">Vocals</Blazorise.Tab>
                 @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
                 @foreach ((string key, _) in tabs)
                 {
