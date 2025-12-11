@@ -4,17 +4,26 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Anthropic.SDK;
+using Anthropic.SDK.Batches;
+using Anthropic.SDK.Constants;
+using Anthropic.SDK.Messaging;
+using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities;
 using EMQ.Server.Db.Imports.SongMatching;
 using EMQ.Server.Db.Imports.SongMatching.Common;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Microsoft.AspNetCore.Mvc;
 using NUnit.Framework;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -687,6 +696,195 @@ public class EntryPoints_SongMatching
             var parentFolder = new DirectoryInfo(newPath).Parent!;
             Directory.CreateDirectory(parentFolder.FullName);
             File.Copy(filePath, newPath);
+        }
+    }
+
+    private static readonly AnthropicClient s_anth = new(Environment.GetEnvironmentVariable("EMQ_ANTHROPIC_API_KEY"));
+
+    // private static readonly IChatClient chatClient = s_anth.Messages;
+
+    private const int RomanizationVersion = 1;
+
+    private const string ModelId = "claude-opus-4-5-20251101";
+
+    private const string ResponsePrefix = "{\"romanization\":\"";
+
+    [Test, Explicit]
+    public async Task RomanizeBGM_Step1_Send()
+    {
+        var japaneseRegex = new Regex(
+            @"[\u00D7\u2000-\u206F\u25A0-\u25FF\u2E80-\u2FDF\u2FF0-\u30FF\u3190-\u319F\u31C0-\u31FF\u3220-\u325F\u3280-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF9F\uFFE0-\uFFEF]|\uD82C[\uDC00-\uDD6F]|\uD83C[\uDE00-\uDEFF]|\uD840[\uDC00-\uDFFF]|[\uD841-\uD868][\uDC00-\uDFFF]|\uD869[\uDC00-\uDEDF]|\uD869[\uDF00-\uDFFF]|[\uD86A-\uD87A][\uDC00-\uDFFF]|\uD87B[\uDC00-\uDE5F]|\uD87E[\uDC00-\uDE1F]|\uD880[\uDC00-\uDFFF]|[\uD881-\uD887][\uDC00-\uDFFF]|\uD888[\uDC00-\uDFAF]",
+            RegexOptions.CultureInvariant);
+        var systemMessages = new List<SystemMessage>()
+        {
+            new(@"
+You are an expert at romanizing Japanese text using modified Hepburn romanization.
+You make sure to spell loanwords in their original language if it makes sense to do so, i.e. when the foreign word is directly recognizable. If it is not directly recognizable, transcribe the reading directly without trying to map to the original language.
+You make sure to use full forms instead of macrons for long vowels.
+You always use 'e' for the particle 'へ'.
+You always use 'o' for the particle 'を'.
+You always use 'n' for 'ん'.
+You make sure all words except particles are capitalized.
+You return the results in JSON format and do not return anything else.")
+        };
+        var batchRequests = new List<BatchRequest>();
+
+        PlayerVndbInfo vndbInfo = new()
+        {
+            VndbId = "u101804",
+            Labels = new List<Label>
+            {
+                new() { Id = 1, Kind = LabelKind.Include },
+                new() { Id = 3, Kind = LabelKind.Include },
+                new() { Id = 4, Kind = LabelKind.Include },
+                new()
+                {
+                    Id = 70, // EMQ-wl-bgm
+                    Kind = LabelKind.Include
+                },
+                new()
+                {
+                    Id = 71, // EMQ-bl-rom
+                    Kind = LabelKind.Exclude
+                },
+            }
+        };
+
+        // PlayerVndbInfo vndbInfo = new()
+        // {
+        //     VndbId = "u280821", Labels = new List<Label> { new() { Id = 15, Kind = LabelKind.Include }, }
+        // };
+
+        var seen = new HashSet<string>();
+        var labels = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+        int[] mIds = await DbManager.FindMusicIdsByLabels(labels, SongSourceSongTypeMode.BGM);
+        var songs = await DbManager.SelectSongsMIds(mIds.ToArray(), false);
+        foreach (Song song in songs)
+        {
+            if (song.Sources.Any(x => x.Titles.Any(y => y.LatinTitle.Contains("Gyakuten"))))
+            {
+                continue;
+            }
+
+            // if (song.DataSource != DataSourceKind.MusicBrainz)
+            // {
+            //     continue;
+            // }
+
+            if (song.Titles.Count != 1)
+            {
+                continue;
+            }
+
+            Title first = song.Titles.First();
+            if (first.LatinTitle != first.NonLatinTitle)
+            {
+                continue;
+            }
+
+            string latin = first.LatinTitle;
+            if (!seen.Add(latin))
+            {
+                continue;
+            }
+
+            if (!japaneseRegex.IsMatch(latin))
+            {
+                continue;
+            }
+
+            var messages = new List<Message>()
+            {
+                new(RoleType.User, latin), new(RoleType.Assistant, ResponsePrefix),
+            };
+            var parameters = new MessageParameters()
+            {
+                Messages = messages,
+                MaxTokens = latin.Length * 4,
+                Model = ModelId,
+                Stream = false,
+                Temperature = 1.0m,
+                System = systemMessages,
+            };
+            var batchRequest = new BatchRequest()
+            {
+                CustomId = $"rom-v{RomanizationVersion}-mId-{song.Id}", MessageParameters = parameters
+            };
+            batchRequests.Add(batchRequest);
+        }
+
+        _ = await s_anth.Batches.CreateBatchAsync(batchRequests);
+    }
+
+    private class RomanizationRoot
+    {
+        // ReSharper disable once InconsistentNaming
+        public string romanization { get; set; } = "";
+    }
+
+    [Test, Explicit]
+    public async Task RomanizeBGM_Step2_FetchAndApply()
+    {
+        string responseId = "";
+        bool processing = true;
+        while (processing)
+        {
+            var status = await s_anth.Batches.RetrieveBatchStatusAsync(responseId);
+            if (status.ProcessingStatus == "ended")
+            {
+                processing = false;
+            }
+            else
+            {
+                await Task.Delay(30000);
+            }
+        }
+
+        var dict = new Dictionary<int, string>();
+        await foreach (var result in s_anth.Batches.RetrieveBatchResultsAsync(responseId))
+        {
+            try
+            {
+                string resText = result.Result.Message.FirstMessage.Text;
+                var deser = JsonSerializer.Deserialize<RomanizationRoot>($"{ResponsePrefix}{resText}");
+                int mId = Convert.ToInt32(result.CustomId.Replace($"rom-v{RomanizationVersion}-mId-", ""));
+                dict[mId] = deser!.romanization;
+            }
+            catch (JsonException)
+            {
+                // ignored
+            }
+        }
+
+        var songs = await DbManager.SelectSongsMIds(dict.Keys.ToArray(), false);
+        string noteUser = $"romanization via {ModelId}";
+        foreach (Song song in songs.OrderBy(x => x.Id))
+        {
+            if (song.Titles.Count != 1)
+            {
+                continue;
+            }
+
+            var first = song.Titles.First();
+            if (first.LatinTitle != first.NonLatinTitle)
+            {
+                continue;
+            }
+
+            first.NonLatinTitle = first.LatinTitle;
+            first.LatinTitle = dict[song.Id];
+            if (first.LatinTitle.NormalizeForAutocomplete() == first.NonLatinTitle.NormalizeForAutocomplete())
+            {
+                continue;
+            }
+
+            // song.DataSource = DataSourceKind.EMQ;
+            var actionResult = await ServerUtils.BotEditSong(new ReqEditSong(song, false, noteUser));
+            if (actionResult is not OkResult)
+            {
+                var badRequestObjectResult = actionResult as BadRequestObjectResult;
+                Console.WriteLine($"actionResult is not OkResult: {song} {badRequestObjectResult?.Value}");
+            }
         }
     }
 }
