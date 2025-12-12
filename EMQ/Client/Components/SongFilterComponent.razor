@@ -76,7 +76,7 @@
                 </div>
             </div>
 
-            <div class="col-md-7 mb-2">
+            <div class="col-md-4 mb-2">
                 <label class="form-label">Song Source Song Types:</label>
                 <div class="d-flex flex-wrap gap-1">
                     @foreach ((SongSourceSongType key, bool _) in SelectedSongSourceSongTypes)
@@ -91,6 +91,21 @@
                             </label>
                         </div>
                     }
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-2">
+                <label class="form-label">Missing:</label>
+                <div class="d-flex flex-wrap gap-1">
+                    <div class="form-check form-check-inline me-1">
+                        <input class="form-check-input" type="checkbox"
+                               id="NLT"
+                               @bind="@MissingNLT"
+                               @bind:after="DirtyFilters"/>
+                        <label class="form-check-label small" for="NLT">
+                            Non-Latin title
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -148,6 +163,8 @@
             .Where(x => x is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
             .ToDictionary(x => x, _ => false);
 
+    private bool MissingNLT { get; set; }
+
     [Parameter]
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
 
@@ -170,7 +187,7 @@
         bool checkExternalLinks = activeExternalLinks.Any();
         bool checkSSST = activeSSST.Any();
 
-        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkLineage || checkArtistRoles || checkExternalLinks || checkSSST;
+        bool hasActiveFilters = checkVideo || checkSound || checkVote || checkLineage || checkArtistRoles || checkExternalLinks || checkSSST || MissingNLT;
         if (!hasActiveFilters)
         {
             return songs;
@@ -284,6 +301,21 @@
                         case false when result:
                             return true;
                     }
+                }
+            }
+
+            if (MissingNLT)
+            {
+                var title = song.Titles.FirstOrDefault(x => x.IsMainTitle) ?? song.Titles.First();
+                bool isMatch = RegexPatterns.JapaneseRegex.IsMatch(title.LatinTitle);
+                bool res = isMatch || string.IsNullOrEmpty(title.NonLatinTitle);
+                bool result = ApplyNot ? !res : res;
+                switch (UseAnd)
+                {
+                    case true when !result:
+                        return false;
+                    case false when result:
+                        return true;
                 }
             }
 

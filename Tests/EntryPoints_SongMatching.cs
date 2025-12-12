@@ -712,9 +712,6 @@ public class EntryPoints_SongMatching
     [Test, Explicit]
     public async Task RomanizeBGM_Step1_Send()
     {
-        var japaneseRegex = new Regex(
-            @"[\u00D7\u2000-\u206F\u25A0-\u25FF\u2E80-\u2FDF\u2FF0-\u30FF\u3190-\u319F\u31C0-\u31FF\u3220-\u325F\u3280-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF9F\uFFE0-\uFFEF]|\uD82C[\uDC00-\uDD6F]|\uD83C[\uDE00-\uDEFF]|\uD840[\uDC00-\uDFFF]|[\uD841-\uD868][\uDC00-\uDFFF]|\uD869[\uDC00-\uDEDF]|\uD869[\uDF00-\uDFFF]|[\uD86A-\uD87A][\uDC00-\uDFFF]|\uD87B[\uDC00-\uDE5F]|\uD87E[\uDC00-\uDE1F]|\uD880[\uDC00-\uDFFF]|[\uD881-\uD887][\uDC00-\uDFFF]|\uD888[\uDC00-\uDFAF]",
-            RegexOptions.CultureInvariant);
         var systemMessages = new List<SystemMessage>()
         {
             new(@"
@@ -734,12 +731,12 @@ You return the results in JSON format and do not return anything else.")
             VndbId = "u101804",
             Labels = new List<Label>
             {
-                new() { Id = 1, Kind = LabelKind.Include },
-                new() { Id = 3, Kind = LabelKind.Include },
-                new() { Id = 4, Kind = LabelKind.Include },
+                // new() { Id = 1, Kind = LabelKind.Include },
+                // new() { Id = 3, Kind = LabelKind.Include },
+                // new() { Id = 4, Kind = LabelKind.Include },
                 new()
                 {
-                    Id = 70, // EMQ-wl-bgm
+                    Id = 18,
                     Kind = LabelKind.Include
                 },
                 new()
@@ -777,10 +774,10 @@ You return the results in JSON format and do not return anything else.")
             }
 
             Title first = song.Titles.First();
-            if (first.LatinTitle != first.NonLatinTitle)
-            {
-                continue;
-            }
+            // if (first.LatinTitle != first.NonLatinTitle)
+            // {
+            //     continue;
+            // }
 
             string latin = first.LatinTitle;
             if (!seen.Add(latin))
@@ -788,7 +785,7 @@ You return the results in JSON format and do not return anything else.")
                 continue;
             }
 
-            if (!japaneseRegex.IsMatch(latin))
+            if (!RegexPatterns.JapaneseRegex.IsMatch(latin))
             {
                 continue;
             }
@@ -866,10 +863,10 @@ You return the results in JSON format and do not return anything else.")
             }
 
             var first = song.Titles.First();
-            if (first.LatinTitle != first.NonLatinTitle)
-            {
-                continue;
-            }
+            // if (first.LatinTitle != first.NonLatinTitle)
+            // {
+            //     continue;
+            // }
 
             first.NonLatinTitle = first.LatinTitle;
             first.LatinTitle = dict[song.Id];
