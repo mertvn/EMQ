@@ -2,7 +2,6 @@
 
 <button type="button" class="btn btn-primary" @onclick="@(() => editSongModalRef.Show())">Edit song</button>
 <GenericModal @ref="@editSongModalRef"
-              Title="Edit song"
               Size="@Blazorise.ModalSize.Fullscreen">
     <EditSongComponent Song="Song" IsNew="IsNew" editSongModalRef="editSongModalRef"></EditSongComponent>
 </GenericModal>

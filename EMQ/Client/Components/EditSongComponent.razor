@@ -9,6 +9,8 @@
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.MusicBrainz.Business
 @inject HttpClient _client
+@inject GlobalKeypressService GlobalKeypressService
+@implements IDisposable
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
 @if (IsNew)
@@ -126,7 +128,7 @@
 <div style="display: flex; flex-wrap: wrap">
     <div style="border: 1px black solid; padding: 10px; width: 970px;">
         <div style="border: 1px black solid; padding: 10px;">
-            <h5>Sources</h5>
+            <span style="font-size: 1.25rem;">Sources</span>
             @if (!IsNew && Song.DataSource != DataSourceKind.VNDB)
             {
                 <button type="button" class="btn btn-primary" @onclick="CopySources">Copy sources</button>
@@ -174,7 +176,7 @@
         <br/>
 
         <div style="border: 1px black solid; padding: 10px;">
-            <h5>Artists</h5>
+            <span style="font-size: 1.25rem;">Artists</span>
             @if (!IsNew)
             {
                 <button type="button" class="btn btn-primary" @onclick="CopyCAL">Copy C/A/L</button>
@@ -218,9 +220,8 @@
         <br/>
 
         <div style="border: 1px black solid; padding: 10px;">
-            <h5>Titles</h5>
+            <span style="font-size: 1.25rem;">Titles</span>
             <button type="button" class="btn btn-primary" @onclick="AddAlias" disabled="@(Song.DataSource != DataSourceKind.EMQ)">Add title</button>
-            <br/>
             <br/>
 
             @for (int index = 0; index < Song.Titles.Count; index++)
@@ -429,12 +430,20 @@
 
     private int MBTracksIndex { get; set; } = -1;
 
+    public void Dispose()
+    {
+        GlobalKeypressService.OnKeypress -= OnGlobalKeypress;
+    }
+
     protected override void OnInitialized()
     {
         if (IsNew)
         {
             Song = GetNewSong;
         }
+
+        Song.DataSource = DataSourceKind.EMQ;
+        GlobalKeypressService.OnKeypress += OnGlobalKeypress;
     }
 
     private async Task CallStateHasChanged()
@@ -1016,6 +1025,37 @@
         }
 
         Ready = true;
+    }
+
+    private async void OnGlobalKeypress(KeyboardEventArgs arg)
+    {
+        // Console.WriteLine(arg.Code);
+        if (arg.CtrlKey || arg.ShiftKey || arg.AltKey || arg.MetaKey)
+        {
+            return;
+        }
+
+        bool isEditMod = ClientState.Session != null &&
+                         AuthStuff.HasPermission(ClientState.Session, PermissionKind.ReviewEdit);
+        try
+        {
+            switch (arg.Code)
+            {
+                case "F1":
+                case "F2":
+                    if (isEditMod)
+                    {
+                        await OnclickSubmit();
+                    }
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        StateHasChanged();
     }
 
 }
