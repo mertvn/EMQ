@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.DataGrid;
 using EMQ.Client.Pages;
+using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
@@ -68,8 +69,8 @@ public partial class EditQueueComponent
             StatusFilter[ReviewQueueStatus.Approved] = true;
         }
 
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All, IsShowAutomatedEdits,
-            StatusFilter.Where(x => x.Value).Select(x => x.Key).ToArray());
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
+            IsShowAutomatedEdits, StatusFilter.Where(x => x.Value).Select(x => x.Key).ToArray());
         var res = await _client.PostAsJsonAsync("Library/FindEQs", req);
         if (res.IsSuccessStatusCode)
         {

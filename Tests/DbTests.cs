@@ -1204,15 +1204,8 @@ public class DbTests
     [Test]
     public async Task FindRQs()
     {
-        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All,
-            Enum.GetValues<ReviewQueueStatus>());
-    }
-
-    [Test, Explicit]
-    public async Task FindRQs_SubmittedByNullBug()
-    {
-        var _ = await DbManager.FindRQs(new DateTime(2025, 02, 20), new DateTime(2025, 02, 21),
-            SongSourceSongTypeMode.Vocals,
+        var _ = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
+            SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
             Enum.GetValues<ReviewQueueStatus>());
     }
 

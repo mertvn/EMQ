@@ -4123,7 +4123,7 @@ AND msm.type = ANY(@msmType)";
     // }
 
     public static async Task<List<RQ>> FindRQs(DateTime startDate, DateTime endDate,
-        SongSourceSongTypeMode ssstm, ReviewQueueStatus[] status)
+        SongSourceSongType[] ssst, ReviewQueueStatus[] status)
     {
         var rqs = new List<RQ>(777);
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -4138,23 +4138,10 @@ AND msm.type = ANY(@msmType)";
         foreach (ReviewQueue reviewQueue in reviewQueues)
         {
             var song = songs[reviewQueue.music_id];
-
-            switch (ssstm)
+            var songSsst = song.Sources.SelectMany(x => x.SongTypes);
+            if (!songSsst.Any(x => ssst.Contains(x)))
             {
-                case SongSourceSongTypeMode.Vocals:
-                    if (song.IsBGM)
-                    {
-                        continue;
-                    }
-
-                    break;
-                case SongSourceSongTypeMode.BGM:
-                    if (!song.IsBGM)
-                    {
-                        continue;
-                    }
-
-                    break;
+                continue;
             }
 
             var rq = new RQ
@@ -4226,7 +4213,7 @@ AND msm.type = ANY(@msmType)";
     }
 
     public static async Task<IEnumerable<EditQueue>> FindEQs(DateTime startDate, DateTime endDate,
-        SongSourceSongTypeMode ssstm, bool isShowAutomatedEdits, ReviewQueueStatus[] status)
+        bool isShowAutomatedEdits, ReviewQueueStatus[] status)
     {
         // todo? ssstm
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());

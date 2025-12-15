@@ -64,7 +64,8 @@ public static class ServerUtils
             return;
         }
 
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All,
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
+            SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
             Enum.GetValues<ReviewQueueStatus>());
         foreach (RQ rq in rqs)
         {

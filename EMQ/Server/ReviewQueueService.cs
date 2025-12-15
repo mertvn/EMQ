@@ -31,7 +31,7 @@ public sealed class ReviewQueueService : BackgroundService
         try
         {
             var rqs = await DbManager.FindRQs(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1),
-                SongSourceSongTypeMode.All, new[] { ReviewQueueStatus.Pending });
+                SongSourceSongTypeMode.All.ToSongSourceSongTypes(), new[] { ReviewQueueStatus.Pending });
             foreach (RQ rq in rqs.Where(x => x.ShouldCheckLineage() &&
                                              x.lineage == SongLinkLineage.Unknown &&
                                              DateTime.UtcNow > x.submitted_on.AddMinutes(ToleranceMinutes)))

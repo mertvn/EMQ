@@ -5,12 +5,12 @@ namespace EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 
 public class ReqFindRQs
 {
-    public ReqFindRQs(DateTime startDate, DateTime endDate, SongSourceSongTypeMode ssstm, bool isShowAutomatedEdits,
+    public ReqFindRQs(DateTime startDate, DateTime endDate, SongSourceSongType[] ssst, bool isShowAutomatedEdits,
         ReviewQueueStatus[] status)
     {
         StartDate = startDate;
         EndDate = endDate;
-        SSSTM = ssstm;
+        SSST = ssst;
         IsShowAutomatedEdits = isShowAutomatedEdits;
         Status = status;
     }
@@ -19,7 +19,7 @@ public class ReqFindRQs
 
     public DateTime EndDate { get; }
 
-    public SongSourceSongTypeMode SSSTM { get; }
+    public SongSourceSongType[] SSST { get; }
 
     public bool IsShowAutomatedEdits { get; }
 

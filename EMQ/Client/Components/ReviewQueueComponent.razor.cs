@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Blazorise.DataGrid;
+using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete.Dto;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Mod.Entities.Concrete.Dto.Request;
@@ -32,7 +33,8 @@ public partial class ReviewQueueComponent
 
     public DateTime EndDateFilter { get; set; } = DateTime.UtcNow.AddDays(1);
 
-    public SongSourceSongTypeMode SSSTMFilter { get; set; } = SongSourceSongTypeMode.All;
+    public HashSet<SongSourceSongType> SSSTFilter { get; } =
+        SongSourceSongTypeMode.All.ToSongSourceSongTypes().ToHashSet();
 
     private string SubmittedByFilter { get; set; } = "";
 
@@ -73,7 +75,7 @@ public partial class ReviewQueueComponent
             StatusFilter[ReviewQueueStatus.Approved] = true;
         }
 
-        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTMFilter, true,
+        var req = new ReqFindRQs(StartDateFilter, EndDateFilter, SSSTFilter.ToArray(), true,
             StatusFilter.Where(x => x.Value).Select(x => x.Key).ToArray());
         var res = await _client.PostAsJsonAsync("Library/FindRQs", req);
         if (res.IsSuccessStatusCode)

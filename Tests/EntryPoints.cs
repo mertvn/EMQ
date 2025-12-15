@@ -376,7 +376,8 @@ public class EntryPoints
     {
         bool deleteAfter = false;
 
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All,
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
+            SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
             Enum.GetValues<ReviewQueueStatus>());
         foreach (RQ rq in rqs)
         {
@@ -418,7 +419,8 @@ public class EntryPoints
     [Test, Explicit]
     public async Task DownloadPendingReviewQueueItems()
     {
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue, SongSourceSongTypeMode.All,
+        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
+            SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
             Enum.GetValues<ReviewQueueStatus>());
         foreach (RQ rq in rqs.Where(x => x.status == ReviewQueueStatus.Pending))
         {

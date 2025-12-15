@@ -26,16 +26,22 @@
         </div>
         <label for="EndDateFilter">End date</label>
         <br/>
-        <br/>
 
-        <select id="SSSTMFilter" style="margin: 5px" @bind="SSSTMFilter">
-            @foreach (var key in Enum.GetValues<SongSourceSongTypeMode>())
+        @foreach (var key in Enum.GetValues<SongSourceSongType>())
+        {
+            if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
             {
-                <option value="@key">@key</option>
+                <label>
+                    <input type="checkbox" class="form-check-input"
+                           @bind:get="@SSSTFilter.Contains(key)"
+                           @bind:set="@(new Func<bool, Task>(async value => {if (value) { SSSTFilter.Add(key); } else { SSSTFilter.Remove(key); }}))"
+                           @bind:event="oninput"
+                           style="margin: 5px"/>
+                    @key.ToString()
+                </label>
+                <br/>
             }
-        </select>
-        <label for="SSSTMFilter">Type</label>
-        <br/>
+        }
 
         <button type="button" class="btn btn-primary" @onclick="RefreshRQs">Search</button>
     </div>
