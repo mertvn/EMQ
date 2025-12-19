@@ -56,7 +56,7 @@ public class SongSource : IEditQueueEntity
             .ThenBy(x => x.IsMainTitle).ToList();
         Links = Links.OrderBy(x => x.Url).ToList();
         Categories = Categories.OrderBy(x => x.Id).ToList();
-        Developers = Developers.OrderBy(x => x.VndbId).ToList();
+        Developers = Developers.OrderBy(x => x.Title.LatinTitle).ToList();
         // todo MusicIds
         SongTypes.Sort();
         return this;

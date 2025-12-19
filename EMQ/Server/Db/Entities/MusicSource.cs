@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -29,4 +30,6 @@ public class MusicSource
 
     [Required]
     public SongSourceType type { get; set; }
+
+    public List<SongSourceDeveloper> developers { get; set; } = new();
 }

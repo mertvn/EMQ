@@ -19,7 +19,8 @@ public class AddTableMusic_Source : Migration
             .WithColumn("rating_bayesian").AsInt32().Nullable()
             // .WithColumn("popularity").AsInt32().Nullable()
             .WithColumn("votecount").AsInt32().Nullable()
-            .WithColumn("type").AsInt32().NotNullable();
+            .WithColumn("type").AsInt32().NotNullable()
+            .WithColumn("developers").AsString().NotNullable();
 
         Execute.Sql("ALTER TABLE music_source ADD CHECK (ISFINITE(air_date_start) = 't');");
     }

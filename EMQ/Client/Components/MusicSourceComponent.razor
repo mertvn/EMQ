@@ -29,7 +29,7 @@
             <EditSourceComponent Source="ResGetSongSource.SongSource" IsNew="false"></EditSourceComponent>
         </details>
 
-        @if (ClientUtils.HasModPerms() && ResGetSongSource.SongSource.Links.Any(x => x.Type == SongSourceLinkType.VNDB))
+        @if (ResGetSongSource.SongSource.Links.Any(x => x.Type == SongSourceLinkType.VNDB))
         {
             <details>
                 <summary>Sync with VNDB</summary>

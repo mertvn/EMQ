@@ -55,9 +55,8 @@
     <div style="display: flex; flex-wrap: wrap">
         <div style="border: 1px black solid; padding: 10px; width: 970px;">
             <div style="border: 1px black solid; padding: 10px;">
-                <h5>Aliases</h5>
+                <span style="font-size: 1.25rem;">Aliases</span>
                 <button type="button" class="btn btn-primary" @onclick="AddAlias">Add alias</button>
-                <br/>
                 <br/>
 
                 @for (int index = 0; index < Source.Titles.Count; index++)
@@ -166,6 +165,54 @@
             </div>
             <br/>
 
+            <div style="border: 1px black solid; padding: 10px;">
+                <span style="font-size: 1.25rem;">Developers</span>
+                <button type="button" class="btn btn-primary" @onclick="AddAliasDev">Add developer</button>
+                <br/>
+
+                @for (int index = 0; index < Source.Developers.Count; index++)
+                {
+                    var alias = Source.Developers[index];
+                    int indexCopy = index;
+                    <div style="border: 1px black solid; padding: 10px;">
+                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAliasDev(indexCopy))">🗑</span>
+                        <br/>
+                        <label style="padding: 4px;">
+                            <select id="AddTitleLang" style="margin: 5px" @bind="alias.Title.Language">
+                                @foreach (var language in Enum.GetValues<Language>())
+                                {
+                                    @if (language != Language.allLanguages)
+                                    {
+                                        <option value="@language">@language.GetDisplayName()</option>
+                                    }
+                                }
+                            </select>
+                            Language
+                        </label>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.Title.LatinTitle" style="width: 700px;"/>
+                            Latin name
+                        </label>
+                        <br/>
+                        <label style="padding: 4px;">
+                            <input type="text" @bind="alias.Title.NonLatinTitle" style="width: 700px;"/>
+                            Non-Latin name
+                        </label>
+                        <br/>
+
+                        <label style="padding: 4px;">
+                            <input type="radio" class="form-check-input" name="radioIsMainTitle"
+                                   checked="@alias.Title.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitleDev(indexCopy))"/>
+                            Primary alias
+                        </label>
+                        <br/>
+                    </div>
+                }
+            </div>
+            <br/>
+
             <textarea id="note_user"
                       rows="2"
                       cols="34"
@@ -240,19 +287,30 @@
         Source.Titles.Add(new Title() { Language = "ja", });
     }
 
+    private void AddAliasDev()
+    {
+        Source.Developers.Add(new SongSourceDeveloper() { Title = new Title() { Language = "ja", } });
+    }
+
     private async Task RemoveAlias(int index)
     {
-    // if (!IsNew)
-    // {
-    //     return;
-    // }
-
         if (Source.Titles.Count <= 1)
         {
             return;
         }
 
         Source.Titles.RemoveAt(index);
+        await CallStateHasChanged();
+    }
+
+    private async Task RemoveAliasDev(int index)
+    {
+        if (Source.Developers.Count <= 1)
+        {
+            return;
+        }
+
+        Source.Developers.RemoveAt(index);
         await CallStateHasChanged();
     }
 
@@ -384,6 +442,15 @@
             }
         }
 
+        foreach (var title in source.Developers)
+        {
+            if (string.IsNullOrWhiteSpace(title.Title.LatinTitle))
+            {
+                ValidationMessages.Add("Latin name must not be empty (dev).");
+                isValid = false;
+            }
+        }
+
         return isValid;
     }
 
@@ -425,6 +492,15 @@
         {
             var title = Source.Titles[index];
             title.IsMainTitle = index == selectedIndex;
+        }
+    }
+
+    private void OnChangeRadioIsMainTitleDev(int selectedIndex)
+    {
+        for (int index = 0; index < Source.Developers.Count; index++)
+        {
+            var title = Source.Developers[index];
+            title.Title.IsMainTitle = index == selectedIndex;
         }
     }
 

@@ -45,6 +45,7 @@ public static class DbManager
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
         SqlMapper.AddTypeHandler(new GenericArrayHandler<int>());
         SqlMapper.AddTypeHandler(new TimeMultiRangeHandler());
+        SqlMapper.AddTypeHandler(typeof(List<SongSourceDeveloper>), new JsonTypeHandler());
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
@@ -752,6 +753,7 @@ group by entity_id",
                             RatingAverage = musicSource.rating_average,
                             RatingBayesian = musicSource.rating_bayesian,
                             VoteCount = musicSource.votecount,
+                            Developers = musicSource.developers,
                             SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                             Titles = new List<Title>
                             {
@@ -944,7 +946,7 @@ group by entity_id",
                 mIdSongSources[mId][msId].SongTypes = songSource.MusicIds[mId].ToList();
 
                 // fill developers
-                var songSourceDevelopers = new List<SongSourceDeveloper>();
+                var songSourceDevelopers = mIdSongSources[mId]![msId].Developers;
                 foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
                              .Select(z => z.Url.ToVndbId()))
                 {
@@ -953,19 +955,20 @@ group by entity_id",
                         foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
                             (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            songSourceDevelopers.Add(new SongSourceDeveloper
+                            if (!songSourceDevelopers.Any(x=> x.Title.LatinTitle == latinTitle))
                             {
-                                VndbId = pId,
-                                Title = new Title
+                                songSourceDevelopers.Add(new SongSourceDeveloper
                                 {
-                                    LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
-                                }
-                            });
+                                    VndbId = pId,
+                                    Title = new Title
+                                    {
+                                        LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                    }
+                                });
+                            }
                         }
                     }
                 }
-
-                mIdSongSources[mId][msId].Developers = songSourceDevelopers;
 
                 // fill link names if empty
                 foreach (SongSourceLink link in songSource.Links)
@@ -1108,6 +1111,7 @@ group by entity_id",
                         RatingAverage = musicSource.rating_average,
                         RatingBayesian = musicSource.rating_bayesian,
                         VoteCount = musicSource.votecount,
+                        Developers = musicSource.developers,
                         Titles = new List<Title>
                         {
                             new Title()
@@ -1242,7 +1246,7 @@ group by entity_id",
                 }
 
                 // fill developers
-                var songSourceDevelopers = new List<SongSourceDeveloper>();
+                var songSourceDevelopers = mIdSongSources[mId]![msId].Developers;
                 foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
                              .Select(z => z.Url.ToVndbId()))
                 {
@@ -1251,19 +1255,20 @@ group by entity_id",
                         foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
                             (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            songSourceDevelopers.Add(new SongSourceDeveloper
+                            if (!songSourceDevelopers.Any(x=> x.Title.LatinTitle == latinTitle))
                             {
-                                VndbId = pId,
-                                Title = new Title
+                                songSourceDevelopers.Add(new SongSourceDeveloper
                                 {
-                                    LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
-                                }
-                            });
+                                    VndbId = pId,
+                                    Title = new Title
+                                    {
+                                        LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                    }
+                                });
+                            }
                         }
                     }
                 }
-
-                mIdSongSources[mId]![msId].Developers = songSourceDevelopers;
 
                 // fill link names if empty
                 foreach (SongSourceLink link in songSource.Links)
@@ -1839,7 +1844,7 @@ GROUP BY artist_id";
                 {
                     int rows = await connection.ExecuteScalarAsync<int>(
                         "UPDATE music_source SET air_date_start = @AirDateStart, language_original = @LanguageOriginal, rating_average = @RatingAverage," +
-                        "rating_bayesian = @RatingBayesian, votecount = @VoteCount, type = @Type WHERE id = @id;",
+                        "rating_bayesian = @RatingBayesian, votecount = @VoteCount, type = @Type, developers = @Developers WHERE id = @id;",
                         new
                         {
                             id = msId,
@@ -1849,6 +1854,7 @@ GROUP BY artist_id";
                             songSource.RatingBayesian,
                             songSource.VoteCount,
                             songSource.Type,
+                            songSource.Developers,
                         });
                     if (rows < 0)
                     {
@@ -1859,8 +1865,8 @@ GROUP BY artist_id";
             else
             {
                 msId = await connection.ExecuteScalarAsync<int>(
-                    @"INSERT INTO music_source (id, air_date_start, air_date_end, language_original, rating_average, rating_bayesian, votecount, type)
-VALUES (@id, @air_date_start, @air_date_end, @language_original, @rating_average, @rating_bayesian, @votecount, @type)
+                    @"INSERT INTO music_source (id, air_date_start, air_date_end, language_original, rating_average, rating_bayesian, votecount, type, developers)
+VALUES (@id, @air_date_start, @air_date_end, @language_original, @rating_average, @rating_bayesian, @votecount, @type, @developers)
 RETURNING id;",
                     new
                     {
@@ -1872,6 +1878,7 @@ RETURNING id;",
                         rating_bayesian = songSource.RatingBayesian,
                         votecount = songSource.VoteCount,
                         type = songSource.Type,
+                        developers = songSource.Developers,
                     }, transaction);
                 if (msId != songSource.Id)
                 {
@@ -1899,7 +1906,8 @@ RETURNING id;",
                     rating_average = songSource.RatingAverage,
                     rating_bayesian = songSource.RatingBayesian,
                     votecount = songSource.VoteCount,
-                    type = songSource.Type
+                    type = songSource.Type,
+                    developers = songSource.Developers
                 };
                 if (!await connection.InsertAsync(source, transaction))
                 {

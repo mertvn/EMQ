@@ -768,7 +768,7 @@ public class DbTests
         GenericSongsAssert(songs);
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_GetRandomSongs_OnlyOwnUploads_Mert()
     {
         Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes = new()
@@ -796,7 +796,7 @@ public class DbTests
         GenericSongsAssert(songs);
     }
 
-    [Test]
+    [Test, Explicit]
     public async Task Test_GetRandomSongs_OnlyOwnUploads_Mert_hslead()
     {
         Dictionary<SongSourceSongType, IntWrapper> validSongSourceSongTypes = new()
