@@ -77,6 +77,8 @@ public partial class QuizSettingsComponent
 
     public string LoadFromCodeB64 { get; set; } = "";
 
+    public GuessKind SelectedSongDifficultyGuessKind { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         SetNewEditContext(ClientQuizSettings);

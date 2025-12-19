@@ -72,6 +72,11 @@ public static class Constants
         { SongSourceType.Game, new[] { SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
     };
 
+    public static readonly HashSet<GuessKind> IgnoredGuessKinds = new()
+    {
+        GuessKind.Rigger, GuessKind.Character, GuessKind.Illustrator, GuessKind.Seiyuu
+    };
+
     public const string QFDateMin = "1987-01-01";
 
     public const string QFDateMax = "2030-01-01";
@@ -99,4 +104,8 @@ public static class Constants
     public const int QFSongRatingAverageMin = 100;
 
     public const int QFSongRatingAverageMax = 1000;
+
+    public const int QFSongDifficultyMin = 0;
+
+    public const int QFSongDifficultyMax = 100;
 }

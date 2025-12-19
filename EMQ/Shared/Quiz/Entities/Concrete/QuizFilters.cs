@@ -220,6 +220,15 @@ public class QuizFilters
     [DefaultValue(LabelKind.Maybe)]
     public LabelKind VocalsFilter { get; set; } = LabelKind.Maybe;
 
+    [ProtoMember(36)]
+    [Required]
+    public bool IsCustomSongDifficultyFilterEnabled { get; set; }
+
+    [ProtoMember(37)]
+    public Dictionary<GuessKind, SongDifficultyFilter> CustomSongDifficultyFilter { get; set; } =
+        Enum.GetValues<GuessKind>().Except(Constants.IgnoredGuessKinds).ToDictionary(x => x,
+            _ => new SongDifficultyFilter(Constants.QFSongDifficultyMin, Constants.QFSongDifficultyMax));
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

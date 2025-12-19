@@ -2610,34 +2610,67 @@ RETURNING id;",
                     queryMusicIds.AppendLine($"AND m.id = ANY({ids.Select(x => x.Item1).ToList()})");
                 }
 
-                var validSongDifficultyLevels = filters.SongDifficultyLevelFilters.Where(x => x.Value).ToList();
-                if (validSongDifficultyLevels.Any() &&
-                    // non-default check
-                    (validSongDifficultyLevels.Count != 6 ||
-                     validSongDifficultyLevels.Any(x => !x.Value)))
+                if (filters.IsCustomSongDifficultyFilterEnabled)
                 {
-                    const string sqlDiff = "select music_id from music_stat where guess_kind = 0"; // todo
+                    const string sqlDiff = "select music_id from music_stat where 1=1";
                     var queryDiff = connection.QueryBuilder($"{sqlDiff:raw}");
 
-                    queryDiff.Append($"\n");
-                    for (int index = 0; index < validSongDifficultyLevels.Count; index++)
+                    foreach ((GuessKind key, var value) in filters.CustomSongDifficultyFilter)
                     {
-                        (SongDifficultyLevel songDifficultyLevel, _) = validSongDifficultyLevels.ElementAt(index);
-                        var range = songDifficultyLevel.GetRange();
-                        double min = (double)range!.Minimum;
-                        double max = (double)range!.Maximum;
-                        queryDiff.Append(index == 0
-                            ? (FormattableString)
-                            $" AND (( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )"
-                            : (FormattableString)
-                            $" OR ( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )");
+                        int min = value.Min;
+                        int max = value.Max;
+                        if (min == Constants.QFSongDifficultyMin && max == Constants.QFSongDifficultyMax)
+                        {
+                            continue;
+                        }
+
+                        if (Constants.IgnoredGuessKinds.Contains(key))
+                        {
+                            continue;
+                        }
+
+                        queryDiff.AppendLine($" INTERSECT");
+                        queryDiff.AppendLine($"{sqlDiff:raw}");
+                        queryDiff.Append((FormattableString)
+                            $"AND (guess_kind = {(int)key} AND stat_correctpercentage >= {min} AND stat_correctpercentage <= {max})");
                     }
 
-                    queryDiff.Append($")");
                     var validMidsDiff = await connection.QueryAsync<int>(queryDiff.Sql, queryDiff.Parameters);
                     validMids = validMids == null
                         ? validMidsDiff.ToList()
                         : validMidsDiff.Intersect(validMids).ToList();
+                }
+                else
+                {
+                    var validSongDifficultyLevels = filters.SongDifficultyLevelFilters.Where(x => x.Value).ToList();
+                    if (validSongDifficultyLevels.Any() &&
+                        // non-default check
+                        (validSongDifficultyLevels.Count != 6 ||
+                         validSongDifficultyLevels.Any(x => !x.Value)))
+                    {
+                        const string sqlDiff = "select music_id from music_stat where guess_kind = 0";
+                        var queryDiff = connection.QueryBuilder($"{sqlDiff:raw}");
+
+                        queryDiff.Append($"\n");
+                        for (int index = 0; index < validSongDifficultyLevels.Count; index++)
+                        {
+                            (SongDifficultyLevel songDifficultyLevel, _) = validSongDifficultyLevels.ElementAt(index);
+                            var range = songDifficultyLevel.GetRange();
+                            double min = (double)range!.Minimum;
+                            double max = (double)range!.Maximum;
+                            queryDiff.Append(index == 0
+                                ? (FormattableString)
+                                $" AND (( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )"
+                                : (FormattableString)
+                                $" OR ( stat_correctpercentage >= {min} AND stat_correctpercentage <= {max} )");
+                        }
+
+                        queryDiff.Append($")");
+                        var validMidsDiff = await connection.QueryAsync<int>(queryDiff.Sql, queryDiff.Parameters);
+                        validMids = validMids == null
+                            ? validMidsDiff.ToList()
+                            : validMidsDiff.Intersect(validMids).ToList();
+                    }
                 }
 
                 var validSongSourceSongTypes = new HashSet<SongSourceSongType>();

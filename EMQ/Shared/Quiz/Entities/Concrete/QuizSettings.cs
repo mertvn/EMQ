@@ -823,6 +823,12 @@ public class QuizSettings
             diff.Add($"Pause after results: {o.IsPauseAfterResults} → {n.IsPauseAfterResults}");
         }
 
+        if (o.Filters.IsCustomSongDifficultyFilterEnabled != n.Filters.IsCustomSongDifficultyFilterEnabled)
+        {
+            diff.Add(
+                $"Custom song difficulty filter: {o.Filters.IsCustomSongDifficultyFilterEnabled} → {n.Filters.IsCustomSongDifficultyFilterEnabled}");
+        }
+
         return diff;
     }
 }

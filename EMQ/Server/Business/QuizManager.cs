@@ -1746,16 +1746,9 @@ public class QuizManager
 
                 foreach ((GuessKind guessKind, GuessInfo guessInfo) in guessInfoDict)
                 {
-                    bool shouldAdd = true;
+                    bool shouldAdd = !Constants.IgnoredGuessKinds.Contains(guessKind);
                     switch (guessKind)
                     {
-                        // not much point tracking these
-                        case GuessKind.Rigger:
-                        case GuessKind.Character:
-                        case GuessKind.Illustrator:
-                        case GuessKind.Seiyuu:
-                            shouldAdd = false;
-                            break;
                         case GuessKind.Developer:
                             if (!hasDeveloper)
                             {
@@ -1784,12 +1777,6 @@ public class QuizManager
                             }
 
                             break;
-                        case GuessKind.Mst:
-                        case GuessKind.A:
-                        case GuessKind.Mt:
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
                     }
 
                     if (shouldAdd)

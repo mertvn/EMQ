@@ -588,23 +588,77 @@
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 245px;">
                             <h5>Song difficulty</h5>
+                            <label>
+                                <InputCheckbox class="form-check-input" @bind-Value="ClientQuizSettings.Filters.IsCustomSongDifficultyFilterEnabled" style="margin: 5px"/>
+                                Custom
+                            </label>
 
-                            @foreach (var key in ClientQuizSettings.Filters.SongDifficultyLevelFilters.Keys.ToList())
+                            @if (ClientQuizSettings.Filters.IsCustomSongDifficultyFilterEnabled)
                             {
-                                <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongDifficultyLevelFilters[key])" style="margin: 5px"/>
-                                <label for="@key">
-                                    <span style="float: left"> @key.GetDisplayName()</span>
-                                </label>
-                                @if (key == SongDifficultyLevel.Impossible)
-                                {
-                                    <span style="float: right">0%</span>
-                                }
-                                else
-                                {
-                                    <span style="float: right"> @((double)key.GetRange()!.Minimum)% - @((double)key.GetRange()!.Maximum)%</span>
-                                }
+                                <label>
+                                    <InputSelect id="SelectedSongDifficultyGuessKind" @bind-Value="SelectedSongDifficultyGuessKind" style="margin: 5px">
+                                        @foreach (GuessKind guessKind in Enum.GetValues<GuessKind>())
+                                        {
+                                            if (Constants.IgnoredGuessKinds.Contains(guessKind))
+                                            {
+                                                continue;
+                                            }
 
+                                            <option value="@guessKind">
+                                                @if (!string.IsNullOrEmpty(guessKind.GetDescription()))
+                                                {
+                                                    @guessKind.GetDescription()
+                                                }
+                                                else
+                                                {
+                                                    @guessKind
+                                                }
+                                            </option>
+                                        }
+                                    </InputSelect>
+                                    Type
+                                </label>
+
+                                @foreach ((GuessKind key, SongDifficultyFilter _) in ClientQuizSettings.Filters.CustomSongDifficultyFilter)
+                                {
+                                    if (key != SelectedSongDifficultyGuessKind)
+                                    {
+                                        continue;
+                                    }
+
+                                    <div @key="@key" style="display: flex; align-items: center; justify-items: center;">
+                                        <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                                            <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.CustomSongDifficultyFilter[key].Min"
+                                                          @bind-ValueHigh="@ClientQuizSettings.Filters.CustomSongDifficultyFilter[key].Max"
+                                                          MinValue="@Constants.QFSongDifficultyMin" MaxValue="@Constants.QFSongDifficultyMax">
+                                            </RangeControl>
+                                            <div style="display: inline-block">
+                                                <InputNumber @bind-Value="ClientQuizSettings.Filters.CustomSongDifficultyFilter[key].Min" style="width: 60px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.CustomSongDifficultyFilter[key].Max" style="width: 60px;"></InputNumber>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
                                 <br/>
+                                @foreach (var key in ClientQuizSettings.Filters.SongDifficultyLevelFilters.Keys.ToList())
+                                {
+                                    <input type="checkbox" id="@key" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongDifficultyLevelFilters[key])" style="margin: 5px"/>
+                                    <label for="@key">
+                                        <span style="float: left"> @key.GetDisplayName()</span>
+                                    </label>
+                                    @if (key == SongDifficultyLevel.Impossible)
+                                    {
+                                        <span style="float: right">0%</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="float: right"> @((double)key.GetRange()!.Minimum)% - @((double)key.GetRange()!.Maximum)%</span>
+                                    }
+
+                                    <br/>
+                                }
                             }
                         </div>
 
