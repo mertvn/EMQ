@@ -31,5 +31,5 @@ public class MusicSource
     [Required]
     public SongSourceType type { get; set; }
 
-    public List<SongSourceDeveloper> developers { get; set; } = new();
+    public List<SongSourceDeveloper>? developers { get; set; }
 }

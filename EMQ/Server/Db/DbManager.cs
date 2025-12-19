@@ -753,7 +753,7 @@ group by entity_id",
                             RatingAverage = musicSource.rating_average,
                             RatingBayesian = musicSource.rating_bayesian,
                             VoteCount = musicSource.votecount,
-                            Developers = musicSource.developers,
+                            Developers = musicSource.developers ?? new List<SongSourceDeveloper>(),
                             SongTypes = new List<SongSourceSongType> { (SongSourceSongType)musicSourceMusic.type },
                             Titles = new List<Title>
                             {
@@ -1111,7 +1111,7 @@ group by entity_id",
                         RatingAverage = musicSource.rating_average,
                         RatingBayesian = musicSource.rating_bayesian,
                         VoteCount = musicSource.votecount,
-                        Developers = musicSource.developers,
+                        Developers = musicSource.developers ?? new List<SongSourceDeveloper>(),
                         Titles = new List<Title>
                         {
                             new Title()
