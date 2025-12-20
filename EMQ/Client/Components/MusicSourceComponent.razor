@@ -45,6 +45,37 @@
       @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.SongSource, MusicSourceId, _client, _reviewEditComponent))">
     ⟲
 </span>
+<br/>
+
+@if (PlayerSongStats != null)
+{
+    <h5>Stats</h5>
+    <div class="page-size-chooser">
+        Items per page:
+        <select @bind="@_paginationPlayerSongStats.ItemsPerPage">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            <option>100</option>
+            <option>250</option>
+        </select>
+    </div>
+    <div>
+        <Paginator State="@_paginationPlayerSongStats"/>
+    </div>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@PlayerSongStats" Pagination="@_paginationPlayerSongStats">
+            <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+            <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
+                @(Math.Round((double)context.CorrectPercentage, 2))%
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.VoteAverage)" Title="Vote avg." Sortable="true"/>
+            <PropertyColumn Property="@(x => x.VoteCount)" Title="Vote count" Sortable="true"/>
+        </QuickGrid>
+    </div>
+    <br/>
+}
 
 @code {
 
@@ -53,6 +84,10 @@
 
     public ResGetSongSource? ResGetSongSource { get; set; }
 
+    private IQueryable<PlayerSongStats>? PlayerSongStats { get; set; }
+
+    private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
+
     private IQueryable<EditQueue>? CurrentEQs { get; set; }
 
     public ReviewEditComponent _reviewEditComponent { get; set; } = null!;
@@ -60,11 +95,12 @@
     protected override async Task OnParametersSetAsync()
     {
         await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = MusicSourceId });
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSongSource", new SongSource { Id = MusicSourceId, LanguageOriginal = "gibstats" });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
             ResGetSongSource = content;
+            PlayerSongStats = content.PlayerSongStats.AsQueryable();
         }
     }
 

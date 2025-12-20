@@ -1397,7 +1397,7 @@ order by ms.id
     {
         const int msId = 7;
         var res = await DbManager.GetSongSource(
-            new SongSource { Id = msId, Categories = new List<SongSourceCategory> { new() } }, null);
+            new SongSource { Id = msId, Categories = new List<SongSourceCategory> { new() } }, null, false);
 
         Console.WriteLine(res.SongSource.Categories.Count);
         var hashset = new HashSet<int>();
@@ -1422,7 +1422,7 @@ order by ms.id
             new SongSource
             {
                 Links = new List<SongSourceLink>() { new() { Type = SongSourceLinkType.VNDB, Url = url, } }
-            }, null);
+            }, null, false);
 
         Assert.That(res.SongSource.Id == 1240);
     }

@@ -56,7 +56,7 @@ public class LibraryController : ControllerBase
         {
             if (int.TryParse(req.SongSourceTitle.Replace("id:", "").Trim(), out int msId))
             {
-                var songsSource = await DbManager.GetSongSource(new SongSource() { Id = msId }, null);
+                var songsSource = await DbManager.GetSongSource(new SongSource() { Id = msId }, null, false);
                 songs = await DbManager.FindSongsBySongSourceTitle(songsSource.SongSource.Titles.First().LatinTitle);
             }
         }
@@ -515,7 +515,8 @@ public class LibraryController : ControllerBase
     public async Task<ActionResult<ResGetSongSource>> GetSongSource(SongSource req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
-        var res = await DbManager.GetSongSource(req, session);
+        var res = await DbManager.GetSongSource(req, session,
+            req.LanguageOriginal == "gibstats"); // we don't talk about it
         return res;
     }
 
@@ -881,7 +882,7 @@ public class LibraryController : ControllerBase
                         (source?.Links.ToArray() ?? Array.Empty<SongSourceLink>()).Select(x => x.Url), x => x.Url)
                     .ToList()
             },
-            session);
+            session, false);
         if (content.SongSource.Id > 0)
         {
             return BadRequest(

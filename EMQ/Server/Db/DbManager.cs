@@ -6370,23 +6370,86 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
         };
     }
 
-    public static async Task<ResGetSongSource> GetSongSource(SongSource req, Session? session)
+
+    public static async Task<ResGetSongSource> GetSongSource(SongSource req, Session? session, bool fetchStats)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var songSource = await SelectSongSourceBatchNoMSM(connection,
             new List<Song> { new() { Sources = new List<SongSource> { req } } },
             req.Categories.Any());
-
-        // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
-        if (session != null)
-        {
-            // todo
-        }
-
         var s = songSource.FirstOrDefault();
-        return s.Value != null && s.Value.Any()
+        var res = s.Value != null && s.Value.Any()
             ? new ResGetSongSource() { SongSource = s.Value.Single().Value, }
             : new ResGetSongSource();
+
+        // Console.WriteLine(JsonSerializer.Serialize(songSource, Utils.JsoIndented));
+        if (res.SongSource.Id > 0 && fetchStats)
+        {
+            if (session != null)
+            {
+                // todo fetch player-specific information
+            }
+
+            // todo should_update_stats filter
+            int msId = res.SongSource.Id;
+            string sqlMs =
+$@"WITH TargetMusic AS (
+    -- Get the small list of music IDs for this source once
+    SELECT music_id
+    FROM music_source_music
+    WHERE music_source_id = @msId
+),
+PlayStats AS (
+    -- Aggregate play counts for only these music IDs
+    SELECT
+        uqp.user_id,
+        COUNT(*) AS TimesPlayed,
+        SUM(CASE WHEN uqp.is_correct THEN 1 ELSE 0 END) AS TimesCorrect
+    FROM unique_quiz_plays uqp
+    INNER JOIN TargetMusic tm ON uqp.music_id = tm.music_id
+    WHERE uqp.user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY uqp.user_id
+),
+VoteStats AS (
+    -- Aggregate votes for only these music IDs
+    SELECT
+        mv.user_id,
+        AVG(mv.vote) / 10 AS AvgVote,
+        COUNT(DISTINCT mv.music_id) AS VoteCount
+    FROM music_vote mv
+    INNER JOIN TargetMusic tm ON mv.music_id = tm.music_id
+    WHERE mv.user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY mv.user_id
+)
+SELECT
+    ps.user_id AS UserId,
+    ps.TimesPlayed,
+    ps.TimesCorrect,
+    COALESCE(ROUND(vs.AvgVote, 2), 0) AS VoteAverage,
+    COALESCE(vs.VoteCount, 0) AS VoteCount
+FROM PlayStats ps
+LEFT JOIN VoteStats vs ON ps.user_id = vs.user_id
+ORDER BY ps.TimesPlayed DESC;
+";
+
+            PlayerSongStats[] playerSongStats =
+                (await connection.QueryAsync<PlayerSongStats>(sqlMs, new { msId })).ToArray();
+            await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            var usernamesDict =
+                (await connectionAuth.QueryAsync<(int, string)>(
+                    "select id, username from users where id = ANY(@userIds)",
+                    new { userIds = playerSongStats.Select(x => x.UserId).ToArray() }))
+                .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+            foreach (PlayerSongStats playerSongStat in playerSongStats)
+            {
+                playerSongStat.Username = Utils.UserIdToUsername(usernamesDict, playerSongStat.UserId);
+            }
+
+            res.PlayerSongStats = playerSongStats;
+        }
+
+        return res;
     }
 
     public static async Task<ResGetSongArtist> GetSongArtist(SongArtist songArtist, Session? session, bool fetchStats)

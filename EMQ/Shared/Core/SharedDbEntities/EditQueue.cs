@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -45,6 +45,8 @@ public class EditQueue
 public class ResGetSongSource
 {
     public SongSource SongSource { get; set; } = new();
+
+    public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ResGetSongArtist
