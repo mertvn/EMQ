@@ -2187,11 +2187,10 @@ public class QuizManager
             Title correctAnswerTitle = guessKind switch
             {
                 GuessKind.Mst => Converters.GetSingleTitle(dbSong.Sources.First().Titles),
-                GuessKind.A =>
-                    Converters.GetSingleTitle(dbSong.Artists.First(x =>
-                        (!dbSong.IsBGM && x.Roles.Contains(SongArtistRole.Vocals)) ||
-                        dbSong.IsBGM && (x.Roles.Contains(SongArtistRole.Unknown) ||
-                                         x.Roles.Contains(SongArtistRole.Composer))).Titles),
+                GuessKind.A => Converters.GetSingleTitle(
+                    (dbSong.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Vocals)) ??
+                     dbSong.Artists.FirstOrDefault(x => x.Roles.Contains(SongArtistRole.Composer)) ??
+                     dbSong.Artists.First()).Titles),
                 GuessKind.Mt => Converters.GetSingleTitle(dbSong.Titles),
                 GuessKind.Developer => dbSong.Sources.First().Developers.FirstOrDefault()?.Title ?? new Title(),
                 GuessKind.Composer => Converters.GetSingleTitle(
