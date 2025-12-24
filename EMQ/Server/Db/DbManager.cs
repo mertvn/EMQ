@@ -955,14 +955,16 @@ group by entity_id",
                         foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
                             (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            if (!songSourceDevelopers.Any(x=> x.Title.LatinTitle == latinTitle))
+                            if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
                             {
                                 songSourceDevelopers.Add(new SongSourceDeveloper
                                 {
                                     VndbId = pId,
                                     Title = new Title
                                     {
-                                        LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                        LatinTitle = latinTitle,
+                                        NonLatinTitle = nonLatinTitle,
+                                        IsMainTitle = true
                                     }
                                 });
                             }
@@ -1255,14 +1257,16 @@ group by entity_id",
                         foreach ((string? _, string? pId, string? name, string? latin) in developers)
                         {
                             (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            if (!songSourceDevelopers.Any(x=> x.Title.LatinTitle == latinTitle))
+                            if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
                             {
                                 songSourceDevelopers.Add(new SongSourceDeveloper
                                 {
                                     VndbId = pId,
                                     Title = new Title
                                     {
-                                        LatinTitle = latinTitle, NonLatinTitle = nonLatinTitle, IsMainTitle = true
+                                        LatinTitle = latinTitle,
+                                        NonLatinTitle = nonLatinTitle,
+                                        IsMainTitle = true
                                     }
                                 });
                             }
@@ -3351,21 +3355,41 @@ ORDER BY artist_id";
     public static async Task<string> SelectAutocompleteDeveloper()
     {
         var res = VnDevelopers.SelectMany(x =>
-                x.Value.Select(y =>
+            x.Value.Select(y =>
+            {
+                (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                if (latinTitleNorm == nonLatinTitleNorm)
                 {
-                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
-                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
-                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
-                    if (latinTitleNorm == nonLatinTitleNorm)
-                    {
-                        nonLatinTitle = "";
-                        nonLatinTitleNorm = "";
-                    }
+                    nonLatinTitle = "";
+                    nonLatinTitleNorm = "";
+                }
 
-                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
-                        latinTitleNorm, nonLatinTitleNorm);
-                }))
-            .DistinctBy(x => x.MSTLatinTitle);
+                return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                    latinTitleNorm, nonLatinTitleNorm);
+            }));
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var emq =
+            (await connection.QueryAsync<string>("select developers from music_source WHERE developers is not null"))
+            .SelectMany(x => JsonSerializer.Deserialize<SongSourceDeveloper[]>(x)!)
+            .Select(y =>
+            {
+                (string latinTitle, string? nonLatinTitle) = (y.Title.LatinTitle, y.Title.NonLatinTitle);
+                string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                if (latinTitleNorm == nonLatinTitleNorm)
+                {
+                    nonLatinTitle = "";
+                    nonLatinTitleNorm = "";
+                }
+
+                return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                    latinTitleNorm, nonLatinTitleNorm);
+            });
+
+        res = res.Concat(emq).DistinctBy(x => x.MSTLatinTitle);
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
