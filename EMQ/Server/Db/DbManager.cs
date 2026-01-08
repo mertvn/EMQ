@@ -6494,43 +6494,44 @@ ORDER BY ps.TimesPlayed DESC;
             // todo should_update_stats filter
             int artistId = artist.First().Value.First().Key; // todo?
             string sqlA =
-                $@"WITH TargetMusic AS (
-    -- Get the small list of music IDs for this artist once
-    SELECT music_id
-    FROM artist_music
-    WHERE artist_id = @artistId
-),
-PlayStats AS (
-    -- Aggregate play counts for only these music IDs
-    SELECT
-        uqp.user_id,
-        COUNT(*) AS TimesPlayed,
-        SUM(CASE WHEN uqp.is_correct THEN 1 ELSE 0 END) AS TimesCorrect
-    FROM unique_quiz_plays uqp
-    INNER JOIN TargetMusic tm ON uqp.music_id = tm.music_id
-    WHERE uqp.user_id < {Constants.PlayerIdGuestMin}
-    GROUP BY uqp.user_id
-),
-VoteStats AS (
-    -- Aggregate votes for only these music IDs
+                $@"SELECT
+    uqp.user_id AS UserId,
+    COUNT(*) AS TimesPlayed,
+    SUM(CASE WHEN uqp.is_correct THEN 1 ELSE 0 END) AS TimesCorrect, -- todo will be slightly incorrect due to how we're generating uqp but meh
+    COALESCE(ROUND(votes.AvgVote, 2), 0) AS VoteAverage,
+    COALESCE(votes.VoteCount, 0) AS VoteCount
+FROM
+    unique_quiz_plays uqp
+LEFT JOIN (
     SELECT
         mv.user_id,
         AVG(mv.vote) / 10 AS AvgVote,
         COUNT(DISTINCT mv.music_id) AS VoteCount
-    FROM music_vote mv
-    INNER JOIN TargetMusic tm ON mv.music_id = tm.music_id
-    WHERE mv.user_id < {Constants.PlayerIdGuestMin}
-    GROUP BY mv.user_id
-)
-SELECT
-    ps.user_id AS UserId,
-    ps.TimesPlayed,
-    ps.TimesCorrect,
-    COALESCE(ROUND(vs.AvgVote, 2), 0) AS VoteAverage,
-    COALESCE(vs.VoteCount, 0) AS VoteCount
-FROM PlayStats ps
-LEFT JOIN VoteStats vs ON ps.user_id = vs.user_id
-ORDER BY ps.TimesPlayed DESC;
+    FROM
+        music_vote mv
+    -- 1. Use EXISTS to filter votes to only those for the artist's music.
+    --    This is a highly efficient, non-duplicating filter.
+    WHERE EXISTS (
+        SELECT 1
+        FROM artist_music am
+        WHERE am.music_id = mv.music_id
+          AND am.artist_id = @artistId
+    ) AND mv.user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY
+        mv.user_id
+) AS votes ON votes.user_id = uqp.user_id
+-- 2. Use the primary EXISTS clause to filter the main plays table.
+--    This should force the planner to use an index on artist_music.
+WHERE EXISTS (
+    SELECT 1
+    FROM artist_music am
+    WHERE am.music_id = uqp.music_id
+      AND am.artist_id = @artistId
+) AND uqp.user_id < {Constants.PlayerIdGuestMin}
+GROUP BY
+    uqp.user_id, votes.AvgVote, votes.VoteCount
+ORDER BY
+    TimesPlayed DESC;
 ";
             playerSongStats = (await connection.QueryAsync<PlayerSongStats>(sqlA, new { artistId })).ToArray();
 
