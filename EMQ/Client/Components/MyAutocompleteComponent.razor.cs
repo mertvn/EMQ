@@ -101,6 +101,12 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     public async Task OnSetInputSearch(string value)
     {
         SelectedText = value;
+
+        if (!ClientState.Preferences.AutocompleteIsEnabled)
+        {
+            return;
+        }
+
         CurrentSearchResults = OnSearch.Invoke(value);
         CurrentFocus = Math.Clamp(CurrentFocus, -1,
             CurrentSearchResults.Length == 0 ? -1 : CurrentSearchResults.Length - 1);

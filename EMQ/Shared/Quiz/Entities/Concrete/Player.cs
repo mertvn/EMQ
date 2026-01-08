@@ -241,4 +241,7 @@ public class PlayerPreferences
 
     [Required]
     public bool AutocompleteShowIcons { get; set; } = true;
+
+    [Required]
+    public bool AutocompleteIsEnabled { get; set; } = true;
 }
