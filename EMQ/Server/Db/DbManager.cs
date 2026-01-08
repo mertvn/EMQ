@@ -6442,7 +6442,6 @@ VoteStats AS (
         COUNT(DISTINCT mv.music_id) AS VoteCount
     FROM music_vote mv
     INNER JOIN TargetMusic tm ON mv.music_id = tm.music_id
-    WHERE mv.user_id < {Constants.PlayerIdGuestMin}
     GROUP BY mv.user_id
 )
 SELECT
