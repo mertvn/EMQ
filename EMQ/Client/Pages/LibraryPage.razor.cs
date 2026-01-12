@@ -32,11 +32,11 @@ public partial class LibraryPage
 
     private string _selectedTab { get; set; } = "TabAutocompleteMst";
 
-    private string _selectedTabVndb { get; set; } = "TabVNDB";
-
     private string _selectedTabStats { get; set; } = "TabAll";
 
     private string _selectedTabQueue { get; set; } = "TabReviewQueue";
+
+    public string FirstTabName { get; set; } = "";
 
     public string VndbAdvsearchStr { get; set; } = "";
 
@@ -113,7 +113,7 @@ public partial class LibraryPage
                 NoSongsText = "No results.";
 
                 await StateHasChangedAsync();
-                await TabsComponentVndb!.SelectTab("TabVNDB");
+                await TabsComponentVndb!.SelectTab(FirstTabName);
             }
         }
     }
@@ -140,7 +140,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponentVndb!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab(FirstTabName);
         }
     }
 
@@ -167,7 +167,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponentVndb!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab(FirstTabName);
         }
     }
 
@@ -192,7 +192,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponentVndb!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab(FirstTabName);
         }
     }
 
@@ -215,7 +215,7 @@ public partial class LibraryPage
         NoSongsText = "No results.";
 
         await StateHasChangedAsync();
-        await TabsComponentVndb!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab(FirstTabName);
     }
 
     public async Task SelectedResultChangedDifficulty(SongDifficultyLevel difficulty, SongSourceSongTypeMode mode)
@@ -238,7 +238,7 @@ public partial class LibraryPage
         NoSongsText = "No results.";
 
         await StateHasChangedAsync();
-        await TabsComponentVndb!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab(FirstTabName);
     }
 
     public async Task SelectedResultChangedWarning(MediaAnalyserWarningKind warning, SongSourceSongTypeMode mode)
@@ -261,7 +261,7 @@ public partial class LibraryPage
         NoSongsText = "No results.";
 
         await StateHasChangedAsync();
-        await TabsComponentVndb!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab(FirstTabName);
     }
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
@@ -287,7 +287,7 @@ public partial class LibraryPage
         }
 
         await StateHasChangedAsync();
-        await TabsComponentVndb!.SelectTab("TabVNDB");
+        await TabsComponentVndb!.SelectTab(FirstTabName);
     }
 
     // todo reapply this after searching
@@ -364,7 +364,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponentVndb!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab(FirstTabName);
         }
     }
 
@@ -384,7 +384,7 @@ public partial class LibraryPage
             NoSongsText = "No results.";
 
             await StateHasChangedAsync();
-            await TabsComponentVndb!.SelectTab("TabVNDB");
+            await TabsComponentVndb!.SelectTab(FirstTabName);
         }
     }
 

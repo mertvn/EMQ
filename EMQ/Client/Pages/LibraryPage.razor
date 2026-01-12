@@ -321,8 +321,14 @@
             var bgms = CurrentSongs.Where(x => x.Sources.Any(y => y.SongTypes.Any(z => z == SongSourceSongType.BGM))).ToList();
             var mbBgms = bgms.Where(x => x.DataSource == DataSourceKind.MusicBrainz).ToList();
             var emqBgms = bgms.Where(x => x.DataSource == DataSourceKind.EMQ).ToList();
+            var vocals = CurrentSongs.Except(bgms).ToList();
 
             var tabs = new Dictionary<string, List<Song>>();
+            if (vocals.Any())
+            {
+                tabs["Vocals"] = vocals;
+            }
+
             @if (IsMergeBGMTabs)
             {
                 if (bgms.Any())
@@ -361,52 +367,48 @@
                     }
                 }
             }
+
+            FirstTabName = tabs.FirstOrDefault().Key;
         }
 
         @* not sure how, but LazyReload is faster than LazyLoad for this *@
-        <Blazorise.Tabs @ref="TabsComponentVndb" @bind-SelectedTab="@_selectedTabVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
+        <Blazorise.Tabs @ref="TabsComponentVndb" RenderMode="Blazorise.TabsRenderMode.LazyReload">
             <Items>
-                <Blazorise.Tab Name="TabVNDB">Vocals</Blazorise.Tab>
-                @* <Blazorise.Tab Name="TabMusicBrainz">MusicBrainz</Blazorise.Tab> *@
                 @foreach ((string key, _) in tabs)
                 {
                     <Blazorise.Tab @key="@key" Name="@key">@key</Blazorise.Tab>
                 }
             </Items>
             <Content>
-                <Blazorise.TabPanel Name="TabVNDB">
-                    <SongInfoCardWrapperComponent
-                        CurrentSongs="@(songFilterComponentRef.ApplyFilters(CurrentSongs.Except(bgms)))"
-                        NoSongsText="@NoSongsText"
-                        IsLibraryPage="true">
-                    </SongInfoCardWrapperComponent>
-                </Blazorise.TabPanel>
                 @foreach ((string key, List<Song> value) in tabs)
                 {
                     <Blazorise.TabPanel @key="@key" Name="@key">
-                        <details style="margin: 5px;">
-                            <summary>Batch uploader (BGM mode)</summary>
-                            @if (ClientState.ServerStats.Config.IsServerReadOnly)
-                            {
-                                <span>Server is in read-only mode.</span>
-                            }
-                            else if (ClientState.ServerStats.Config.IsSubmissionDisabled)
-                            {
-                                <span>Submissions are currently disabled.</span>
-                            }
-                            else
-                            {
-                                @if (ClientUtils.HasUploadPerms())
+                        @if (key != "Vocals")
+                        {
+                            <details style="margin: 5px;">
+                                <summary>Batch uploader (BGM mode)</summary>
+                                @if (ClientState.ServerStats.Config.IsServerReadOnly)
                                 {
-                                    <UploadBatchComponent Songs="value" IsBGMMode="true"></UploadBatchComponent>
+                                    <span>Server is in read-only mode.</span>
+                                }
+                                else if (ClientState.ServerStats.Config.IsSubmissionDisabled)
+                                {
+                                    <span>Submissions are currently disabled.</span>
                                 }
                                 else
                                 {
-                                    <p>Insufficient permissions.</p>
+                                    @if (ClientUtils.HasUploadPerms())
+                                    {
+                                        <UploadBatchComponent Songs="value" IsBGMMode="true"></UploadBatchComponent>
+                                    }
+                                    else
+                                    {
+                                        <p>Insufficient permissions.</p>
+                                    }
                                 }
-                            }
-                        </details>
-                        <br/>
+                            </details>
+                            <br/>
+                        }
 
                         <SongInfoCardWrapperComponent
                             CurrentSongs="@(songFilterComponentRef.ApplyFilters(value))"
@@ -415,11 +417,6 @@
                         </SongInfoCardWrapperComponent>
                     </Blazorise.TabPanel>
                 }
-                @* <Blazorise.TabPanel Name="TabMusicBrainz"> *@
-                @*     @if (true) *@
-                @*     { *@
-                @*     } *@
-                @* </Blazorise.TabPanel> *@
             </Content>
         </Blazorise.Tabs>
 
