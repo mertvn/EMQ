@@ -30,7 +30,7 @@
            @onblur="OnBlur"/>
 
     <div class="autocomplete-items" tabindex="1"
-         style="display: @UiHelpers.Bool2Display(ShowDropdown && CurrentSearchResults.Any()); max-height: @MaxMenuHeight; overflow-x: auto; overflow-y: scroll;">
+         style="display: @UiHelpers.Bool2Display(ClientState.Preferences.AutocompleteIsEnabled && ShowDropdown && CurrentSearchResults.Any()); max-height: @MaxMenuHeight; overflow-x: auto; overflow-y: scroll;">
         @for (int i = 0; i < CurrentSearchResults.Length; i++)
         {
             TValue searchResult = CurrentSearchResults[i];
