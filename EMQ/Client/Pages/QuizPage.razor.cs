@@ -874,7 +874,7 @@ public partial class QuizPage
                 }
             }
 
-            if (Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess && _currentSong is { MuteMs: > 0 } &&
+            if (_currentSong is { MuteMs: > 0 } && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess &&
                 PageState.Countdown <= (Room.QuizSettings.GuessMs - _currentSong.MuteMs))
             {
                 LastSetVideoMuted = DateTime.UtcNow;

@@ -209,7 +209,7 @@ public class PlayerPreferences
     public bool ShowVndbCovers { get; set; } = true;
 
     [Required]
-    public bool ShowSpacedRepetitionInfo { get; set; } = true;
+    public bool ShowSpacedRepetitionInfo { get; set; } = false;
 
     // todo only hide spoilers if not finished/voted
     [Required]
