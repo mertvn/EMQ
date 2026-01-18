@@ -32,6 +32,8 @@ public partial class Song : IEditQueueEntity
 
     public string SeiyuuName { get; set; } = ""; // todo move out of this class
 
+    public int MuteMs { get; set; } // todo move out of this class
+
     public List<Title> Titles { get; set; } = new();
 
     public List<SongArtist> Artists { get; set; } = new();

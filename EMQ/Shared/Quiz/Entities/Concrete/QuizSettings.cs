@@ -20,6 +20,7 @@ public class QuizSettings
         GamemodeKind != GamemodeKind.Radio &&
         Filters.ScreenshotKind == ScreenshotKind.None &&
         Filters.StartTimeKind == StartTimeKind.Random &&
+        MuteMs == 0 &&
         !IsSharedGuessesTeams &&
         !IsNoSoundMode &&
         !EnabledSongHintKinds.Any(x => x.Value) &&
@@ -334,6 +335,22 @@ public class QuizSettings
     [Required]
     [DefaultValue(false)]
     public bool IsPauseAfterResults { get; set; } = false;
+
+    [ProtoMember(41)]
+    [Required]
+    [Range(0, int.MaxValue)]
+    [DefaultValue(0)]
+    public int MuteMs { get; set; } = 0;
+
+    [Required]
+    [Range(0, int.MaxValue / 1000)]
+    [DefaultValue(0)]
+    // ReSharper disable once InconsistentNaming
+    public int UI_MuteMs
+    {
+        get { return MuteMs / 1000; }
+        set { MuteMs = value * 1000; }
+    }
 
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
@@ -827,6 +844,11 @@ public class QuizSettings
         {
             diff.Add(
                 $"Custom song difficulty filter: {o.Filters.IsCustomSongDifficultyFilterEnabled} → {n.Filters.IsCustomSongDifficultyFilterEnabled}");
+        }
+
+        if (o.UI_MuteMs != n.UI_MuteMs)
+        {
+            diff.Add($"Mute after: {o.UI_MuteMs} → {n.UI_MuteMs}");
         }
 
         return diff;

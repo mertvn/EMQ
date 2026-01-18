@@ -423,6 +423,7 @@ public partial class QuizPage
                     Sources = nextSong.Hint.Sources,
                     Artists = nextSong.Hint.Artists,
                     Titles = nextSong.Hint.Titles,
+                    MuteMs = nextSong.MuteMs,
                 };
 
                 if (!Room?.QuizSettings.IsNoSoundMode ?? true)
@@ -871,6 +872,14 @@ public partial class QuizPage
                         await PlayVideo();
                     }
                 }
+            }
+
+            if (Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess && _currentSong is { MuteMs: > 0 } &&
+                PageState.Countdown <= (Room.QuizSettings.GuessMs - _currentSong.MuteMs))
+            {
+                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
             }
 
             bool _ = await Preload2(_nextSong);

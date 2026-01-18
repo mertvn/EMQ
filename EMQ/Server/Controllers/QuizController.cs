@@ -151,7 +151,8 @@ public class QuizController : ControllerBase
 
                         return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl,
                             hint,
-                            song.Artists.Any(x => (x.Id is 77 or 1053) && x.Roles.Contains(SongArtistRole.Vocals)));
+                            song.Artists.Any(x => (x.Id is 77 or 1053) && x.Roles.Contains(SongArtistRole.Vocals)),
+                            room.QuizSettings.MuteMs);
                     }
                     else
                     {

@@ -335,13 +335,14 @@
             @{
                 string? video1Src;
                 string? video2Src;
+                bool setMuted = (_currentSong is {MuteMs: 0 } || Room?.Quiz?.QuizState.Phase is not QuizPhaseKind.Guess) &&
+                                !(ClientState.Preferences.MuteWhenDuca && IsDuca) && DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(10);
 
                 if (VisibleVideoElementId == "video1")
                 {
                     video1Src = _currentSong != null && _currentSong.Links.Any() ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
                     video2Src = _nextSong != null && _nextSong.Links.Any() ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
-
-                    if (!(ClientState.Preferences.MuteWhenDuca && IsDuca) && DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(10))
+                    if (setMuted)
                     {
                         LastSetVideoMuted = DateTime.UtcNow;
                         _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
@@ -352,8 +353,7 @@
                 {
                     video2Src = _currentSong != null && _currentSong.Links.Any() ? $"{_currentSong?.Links.First().Url}#t={_currentSong?.StartTime}" : null;
                     video1Src = _nextSong != null && _nextSong.Links.Any() ? $"{_nextSong?.Links.First().Url}#t={_nextSong?.StartTime}" : null;
-
-                    if (!(ClientState.Preferences.MuteWhenDuca && IsDuca) && DateTime.UtcNow - LastSetVideoMuted > TimeSpan.FromMilliseconds(10))
+                    if (setMuted)
                     {
                         LastSetVideoMuted = DateTime.UtcNow;
                         _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
