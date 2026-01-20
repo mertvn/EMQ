@@ -264,9 +264,7 @@
         <div style="border: 1px black solid; padding: 10px;">
             <div style="margin: 16px; width: 330px; min-height:200px;">
                 <h4>Preview</h4>
-                @* todo? *@
-                <pre>@JsonSerializer.Serialize(Artist, Utils.JsoIndented)</pre>
-                @* <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent> *@
+                <ArtistInfoCardComponent Artist="@Artist"></ArtistInfoCardComponent>
             </div>
             <br/>
         </div>

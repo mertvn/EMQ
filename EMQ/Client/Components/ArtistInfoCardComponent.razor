@@ -1,0 +1,105 @@
+﻿@using EMQ.Shared.Quiz.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
+@inject HttpClient _client
+
+<div class="artistInfoCard">
+    @if (Artist != null)
+    {
+        var mainTitle = Converters.GetSingleTitle(Artist.Titles);
+        <span style="font-size: x-large">@mainTitle.ToString()</span>
+
+        <ArtistFaviconsComponent Links="Artist.Links" IsArtistPage="true"/> // todo? param
+        <br/>
+
+        @foreach (var title in Artist.Titles)
+        {
+            if (title == mainTitle)
+            {
+                continue;
+            }
+
+            <span>@title.ToString()</span>
+            <br/>
+        }
+
+        <br/>
+
+        @if (Artist.ArtistArtists.Any())
+        {
+            <details open>
+                <summary>Relationships</summary>
+                <ul>
+                    @foreach (var arar in Artist.ArtistArtists)
+                    {
+                        bool forward = arar.source == Artist.Id;
+                        int otherArtistId = forward ? arar.target : arar.source;
+                        if (!ClientState.ArtistsCache.TryGetValue(otherArtistId, out var otherArtist))
+                        {
+                            otherArtist = new SongArtist { Id = otherArtistId, Titles = new List<Title> { new() { LatinTitle = $"ea{otherArtistId}" } } };
+                        }
+
+                        switch (arar.rel)
+                        {
+                            case ArtistArtistRelKind.MemberOfBand:
+                                {
+                                    string href = $"ea{otherArtist.Id}";
+                                    if (forward)
+                                    {
+                                        <li>Member of <a href=@href target="_blank">@Converters.GetSingleTitle(otherArtist.Titles)</a> </li>
+                                    }
+                                    else
+                                    {
+                                        <li>Member: <a href=@href target="_blank">@Converters.GetSingleTitle(otherArtist.Titles)</a> </li>
+                                    }
+                                    break;
+                                }
+                            default:
+                                <li>Unknown relationship</li>
+                                break;
+                        }
+                    }
+                </ul>
+            </details>
+        }
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public SongArtist? Artist { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var artist = Artist;
+        if (artist != null && artist.ArtistArtists.Any())
+        {
+    // TOSCALE
+            foreach (ArtistArtist arar in artist.ArtistArtists)
+            {
+                if (!ClientState.ArtistsCache.ContainsKey(arar.source))
+                {
+                    HttpResponseMessage res2 = await _client.PostAsJsonAsync("Library/GetSongArtist", new SongArtist { Id = arar.source });
+                    if (res2.IsSuccessStatusCode)
+                    {
+                        var content2 = (await res2.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                        var ar = content2.SongArtists.First();
+                        ClientState.ArtistsCache[ar.Id] = ar;
+                    }
+                }
+
+                if (!ClientState.ArtistsCache.ContainsKey(arar.target))
+                {
+                    HttpResponseMessage res3 = await _client.PostAsJsonAsync("Library/GetSongArtist", new SongArtist { Id = arar.target });
+                    if (res3.IsSuccessStatusCode)
+                    {
+                        var content3 = (await res3.Content.ReadFromJsonAsync<ResGetSongArtist>())!;
+                        var ar = content3.SongArtists.First();
+                        ClientState.ArtistsCache[ar.Id] = ar;
+                    }
+                }
+            }
+        }
+    }
+
+}

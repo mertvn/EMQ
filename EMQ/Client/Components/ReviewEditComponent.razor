@@ -111,11 +111,11 @@
                                         case EntityKind.SongArtist:
                                             if (OldEntity != null)
                                             {
-                                                <pre>@JsonSerializer.Serialize((SongArtist)OldEntity, Utils.JsoIndented)</pre>
+                                                <ArtistInfoCardComponent Artist="(SongArtist)OldEntity"></ArtistInfoCardComponent>
                                                 <span style="align-self: center; margin: 10px;">=></span>
                                             }
 
-                                            <pre>@JsonSerializer.Serialize(songArtist, Utils.JsoIndented)</pre>
+                                            <ArtistInfoCardComponent Artist="@(songArtist)"></ArtistInfoCardComponent>
                                             break;
                                         case EntityKind.MergeArtists:
                                             {
