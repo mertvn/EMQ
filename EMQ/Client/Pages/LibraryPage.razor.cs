@@ -332,6 +332,8 @@ public partial class LibraryPage
 
                     return vote;
                 }).ToList(),
+            LibrarySongOrderKind.SourceYear => CurrentSongs
+                .OrderBy(x => x.Sources.Min(y => y.AirDateStart.Year)).ToList(),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -411,7 +413,7 @@ public enum LibrarySongOrderKind
     [Description("My vote")]
     MyVote,
 
-    [Description("Song source song type")]
+    [Description("Source song type")]
     SSST,
 
     [Description("Comment count")]
@@ -422,4 +424,7 @@ public enum LibrarySongOrderKind
 
     [Description("Collection count")]
     CollectionCount,
+
+    [Description("Source year")]
+    SourceYear,
 }
