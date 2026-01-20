@@ -333,7 +333,7 @@ public partial class LibraryPage
                     return vote;
                 }).ToList(),
             LibrarySongOrderKind.SourceYear => CurrentSongs
-                .OrderBy(x => x.Sources.Min(y => y.AirDateStart.Year)).ToList(),
+                .OrderBy(x => x.Sources.Min(y => y.AirDateStart.Ticks)).ToList(),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
