@@ -113,8 +113,8 @@ public class EntryPoints_Encoding
             rarFiles.AddRange(Directory.EnumerateFiles(inputDir, $"*.{rarExtension}", SearchOption.AllDirectories));
         }
 
-        const char startChar = 'O';
-        const char endChar = 'P';
+        const char startChar = 'Q';
+        const char endChar = 'R';
 
         rarFiles = rarFiles.Where(x =>
         {

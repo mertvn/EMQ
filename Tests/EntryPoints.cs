@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Dapper;
 using Dapper.Database.Extensions;
 using EMQ.Client;
+using EMQ.Client.Components;
 using EMQ.Server;
 using EMQ.Server.Business;
 using EMQ.Server.Controllers;
@@ -24,6 +25,7 @@ using EMQ.Server.Db.Imports.VNDB;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.MusicBrainz.Business;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using FluentMigrator.Runner;
@@ -1963,6 +1965,152 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                     File.Copy(filePath, finalFilename);
                 }
             }
+        }
+    }
+
+    [Test, Explicit]
+    public static async Task DetectPossibleUpscale()
+    {
+    }
+
+    [Test, Explicit]
+    public static async Task GenerateAutocompleteShortcuts()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+
+        var artistIds = await connection.QueryAsync<int>("select id from artist");
+        var songs = artistIds.Select(x => new Song { Artists = new List<SongArtist> { new() { Id = x } } }).ToList();
+        var artists = (await DbManager.SelectArtistBatchNoAM(connection, songs, false))
+            .SelectMany(x => x.Value.Select(y => y.Value)).DistinctBy(x => x.Id).ToArray();
+
+        var comp = new AutocompleteAComponent
+        {
+            AutocompleteData = JsonSerializer.Deserialize<AutocompleteA[]>(
+                await File.ReadAllTextAsync(@"a.json"))!
+        };
+
+        foreach (SongArtist artist in artists)
+        {
+            const int minLength = 3;
+            const int maxLength = 10;
+            string? latinTitle = artist.Titles.FirstOrDefault(x => x.IsMainTitle)?.LatinTitle;
+            if (latinTitle is null)
+            {
+                continue;
+            }
+
+            string input = latinTitle.NormalizeForAutocomplete();
+            if (string.IsNullOrEmpty(input) || input.Length < minLength)
+                continue;
+
+            // Ensure maxLength doesn't exceed string length
+            int actualMaxLength = Math.Min(maxLength, input.Length);
+
+            // Validate length constraints
+            if (minLength > actualMaxLength)
+                continue;
+
+            Console.WriteLine(input);
+            var substrings = new List<string>(128);
+            for (int start = 0; start < input.Length; start++)
+            {
+                // Calculate the minimum end position for this start
+                int minEnd = start + minLength;
+                if (minEnd > input.Length) break;
+
+                // Calculate the maximum end position for this start
+                int maxEnd = Math.Min(start + actualMaxLength, input.Length);
+
+                for (int end = minEnd; end <= maxEnd; end++)
+                {
+                    substrings.Add(input[start..end]);
+                }
+            }
+
+            input = Utils.GetReversedArtistName(latinTitle); // todo
+            for (int start = 0; start < input.Length; start++)
+            {
+                // Calculate the minimum end position for this start
+                int minEnd = start + minLength;
+                if (minEnd > input.Length) break;
+
+                // Calculate the maximum end position for this start
+                int maxEnd = Math.Min(start + actualMaxLength, input.Length);
+
+                for (int end = minEnd; end <= maxEnd; end++)
+                {
+                    substrings.Add(input[start..end]);
+                }
+            }
+
+            var dict = new Dictionary<int, string>();
+            foreach (string substring in substrings)
+            {
+                //Console.WriteLine(substring);
+                var search = comp.OnSearch<AutocompleteA>(substring).ToList();
+                var first = search.FirstOrDefault(x => x.AId == artist.Id);
+                if (first != null)
+                {
+                    int pos = search.IndexOf(first);
+                    if (pos is >= 0 and <= 8)
+                    {
+                        if (dict.TryGetValue(pos, out string? existing))
+                        {
+                            if (substring.Length >= existing.Length)
+                            {
+                                continue;
+                            }
+                        }
+
+                        dict[pos] = substring;
+                    }
+                }
+            }
+
+            int shortestInt = maxLength;
+            string shortestStr = "";
+            foreach ((int _, string? value) in dict)
+            {
+                if (value.Length < shortestInt)
+                {
+                    shortestInt = value.Length;
+                    shortestStr = value;
+                }
+            }
+
+            int smallestInt = maxLength;
+            string smallestStr = "";
+            foreach ((int key, string? value) in dict)
+            {
+                if (key < smallestInt)
+                {
+                    smallestInt = key;
+                    smallestStr = value;
+                }
+            }
+
+            if (shortestStr.Length < smallestStr.Length)
+            {
+                Console.WriteLine($"{shortestStr} ({shortestInt})");
+            }
+
+            Console.WriteLine($"{smallestStr} ({smallestInt})");
+            Console.WriteLine();
+            //return;
+        }
+    }
+
+    [Test, Explicit]
+    public static async Task FillDevelopers()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        string[] withDevs = DbManager.VnDevelopers.Keys.Select(x => x.ToVndbUrl()).ToArray();
+        int[] maybe = (await connection.QueryAsync<int>(
+            $"select music_source_id from music_source_external_link msel join music_source ms on ms.id = msel.music_source_id where msel.type = {(int)SongSourceLinkType.VNDB} and not url=any(@withDevs) and developers is null",
+            new { withDevs })).OrderBy(x => x).ToArray();
+        foreach (int i in maybe)
+        {
+            Console.WriteLine($"https://erogemusicquiz.com/ems{i}");
         }
     }
 }

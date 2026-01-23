@@ -123,7 +123,7 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
         return str;
     }
 
-    private TValue[] OnSearch<TValue>(string value)
+    public TValue[] OnSearch<TValue>(string value)
     {
         if (value.StartsWith("id:"))
         {

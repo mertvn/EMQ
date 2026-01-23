@@ -6417,7 +6417,7 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
             // todo should_update_stats filter
             int msId = res.SongSource.Id;
             string sqlMs =
-$@"WITH TargetMusic AS (
+                $@"WITH TargetMusic AS (
     -- Get the small list of music IDs for this source once
     SELECT music_id
     FROM music_source_music
