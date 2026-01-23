@@ -1,0 +1,100 @@
+﻿@using EMQ.Shared.Auth.Entities.Concrete.Dto.Response
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using EMQ.Client.Pages
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.VNDB.Business
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
+
+<ReviewEditComponent @ref="_reviewEditComponent" CurrentEQs="@(CurrentEQs)" ParentStateHasChangedCallback="@CallStateHasChanged"/>
+
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}em{MusicId - 1}"))">Prev</button>
+<button type="button" class="btn btn-primary" @onclick="@(() => _navigation.NavigateTo($"{_navigation.BaseUri}em{MusicId + 1}"))">Next</button>
+<br/>
+
+@if (ResGetSong != null)
+{
+    var song = ResGetSong.Song;
+    var currentSongs = new List<Song>() { song };
+    <SongInfoCardWrapperComponent CurrentSongs="@currentSongs"></SongInfoCardWrapperComponent>
+
+    @if (ClientUtils.HasEditPerms())
+    {
+        <details>
+            <summary>Edit song</summary>
+            <EditSongComponent Song="@song" IsNew="false"></EditSongComponent>
+        </details>
+    }
+}
+
+<span style="cursor: pointer;" title="History"
+      @onclick="@(async () => CurrentEQs = await ClientUtils.OnclickEntityHistory(EntityKind.Song, MusicId, _client, _reviewEditComponent))">
+    ⟲
+</span>
+<br/>
+
+@if (PlayerSongStats != null)
+{
+    <h5>Stats</h5>
+    <div class="page-size-chooser">
+        Items per page:
+        <select @bind="@_paginationPlayerSongStats.ItemsPerPage">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            <option>100</option>
+            <option>250</option>
+        </select>
+    </div>
+    <div>
+        <Paginator State="@_paginationPlayerSongStats"/>
+    </div>
+    <div class="grid" tabindex="-1">
+        <QuickGrid Items="@PlayerSongStats" Pagination="@_paginationPlayerSongStats">
+            <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
+            <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+            <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
+                @(Math.Round((double)context.CorrectPercentage, 2))%
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+    <br/>
+}
+
+@code {
+
+    [Parameter]
+    public int MusicId { get; set; }
+
+    public ResGetSong? ResGetSong { get; set; }
+
+    private IQueryable<EditQueue>? CurrentEQs { get; set; }
+
+    public ReviewEditComponent _reviewEditComponent { get; set; } = null!;
+
+    private IQueryable<PlayerSongStats>? PlayerSongStats { get; set; }
+
+    private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSong", new Song { Id = MusicId });
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSong>())!;
+            ResGetSong = content;
+            PlayerSongStats = content.PlayerSongStats.AsQueryable();
+        }
+    }
+
+    private async Task CallStateHasChanged()
+    {
+        StateHasChanged();
+    }
+
+}

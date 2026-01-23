@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -40,6 +40,13 @@ public class EditQueue
 
     [Required]
     public int entity_id { get; set; }
+}
+
+public class ResGetSong
+{
+    public Song Song { get; set; } = new();
+
+    public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ResGetSongSource

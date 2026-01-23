@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -507,6 +507,16 @@ public class LibraryController : ControllerBase
         {
             ServerState.SemaphoreHair.Release();
         }
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetSong")]
+    public async Task<ActionResult<ResGetSong>> GetSong(Song req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        var res = await DbManager.GetSong(req, session, true);
+        return res;
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]

@@ -6394,6 +6394,52 @@ where user_id = @userId AND msm.type = ANY(@msmType)",
         };
     }
 
+    public static async Task<ResGetSong> GetSong(Song req, Session? session, bool fetchStats)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var song = await SelectSongsBatch(new List<Song> { req }, false); // todo
+        var s = song.FirstOrDefault();
+        var res = s != null
+            ? new ResGetSong() { Song = s }
+            : new ResGetSong();
+
+        // Console.WriteLine(JsonSerializer.Serialize(song, Utils.JsoIndented));
+        if (res.Song.Id > 0 && fetchStats)
+        {
+            if (session != null)
+            {
+                // todo fetch player-specific information
+            }
+
+            // todo should_update_stats filter
+            int mId = res.Song.Id;
+            string sqlM = $@"
+SELECT user_id as UserId, count(music_id) as TimesPlayed, count(is_correct) filter(where is_correct) as TimesCorrect
+FROM quiz_song_history qsh
+WHERE music_id = @mId AND guess_kind = {(int)GuessKind.Mst} -- todo?
+GROUP BY user_id
+ORDER BY count(music_id) DESC
+";
+
+            PlayerSongStats[] playerSongStats =
+                (await connection.QueryAsync<PlayerSongStats>(sqlM, new { mId })).ToArray();
+            await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            var usernamesDict =
+                (await connectionAuth.QueryAsync<(int, string)>(
+                    "select id, username from users where id = ANY(@userIds)",
+                    new { userIds = playerSongStats.Select(x => x.UserId).ToArray() }))
+                .ToDictionary(x => x.Item1, x => x.Item2); // todo important cache this
+
+            foreach (PlayerSongStats playerSongStat in playerSongStats)
+            {
+                playerSongStat.Username = Utils.UserIdToUsername(usernamesDict, playerSongStat.UserId);
+            }
+
+            res.PlayerSongStats = playerSongStats;
+        }
+
+        return res;
+    }
 
     public static async Task<ResGetSongSource> GetSongSource(SongSource req, Session? session, bool fetchStats)
     {

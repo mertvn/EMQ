@@ -377,7 +377,7 @@
     public bool IsNew { get; set; }
 
     [Parameter]
-    public GenericModal editSongModalRef { get; set; } = null!;
+    public GenericModal? editSongModalRef { get; set; }
 
     private SongInfoCardComponent _songInfoCardComponentRef = null!;
 
@@ -587,7 +587,7 @@
                     {
                         StateHasChanged();
                         await Task.Delay(TimeSpan.FromMilliseconds(500));
-                        editSongModalRef.Hide();
+                        editSongModalRef?.Hide();
                     }
                 }
                 else
@@ -1021,7 +1021,7 @@
         HttpResponseMessage res = await _client.PostAsJsonAsync("Library/EditDeleteSong", req);
         if (res.IsSuccessStatusCode)
         {
-            editSongModalRef.Hide();
+            editSongModalRef?.Hide();
         }
 
         Ready = true;

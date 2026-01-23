@@ -417,14 +417,13 @@
 
         <div class="songInfoCard bottom" style="display: flex; justify-content: space-between; margin: 0 10px 4px 6px;">
             <span class="songInfoCardMusicId"
-                  style="cursor: pointer;"
-                  title="Id (click to copy share link)">
+                  style="cursor: pointer;">
                 @if (Song.Id > 0)
                 {
-                    string link = $"{_navigation.BaseUri}LibraryPage?mId={Song.Id}";
-                    <span @onclick="@(async () => await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", link))">
+                    string href = $"em{Song.Id}";
+                    <a href="@href" target="_blank" style="margin-left: 4px; color: inherit; text-decoration-line: inherit;">
                         @Song.Id
-                    </span>
+                    </a>
                 }
             </span>
 
