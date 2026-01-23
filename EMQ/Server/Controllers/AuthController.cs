@@ -743,7 +743,7 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
-    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [CustomAuthorize(PermissionKind.SetAvatar)]
     [HttpPost]
     [Route("SetAvatar")]
     public async Task<ActionResult<Avatar>> SetAvatar([FromBody] Avatar req)

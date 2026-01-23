@@ -20,7 +20,7 @@
         <Blazorise.ModalBody>
             @if (ClientState.Session != null)
             {
-                bool isUser = AuthStuff.HasPermission(ClientState.Session, PermissionKind.User);
+                bool hasPerms = AuthStuff.HasPermission(ClientState.Session, PermissionKind.SetAvatar);
                 <div id="playerPreferences" style="padding: 5px; margin: 2px;">
                     <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
                         <DataAnnotationsValidator/>
@@ -301,7 +301,7 @@
                                     }
                                 </Blazorise.TabPanel>
                             <Blazorise.TabPanel Name="TabAvatar">
-                                @if (isUser)
+                                @if (hasPerms)
                                 {
                                     <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
                                         @foreach (var character in Enum.GetValues<AvatarCharacter>())
@@ -346,7 +346,7 @@
                                 }
                                 else
                                 {
-                                    <p>You must be logged in as a registered user to change your avatar.</p>
+                                    <p>You do not have the required permissions.</p>
                                 }
                             </Blazorise.TabPanel>
                             </Content>
