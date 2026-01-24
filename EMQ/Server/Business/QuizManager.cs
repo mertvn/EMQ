@@ -75,6 +75,41 @@ public class QuizManager
                 LastUpdate = DateTime.UtcNow;
                 TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id),
                     Quiz.Room, false);
+
+                var bots = Quiz.Room.Players.Where(x => x.IsBot).ToArray();
+                if (bots.Any())
+                {
+                    var enabledGuessKinds = Quiz.Room.QuizSettings.EnabledGuessKinds.Where(x => x.Value).ToArray();
+                    foreach (Player bot in bots)
+                    {
+                        if (bot.Guess is null || Quiz.Room.QuizSettings.IsSharedGuessesTeams) // minor optimization
+                        {
+                            foreach ((GuessKind guessKind, bool _) in enabledGuessKinds)
+                            {
+                                bool answered = !string.IsNullOrEmpty(bot.Guess?.Dict[guessKind]);
+                                double answeredMultiplier = answered ? 1 : 0.9;
+                                if (Random.Shared.NextDouble() * 100 <=
+                                    Math.Clamp((89 * answeredMultiplier) + (enabledGuessKinds.Length * 3), 87, 99))
+                                {
+                                    continue;
+                                }
+
+                                GuessKind key = guessKind;
+                                if (key is GuessKind.Composer or GuessKind.Arranger or GuessKind.Lyricist)
+                                {
+                                    key = GuessKind.A;
+                                }
+
+                                if (DbManager.AutocompleteDict.TryGetValue(key, out string[]? dict))
+                                {
+                                    await OnSendGuessChanged(bot.Id, dict[Random.Shared.Next(0, dict.Length - 1)],
+                                        guessKind);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (Quiz.QuizState.RemainingMs >= 0)

@@ -198,6 +198,9 @@ ORDER BY music_id;";
     /// array of user ids
     private static int[] IgnoredMusicComments { get; set; } = Array.Empty<int>();
 
+    // doesn't need to be Concurrent as long as we don't care about writes being lost
+    public static Dictionary<GuessKind, string[]> AutocompleteDict { get; } = new();
+
     private static async Task RefreshMusicIdsRecordingGidsCache()
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -3224,6 +3227,7 @@ RETURNING id;",
                 }
             }
 
+            AutocompleteDict[GuessKind.Mst] = res.Select(x => x.MSTLatinTitle).ToArray();
             string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
@@ -3303,6 +3307,7 @@ ORDER BY artist_id";
                 }
             }
 
+            AutocompleteDict[GuessKind.A] = res.Select(x => x.AALatinAlias).ToArray();
             string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
@@ -3347,6 +3352,7 @@ ORDER BY artist_id";
                 }
             }
 
+            AutocompleteDict[GuessKind.Mt] = res.Select(x => x.MTLatinTitle).ToArray();
             string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
@@ -3390,6 +3396,7 @@ ORDER BY artist_id";
             });
 
         res = res.Concat(emq).DistinctBy(x => x.MSTLatinTitle);
+        AutocompleteDict[GuessKind.Developer] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
@@ -3412,6 +3419,8 @@ ORDER BY artist_id";
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
+
+        AutocompleteDict[GuessKind.Character] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
@@ -3434,6 +3443,8 @@ ORDER BY artist_id";
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
+
+        AutocompleteDict[GuessKind.Illustrator] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
@@ -3456,6 +3467,8 @@ ORDER BY artist_id";
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
             .DistinctBy(x => x.MSTLatinTitle);
+
+        AutocompleteDict[GuessKind.Seiyuu] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
