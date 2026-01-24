@@ -605,6 +605,12 @@
         bool isValid = true;
         bool isBgm = song.IsBGM;
 
+        if (NoteUser.Contains("litter.catbox", StringComparison.OrdinalIgnoreCase))
+        {
+            ValidationMessages.Add("Do not use temporary file hosts in edit summaries.");
+            isValid = false;
+        }
+
         if (!song.Sources.Any())
         {
             ValidationMessages.Add("There must be at least one source.");

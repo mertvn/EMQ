@@ -354,6 +354,12 @@
         ValidationMessages.Clear();
         bool isValid = true;
 
+        if (NoteUser.Contains("litter.catbox", StringComparison.OrdinalIgnoreCase))
+        {
+            ValidationMessages.Add("Do not use temporary file hosts in edit summaries.");
+            isValid = false;
+        }
+
         if (!source.Titles.Any())
         {
             ValidationMessages.Add("There must be at least one alias.");
