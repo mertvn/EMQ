@@ -189,29 +189,6 @@ public partial class PlayerPreferencesComponent
         }
     }
 
-    // public async Task GetVndbInfoFromServer(PlayerVndbInfo vndbInfo)
-    // {
-    //     vndbInfo.Labels = new List<Label>();
-    //
-    //     HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/GetVndbInfo",
-    //         new ReqSetVndbInfo(ClientState.Session!.Token, new PlayerVndbInfo()));
-    //
-    //     if (res.IsSuccessStatusCode)
-    //     {
-    //         var content = await res.Content.ReadFromJsonAsync<PlayerVndbInfo>();
-    //         ClientState.VndbInfo = content!;
-    //     }
-    //     else
-    //     {
-    //         // todo warn user
-    //
-    //         // todo?
-    //         // Labels.Clear();
-    //     }
-    //
-    //     StateHasChanged();
-    // }
-
     public async Task SetVndbInfo(PlayerVndbInfo vndbInfo)
     {
         InProgress = true;

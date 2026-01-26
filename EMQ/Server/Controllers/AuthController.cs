@@ -346,21 +346,6 @@ public class AuthController : ControllerBase
     //     return session.Player.Preferences;
     // }
 
-    // [CustomAuthorize(PermissionKind.UpdatePreferences)]
-    // [HttpPost]
-    // [Route("GetVndbInfo")]
-    // public async Task<ActionResult<PlayerVndbInfo>> GetVndbInfo([FromBody] ReqSetVndbInfo req)
-    // {
-    //     var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
-    //     if (session == null)
-    //     {
-    //         return Unauthorized();
-    //     }
-    //
-    //     var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id);
-    //     return vndbInfo;
-    // }
-
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
     [HttpPost]
     [Route("SetVndbInfo")]

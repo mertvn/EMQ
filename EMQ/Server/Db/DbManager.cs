@@ -2441,11 +2441,11 @@ RETURNING id;",
                     querySources.AppendLine(
                         $"AND ms.type = ANY({filters.SongSourceTypeFilter.Where(x => x.Value).Select(x => x.Key).Cast<int>().ToArray()})");
 
-                    var validSourcesInner = filters.SongSourceFilters;
-                    var trileans = validSourcesInner.Select(x => x.Trilean);
+                    var songSourceFilters = filters.SongSourceFilters;
+                    var trileans = songSourceFilters.Select(x => x.Trilean);
                     bool hasInclude = trileans.Any(y => y is LabelKind.Include);
 
-                    var ordered = validSourcesInner.OrderByDescending(x => x.Trilean == LabelKind.Include)
+                    var ordered = songSourceFilters.OrderByDescending(x => x.Trilean == LabelKind.Include)
                         .ThenByDescending(y => y.Trilean == LabelKind.Maybe)
                         .ThenByDescending(z => z.Trilean == LabelKind.Exclude).ToList();
                     for (int index = 0; index < ordered.Count; index++)

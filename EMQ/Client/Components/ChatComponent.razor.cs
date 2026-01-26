@@ -113,13 +113,19 @@ public partial class ChatComponent
                             case "ping":
                                 {
                                     var stopwatch = new Stopwatch();
+                                    _ = await _client.GetAsync("Auth/Ping");
                                     stopwatch.Start();
-                                    var res = await _client.GetAsync("Auth/Ping");
-                                    if (res.IsSuccessStatusCode)
+                                    const int n = 2;
+                                    for (int i = 0; i < n; i++)
                                     {
-                                        message = new ChatMessage($"{stopwatch.ElapsedMilliseconds} ms");
+                                        var res = await _client.GetAsync("Auth/Ping");
+                                        if (!res.IsSuccessStatusCode)
+                                        {
+                                            throw new Exception();
+                                        }
                                     }
 
+                                    message = new ChatMessage($"{stopwatch.ElapsedMilliseconds / n} ms");
                                     stopwatch.Stop();
                                     break;
                                 }

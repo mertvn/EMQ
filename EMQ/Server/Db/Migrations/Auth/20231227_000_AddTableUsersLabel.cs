@@ -19,7 +19,7 @@ public class AddTableUsersLabel : Migration
             .WithColumn("vndb_label_name").AsString().NotNullable()
             .WithColumn("vndb_label_is_private").AsString().NotNullable()
             .WithColumn("kind").AsInt32().NotNullable()
-            .WithColumn("preset_name").AsString(64).NotNullable();
+            .WithColumn("preset_name").AsString(64).NotNullable(); // todo FK
 
         // multiple EMQ users can use the same VNDB account, and one user can use multiple VNDB accounts using presets
         Execute.Sql(

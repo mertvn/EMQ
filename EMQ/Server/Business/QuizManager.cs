@@ -982,7 +982,8 @@ public class QuizManager
                         {
                             if (DbManager.VnSeiyuus.TryGetValue(vndbId, out var vnSeiyuus))
                             {
-                                foreach ((string? _, string? sid, string? cid, int vsaid, string? _, string? _) in vnSeiyuus)
+                                foreach ((string? _, string? sid, string? cid, int vsaid, string? _,
+                                             string? _) in vnSeiyuus)
                                 {
                                     if (characterIds.Contains(cid))
                                     {
