@@ -474,6 +474,7 @@
             value += '/';
         }
 
+        // todo crop MAL/AniList links
         foreach ((SongSourceLinkType key, Regex regex) in RegexPatterns.SourceLinkRegex)
         {
             if (Source.Links.Any(x => x.Type == key))

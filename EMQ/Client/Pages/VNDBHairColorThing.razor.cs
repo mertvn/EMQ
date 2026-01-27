@@ -54,7 +54,8 @@ public partial class VNDBHairColorThing
             VndbAdvsearchStr = VndbAdvsearchStr.SanitizeVndbAdvsearchStr();
             if (!string.IsNullOrWhiteSpace(VndbAdvsearchStr))
             {
-                ValidIds = (await VndbMethods.GetCharacterIdsMatchingAdvsearchStr(ClientState.VndbInfo,
+                ValidIds = (await VndbMethods.GetCharacterIdsMatchingAdvsearchStr(
+                                ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.VNDB),
                                 VndbAdvsearchStr) ??
                             Array.Empty<string>()).ToList();
             }

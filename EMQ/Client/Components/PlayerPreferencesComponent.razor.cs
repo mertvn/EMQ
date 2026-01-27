@@ -24,6 +24,8 @@ public partial class PlayerPreferencesComponent
 
     private string _selectedTab { get; set; } = "TabGeneral";
 
+    private string _selectedTabLists { get; set; } = UserListDatabaseKind.VNDB.ToString();
+
     public bool InProgress { get; set; }
 
     public List<string> LoginProgressDisplay { get; set; } = new();
@@ -91,26 +93,26 @@ public partial class PlayerPreferencesComponent
         _modalRef.Show();
     }
 
-    private async Task FetchLabels(PlayerVndbInfo vndbInfo)
-    {
-        // LoginInProgress = true;
-        // StateHasChanged();
-
-        var final = await FetchLabelsInner(vndbInfo);
-        ClientState.VndbInfo.Labels = final;
-
-        // LoginInProgress = false;
-        StateHasChanged();
-    }
-
     public async Task<List<Label>> FetchLabelsInner(PlayerVndbInfo vndbInfo)
     {
         List<Label> newLabels = new();
-
-        VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(vndbInfo);
-        foreach (VNDBLabel vndbLabel in vndbLabels)
+        switch (vndbInfo.DatabaseKind)
         {
-            newLabels.Add(Label.FromVndbLabel(vndbLabel));
+            case UserListDatabaseKind.VNDB:
+                VNDBLabel[] vndbLabels = await VndbMethods.GetLabels(vndbInfo);
+                foreach (VNDBLabel vndbLabel in vndbLabels)
+                {
+                    newLabels.Add(Label.FromVndbLabel(vndbLabel));
+                }
+
+                break;
+            case UserListDatabaseKind.MAL:
+                newLabels.Add(new Label { Id = 1, IsPrivate = false, Name = "Watching" });
+                newLabels.Add(new Label { Id = 2, IsPrivate = false, Name = "Completed" });
+                newLabels.Add(new Label { Id = 3, IsPrivate = false, Name = "On-Hold" });
+                newLabels.Add(new Label { Id = 4, IsPrivate = false, Name = "Dropped" });
+                newLabels.Add(new Label { Id = 6, IsPrivate = false, Name = "Plan to Watch" });
+                break;
         }
 
         Console.WriteLine(vndbInfo.Labels!.Count + "-" + newLabels.Count);
@@ -118,24 +120,26 @@ public partial class PlayerPreferencesComponent
         return final;
     }
 
-    private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind)
+    private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind, PlayerVndbInfo vndbInfo)
     {
+        InProgress = true;
         if (label.Kind == newLabelKind)
         {
             return;
         }
 
-        label = await UpdateLabel(label, newLabelKind);
+        label = await UpdateLabel(label, newLabelKind, vndbInfo);
 
         HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdateLabel",
-            new ReqUpdateLabel(ClientState.Session!.Token, label));
+            new ReqUpdateLabel(ClientState.Session!.Token, label, vndbInfo.DatabaseKind));
 
         if (res.IsSuccessStatusCode)
         {
             var updatedLabel = await res.Content.ReadFromJsonAsync<Label>();
             if (updatedLabel != null)
             {
-                Label oldLabel = ClientState.VndbInfo.Labels!.Single(x => x.Id == updatedLabel.Id);
+                Label oldLabel = ClientState.VndbInfo.First(x => x.DatabaseKind == vndbInfo.DatabaseKind).Labels!
+                    .Single(x => x.Id == updatedLabel.Id);
                 oldLabel.Kind = updatedLabel.Kind;
                 oldLabel.VNs = updatedLabel.VNs;
             }
@@ -143,21 +147,24 @@ public partial class PlayerPreferencesComponent
         else
         {
             // todo warn user & restore old label state
+            InProgress = false;
+            throw new Exception();
         }
+
+        InProgress = false;
     }
 
-    private async Task RefreshLabel(Label label, LabelKind newLabelKind)
+    private async Task RefreshLabel(Label label, LabelKind newLabelKind, PlayerVndbInfo vndbInfo)
     {
-        await OnLabelKindChanged(label, LabelKind.Maybe);
-        await OnLabelKindChanged(label, newLabelKind);
+        await OnLabelKindChanged(label, LabelKind.Maybe, vndbInfo);
+        await OnLabelKindChanged(label, newLabelKind, vndbInfo);
     }
 
-    public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind)
+    public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind, PlayerVndbInfo vndbInfo)
     {
-        if (ClientState.Session != null && ClientState.VndbInfo.Labels != null)
+        if (ClientState.Session != null && vndbInfo?.Labels != null)
         {
-            Console.WriteLine(
-                $"{ClientState.VndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
+            Console.WriteLine($"{vndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
             label.Kind = newLabelKind;
 
             var newVns = new Dictionary<string, int>();
@@ -167,12 +174,30 @@ public partial class PlayerPreferencesComponent
                     break;
                 case LabelKind.Include:
                 case LabelKind.Exclude:
-                    var grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
+                    var grabbed = new List<Label>();
+                    switch (vndbInfo.DatabaseKind)
                     {
-                        VndbId = ClientState.VndbInfo.VndbId,
-                        VndbApiToken = ClientVndbApiToken,
-                        Labels = new List<Label>() { label },
-                    });
+                        case UserListDatabaseKind.VNDB:
+                            grabbed = await VndbMethods.GrabPlayerVNsFromVndb(new PlayerVndbInfo()
+                            {
+                                VndbId = vndbInfo.VndbId,
+                                VndbApiToken = ClientVndbApiToken,
+                                Labels = new List<Label>() { label },
+                                DatabaseKind = vndbInfo.DatabaseKind,
+                            });
+                            break;
+                        case UserListDatabaseKind.MAL:
+                            grabbed = await MalMethods.ProxyGrabPlayerAnimeFromMal(_client,
+                                new PlayerVndbInfo()
+                                {
+                                    VndbId = vndbInfo.VndbId,
+                                    VndbApiToken = ClientVndbApiToken,
+                                    Labels = new List<Label>() { label },
+                                    DatabaseKind = vndbInfo.DatabaseKind,
+                                });
+                            break;
+                    }
+
                     newVns = grabbed.SingleOrDefault()?.VNs ?? new Dictionary<string, int>();
                     break;
                 default:
@@ -195,46 +220,57 @@ public partial class PlayerPreferencesComponent
         LoginProgressDisplay.Clear();
         StateHasChanged();
 
-        if (!string.IsNullOrWhiteSpace(ClientVndbApiToken))
+        if (vndbInfo.DatabaseKind == UserListDatabaseKind.VNDB)
         {
-            LoginProgressDisplay.Add("Validating VNDB API Token...");
-            var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = ClientVndbApiToken });
-            if (resAuth != null)
+            if (!string.IsNullOrWhiteSpace(ClientVndbApiToken))
             {
-                const string vndbPermName = "listread"; // todo
-                if (!resAuth.Permissions.Contains(vndbPermName))
+                LoginProgressDisplay.Add("Validating VNDB API Token...");
+                var resAuth = await Juliet.Api.GET_authinfo(new Param() { APIToken = ClientVndbApiToken });
+                if (resAuth != null)
                 {
-                    vndbInfo.VndbId = "";
-                    LoginProgressDisplay.Add(
-                        $"Error: VNDB API Token does not have the necessary permissions: {vndbPermName}");
-                    StateHasChanged();
+                    const string vndbPermName = "listread"; // todo
+                    if (!resAuth.Permissions.Contains(vndbPermName))
+                    {
+                        vndbInfo.VndbId = "";
+                        LoginProgressDisplay.Add(
+                            $"Error: VNDB API Token does not have the necessary permissions: {vndbPermName}");
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        vndbInfo.VndbId = resAuth.Id;
+                        LoginProgressDisplay.Add("Successfully validated VNDB API Token.");
+                        StateHasChanged();
+                    }
                 }
                 else
                 {
-                    vndbInfo.VndbId = resAuth.Id;
-                    LoginProgressDisplay.Add("Successfully validated VNDB API Token.");
+                    vndbInfo.VndbId = "";
+                    LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
                     StateHasChanged();
                 }
-            }
-            else
-            {
-                vndbInfo.VndbId = "";
-                LoginProgressDisplay.Add("Error: Failed to validate VNDB API Token.");
-                StateHasChanged();
             }
         }
 
         if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
             vndbInfo.VndbId = "";
-            ClientVndbApiToken = "";
+            if (vndbInfo.DatabaseKind == UserListDatabaseKind.VNDB)
+            {
+                ClientVndbApiToken = "";
+            }
+
             vndbInfo.Labels = new List<Label>();
         }
         else
         {
             vndbInfo.Labels = new List<Label>();
-            vndbInfo.VndbApiToken = ClientVndbApiToken;
-            await FetchLabels(vndbInfo);
+            if (vndbInfo.DatabaseKind == UserListDatabaseKind.VNDB)
+            {
+                vndbInfo.VndbApiToken = ClientVndbApiToken;
+            }
+
+            vndbInfo.Labels = await FetchLabelsInner(vndbInfo);
 
             // we try processing playing, finished, stalled, voted, EMQ-wl, and EMQ-bl labels by default
             foreach (Label label in vndbInfo.Labels)
@@ -254,9 +290,20 @@ public partial class PlayerPreferencesComponent
                 }
             }
 
-            var vns = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
-            var intersect = Label.MergeLabels(vndbInfo.Labels, vns);
+            List<Label> vns;
+            switch (vndbInfo.DatabaseKind)
+            {
+                case UserListDatabaseKind.VNDB:
+                    vns = await VndbMethods.GrabPlayerVNsFromVndb(vndbInfo);
+                    break;
+                case UserListDatabaseKind.MAL:
+                    vns = await MalMethods.ProxyGrabPlayerAnimeFromMal(_client, vndbInfo);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
+            var intersect = Label.MergeLabels(vndbInfo.Labels, vns);
             foreach (Label label in vns)
             {
                 if (!intersect.Contains(label))
@@ -267,16 +314,16 @@ public partial class PlayerPreferencesComponent
         }
 
         HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
-            new ReqSetVndbInfo(ClientState.Session!.Token, vndbInfo));
+            new ReqSetVndbInfo(ClientState.Session!.Token, ClientState.VndbInfo));
 
         if (res.IsSuccessStatusCode)
         {
-            ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+            ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
         }
         else
         {
-            // todo warn user
-            ClientState.VndbInfo.Labels = new List<Label>();
+            InProgress = false;
+            throw new Exception();
         }
 
         InProgress = false;
@@ -299,13 +346,15 @@ public partial class PlayerPreferencesComponent
                     {
                         Presets.Add(new UserLabelPreset { name = promptResult });
                         SelectedPresetName = promptResult;
-                        ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+                        ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
+                        ClientState.VndbInfo.AddRange(Enum.GetValues<UserListDatabaseKind>()
+                            .Select(x => new PlayerVndbInfo() { DatabaseKind = x }));
                     }
                     else
                     {
-                        // todo warn user
                         SelectedPresetName = "";
-                        ClientState.VndbInfo.Labels = new List<Label>();
+                        InProgress = false;
+                        throw new Exception();
                     }
                 }
             }
@@ -316,13 +365,13 @@ public partial class PlayerPreferencesComponent
             if (res.IsSuccessStatusCode)
             {
                 SelectedPresetName = value;
-                ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<PlayerVndbInfo>())!;
+                ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
             }
             else
             {
-                // todo warn user
                 SelectedPresetName = "";
-                ClientState.VndbInfo.Labels = new List<Label>();
+                InProgress = false;
+                throw new Exception();
             }
         }
 
@@ -354,7 +403,7 @@ public partial class PlayerPreferencesComponent
         {
             SelectedPresetName = "";
             Presets.Remove(preset);
-            ClientState.VndbInfo = new PlayerVndbInfo();
+            ClientState.VndbInfo = new();
         }
         else
         {

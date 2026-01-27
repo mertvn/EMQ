@@ -152,14 +152,14 @@ public static class ServerUtils
     }
 
     // todo move all of these
-    public static async Task<List<PlayerVndbInfo>> GetAllVndbInfos(List<Session> sessions)
+    public static async Task<List<PlayerVndbInfo[]>> GetAllVndbInfos(List<Session> sessions)
     {
-        var ret = new List<PlayerVndbInfo>();
+        var ret = new List<PlayerVndbInfo[]>();
         foreach (Session session in sessions)
         {
-            PlayerVndbInfo vndbInfo =
+            var vndbInfos =
                 await GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
-            ret.Add(vndbInfo);
+            ret.Add(vndbInfos);
         }
 
         return ret;
@@ -178,43 +178,46 @@ public static class ServerUtils
     }
 
     // todo return null if not found
-    public static async Task<PlayerVndbInfo> GetVndbInfo_Inner(int userId, string? presetName)
+    public static async Task<PlayerVndbInfo[]> GetVndbInfo_Inner(int userId, string? presetName)
     {
-        var vndbInfo = await DbManager_Auth.GetUserVndbInfo(userId, presetName);
-        if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && !string.IsNullOrEmpty(presetName))
+        var vndbInfos = await DbManager_Auth.GetUserVndbInfo(userId, presetName);
+        foreach (var vndbInfo in vndbInfos)
         {
-            vndbInfo.Labels = new List<Label>();
-
-            var userLabels = await DbManager_Auth.GetUserLabels(userId, vndbInfo.VndbId, presetName);
-            if (userLabels.Any())
+            if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && !string.IsNullOrEmpty(presetName))
             {
-                var userLabelVnsDict = (await DbManager_Auth.GetUserLabelVns(userLabels.Select(x => x.id).ToList()))
-                    .GroupBy(x => x.users_label_id)
-                    .ToDictionary(x => x.Key, x => x.ToList());
-                foreach (var userLabel in userLabels)
-                {
-                    var label = FromUserLabel(userLabel);
-                    if (userLabelVnsDict.TryGetValue(userLabel.id, out var userLabelVns))
-                    {
-                        foreach (var userLabelVn in userLabelVns)
-                        {
-                            label.VNs[userLabelVn.vnid] = userLabelVn.vote;
-                        }
-                    }
+                vndbInfo.Labels = new List<Label>();
 
-                    vndbInfo.Labels.Add(label);
+                var userLabels = await DbManager_Auth.GetUserLabels(userId, vndbInfo.VndbId, presetName);
+                if (userLabels.Any())
+                {
+                    var userLabelVnsDict = (await DbManager_Auth.GetUserLabelVns(userLabels.Select(x => x.id).ToList()))
+                        .GroupBy(x => x.users_label_id)
+                        .ToDictionary(x => x.Key, x => x.ToList());
+                    foreach (var userLabel in userLabels)
+                    {
+                        var label = FromUserLabel(userLabel);
+                        if (userLabelVnsDict.TryGetValue(userLabel.id, out var userLabelVns))
+                        {
+                            foreach (var userLabelVn in userLabelVns)
+                            {
+                                label.VNs[userLabelVn.vnid] = userLabelVn.vote;
+                            }
+                        }
+
+                        vndbInfo.Labels.Add(label);
+                    }
                 }
+            }
+
+            if (vndbInfo.Labels != null)
+            {
+                // default labels (Id <= 7) are always first, and then the custom labels appear in an alphabetically-sorted order
+                // this implementation doesn't work correctly if the user has labels named 0-9, but meh
+                vndbInfo.Labels = vndbInfo.Labels.OrderBy(x => x.Id <= 7 ? x.Id.ToString() : x.Name).ToList();
             }
         }
 
-        if (vndbInfo.Labels != null)
-        {
-            // default labels (Id <= 7) are always first, and then the custom labels appear in an alphabetically-sorted order
-            // this implementation doesn't work correctly if the user has labels named 0-9, but meh
-            vndbInfo.Labels = vndbInfo.Labels.OrderBy(x => x.Id <= 7 ? x.Id.ToString() : x.Name).ToList();
-        }
-
-        return vndbInfo;
+        return vndbInfos;
     }
 
     public static void SftpFileUpload(string ftpUrl, string username, string password, Stream stream, string remotePath)

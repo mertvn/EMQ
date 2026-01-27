@@ -19,6 +19,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
+using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -162,9 +163,9 @@ public class AuthController : ControllerBase
         ServerState.AddSession(session);
 
         Console.WriteLine(
-            $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} ({vndbInfo.VndbId}) @ {ip}");
+            $"Created new session for {session.UserRoleKind.ToString()} p{player.Id} {player.Username} @ {ip}");
 
-        return new ResCreateSession(session, vndbInfo);
+        return new ResCreateSession(session, vndbInfo.ToList());
     }
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
@@ -215,7 +216,7 @@ public class AuthController : ControllerBase
             }
         }
 
-        PlayerVndbInfo? vndbInfo = null;
+        List<PlayerVndbInfo>? vndbInfo = null;
         if (session == null)
         {
             if (secret is not null)
@@ -264,8 +265,8 @@ public class AuthController : ControllerBase
             });
 
             vndbInfo ??=
-                await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
-            return new ResValidateSession(session, vndbInfo);
+                (await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName)).ToList();
+            return new ResValidateSession(session, vndbInfo.ToList());
         }
     }
 
@@ -303,9 +304,10 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        PlayerVndbInfo vndbInfo =
+        PlayerVndbInfo[] vndbInfo =
             await DbManager_Auth.GetUserVndbInfo(session.Player.Id, session.ActiveUserLabelPresetName);
-        if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
+        string? vndbId = vndbInfo.FirstOrDefault(x => x.DatabaseKind == req.DatabaseKind)?.VndbId;
+        if (string.IsNullOrWhiteSpace(vndbId))
         {
             throw new Exception($"Couldn't GetUserVndbInfo for p{session.Player.Id}");
         }
@@ -314,12 +316,13 @@ public class AuthController : ControllerBase
         var userLabel = new UserLabel
         {
             user_id = session.Player.Id,
-            vndb_uid = vndbInfo.VndbId,
+            vndb_uid = vndbId,
             vndb_label_id = req.Label.Id,
             vndb_label_name = req.Label.Name,
             vndb_label_is_private = req.Label.IsPrivate,
             kind = req.Label.Kind,
             preset_name = session.ActiveUserLabelPresetName!,
+            database_kind = req.DatabaseKind,
         };
         long userLabelId = await DbManager_Auth.RecreateUserLabel(userLabel, req.Label.VNs);
 
@@ -349,7 +352,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
     [HttpPost]
     [Route("SetVndbInfo")]
-    public async Task<ActionResult<PlayerVndbInfo>> SetVndbInfo([FromBody] ReqSetVndbInfo req)
+    public async Task<ActionResult<PlayerVndbInfo[]>> SetVndbInfo([FromBody] ReqSetVndbInfo req)
     {
         var session = ServerState.Sessions.SingleOrDefault(x => x.Token == req.PlayerToken);
         if (session == null)
@@ -357,36 +360,39 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        Console.WriteLine($"SetVndbInfo for p{session.Player.Id} to {req.VndbInfo.VndbId}");
         if (string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
         {
             return StatusCode(520);
         }
 
         await DbManager_Auth.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
-
-        if (!string.IsNullOrWhiteSpace(req.VndbInfo.VndbId) && req.VndbInfo.Labels is not null)
+        foreach (PlayerVndbInfo vndbInfo in req.VndbInfo)
         {
-            // todo? batch
-            foreach (Label label in req.VndbInfo.Labels)
+            Console.WriteLine($"SetVndbInfo for p{session.Player.Id} to {vndbInfo.VndbId}");
+            if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && vndbInfo.Labels is not null)
             {
-                var userLabel = new UserLabel
+                // todo? batch
+                foreach (Label label in vndbInfo.Labels)
                 {
-                    user_id = session.Player.Id,
-                    vndb_uid = req.VndbInfo.VndbId,
-                    vndb_label_id = label.Id,
-                    vndb_label_name = label.Name,
-                    vndb_label_is_private = label.IsPrivate,
-                    kind = label.Kind,
-                    preset_name = session.ActiveUserLabelPresetName,
-                };
-                long _ = await DbManager_Auth.RecreateUserLabel(userLabel, label.VNs);
+                    var userLabel = new UserLabel
+                    {
+                        user_id = session.Player.Id,
+                        vndb_uid = vndbInfo.VndbId,
+                        vndb_label_id = label.Id,
+                        vndb_label_name = label.Name,
+                        vndb_label_is_private = label.IsPrivate,
+                        kind = label.Kind,
+                        preset_name = session.ActiveUserLabelPresetName,
+                        database_kind = vndbInfo.DatabaseKind,
+                    };
+                    long _ = await DbManager_Auth.RecreateUserLabel(userLabel, label.VNs);
+                }
             }
         }
 
         // todo this is inefficient
-        var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
-        return vndbInfo;
+        var res = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
+        return res;
     }
 
     [CustomAuthorize(PermissionKind.Visitor)]
@@ -684,7 +690,7 @@ public class AuthController : ControllerBase
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
     [HttpPost]
     [Route("UpsertUserLabelPreset")]
-    public async Task<ActionResult<PlayerVndbInfo>> UpsertUserLabelPreset([FromBody] string name)
+    public async Task<ActionResult<PlayerVndbInfo[]>> UpsertUserLabelPreset([FromBody] string name)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)
@@ -837,5 +843,14 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<ResGetRecentMusicVotes>> GetRecentMusicVotes()
     {
         return await DbManager.GetRecentMusicVotes();
+    }
+
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [HttpPost]
+    [Route("ProxyGrabPlayerAnimeFromMal")]
+    public async Task<List<Label>> ProxyGrabPlayerAnimeFromMal(PlayerVndbInfo vndbInfo)
+    {
+        return await MalMethods.GrabPlayerAnimeFromMal(vndbInfo);
     }
 }

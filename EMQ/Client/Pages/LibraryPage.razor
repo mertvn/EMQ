@@ -251,7 +251,7 @@
                 }
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabMyList">
-                @if (ClientState.VndbInfo.Labels != null)
+                @if (ClientState.VndbInfo.Any(x => x.Labels != null))
                 {
                    @* todo stats *@
                     <select id="SSSTMFilter" style="margin: 5px" @bind="SSSTMFilter">

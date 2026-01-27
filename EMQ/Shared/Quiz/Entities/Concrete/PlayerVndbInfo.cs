@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using EMQ.Shared.Core;
 using Juliet.Model.VNDBObject;
 
@@ -10,14 +13,59 @@ namespace EMQ.Shared.Quiz.Entities.Concrete;
 
 public class PlayerVndbInfo
 {
-    [RegularExpression(RegexPatterns.VndbIdRegex,
-        ErrorMessage = "Invalid VNDB Id: make sure it looks like u1234567")]
+    [CustomValidation(typeof(PlayerVndbInfo), nameof(ValidateVndbId))]
     public string? VndbId { get; set; }
 
     [JsonIgnore]
     public string? VndbApiToken { get; set; } // do not use from the Client!
 
     public List<Label>? Labels { get; set; }
+
+    public UserListDatabaseKind DatabaseKind { get; set; }
+
+    public static ValidationResult ValidateVndbId(string vndbId, ValidationContext validationContext)
+    {
+        if (!string.IsNullOrEmpty(vndbId))
+        {
+            PropertyInfo databaseKindProp = validationContext.ObjectType.GetProperty(nameof(DatabaseKind))!;
+            UserListDatabaseKind databaseKind =
+                (UserListDatabaseKind)databaseKindProp.GetValue(validationContext.ObjectInstance, null)!;
+            switch (databaseKind)
+            {
+                case UserListDatabaseKind.VNDB:
+                    if (!Regex.IsMatch(vndbId, RegexPatterns.VndbIdRegex))
+                    {
+                        return new ValidationResult("Invalid VNDB Id: make sure it looks like u1234567",
+                            new[] { validationContext.MemberName! });
+                    }
+
+                    break;
+                case UserListDatabaseKind.EMQ:
+                    break;
+                case UserListDatabaseKind.MAL:
+                    if (!Regex.IsMatch(vndbId, RegexPatterns.UsernameRegex))
+                    {
+                        return new ValidationResult("Invalid MyAnimeList username",
+                            new[] { validationContext.MemberName! });
+                    }
+
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        return ValidationResult.Success!;
+    }
+}
+
+public enum UserListDatabaseKind
+{
+    VNDB,
+    EMQ,
+
+    // [Description("MyAnimeList")]
+    MAL,
 }
 
 public class Label

@@ -31,4 +31,7 @@ public class UserLabel
 
     [Required]
     public string preset_name { get; set; } = "";
+
+    [Required]
+    public UserListDatabaseKind database_kind { get; set; }
 }

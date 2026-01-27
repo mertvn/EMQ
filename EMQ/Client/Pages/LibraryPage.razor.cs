@@ -13,6 +13,7 @@ using EMQ.Shared.Quiz.Entities.Concrete;
 using EMQ.Shared.VNDB.Business;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Label = EMQ.Shared.Quiz.Entities.Concrete.Label;
 
 namespace EMQ.Client.Pages;
 
@@ -266,13 +267,14 @@ public partial class LibraryPage
 
     private async Task OnclickButtonFetchMyList(MouseEventArgs arg)
     {
-        if (ClientState.VndbInfo.Labels != null)
+        var labels = ClientState.VndbInfo.SelectMany(x => x.Labels ?? new List<Label>()).ToList();
+        if (labels.Any())
         {
             CurrentSongs = new List<Song>();
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            var req = new ReqFindSongsByLabels(ClientState.VndbInfo.Labels, SSSTMFilter);
+            var req = new ReqFindSongsByLabels(labels, SSSTMFilter);
             var res = await _client.PostAsJsonAsync("Library/FindSongsByLabels", req);
             if (res.IsSuccessStatusCode)
             {
@@ -312,12 +314,13 @@ public partial class LibraryPage
                 .OrderByDescending(x =>
                 {
                     int vote = 0;
-                    if (ClientState.VndbInfo.Labels != null)
+                    var labels = ClientState.VndbInfo.SelectMany(a => a.Labels ?? new List<Label>()).ToList();
+                    if (labels.Any())
                     {
                         string[] vndbUrls = x.Sources
                             .Select(y => y.Links.FirstOrDefault(z => z.Type == SongSourceLinkType.VNDB))
                             .Select(y => y?.Url ?? "").ToArray();
-                        foreach (var label in ClientState.VndbInfo.Labels.TakeWhile(_ => vote <= 0))
+                        foreach (var label in labels.TakeWhile(_ => vote <= 0))
                         {
                             foreach ((string? key, int value) in label.VNs)
                             {
@@ -347,8 +350,8 @@ public partial class LibraryPage
             NoSongsText = "Loading...";
             StateHasChanged();
 
-            string[]? vndbUrls =
-                await VndbMethods.GetVnUrlsMatchingAdvsearchStr(ClientState.VndbInfo, VndbAdvsearchStr);
+            string[]? vndbUrls = await VndbMethods.GetVnUrlsMatchingAdvsearchStr(
+                ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.VNDB), VndbAdvsearchStr);
             if (vndbUrls != null && vndbUrls.Any())
             {
                 var req = vndbUrls;

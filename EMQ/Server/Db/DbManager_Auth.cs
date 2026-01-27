@@ -200,23 +200,26 @@ public class DbManager_Auth
     }
 
     // todo return null if not found
-    public static async Task<PlayerVndbInfo> GetUserVndbInfo(int userId, string? presetName)
+    public static async Task<PlayerVndbInfo[]> GetUserVndbInfo(int userId, string? presetName)
     {
         if (string.IsNullOrEmpty(presetName))
         {
-            return new PlayerVndbInfo();
+            return Array.Empty<PlayerVndbInfo>();
         }
 
         // todo? store actual vndb info and return that instead of this
         const string sql =
-            "SELECT vndb_uid from users_label where user_id = @userId and preset_name = @presetName LIMIT 1";
+            "SELECT distinct vndb_uid, database_kind from users_label where user_id = @userId and preset_name = @presetName";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
             var userLabel = (await connection.QueryAsync<UserLabel>(sql, new { userId, presetName })).ToList();
-            return new PlayerVndbInfo
+            return userLabel.Select(x => new PlayerVndbInfo()
             {
-                VndbId = userLabel.FirstOrDefault()?.vndb_uid, VndbApiToken = null, Labels = null
-            };
+                VndbId = x.vndb_uid,
+                VndbApiToken = null,
+                Labels = null,
+                DatabaseKind = x.database_kind,
+            }).ToArray();
         }
     }
 
@@ -267,7 +270,6 @@ public class DbManager_Auth
                 var userLabelVns = new List<UserLabelVn>();
                 foreach ((string vnurl, int vote) in vns)
                 {
-                    // todo convert vnurl to vnid
                     var userLabelVn = new UserLabelVn { users_label_id = userLabelId, vnid = vnurl, vote = vote };
                     userLabelVns.Add(userLabelVn);
                 }

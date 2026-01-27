@@ -13,169 +13,204 @@
 
 @* setting z-index seems to prevent the modal closing animation from playing sometimes, but we have to do it *@
 <Blazorise.Modal @ref="_modalRef" style="z-index: 4000">
-    <Blazorise.ModalContent Centered="true" Scrollable="true" Size="Blazorise.ModalSize.ExtraLarge">
-        <Blazorise.ModalHeader>
-            <Blazorise.ModalTitle>Preferences</Blazorise.ModalTitle>
-        </Blazorise.ModalHeader>
-        <Blazorise.ModalBody>
-            @if (ClientState.Session != null)
+<Blazorise.ModalContent Centered="true" Scrollable="true" Size="Blazorise.ModalSize.ExtraLarge">
+<Blazorise.ModalHeader>
+    <Blazorise.ModalTitle>Preferences</Blazorise.ModalTitle>
+</Blazorise.ModalHeader>
+<Blazorise.ModalBody>
+@if (ClientState.Session != null)
+{
+    bool hasPerms = AuthStuff.HasPermission(ClientState.Session, PermissionKind.SetAvatar);
+    <div id="playerPreferences" style="padding: 5px; margin: 2px;">
+    <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+
+    <Blazorise.Tabs @bind-SelectedTab="@_selectedTab">
+    <Items>
+        <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
+        <Blazorise.Tab Name="TabLists">Lists</Blazorise.Tab>
+        <Blazorise.Tab Name="TabAvatar">Avatar</Blazorise.Tab>
+    </Items>
+    <Content>
+    <Blazorise.TabPanel Name="TabGeneral">
+        @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.ImportHelper))
+        {
+            <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
+            <label for="DebugMode">Debug mode</label>
+            <br/>
+        }
+
+        <InputCheckbox id="WantsVideo" class="form-check-input" @bind-Value="ClientState.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
+        <label for="WantsVideo">Prefer video links over sound links</label>
+        <br/>
+
+        <InputCheckbox id="WantsEnglish" class="form-check-input" @bind-Value="ClientState.Preferences.WantsEnglish" style="margin: 5px"></InputCheckbox>
+        <label for="WantsEnglish">Prefer English titles when available</label>
+        <br/>
+
+        <InputCheckbox id="WantsOriginalTitle" class="form-check-input" @bind-Value="ClientState.Preferences.WantsOriginalTitle" style="margin: 5px"></InputCheckbox>
+        <label for="WantsOriginalTitle">Prefer original title for multiple choice options</label>
+        <br/>
+
+        <InputCheckbox id="RestartSongsOnResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
+        <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
+        <br/>
+
+        <InputCheckbox id="AutoSkipGuessPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
+        <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
+        <br/>
+
+        <InputCheckbox id="AutoSkipResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
+        <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
+        <br/>
+
+        <InputCheckbox id="ShowVndbCovers" class="form-check-input" @bind-Value="ClientState.Preferences.ShowVndbCovers" style="margin: 5px"></InputCheckbox>
+        <label for="ShowVndbCovers">Show VNDB cover images when there is no video</label>
+        <br/>
+
+        <InputCheckbox id="ShowSpacedRepetitionInfo" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSpacedRepetitionInfo" style="margin: 5px"></InputCheckbox>
+        <label for="ShowSpacedRepetitionInfo">Show spaced repetition information</label>
+        <br/>
+
+        <InputCheckbox id="HideSpoilers" class="form-check-input" @bind-Value="ClientState.Preferences.HideSpoilers" style="margin: 5px"></InputCheckbox>
+        <label for="HideSpoilers">Hide videos containing spoilers</label>
+        <br/>
+
+        <InputCheckbox id="HideFlashingLights" class="form-check-input" @bind-Value="ClientState.Preferences.HideFlashingLights" style="margin: 5px"></InputCheckbox>
+        <label for="HideFlashingLights">Hide videos containing flashing lights</label>
+        <br/>
+
+        <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
+        <label for="SwapArtistNameAndSongTitleDropdowns">Swap the positions of the artist name and song title dropdowns</label>
+        <br/>
+
+        <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
+        <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
+        <br/>
+
+        <InputCheckbox id="MuteWhenDuca" class="form-check-input" @bind-Value="ClientState.Preferences.MuteWhenDuca" style="margin: 5px"></InputCheckbox>
+        <label for="MuteWhenDuca">Mute when Duca</label>
+        <br/>
+
+        @if (ClientState.ServerStats.Config.IsChristmasMode)
+        {
+            <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>
+            <label for="ShowSnowflakes">Show snowflakes</label>
+            <br/>
+        }
+
+        <InputSelect id="LinkHost" @bind-Value="ClientState.Preferences.LinkHost" style="margin: 5px">
+            @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => SongLink.FileLinkTypes.Contains((int)x)))
             {
-                bool hasPerms = AuthStuff.HasPermission(ClientState.Session, PermissionKind.SetAvatar);
-                <div id="playerPreferences" style="padding: 5px; margin: 2px;">
-                    <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
-                        <DataAnnotationsValidator/>
-                        <ValidationSummary/>
+                <option value="@songLinkType">@songLinkType</option>
+            }
+        </InputSelect>
+        <label for="LinkHost">Preferred host</label>
+        <br/>
 
-                        <Blazorise.Tabs @bind-SelectedTab="@_selectedTab">
-                            <Items>
-                                <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
-                                <Blazorise.Tab Name="TabVNDB">VNDB</Blazorise.Tab>
-                                <Blazorise.Tab Name="TabAvatar">Avatar</Blazorise.Tab>
-                            </Items>
-                            <Content>
-                                <Blazorise.TabPanel Name="TabGeneral">
-                                    @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.ImportHelper))
-                                    {
-                                        <InputCheckbox id="DebugMode" class="form-check-input" @bind-Value="ClientState.Preferences.DebugMode" style="margin: 5px"></InputCheckbox>
-                                        <label for="DebugMode">Debug mode</label>
-                                        <br/>
-                                    }
+        <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
+            <Blazorise.Slider style="max-width: 100px;" id="VolumeMaster" @bind-Value="@ClientState.Preferences.VolumeMaster" Min="0" Max="100"/>
+            <label for="VolumeMaster" style="margin-left: 5px;">Master Volume</label>
+            <br/>
+        </div>
 
-                                    <InputCheckbox id="WantsVideo" class="form-check-input" @bind-Value="ClientState.Preferences.WantsVideo" style="margin: 5px"></InputCheckbox>
-                                    <label for="WantsVideo">Prefer video links over sound links</label>
+        <div style="border: 1px black solid; margin: 2px; padding: 10px; width: 400px;">
+            <h5>Autocomplete</h5>
+            <InputCheckbox id="AutocompleteIsEnabled" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteIsEnabled" style="margin: 5px"></InputCheckbox>
+            <label for="AutocompleteIsEnabled">Enabled</label>
+            <br/>
+
+            <InputCheckbox id="AutocompleteHighlightMatch" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteHighlightMatch" style="margin: 5px"></InputCheckbox>
+            <label for="AutocompleteHighlightMatch">Highlight matching text</label>
+            <br/>
+
+            <InputCheckbox id="AutocompleteRequireConfirmation" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteRequireConfirmation" style="margin: 5px"></InputCheckbox>
+            <label for="AutocompleteRequireConfirmation">Require confirmation before changing guess</label>
+            <br/>
+
+            <InputCheckbox id="AutocompleteShowIcons" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteShowIcons" style="margin: 5px"></InputCheckbox>
+            <label for="AutocompleteShowIcons">Show icons</label>
+            <br/>
+        </div>
+
+    </Blazorise.TabPanel>
+    <Blazorise.TabPanel Name="TabLists">
+        <div>
+            <ul>
+                @foreach (string item in LoginProgressDisplay)
+                {
+                    <li>@item</li>
+                }
+            </ul>
+        </div>
+
+        <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
+            🗑
+        </button>
+
+        <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
+            <option value="@CreateNewPresetValue">- Create new preset -</option>
+            @foreach (var preset in Presets)
+            {
+                <option value="@preset.name">@preset.name</option>
+            }
+        </select>
+        <label for="SelectPreset">Preset</label>
+        <br/>
+
+        <br/>
+        @if (!string.IsNullOrEmpty(SelectedPresetName))
+        {
+            <Blazorise.Tabs @bind-SelectedTab="@_selectedTabLists">
+                <Items>
+                    @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
+                    {
+                        <Blazorise.Tab Name="@(databaseKind.ToString())">@databaseKind.GetDescription()</Blazorise.Tab>
+                    }
+                </Items>
+                <Content>
+
+                    @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
+                    {
+                        <Blazorise.TabPanel Name="@(databaseKind.ToString())">
+                            @if (databaseKind is UserListDatabaseKind.EMQ)
+                            {
+                                <p>soon™</p>
+                            }
+                            else if (databaseKind is UserListDatabaseKind.VNDB or UserListDatabaseKind.MAL)
+                            {
+                                var vndbInfo = ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == databaseKind);
+                                if (vndbInfo is null)
+                                {
                                     <br/>
-
-                                    <InputCheckbox id="WantsEnglish" class="form-check-input" @bind-Value="ClientState.Preferences.WantsEnglish" style="margin: 5px"></InputCheckbox>
-                                    <label for="WantsEnglish">Prefer English titles when available</label>
-                                    <br/>
-
-                                    <InputCheckbox id="WantsOriginalTitle" class="form-check-input" @bind-Value="ClientState.Preferences.WantsOriginalTitle" style="margin: 5px"></InputCheckbox>
-                                    <label for="WantsOriginalTitle">Prefer original title for multiple choice options</label>
-                                    <br/>
-
-                                    <InputCheckbox id="RestartSongsOnResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.RestartSongsOnResultsPhase" style="margin: 5px"></InputCheckbox>
-                                    <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
-                                    <br/>
-
-                                    <InputCheckbox id="AutoSkipGuessPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
-                                    <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
-                                    <br/>
-
-                                    <InputCheckbox id="AutoSkipResultsPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipResultsPhase" style="margin: 5px"></InputCheckbox>
-                                    <label for="AutoSkipResultsPhase">Auto-skip Results Phase</label>
-                                    <br/>
-
-                                    <InputCheckbox id="ShowVndbCovers" class="form-check-input" @bind-Value="ClientState.Preferences.ShowVndbCovers" style="margin: 5px"></InputCheckbox>
-                                    <label for="ShowVndbCovers">Show VNDB cover images when there is no video</label>
-                                    <br/>
-
-                                    <InputCheckbox id="ShowSpacedRepetitionInfo" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSpacedRepetitionInfo" style="margin: 5px"></InputCheckbox>
-                                    <label for="ShowSpacedRepetitionInfo">Show spaced repetition information</label>
-                                    <br/>
-
-                                    <InputCheckbox id="HideSpoilers" class="form-check-input" @bind-Value="ClientState.Preferences.HideSpoilers" style="margin: 5px"></InputCheckbox>
-                                    <label for="HideSpoilers">Hide videos containing spoilers</label>
-                                    <br/>
-
-                                    <InputCheckbox id="HideFlashingLights" class="form-check-input" @bind-Value="ClientState.Preferences.HideFlashingLights" style="margin: 5px"></InputCheckbox>
-                                    <label for="HideFlashingLights">Hide videos containing flashing lights</label>
-                                    <br/>
-
-                                    <InputCheckbox id="SwapArtistNameAndSongTitleDropdowns" class="form-check-input" @bind-Value="ClientState.Preferences.SwapArtistNameAndSongTitleDropdowns" style="margin: 5px"></InputCheckbox>
-                                    <label for="SwapArtistNameAndSongTitleDropdowns">Swap the positions of the artist name and song title dropdowns</label>
-                                    <br/>
-
-                                    <InputCheckbox id="ForceDefaultAvatar" class="form-check-input" @bind-Value="ClientState.Preferences.ForceDefaultAvatar" style="margin: 5px"></InputCheckbox>
-                                    <label for="ForceDefaultAvatar">Force everyone to use the default avatar</label>
-                                    <br/>
-
-                                    <InputCheckbox id="MuteWhenDuca" class="form-check-input" @bind-Value="ClientState.Preferences.MuteWhenDuca" style="margin: 5px"></InputCheckbox>
-                                    <label for="MuteWhenDuca">Mute when Duca</label>
-                                    <br/>
-
-                                    @if (ClientState.ServerStats.Config.IsChristmasMode)
-                                    {
-                                        <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>
-                                        <label for="ShowSnowflakes">Show snowflakes</label>
-                                        <br/>
-                                    }
-
-                                    <InputSelect id="LinkHost" @bind-Value="ClientState.Preferences.LinkHost" style="margin: 5px">
-                                        @foreach (SongLinkType songLinkType in Enum.GetValues<SongLinkType>().Where(x => SongLink.FileLinkTypes.Contains((int)x)))
-                                        {
-                                            <option value="@songLinkType">@songLinkType</option>
-                                        }
-                                    </InputSelect>
-                                    <label for="LinkHost">Preferred host</label>
-                                    <br/>
-
-                                    <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
-                                        <Blazorise.Slider style="max-width: 100px;" id="VolumeMaster" @bind-Value="@ClientState.Preferences.VolumeMaster" Min="0" Max="100"/>
-                                        <label for="VolumeMaster" style="margin-left: 5px;">Master Volume</label>
-                                        <br/>
-                                    </div>
-
-                                    <div style="border: 1px black solid; margin: 2px; padding: 10px; width: 400px;">
-                                        <h5>Autocomplete</h5>
-                                        <InputCheckbox id="AutocompleteIsEnabled" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteIsEnabled" style="margin: 5px"></InputCheckbox>
-                                        <label for="AutocompleteIsEnabled">Enabled</label>
-                                        <br/>
-
-                                        <InputCheckbox id="AutocompleteHighlightMatch" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteHighlightMatch" style="margin: 5px"></InputCheckbox>
-                                        <label for="AutocompleteHighlightMatch">Highlight matching text</label>
-                                        <br/>
-
-                                        <InputCheckbox id="AutocompleteRequireConfirmation" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteRequireConfirmation" style="margin: 5px"></InputCheckbox>
-                                        <label for="AutocompleteRequireConfirmation">Require confirmation before changing guess</label>
-                                        <br/>
-
-                                        <InputCheckbox id="AutocompleteShowIcons" class="form-check-input" @bind-Value="ClientState.Preferences.AutocompleteShowIcons" style="margin: 5px"></InputCheckbox>
-                                        <label for="AutocompleteShowIcons">Show icons</label>
-                                        <br/>
-                                    </div>
-
-                                </Blazorise.TabPanel>
-                                <Blazorise.TabPanel Name="TabVNDB">
-                                    <div>
-                                        <ul>
-                                            @foreach (string item in LoginProgressDisplay)
-                                            {
-                                                <li>@item</li>
-                                            }
-                                        </ul>
-                                    </div>
-
-                                    <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
-                                        🗑
+                                    <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">
+                                        Add
                                     </button>
-
-                                    <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
-                                        <option value="@CreateNewPresetValue">- Create new preset -</option>
-                                        @foreach (var preset in Presets)
-                                        {
-                                            <option value="@preset.name">@preset.name</option>
-                                        }
-                                    </select>
-                                    <label for="SelectPreset">Preset</label>
+                                }
+                                else
+                                {
+                                    string vndbIdText = databaseKind == UserListDatabaseKind.MAL ? "Username" : "Id";
+                                    <InputText id="VndbId" type="text" @bind-Value="@vndbInfo.VndbId" style="margin: 5px"/>
+                                    <label for="VndbId">@(vndbIdText)</label>
                                     <br/>
 
-                                    <br/>
-                                    @if (!string.IsNullOrEmpty(SelectedPresetName))
+                                    @if (databaseKind == UserListDatabaseKind.VNDB)
                                     {
-                                        <InputText id="VndbId" type="text" @bind-Value="@ClientState.VndbInfo.VndbId" style="margin: 5px"/>
-                                        <label for="VndbId">VNDB Id</label>
-                                        <br/>
                                         <InputText id="VndbApiToken" type="text" @bind-Value="@ClientVndbApiToken" style="margin: 5px"/>
                                         <label for="VndbApiToken">
-                                            <a href="https://vndb.org/u/tokens" target="_blank">VNDB API Token</a> (Optional, only required if your list is private, not sent to server)
+                                            <a href="https://vndb.org/u/tokens" target="_blank">API Token</a> (Optional, only required if your list is private, not sent to server)
                                         </label>
                                         <br/>
+                                    }
 
-                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="@(() => SetVndbInfo(ClientState.VndbInfo))" style="margin: 5px">
-                                            Set VNDB info
-                                        </button>
-                                        <br/>
+                                    <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="@(() => SetVndbInfo(vndbInfo))" style="margin: 5px">
+                                        Set list info
+                                    </button>
+                                    <br/>
 
+                                    @if (vndbInfo.Labels is not null)
+                                    {
                                         <br/>
                                         <select style="margin: 5px" @bind="SelectedSSSTM">
                                             @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
@@ -222,151 +257,153 @@
                                                 </li>
                                             </ul>
                                         }
-
-                                        <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
-                                            <h5> Label settings</h5>
-                                            @if (ClientState.VndbInfo.Labels is not null)
-                                            {
-                                                <p>
-                                                    You can include or exclude VNDB labels here. If a VN is labeled with both Exclude and Include, it will be excluded.
-                                                    You might get throttled by the VNDB API if you select a label that contains more than a few thousand VNs.
-                                                </p>
-
-                                            @*
-                                            <button type="button" class="btn btn-primary" disabled="@LoginInProgress" @onclick="@(() => FetchLabels(ClientState.VndbInfo))">
-                                                Fetch labels
-                                            </button>
-                                            <br/>
-                                            *@
-
-                                                <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
-                                                    @foreach (var label in ClientState.VndbInfo.Labels)
-                                                    {
-                                                        <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
-                                                            <div class="labelCardBody card-body">
-                                                                <span>#@label.Id @label.Name (@label.VNs.Count)</span>
-                                                                @if (label.IsPrivate)
-                                                                {
-                                                                    <span> Private </span>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <span> Public </span>
-                                                                }
-
-                                                                <span title="Refresh" style="cursor: pointer; float: right;" @onclick="@(() => RefreshLabel(label, label.Kind))">
-                                                                    ⟲
-                                                                </span>
-
-                                                                <br/>
-                                                                <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
-                                                                    <label class="btn btn-outline-primary"
-                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
-
-                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Include)"
-                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include))"> Include
-                                                                    </label>
-
-                                                                    <label class="btn btn-outline-primary"
-                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
-
-                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
-                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe))"> Ignore
-                                                                    </label>
-
-                                                                    <label class="btn btn-outline-primary"
-                                                                           style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
-                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");
-                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
-
-                                                                        <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
-                                                                               @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude))"> Exclude
-                                                                    </label>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <p>Your VNDB info is not set.</p>
-                                            }
-                                        </div>
                                     }
-                                </Blazorise.TabPanel>
-                            <Blazorise.TabPanel Name="TabAvatar">
-                                @if (hasPerms)
-                                {
-                                    <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
-                                        @foreach (var character in Enum.GetValues<AvatarCharacter>())
+
+                                    <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
+                                        <h5>Label settings</h5>
+                                        @if (vndbInfo.Labels is not null)
                                         {
-                                            <option value="@character">@character.GetDescription()</option>
+                                            <p>
+                                                You can include or exclude list labels here. If a Source is labeled with both Exclude and Include, it will be excluded.
+                                                You might get throttled if you select a label that contains more than a few thousand Sources.
+                                            </p>
+
+                                            <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
+                                                @foreach (var label in vndbInfo.Labels)
+                                                {
+                                                    <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
+                                                        <div class="labelCardBody card-body">
+                                                            <span>#@label.Id @label.Name (@label.VNs.Count)</span>
+                                                            @if (label.IsPrivate)
+                                                            {
+                                                                <span> Private </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span> Public </span>
+                                                            }
+
+                                                            <span title="Refresh" style="cursor: pointer; float: right;" @onclick="@(() => RefreshLabel(label, label.Kind, vndbInfo))">
+                                                                ⟲
+                                                            </span>
+
+                                                            <br/>
+                                                            <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
+                                                                <label class="btn btn-outline-primary"
+                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
+                                                                                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");
+                                                                                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Include)"
+                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include, vndbInfo))"> Include
+                                                                </label>
+
+                                                                <label class="btn btn-outline-primary"
+                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
+                                                                                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");
+                                                                                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
+                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe, vndbInfo))"> Ignore
+                                                                </label>
+
+                                                                <label class="btn btn-outline-primary"
+                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
+                                                                                                            color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");
+                                                                                                            pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
+                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude, vndbInfo))"> Exclude
+                                                                </label>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
                                         }
-                                    </select>
-                                    <label for="SelectCharacter">Character</label>
-                                    <br/>
-
-                                    @if (ClientAvatar?.Character is AvatarCharacter.VNDBCharacterImage)
-                                    {
-                                        <input id="InputVNDBCharacterImage" type="text" style="margin: 5px; width: 120px;" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
-                                        <label for="InputVNDBCharacterImage">VNDB character ID (e.g. c465)</label>
-                                        <br/>
-                                    }
-                                    else
-                                    {
-                                        <select id="SelectSkin" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged" disabled="@InProgress">
-                                            @foreach (string skin in Avatar.SkinsDict[ClientAvatar?.Character ?? AvatarCharacter.Auu])
-                                            {
-                                                <option value="@skin">@skin</option>
-                                            }
-                                        </select>
-                                        <label for="SelectSkin">Skin</label>
-                                        <br/>
-                                    }
-
-                                    <br/>
-                                    @if (!string.IsNullOrWhiteSpace(ClientAvatar?.Skin))
-                                    {
-                                        <div style="display: flex;">
-                                            @foreach (var status in Enum.GetValues<PlayerStatus>().Where(x => x != PlayerStatus.Dead))
-                                            {
-                                                <div style="display: flex; flex-direction: column;">
-                                                    <span style="text-align: center;">@status</span>
-                                                    <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(ClientAvatar, status)" alt="Avatar" class="@status">
-                                                </div>
-                                            }
-                                        </div>
-                                    }
+                                        else
+                                        {
+                                            <p>Your list info is not set.</p>
+                                        }
+                                    </div>
                                 }
-                                else
-                                {
-                                    <p>You do not have the required permissions.</p>
-                                }
-                            </Blazorise.TabPanel>
-                            </Content>
-                        </Blazorise.Tabs>
-                    </EditForm>
-                </div>
+                            }
+
+                        </Blazorise.TabPanel>
+                    }
+                </Content>
+            </Blazorise.Tabs>
+        }
+    </Blazorise.TabPanel>
+
+    <Blazorise.TabPanel Name="TabAvatar">
+        @if (hasPerms)
+        {
+            <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
+                @foreach (var character in Enum.GetValues<AvatarCharacter>())
+                {
+                    <option value="@character">@character.GetDescription()</option>
+                }
+            </select>
+            <label for="SelectCharacter">Character</label>
+            <br/>
+
+            @if (ClientAvatar?.Character is AvatarCharacter.VNDBCharacterImage)
+            {
+                <input id="InputVNDBCharacterImage" type="text" style="margin: 5px; width: 120px;" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
+                <label for="InputVNDBCharacterImage">VNDB character ID (e.g. c465)</label>
+                <br/>
             }
             else
             {
-                <span> You must be logged in to change your preferences.</span>
+                <select id="SelectSkin" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged" disabled="@InProgress">
+                    @foreach (string skin in Avatar.SkinsDict[ClientAvatar?.Character ?? AvatarCharacter.Auu])
+                    {
+                        <option value="@skin">@skin</option>
+                    }
+                </select>
+                <label for="SelectSkin">Skin</label>
+                <br/>
             }
-        </Blazorise.ModalBody>
-        <Blazorise.ModalFooter>
-            <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
-                Close
-            </button>
-            <button type="button" class="btn btn-primary" disabled="@(ClientState.Session == null)"
-                    @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Preferences); } })">
-                Save preferences
-            </button>
-        </Blazorise.ModalFooter>
-    </Blazorise.ModalContent>
+
+            <br/>
+            @if (!string.IsNullOrWhiteSpace(ClientAvatar?.Skin))
+            {
+                <div style="display: flex;">
+                    @foreach (var status in Enum.GetValues<PlayerStatus>().Where(x => x != PlayerStatus.Dead))
+                    {
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="text-align: center;">@status</span>
+                            <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(ClientAvatar, status)" alt="Avatar" class="@status">
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <p>You do not have the required permissions.</p>
+        }
+    </Blazorise.TabPanel>
+    </Content>
+    </Blazorise.Tabs>
+    </EditForm>
+    </div>
+}
+else
+{
+    <span> You must be logged in to change your preferences.</span>
+}
+</Blazorise.ModalBody>
+<Blazorise.ModalFooter>
+    <button type="button" class="btn btn-secondary" @onclick="@(() => { _modalRef.Hide(); })">
+        Close
+    </button>
+    <button type="button" class="btn btn-primary" disabled="@(ClientState.Session == null)"
+            @onclick="@(async () => { if (ClientState.Session != null) { await UpdatePlayerPreferences(ClientState.Preferences); } })">
+        Save preferences
+    </button>
+</Blazorise.ModalFooter>
+</Blazorise.ModalContent>
 </Blazorise.Modal>

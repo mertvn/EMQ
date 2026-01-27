@@ -1898,7 +1898,7 @@ public class QuizManager
         if (useLists)
         {
             var allVndbInfos = await ServerUtils.GetAllVndbInfos(sessions);
-            labelMids = await DbManager.FindMusicIdsByLabels(allVndbInfos
+            labelMids = await DbManager.FindMusicIdsByLabels(allVndbInfos.SelectMany(x => x)
                 .Where(x => x.Labels != null).SelectMany(x => x.Labels!), SongSourceSongTypeMode.Vocals);
         }
 
@@ -2647,38 +2647,46 @@ public class QuizManager
                     continue;
                 }
 
-                var vndbInfo = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
-                if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
-                    string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
+                var vndbInfos = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
+                foreach (PlayerVndbInfo vndbInfo in vndbInfos)
                 {
-                    continue;
-                }
-
-                if (vndbInfo.Labels != null)
-                {
-                    var userLabels =
-                        await DbManager_Auth.GetUserLabels(player.Id, vndbInfo.VndbId,
-                            session.ActiveUserLabelPresetName);
-                    var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
-                    var exclude = userLabels.Where(x => x.kind == LabelKind.Exclude).ToList();
-
-                    // todo Exclude does nothing on its own (don't break Balanced while fixing this)
-                    if (include.Any())
+                    if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
+                        string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
                     {
-                        validSourcesDict[player.Id] =
-                            (await DbManager_Auth.GetUserLabelVns(include.Select(x => x.id).ToList()))
-                            .Select(x => x.vnid).ToList();
+                        continue;
+                    }
 
-                        if (exclude.Any())
+                    if (vndbInfo.Labels != null)
+                    {
+                        var userLabels =
+                            await DbManager_Auth.GetUserLabels(player.Id, vndbInfo.VndbId,
+                                session.ActiveUserLabelPresetName);
+                        var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
+                        var exclude = userLabels.Where(x => x.kind == LabelKind.Exclude).ToList();
+
+                        // todo Exclude does nothing on its own (don't break Balanced while fixing this)
+                        if (include.Any())
                         {
-                            List<string> excluded =
-                                (await DbManager_Auth.GetUserLabelVns(exclude.Select(x => x.id).ToList()))
-                                .Select(x => x.vnid).ToList();
+                            if (!validSourcesDict.ContainsKey(player.Id))
+                            {
+                                validSourcesDict[player.Id] = new List<string>();
+                            }
 
-                            validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
+                            validSourcesDict[player.Id].AddRange(
+                                (await DbManager_Auth.GetUserLabelVns(include.Select(x => x.id).ToList()))
+                                .Select(x => x.vnid));
+
+                            if (exclude.Any())
+                            {
+                                List<string> excluded =
+                                    (await DbManager_Auth.GetUserLabelVns(exclude.Select(x => x.id).ToList()))
+                                    .Select(x => x.vnid).ToList();
+
+                                validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
+                            }
+
+                            validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
                         }
-
-                        validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
                     }
                 }
             }
@@ -2746,11 +2754,10 @@ public class QuizManager
         // Quiz.Room.Log("validArtists: " + JsonSerializer.Serialize(validArtists, Utils.Jso));
         // Quiz.Room.Log($"validArtistsCount: {validArtists.Count}");
 
-        // todo handle hotjoining players
-        var vndbInfos = new Dictionary<int, PlayerVndbInfo>();
+        var vndbInfosDict = new Dictionary<int, PlayerVndbInfo[]>();
         foreach ((int _, Session session) in playerSessions)
         {
-            vndbInfos[session.Player.Id] =
+            vndbInfosDict[session.Player.Id] =
                 await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
         }
 
@@ -2914,6 +2921,8 @@ public class QuizManager
                                 Console.WriteLine($"dbSongs.Count after distinct1: {dbSongs.Count}");
                             }
 
+                            // todo cull extra songs (make sure every player gets the exact same number of songs)
+
                             Console.WriteLine($"dbSongs.Count before distinct2: {dbSongs.Count}");
                             dbSongs = dbSongs.DistinctBy(x => x.Id).ToList();
                             Console.WriteLine($"dbSongs.Count after distinct2: {dbSongs.Count}");
@@ -2938,7 +2947,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfos);
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfosDict);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -3061,7 +3070,7 @@ public class QuizManager
 
                 foreach (Song dbSong in dbSongs)
                 {
-                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfos);
+                    dbSong.PlayerLabels = GetPlayerLabelsForSong(dbSong, vndbInfosDict);
                 }
 
                 Quiz.Songs = dbSongs;
@@ -3871,52 +3880,64 @@ GROUP BY start_time",
     }
 
     private static Dictionary<int, List<Label>> GetPlayerLabelsForSong(Song song,
-        Dictionary<int, PlayerVndbInfo> vndbInfos)
+        Dictionary<int, PlayerVndbInfo[]> vndbInfos)
     {
         // todo? this could be written in a more efficient (batched) manner
         Dictionary<int, List<Label>> playerLabels = new();
-        foreach ((int playerId, PlayerVndbInfo? vndbInfo) in vndbInfos)
+        foreach ((int playerId, PlayerVndbInfo[]? inner) in vndbInfos)
         {
-            if (vndbInfo.Labels != null)
+            bool found = false;
+            foreach (PlayerVndbInfo vndbInfo in inner)
             {
-                var excludedVns = vndbInfo.Labels.Where(x => x is { Kind: LabelKind.Exclude })
-                    .SelectMany(x => x.VNs.Select(y => y.Key));
-                playerLabels[playerId] = new List<Label>();
-                foreach (Label label in vndbInfo.Labels.Where(x => x.Kind == LabelKind.Include))
+                if (found)
                 {
-                    var currentSongSourceVndbUrls = song.Sources
-                        .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
-                        .Select(z => z.Url)
-                        .ToList();
+                    break;
+                }
 
-                    if (currentSongSourceVndbUrls.Any(x => label.VNs.ContainsKey(x) && !excludedVns.Contains(x)))
+                if (vndbInfo.Labels != null)
+                {
+                    var excludedVns = vndbInfo.Labels.Where(x => x is { Kind: LabelKind.Exclude })
+                        .SelectMany(x => x.VNs.Select(y => y.Key));
+                    playerLabels[playerId] = new List<Label>();
+                    foreach (Label label in vndbInfo.Labels.Where(x => x.Kind == LabelKind.Include))
                     {
-                        // todo? add preference for showing private labels as is
-                        if (label.IsPrivate)
+                        var currentSongSourceUrls = song.Sources
+                            .SelectMany(x => x.Links)
+                            .Select(z => z.Url)
+                            .ToList();
+
+                        if (currentSongSourceUrls.Any(x => label.VNs.ContainsKey(x) && !excludedVns.Contains(x)))
                         {
-                            var newLabel = new Label
+                            // todo? add preference for showing private labels as is
+                            if (label.IsPrivate)
                             {
-                                Id = -1,
-                                IsPrivate = true,
-                                Name = "Private Label",
-                                VNs = label.VNs.Where(x => currentSongSourceVndbUrls.Contains(x.Key))
-                                    .ToDictionary(x => x.Key, x => x.Value),
-                                Kind = label.Kind
-                            };
-                            playerLabels[playerId].Add(newLabel);
-                        }
-                        else
-                        {
-                            var newLabel = new Label
+                                var newLabel = new Label
+                                {
+                                    Id = -1,
+                                    IsPrivate = true,
+                                    Name = "Private Label",
+                                    VNs = label.VNs.Where(x => currentSongSourceUrls.Contains(x.Key))
+                                        .ToDictionary(x => x.Key, x => x.Value),
+                                    Kind = label.Kind
+                                };
+                                playerLabels[playerId].Add(newLabel);
+                            }
+                            else
                             {
-                                Id = label.Id,
-                                IsPrivate = label.IsPrivate,
-                                Name = label.Name,
-                                VNs = label.VNs.Where(x => currentSongSourceVndbUrls.Contains(x.Key))
-                                    .ToDictionary(x => x.Key, x => x.Value),
-                                Kind = label.Kind
-                            };
-                            playerLabels[playerId].Add(newLabel);
+                                var newLabel = new Label
+                                {
+                                    Id = label.Id,
+                                    IsPrivate = label.IsPrivate,
+                                    Name = label.Name,
+                                    VNs = label.VNs.Where(x => currentSongSourceUrls.Contains(x.Key))
+                                        .ToDictionary(x => x.Key, x => x.Value),
+                                    Kind = label.Kind
+                                };
+                                playerLabels[playerId].Add(newLabel);
+                            }
+
+                            found = true;
+                            break;
                         }
                     }
                 }

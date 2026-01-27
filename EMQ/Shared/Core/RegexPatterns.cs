@@ -86,8 +86,8 @@ public static class RegexPatterns
     {
         { SongSourceLinkType.VNDB, new Regex(@"^https://vndb\.org/v[0-9]+/$") },
         { SongSourceLinkType.ErogamescapeGame, new Regex(@"^https://erogamescape\.dyndns\.org/~ap2/ero/toukei_kaiseki/game\.php\?game=[0-9]+/$") },
-        { SongSourceLinkType.MyAnimeListAnime, new Regex(@"^https://myanimelist\.net/anime/[0-9]+/?.*?/$") },
-        { SongSourceLinkType.AniListAnime, new Regex(@"^https://anilist\.co/anime/[0-9]+/?.*?/$") },
+        { SongSourceLinkType.MyAnimeListAnime, new Regex(@"^https://myanimelist\.net/anime/[0-9]+/$") },
+        { SongSourceLinkType.AniListAnime, new Regex(@"^https://anilist\.co/anime/[0-9]+/$") },
         { SongSourceLinkType.AniDBAnime, new Regex(@"^https://anidb\.net/anime/[0-9]+/$") },
         { SongSourceLinkType.WikidataItem, new Regex(@"^https://www\.wikidata\.org/wiki/Q[0-9]+/$") },
     };

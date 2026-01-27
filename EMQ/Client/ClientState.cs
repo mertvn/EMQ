@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -19,7 +20,8 @@ public static class ClientState
 
     public static TimeSpan Countdown { get; set; }
 
-    public static PlayerVndbInfo VndbInfo { get; set; } = new();
+    public static List<PlayerVndbInfo> VndbInfo { get; set; } = Enum.GetValues<UserListDatabaseKind>()
+        .Select(x => new PlayerVndbInfo() { DatabaseKind = x }).ToList();
 
     public static Dictionary<string, PeriodicTimer> Timers { get; set; } = new();
 

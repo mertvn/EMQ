@@ -401,12 +401,13 @@ public class LibraryController : ControllerBase
         }
 
         var vndbInfo = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, req.PresetName);
-        if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) || vndbInfo.Labels is null || !vndbInfo.Labels.Any())
+        var labels = vndbInfo.SelectMany(x => x.Labels ?? new List<Label>()).ToArray();
+        if (!labels.Any())
         {
             return StatusCode(404);
         }
 
-        int[] mIds = await DbManager.FindMusicIdsByLabels(vndbInfo.Labels, req.SSSTM);
+        int[] mIds = await DbManager.FindMusicIdsByLabels(labels, req.SSSTM);
         var res = await DbManager.GetLabelStats(mIds);
         return res;
     }
