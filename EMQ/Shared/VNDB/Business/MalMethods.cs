@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -36,6 +37,8 @@ public static class MalMethods
     public static async Task<List<Label>> GrabPlayerAnimeFromMal(PlayerVndbInfo vndbInfo)
     {
         var ret = new List<Label>();
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromMinutes(3));
         if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId))
         {
             if (vndbInfo.Labels != null && vndbInfo.Labels.Any())
@@ -56,18 +59,24 @@ public static class MalMethods
                             List<MALUlistAnime> final = new();
                             while (more)
                             {
+                                if (cts.IsCancellationRequested)
+                                {
+                                    break;
+                                }
+
                                 var res = await s_client.GetAsync(
-                                    $"{apiUrl}{username}/load.json?offset={offset}&status={label.Id}&order=0");
+                                    $"{apiUrl}{username}/load.json?offset={offset}&status={label.Id}&order=0",
+                                    cts.Token);
                                 if (res.StatusCode is HttpStatusCode.OK)
                                 {
-                                    string content = await res.Content.ReadAsStringAsync();
+                                    string content = await res.Content.ReadAsStringAsync(cts.Token);
                                     MALUlistAnime[] deser = JsonSerializer.Deserialize<MALUlistAnime[]>(content)!;
                                     final.AddRange(deser);
                                     more = deser.Length >= 300;
                                     if (more)
                                     {
                                         offset += 300;
-                                        await Task.Delay(TimeSpan.FromSeconds(3)); // TOSCALE: semaphore
+                                        await Task.Delay(TimeSpan.FromSeconds(3), cts.Token); // TOSCALE: semaphore
                                     }
                                 }
                                 else

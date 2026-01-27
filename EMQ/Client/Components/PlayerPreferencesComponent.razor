@@ -283,7 +283,7 @@
                                                                 <span> Public </span>
                                                             }
 
-                                                            <span title="Refresh" style="cursor: pointer; float: right;" @onclick="@(() => RefreshLabel(label, label.Kind, vndbInfo))">
+                                                            <span title="Refresh" style="cursor: pointer; float: right; pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress)" @onclick="@(() => RefreshLabel(label, label.Kind, vndbInfo))">
                                                                 ⟲
                                                             </span>
 
