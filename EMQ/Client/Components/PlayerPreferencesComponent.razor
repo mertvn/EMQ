@@ -186,7 +186,7 @@
                             }
                             else
                             {
-                                var label = ClientState.VndbInfo.First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels.Single();
+                                var label = ClientState.VndbInfo.First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels.SingleOrDefault();
                                 <div style="min-height: 350px;">
                                     <GuessInputComponent @ref="_guessInputComponentRef"
                                                          Placeholder="Enter source title here"
