@@ -146,7 +146,7 @@
                     </ul>
                 </details>
                 <table>
-                    @foreach (var link in Source.Links)
+                    @foreach (var link in Source.Links.Where(x => x.Type != SongSourceLinkType.SelfSource))
                     {
                         <tr>
                             <td>
@@ -413,7 +413,7 @@
             SongSourceLinkType[] validLinkTypes = Constants.ValidLinkTypesForSourceTypeDict[source.Type];
             foreach (SongSourceLink link in source.Links)
             {
-                if (!validLinkTypes.Contains(link.Type))
+                if (link.Type != SongSourceLinkType.SelfSource && !validLinkTypes.Contains(link.Type))
                 {
                     ValidationMessages.Add($"Invalid link type for the source type: {link.Type}");
                     isValid = false;

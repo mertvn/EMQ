@@ -115,7 +115,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
         string? str = t.SongSourceType switch
         {
             SongSourceType.VN => "assets/favicon/vndb.ico",
-            SongSourceType.Anime => "assets/favicon/anison.ico",
+            SongSourceType.Anime => "assets/favicon/mal.ico",
             SongSourceType.Touhou => "assets/favicon/touhoudb.ico",
             SongSourceType.Game => null, // todo
             _ => null
