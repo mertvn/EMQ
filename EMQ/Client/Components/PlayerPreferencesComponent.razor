@@ -224,10 +224,17 @@
                         {
                             if (vndbInfo is null)
                             {
-                                <br/>
-                                <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">
-                                    Add
-                                </button>
+                                @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
+                                {
+                                    <br/>
+                                    <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">
+                                        Add
+                                    </button>
+                                }
+                                else
+                                {
+                                    <p>You must be a registered user to use this feature.</p>
+                                }
                             }
                             else
                             {
