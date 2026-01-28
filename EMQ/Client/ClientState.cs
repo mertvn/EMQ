@@ -31,7 +31,9 @@ public static class ClientState
 
     public static Dictionary<int, MusicVote> MusicVotes { get; set; } = new();
 
-    public static Dictionary<int, SongArtist> ArtistsCache { get; } = new(); // todo? move to ArtistComponent
+    public static Dictionary<int, SongArtist> ArtistsCache { get; } = new();
+
+    public static Dictionary<int, SongSource> SourcesCache { get; } = new();
 
     public static SongArtist[] CopiedCAL { get; set; } = Array.Empty<SongArtist>();
 

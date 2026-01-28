@@ -533,6 +533,18 @@ public class LibraryController : ControllerBase
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
+    [Route("GetSongSources")]
+    public async Task<ActionResult<SongSource[]>> GetSongSources(SongSource[] req)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        List<Song> songs = req.SelectMany(x =>
+            new List<Song>() { new() { Sources = new List<SongSource>() { new() { Id = x.Id } } } }).ToList();
+        var res = await DbManager.SelectSongSourceBatchNoMSM(connection, songs, false);
+        return res.SelectMany(x => x.Value!.Values).ToArray();
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
     [Route("GetSongArtist")]
     public async Task<ActionResult<ResGetSongArtist>> GetSongArtist(SongArtist req)
     {

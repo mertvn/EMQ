@@ -9,7 +9,7 @@ public class SongSourceLink
     {
         (int)SongSourceLinkType.VNDB, (int)SongSourceLinkType.ErogamescapeGame,
         (int)SongSourceLinkType.MyAnimeListAnime, (int)SongSourceLinkType.AniListAnime,
-        (int)SongSourceLinkType.AniDBAnime, (int)SongSourceLinkType.WikidataItem,
+        (int)SongSourceLinkType.AniDBAnime, (int)SongSourceLinkType.WikidataItem, (int)SongSourceLinkType.SelfSource,
     };
 
     public string Url { get; set; } = "";
@@ -30,4 +30,5 @@ public enum SongSourceLinkType
     AniListAnime,
     AniDBAnime,
     WikidataItem,
+    SelfSource,
 }

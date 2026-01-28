@@ -68,7 +68,7 @@
 
     protected override void OnParametersSet()
     {
-        LinksOrdered = Links.OrderBy(x => x.Type).ToArray();
+        LinksOrdered = Links.Where(x => x.Type != SongSourceLinkType.SelfSource).OrderBy(x => x.Type).ToArray();
     }
 
 }

@@ -45,6 +45,10 @@ public partial class PlayerPreferencesComponent
 
     public Dictionary<string, LabelStats?> LabelStats { get; set; } = new();
 
+    private GuessInputComponent _guessInputComponentRef = null!;
+
+    private string? selectedMusicSourceTitle { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         while (ClientState.Session is null)
@@ -61,6 +65,7 @@ public partial class PlayerPreferencesComponent
         }
 
         ClientAvatar = ClientState.Session.Player.Avatar;
+        await FetchMissingSongSourcesForEMQTab();
 
         InProgress = false;
     }
@@ -473,5 +478,171 @@ public partial class PlayerPreferencesComponent
         {
             LabelStats[SelectedPresetName] = null;
         }
+    }
+
+    private async Task AddEMQVndbInfo()
+    {
+        InProgress = true;
+        var vndbInfo = new PlayerVndbInfo()
+        {
+            VndbId = $"eu{ClientState.Session!.Player.Id}",
+            DatabaseKind = UserListDatabaseKind.EMQ,
+            Labels = new List<Label>()
+            {
+                new()
+                {
+                    Id = 1,
+                    IsPrivate = false,
+                    Name = "My EMQ Label",
+                    VNs = new Dictionary<string, int>(),
+                    Kind = LabelKind.Include
+                }
+            }
+        };
+        ClientState.VndbInfo.Add(vndbInfo);
+
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
+            new ReqSetVndbInfo(ClientState.Session.Token, ClientState.VndbInfo));
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
+        }
+        else
+        {
+            InProgress = false;
+            throw new Exception();
+        }
+
+        InProgress = false;
+    }
+
+    public async Task FetchMissingSongSourcesForEMQTab()
+    {
+        var label = ClientState.VndbInfo
+            .FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.EMQ)?.Labels?.SingleOrDefault();
+        if (label == null)
+        {
+            return;
+        }
+
+        var msIds = label.VNs.Select(x => Convert.ToInt32(x.Key.Replace("https://erogemusicquiz.com/ems", "")));
+        int[] missing = msIds.Except(ClientState.SourcesCache.Keys).ToArray();
+        if (missing.Any())
+        {
+            var res = await _client.PostAsJsonAsync("Library/GetSongSources",
+                missing.Select(x => new SongSource() { Id = x }).ToArray());
+            if (res.IsSuccessStatusCode)
+            {
+                var content = (await res.Content.ReadFromJsonAsync<SongSource[]>())!;
+                foreach (SongSource songSource in content)
+                {
+                    ClientState.SourcesCache[songSource.Id] = songSource;
+                }
+            }
+        }
+    }
+
+    public async Task SelectedResultChangedMst()
+    {
+        InProgress = true;
+        var vndbInfo = ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.EMQ);
+        if (vndbInfo == null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
+        {
+            var req = new ReqFindSongsBySongSourceTitle(selectedMusicSourceTitle);
+            var res = await _client.PostAsJsonAsync("Library/FindSongsBySongSourceTitle", req);
+            if (res.IsSuccessStatusCode)
+            {
+                List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+                if (songs != null && songs.Any())
+                {
+                    string norm = selectedMusicSourceTitle.NormalizeForAutocomplete();
+                    var label = vndbInfo.Labels!.Single();
+                    var current = label.VNs.Keys.Select(x =>
+                        Convert.ToInt32(x.Replace("https://erogemusicquiz.com/ems", "")));
+                    var msIds = new HashSet<int>(current);
+                    foreach (Song song in songs)
+                    {
+                        foreach (SongSource source in song.Sources)
+                        {
+                            if (source.Titles.Any(x =>
+                                    x.LatinTitle.NormalizeForAutocomplete() == norm ||
+                                    x.NonLatinTitle?.NormalizeForAutocomplete() == norm))
+                            {
+                                msIds.Add(source.Id);
+                            }
+                        }
+                    }
+
+                    foreach (int msId in msIds)
+                    {
+                        label.VNs[$"https://erogemusicquiz.com/ems{msId}"] = -1;
+
+                        HttpResponseMessage resUpdateLabel = await _client.PostAsJsonAsync("Auth/UpdateLabel",
+                            new ReqUpdateLabel(ClientState.Session!.Token, label, vndbInfo.DatabaseKind));
+                        if (resUpdateLabel.IsSuccessStatusCode)
+                        {
+                            var updatedLabel = await resUpdateLabel.Content.ReadFromJsonAsync<Label>();
+                            if (updatedLabel != null)
+                            {
+                                Label oldLabel = ClientState.VndbInfo
+                                    .First(x => x.DatabaseKind == vndbInfo.DatabaseKind).Labels!
+                                    .Single(x => x.Id == updatedLabel.Id);
+                                oldLabel.Kind = updatedLabel.Kind;
+                                oldLabel.VNs = updatedLabel.VNs;
+                            }
+
+                            await _guessInputComponentRef.ClearInputField();
+                        }
+                        else
+                        {
+                            // todo warn user & restore old label state
+                            InProgress = false;
+                            StateHasChanged();
+                            throw new Exception();
+                        }
+                    }
+
+                    await FetchMissingSongSourcesForEMQTab();
+                }
+            }
+        }
+
+        InProgress = false;
+        StateHasChanged();
+    }
+
+    private async Task DeleteEMQSourceFromLabel(Label label, string key)
+    {
+        InProgress = true;
+
+        label.VNs.Remove(key);
+        HttpResponseMessage resUpdateLabel = await _client.PostAsJsonAsync("Auth/UpdateLabel",
+            new ReqUpdateLabel(ClientState.Session!.Token, label, UserListDatabaseKind.EMQ));
+        if (resUpdateLabel.IsSuccessStatusCode)
+        {
+            var updatedLabel = await resUpdateLabel.Content.ReadFromJsonAsync<Label>();
+            if (updatedLabel != null)
+            {
+                Label oldLabel = ClientState.VndbInfo
+                    .First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels!
+                    .Single(x => x.Id == updatedLabel.Id);
+                oldLabel.Kind = updatedLabel.Kind;
+                oldLabel.VNs = updatedLabel.VNs;
+            }
+        }
+        else
+        {
+            // todo warn user & restore old label state
+            InProgress = false;
+            StateHasChanged();
+            throw new Exception();
+        }
+
+        InProgress = false;
     }
 }

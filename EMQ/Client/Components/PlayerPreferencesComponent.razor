@@ -136,205 +136,246 @@
 
     </Blazorise.TabPanel>
     <Blazorise.TabPanel Name="TabLists">
-        <div>
-            <ul>
-                @foreach (string item in LoginProgressDisplay)
-                {
-                    <li>@item</li>
-                }
-            </ul>
-        </div>
-
-        <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
-            🗑
-        </button>
-
-        <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
-            <option value="@CreateNewPresetValue">- Create new preset -</option>
-            @foreach (var preset in Presets)
+    <div>
+        <ul>
+            @foreach (string item in LoginProgressDisplay)
             {
-                <option value="@preset.name">@preset.name</option>
+                <li>@item</li>
             }
-        </select>
-        <label for="SelectPreset">Preset</label>
-        <br/>
+        </ul>
+    </div>
 
-        <br/>
-        @if (!string.IsNullOrEmpty(SelectedPresetName))
+    <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
+        🗑
+    </button>
+
+    <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
+        <option value="@CreateNewPresetValue">- Create new preset -</option>
+        @foreach (var preset in Presets)
         {
-            <Blazorise.Tabs @bind-SelectedTab="@_selectedTabLists">
-                <Items>
-                    @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
-                    {
-                        <Blazorise.Tab Name="@(databaseKind.ToString())">@databaseKind.GetDescription()</Blazorise.Tab>
-                    }
-                </Items>
-                <Content>
+            <option value="@preset.name">@preset.name</option>
+        }
+    </select>
+    <label for="SelectPreset">Preset</label>
+    <br/>
 
-                    @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
-                    {
-                        <Blazorise.TabPanel Name="@(databaseKind.ToString())">
-                            @if (databaseKind is UserListDatabaseKind.EMQ)
+    <br/>
+    @if (!string.IsNullOrEmpty(SelectedPresetName))
+    {
+        <Blazorise.Tabs @bind-SelectedTab="@_selectedTabLists">
+            <Items>
+                @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
+                {
+                    <Blazorise.Tab Name="@(databaseKind.ToString())">@databaseKind.GetDescription()</Blazorise.Tab>
+                }
+            </Items>
+            <Content>
+
+                @foreach (var databaseKind in Enum.GetValues<UserListDatabaseKind>())
+                {
+                    var vndbInfo = ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == databaseKind);
+                    <Blazorise.TabPanel Name="@(databaseKind.ToString())">
+                        @if (databaseKind is UserListDatabaseKind.EMQ)
+                        {
+                            if (vndbInfo is null)
                             {
-                                <p>soon™</p>
+                                <br/>
+                                <button type="button" class="btn btn-success" @onclick="@AddEMQVndbInfo">
+                                    Add
+                                </button>
                             }
-                            else if (databaseKind is UserListDatabaseKind.VNDB or UserListDatabaseKind.MAL)
+                            else
                             {
-                                var vndbInfo = ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == databaseKind);
-                                if (vndbInfo is null)
-                                {
-                                    <br/>
-                                    <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">
-                                        Add
-                                    </button>
-                                }
-                                else
-                                {
-                                    string vndbIdText = databaseKind == UserListDatabaseKind.MAL ? "Username" : "Id";
-                                    <InputText id="VndbId" type="text" @bind-Value="@vndbInfo.VndbId" style="margin: 5px"/>
-                                    <label for="VndbId">@(vndbIdText)</label>
-                                    <br/>
+                                var label = ClientState.VndbInfo.First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels.Single();
+                                <div style="min-height: 350px;">
+                                    <GuessInputComponent @ref="_guessInputComponentRef"
+                                                         Placeholder="Enter source title here"
+                                                         IsDisabled="false"
+                                                         IsQuizPage="false"
+                                                         @bind-Guess="@selectedMusicSourceTitle"
+                                                         Callback="SelectedResultChangedMst"
+                                                         UseAll="true"
+                                                         AllowTypingId="true">
+                                    </GuessInputComponent>
 
-                                    @if (databaseKind == UserListDatabaseKind.VNDB)
+                                    @if (label != null)
                                     {
-                                        <InputText id="VndbApiToken" type="text" @bind-Value="@ClientVndbApiToken" style="margin: 5px"/>
-                                        <label for="VndbApiToken">
-                                            <a href="https://vndb.org/u/tokens" target="_blank">API Token</a> (Optional, only required if your list is private, not sent to server)
-                                        </label>
-                                        <br/>
-                                    }
-
-                                    <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="@(() => SetVndbInfo(vndbInfo))" style="margin: 5px">
-                                        Set list info
-                                    </button>
-                                    <br/>
-
-                                    @if (vndbInfo.Labels is not null)
-                                    {
-                                        <br/>
-                                        <select style="margin: 5px" @bind="SelectedSSSTM">
-                                            @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
-                                            {
-                                                <option value="@ssstm">@ssstm</option>
-                                            }
-                                        </select>
-                                        <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
-                                            Calculate stats
-                                        </button>
-
-                                        @if (LabelStats.TryGetValue(SelectedPresetName, out var labelStats) && labelStats != null)
+                                        @foreach ((string key, int _) in label.VNs)
                                         {
-                                            <ul>
+                                            <ul style="list-style: none;">
+                                                @if (!ClientState.SourcesCache.TryGetValue(Convert.ToInt32(key.Replace("https://erogemusicquiz.com/ems", "")), out var ms))
+                                                {
+                                                    ms = new SongSource() { Titles = new List<Title>() { new() { LatinTitle = key } } };
+                                                }
+
                                                 <li>
-                                                    Total songs: @(labelStats.TotalSongs)
-                                                    <ul>
-                                                        @foreach ((SongSourceSongType key, int value) in labelStats.SSST)
-                                                        {
-                                                            <li>@key.GetDisplayName(): @value</li>
-                                                        }
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    Total VNs: @(labelStats.TotalSources)
-                                                </li>
-                                                <li>
-                                                    Total artists: @(labelStats.TotalArtists)
-                                                </li>
-                                                <li>
-                                                    Average guess rate: @(Math.Round(labelStats.CorrectPercentage, 2))%
-                                                    <ul>
-                                                        @foreach ((SongDifficultyLevel key, int value) in labelStats.SongDifficultyLevels)
-                                                        {
-                                                            <li>@key.GetDisplayName(): @value</li>
-                                                        }
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    Average guess time: @(Math.Round(labelStats.GuessMs / 1000, 2))s
-                                                </li>
-                                                <li>
-                                                    Average unique players: @(Math.Round(labelStats.UniqueUsers, 2))
+                                                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await DeleteEMQSourceFromLabel(label, key))">🗑</span>
+                                                    <a href=@key target="_blank" style="color: inherit; text-decoration-line: inherit;">
+                                                        @Converters.GetSingleTitle(ms.Titles)
+                                                    </a>
                                                 </li>
                                             </ul>
                                         }
                                     }
+                                </div>
+                            }
+                        }
+                        else if (databaseKind is UserListDatabaseKind.VNDB or UserListDatabaseKind.MAL)
+                        {
+                            if (vndbInfo is null)
+                            {
+                                <br/>
+                                <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">
+                                    Add
+                                </button>
+                            }
+                            else
+                            {
+                                string vndbIdText = databaseKind == UserListDatabaseKind.MAL ? "Username" : "Id";
+                                <InputText id="VndbId" type="text" @bind-Value="@vndbInfo.VndbId" style="margin: 5px"/>
+                                <label for="VndbId">@(vndbIdText)</label>
+                                <br/>
 
-                                    <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
-                                        <h5>Label settings</h5>
-                                        @if (vndbInfo.Labels is not null)
+                                @if (databaseKind == UserListDatabaseKind.VNDB)
+                                {
+                                    <InputText id="VndbApiToken" type="text" @bind-Value="@ClientVndbApiToken" style="margin: 5px"/>
+                                    <label for="VndbApiToken">
+                                        <a href="https://vndb.org/u/tokens" target="_blank">API Token</a> (Optional, only required if your list is private, not sent to server)
+                                    </label>
+                                    <br/>
+                                }
+
+                                <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="@(() => SetVndbInfo(vndbInfo))" style="margin: 5px">
+                                    Set list info
+                                </button>
+                                <br/>
+
+                                @if (vndbInfo.Labels is not null)
+                                {
+                                    <br/>
+                                    <select style="margin: 5px" @bind="SelectedSSSTM">
+                                        @foreach (var ssstm in Enum.GetValues<SongSourceSongTypeMode>())
                                         {
-                                            <p>
-                                                You can include or exclude list labels here. If a Source is labeled with both Exclude and Include, it will be excluded.
-                                                You might get throttled if you select a label that contains more than a few thousand Sources.
-                                            </p>
+                                            <option value="@ssstm">@ssstm</option>
+                                        }
+                                    </select>
+                                    <button type="button" class="btn btn-primary" disabled="@InProgress" @onclick="OnclickCalculateStats" style="margin: 5px">
+                                        Calculate stats
+                                    </button>
 
-                                            <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
-                                                @foreach (var label in vndbInfo.Labels)
-                                                {
-                                                    <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
-                                                        <div class="labelCardBody card-body">
-                                                            <span>#@label.Id @label.Name (@label.VNs.Count)</span>
-                                                            @if (label.IsPrivate)
-                                                            {
-                                                                <span> Private </span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span> Public </span>
-                                                            }
+                                    @if (LabelStats.TryGetValue(SelectedPresetName, out var labelStats) && labelStats != null)
+                                    {
+                                        <ul>
+                                            <li>
+                                                Total songs: @(labelStats.TotalSongs)
+                                                <ul>
+                                                    @foreach ((SongSourceSongType key, int value) in labelStats.SSST)
+                                                    {
+                                                        <li>@key.GetDisplayName(): @value</li>
+                                                    }
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                Total VNs: @(labelStats.TotalSources)
+                                            </li>
+                                            <li>
+                                                Total artists: @(labelStats.TotalArtists)
+                                            </li>
+                                            <li>
+                                                Average guess rate: @(Math.Round(labelStats.CorrectPercentage, 2))%
+                                                <ul>
+                                                    @foreach ((SongDifficultyLevel key, int value) in labelStats.SongDifficultyLevels)
+                                                    {
+                                                        <li>@key.GetDisplayName(): @value</li>
+                                                    }
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                Average guess time: @(Math.Round(labelStats.GuessMs / 1000, 2))s
+                                            </li>
+                                            <li>
+                                                Average unique players: @(Math.Round(labelStats.UniqueUsers, 2))
+                                            </li>
+                                        </ul>
+                                    }
+                                }
 
-                                                            <span title="Refresh" style="cursor: pointer; float: right; pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress)" @onclick="@(() => RefreshLabel(label, label.Kind, vndbInfo))">
-                                                                ⟲
-                                                            </span>
+                                <div id="labelSettings" style="border: 1px solid black; margin: 2px; padding: 5px;">
+                                    <h5>Label settings</h5>
+                                    @if (vndbInfo.Labels is not null)
+                                    {
+                                        <p>
+                                            You can include or exclude list labels here. If a Source is labeled with both Exclude and Include, it will be excluded.
+                                            You might get throttled if you select a label that contains more than a few thousand Sources.
+                                        </p>
 
-                                                            <br/>
-                                                            <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
+                                        <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
+                                            @foreach (var label in vndbInfo.Labels)
+                                            {
+                                                <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
+                                                    <div class="labelCardBody card-body">
+                                                        <span>#@label.Id @label.Name (@label.VNs.Count)</span>
+                                                        @if (label.IsPrivate)
+                                                        {
+                                                            <span> Private </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span> Public </span>
+                                                        }
+
+                                                        <span title="Refresh" style="cursor: pointer; float: right; pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress)" @onclick="@(() => RefreshLabel(label, label.Kind, vndbInfo))">
+                                                            ⟲
+                                                        </span>
+
+                                                        <br/>
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
+                                                            <label class="btn btn-outline-primary"
+                                                                   style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
                                                                                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");
                                                                                                             pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Include)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include, vndbInfo))"> Include
-                                                                </label>
+                                                                <input type="radio" checked="@(label.Kind == LabelKind.Include)"
+                                                                       @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include, vndbInfo))"> Include
+                                                            </label>
 
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
+                                                            <label class="btn btn-outline-primary"
+                                                                   style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
                                                                                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");
                                                                                                             pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe, vndbInfo))"> Ignore
-                                                                </label>
+                                                                <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
+                                                                       @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe, vndbInfo))"> Ignore
+                                                            </label>
 
-                                                                <label class="btn btn-outline-primary"
-                                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
+                                                            <label class="btn btn-outline-primary"
+                                                                   style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
                                                                                                             color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");
                                                                                                             pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
 
-                                                                    <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
-                                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude, vndbInfo))"> Exclude
-                                                                </label>
-                                                            </div>
-
+                                                                <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
+                                                                       @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude, vndbInfo))"> Exclude
+                                                            </label>
                                                         </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <p>Your list info is not set.</p>
-                                        }
-                                    </div>
-                                }
-                            }
 
-                        </Blazorise.TabPanel>
-                    }
-                </Content>
-            </Blazorise.Tabs>
-        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p>Your list info is not set.</p>
+                                    }
+                                </div>
+                            }
+                        }
+
+                    </Blazorise.TabPanel>
+                }
+            </Content>
+        </Blazorise.Tabs>
+    }
     </Blazorise.TabPanel>
 
     <Blazorise.TabPanel Name="TabAvatar">

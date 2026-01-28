@@ -393,7 +393,6 @@ public static class MusicBrainzImporter
             $"StartSection end: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         await DbManager.Init();
-        await DbManager.RefreshAutocompleteFiles();
     }
 
     [SuppressMessage("ReSharper", "StringLiteralTypo")]

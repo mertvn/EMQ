@@ -390,13 +390,11 @@ async Task Init()
             runner.MigrateUp();
         }
 
+        Directory.CreateDirectory(ServerState.AutocompleteFolder);
         await DbManager.Init();
         // var b = await DbManager.SelectSongsMIds(Enumerable.Range(1, 41800).ToList(), false);
         // var libraryStats = await DbManager.SelectLibraryStats(250, Enum.GetValues<SongSourceSongType>());
         // Environment.Exit(0);
-
-        Directory.CreateDirectory(ServerState.AutocompleteFolder);
-        await DbManager.RefreshAutocompleteFiles();
 
         if (precacheSongs)
         {
