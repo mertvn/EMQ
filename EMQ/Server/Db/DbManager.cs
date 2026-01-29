@@ -237,8 +237,9 @@ ORDER BY music_id;";
 
         // enforce SelfSource link consistency
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connection.ExecuteAsync(@$"DELETE FROM music_source_external_link WHERE TYPE = {(int)SongSourceLinkType.SelfSource};
-        INSERT INTO music_source_external_link SELECT id, 'https://erogemusicquiz.com/ems'||id, {(int)SongSourceLinkType.SelfSource}, '' FROM music_source;");
+        await connection.ExecuteAsync(
+            @$"DELETE FROM music_source_external_link WHERE TYPE = {(int)SongSourceLinkType.SelfSource};
+        INSERT INTO music_source_external_link SELECT id, 'https://erogemusicquiz.com/ems'||id, {(int)SongSourceLinkType.SelfSource}, '' FROM music_source ON CONFLICT DO NOTHING;");
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
