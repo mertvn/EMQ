@@ -557,7 +557,7 @@
 
         var anime = new SongSource()
         {
-            AirDateStart = data.aired?.from ?? DateTime.UnixEpoch,
+            AirDateStart = data.aired?.from?.ToUniversalTime() ?? DateTime.UnixEpoch,
             LanguageOriginal = "ja",
             RatingAverage = (int)((data.score ?? 0) * 100),
             RatingBayesian = (int)((data.score ?? 0) * 100),
