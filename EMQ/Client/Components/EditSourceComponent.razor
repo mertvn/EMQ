@@ -44,7 +44,7 @@
 
         <details style="padding: 5px;">
             <summary>MAL seeder</summary>
-            <p>Enter a MAL anime id to fill information automatically.</p>
+            <p>Enter a MAL anime id or URL to fill information automatically.</p>
             <input type="text" @bind:get="@MalSeederInputText" @bind:set="@SeedFromMal" style="width: 540px;"/>
             <br/>
         </details>
@@ -535,7 +535,14 @@
     private async Task SeedFromMal(string value)
     {
         MalSeederInputText = value;
-        if (!int.TryParse(value, out int malId))
+        var match = Regex.Match(value, @"https://myanimelist\.net/anime/([0-9]+)/?.*");
+        if (!match.Success)
+        {
+            MalSeederInputText = "Invalid input.";
+            return;
+        }
+
+        if (!int.TryParse(match.Groups[1].Value, out int malId))
         {
             MalSeederInputText = "Invalid input.";
             return;
