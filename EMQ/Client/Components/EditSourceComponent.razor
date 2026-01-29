@@ -572,8 +572,8 @@
                 new() { Type = SongSourceLinkType.MyAnimeListAnime, Url = $"https://myanimelist.net/anime/{malId}" }
             },
             Type = SongSourceType.Anime,
-    // todo
-    // Developers = data.studios?.Select(x => new SongSourceDeveloper { VndbId =, Title = }).ToList() ?? new List<SongSourceDeveloper>()
+            Developers = data.studios?.Select(x =>
+                new SongSourceDeveloper { VndbId = x.mal_id?.ToString() ?? "", Title = new Title() { LatinTitle = x.name ?? "" } }).ToList() ?? new List<SongSourceDeveloper>()
         };
 
         Source = anime;
