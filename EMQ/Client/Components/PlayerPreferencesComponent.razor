@@ -224,7 +224,7 @@
                         {
                             if (vndbInfo is null)
                             {
-                                @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
+                                @if (databaseKind is not UserListDatabaseKind.MAL || AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
                                 {
                                     <br/>
                                     <button type="button" class="btn btn-success" @onclick="@(() => ClientState.VndbInfo.Add(new PlayerVndbInfo() { DatabaseKind = databaseKind }))">

@@ -353,7 +353,7 @@ public partial class PlayerPreferencesComponent
                         SelectedPresetName = promptResult;
                         ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
                         ClientState.VndbInfo.AddRange(Enum.GetValues<UserListDatabaseKind>()
-                            .Where(x => x != UserListDatabaseKind.EMQ)
+                            .Where(x => x == UserListDatabaseKind.VNDB)
                             .Select(x => new PlayerVndbInfo() { DatabaseKind = x }));
                     }
                     else
