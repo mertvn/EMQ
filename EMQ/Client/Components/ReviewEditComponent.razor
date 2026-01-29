@@ -171,11 +171,7 @@
                 }
 
                 <p>Keybinds: A (Prev), D (Next), P (Seek to pending), Z (Rejected), X (Pending), C (Approved)</p>
-
-                @if (isEditMod)
-                {
-                    <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
-                }
+                <pre>@JsonSerializer.Serialize(reviewingItem, Utils.JsoIndented)</pre>
             }
         </Blazorise.ModalBody>
         <Blazorise.ModalFooter>
