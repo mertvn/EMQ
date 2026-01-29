@@ -173,7 +173,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
 
         return (TValue[])(object)dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value)
-            .DistinctBy(x => x.Key.MSTLatinTitle)
+            .DistinctBy(x => new { x.Key.MSTLatinTitle, x.Key.SongSourceType })
             .Take(maxResults)
             .Select(x => x.Key)
             .ToArray();
