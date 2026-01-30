@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using EMQ.Client.Components;
@@ -57,6 +58,8 @@ public class ClientUtils
     private bool IsRestoringSession { get; set; }
 
     private bool IsRestoringPreferences { get; set; }
+
+    private static readonly SemaphoreSlim s_uploadSemaphore = new(3);
 
     public async Task<Room?> SyncRoom()
     {
@@ -236,6 +239,7 @@ public class ClientUtils
     {
         try
         {
+            await s_uploadSemaphore.WaitAsync();
             using var content = new MultipartFormDataContent();
             var fileContent = new StreamContent(file.OpenReadStream(UploadConstants.MaxFilesizeBytes));
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(fileContentType);
@@ -289,6 +293,10 @@ public class ClientUtils
         {
             uploadResult.ErrorStr = $"Client-side exception while uploading: {ex}";
             return false;
+        }
+        finally
+        {
+            s_uploadSemaphore.Release();
         }
     }
 
