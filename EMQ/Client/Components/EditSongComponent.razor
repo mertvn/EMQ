@@ -987,7 +987,7 @@
 
         foreach (SongArtist songArtist in Song.Artists)
         {
-            if (!songArtist.Roles.Any())
+            if (!songArtist.Roles.Any() && DefaultRole != SongArtistRole.Unknown)
             {
                 songArtist.Roles = new List<SongArtistRole>() { DefaultRole };
             }
