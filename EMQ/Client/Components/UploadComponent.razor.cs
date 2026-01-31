@@ -22,11 +22,19 @@ public partial class UploadComponent
     public int mId { get; set; }
 
     [Parameter]
+    public bool IsBGM { get; set; }
+
+    [Parameter]
     public Func<Task>? ParentStateHasChangedCallback { get; set; }
 
     private string StatusText { get; set; } = "";
 
     public UploadOptions UploadOptions { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        UploadOptions.ShouldCropSilence = !IsBGM;
+    }
 
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {

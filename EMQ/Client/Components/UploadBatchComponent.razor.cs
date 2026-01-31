@@ -41,6 +41,11 @@ public partial class UploadBatchComponent
 
     public UploadOptions UploadOptions { get; set; } = new();
 
+    protected override void OnParametersSet()
+    {
+        UploadOptions.ShouldCropSilence = !IsBGMMode;
+    }
+
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         if (UploadTasks.Any(x => !x.IsCompleted))
