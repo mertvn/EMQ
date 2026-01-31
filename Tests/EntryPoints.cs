@@ -7,7 +7,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Dapper;
@@ -2111,6 +2113,58 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         foreach (int i in maybe)
         {
             Console.WriteLine($"https://erogemusicquiz.com/ems{i}");
+        }
+    }
+
+    [Test, Explicit]
+    public async Task FetchAnimeCovers()
+    {
+        var client = new HttpClient();
+        const string baseUrl = "https://api.jikan.moe/v4/";
+        const string baseDownloadDir = "C:/malcovers";
+        Directory.CreateDirectory(baseDownloadDir);
+        foreach (int id in Enumerable.Range(1, 63_350))
+        {
+            string outputPath = $@"{baseDownloadDir}/{id}.webp";
+            string outputPathError = $@"{baseDownloadDir}/{id}_err.txt";
+            try
+            {
+                if (!File.Exists(outputPath) && !File.Exists(outputPathError))
+                {
+                    string url = $"{baseUrl}anime/{id}";
+                    var res = await client.GetFromJsonAsync<JsonElement>(url);
+                    string? imageUrl = res.GetProperty("data").GetProperty("images").GetProperty("webp")
+                        .GetProperty("large_image_url").GetString();
+                    byte[] image = await client.GetByteArrayAsync(imageUrl);
+                    await File.WriteAllBytesAsync(outputPath, image);
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("404"))
+                {
+                    await File.WriteAllTextAsync(outputPathError, e.Message);
+                }
+            }
+        }
+
+        string imageKind = "cv";
+        string[] files = Directory.GetFiles(baseDownloadDir);
+        foreach (string file in files)
+        {
+            if (file.EndsWith(".webp"))
+            {
+                string filename = Path.GetFileNameWithoutExtension(file);
+                (string? modStr, int number) = Utils.ParseVndbScreenshotStr($"{imageKind}{filename}");
+                string outDir =$"{baseDownloadDir}/mal-img/{imageKind}/{modStr}";
+                string final = $"{outDir}/{number}.webp";
+                if (!File.Exists(final))
+                {
+                    Directory.CreateDirectory(outDir);
+                    File.Copy(file, final);
+                }
+            }
         }
     }
 }

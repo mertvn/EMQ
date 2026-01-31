@@ -27,6 +27,7 @@ public class Setup
         // Console.WriteLine(Directory.GetCurrentDirectory());
         DotEnv.Load("../../../../.env");
 
+        ServerState.WwwRootFolder = "../../../../EMQ/Client/wwwroot";
         // todo important: don't run this if the db doesn't exist
         await DbManager.Init();
 

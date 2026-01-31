@@ -11,17 +11,17 @@ public enum ScreenshotKind
     VN,
 
     [Display(Name = "cv")]
-    [Description("VN cover")]
+    [Description("Source cover")]
     VNCover,
 
     [Display(Name = "ch")]
     Character,
 
     [Display(Name = "sf")]
-    [Description("VN (prefer explicit)")]
+    [Description("Source (prefer explicit)")]
     VNPreferExplicit,
 
     [Display(Name = "cv")]
-    [Description("VN cover (blurred text)")]
+    [Description("Source cover (blurred text)")]
     VNCoverBlurredText,
 }

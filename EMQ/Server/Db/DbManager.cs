@@ -5534,119 +5534,155 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         Dictionary<string, DateTime> imageLastPlayedAtDict)
     {
         string ret = "";
-        var vndbLink = songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB);
-        if (vndbLink == null)
-        {
-            return ret;
-        }
-
         string[] exc = imageLastPlayedAtDict.Where(x =>
                 (DateTime.UtcNow - x.Value) < TimeSpan.FromMinutes(Math.Clamp(preventSameImageSpamMinutes, 0, 777)))
             .Select(x => x.Key).ToArray();
 
-        string sourceVndbId = vndbLink.Url.ToVndbId();
-        switch (screenshotKind)
+        switch (songSource.Type)
         {
-            case ScreenshotKind.None:
-                break;
-            case ScreenshotKind.VN:
+            case SongSourceType.VN:
                 {
-                    const string sql = "SELECT scr from vn_screenshots where id = @id AND NOT scr = ANY(@exc)";
-                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    var externalLink = songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.VNDB);
+                    if (externalLink == null)
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
-                            .Shuffle().FirstOrDefault();
-                        if (!string.IsNullOrEmpty(screenshot))
-                        {
-                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
-                                .ReplaceSelfhostLink();
-                        }
+                        return ret;
+                    }
+
+                    string sourceExternalId = externalLink.Url.ToVndbId();
+                    switch (screenshotKind)
+                    {
+                        case ScreenshotKind.VN:
+                            {
+                                const string sql =
+                                    "SELECT scr from vn_screenshots where id = @id AND NOT scr = ANY(@exc)";
+                                await using var connection =
+                                    new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                                string? screenshot =
+                                    (await connection.QueryAsync<string?>(sql, new { id = sourceExternalId, exc }))
+                                    .Shuffle().FirstOrDefault();
+                                if (!string.IsNullOrEmpty(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
+                                        .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
+                        case ScreenshotKind.VNCover:
+                            {
+                                const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
+                                await using var connection =
+                                    new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                                string? screenshot =
+                                    (await connection.QueryAsync<string?>(sql, new { id = sourceExternalId, exc }))
+                                    .Shuffle().FirstOrDefault();
+                                if (!string.IsNullOrEmpty(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv/{modStr}/{number}.jpg"
+                                        .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
+                        case ScreenshotKind.Character:
+                            {
+                                string[]? role = vndbCharRoles?.Where(x => x.Value)
+                                    .Select(x => x.Key.ToString().ToLowerInvariant())
+                                    .ToArray() ?? null;
+                                const string sql =
+                                    "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id " +
+                                    "and ((@role::char_role[] IS NULL) or cv.role = ANY(@role::char_role[])) AND NOT c.image = ANY(@exc)";
+                                await using var connection =
+                                    new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                                string? screenshot =
+                                    (await connection.QueryAsync<string?>(sql,
+                                        new { id = sourceExternalId, role, exc }))
+                                    .Shuffle()
+                                    .FirstOrDefault();
+                                if (!string.IsNullOrEmpty(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg"
+                                        .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
+                        case ScreenshotKind.VNPreferExplicit:
+                            {
+                                const string sql =
+                                    "SELECT scr from vn_screenshots vs join images i on i.id = vs.scr where vs.id = @id and i.c_sexual_avg > 100 AND NOT scr = ANY(@exc)";
+                                await using var connection =
+                                    new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                                string? screenshot =
+                                    (await connection.QueryAsync<string?>(sql, new { id = sourceExternalId, exc }))
+                                    .Shuffle().FirstOrDefault();
+                                if (!string.IsNullOrEmpty(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
+                                        .ReplaceSelfhostLink();
+                                }
+                                else
+                                {
+                                    ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN, null,
+                                        preventSameImageSpamMinutes, imageLastPlayedAtDict);
+                                }
+
+                                break;
+                            }
+                        case ScreenshotKind.VNCoverBlurredText:
+                            {
+                                const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
+                                await using var connection =
+                                    new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                                string? screenshot =
+                                    (await connection.QueryAsync<string?>(sql, new { id = sourceExternalId, exc }))
+                                    .Shuffle().FirstOrDefault();
+                                if (!string.IsNullOrEmpty(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret =
+                                        $"https://emqselfhost/selfhoststorage/vndb-img/cv_blurredtext/{modStr}/{number}.jpg"
+                                            .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
                     }
 
                     break;
                 }
-            case ScreenshotKind.VNCover:
+            case SongSourceType.Anime:
                 {
-                    const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
-                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
+                    var externalLink =
+                        songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.MyAnimeListAnime);
+                    if (externalLink == null)
                     {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
-                            .Shuffle().FirstOrDefault();
-                        if (!string.IsNullOrEmpty(screenshot))
-                        {
-                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv/{modStr}/{number}.jpg"
-                                .ReplaceSelfhostLink();
-                        }
+                        return ret;
+                    }
+
+                    string sourceExternalId = externalLink.Url.LastSegment();
+                    switch (screenshotKind)
+                    {
+                        case ScreenshotKind.VNCover:
+                            {
+                                string screenshot = $"cv{sourceExternalId}";
+                                if (!exc.Contains(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/mal-img/cv/{modStr}/{number}.webp"
+                                        .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
                     }
 
                     break;
                 }
-            case ScreenshotKind.Character:
-                {
-                    string[]? role = vndbCharRoles?.Where(x => x.Value).Select(x => x.Key.ToString().ToLowerInvariant())
-                        .ToArray() ?? null;
-                    const string sql =
-                        "SELECT c.image from chars c join chars_vns cv on cv.id = c.id join vn v on v.id = cv.vid where c.image is not null and v.id = @id " +
-                        "and ((@role::char_role[] IS NULL) or cv.role = ANY(@role::char_role[])) AND NOT c.image = ANY(@exc)";
-                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
-                    {
-                        string? screenshot =
-                            (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, role, exc })).Shuffle()
-                            .FirstOrDefault();
-                        if (!string.IsNullOrEmpty(screenshot))
-                        {
-                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg"
-                                .ReplaceSelfhostLink();
-                        }
-                    }
-
-                    break;
-                }
-            case ScreenshotKind.VNPreferExplicit:
-                {
-                    const string sql =
-                        "SELECT scr from vn_screenshots vs join images i on i.id = vs.scr where vs.id = @id and i.c_sexual_avg > 100 AND NOT scr = ANY(@exc)";
-                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
-                    {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
-                            .Shuffle().FirstOrDefault();
-                        if (!string.IsNullOrEmpty(screenshot))
-                        {
-                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/sf/{modStr}/{number}.jpg"
-                                .ReplaceSelfhostLink();
-                        }
-                        else
-                        {
-                            ret = await GetRandomScreenshotUrl(songSource, ScreenshotKind.VN, null,
-                                preventSameImageSpamMinutes, imageLastPlayedAtDict);
-                        }
-                    }
-
-                    break;
-                }
-            case ScreenshotKind.VNCoverBlurredText:
-                {
-                    const string sql = "SELECT image from vn where id = @id AND NOT image = ANY(@exc)";
-                    await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
-                    {
-                        string? screenshot = (await connection.QueryAsync<string?>(sql, new { id = sourceVndbId, exc }))
-                            .Shuffle().FirstOrDefault();
-                        if (!string.IsNullOrEmpty(screenshot))
-                        {
-                            (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
-                            ret = $"https://emqselfhost/selfhoststorage/vndb-img/cv_blurredtext/{modStr}/{number}.jpg"
-                                .ReplaceSelfhostLink();
-                        }
-                    }
-
-                    break;
-                }
-            default:
-                throw new ArgumentOutOfRangeException(nameof(screenshotKind), screenshotKind, null);
         }
 
         return ret;

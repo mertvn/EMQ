@@ -465,7 +465,7 @@ public class QuizManager
         var song = Quiz.Songs[Quiz.QuizState.sp];
         List<string> characterIds = new(1); // a character image very rarely can be used for multiple characters
         bool isSpecificCharMode = !string.IsNullOrWhiteSpace(song.ScreenshotUrl) &&
-                                  song.ScreenshotUrl.Contains("vndb-img/ch/");
+                                  song.ScreenshotUrl.Contains("/ch/");
         bool needToFillCharacterName = isSpecificCharMode && string.IsNullOrWhiteSpace(song.CharacterName);
         bool needToFillSeiyuuName = isSpecificCharMode && string.IsNullOrWhiteSpace(song.SeiyuuName);
 
@@ -846,7 +846,9 @@ public class QuizManager
                     {
                         string str = song.ScreenshotUrl.UnReplaceSelfhostLink()
                             .Replace("https://emqselfhost/selfhoststorage/vndb-img/ch/", "")
-                            .Replace(".jpg", "");
+                            .Replace("https://emqselfhost/selfhoststorage/mal-img/ch/", "")
+                            .Replace(".jpg", "")
+                            .Replace(".webp", "");
                         string number = str.Split('/')[1];
                         string imgId = $"ch{number}";
                         foreach (string vndbId in vndbIds)
@@ -1251,7 +1253,8 @@ public class QuizManager
         if (Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes > 0 && !string.IsNullOrEmpty(song.ScreenshotUrl))
         {
             string imagePrefix = Quiz.Room.QuizSettings.Filters.ScreenshotKind.GetDisplayName()!;
-            string imageId = $"{imagePrefix}{song.ScreenshotUrl.LastSegment().Replace(".jpg", "")}";
+            string imageId =
+                $"{imagePrefix}{song.ScreenshotUrl.LastSegment().Replace(".jpg", "").Replace(".webp", "")}";
             Quiz.Room.ImageLastPlayedAtDict[imageId] = DateTime.UtcNow;
         }
 
@@ -2485,7 +2488,7 @@ public class QuizManager
             }
 
             song.CoverUrl = await DbManager.GetRandomScreenshotUrl(songSource, ScreenshotKind.VNCover, null,
-                Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes, Quiz.Room.ImageLastPlayedAtDict);
+                Quiz.Room.QuizSettings.PreventSameScreenshotSpamMinutes, new Dictionary<string, DateTime>());
         }
 
         TypedQuizHub.ReceiveQuizEntered(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id));
