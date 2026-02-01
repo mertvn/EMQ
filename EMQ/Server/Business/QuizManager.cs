@@ -842,6 +842,9 @@ public class QuizManager
                     correctAnswers = new List<string>();
                     var vndbIds = song.Sources.SelectMany(x =>
                         x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(y => y.Url.ToVndbId()));
+                    var malIds = song.Sources.SelectMany(x =>
+                        x.Links.Where(y => y.Type == SongSourceLinkType.MyAnimeListAnime).Select(y =>
+                            $"mal-anime-{y.Url.Replace("https://myanimelist.net/anime/", "").Replace("/", "")}"));
                     if (isSpecificCharMode)
                     {
                         string str = song.ScreenshotUrl.UnReplaceSelfhostLink()
@@ -851,17 +854,16 @@ public class QuizManager
                             .Replace(".webp", "");
                         string number = str.Split('/')[1];
                         string imgId = $"ch{number}";
-                        foreach (string vndbId in vndbIds)
+                        foreach (string vndbId in vndbIds.Concat(malIds))
                         {
                             if (DbManager.VnCharacters.TryGetValue(vndbId, out var vnChars))
                             {
-                                foreach ((string? _, string? cid, string? image, string? latin,
-                                             string? name) in vnChars)
+                                foreach (var charsDenorm in vnChars)
                                 {
-                                    if (image == imgId)
+                                    if (charsDenorm.image == imgId)
                                     {
-                                        characterIds.Add(cid);
-                                        var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                        characterIds.Add(charsDenorm.cid);
+                                        var title = Utils.VndbTitleToEmqTitle(charsDenorm.name, charsDenorm.latin);
                                         correctAnswers.Add(title.latinTitle);
                                         if (title.nonLatinTitle != null)
                                         {
@@ -880,9 +882,9 @@ public class QuizManager
                         {
                             if (DbManager.VnCharacters.TryGetValue(vndbId, out var vnChars))
                             {
-                                foreach ((string? _, string? _, string? _, string? latin, string? name) in vnChars)
+                                foreach (var charsDenorm in vnChars)
                                 {
-                                    var title = Utils.VndbTitleToEmqTitle(name, latin);
+                                    var title = Utils.VndbTitleToEmqTitle(charsDenorm.name, charsDenorm.latin);
                                     correctAnswers.Add(title.latinTitle);
                                     if (title.nonLatinTitle != null)
                                     {

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
@@ -2157,7 +2158,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             {
                 string filename = Path.GetFileNameWithoutExtension(file);
                 (string? modStr, int number) = Utils.ParseVndbScreenshotStr($"{imageKind}{filename}");
-                string outDir =$"{baseDownloadDir}/mal-img/{imageKind}/{modStr}";
+                string outDir = $"{baseDownloadDir}/mal-img/{imageKind}/{modStr}";
                 string final = $"{outDir}/{number}.webp";
                 if (!File.Exists(final))
                 {
@@ -2166,5 +2167,77 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 }
             }
         }
+    }
+
+    [Test, Explicit]
+    public async Task FetchAnimeCharactersInfo()
+    {
+        await using var connectionScrapsMal = new NpgsqlConnection(ConnectionHelper
+            .GetConnectionStringBuilderWithDatabaseUrl("postgresql://postgres:postgres@127.0.0.1:5432/SCRAPS_MAL")
+            .ToString());
+        var client = new HttpClient();
+        const string baseUrl = "https://api.jikan.moe/v4/";
+        var have =
+            await connectionScrapsMal.QueryAsync<int>("select replace(key, 'mal-ch-', '')::int from generic_fetch");
+        foreach (int id in Enumerable.Range(1, 289_230).Except(have))
+        {
+            string key = $"mal-ch-{id}";
+            GenericFetch dto = new() { key = key };
+            string url = $"{baseUrl}characters/{id}/full";
+            var res = await client.GetAsync(url);
+            dto.modified_at = DateTime.UtcNow;
+            dto.status = (int)res.StatusCode;
+            if (res.StatusCode is HttpStatusCode.OK)
+            {
+                string content = await res.Content.ReadAsStringAsync();
+                dto.value = content;
+            }
+
+            await connectionScrapsMal.InsertAsync(dto);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        var fetched = await connectionScrapsMal.QueryAsync<string>(
+            "select value from generic_fetch where key like 'mal-ch-%' and value is not null");
+        var animeCharacters = new List<CharsDenorm>(16000);
+        foreach (string s in fetched)
+        {
+            var deser = JsonSerializer.Deserialize<JikanCharactersFullRoot>(s)!;
+            foreach (JikanAnimeIntermediary animeIntermediary in deser.data.anime)
+            {
+                string vid = $"mal-anime-{animeIntermediary.anime.mal_id}";
+                string cid = deser.data.mal_id.ToString()!;
+                string image = $"ch{cid}";
+                string latin = deser.data.name;
+
+                // some of the kanji names contain a space and others don't, but brute-forcing it like the EGSImporter would cost too much space
+                string name = deser.data.name_kanji;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    (latin, name) = (name, latin); // compatability with VNDB names
+                }
+
+                VndbCharRoleKind? role = animeIntermediary.role switch
+                {
+                    "Main" => VndbCharRoleKind.Main,
+                    "Supporting" => VndbCharRoleKind.Side,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                var charsDenorm = new CharsDenorm
+                {
+                    vid = vid,
+                    cid = cid,
+                    image = image,
+                    latin = latin,
+                    name = name,
+                    role = role,
+                };
+                animeCharacters.Add(charsDenorm);
+            }
+        }
+
+        await using var connectionEmq = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connectionEmq.UpsertListAsync(animeCharacters);
     }
 }

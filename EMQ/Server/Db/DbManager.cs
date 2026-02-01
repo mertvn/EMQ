@@ -95,11 +95,23 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
                 string[] vids = (await connection.QueryAsync<string>(
                         $"SELECT DISTINCT REPLACE(url,'https://vndb.org/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.VNDB}"))
                     .ToArray();
-                var vnCharacters = await connectionVndb
-                    .QueryAsync<(string vid, string cid, string image, string? latin, string name)>(
-                        "select distinct cv.vid, c.id, c.image, c.latin, c.name from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
-                        new { vids });
-                VnCharacters = vnCharacters.GroupBy(x => x.vid)
+
+                string[] vidsMal = (await connection.QueryAsync<string>(
+                        $"SELECT DISTINCT REPLACE(url,'https://myanimelist.net/anime/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.MyAnimeListAnime}"))
+                    .Select(x => $"mal-anime-{x}").ToArray();
+
+                var sourceCharacters = new List<CharsDenorm>();
+                var vnCharacters = await connectionVndb.QueryAsync<CharsDenorm>(
+                    "select distinct cv.vid, c.id, c.image, c.latin, c.name, cv.role from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
+                    new { vids });
+                sourceCharacters.AddRange(vnCharacters);
+
+                var animeCharacters = await connection.QueryAsync<CharsDenorm>(
+                    "select distinct * from chars_denorm where vid = ANY(@vidsMal)",
+                    new { vidsMal });
+                sourceCharacters.AddRange(animeCharacters);
+
+                VnCharacters = sourceCharacters.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
 
                 var vnIllustrators = await connectionVndb
@@ -174,9 +186,8 @@ ORDER BY music_id;";
         VnDevelopers { get; set; } =
         FrozenDictionary<string, (string vId, string pId, string name, string? latin)[]>.Empty;
 
-    public static FrozenDictionary<string, List<(string vid, string cid, string image, string? latin, string name)>>
-        VnCharacters { get; set; } =
-        FrozenDictionary<string, List<(string vid, string cid, string image, string? latin, string name)>>.Empty;
+    public static FrozenDictionary<string, List<CharsDenorm>> VnCharacters { get; set; } =
+        FrozenDictionary<string, List<CharsDenorm>>.Empty;
 
     public static FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>
         VnIllustrators { get; set; } =
@@ -5685,6 +5696,42 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                                     (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
                                     ret = $"https://emqselfhost/selfhoststorage/mal-img/cv/{modStr}/{number}.webp"
                                         .ReplaceSelfhostLink();
+                                }
+
+                                break;
+                            }
+                        case ScreenshotKind.Character:
+                            {
+                                var validRoles = vndbCharRoles?.Where(x => x.Value)
+                                    .Select(x => x.Key)
+                                    .ToHashSet() ?? null;
+
+                                string sourceId = $"mal-anime-{sourceExternalId}";
+                                if (VnCharacters.TryGetValue(sourceId, out var sourceChars))
+                                {
+                                    string screenshot = "";
+                                    foreach (var charsDenorm in sourceChars.Shuffle())
+                                    {
+                                        if (exc.Contains(charsDenorm.image))
+                                        {
+                                            continue;
+                                        }
+
+                                        if (validRoles != null &&
+                                            (charsDenorm.role == null || !validRoles.Contains(charsDenorm.role.Value)))
+                                        {
+                                            continue;
+                                        }
+
+                                        screenshot = charsDenorm.image;
+                                    }
+
+                                    if (!string.IsNullOrEmpty(screenshot))
+                                    {
+                                        (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                        ret = $"https://emqselfhost/selfhoststorage/mal-img/ch/{modStr}/{number}.webp"
+                                            .ReplaceSelfhostLink();
+                                    }
                                 }
 
                                 break;
