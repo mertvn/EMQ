@@ -3402,7 +3402,7 @@ ORDER BY artist_id";
                     latinTitleNorm, nonLatinTitleNorm);
             });
 
-        res = res.Concat(emq).DistinctBy(x => x.MSTLatinTitle);
+        res = res.Concat(emq).DistinctBy(x => x.MSTLatinTitle).ToArray();
         AutocompleteDict[GuessKind.Developer] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
@@ -3416,18 +3416,28 @@ ORDER BY artist_id";
                     (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
                     string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
                     string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
-                    if (latinTitleNorm == nonLatinTitleNorm)
+
+                    // id and isMain are set to their default values here because it saves space and doesn't matter
+                    var re = new AutocompleteA(0, latinTitle, nonLatinTitle ?? "", false)
                     {
-                        nonLatinTitle = "";
-                        nonLatinTitleNorm = "";
+                        AALatinAliasNormalized = latinTitleNorm,
+                        AANonLatinAliasNormalized = nonLatinTitleNorm,
+                        AALatinAliasNormalizedReversed = Utils.GetReversedArtistName(latinTitle),
+                        AANonLatinAliasNormalizedReversed = Utils.GetReversedArtistName(nonLatinTitle),
+                    };
+
+                    if (re.AALatinAliasNormalized == re.AANonLatinAliasNormalized)
+                    {
+                        re.AANonLatinAlias = "";
+                        re.AANonLatinAliasNormalized = "";
+                        re.AANonLatinAliasNormalizedReversed = "";
                     }
 
-                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
-                        latinTitleNorm, nonLatinTitleNorm);
+                    return re;
                 }))
-            .DistinctBy(x => x.MSTLatinTitle);
+            .DistinctBy(x => x.AALatinAlias).ToArray();
 
-        AutocompleteDict[GuessKind.Character] = res.Select(x => x.MSTLatinTitle).ToArray();
+        AutocompleteDict[GuessKind.Character] = res.Select(x => x.AALatinAlias).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }
@@ -3449,7 +3459,7 @@ ORDER BY artist_id";
                     return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
-            .DistinctBy(x => x.MSTLatinTitle);
+            .DistinctBy(x => x.MSTLatinTitle).ToArray();
 
         AutocompleteDict[GuessKind.Illustrator] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
@@ -3473,7 +3483,7 @@ ORDER BY artist_id";
                     return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
                         latinTitleNorm, nonLatinTitleNorm);
                 }))
-            .DistinctBy(x => x.MSTLatinTitle);
+            .DistinctBy(x => x.MSTLatinTitle).ToArray();
 
         AutocompleteDict[GuessKind.Seiyuu] = res.Select(x => x.MSTLatinTitle).ToArray();
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);

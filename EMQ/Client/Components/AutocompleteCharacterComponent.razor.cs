@@ -19,7 +19,7 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteMst[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMst>();
+    public AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -56,7 +56,7 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/character.json"))!;
+        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/character.json"))!;
     }
 
     public void CallStateHasChanged()
@@ -93,22 +93,32 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
         var valueSpan = value.AsSpan();
         bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 50; // todo
-        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
-        foreach (AutocompleteMst d in AutocompleteData)
+        var dictLT = new Dictionary<AutocompleteA, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
+        foreach (AutocompleteA d in AutocompleteData)
         {
-            var matchLT = d.MSTLatinTitleNormalized.AsSpan()
+            var matchLT = d.AALatinAliasNormalized.AsSpan()
                 .StartsWithContains(valueSpan, StringComparison.Ordinal);
             if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+            else if (d.AALatinAliasNormalizedReversed.AsSpan()
+                         .StartsWithContains(valueSpan, StringComparison.Ordinal) > 0)
             {
                 dictLT[d] = matchLT;
             }
 
             if (hasNonAscii)
             {
-                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan()
+                var matchNLT = d.AANonLatinAliasNormalized.AsSpan()
                     .StartsWithContains(valueSpan, StringComparison.Ordinal);
                 if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+                else if (d.AANonLatinAliasNormalizedReversed.AsSpan()
+                             .StartsWithContains(valueSpan, StringComparison.Ordinal) > 0)
                 {
                     dictNLT[d] = matchNLT;
                 }
@@ -117,9 +127,9 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
         return (TValue[])(object)dictLT.Concat(dictNLT)
             .OrderByDescending(x => x.Value)
-            .DistinctBy(x => x.Key.MSTLatinTitle)
+            .DistinctBy(x => x.Key.AALatinAlias)
             .Take(maxResults)
-            .Select(x => x.Key.MSTLatinTitle)
+            .Select(x => x.Key.AALatinAlias)
             .ToArray();
     }
 
