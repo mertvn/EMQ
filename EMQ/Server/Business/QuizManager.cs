@@ -2494,7 +2494,7 @@ public class QuizManager
         }
 
         TypedQuizHub.ReceiveQuizEntered(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id));
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(5));
     }
 
     // todo important pressing start with default settings doesnt work (list read kind filter prob)

@@ -222,6 +222,8 @@ public partial class QuizPage
 
     public bool IsDuca => (_currentSong?.IsDuca ?? false) || (_nextSong?.IsDuca ?? false);
 
+    private bool IsInitialized { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         // Console.WriteLine(
@@ -244,6 +246,9 @@ public partial class QuizPage
         }
 
         PageState.DebugOut.Add("init QuizPage");
+        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+
         if (ClientState.Session!.hubConnection is not null)
         {
             await _clientConnectionManager.SetHandlers(_handlers);
@@ -309,6 +314,7 @@ public partial class QuizPage
         await ClientState.Session!.hubConnection!.SendAsync("SendPlayerIsBuffered", ClientState.Session.Player.Id,
             $"OnInitializedAsync");
         await _jsRuntime.InvokeVoidAsync("addQuizPageEventListeners");
+        IsInitialized = true;
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -877,9 +883,12 @@ public partial class QuizPage
             if (_currentSong is { MuteMs: > 0 } && Room?.Quiz?.QuizState.Phase is QuizPhaseKind.Guess &&
                 PageState.Countdown <= (Room.QuizSettings.GuessMs - _currentSong.MuteMs))
             {
-                LastSetVideoMuted = DateTime.UtcNow;
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                if (IsInitialized)
+                {
+                    LastSetVideoMuted = DateTime.UtcNow;
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                }
             }
 
             bool _ = await Preload2(_nextSong);
@@ -954,24 +963,27 @@ public partial class QuizPage
         if (index < _clientSongs.Count)
         {
             PageState.DebugOut.Add("index: " + index);
-            if (ClientState.Preferences.MuteWhenDuca && IsDuca)
+            if (IsInitialized)
             {
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
-            }
-            else
-            {
-                if (VisibleVideoElementId == "video1")
+                if (ClientState.Preferences.MuteWhenDuca && IsDuca)
                 {
-                    LastSetVideoMuted = DateTime.UtcNow;
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
                     await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
-                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
                 }
                 else
                 {
-                    LastSetVideoMuted = DateTime.UtcNow;
-                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+                    if (VisibleVideoElementId == "video1")
+                    {
+                        LastSetVideoMuted = DateTime.UtcNow;
+                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+                    }
+                    else
+                    {
+                        LastSetVideoMuted = DateTime.UtcNow;
+                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+                    }
                 }
             }
 
@@ -1115,17 +1127,20 @@ public partial class QuizPage
         var timeRanges = await _jsRuntime.InvokeAsync<JsTimeRange[]>("getVideoBuffered", HiddenVideoElementId);
         Console.WriteLine(JsonSerializer.Serialize(timeRanges, Utils.JsoIndented));
 
-        if (VisibleVideoElementId == "video1")
+        if (IsInitialized)
         {
-            LastSetVideoMuted = DateTime.UtcNow;
-            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
-            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
-        }
-        else
-        {
-            LastSetVideoMuted = DateTime.UtcNow;
-            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-            await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+            if (VisibleVideoElementId == "video1")
+            {
+                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
+            }
+            else
+            {
+                LastSetVideoMuted = DateTime.UtcNow;
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
+                await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
+            }
         }
 
         if (Room is { Quiz: { } } && _currentSong != null)
