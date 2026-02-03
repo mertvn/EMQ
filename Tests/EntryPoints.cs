@@ -2147,6 +2147,8 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 {
                     await File.WriteAllTextAsync(outputPathError, e.Message);
                 }
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
             }
         }
 
@@ -2214,7 +2216,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 string name = deser.data.name_kanji;
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    (latin, name) = (name, latin); // compatability with VNDB names
+                    (latin, name) = (name, latin); // compatibility with VNDB names
                 }
 
                 VndbCharRoleKind? role = animeIntermediary.role switch

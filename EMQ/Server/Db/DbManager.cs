@@ -5096,7 +5096,7 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
 
         var qMsm = connection.QueryBuilder($"{sqlMusicSourceMusic:raw}");
         qMsm.Where($"mst.is_main_title = true");
-        qMsm.Where($"msel.type = ANY({SongSourceLink.ProperLinkTypes})");
+        qMsm.Where($"msel.type = {(int)SongSourceLinkType.SelfSource}");
         qMsm.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
         // Console.WriteLine(
