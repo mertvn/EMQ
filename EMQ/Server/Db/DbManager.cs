@@ -31,7 +31,6 @@ using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz;
 using EMQ.Shared.Quiz.Entities.Abstract;
-using FlatSharp;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
@@ -242,7 +241,7 @@ ORDER BY music_id;";
             await SelectAutocompleteMt(SongSourceSongTypeMode.All));
 
         await File.WriteAllTextAsync($"{autocompleteFolder}/developer.json", await SelectAutocompleteDeveloper());
-        await File.WriteAllBytesAsync($"{autocompleteFolder}/character.bin", await SelectAutocompleteCharacter());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/character.json", await SelectAutocompleteCharacter());
         await File.WriteAllTextAsync($"{autocompleteFolder}/illustrator.json", await SelectAutocompleteIllustrator());
         await File.WriteAllTextAsync($"{autocompleteFolder}/seiyuu.json", await SelectAutocompleteSeiyuu());
         await File.WriteAllTextAsync($"{autocompleteFolder}/collection.json", await SelectAutocompleteCollection());
@@ -3420,7 +3419,7 @@ ORDER BY artist_id";
         return autocomplete;
     }
 
-    public static async Task<byte[]> SelectAutocompleteCharacter()
+    public static async Task<string> SelectAutocompleteCharacter()
     {
         var res = VnCharacters.SelectMany(x =>
                 x.Value.Select(y =>
@@ -3429,10 +3428,9 @@ ORDER BY artist_id";
                     string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
                     string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
 
-                    var re = new AutocompleteCharacter_FB
+                    // id and isMain are set to their default values here because it saves space and doesn't matter
+                    var re = new AutocompleteA(0, latinTitle, nonLatinTitle ?? "", false)
                     {
-                        AALatinAlias = latinTitle,
-                        // AANonLatinAlias = nonLatinTitle,
                         AALatinAliasNormalized = latinTitleNorm,
                         AANonLatinAliasNormalized = nonLatinTitleNorm,
                         AALatinAliasNormalizedReversed = Utils.GetReversedArtistName(latinTitle),
@@ -3441,9 +3439,9 @@ ORDER BY artist_id";
 
                     if (re.AALatinAliasNormalized == re.AANonLatinAliasNormalized)
                     {
-                        // re.AANonLatinAlias = null;
-                        re.AANonLatinAliasNormalized = null;
-                        re.AANonLatinAliasNormalizedReversed = null;
+                        re.AANonLatinAlias = "";
+                        re.AANonLatinAliasNormalized = "";
+                        re.AANonLatinAliasNormalizedReversed = "";
                     }
 
                     return re;
@@ -3451,12 +3449,8 @@ ORDER BY artist_id";
             .DistinctBy(x => x.AALatinAlias).ToArray();
 
         AutocompleteDict[GuessKind.Character] = res.Select(x => x.AALatinAlias).ToArray();
-
-        var list = new AutocompleteCharacterList_FB() { List = res };
-        int maxBytesNeeded = AutocompleteCharacterList_FB.Serializer.GetMaxSize(list);
-        byte[] buffer = new byte[maxBytesNeeded];
-        int bytesWritten = AutocompleteCharacterList_FB.Serializer.Write(buffer, list);
-        return buffer.AsSpan()[..bytesWritten].ToArray();
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
     }
 
     public static async Task<string> SelectAutocompleteIllustrator()
