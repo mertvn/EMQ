@@ -1,0 +1,17 @@
+﻿attribute "fs_serializer";
+attribute "fs_vector";
+
+namespace EMQ.Client;
+
+table AutocompleteCharacter_FB (fs_serializer) {
+    AALatinAlias : string (required);
+    // AANonLatinAlias : string;
+    AALatinAliasNormalized : string;
+    AANonLatinAliasNormalized : string;
+    AALatinAliasNormalizedReversed : string;
+    AANonLatinAliasNormalizedReversed : string;
+}
+
+table AutocompleteCharacterList_FB (fs_serializer) {
+    List : [ AutocompleteCharacter_FB ] (fs_vector:"IReadOnlyList");
+}

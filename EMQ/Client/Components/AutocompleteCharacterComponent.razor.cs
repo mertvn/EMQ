@@ -9,6 +9,7 @@ using EMQ.Shared.Core;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Quiz.Entities.Abstract;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using FlatSharp;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -19,7 +20,8 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
+    public IReadOnlyList<AutocompleteCharacter_FB> AutocompleteData { get; set; } =
+        Array.Empty<AutocompleteCharacter_FB>();
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -56,7 +58,12 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/character.json"))!;
+        var res = await _client.GetAsync("autocomplete/character.bin");
+        if (res.IsSuccessStatusCode)
+        {
+            byte[] content = await res.Content.ReadAsByteArrayAsync();
+            AutocompleteData = AutocompleteCharacterList_FB.Serializer.Parse(content).List!;
+        }
     }
 
     public void CallStateHasChanged()
@@ -93,9 +100,9 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
         var valueSpan = value.AsSpan();
         bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 50; // todo
-        var dictLT = new Dictionary<AutocompleteA, StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
-        foreach (AutocompleteA d in AutocompleteData)
+        var dictLT = new Dictionary<AutocompleteCharacter_FB, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteCharacter_FB, StringMatch>();
+        foreach (AutocompleteCharacter_FB d in AutocompleteData)
         {
             var matchLT = d.AALatinAliasNormalized.AsSpan()
                 .StartsWithContains(valueSpan, StringComparison.Ordinal);

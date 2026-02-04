@@ -21,11 +21,17 @@
     <PackageReference Include="Blazorise.DataGrid" Version="1.1.5" />
     <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.1.5" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
+    <PackageReference Include="FlatSharp.Runtime" Version="7.9.0" />
+    <PackageReference Include="FlatSharp.Compiler" Version="7.9.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\VNDBStaffNotesParser\VNDBStaffNotesParser.csproj" />
     <ProjectReference Include="..\Shared\EMQ.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FlatSharpSchema Include="AutocompleteCharacter_FB.fbs" />
   </ItemGroup>
 
 </Project>
