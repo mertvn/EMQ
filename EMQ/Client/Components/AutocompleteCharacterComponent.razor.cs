@@ -19,7 +19,7 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
+    public AutocompleteCharacter[] AutocompleteData { get; set; } = Array.Empty<AutocompleteCharacter>();
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -56,7 +56,12 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
     protected override async Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/character.json"))!;
+        var res = await _client.GetAsync("autocomplete/character.bin");
+        if (res.IsSuccessStatusCode)
+        {
+            byte[] content = await res.Content.ReadAsByteArrayAsync();
+            AutocompleteData = AutocompleteCharacterSerializer.DeserializeArray(content);
+        }
     }
 
     public void CallStateHasChanged()
@@ -93,9 +98,9 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
         var valueSpan = value.AsSpan();
         bool hasNonAscii = !Ascii.IsValid(valueSpan);
         const int maxResults = 50; // todo
-        var dictLT = new Dictionary<AutocompleteA, StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteA, StringMatch>();
-        foreach (AutocompleteA d in AutocompleteData)
+        var dictLT = new Dictionary<AutocompleteCharacter, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteCharacter, StringMatch>();
+        foreach (AutocompleteCharacter d in AutocompleteData)
         {
             var matchLT = d.AALatinAliasNormalized.AsSpan()
                 .StartsWithContains(valueSpan, StringComparison.Ordinal);

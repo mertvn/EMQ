@@ -82,7 +82,7 @@ public class EntryPoints
     [Test, Explicit]
     public async Task GenerateAutocompleteCharacterJson()
     {
-        await File.WriteAllTextAsync("character.json", await DbManager.SelectAutocompleteCharacter());
+        await File.WriteAllBytesAsync("character.bin", await DbManager.SelectAutocompleteCharacter());
     }
 
     [Test, Explicit]
