@@ -136,6 +136,14 @@ public class ModController : ControllerBase
         Console.WriteLine(
             $"{session.Player.Username} SetServerConfig {JsonSerializer.Serialize(ServerState.Config)} -> {JsonSerializer.Serialize(req)}");
         ServerState.Config = req;
+        if (!req.AllowGuests)
+        {
+            foreach (var sess in ServerState.Sessions.Where(x => x.Player.Id >= Constants.PlayerIdGuestMin))
+            {
+                await ServerState.RemoveSession(sess, "SetServerConfig");
+            }
+        }
+
         return Ok();
     }
 
