@@ -102,7 +102,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
 
                 var sourceCharacters = new List<CharsDenorm>();
                 var vnCharacters = await connectionVndb.QueryAsync<CharsDenorm>(
-                    "select distinct cv.vid, c.id, c.image, c.latin, c.name, cv.role from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
+                    "select distinct cv.vid, c.id as cid, c.image, c.latin, c.name, cv.role from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
                     new { vids });
                 sourceCharacters.AddRange(vnCharacters);
 
