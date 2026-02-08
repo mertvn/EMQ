@@ -1011,7 +1011,7 @@ public class QuizController : ControllerBase
     }
 
     // todo? personalities/specialties
-    [CustomAuthorize(PermissionKind.PlayQuiz)]
+    [CustomAuthorize(PermissionKind.User)]
     [HttpPost]
     [Route("AddBotPlayer")]
     public async Task<ActionResult> AddBotPlayer([FromBody] string chId)

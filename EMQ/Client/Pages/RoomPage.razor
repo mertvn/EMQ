@@ -320,7 +320,7 @@ else
             </div>
         }
 
-        @if (Room?.Owner.Id == ClientState.Session?.Player.Id)
+        @if (Room?.Owner.Id == ClientState.Session?.Player.Id && AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
         {
             <button type="button" class="btn btn-success" @onclick="Onclick_AddBotPlayer">Add bot</button>
         }
