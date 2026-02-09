@@ -186,6 +186,10 @@
                             }
                             else
                             {
+                                <button type="button" class="btn btn-danger" @onclick="@(() => RemoveEMQVndbInfo(vndbInfo))">
+                                    Remove list
+                                </button>
+
                                 var label = ClientState.VndbInfo.First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels.SingleOrDefault();
                                 <div style="min-height: 350px;">
                                     <GuessInputComponent @ref="_guessInputComponentRef"

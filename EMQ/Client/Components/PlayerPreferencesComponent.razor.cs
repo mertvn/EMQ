@@ -517,6 +517,33 @@ public partial class PlayerPreferencesComponent
         InProgress = false;
     }
 
+    private async Task RemoveEMQVndbInfo(PlayerVndbInfo vndbInfo)
+    {
+        bool confirmed =
+            await _jsRuntime.InvokeAsync<bool>("confirm", "Really remove this list and all the sources it contains?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        InProgress = true;
+
+        ClientState.VndbInfo.Remove(vndbInfo);
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetVndbInfo",
+            new ReqSetVndbInfo(ClientState.Session!.Token, ClientState.VndbInfo));
+        if (res.IsSuccessStatusCode)
+        {
+            ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
+        }
+        else
+        {
+            InProgress = false;
+            throw new Exception();
+        }
+
+        InProgress = false;
+    }
+
     public async Task FetchMissingSongSourcesForEMQTab()
     {
         var label = ClientState.VndbInfo
