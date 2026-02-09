@@ -4,7 +4,7 @@ public class ServerConfig
 {
     public bool AllowRegistration { get; set; } = false;
 
-    public bool AllowGuests { get; set; } = true;
+    public bool AllowGuests { get; set; } = false;
 
     public bool RememberGuestsBetweenServerRestarts { get; set; }
 
