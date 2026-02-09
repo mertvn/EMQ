@@ -19,6 +19,9 @@
     <span style="font-size: x-large"> @container.Collection.name</span>
     <br/>
 
+    <span> @container.Collection.visibility</span>
+    <br/>
+
     @foreach (var user in container.CollectionUsers)
     {
         string username = Utils.UserIdToUsername(ResGetCollectionContainers.UsernamesDict, user.user_id);
@@ -46,6 +49,18 @@
                 Name
             </label>
             <br/>
+
+            <div>
+                <select style="margin: 5px" @bind="@container.Collection.visibility">
+                    @foreach (var visibilityKind in Enum.GetValues<CollectionVisibilityKind>())
+                    {
+                        <option value="@visibilityKind">
+                            @visibilityKind.GetDescription()
+                        </option>
+                    }
+                </select>
+                <span>Visibility</span>
+            </div>
             <br/>
 
             <div style="border: 1px solid #ddd; padding: 5px;">

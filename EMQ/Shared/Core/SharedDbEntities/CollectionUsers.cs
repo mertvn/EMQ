@@ -16,6 +16,7 @@ public class CollectionUsers
     public int user_id { get; set; }
 
     [Required]
+    [EnumDataType(typeof(CollectionUsersRoleKind))]
     public CollectionUsersRoleKind role { get; set; }
 }
 

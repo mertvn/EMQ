@@ -19,4 +19,14 @@ public class Collection
 
     [Required]
     public DateTime created_at { get; set; }
+
+    [Required]
+    [EnumDataType(typeof(CollectionVisibilityKind))]
+    public CollectionVisibilityKind visibility { get; set; }
+}
+
+public enum CollectionVisibilityKind
+{
+    Public,
+    Unlisted
 }

@@ -1331,8 +1331,9 @@ public class LibraryController : ControllerBase
                 return StatusCode(409);
             }
 
-            success &= await connection.ExecuteAsync("UPDATE collection SET name = @name WHERE id = @id",
-                new { req.Collection.id, req.Collection.name }, transaction) == 1;
+            success &= await connection.ExecuteAsync(
+                "UPDATE collection SET name = @name, visibility = @visibility WHERE id = @id",
+                new { req.Collection.id, req.Collection.name, req.Collection.visibility }, transaction) == 1;
 
             success &= await connection.ExecuteAsync("DELETE FROM collection_users WHERE collection_id = @id",
                 new { req.Collection.id }, transaction) > 0;
@@ -1481,7 +1482,8 @@ public class LibraryController : ControllerBase
         }
 
         var cids = await connection.QueryAsync<int>(
-            "select id from collection c join collection_entity ce on c.id = ce.collection_id where entity_kind = @kind and entity_id = ANY(@eids)",
+            $@"select id from collection c join collection_entity ce on c.id = ce.collection_id
+where visibility = {(int)CollectionVisibilityKind.Public} and entity_kind = @kind and entity_id = ANY(@eids)",
             new
             {
                 kind = (int)entityKind,
@@ -1504,6 +1506,7 @@ public class LibraryController : ControllerBase
 FROM collection c
 LEFT JOIN collection_users cu ON c.id = cu.collection_id AND cu.role = {(int)CollectionUsersRoleKind.Owner}
 JOIN collection_entity ce ON c.id = ce.collection_id
+where visibility = {(int)CollectionVisibilityKind.Public}
 GROUP BY c.id, c.name, c.created_at, cu.user_id
 ORDER BY c.id")).ToList();
 

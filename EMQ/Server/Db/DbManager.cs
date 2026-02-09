@@ -592,7 +592,7 @@ ORDER BY music_id;";
             (await connection.QueryAsync<(int mId, int count)>(
                 $@"select entity_id, count(entity_id) from collection c
 join collection_entity ce on ce.collection_id = c.id
-where entity_kind = {(int)EntityKind.Song} and entity_id = ANY(@mIds)
+where entity_kind = {(int)EntityKind.Song} and visibility = {(int)CollectionVisibilityKind.Public} and entity_id = ANY(@mIds)
 group by entity_id",
                 new { mIds = songs.Select(x => x.Value.Id).ToArray() }, transaction))
             .ToArray();
