@@ -271,7 +271,6 @@ public class AuthController : ControllerBase
     }
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
-    [CustomAuthorize(PermissionKind.Login)]
     [HttpGet]
     [Route("ValidateSessionWithCookie")]
     public async Task<ActionResult> ValidateSessionWithCookie()
