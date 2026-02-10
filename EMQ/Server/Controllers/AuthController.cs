@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -276,21 +276,30 @@ public class AuthController : ControllerBase
     [Route("ValidateSessionWithCookie")]
     public async Task<ActionResult> ValidateSessionWithCookie()
     {
-        if (Request.Cookies.TryGetValue("user-id", out string? userId) &&
+        if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
             Request.Cookies.TryGetValue("session-token", out string? token))
         {
-            var session =
-                ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
-            if (session != null)
+            if (int.TryParse(userIdStr, out int userIdInt))
             {
-                Response.Headers["X-USER-ID"] = session.Player.Id.ToString();
-                Response.Headers["X-USER-NAME"] = session.Player.Username;
-                Response.Headers["X-USER-ROLE"] =
-                    AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
+                var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
+                if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
+                {
+                    var session =
+                        ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
+                    if (session != null)
+                    {
+                        Response.Headers["X-USER-ID"] = userIdStr;
+                        Response.Headers["X-USER-NAME"] = session.Player.Username;
+                        Response.Headers["X-USER-ROLE"] =
+                            AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
+                    }
+
+                    return Ok();
+                }
             }
         }
 
-        return Ok();
+        return Unauthorized();
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]
