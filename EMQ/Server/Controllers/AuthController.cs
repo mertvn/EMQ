@@ -281,19 +281,20 @@ public class AuthController : ControllerBase
         {
             if (int.TryParse(userIdStr, out int userIdInt))
             {
+                var session =
+                    ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
+                if (session != null)
+                {
+                    Response.Headers["X-USER-ID"] = userIdStr;
+                    Response.Headers["X-USER-NAME"] = session.Player.Username;
+                    Response.Headers["X-USER-ROLE"] =
+                        AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
+                    return Ok();
+                }
+
                 var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
                 if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
                 {
-                    var session =
-                        ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
-                    if (session != null)
-                    {
-                        Response.Headers["X-USER-ID"] = userIdStr;
-                        Response.Headers["X-USER-NAME"] = session.Player.Username;
-                        Response.Headers["X-USER-ROLE"] =
-                            AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
-                    }
-
                     return Ok();
                 }
             }
