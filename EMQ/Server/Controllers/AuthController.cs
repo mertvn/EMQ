@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -292,7 +292,7 @@ public class AuthController : ControllerBase
         return StatusCode(201);
     }
 
-    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    // [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [HttpGet]
     [Route("ValidateSessionWithCookieForShs/")]
     public async Task<ActionResult> ValidateSessionWithCookieForShs()
