@@ -272,15 +272,34 @@ public class AuthController : ControllerBase
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [HttpGet]
-    [Route("ValidateSessionWithCookie/")]
-    public async Task<ActionResult> ValidateSessionWithCookie()
+    [Route("ValidateSessionWithCookieForSqlBin/")]
+    public async Task<ActionResult> ValidateSessionWithCookieForSqlBin()
+    {
+        if (Request.Cookies.TryGetValue("user-id", out string? userId) &&
+            Request.Cookies.TryGetValue("session-token", out string? token))
+        {
+            var session =
+                ServerState.Sessions.SingleOrDefault(x => x.Player.Id.ToString() == userId && x.Token == token);
+            if (session != null)
+            {
+                Response.Headers["X-USER-ID"] = session.Player.Id.ToString();
+                Response.Headers["X-USER-NAME"] = session.Player.Username;
+                Response.Headers["X-USER-ROLE"] =
+                    AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
+            }
+        }
+
+        return StatusCode(201);
+    }
+
+    [EnableRateLimiting(RateLimitKind.ValidateSession)]
+    [HttpGet]
+    [Route("ValidateSessionWithCookieForShs/")]
+    public async Task<ActionResult> ValidateSessionWithCookieForShs()
     {
         Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
         Response.Headers["Pragma"] = "no-cache";
         Response.Headers["Vary"] = "Cookie";
-        Response.Headers["X-USER-ID"] = "";
-        Response.Headers["X-USER-NAME"] = "";
-        Response.Headers["X-USER-ROLE"] = "";
         if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
             Request.Cookies.TryGetValue("session-token", out string? token))
         {
@@ -290,17 +309,13 @@ public class AuthController : ControllerBase
                     ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
                 if (session != null)
                 {
-                    Response.Headers["X-USER-ID"] = userIdStr;
-                    Response.Headers["X-USER-NAME"] = session.Player.Username;
-                    Response.Headers["X-USER-ROLE"] =
-                        AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
-                    return StatusCode(201);
+                    return StatusCode(202);
                 }
 
                 var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
                 if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
                 {
-                    return StatusCode(202);
+                    return StatusCode(203);
                 }
             }
         }
