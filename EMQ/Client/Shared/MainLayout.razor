@@ -106,7 +106,7 @@
         if (firstRender)
         {
             GetServerStats(null, null!);
-            Timer.Interval = TimeSpan.FromSeconds(12).TotalMilliseconds;
+            Timer.Interval = TimeSpan.FromSeconds(25).TotalMilliseconds;
             Timer.Elapsed += GetServerStats;
             Timer.AutoReset = true;
             Timer.Start();

@@ -56,7 +56,7 @@ public partial class HotelPage
             timer.Dispose();
         }
 
-        timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
         ClientState.Timers["GetRooms"] = timer;
         while (await timer.WaitForNextTickAsync())
         {
