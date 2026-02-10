@@ -294,13 +294,13 @@ public class AuthController : ControllerBase
                     Response.Headers["X-USER-NAME"] = session.Player.Username;
                     Response.Headers["X-USER-ROLE"] =
                         AuthStuff.HasPermission(session, PermissionKind.Admin) ? "admin" : "editor";
-                    return Ok();
+                    return StatusCode(201);
                 }
 
                 var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
                 if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
                 {
-                    return Ok();
+                    return StatusCode(202);
                 }
             }
         }
