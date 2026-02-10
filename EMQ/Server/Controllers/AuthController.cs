@@ -275,6 +275,12 @@ public class AuthController : ControllerBase
     [Route("ValidateSessionWithCookie/")]
     public async Task<ActionResult> ValidateSessionWithCookie()
     {
+        Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Vary"] = "Cookie";
+        Response.Headers["X-USER-ID"] = "";
+        Response.Headers["X-USER-NAME"] = "";
+        Response.Headers["X-USER-ROLE"] = "";
         if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
             Request.Cookies.TryGetValue("session-token", out string? token))
         {
