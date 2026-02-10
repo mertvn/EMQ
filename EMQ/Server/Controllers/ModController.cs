@@ -125,7 +125,7 @@ public class ModController : ControllerBase
     [CustomAuthorize(PermissionKind.Admin)]
     [HttpPost]
     [Route("SetServerConfig")]
-    public async Task<ActionResult> ToggleIsSubmissionDisabled(ServerConfig req)
+    public async Task<ActionResult> SetServerConfig(ServerConfig req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
         if (session is null)

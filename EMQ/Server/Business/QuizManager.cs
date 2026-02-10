@@ -3402,7 +3402,7 @@ GROUP BY start_time",
                     guess = guess.RemoveInvalidUnicodeSequences(firstInvalidUnicodeCharIndex);
                 }
 
-                if (playerId is >= Constants.PlayerIdGuestMin and < Constants.PlayerIdBotMin)
+                if (Utils.GetPlayerKind(playerId) is PlayerKind.Guest)
                 {
                     if (!DbManager.AutocompleteDict.TryGetValue(guessKind, out string[]? validGuesses) ||
                         !validGuesses.Contains(guess, StringComparer.OrdinalIgnoreCase))

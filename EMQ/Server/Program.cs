@@ -58,7 +58,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy(RateLimitKind.Register, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),
-        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 2, Window = TimeSpan.FromDays(1), }));
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = 4, Window = TimeSpan.FromDays(1), }));
 
     options.AddPolicy(RateLimitKind.ForgottenPassword, context => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: ServerUtils.GetIpAddress(context),

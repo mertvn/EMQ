@@ -91,6 +91,12 @@
                 @(nameof(ClientServerConfig.IsChristmasMode))
             </label>
             <br/>
+
+            <label>
+                <input type="checkbox" class="form-check-input" @bind="ClientServerConfig.IsHardened" @bind:after="@SendSetServerConfigReq"/>
+                @(nameof(ClientServerConfig.IsHardened))
+            </label>
+            <br/>
         }
 
     </div>

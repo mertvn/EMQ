@@ -4,7 +4,7 @@ public class ServerConfig
 {
     public bool AllowRegistration { get; set; } = false;
 
-    public bool AllowGuests { get; set; } = false;
+    public bool AllowGuests { get; set; } = true;
 
     public bool RememberGuestsBetweenServerRestarts { get; set; }
 
@@ -13,4 +13,6 @@ public class ServerConfig
     public bool IsSubmissionDisabled { get; set; }
 
     public bool IsChristmasMode { get; set; }
+
+    public bool IsHardened { get; set; } = true;
 }

@@ -7,8 +7,10 @@
 
 @if (!ClientState.ServerStats.Config.AllowRegistration)
 {
-    <p>Registrations are currently disabled.</p>
-    return;
+    <p>Public registrations are disabled due to abuse, however you may still register if you have a registration code.</p>
+    <p>Registrations codes cost 25 USD per account.</p>
+    <p>To obtain a registration code, please visit the #registration channel in the <a href="https://discord.com/invite/jKFGavUdff">Discord</a>.</p>
+    <br/>
 }
 
 <h3>Register new account</h3>
@@ -31,6 +33,13 @@
         <label for="email">Email</label>
         <br/>
 
+        @if (!ClientState.ServerStats.Config.AllowRegistration)
+        {
+            <InputText id="code" type="text" @bind-Value="@Model.Code" style="margin: 5px; width: 200px;"></InputText>
+            <label for="code">Registration code</label>
+            <br/>
+        }
+
         @* todo privacy policy etc. checkboxes *@
 
         <button type="submit" disabled="@(!Ready)" class="btn btn-primary">
@@ -52,7 +61,7 @@ else
 
 @code {
 
-    private ReqStartRegistration Model { get; } = new("", "");
+    private ReqStartRegistration Model { get; } = new("", "", "");
 
     private string StatusText { get; set; } = "";
 
@@ -87,7 +96,7 @@ else
             }
             else
             {
-                var req = new ReqStartRegistration(model.Username, model.Email);
+                var req = new ReqStartRegistration(model.Username, model.Email, model.Code);
                 var res = await _client.PostAsJsonAsync("Auth/StartRegistration", req);
                 if (res.IsSuccessStatusCode)
                 {
@@ -103,6 +112,9 @@ else
                     {
                         case HttpStatusCode.TooManyRequests:
                             StatusText = "You have been rate-limited. Try again in a day.";
+                            break;
+                        case HttpStatusCode.PaymentRequired:
+                            StatusText = "Invalid registration code.";
                             break;
                         default:
                             StatusText = "Something went wrong when registering your account.";

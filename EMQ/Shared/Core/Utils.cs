@@ -155,6 +155,17 @@ public static class Utils
         return T.Max(min, T.Min(value, max));
     }
 
+    public static PlayerKind GetPlayerKind(int id)
+    {
+        return id switch
+        {
+            > 0 and < Constants.PlayerIdGuestMin => PlayerKind.User,
+            >= Constants.PlayerIdGuestMin and < Constants.PlayerIdBotMin => PlayerKind.Guest,
+            >= Constants.PlayerIdBotMin => PlayerKind.Bot,
+            _ => PlayerKind.Error
+        };
+    }
+
     public static List<(List<TimeSpan> timeSpans, int count)> ClusterTimeSpans(
         IEnumerable<(TimeSpan timeSpan, int count)> source, TimeSpan threshold)
     {

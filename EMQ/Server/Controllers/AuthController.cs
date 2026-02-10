@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -300,6 +300,12 @@ public class AuthController : ControllerBase
         Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
         Response.Headers["Pragma"] = "no-cache";
         Response.Headers["Vary"] = "Cookie";
+
+        if (!ServerState.Config.IsHardened)
+        {
+            return StatusCode(205);
+        }
+
         if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
             Request.Cookies.TryGetValue("session-token", out string? token))
         {
@@ -393,6 +399,14 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
         {
             return StatusCode(520);
+        }
+
+        if (Utils.GetPlayerKind(session.Player.Id) < PlayerKind.User)
+        {
+            if (ServerState.Config.IsHardened)
+            {
+                return StatusCode(420);
+            }
         }
 
         await DbManager_Auth.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
@@ -523,9 +537,9 @@ public class AuthController : ControllerBase
     [Route("StartRegistration")]
     public async Task<ActionResult> StartRegistration(ReqStartRegistration req)
     {
-        if (!ServerState.Config.AllowRegistration)
+        if (!ServerState.Config.AllowRegistration && !await DbManager_Auth.IsRegistrationCodeValid(req.Code))
         {
-            return Unauthorized();
+            return StatusCode((int)HttpStatusCode.PaymentRequired);
         }
 
         bool isValid = await AuthManager.RegisterStep1SendEmail(req.Username, req.Email);
@@ -534,6 +548,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        _ = await DbManager_Auth.DeleteRegistrationCode(req.Code); // should be in transaction but meh
         return Ok();
     }
 
@@ -728,6 +743,14 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        if (Utils.GetPlayerKind(session.Player.Id) < PlayerKind.User)
+        {
+            if (ServerState.Config.IsHardened)
+            {
+                return StatusCode(420);
+            }
+        }
+
         bool success =
             await DbManager_Auth.UpsertUserLabelPreset(new UserLabelPreset
             {
@@ -876,7 +899,7 @@ public class AuthController : ControllerBase
     }
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
-    [CustomAuthorize(PermissionKind.UpdatePreferences)]
+    [CustomAuthorize(PermissionKind.User)]
     [HttpPost]
     [Route("ProxyGrabPlayerAnimeFromMal")]
     public async Task<List<Label>> ProxyGrabPlayerAnimeFromMal(PlayerVndbInfo vndbInfo)

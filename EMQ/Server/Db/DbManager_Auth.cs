@@ -215,10 +215,7 @@ public class DbManager_Auth
             var userLabel = (await connection.QueryAsync<UserLabel>(sql, new { userId, presetName })).ToList();
             return userLabel.Select(x => new PlayerVndbInfo()
             {
-                VndbId = x.vndb_uid,
-                VndbApiToken = null,
-                Labels = null,
-                DatabaseKind = x.database_kind,
+                VndbId = x.vndb_uid, VndbApiToken = null, Labels = null, DatabaseKind = x.database_kind,
             }).ToArray();
         }
     }
@@ -339,5 +336,34 @@ public class DbManager_Auth
         {
             throw new Exception($"Error setting avatar for {userId} to {avatar.Character} {avatar.Skin}");
         }
+    }
+
+    public static async Task<bool> IsRegistrationCodeValid(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(code, out _))
+        {
+            return false;
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        return await connection.ExecuteScalarAsync<bool>("select 1 from registration_code where code = @code",
+            new { code });
+    }
+
+    public static async Task<bool> DeleteRegistrationCode(string? code)
+    {
+        if (!await IsRegistrationCodeValid(code))
+        {
+            return false;
+        }
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        return await connection.ExecuteScalarAsync<bool>("delete from registration_code where code = @code",
+            new { code });
     }
 }
