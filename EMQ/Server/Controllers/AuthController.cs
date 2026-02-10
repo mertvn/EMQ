@@ -272,7 +272,7 @@ public class AuthController : ControllerBase
 
     [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [HttpGet]
-    [Route("ValidateSessionWithCookie")]
+    [Route("ValidateSessionWithCookie/")]
     public async Task<ActionResult> ValidateSessionWithCookie()
     {
         if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
