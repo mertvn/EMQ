@@ -155,6 +155,7 @@ public static class Program
                     "report",
                     "review_queue",
                     "room",
+                    "chars_denorm",
                 };
 
                 var excludedTables = new List<string>() { "", "*user*", "quiz_song_history", };
@@ -303,7 +304,7 @@ public static class Program
         IEnumerable<ISftpFile> files = sftpClient.ListDirectory(sourceRemotePath);
         foreach (ISftpFile file in files)
         {
-            if (file.Name is not ("." or ".." or "vndb-img"))
+            if (file.Name is not ("." or ".."))
             {
                 string sourceFilePath = $"{sourceRemotePath}/{file.Name}";
                 string destFilePath = Path.Combine(destLocalPath, file.Name);

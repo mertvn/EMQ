@@ -2122,7 +2122,8 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
     {
         var client = new HttpClient();
         const string baseUrl = "https://api.jikan.moe/v4/";
-        const string baseDownloadDir = "C:/malcovers";
+        const string imageKind = "cv";
+        const string baseDownloadDir = $"C:/malcovers/raw/{imageKind}";
         Directory.CreateDirectory(baseDownloadDir);
         foreach (int id in Enumerable.Range(1, 63_350))
         {
@@ -2136,6 +2137,11 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                     var res = await client.GetFromJsonAsync<JsonElement>(url);
                     string? imageUrl = res.GetProperty("data").GetProperty("images").GetProperty("webp")
                         .GetProperty("large_image_url").GetString();
+                    if (imageUrl!.Contains("icon-256.")) // no image
+                    {
+                        continue;
+                    }
+
                     byte[] image = await client.GetByteArrayAsync(imageUrl);
                     await File.WriteAllBytesAsync(outputPath, image);
                     await Task.Delay(TimeSpan.FromSeconds(1));
@@ -2152,7 +2158,6 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             }
         }
 
-        string imageKind = "cv";
         string[] files = Directory.GetFiles(baseDownloadDir);
         foreach (string file in files)
         {
@@ -2201,24 +2206,27 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
 
         var fetched = await connectionScrapsMal.QueryAsync<string>(
             "select value from generic_fetch where key like 'mal-ch-%' and value is not null");
-        var animeCharacters = new List<CharsDenorm>(16000);
+        var animeCharacters = new List<CharsDenorm>(289_230);
+        var imageUrls = new Dictionary<string, string>();
         foreach (string s in fetched)
         {
             var deser = JsonSerializer.Deserialize<JikanCharactersFullRoot>(s)!;
+            string cid = deser.data.mal_id.ToString()!;
+            imageUrls[cid] = deser.data.images.webp.image_url;
+
+            string image = $"ch{cid}";
+            string latin = deser.data.name;
+
+            // some of the kanji names contain a space and others don't, but brute-forcing it like the EGSImporter would cost too much space
+            string name = deser.data.name_kanji;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                (latin, name) = (name, latin); // compatibility with VNDB names
+            }
+
             foreach (JikanAnimeIntermediary animeIntermediary in deser.data.anime)
             {
                 string vid = $"mal-anime-{animeIntermediary.anime.mal_id}";
-                string cid = deser.data.mal_id.ToString()!;
-                string image = $"ch{cid}";
-                string latin = deser.data.name;
-
-                // some of the kanji names contain a space and others don't, but brute-forcing it like the EGSImporter would cost too much space
-                string name = deser.data.name_kanji;
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    (latin, name) = (name, latin); // compatibility with VNDB names
-                }
-
                 VndbCharRoleKind? role = animeIntermediary.role switch
                 {
                     "Main" => VndbCharRoleKind.Main,
@@ -2239,7 +2247,84 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             }
         }
 
+        const string imageKind = "ch";
+        const string baseDownloadDir = $"C:/malcovers/raw/{imageKind}";
+        Directory.CreateDirectory(baseDownloadDir);
+        foreach ((string? id, string? imageUrl) in imageUrls.OrderBy(x => x.Key))
+        {
+            if (imageUrl.Contains("icon-256.")) // no image
+            {
+                continue;
+            }
+
+            string outputPath = $@"{baseDownloadDir}/{id}.webp";
+            string outputPathError = $@"{baseDownloadDir}/{id}_err.txt";
+            try
+            {
+                if (!File.Exists(outputPath) && !File.Exists(outputPathError))
+                {
+                    byte[] image = await client.GetByteArrayAsync(imageUrl);
+                    await File.WriteAllBytesAsync(outputPath, image);
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("404"))
+                {
+                    await File.WriteAllTextAsync(outputPathError, e.Message);
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        string[] files = Directory.GetFiles(baseDownloadDir);
+        foreach (string file in files)
+        {
+            if (file.EndsWith(".webp"))
+            {
+                string filename = Path.GetFileNameWithoutExtension(file);
+                (string? modStr, int number) = Utils.ParseVndbScreenshotStr($"{imageKind}{filename}");
+                string outDir = $"{baseDownloadDir}/mal-img/{imageKind}/{modStr}";
+                string final = $"{outDir}/{number}.webp";
+                if (!File.Exists(final))
+                {
+                    Directory.CreateDirectory(outDir);
+                    File.Copy(file, final);
+                }
+            }
+        }
+
         await using var connectionEmq = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await connectionEmq.UpsertListAsync(animeCharacters);
+        await connectionEmq.InsertListAsync(animeCharacters);
+    }
+
+    [Test, Explicit]
+    public async Task FetchAnimeSeiyuuInfo()
+    {
+        await using var connectionScrapsMal = new NpgsqlConnection(ConnectionHelper
+            .GetConnectionStringBuilderWithDatabaseUrl("postgresql://postgres:postgres@127.0.0.1:5432/SCRAPS_MAL")
+            .ToString());
+        var fetched = await connectionScrapsMal.QueryAsync<string>(
+            "select value from generic_fetch where key like 'mal-ch-%' and value is not null");
+        var seiyuuIds = new HashSet<int>(16000);
+        foreach (string s in fetched)
+        {
+            var deser = JsonSerializer.Deserialize<JikanCharactersFullRoot>(s)!;
+            foreach (int id in deser.data.voices.Where(x => x.language == "Japanese")
+                         .Select(x => x.person.mal_id!.Value))
+            {
+                seiyuuIds.Add(id);
+            }
+        }
+
+        foreach (int seiyuuId in seiyuuIds)
+        {
+            Console.WriteLine(seiyuuId);
+        }
+
+        Console.WriteLine(seiyuuIds.Count);
+        await using var connectionEmq = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
     }
 }
