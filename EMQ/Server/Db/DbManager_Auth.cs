@@ -334,7 +334,7 @@ public class DbManager_Auth
         await using var transaction = await connection.BeginTransactionAsync();
 
         int rows = await connection.ExecuteAsync("UPDATE users SET avatar = @avatar, skin = @skin where id = @userId",
-            new { userId, avatar = avatar.Character, skin = avatar.Skin });
+            new { userId, avatar = avatar.Character, skin = avatar.Skin }, transaction);
         if (rows != 1)
         {
             throw new Exception($"Error setting avatar for {userId} to {avatar.Character} {avatar.Skin}");
