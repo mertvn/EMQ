@@ -808,9 +808,9 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        if (req.Character is AvatarCharacter.VNDBCharacterImage)
+        if (req.Character is AvatarCharacter.VNDBCharacterImage or AvatarCharacter.MALCharacterImage)
         {
-            req.Skin = await DbManager.GetCharacterImageId(req.Skin.ToVndbId());
+            req.Skin = await DbManager.GetCharacterImageId(req.Skin.ToVndbId(), req.Character);
         }
         else
         {

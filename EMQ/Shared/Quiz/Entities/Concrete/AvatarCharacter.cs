@@ -11,4 +11,7 @@ public enum AvatarCharacter
 
     [Description("Procras & Tina")]
     ProcrasAndTina,
+
+    [Description("MAL")]
+    MALCharacterImage,
 }

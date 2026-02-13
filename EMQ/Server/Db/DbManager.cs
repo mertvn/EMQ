@@ -6415,12 +6415,27 @@ GROUP BY type
         }
     }
 
-    public static async Task<string> GetCharacterImageId(string cId)
+    public static async Task<string> GetCharacterImageId(string cId, AvatarCharacter character)
     {
-        const string sql = "SELECT c.image from chars c where c.image is not null and c.id = @cId";
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
-        string? screenshot = await connection.QuerySingleOrDefaultAsync<string?>(sql, new { cId });
-        return screenshot ?? "";
+        switch (character)
+        {
+            case AvatarCharacter.VNDBCharacterImage:
+                {
+                    const string sql = "SELECT c.image from chars c where c.image is not null and c.id = @cId";
+                    await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+                    string? screenshot = await connection.QuerySingleOrDefaultAsync<string?>(sql, new { cId });
+                    return screenshot ?? "";
+                }
+            case AvatarCharacter.MALCharacterImage:
+                if (string.IsNullOrEmpty(cId) || cId.Any(x => !char.IsAsciiDigit(x)))
+                {
+                    return "";
+                }
+
+                return $"ch{cId}";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(character), character, null);
+        }
     }
 
     public static async Task<ServerActivityStats> GetServerActivityStats(DateTime startDate, DateTime endDate)

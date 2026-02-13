@@ -109,7 +109,7 @@ public static class Utils
 
     public static (string modStr, int number) ParseVndbScreenshotStr(string screenshot)
     {
-        int number = Convert.ToInt32(screenshot.Substring(2, screenshot.Length - 2));
+        int number = Convert.ToInt32(screenshot[2..]);
         int mod = number % 100;
         string modStr = mod > 9 ? mod.ToString() : $"0{mod}";
         return (modStr, number);

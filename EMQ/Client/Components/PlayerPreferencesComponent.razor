@@ -417,6 +417,14 @@
                 <label for="InputVNDBCharacterImage">VNDB character ID (e.g. c465)</label>
                 <br/>
             }
+            else if (ClientAvatar?.Character is AvatarCharacter.MALCharacterImage)
+            {
+                <label>
+                    <input type="text" style="margin: 5px; width: 120px;" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged"/>
+                    MAL character ID (e.g. 4686)
+                </label>
+                <br/>
+            }
             else
             {
                 <select id="SelectSkin" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged" disabled="@InProgress">

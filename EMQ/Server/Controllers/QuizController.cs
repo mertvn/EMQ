@@ -1117,7 +1117,8 @@ and (SPLIT_PART(c.id::text, 'c', 2)::int) <= 131575 -- don't have images for new
             return Unauthorized();
         }
 
-        oldBot.Avatar.Skin = await DbManager.GetCharacterImageId(newBot.BotInfo!.VndbId);
+        oldBot.Avatar.Skin =
+            await DbManager.GetCharacterImageId(newBot.BotInfo!.VndbId, AvatarCharacter.VNDBCharacterImage);
         oldBot.Username = newBot.Username; // todo? force to start with Bot
         oldBot.BotInfo = newBot.BotInfo;
 
