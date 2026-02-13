@@ -38,10 +38,14 @@ public partial class PlayerPreferencesComponent
 
     public SongSourceSongTypeMode SelectedSSSTM { get; set; } = SongSourceSongTypeMode.Vocals;
 
+    public DonorBenefitKind SelectedDonorBenefitKind { get; set; }
+
     // 1 more char. than the longest preset name allowed
     public const string CreateNewPresetValue = "-----------------------------------------------------------------";
 
     public Avatar? ClientAvatar { get; set; }
+
+    public DonorBenefit? ClientDonorBenefit { get; set; }
 
     public Dictionary<string, LabelStats?> LabelStats { get; set; } = new();
 
@@ -65,6 +69,7 @@ public partial class PlayerPreferencesComponent
         }
 
         ClientAvatar = ClientState.Session.Player.Avatar;
+        ClientDonorBenefit = ClientState.Session.Player.DonorBenefit;
         await FetchMissingSongSourcesForEMQTab();
 
         InProgress = false;
@@ -460,10 +465,28 @@ public partial class PlayerPreferencesComponent
         if (res.IsSuccessStatusCode)
         {
             ClientAvatar = await res.Content.ReadFromJsonAsync<Avatar>();
+            ClientState.Session!.Player.Avatar = ClientAvatar!;
         }
         else
         {
-            // todo warn error
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    private async Task SendSetDonorBenefitReq(DonorBenefit donorBenefit)
+    {
+        HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/SetDonorBenefit", donorBenefit);
+        if (res.IsSuccessStatusCode)
+        {
+            ClientDonorBenefit = await res.Content.ReadFromJsonAsync<DonorBenefit>();
+            ClientState.Session!.Player.DonorBenefit = ClientDonorBenefit!;
+            await _jsRuntime.InvokeVoidAsync("alert", "OK.");
+        }
+        else
+        {
+            await _jsRuntime.InvokeVoidAsync("alert",
+                $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
 

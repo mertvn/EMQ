@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using EMQ.Shared.Quiz.Entities.Concrete;
 
 namespace EMQ.Shared.Auth.Entities.Concrete;
 
@@ -116,6 +117,24 @@ public static class AuthStuff // todo? find better name
         return userPermissions.Contains(permission);
     }
 
+    public static bool HasDonorBenefit(Session? session, DonorBenefitKind benefitKind)
+    {
+        if (session == null)
+        {
+            return false;
+        }
+
+        PermissionKind permission = benefitKind switch
+        {
+            DonorBenefitKind.DonorBadge => PermissionKind.Donor,
+            DonorBenefitKind.UsernameColor => PermissionKind.ChangeUsernameColor,
+            DonorBenefitKind.UsernameAnimation => PermissionKind.ChangeUsernameAnimation,
+            _ => throw new ArgumentOutOfRangeException(nameof(benefitKind), benefitKind, null)
+        };
+
+        return HasPermission(session, permission);
+    }
+
     // todo use everywhere relevant
     public static Session? GetSession(IDictionary<object, object?> httpContextItems)
     {
@@ -162,6 +181,10 @@ public enum PermissionKind
     Comment = 3007,
     ManageCollections = 3008,
     SetAvatar = 3009,
+
+    Donor = 3200,
+    ChangeUsernameColor = 3201,
+    ChangeUsernameAnimation = 3202,
 
     ImportHelper = 3700,
 

@@ -330,12 +330,39 @@ public class DbManager_Auth
     public static async Task SetAvatar(int userId, Avatar avatar)
     {
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
         int rows = await connection.ExecuteAsync("UPDATE users SET avatar = @avatar, skin = @skin where id = @userId",
             new { userId, avatar = avatar.Character, skin = avatar.Skin });
         if (rows != 1)
         {
             throw new Exception($"Error setting avatar for {userId} to {avatar.Character} {avatar.Skin}");
         }
+
+        await transaction.CommitAsync();
+    }
+
+    public static async Task UpsertDonorBenefit(DonorBenefit donorBenefit)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        bool success = await connection.UpsertAsync(donorBenefit, transaction);
+        if (!success)
+        {
+            throw new Exception($"Error upserting donor_benefit for {donorBenefit.user_id}");
+        }
+
+        await transaction.CommitAsync();
+    }
+
+    public static async Task<DonorBenefit?> GetDonorBenefit(int userId)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        return await connection.QueryFirstOrDefaultAsync<DonorBenefit>(
+            "select * from donor_benefit where user_id = @userId", new { userId });
     }
 
     public static async Task<bool> IsRegistrationCodeValid(string? code)

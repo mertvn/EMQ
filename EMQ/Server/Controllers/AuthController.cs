@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -149,7 +149,17 @@ public class AuthController : ControllerBase
 
         string? activeUserLabelPresetName = await DbManager_Auth.GetActiveUserLabelPresetName(playerId);
         var vndbInfo = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
-        var player = new Player(playerId, username, new Avatar(character, skin));
+
+        DonorBenefit? donorBenefit = null;
+        if (Utils.GetPlayerKind(playerId) == PlayerKind.User)
+        {
+            donorBenefit = await DbManager_Auth.GetDonorBenefit(playerId);
+        }
+
+        var player = new Player(playerId, username, new Avatar(character, skin))
+        {
+            DonorBenefit = donorBenefit ?? new DonorBenefit()
+        };
         var session = new Session(player, token, userRoleKind, activeUserLabelPresetName)
         {
             IncludedPermissions = includedPermissions, ExcludedPermissions = excludedPermissions
@@ -813,6 +823,52 @@ public class AuthController : ControllerBase
         await DbManager_Auth.SetAvatar(session.Player.Id, req);
         session.Player.Avatar = req;
         return req;
+    }
+
+    [CustomAuthorize(PermissionKind.Donor)]
+    [HttpPost]
+    [Route("SetDonorBenefit")]
+    public async Task<ActionResult<DonorBenefit>> SetDonorBenefit([FromBody] DonorBenefit req)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        var dto = new DonorBenefit() { user_id = session.Player.Id };
+        foreach (DonorBenefitKind benefitKind in Enum.GetValues<DonorBenefitKind>())
+        {
+            if (AuthStuff.HasDonorBenefit(session, benefitKind))
+            {
+                switch (benefitKind)
+                {
+                    case DonorBenefitKind.DonorBadge:
+                        dto.show_donor_badge = req.show_donor_badge;
+                        break;
+                    case DonorBenefitKind.UsernameColor:
+                        if (RegexPatterns.ColorHexStringRegex.IsMatch(req.username_color))
+                        {
+                            dto.username_color = req.username_color;
+                        }
+
+                        break;
+                    case DonorBenefitKind.UsernameAnimation:
+                        if (Enum.IsDefined(req.username_animation))
+                        {
+                            dto.username_animation = req.username_animation;
+                        }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        await DbManager_Auth.UpsertDonorBenefit(dto);
+        session.Player.DonorBenefit = dto;
+        return dto;
     }
 
     [CustomAuthorize(PermissionKind.Vote)]

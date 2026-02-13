@@ -1,0 +1,40 @@
+﻿@using EMQ.Shared.Core.UI
+@using EMQ.Shared.Quiz.Entities.Concrete
+
+@if (ChatMessage != null)
+{
+    <div class="chatMessage" style="background-color: black; padding: 5px; margin:5px;">
+        @* <span class="chatMessageTimestamp">@(chatMessage.Timestamp.ToString("O"))</span> *@
+        @if (ChatMessage.Sender != null)
+        {
+            string color = "inherit";
+            @if (!string.IsNullOrEmpty(ChatMessage.Sender.DonorBenefit.username_color))
+            {
+                color = ChatMessage.Sender.DonorBenefit.username_color;
+            }
+
+            string donorBadgeStr = ChatMessage.Sender.DonorBenefit.show_donor_badge ? "❤️" : "";
+            string usernameStr = $"{donorBadgeStr}{ChatMessage.Sender.Username}";
+            string senderNameClass = $"chatMessageSenderUsername {ChatMessage.Sender.DonorBenefit.username_animation.ToString()}";
+
+            // urgh
+            <b><span class="@senderNameClass" style="cursor: @UiHelpers.Bool2CursorPointer(IsChatMod); color: @color;" @onclick="@(e => Onclick_Sender?.Invoke(ChatMessage.Sender, e))">@(usernameStr)</span>:&nbsp;</b>
+        }
+        <span class="chatMessageContents">
+            <LinkifierComponent Text="@ChatMessage.Contents"></LinkifierComponent>
+        </span>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public ChatMessage? ChatMessage { get; set; }
+
+    [Parameter]
+    public bool IsChatMod { get; set; }
+
+    [Parameter]
+    public Action<Player, MouseEventArgs>? Onclick_Sender { get; set; }
+
+}

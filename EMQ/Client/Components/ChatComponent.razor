@@ -30,18 +30,7 @@
     <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
         @foreach (ChatMessage chatMessage in Chat.Concat(ClientChat).OrderBy(x => x.Timestamp))
         {
-            <div class="chatMessage" style="background-color: black; padding: 5px; margin:5px;">
-                @* <span class="chatMessageTimestamp">@(chatMessage.Timestamp.ToString("O"))</span> *@
-                @if (chatMessage.Sender != null)
-                {
-                    <span class="chatMessageSenderName" style="cursor: @UiHelpers.Bool2CursorPointer(isChatMod);" @onclick="@(e => Onclick_Sender(chatMessage.Sender, e))">
-                        <b>@(chatMessage.Sender.Username): </b>
-                    </span>
-                }
-                <span class="chatMessageContents">
-                    <LinkifierComponent Text="@chatMessage.Contents"></LinkifierComponent>
-                </span>
-            </div>
+            <ChatMessageComponent ChatMessage="chatMessage" IsChatMod="isChatMod" Onclick_Sender="Onclick_Sender"/>
         }
     </div>
 

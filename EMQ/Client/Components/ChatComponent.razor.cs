@@ -234,7 +234,7 @@ public partial class ChatComponent
         StateHasChanged();
     }
 
-    private async Task Onclick_Sender(Player sender, MouseEventArgs e)
+    private void Onclick_Sender(Player sender, MouseEventArgs e)
     {
         bool isChatMod = AuthStuff.HasPermission(ClientState.Session, PermissionKind.ModerateChat);
         if (!isChatMod)

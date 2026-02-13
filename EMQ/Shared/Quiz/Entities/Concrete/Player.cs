@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -79,6 +80,8 @@ public class Player
 
     [JsonIgnore]
     public Dictionary<string, DateTime> VNLastPlayedAtDict { get; } = new();
+
+    public DonorBenefit DonorBenefit { get; set; } = new();
 }
 
 public class PlayerConnectionInfo

@@ -183,7 +183,7 @@ else
         {
             bool isReadiedUp = player.IsReadiedUp || Room?.Owner.Id == player.Id;
             string boxShadowColor = isReadiedUp ? "#0f0" : "#f00";
-            <div class="playerDiv" style="margin: 10px; width: 160px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnectionQuiz, "inherit", "0.5");
+            <div class="playerDiv" style="margin: 10px; width: 180px; height: 350px; opacity: @UiHelpers.Bool2Text(player.HasActiveConnectionQuiz, "inherit", "0.5");
                  box-shadow: inset 0 0 2px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor, 0 0 5px @boxShadowColor;">
                 <p style="text-align: center;">@(isReadiedUp ? "Ready" : "Not ready")</p>
 
@@ -249,9 +249,9 @@ else
                 @{
                     Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : player.Avatar;
                 }
-                <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar" class="@(isReadiedUp ? "Ready" : "NotReady")">
+                <img width="180px" height="180px" src="@Avatar.GetUrlByPlayerState(avatar, PlayerStatus.Default)" alt="Avatar" class="@(isReadiedUp ? "Ready" : "NotReady")">
 
-                <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 160px; display: flex; justify-content:center; align-items:center;">
+                <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 180px; display: flex; justify-content:center; align-items:center;">
                     @if (player.IsBot)
                     {
                         <span style="color: white; text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
@@ -261,7 +261,7 @@ else
                     }
 
                     @{
-                        string usernameColor = "white";
+                        string usernameColor = !string.IsNullOrEmpty(player.DonorBenefit.username_color) ? player.DonorBenefit.username_color : "white";
                     }
 
                     @if (Room != null && Room.QuizSettings.TeamSize > 1 && !Room.QuizSettings.IsSharedGuessesTeams)
@@ -280,8 +280,13 @@ else
                             };
                     }
 
-                    <span style="color: @usernameColor; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @player.Username
+                    @{
+                        string donorBadgeStr = player.DonorBenefit.show_donor_badge ? "❤️" : "";
+                        string usernameStr = $"{donorBadgeStr}{player.Username}";
+                    }
+
+                    <span style="color: @usernameColor; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" class="@(player.DonorBenefit.username_animation.ToString())">
+                        @usernameStr
                     </span>
                 </div>
                 @if ((Room?.Owner.Id == ClientState.Session?.Player.Id && player.Id != ClientState.Session?.Player.Id) ||

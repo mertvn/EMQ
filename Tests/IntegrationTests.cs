@@ -52,7 +52,7 @@ public class IntegrationTests
 
             for (int i = 0; i < 100; i++)
             {
-                ReqCreateRoom req = new(session.Token, $"r{i}", "", new QuizSettings() { NumSongs = 40 });
+                ReqCreateRoom req = new(session.Token, "Room", "", new QuizSettings() { NumSongs = 40 });
                 HttpResponseMessage res1 = await ServerUtils.Client.PostAsJsonAsync("Quiz/CreateRoom", req);
                 var roomId = await res1.Content.ReadFromJsonAsync<Guid>();
 
@@ -111,7 +111,7 @@ public class IntegrationTests
 
                 if (currentPlayer == 0)
                 {
-                    ReqCreateRoom req = new(session.Token, $"r{outerIndex}", "", new QuizSettings() { NumSongs = 40 });
+                    ReqCreateRoom req = new(session.Token, "Room", "", new QuizSettings() { NumSongs = 40 });
                     HttpResponseMessage res1 = await client.PostAsJsonAsync("Quiz/CreateRoom", req);
                     roomId = await res1.Content.ReadFromJsonAsync<Guid>();
                     p0Session = session;

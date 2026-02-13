@@ -6,6 +6,7 @@
 @using Juliet.Model.VNDBObject
 @using Microsoft.Extensions.Logging
 @using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core.SharedDbEntities
 @inject HttpClient _client
 @inject ILogger<PlayerPreferencesComponent> _logger
 @inject ClientUtils _clientUtils
@@ -20,7 +21,7 @@
 <Blazorise.ModalBody>
 @if (ClientState.Session != null)
 {
-    bool hasPerms = AuthStuff.HasPermission(ClientState.Session, PermissionKind.SetAvatar);
+    bool hasAvatarPerms = AuthStuff.HasPermission(ClientState.Session, PermissionKind.SetAvatar);
     <div id="playerPreferences" style="padding: 5px; margin: 2px;">
     <EditForm Model="@ClientState.Preferences" OnValidSubmit="@(() => UpdatePlayerPreferences(ClientState.Preferences))">
     <DataAnnotationsValidator/>
@@ -31,6 +32,7 @@
         <Blazorise.Tab Name="TabGeneral">General</Blazorise.Tab>
         <Blazorise.Tab Name="TabLists">Lists</Blazorise.Tab>
         <Blazorise.Tab Name="TabAvatar">Avatar</Blazorise.Tab>
+        <Blazorise.Tab Name="TabDonorBenefit">Donor Benefits</Blazorise.Tab>
     </Items>
     <Content>
     <Blazorise.TabPanel Name="TabGeneral">
@@ -398,7 +400,7 @@
     </Blazorise.TabPanel>
 
     <Blazorise.TabPanel Name="TabAvatar">
-        @if (hasPerms)
+        @if (hasAvatarPerms)
         {
             <select id="SelectCharacter" style="margin: 5px" @bind:get="@ClientAvatar?.Character" @bind:set="@OnSelectedCharacterChanged" disabled="@InProgress">
                 @foreach (var character in Enum.GetValues<AvatarCharacter>())
@@ -435,7 +437,7 @@
                     {
                         <div style="display: flex; flex-direction: column;">
                             <span style="text-align: center;">@status</span>
-                            <img width="160px" height="160px" src="@Avatar.GetUrlByPlayerState(ClientAvatar, status)" alt="Avatar" class="@status">
+                            <img width="180px" height="180px" src="@Avatar.GetUrlByPlayerState(ClientAvatar, status)" alt="Avatar" class="@status">
                         </div>
                     }
                 </div>
@@ -444,6 +446,122 @@
         else
         {
             <p>You do not have the required permissions.</p>
+        }
+    </Blazorise.TabPanel>
+    <Blazorise.TabPanel Name="TabDonorBenefit">
+        @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.User) && ClientDonorBenefit != null)
+        {
+            <select id="SelectDonorBenefitKind" style="margin: 5px" @bind="@SelectedDonorBenefitKind" disabled="@InProgress">
+                @foreach (var benefit in Enum.GetValues<DonorBenefitKind>())
+                {
+                    <option value="@benefit">@benefit.GetDescription()</option>
+                }
+            </select>
+            <label for="SelectDonorBenefitKind">Benefit</label>
+            <br/>
+
+            bool isDonor = AuthStuff.HasPermission(ClientState.Session, PermissionKind.Donor);
+            Player player = JsonSerializer.Deserialize<Player>(JsonSerializer.Serialize(ClientState.Session.Player));
+            player.DonorBenefit = ClientDonorBenefit;
+            Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : player.Avatar;
+            string donorBadgeStr = player.DonorBenefit.show_donor_badge ? "❤️" : "";
+            string usernameStr = $"{donorBadgeStr}{player.Username}";
+            string usernameColor = !string.IsNullOrEmpty(player.DonorBenefit.username_color) ? player.DonorBenefit.username_color : "white";
+
+            switch (SelectedDonorBenefitKind)
+            {
+                case DonorBenefitKind.DonorBadge:
+                    {
+                        bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.DonorBadge);
+                        if (!hasPerms)
+                        {
+                            <p>Donate a total of $1 or more to unlock this benefit.</p>
+                        }
+
+                        <label>
+                            <InputCheckbox class="form-check-input" @bind-Value="@ClientDonorBenefit.show_donor_badge" style="margin: 5px;"/>
+                            Show donor badge
+                        </label>
+                        <br/>
+
+                        break;
+                    }
+                case DonorBenefitKind.UsernameColor:
+                    {
+                        bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.UsernameColor);
+                        if (!hasPerms)
+                        {
+                            <p>Donate a total of $5 or more to unlock this benefit.</p>
+                        }
+
+                        <label>
+                            <input type="color" @bind="@ClientDonorBenefit.username_color"/>
+                            <input type="text" @bind="@ClientDonorBenefit.username_color"/>
+                            Color
+                        </label>
+                        break;
+                    }
+                case DonorBenefitKind.UsernameAnimation:
+                    {
+                        bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.UsernameAnimation);
+                        if (!hasPerms)
+                        {
+                            <p>Donate a total of $10 or more to unlock this benefit.</p>
+                        }
+
+                        <label>
+                            <select style="margin: 5px" @bind="@ClientDonorBenefit.username_animation" disabled="@InProgress">
+                                @foreach (var kind in Enum.GetValues<UsernameAnimationKind>())
+                                {
+                                    // i don't think there's a way to make this one look good
+                                    @if (kind != UsernameAnimationKind.scroll)
+                                    {
+                                        <option value="@kind">@kind.GetDescription()</option>
+                                    }
+                                }
+                            </select>
+                            Animation
+                        </label>
+                        <br/>
+                        break;
+                    }
+            }
+
+            switch (SelectedDonorBenefitKind)
+            {
+                case DonorBenefitKind.DonorBadge:
+                case DonorBenefitKind.UsernameColor:
+                case DonorBenefitKind.UsernameAnimation:
+                    <div style="border: 1px solid black;">
+                        Preview
+
+                        <ChatMessageComponent ChatMessage="@(new ChatMessage("I love EMQ", player))" IsChatMod="@false" Onclick_Sender="@null"/>
+
+                        <div style="position: relative">
+                            <img width="180px" height="180px" src="@Avatar.GetUrlByPlayerState(avatar, player.PlayerStatus)" alt="Avatar" class="@player.PlayerStatus">
+                            <div style="background-color:rgba(0, 0, 0, 0.9); height:25px; width: 180px; display: flex; justify-content:center; align-items:center;">
+                                <span class="scoreSpan" style="color: white; position: absolute; bottom: 0; left: 0; height:25px; width: 18px;">
+                                    0
+                                </span>
+                                <span style="color: @usernameColor; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                      class="@(ClientDonorBenefit.username_animation.ToString())">
+                                    @usernameStr
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    break;
+            }
+
+            <br/>
+            <button type="button" class="btn btn-primary" @onclick="@(() => SendSetDonorBenefitReq(ClientDonorBenefit))"
+                    disabled="@(!isDonor || (ClientDonorBenefit.username_color.Any() && !RegexPatterns.ColorHexStringRegex.IsMatch(ClientDonorBenefit.username_color)))">
+                Save all donor benefits
+            </button>
+        }
+        else
+        {
+            <p>You must be a registered user to use this feature.</p>
         }
     </Blazorise.TabPanel>
     </Content>
