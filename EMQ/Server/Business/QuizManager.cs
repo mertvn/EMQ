@@ -69,7 +69,7 @@ public class QuizManager
         if (Quiz.QuizState.QuizStatus == QuizStatus.Playing)
         {
             // var tickStart = DateTime.UtcNow; // todo? this might not be precise enough
-            if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(1))
+            if (Quiz.QuizState.Phase != QuizPhaseKind.Looting && DateTime.UtcNow - LastUpdate > TimeSpan.FromSeconds(2))
             {
                 // Console.WriteLine($"sending update at {DateTime.UtcNow}");
                 LastUpdate = DateTime.UtcNow;

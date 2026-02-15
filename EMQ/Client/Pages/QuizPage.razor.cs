@@ -835,7 +835,7 @@ public partial class QuizPage
             {
                 PageState.Countdown -= Quiz.TickRateClient;
             }
-            else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(2))
+            else if (!SyncInProgress && DateTime.UtcNow - LastSync > TimeSpan.FromSeconds(4))
             {
                 await SyncWithServer();
                 if (Room is null || Room.Quiz is null)
