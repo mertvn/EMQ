@@ -2306,25 +2306,76 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         await using var connectionScrapsMal = new NpgsqlConnection(ConnectionHelper
             .GetConnectionStringBuilderWithDatabaseUrl("postgresql://postgres:postgres@127.0.0.1:5432/SCRAPS_MAL")
             .ToString());
-        var fetched = await connectionScrapsMal.QueryAsync<string>(
-            "select value from generic_fetch where key like 'mal-ch-%' and value is not null");
-        var seiyuuIds = new HashSet<int>(16000);
-        foreach (string s in fetched)
+        // var fetched = await connectionScrapsMal.QueryAsync<string>(
+        //     "select value from generic_fetch where key like 'mal-ch-%' and value is not null");
+        // var seiyuuIds = new HashSet<int>(16000);
+        // foreach (string s in fetched)
+        // {
+        //     var deser = JsonSerializer.Deserialize<JikanCharactersFullRoot>(s)!;
+        //     foreach (int id in deser.data.voices.Where(x => x.language == "Japanese")
+        //                  .Select(x => x.person.mal_id!.Value))
+        //     {
+        //         seiyuuIds.Add(id);
+        //     }
+        // }
+
+        // var client = new HttpClient();
+        // const string baseUrl = "https://api.jikan.moe/v4/";
+        // foreach (int id in seiyuuIds)
+        // {
+        //     string key = $"mal-s-{id}";
+        //     GenericFetch dto = new() { key = key };
+        //     string url = $"{baseUrl}people/{id}/full";
+        //     var res = await client.GetAsync(url);
+        //     dto.modified_at = DateTime.UtcNow;
+        //     dto.status = (int)res.StatusCode;
+        //     if (res.StatusCode is HttpStatusCode.OK)
+        //     {
+        //         string content = await res.Content.ReadAsStringAsync();
+        //         dto.value = content;
+        //     }
+        //
+        //     await connectionScrapsMal.InsertAsync(dto);
+        //     await Task.Delay(TimeSpan.FromSeconds(1));
+        // }
+
+        var list = new List<StaffDenorm>(16_000);
+        var fetchedSeiyuu = await connectionScrapsMal.QueryAsync<string>(
+            "select value from generic_fetch where key like 'mal-s-%' and value is not null");
+        foreach (string s in fetchedSeiyuu)
         {
-            var deser = JsonSerializer.Deserialize<JikanCharactersFullRoot>(s)!;
-            foreach (int id in deser.data.voices.Where(x => x.language == "Japanese")
-                         .Select(x => x.person.mal_id!.Value))
+            var deser = JsonSerializer.Deserialize<JikanPeopleRoot>(s)!;
+            string sid = deser.data.mal_id.ToString()!;
+            string latin = deser.data.name;
+
+            string name = $"{deser.data.family_name}{deser.data.given_name}";
+            if (string.IsNullOrWhiteSpace(name))
             {
-                seiyuuIds.Add(id);
+                (latin, name) = (name, latin); // compatibility with VNDB names
+            }
+
+            foreach (var voice in deser.data.voices)
+            {
+                var anime = voice.anime;
+                var character = voice.character;
+                string vid = $"mal-anime-{anime.mal_id}";
+                string detailId = character.mal_id!.Value.ToString();
+
+                var staffDenorm = new StaffDenorm()
+                {
+                    vid = vid,
+                    sid = sid,
+                    alias_id = sid,
+                    detail_id = detailId,
+                    latin = latin,
+                    name = name,
+                    role = StaffDenormRoleKind.Seiyuu,
+                };
+                list.Add(staffDenorm);
             }
         }
 
-        foreach (int seiyuuId in seiyuuIds)
-        {
-            Console.WriteLine(seiyuuId);
-        }
-
-        Console.WriteLine(seiyuuIds.Count);
         await using var connectionEmq = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connectionEmq.InsertListAsync(list);
     }
 }

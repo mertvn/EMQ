@@ -980,18 +980,21 @@ public class QuizManager
                     var vndbIds = song.Sources.SelectMany(x =>
                         x.Links.Where(y => y.Type == SongSourceLinkType.VNDB).Select(y => y.Url.ToVndbId()));
 
+                    var malIds = song.Sources.SelectMany(x =>
+                        x.Links.Where(y => y.Type == SongSourceLinkType.MyAnimeListAnime).Select(y =>
+                            $"mal-anime-{y.Url.Replace("https://myanimelist.net/anime/", "").Replace("/", "")}"));
+
                     if (isSpecificCharMode)
                     {
-                        foreach (string vndbId in vndbIds)
+                        foreach (string vndbId in vndbIds.Concat(malIds))
                         {
                             if (DbManager.VnSeiyuus.TryGetValue(vndbId, out var vnSeiyuus))
                             {
-                                foreach ((string? _, string? sid, string? cid, int vsaid, string? _,
-                                             string? _) in vnSeiyuus)
+                                foreach (StaffDenorm staff in vnSeiyuus)
                                 {
-                                    if (characterIds.Contains(cid))
+                                    if (characterIds.Contains(staff.detail_id))
                                     {
-                                        if (DbManager.StaffAliases.TryGetValue(sid, out var aliases))
+                                        if (DbManager.StaffAliases.TryGetValue(staff.sid, out var aliases))
                                         {
                                             foreach ((string? _, int saaid, string? latin, string? name) in aliases)
                                             {
@@ -1002,7 +1005,7 @@ public class QuizManager
                                                     correctAnswers.Add(title.nonLatinTitle);
                                                 }
 
-                                                if (vsaid == saaid)
+                                                if (staff.alias_id == saaid.ToString())
                                                 {
                                                     song.SeiyuuName = title.latinTitle;
                                                     if (title.nonLatinTitle != null)
@@ -1012,6 +1015,21 @@ public class QuizManager
                                                 }
                                             }
                                         }
+                                        else if (staff.sid == staff.alias_id)
+                                        {
+                                            var title = Utils.VndbTitleToEmqTitle(staff.name, staff.latin);
+                                            correctAnswers.Add(title.latinTitle);
+                                            if (title.nonLatinTitle != null)
+                                            {
+                                                correctAnswers.Add(title.nonLatinTitle);
+                                            }
+
+                                            song.SeiyuuName = title.latinTitle;
+                                            if (title.nonLatinTitle != null)
+                                            {
+                                                song.SeiyuuName += $", {title.nonLatinTitle}";
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1019,13 +1037,13 @@ public class QuizManager
                     }
                     else
                     {
-                        foreach (string vndbId in vndbIds)
+                        foreach (string vndbId in vndbIds.Concat(malIds))
                         {
                             if (DbManager.VnSeiyuus.TryGetValue(vndbId, out var vnSeiyuus))
                             {
-                                foreach ((string? _, string? sid, string? _, int _, string? _, string? _) in vnSeiyuus)
+                                foreach (StaffDenorm staff in vnSeiyuus)
                                 {
-                                    if (DbManager.StaffAliases.TryGetValue(sid, out var aliases))
+                                    if (DbManager.StaffAliases.TryGetValue(staff.sid, out var aliases))
                                     {
                                         foreach ((string? _, int _, string? latin, string? name) in aliases)
                                         {
@@ -1035,6 +1053,21 @@ public class QuizManager
                                             {
                                                 correctAnswers.Add(title.nonLatinTitle);
                                             }
+                                        }
+                                    }
+                                    else if (staff.sid == staff.alias_id)
+                                    {
+                                        var title = Utils.VndbTitleToEmqTitle(staff.name, staff.latin);
+                                        correctAnswers.Add(title.latinTitle);
+                                        if (title.nonLatinTitle != null)
+                                        {
+                                            correctAnswers.Add(title.nonLatinTitle);
+                                        }
+
+                                        song.SeiyuuName = title.latinTitle;
+                                        if (title.nonLatinTitle != null)
+                                        {
+                                            song.SeiyuuName += $", {title.nonLatinTitle}";
                                         }
                                     }
                                 }

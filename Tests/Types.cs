@@ -74,3 +74,42 @@ public class JikanWebp
     public string image_url { get; set; } = "";
     public string large_image_url { get; set; } = "";
 }
+
+public class JikanPeopleAnimeIntermediary
+{
+    public string position { get; set; } = "";
+    public JikanPeopleAnime anime { get; set; } = new();
+}
+
+public class JikanPeopleAnime
+{
+    public int? mal_id { get; set; }
+}
+
+public class JikanPeopleCharacter
+{
+    public int? mal_id { get; set; }
+}
+
+public class JikanPeopleData
+{
+    public int? mal_id { get; set; }
+    public string name { get; set; } = "";
+    public string given_name { get; set; } = "";
+    public string family_name { get; set; } = "";
+    // public List<object> alternate_names { get; set; }
+    public List<JikanPeopleAnimeIntermediary> anime { get; set; } = new();
+    public List<JikanPeopleVoice> voices { get; set; } = new();
+}
+
+public class JikanPeopleRoot
+{
+    public JikanPeopleData data { get; set; } = new();
+}
+
+public class JikanPeopleVoice
+{
+    public string role { get; set; } = "";
+    public JikanPeopleAnime anime { get; set; } = new();
+    public JikanPeopleCharacter character { get; set; } = new();
+}

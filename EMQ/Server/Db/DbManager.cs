@@ -42,6 +42,9 @@ public static class DbManager
     {
         // return;
         Console.WriteLine("Initializing DbManager");
+        var stopwatch = new Utils.MyStopwatch();
+        stopwatch.Start();
+        stopwatch.StartSection("init");
         SqlMapper.AddTypeHandler(typeof(MediaAnalyserResult), new JsonTypeHandler());
         SqlMapper.AddTypeHandler(new GenericArrayHandler<int>());
         SqlMapper.AddTypeHandler(new TimeMultiRangeHandler());
@@ -50,20 +53,25 @@ public static class DbManager
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
 
+        stopwatch.StartSection("musicBrainzReleaseRecordings");
         var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
         MusicBrainzRecordingReleases = musicBrainzReleaseRecordings.GroupBy(x => x.recording)
             .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.release).ToList());
 
+        stopwatch.StartSection("musicBrainzReleaseVgmdbAlbums");
         var musicBrainzReleaseVgmdbAlbums = await connection.GetListAsync<MusicBrainzReleaseVgmdbAlbum>();
         MusicBrainzReleaseVgmdbAlbums = musicBrainzReleaseVgmdbAlbums.GroupBy(x => x.release)
             .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.album_id).ToList());
 
+        stopwatch.StartSection("MusicBrainzRecordingTracks");
         var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
         MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
             .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
 
+        stopwatch.StartSection("IgnoredMusicVotes");
         IgnoredMusicVotes = (await connectionAuth.QueryAsync<int>("select id from users where ign_mv")).ToArray();
 
+        stopwatch.StartSection("vnIds");
         string[] vnIds = (await connection.QueryAsync<string>(
                 $"select url from music_source_external_link where type = {(int)SongSourceLinkType.VNDB}"))
             .Select(x => x.ToVndbId()).ToArray();
@@ -74,12 +82,14 @@ public static class DbManager
         {
             await using (var connectionVndb = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb()))
             {
+                stopwatch.StartSection("staffAliases");
                 var staffAliases = await connectionVndb
                     .QueryAsync<(string id, int aid, string? latin, string name)>(
                         "select id, aid, latin, name from staff_alias");
                 StaffAliases = staffAliases.GroupBy(x => x.id)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
 
+                stopwatch.StartSection("vnDevelopers");
                 var vnDevelopers =
                     await connectionVndb.QueryAsync<(string vId, string pId, string name, string? latin)>(@"
 SELECT distinct v.id, p.id, p.name, p.latin FROM producers p
@@ -92,6 +102,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
                 VnDevelopers = vnDevelopers.GroupBy(x => x.vId)
                     .ToFrozenDictionary(y => y.Key, y => y.Select(z => z).ToArray());
 
+                stopwatch.StartSection("vids");
                 string[] vids = (await connection.QueryAsync<string>(
                         $"SELECT DISTINCT REPLACE(url,'https://vndb.org/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.VNDB}"))
                     .ToArray();
@@ -100,6 +111,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
                         $"SELECT DISTINCT REPLACE(url,'https://myanimelist.net/anime/', '') FROM music_source_external_link WHERE type = {(int)SongSourceLinkType.MyAnimeListAnime}"))
                     .Select(x => $"mal-anime-{x}").ToArray();
 
+                stopwatch.StartSection("CharsDenorm");
                 var sourceCharacters = new List<CharsDenorm>();
                 var vnCharacters = await connectionVndb.QueryAsync<CharsDenorm>(
                     "select distinct cv.vid, c.id as cid, c.image, c.latin, c.name, cv.role from chars c join chars_vns cv on cv.id = c.id where vid = ANY(@vids)",
@@ -114,6 +126,7 @@ WHERE rp.developer AND r.official AND v.id = ANY(@vnIds)",
                 VnCharacters = sourceCharacters.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
 
+                stopwatch.StartSection("vnIllustrators");
                 var vnIllustrators = await connectionVndb
                     .QueryAsync<(string vid, string sid, int aid, string? latin, string name)>(
                         @"
@@ -125,15 +138,27 @@ WHERE vs.id = ANY(@vids) AND (vs.role = 'art' OR vs.role = 'chardesign')",
                 VnIllustrators = vnIllustrators.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
 
+                stopwatch.StartSection("vnSeiyuus");
+                var sourceSeiyuus = new List<StaffDenorm>();
                 var vnSeiyuus = await connectionVndb
-                    .QueryAsync<(string vid, string sid, string cid, int aid, string? latin, string name)>(
-                        @"SELECT vs.id, sa.id, vs.cid, vs.aid, sa.latin, sa.name FROM vn_seiyuu vs JOIN staff_alias sa on sa.aid = vs.aid WHERE vs.id = ANY(@vids)",
+                    .QueryAsync<StaffDenorm>(
+                        @$"
+SELECT distinct vs.id as vid, sa.id as sid, vs.cid as detail_id, vs.aid::text as alias_id, sa.latin, sa.name, {(int)StaffDenormRoleKind.Seiyuu} as role
+FROM vn_seiyuu vs JOIN staff_alias sa on sa.aid = vs.aid WHERE vs.id = ANY(@vids)",
                         new { vids });
-                VnSeiyuus = vnSeiyuus.GroupBy(x => x.vid)
+                sourceSeiyuus.AddRange(vnSeiyuus);
+
+                var animeSeiyuus = await connection.QueryAsync<StaffDenorm>(
+                    "select distinct * from staff_denorm where vid = ANY(@vidsMal)",
+                    new { vidsMal });
+                sourceSeiyuus.AddRange(animeSeiyuus);
+
+                VnSeiyuus = sourceSeiyuus.GroupBy(x => x.vid)
                     .ToFrozenDictionary(x => x.Key, x => x.ToList());
             }
         }
 
+        stopwatch.StartSection("McOptionsQshDict");
         const string sqlMcOptionsQsh = @"WITH ranked_guesses AS (
     SELECT
         qsh.music_id,
@@ -160,8 +185,11 @@ ORDER BY music_id;";
             (await connection.QueryAsync<(int, int[])>(sqlMcOptionsQsh))
             .ToFrozenDictionary(x => x.Item1, x => x.Item2.ToList());
 
+        stopwatch.StartSection("RefreshMusicIdsRecordingGidsCache");
         await RefreshMusicIdsRecordingGidsCache();
+        stopwatch.StartSection("RefreshAutocompleteFiles");
         await RefreshAutocompleteFiles();
+        stopwatch.Stop();
     }
 
     private static ConcurrentDictionary<int, Song> CachedSongs { get; } = new();
@@ -193,10 +221,8 @@ ORDER BY music_id;";
         VnIllustrators { get; set; } =
         FrozenDictionary<string, List<(string vid, string sid, int aid, string? latin, string name)>>.Empty;
 
-    public static FrozenDictionary<string,
-            List<(string vid, string sid, string cid, int aid, string? latin, string name)>>
-        VnSeiyuus { get; set; } =
-        FrozenDictionary<string, List<(string vid, string sid, string cid, int aid, string? latin, string name)>>.Empty;
+    public static FrozenDictionary<string, List<StaffDenorm>> VnSeiyuus { get; set; } =
+        FrozenDictionary<string, List<StaffDenorm>>.Empty;
 
     public static FrozenDictionary<int, List<int>> McOptionsQshDict { get; set; } =
         FrozenDictionary<int, List<int>>.Empty;
