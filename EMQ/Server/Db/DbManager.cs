@@ -2253,11 +2253,11 @@ RETURNING id;",
         var ret = new List<Song>();
 
         // todo important take into account new msel types (especially for dupe checking)
-        List<(int, string)>? ids = null;
+        List<(int, int)>? ids = null;
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             string sqlMusicIds =
-                $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, ms.id FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -2285,7 +2285,7 @@ RETURNING id;",
                         $"StartSection GetRandomSongs_categories: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
                     string sqlCategories =
-                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, ms.id FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -2359,7 +2359,7 @@ RETURNING id;",
                         }
 
                         var resCategories =
-                            (await connection.QueryAsync<(int, string)>(queryCategories.Sql,
+                            (await connection.QueryAsync<(int, int)>(queryCategories.Sql,
                                 queryCategories.Parameters))
                             .Shuffle().ToList();
                         ids = resCategories;
@@ -2372,7 +2372,7 @@ RETURNING id;",
                         $"StartSection GetRandomSongs_artists: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
                     string sqlArtists =
-                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, ms.id FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -2442,7 +2442,7 @@ RETURNING id;",
                     }
 
                     var resArtist =
-                        (await connection.QueryAsync<(int, string)>(queryArtists.Sql, queryArtists.Parameters))
+                        (await connection.QueryAsync<(int, int)>(queryArtists.Sql, queryArtists.Parameters))
                         .Shuffle().ToList();
 
                     if (ids != null && ids.Any())
@@ -2469,7 +2469,7 @@ RETURNING id;",
                         $"StartSection GetRandomSongs_sources: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
                     string sqlSources =
-                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, ms.id FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -2535,7 +2535,7 @@ RETURNING id;",
                     }
 
                     var resSource =
-                        (await connection.QueryAsync<(int, string)>(querySources.Sql, querySources.Parameters))
+                        (await connection.QueryAsync<(int, int)>(querySources.Sql, querySources.Parameters))
                         .Shuffle().ToList();
 
                     if (ids != null && ids.Any())
@@ -2562,7 +2562,7 @@ RETURNING id;",
                         $"StartSection GetRandomSongs_collections: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
                     string sqlCollections =
-                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, msel.url FROM music_external_link mel
+                        $@"SELECT DISTINCT ON (mel.music_id) mel.music_id, ms.id FROM music_external_link mel
                                      JOIN music m on m.id = mel.music_id
                                      JOIN music_source_music msm on msm.music_id = m.id
                                      JOIN music_source ms on msm.music_source_id = ms.id
@@ -2631,7 +2631,7 @@ RETURNING id;",
                     }
 
                     var resCollection =
-                        (await connection.QueryAsync<(int, string)>(queryCollections.Sql, queryCollections.Parameters))
+                        (await connection.QueryAsync<(int, int)>(queryCollections.Sql, queryCollections.Parameters))
                         .Shuffle().ToList();
 
                     if (ids != null && ids.Any())
@@ -3007,7 +3007,7 @@ RETURNING id;",
                 Console.WriteLine(JsonSerializer.Serialize(queryMusicIds.Parameters, Utils.JsoIndented));
             }
 
-            ids = (await connection.QueryAsync<(int, string)>(queryMusicIds.Sql, queryMusicIds.Parameters))
+            ids = (await connection.QueryAsync<(int, int)>(queryMusicIds.Sql, queryMusicIds.Parameters))
                 .Shuffle().ToList();
             // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
 
@@ -3021,7 +3021,7 @@ RETURNING id;",
             $"StartSection GetRandomSongs_SelectSongs: {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s");
 
         // 2. Select Song objects with those music ids until we hit the desired NumSongs, respecting the Duplicates and Song Types settings
-        var addedMselUrls = new List<string>();
+        var addedMsIds = new List<int>();
 
         bool doSongSourceSongTypeFiltersCheck = filters?.SongSourceSongTypeFilters.Any(x => x.Value.Value > 0) ?? false;
         bool doListReadKindFiltersCheck = songSelectionKind != SongSelectionKind.Looting &&
@@ -3060,7 +3060,7 @@ RETURNING id;",
         int lastIndex = 0;
         var songsDict = new Dictionary<int, Song>();
         int totalSelected = 0;
-        foreach ((int mId, string? mselUrl) in ids)
+        foreach ((int mId, int msId) in ids)
         {
             if (ret.Count >= numSongs ||
                 (songTypesLeft != null && !songTypesLeft.Any(x => x.Value > 0)) ||
@@ -3069,7 +3069,7 @@ RETURNING id;",
                 break;
             }
 
-            if (!addedMselUrls.Contains(mselUrl) || duplicates)
+            if (!addedMsIds.Contains(msId) || duplicates)
             {
                 bool exists = songsDict.TryGetValue(mId, out Song? song);
                 while (!exists)
@@ -3173,7 +3173,7 @@ RETURNING id;",
                     };
                 }
 
-                bool isDuplicate = addedMselUrls.Contains(mselUrl);
+                bool isDuplicate = addedMsIds.Contains(msId);
                 canAdd &= !isDuplicate || duplicates;
                 if (canAdd)
                 {
@@ -3188,7 +3188,7 @@ RETURNING id;",
                     }
 
                     ret.Add(song!);
-                    addedMselUrls.Add(mselUrl);
+                    addedMsIds.Add(msId);
                 }
             }
         }
