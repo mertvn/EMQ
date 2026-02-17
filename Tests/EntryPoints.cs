@@ -2229,7 +2229,7 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                 string vid = $"mal-anime-{animeIntermediary.anime.mal_id}";
                 VndbCharRoleKind? role = animeIntermediary.role switch
                 {
-                    "Main" => VndbCharRoleKind.Main,
+                    "Main" => VndbCharRoleKind.Primary,
                     "Supporting" => VndbCharRoleKind.Side,
                     _ => throw new ArgumentOutOfRangeException()
                 };

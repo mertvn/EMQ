@@ -29,7 +29,7 @@ public partial class LibraryPage
 
     public List<Song> CurrentSongs { get; set; } = new();
 
-    public string NoSongsText { get; set; } = "";
+    public string NoSongsText { get; set; } = ""; // todo this doesn't get shown anymore
 
     private string _selectedTab { get; set; } = "TabAutocompleteMst";
 

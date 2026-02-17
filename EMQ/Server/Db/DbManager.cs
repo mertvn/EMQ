@@ -3478,6 +3478,7 @@ ORDER BY artist_id";
         return AutocompleteCharacterSerializer.SerializeArray(res);
     }
 
+    // todo reverse
     public static async Task<string> SelectAutocompleteIllustrator()
     {
         var res = VnIllustrators.SelectMany(x =>

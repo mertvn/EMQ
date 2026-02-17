@@ -194,7 +194,7 @@
                             Remove list
                         </button>
 
-                        var label = ClientState.VndbInfo.First(x => x.DatabaseKind == UserListDatabaseKind.EMQ).Labels.SingleOrDefault();
+                        var label = vndbInfo.Labels.SingleOrDefault();
                         <div style="min-height: 350px;">
                             <GuessInputComponent @ref="_guessInputComponentRef"
                                                  Placeholder="Enter source title here"

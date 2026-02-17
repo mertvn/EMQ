@@ -132,12 +132,12 @@ public partial class PlayerPreferencesComponent
 
     private async Task OnLabelKindChanged(Label label, LabelKind newLabelKind, PlayerVndbInfo vndbInfo)
     {
-        InProgress = true;
         if (label.Kind == newLabelKind)
         {
             return;
         }
 
+        InProgress = true;
         label = await UpdateLabel(label, newLabelKind, vndbInfo);
 
         HttpResponseMessage res = await _client.PostAsJsonAsync("Auth/UpdateLabel",
@@ -595,13 +595,13 @@ public partial class PlayerPreferencesComponent
 
     public async Task SelectedResultChangedMst()
     {
-        InProgress = true;
         var vndbInfo = ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.EMQ);
         if (vndbInfo == null)
         {
             return;
         }
 
+        InProgress = true;
         if (!string.IsNullOrWhiteSpace(selectedMusicSourceTitle))
         {
             var req = new ReqFindSongsBySongSourceTitle(selectedMusicSourceTitle);
