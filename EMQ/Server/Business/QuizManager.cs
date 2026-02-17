@@ -2649,6 +2649,7 @@ public class QuizManager
             Quiz.Room.QuizSettings.TimeoutMs = 5000;
         }
 
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         CorrectAnswersDicts =
             Enum.GetValues<GuessKind>().ToDictionary(x => x, _ => new Dictionary<int, List<string>>());
         ArtistAliasesDict = null;
@@ -2686,6 +2687,7 @@ public class QuizManager
                 }
 
                 var vndbInfos = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
+                var userLabelsList = new List<UserLabel>();
                 foreach (PlayerVndbInfo vndbInfo in vndbInfos)
                 {
                     if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
@@ -2699,8 +2701,8 @@ public class QuizManager
                         var userLabels =
                             await DbManager_Auth.GetUserLabels(player.Id, vndbInfo.VndbId,
                                 session.ActiveUserLabelPresetName);
+                        userLabelsList.AddRange(userLabels);
                         var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
-                        var exclude = userLabels.Where(x => x.kind == LabelKind.Exclude).ToList();
 
                         // todo Exclude does nothing on its own (don't break Balanced while fixing this)
                         if (include.Any())
@@ -2713,20 +2715,23 @@ public class QuizManager
                             validSourcesDict[player.Id].AddRange(
                                 (await DbManager_Auth.GetUserLabelVns(include.Select(x => x.id).ToList()))
                                 .Select(x => x.vnid));
-
-                            if (exclude.Any())
-                            {
-                                List<string> excluded =
-                                    (await DbManager_Auth.GetUserLabelVns(exclude.Select(x => x.id).ToList()))
-                                    .Select(x => x.vnid).ToList();
-
-                                validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excluded).ToList();
-                            }
-
-                            validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
                         }
                     }
                 }
+
+                var exclude = userLabelsList.Where(x => x.kind == LabelKind.Exclude).ToList();
+                if (exclude.Any())
+                {
+                    List<string> excluded =
+                        (await DbManager_Auth.GetUserLabelVns(exclude.Select(x => x.id).ToList()))
+                        .Select(x => x.vnid).ToList();
+                    var excludedMselUrls = await connection.QueryAsync<string>(
+                        @"SELECT msel2.url FROM music_source_external_link msel1 JOIN music_source_external_link msel2 USING (music_source_id) WHERE msel1.url = any(@url)",
+                        new { url = excluded });
+                    validSourcesDict[player.Id] = validSourcesDict[player.Id].Except(excludedMselUrls).ToList();
+                }
+
+                validSourcesDict[player.Id] = validSourcesDict[player.Id].Distinct().ToList();
             }
         }
 
@@ -3119,8 +3124,6 @@ public class QuizManager
         }
 
         var filters = Quiz.Room.QuizSettings.Filters;
-        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-
         var shortestLinkDict = dbSongs.ToDictionary(song => song.Id,
             song => SongLink.GetShortestLink(song.Links.Where(x => x.IsFileLink && !x.IsVideo),
                 filters.IsPreferLongLinks));
