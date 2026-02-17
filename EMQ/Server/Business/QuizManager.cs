@@ -2696,6 +2696,11 @@ public class QuizManager
                         continue;
                     }
 
+                    if (!validSourcesDict.ContainsKey(player.Id))
+                    {
+                        validSourcesDict[player.Id] = new List<string>();
+                    }
+
                     if (vndbInfo.Labels != null)
                     {
                         var userLabels =
@@ -2707,11 +2712,6 @@ public class QuizManager
                         // todo Exclude does nothing on its own (don't break Balanced while fixing this)
                         if (include.Any())
                         {
-                            if (!validSourcesDict.ContainsKey(player.Id))
-                            {
-                                validSourcesDict[player.Id] = new List<string>();
-                            }
-
                             validSourcesDict[player.Id].AddRange(
                                 (await DbManager_Auth.GetUserLabelVns(include.Select(x => x.id).ToList()))
                                 .Select(x => x.vnid));
