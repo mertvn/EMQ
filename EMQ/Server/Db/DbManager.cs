@@ -51,7 +51,6 @@ public static class DbManager
         SqlMapper.AddTypeHandler(typeof(List<SongSourceDeveloper>), new JsonTypeHandler());
 
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
-        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
 
         stopwatch.StartSection("musicBrainzReleaseRecordings");
         var musicBrainzReleaseRecordings = await connection.GetListAsync<MusicBrainzReleaseRecording>();
@@ -67,9 +66,6 @@ public static class DbManager
         var musicBrainzTrackRecordings = await connection.GetListAsync<MusicBrainzTrackRecording>();
         MusicBrainzRecordingTracks = musicBrainzTrackRecordings.GroupBy(x => x.recording)
             .ToFrozenDictionary(y => y.Key, y => y.Select(z => z.track).ToList());
-
-        stopwatch.StartSection("IgnoredMusicVotes");
-        IgnoredMusicVotes = (await connectionAuth.QueryAsync<int>("select id from users where ign_mv")).ToArray();
 
         stopwatch.StartSection("vnIds");
         string[] vnIds = (await connection.QueryAsync<string>(
@@ -277,6 +273,9 @@ ORDER BY music_id;";
         await connection.ExecuteAsync(
             @$"DELETE FROM music_source_external_link WHERE TYPE = {(int)SongSourceLinkType.SelfSource};
         INSERT INTO music_source_external_link SELECT id, 'https://erogemusicquiz.com/ems'||id, {(int)SongSourceLinkType.SelfSource}, '' FROM music_source ON CONFLICT DO NOTHING;");
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        IgnoredMusicVotes = (await connectionAuth.QueryAsync<int>("select id from users where ign_mv")).ToArray();
     }
 
     public static async Task<List<Song>> SelectSongsMIds(int[] mIds, bool selectCategories,
