@@ -194,9 +194,9 @@
                             Remove list
                         </button>
 
-                        var label = vndbInfo.Labels.SingleOrDefault();
+                        var label = vndbInfo.Labels?.SingleOrDefault();
                         <div style="min-height: 350px;">
-                            @if (vndbInfo.Labels is not null)
+                            @if (label is not null)
                             {
                                 <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
                                     <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
@@ -511,7 +511,7 @@
             <br/>
 
             bool isDonor = AuthStuff.HasPermission(ClientState.Session, PermissionKind.Donor);
-            Player player = JsonSerializer.Deserialize<Player>(JsonSerializer.Serialize(ClientState.Session.Player));
+            Player player = JsonSerializer.Deserialize<Player>(JsonSerializer.Serialize(ClientState.Session.Player))!;
             player.DonorBenefit = ClientDonorBenefit;
             Avatar avatar = ClientState.Preferences.ForceDefaultAvatar ? Avatar.DefaultAvatar : player.Avatar;
             string donorBadgeStr = player.DonorBenefit.show_donor_badge ? "❤️" : "";
