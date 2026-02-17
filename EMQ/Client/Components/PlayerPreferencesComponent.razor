@@ -196,6 +196,48 @@
 
                         var label = vndbInfo.Labels.SingleOrDefault();
                         <div style="min-height: 350px;">
+                            @if (vndbInfo.Labels is not null)
+                            {
+                                <div class="labels d-flex flex-row flex-wrap" style="max-width: 1600px">
+                                    <div class="labelCard card" style="margin: 16px; min-width:200px; max-width: 340px; min-height:120px;">
+                                        <div class="labelCardBody card-body">
+                                            <span>#@label.Id @label.Name (@label.VNs.Count)</span>
+                                            <span> Public </span>
+
+                                            <br/>
+                                            <div class="btn-group btn-group-toggle" data-toggle="buttons" style="margin-top: 30px; background-color: white">
+                                                <label class="btn btn-outline-primary"
+                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "green", "transparent");
+                                                                                                                                        color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Include, "white", "black");
+                                                                                                                                        pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                    <input type="radio" checked="@(label.Kind == LabelKind.Include)"
+                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Include, vndbInfo))"> Include
+                                                </label>
+
+                                                <label class="btn btn-outline-primary"
+                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "gray", "transparent");
+                                                                                                                                        color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Maybe, "white", "black");
+                                                                                                                                        pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                    <input type="radio" checked="@(label.Kind == LabelKind.Maybe)"
+                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Maybe, vndbInfo))"> Ignore
+                                                </label>
+
+                                                <label class="btn btn-outline-primary"
+                                                       style="background-color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "red", "transparent");
+                                                                                                                                        color: @UiHelpers.Bool2Color(label.Kind == LabelKind.Exclude, "white", "black");
+                                                                                                                                        pointer-events: @UiHelpers.Bool2PointerEvents(!InProgress);">
+
+                                                    <input type="radio" checked="@(label.Kind == LabelKind.Exclude)"
+                                                           @onclick="@(() => OnLabelKindChanged(label, LabelKind.Exclude, vndbInfo))"> Exclude
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
                             <GuessInputComponent @ref="_guessInputComponentRef"
                                                  Placeholder="Enter source title here"
                                                  IsDisabled="false"

@@ -172,7 +172,7 @@ public partial class PlayerPreferencesComponent
 
     public async Task<Label> UpdateLabel(Label label, LabelKind newLabelKind, PlayerVndbInfo vndbInfo)
     {
-        if (ClientState.Session != null && vndbInfo?.Labels != null)
+        if (ClientState.Session != null && vndbInfo.Labels != null)
         {
             Console.WriteLine($"{vndbInfo.VndbId}: {label.Id} ({label.Name}), {label.Kind} => {newLabelKind}");
             label.Kind = newLabelKind;
@@ -214,7 +214,11 @@ public partial class PlayerPreferencesComponent
                     throw new ArgumentOutOfRangeException();
             }
 
-            label.VNs = newVns;
+            if (vndbInfo.DatabaseKind != UserListDatabaseKind.EMQ)
+            {
+                label.VNs = newVns;
+            }
+
             return label;
         }
         else
