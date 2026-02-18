@@ -2686,6 +2686,11 @@ public class QuizManager
                     continue;
                 }
 
+                if (!validSourcesDict.ContainsKey(player.Id))
+                {
+                    validSourcesDict[player.Id] = new List<string>();
+                }
+
                 var vndbInfos = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
                 var userLabelsList = new List<UserLabel>();
                 foreach (PlayerVndbInfo vndbInfo in vndbInfos)
@@ -2694,11 +2699,6 @@ public class QuizManager
                         string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
                     {
                         continue;
-                    }
-
-                    if (!validSourcesDict.ContainsKey(player.Id))
-                    {
-                        validSourcesDict[player.Id] = new List<string>();
                     }
 
                     if (vndbInfo.Labels != null)
