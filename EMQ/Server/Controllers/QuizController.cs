@@ -120,63 +120,57 @@ public class QuizController : ControllerBase
 
         var room = ServerState.Rooms.SingleOrDefault(x =>
             x.Players.Any(y => y.Id == session.Player.Id) || x.Spectators.Any(y => y.Id == session.Player.Id));
-        if (room is not null)
+        if (room?.Quiz == null)
         {
-            if (room.Quiz != null)
-            {
-                if (req.SongIndex <= room.Quiz.QuizState.sp + room.Quiz.Room.QuizSettings.PreloadAmount)
-                {
-                    if (req.SongIndex < room.Quiz.Songs.Count)
-                    {
-                        var song = room.Quiz.Songs[req.SongIndex];
-
-                        string url = ClientUtils.GetPreferredSongLinkUrl(song.Links, req.WantsVideo, req.Host)!;
-
-                        SongHint hint = new();
-                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Msst, out bool msst) &&
-                            msst)
-                        {
-                            hint.Sources = song.Sources;
-                        }
-
-                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.A, out bool a) && a)
-                        {
-                            hint.Artists = song.Artists;
-                        }
-
-                        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Mt, out bool mt) && mt)
-                        {
-                            hint.Titles = song.Titles;
-                        }
-
-                        return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl,
-                            hint,
-                            song.Artists.Any(x => (x.Id is 77 or 1053) && x.Roles.Contains(SongArtistRole.Vocals)),
-                            room.QuizSettings.MuteMs);
-                    }
-                    else
-                    {
-                        _logger.LogError("Requested song index is invalid: " + req.SongIndex);
-                        return BadRequest("Requested song index is invalid: " + req.SongIndex);
-                    }
-                }
-                else
-                {
-                    _logger.LogError("Requested song index is too far in the future: " + req.SongIndex);
-                    return BadRequest("Requested song index is too far in the future: " + req.SongIndex);
-                }
-            }
-            else
-            {
-                _logger.LogError("Room does not have a quiz initialized: " + room.Id);
-                return BadRequest("Room does not have a quiz initialized: " + room.Id);
-            }
+            return BadRequest();
         }
-        else
+
+        if (req.SongIndex > room.Quiz.QuizState.sp + room.Quiz.Room.QuizSettings.PreloadAmount)
         {
-            _logger.LogError("Room not found with playerToken: " + req.PlayerToken);
-            return BadRequest("Room not found with playerToken: " + req.PlayerToken);
+            return BadRequest();
         }
+
+        if (req.SongIndex >= room.Quiz.Songs.Count)
+        {
+            return BadRequest();
+        }
+
+        var song = room.Quiz.Songs[req.SongIndex];
+        bool wantsVideo = req.CdnEdge switch
+        {
+            CdnEdgeKind.Asia => false,
+            _ => req.WantsVideo
+        };
+
+        string url = ClientUtils.GetPreferredSongLinkUrl(song.Links, wantsVideo, req.Host)!;
+        switch (req.CdnEdge)
+        {
+            case CdnEdgeKind.Asia:
+                url = url.Replace("https://erogemusicquiz.com/", "https://asiadist.erogemusicquiz.com/");
+                break;
+        }
+
+        SongHint hint = new();
+        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Msst, out bool msst) &&
+            msst)
+        {
+            hint.Sources = song.Sources;
+        }
+
+        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.A, out bool a) && a)
+        {
+            hint.Artists = song.Artists;
+        }
+
+        if (room.QuizSettings.EnabledSongHintKinds.TryGetValue(SongHintKind.Mt, out bool mt) && mt)
+        {
+            hint.Titles = song.Titles;
+        }
+
+        bool isDuca =
+            song.Artists.Any(x => (x.Id is 77 or 1053) && x.Roles.Contains(SongArtistRole.Vocals));
+        return new ResNextSong(req.SongIndex, url, song.StartTime, song.ScreenshotUrl, song.CoverUrl,
+            hint, isDuca, room.QuizSettings.MuteMs);
     }
 
     [EnableRateLimiting(RateLimitKind.OnceEvery5Seconds)]

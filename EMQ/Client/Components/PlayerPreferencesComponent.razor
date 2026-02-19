@@ -111,6 +111,15 @@
         <label for="LinkHost">Preferred host</label>
         <br/>
 
+        <InputSelect id="CdnEdge" @bind-Value="ClientState.Preferences.CdnEdge" style="margin: 5px">
+            @foreach (CdnEdgeKind cdnEdge in Enum.GetValues<CdnEdgeKind>().Where(x => x != CdnEdgeKind.Auto))
+            {
+                <option value="@cdnEdge">@cdnEdge.GetDescription()</option>
+            }
+        </InputSelect>
+        <label for="CdnEdge">Preferred location</label>
+        <br/>
+
         <div style="max-width: 400px; display: flex; align-items: center; align-content: center;">
             <Blazorise.Slider style="max-width: 100px;" id="VolumeMaster" @bind-Value="@ClientState.Preferences.VolumeMaster" Min="0" Max="100"/>
             <label for="VolumeMaster" style="margin-left: 5px;">Master Volume</label>

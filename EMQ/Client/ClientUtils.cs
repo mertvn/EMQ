@@ -312,7 +312,6 @@ public class ClientUtils
             url = links.FirstOrDefault(x => x.Type == host && !x.IsVideo)?.Url;
         }
 
-        // todo priority setting for host or video
         if (string.IsNullOrWhiteSpace(url))
         {
             url = links.FirstOrDefault(x => x.Type == host)?.Url;

@@ -416,7 +416,7 @@ public partial class QuizPage
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong",
             new ReqNextSong(ClientState.Session!.Token, index, ClientState.Preferences.WantsVideo,
-                ClientState.Preferences.LinkHost));
+                ClientState.Preferences.LinkHost, ClientState.Preferences.CdnEdge));
         if (res.IsSuccessStatusCode)
         {
             ResNextSong? nextSong = await res.Content.ReadFromJsonAsync<ResNextSong>().ConfigureAwait(false);

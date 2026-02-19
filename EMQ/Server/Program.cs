@@ -214,9 +214,9 @@ app.UseHttpsRedirection();
 string csp = @$"
                base-uri 'self';
                default-src 'self';
-               connect-src 'self' *.vndb.org *.catbox.moe fonts.gstatic.com musicbrainz.org api.jikan.moe;
+               connect-src 'self' *.vndb.org fonts.gstatic.com musicbrainz.org api.jikan.moe;
                font-src 'self' fonts.gstatic.com;
-               media-src 'self' blob: *.catbox.moe {Constants.SelfhostAddress};
+               media-src 'self' blob: {Constants.SelfhostAddress} *.{Constants.WebsiteDomainNoProtocol};
                img-src data: https: blob:;
                object-src 'none';
                script-src 'self'

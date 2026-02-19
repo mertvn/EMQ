@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -247,4 +248,18 @@ public class PlayerPreferences
 
     [Required]
     public bool AutocompleteIsEnabled { get; set; } = true;
+
+    [Required]
+    public CdnEdgeKind CdnEdge { get; set; } = CdnEdgeKind.NaEast;
+}
+
+public enum CdnEdgeKind
+{
+    Auto,
+
+    [Description("NA-East (Virginia)")]
+    NaEast,
+
+    [Description("Asia (Singapore)")]
+    Asia,
 }
