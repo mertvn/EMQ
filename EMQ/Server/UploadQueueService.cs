@@ -202,8 +202,8 @@ public sealed class UploadQueueService : BackgroundService
                     {
                         uploadResult.ErrorStr = "Transcoding...";
                         transcodedPath =
-                            await MediaAnalyser.TranscodeInto192KMp3(tempPath,
-                                value.UploadOptions, cancellationTokenSource.Token);
+                            await MediaAnalyser.TranscodeIntoMp3(tempPath, value.UploadOptions,
+                                mediaTypeInfo.MimeType == "audio/wav" ? 320 : 192, cancellationTokenSource.Token);
                         encodedByEmq = true;
                     }
                     finally

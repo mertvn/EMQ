@@ -492,8 +492,8 @@ public static class MediaAnalyser
         return outputFinal;
     }
 
-    public static async Task<string> TranscodeInto192KMp3(string filePath, UploadOptions uploadOptions,
-        CancellationToken cancellationToken)
+    public static async Task<string> TranscodeIntoMp3(string filePath, UploadOptions uploadOptions,
+        int bitrate, CancellationToken cancellationToken)
     {
         Console.WriteLine("transcoding into .mp3");
         string outputFinal = $"{Path.GetTempFileName()}.mp3";
@@ -530,7 +530,7 @@ public static class MediaAnalyser
                     $"-i \"{filePath}\" " +
                     $"-ss {ss} " +
                     (to.Any() ? $"-to {to} " : "") +
-                    $"-c:a {audioEncoderName} -b:a 192k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
+                    $"-c:a {audioEncoderName} -b:a {bitrate}k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
                     $"-nostdin " +
                     $"\"{outputFinal}\"",
                 CreateNoWindow = true,
