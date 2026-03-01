@@ -333,12 +333,15 @@ public class QuizHub : Hub
                     (requestingPlayer.Id == room.Owner.Id || requestingPlayer.Id == targetPlayer.Id ||
                      AuthStuff.HasPermission(session, PermissionKind.Moderator)))
                 {
-                    room.Spectators.Enqueue(targetPlayer);
-                    room.RemovePlayer(targetPlayer);
-                    string byStr = requestingPlayer.Id == targetPlayer.Id ? "" : $" by {requestingPlayer.Username}";
-                    room.Log($"{targetPlayer.Username} converted to spectator{byStr}.", targetPlayer.Id, true);
-                    TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id),
-                        room);
+                    if (targetPlayer.Id != room.Owner.Id)
+                    {
+                        room.Spectators.Enqueue(targetPlayer);
+                        room.RemovePlayer(targetPlayer);
+                        string byStr = requestingPlayer.Id == targetPlayer.Id ? "" : $" by {requestingPlayer.Username}";
+                        room.Log($"{targetPlayer.Username} converted to spectator{byStr}.", targetPlayer.Id, true);
+                        TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id),
+                            room);
+                    }
                 }
             }
         }

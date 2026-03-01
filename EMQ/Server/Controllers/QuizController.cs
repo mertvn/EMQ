@@ -283,11 +283,8 @@ public class QuizController : ControllerBase
 
             return new ResJoinRoom(room.Quiz?.QuizState.QuizStatus ?? QuizStatus.Starting);
         }
-        else
-        {
-            _logger.LogError($"Wrong room password for r{room.Id}: {req.Password}");
-            return Unauthorized();
-        }
+
+        return Unauthorized();
     }
 
     [CustomAuthorize(PermissionKind.PlayQuiz)]
