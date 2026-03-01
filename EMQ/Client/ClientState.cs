@@ -48,4 +48,6 @@ public static class ClientState
     public static ResGetCollectionContainers ResGetCollectionContainers { get; set; } = new();
 
     public static int SelectedCollectionId { get; set; }
+
+    public static List<UserLabelPreset> Presets { get; set; } = new();
 }

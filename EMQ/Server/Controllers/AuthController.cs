@@ -419,34 +419,7 @@ public class AuthController : ControllerBase
             }
         }
 
-        await DbManager_Auth.DeleteUserLabels(session.Player.Id, session.ActiveUserLabelPresetName);
-        foreach (PlayerVndbInfo vndbInfo in req.VndbInfo)
-        {
-            Console.WriteLine($"SetVndbInfo for p{session.Player.Id} to {vndbInfo.VndbId}");
-            if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && vndbInfo.Labels is not null)
-            {
-                // todo? batch
-                foreach (Label label in vndbInfo.Labels)
-                {
-                    var userLabel = new UserLabel
-                    {
-                        user_id = session.Player.Id,
-                        vndb_uid = vndbInfo.VndbId,
-                        vndb_label_id = label.Id,
-                        vndb_label_name = label.Name,
-                        vndb_label_is_private = label.IsPrivate,
-                        kind = label.Kind,
-                        preset_name = session.ActiveUserLabelPresetName,
-                        database_kind = vndbInfo.DatabaseKind,
-                    };
-                    long _ = await DbManager_Auth.RecreateUserLabel(userLabel, label.VNs);
-                }
-            }
-        }
-
-        // todo this is inefficient
-        var res = await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
-        return res;
+        return await QuizManager.SetVndbInfoInner(session.Player.Id, session.ActiveUserLabelPresetName, req.VndbInfo);
     }
 
     [CustomAuthorize(PermissionKind.Visitor)]

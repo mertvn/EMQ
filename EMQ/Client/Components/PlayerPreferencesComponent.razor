@@ -158,13 +158,13 @@
             </ul>
         </div>
 
-        <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !Presets.Any())">
+        <button type="button" class="btn btn-danger" @onclick="@(async () => { await Onclick_DeletePreset(SelectedPresetName); })" disabled="@(InProgress || !ClientState.Presets.Any())">
             🗑
         </button>
 
         <select id="SelectPreset" style="margin: 5px" @bind:get="@SelectedPresetName" @bind:set="@OnSelectedPresetChanged" disabled="@InProgress">
             <option value="@CreateNewPresetValue">- Create new preset -</option>
-            @foreach (var preset in Presets)
+            @foreach (var preset in ClientState.Presets)
             {
                 <option value="@preset.name">@preset.name</option>
             }

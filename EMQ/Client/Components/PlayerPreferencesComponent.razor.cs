@@ -32,8 +32,6 @@ public partial class PlayerPreferencesComponent
 
     private string? ClientVndbApiToken { get; set; }
 
-    public List<UserLabelPreset> Presets { get; set; } = new();
-
     public string SelectedPresetName { get; set; } = "";
 
     public SongSourceSongTypeMode SelectedSSSTM { get; set; } = SongSourceSongTypeMode.Vocals;
@@ -64,7 +62,7 @@ public partial class PlayerPreferencesComponent
         var resGet = await _client.GetAsync("Auth/GetUserLabelPresets");
         if (resGet.IsSuccessStatusCode)
         {
-            Presets = (await resGet.Content.ReadFromJsonAsync<List<UserLabelPreset>>())!;
+            ClientState.Presets = (await resGet.Content.ReadFromJsonAsync<List<UserLabelPreset>>())!;
             SelectedPresetName = ClientState.Session.ActiveUserLabelPresetName ?? "";
         }
 
@@ -353,12 +351,13 @@ public partial class PlayerPreferencesComponent
                 (await _jsRuntime.InvokeAsync<string?>("prompt", "Enter new preset name (64 chars max.)"))?.Trim();
             if (!string.IsNullOrWhiteSpace(promptResult) && promptResult.Length is > 0 and <= 64)
             {
-                if (!Presets.Any(x => string.Equals(x.name, promptResult, StringComparison.OrdinalIgnoreCase)))
+                if (!ClientState.Presets.Any(x =>
+                        string.Equals(x.name, promptResult, StringComparison.OrdinalIgnoreCase)))
                 {
                     var res = await _client.PostAsJsonAsync("Auth/UpsertUserLabelPreset", promptResult);
                     if (res.IsSuccessStatusCode)
                     {
-                        Presets.Add(new UserLabelPreset { name = promptResult });
+                        ClientState.Presets.Add(new UserLabelPreset { name = promptResult });
                         SelectedPresetName = promptResult;
                         ClientState.VndbInfo = (await res.Content.ReadFromJsonAsync<List<PlayerVndbInfo>>())!;
                         ClientState.VndbInfo.AddRange(Enum.GetValues<UserListDatabaseKind>()
@@ -406,7 +405,7 @@ public partial class PlayerPreferencesComponent
             return;
         }
 
-        var preset = Presets.SingleOrDefault(x => x.name == name);
+        var preset = ClientState.Presets.SingleOrDefault(x => x.name == name);
         if (preset == null)
         {
             return;
@@ -417,7 +416,7 @@ public partial class PlayerPreferencesComponent
         if (res.IsSuccessStatusCode)
         {
             SelectedPresetName = "";
-            Presets.Remove(preset);
+            ClientState.Presets.Remove(preset);
             ClientState.VndbInfo = new();
         }
         else

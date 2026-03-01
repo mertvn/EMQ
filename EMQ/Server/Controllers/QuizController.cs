@@ -1115,6 +1115,7 @@ and (SPLIT_PART(c.id::text, 'c', 2)::int) <= 131575 -- don't have images for new
             await DbManager.GetCharacterImageId(newBot.BotInfo!.VndbId, AvatarCharacter.VNDBCharacterImage);
         oldBot.Username = newBot.Username; // todo? force to start with Bot
         oldBot.BotInfo = newBot.BotInfo;
+        oldBot.BotInfo.ActiveUserLabelPlayerId = session.Player.Id;
 
         TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
         return Ok();

@@ -2681,31 +2681,35 @@ public class QuizManager
 
             if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsAllRandom)
             {
-                if (!playerSessions.TryGetValue(player.Id, out Session? session)) // Bot player
+                string? activeUserLabelPresetName = playerSessions.TryGetValue(player.Id, out Session? session)
+                    ? session.ActiveUserLabelPresetName
+                    : player.BotInfo?.ActiveUserLabelPresetName;
+                if (string.IsNullOrEmpty(activeUserLabelPresetName))
                 {
                     continue;
                 }
 
+                int playerIdForList = player.BotInfo?.ActiveUserLabelPlayerId > 0
+                    ? player.BotInfo.ActiveUserLabelPlayerId
+                    : player.Id;
                 if (!validSourcesDict.ContainsKey(player.Id))
                 {
                     validSourcesDict[player.Id] = new List<string>();
                 }
 
-                var vndbInfos = await ServerUtils.GetVndbInfo_Inner(player.Id, session.ActiveUserLabelPresetName);
+                var vndbInfos = await ServerUtils.GetVndbInfo_Inner(playerIdForList, activeUserLabelPresetName);
                 var userLabelsList = new List<UserLabel>();
                 foreach (PlayerVndbInfo vndbInfo in vndbInfos)
                 {
-                    if (string.IsNullOrWhiteSpace(vndbInfo.VndbId) ||
-                        string.IsNullOrEmpty(session.ActiveUserLabelPresetName))
+                    if (string.IsNullOrWhiteSpace(vndbInfo.VndbId))
                     {
                         continue;
                     }
 
                     if (vndbInfo.Labels != null)
                     {
-                        var userLabels =
-                            await DbManager_Auth.GetUserLabels(player.Id, vndbInfo.VndbId,
-                                session.ActiveUserLabelPresetName);
+                        var userLabels = await DbManager_Auth.GetUserLabels(playerIdForList, vndbInfo.VndbId,
+                            activeUserLabelPresetName);
                         userLabelsList.AddRange(userLabels);
                         var include = userLabels.Where(x => x.kind == LabelKind.Include).ToList();
 
@@ -2802,6 +2806,12 @@ public class QuizManager
         {
             vndbInfosDict[session.Player.Id] =
                 await ServerUtils.GetVndbInfo_Inner(session.Player.Id, session.ActiveUserLabelPresetName);
+        }
+
+        foreach (var bot in Quiz.Room.Players.Where(x => !string.IsNullOrEmpty(x.BotInfo?.ActiveUserLabelPresetName)))
+        {
+            vndbInfosDict[bot.Id] = await ServerUtils.GetVndbInfo_Inner(bot.BotInfo!.ActiveUserLabelPlayerId,
+                bot.BotInfo!.ActiveUserLabelPresetName);
         }
 
         List<Song> dbSongs;
@@ -4022,5 +4032,38 @@ GROUP BY start_time",
         previous.interval_days = previousDays; // restore old state for UI
         bool success = await DbManager.UpsertEntity(current);
         return (previous, current);
+    }
+
+    public static async Task<PlayerVndbInfo[]> SetVndbInfoInner(int playerId, string activeUserLabelPresetName,
+        List<PlayerVndbInfo> vndbInfos)
+    {
+        await DbManager_Auth.DeleteUserLabels(playerId, activeUserLabelPresetName);
+        foreach (PlayerVndbInfo vndbInfo in vndbInfos)
+        {
+            Console.WriteLine($"SetVndbInfo for p{playerId} to {vndbInfo.VndbId}");
+            if (!string.IsNullOrWhiteSpace(vndbInfo.VndbId) && vndbInfo.Labels is not null)
+            {
+                // todo? batch
+                foreach (Label label in vndbInfo.Labels)
+                {
+                    var userLabel = new UserLabel
+                    {
+                        user_id = playerId,
+                        vndb_uid = vndbInfo.VndbId,
+                        vndb_label_id = label.Id,
+                        vndb_label_name = label.Name,
+                        vndb_label_is_private = label.IsPrivate,
+                        kind = label.Kind,
+                        preset_name = activeUserLabelPresetName,
+                        database_kind = vndbInfo.DatabaseKind,
+                    };
+                    long _ = await DbManager_Auth.RecreateUserLabel(userLabel, label.VNs);
+                }
+            }
+        }
+
+        // todo this is inefficient
+        var res = await ServerUtils.GetVndbInfo_Inner(playerId, activeUserLabelPresetName);
+        return res;
     }
 }

@@ -57,6 +57,19 @@
             <br/>
         }
 
+        <label>
+            <select @bind="Model.BotInfo.ActiveUserLabelPresetName" disabled="@IsReadOnly">
+                <option value="">[none]</option>
+                @foreach (var preset in ClientState.Presets)
+                {
+                    <option value="@preset.name">@preset.name</option>
+                }
+            </select>
+            List preset (current: eu@(Model.BotInfo.ActiveUserLabelPlayerId) / @Model.BotInfo.ActiveUserLabelPresetName)
+        </label>
+        <br/>
+        <br/>
+
         <p>Hit chance for the last song (Source Title): @Model.BotInfo.LastSongHitChance.ToString("N2", CultureInfo.InvariantCulture)%</p>
     </div>
 }
