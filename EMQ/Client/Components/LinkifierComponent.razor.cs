@@ -15,9 +15,11 @@ namespace EMQ.Client.Components
         [Parameter]
         public string Target { get; set; } = "_blank";
 
-        private static readonly Regex s_urlRegex = new(
-            @"(https?:\/\/)([\w\-]+(\.[\w\-]+)+)([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex s_tokenRegex = new(
+            @"(https?:\/\/)([\w\-]+(\.[\w\-]+)+)([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?" +
+            @"|~~(.+?)~~" +
+            @"|\|\|(.+?)\|\|",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
@@ -29,28 +31,45 @@ namespace EMQ.Client.Components
             int sequence = 0;
             int lastIndex = 0;
 
-            foreach (Match match in s_urlRegex.Matches(Text))
+            foreach (Match match in s_tokenRegex.Matches(Text))
             {
                 // Add text before the match
                 if (match.Index > lastIndex)
                 {
-                    builder.AddMarkupContent(sequence++,
-                        Text[lastIndex..match.Index].Replace("<", "&lt;").Replace(">", "&gt;"));
+                    builder.AddMarkupContent(sequence++, EscapeHtml(Text[lastIndex..match.Index]));
                 }
 
-                // Add the link
-                builder.OpenElement(sequence++, "a");
-                builder.AddAttribute(sequence++, "href", match.Value);
-                builder.AddAttribute(sequence++, "target", Target);
-                builder.AddAttribute(sequence++, "rel", "noopener noreferrer");
-
-                if (!string.IsNullOrEmpty(CssClass))
+                if (match.Groups[5].Success)
                 {
-                    builder.AddAttribute(sequence++, "class", CssClass);
+                    // Strikethrough: ~~text~~
+                    builder.OpenElement(sequence++, "s");
+                    builder.AddContent(sequence++, match.Groups[5].Value);
+                    builder.CloseElement();
                 }
+                else if (match.Groups[6].Success)
+                {
+                    // Spoiler: ||text||
+                    builder.OpenElement(sequence++, "span");
+                    builder.AddAttribute(sequence++, "class", "spoiler");
+                    builder.AddContent(sequence++, match.Groups[6].Value);
+                    builder.CloseElement();
+                }
+                else
+                {
+                    // URL
+                    builder.OpenElement(sequence++, "a");
+                    builder.AddAttribute(sequence++, "href", match.Value);
+                    builder.AddAttribute(sequence++, "target", Target);
+                    builder.AddAttribute(sequence++, "rel", "noopener noreferrer");
 
-                builder.AddContent(sequence++, match.Value);
-                builder.CloseElement();
+                    if (!string.IsNullOrEmpty(CssClass))
+                    {
+                        builder.AddAttribute(sequence++, "class", CssClass);
+                    }
+
+                    builder.AddContent(sequence++, match.Value);
+                    builder.CloseElement();
+                }
 
                 lastIndex = match.Index + match.Length;
             }
@@ -58,8 +77,13 @@ namespace EMQ.Client.Components
             // Add any remaining text after the last match
             if (lastIndex < Text.Length)
             {
-                builder.AddMarkupContent(sequence, Text[lastIndex..].Replace("<", "&lt;").Replace(">", "&gt;"));
+                builder.AddMarkupContent(sequence, EscapeHtml(Text[lastIndex..]));
             }
+        }
+
+        private static string EscapeHtml(string text)
+        {
+            return text.Replace("<", "&lt;").Replace(">", "&gt;");
         }
     }
 }

@@ -247,3 +247,14 @@ a, .btn-link {
     transform: translateZ(0);
     backface-visibility: hidden;
 }
+
+.spoiler {
+    background-color: currentColor;
+    border-radius: 3px;
+    transition: background-color 0.5s;
+}
+
+.spoiler:hover,
+.spoiler:active {
+    background-color: transparent;
+}
