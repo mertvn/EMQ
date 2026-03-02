@@ -158,7 +158,7 @@ public static class Program
                     "chars_denorm",
                 };
 
-                var excludedTables = new List<string>() { "", "*user*", "quiz_song_history", };
+                var excludedTables = new List<string>() { "", "*user*", };
                 if (isPublicDump)
                 {
                     proc.StartInfo.Arguments += string.Join(" -t ", includedTables);
