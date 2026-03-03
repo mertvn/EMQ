@@ -438,7 +438,7 @@ public class QuizController : ControllerBase
             {
                 if (req.Contents.Length <= Constants.MaxChatMessageLength)
                 {
-                    if (room.Chat.Count > 50)
+                    while (room.Chat.Count > 50)
                     {
                         room.Chat.TryDequeue(out _);
                     }
@@ -448,7 +448,7 @@ public class QuizController : ControllerBase
                     // todo we should only need 1 method here after a SignalR refactor
                     TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
                     TypedQuizHub.ReceiveUpdateRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room, false);
-                    _logger.LogInformation($"r{room.Id} cM: {player.Username}: {req.Contents}");
+                    Console.WriteLine($"r{room.Id} cM: {player.Username}: {req.Contents}");
                 }
             }
             else

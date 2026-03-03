@@ -151,7 +151,7 @@ public static class Program
                     "edit_queue",
                     "erodle*",
                     "music*",
-                    "quiz",
+                    "quiz*",
                     "report",
                     "review_queue",
                     "room",

@@ -35,7 +35,7 @@ public partial class ChatComponent
 
     private Dictionary<string, string> EmojiData { get; set; } = new();
 
-    public Player? SelectedPlayer { get; set; }
+    public ChatMessageSender? SelectedSender { get; set; }
 
     private ChatUserDetailComponent _modalRef = null!;
 
@@ -234,7 +234,7 @@ public partial class ChatComponent
         StateHasChanged();
     }
 
-    private void Onclick_Sender(Player sender, MouseEventArgs e)
+    private void Onclick_Sender(ChatMessageSender sender, MouseEventArgs e)
     {
         bool isChatMod = AuthStuff.HasPermission(ClientState.Session, PermissionKind.ModerateChat);
         if (!isChatMod)
@@ -242,7 +242,7 @@ public partial class ChatComponent
             return;
         }
 
-        SelectedPlayer = sender;
+        SelectedSender = sender;
         _modalRef.Show(e.ClientX, e.ClientY + 30);
     }
 }
