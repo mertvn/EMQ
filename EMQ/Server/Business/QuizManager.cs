@@ -550,15 +550,13 @@ public class QuizManager
 
                         var titles = artists.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
-                        correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
-                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
+                        correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())!);
 
                         correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.LatinTitle)));
-                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.NonLatinTitle))
-                            .Where(x => !string.IsNullOrWhiteSpace(x)));
+                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.NonLatinTitle)));
                     }
 
-                    correctAnswers = correctAnswers.Distinct().ToList();
+                    correctAnswers = correctAnswers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
                     CorrectAnswersDicts[GuessKind.A].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA-a: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
                 }
@@ -862,6 +860,7 @@ public class QuizManager
                                 {
                                     if (charsDenorm.image == imgId)
                                     {
+                                        // todo important reversed
                                         characterIds.Add(charsDenorm.cid);
                                         var title = Utils.VndbTitleToEmqTitle(charsDenorm.name, charsDenorm.latin);
                                         correctAnswers.Add(title.latinTitle);
@@ -2871,6 +2870,7 @@ public class QuizManager
                     case ListDistributionKind.Balanced:
                         {
                             // todo tests
+                            // todo ignore lists with 0
                             if (validSourcesDict.Count < 2)
                             {
                                 Quiz.Room.Log(
@@ -3421,7 +3421,7 @@ GROUP BY start_time",
         }
     }
 
-    public async Task OnSendGuessChanged(int playerId, string? guess, GuessKind guessKind)
+    public async Task OnSendGuessChanged(int playerId, string? guess, GuessKind guessKind, Session? session = null)
     {
         // don't allow players to change guesses in shared-guesses teamed games after team guesses have been determined
         if (Quiz.QuizState.Phase is QuizPhaseKind.Guess || (Quiz.QuizState.Phase is QuizPhaseKind.Judgement &&
@@ -3448,7 +3448,9 @@ GROUP BY start_time",
                     guess = guess.RemoveInvalidUnicodeSequences(firstInvalidUnicodeCharIndex);
                 }
 
-                if (Utils.GetPlayerKind(playerId) is PlayerKind.Guest)
+                bool allowFreetyping = Utils.GetPlayerKind(playerId) is PlayerKind.Bot ||
+                                       AuthStuff.HasPermission(session, PermissionKind.SendChatMessage);
+                if (!allowFreetyping)
                 {
                     if (!DbManager.AutocompleteDict.TryGetValue(guessKind, out string[]? validGuesses) ||
                         !validGuesses.Contains(guess, StringComparer.OrdinalIgnoreCase))

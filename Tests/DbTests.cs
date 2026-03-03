@@ -1551,4 +1551,22 @@ order by ms.id
             Console.WriteLine();
         }
     }
+
+    [Test]
+    public async Task Test_SelectQsh()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var guesses = await connection.QueryAsync<string>(
+            "select distinct guess from quiz_song_history where guess_kind = 0");
+        var list = guesses.Where(s =>
+        {
+            string trim = s.Trim();
+            return trim.Length >= 3 && !DbManager.AutocompleteDict[GuessKind.Mst]
+                .Contains(trim, StringComparer.InvariantCultureIgnoreCase);
+        }).ToList();
+        foreach (string s in list.OrderBy(x => x))
+        {
+            Console.WriteLine(s);
+        }
+    }
 }

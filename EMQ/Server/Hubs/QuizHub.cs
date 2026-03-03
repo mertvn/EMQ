@@ -92,7 +92,7 @@ public class QuizHub : Hub
                 var quizManager = ServerState.QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                 if (quizManager != null)
                 {
-                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, guessKind);
+                    await quizManager.OnSendGuessChanged(session.Player.Id, guess, guessKind, session);
                 }
             }
         }
