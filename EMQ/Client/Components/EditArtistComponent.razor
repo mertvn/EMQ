@@ -51,6 +51,20 @@
             <br/>
         </details>
 
+        <details style="padding: 5px;">
+            <summary>MusicBrainz seeder (artists from release)</summary>
+            <p>Enter a MusicBrainz release id or URL to fill information automatically.</p>
+            <input type="text" @bind:get="@MusicBrainzSeederReleaseInputText" @bind:set="@SeedArtistsFromMusicBrainzRelease" style="width: 540px;"/>
+            <br/>
+
+            <ul>
+                @foreach (var artist in MissingMbArtists)
+                {
+                    <li>@artist.id <button type="button" class="btn btn-primary" @onclick="@(() => SeedFromMusicBrainz(artist.id))">Move to seeder</button> @artist.name (@artist.sortname)</li>
+                }
+            </ul>
+        </details>
+
         // no point, barely saves any time/effort
         @* <details style="padding: 5px;"> *@
         @*     <summary>EGS seeder</summary> *@
@@ -296,6 +310,10 @@
     private string VndbSeederInputText { get; set; } = "";
 
     private string MusicBrainzSeederInputText { get; set; } = "";
+
+    private string MusicBrainzSeederReleaseInputText { get; set; } = "";
+
+    private List<MbArtist> MissingMbArtists { get; set; } = new();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -669,4 +687,50 @@
                 $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
     }
+
+    private async Task SeedArtistsFromMusicBrainzRelease(string value)
+    {
+        MusicBrainzSeederReleaseInputText = value;
+        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/release/", "").Replace("/", ""), out var guid))
+        {
+            MusicBrainzSeederReleaseInputText = "Invalid input.";
+            return;
+        }
+
+        var mbRelease = await MBApi.GetRelease(ClientState.ExternalClient, guid, true);
+        if (mbRelease == null)
+        {
+            MusicBrainzSeederReleaseInputText = "Error fetching release information.";
+            return;
+        }
+
+        if (!ClientState.MBArtistDict.Any())
+        {
+            HttpResponseMessage resMBArtists = await _client.GetAsync("Library/GetMBArtists");
+            if (resMBArtists.IsSuccessStatusCode)
+            {
+                ClientState.MBArtistDict = (await resMBArtists.Content.ReadFromJsonAsync<Dictionary<string, int>>())!;
+            }
+        }
+
+        MissingMbArtists.Clear();
+        var missingIds = new HashSet<string>();
+        foreach (MBMedium mbMedium in mbRelease.media.OrderBy(x => x.position))
+        {
+            foreach (MBTrack mbTrack in mbMedium.tracks.OrderBy(x => x.position))
+            {
+                foreach (var mbArtistCredit in mbTrack.recording!.artistcredit)
+                {
+                    if (!ClientState.MBArtistDict.ContainsKey(mbArtistCredit.artist.id))
+                    {
+                        if (missingIds.Add(mbArtistCredit.artist.id))
+                        {
+                            MissingMbArtists.Add(mbArtistCredit.artist);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

@@ -9,7 +9,7 @@ public static class MBApi
 {
     private const string BaseUrl = "https://musicbrainz.org/ws/2/";
 
-    public static async Task<MBRelease?> GetRelease(HttpClient client, Guid id)
+    public static async Task<MBRelease?> GetRelease(HttpClient client, Guid id, bool includeArtistCredits = false)
     {
         try
         {
@@ -18,7 +18,8 @@ public static class MBApi
                 return null;
             }
 
-            string url = $"{BaseUrl}release/{id}?fmt=json&inc=recordings";
+            string artistCredits = includeArtistCredits ? "+artist-credits" : "";
+            string url = $"{BaseUrl}release/{id}?fmt=json&inc=recordings{artistCredits}";
             var res = await client.GetFromJsonAsync<MBRelease>(url);
             // Console.WriteLine(res);
             return res;
