@@ -550,13 +550,14 @@ public class QuizManager
 
                         var titles = artists.SelectMany(x => x.Titles).ToArray();
                         correctAnswers = titles.Select(x => x.LatinTitle.NormalizeForAutocomplete()).ToList();
-                        correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())!);
-
+                        correctAnswers.AddRange(titles.Select(x => x.NonLatinTitle?.NormalizeForAutocomplete())
+                            .Where(x => !string.IsNullOrWhiteSpace(x))!);
                         correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.LatinTitle)));
-                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.NonLatinTitle)));
+                        correctAnswers.AddRange(titles.Select(x => Utils.GetReversedArtistName(x.NonLatinTitle))
+                            .Where(x => !string.IsNullOrWhiteSpace(x)));
                     }
 
-                    correctAnswers = correctAnswers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                    correctAnswers = correctAnswers.Distinct().ToList();
                     CorrectAnswersDicts[GuessKind.A].Add(Quiz.QuizState.sp, correctAnswers);
                     Quiz.Room.Log("cA-a: " + JsonSerializer.Serialize(correctAnswers, Utils.Jso));
                 }
