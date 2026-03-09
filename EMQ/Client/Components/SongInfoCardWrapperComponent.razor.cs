@@ -20,7 +20,7 @@ namespace EMQ.Client.Components;
 public partial class SongInfoCardWrapperComponent
 {
     [Parameter]
-    public IEnumerable<Song> CurrentSongs { get; set; } = new List<Song>();
+    public List<Song> CurrentSongs { get; set; } = new();
 
     [Parameter]
     public string NoSongsText { get; set; } = "";
@@ -31,7 +31,8 @@ public partial class SongInfoCardWrapperComponent
     [Parameter]
     public Dictionary<int, Func<Task>>? BatchUploaderCallbacks { get; set; }
 
-    private int VisibleSongsCount => CurrentSongs.Count();
+    [Parameter]
+    public bool DoPaging { get; set; }
 
     private string _batchSetSubmittedByText = "";
 
@@ -50,6 +51,38 @@ public partial class SongInfoCardWrapperComponent
     private MusicCollectionComponent _musicCollectionComponent = null!;
 
     private Song CurrentSong { get; set; } = new();
+
+    private int CurrentPage { get; set; } = 1;
+
+    private int PageSize { get; set; } = 50;
+
+    private List<Song>? PreviousSongs { get; set; }
+
+    private List<Song> PagedSongs => DoPaging
+        ? CurrentSongs.Skip((CurrentPage - 1) * PageSize).Take(PageSize).ToList()
+        : CurrentSongs;
+
+    private int TotalFilteredCount => CurrentSongs.Count;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalFilteredCount / PageSize));
+
+    private int ShowingFrom => TotalFilteredCount == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+
+    private int ShowingTo => Math.Min(CurrentPage * PageSize, TotalFilteredCount);
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(PreviousSongs, CurrentSongs))
+        {
+            CurrentPage = 1;
+            PreviousSongs = CurrentSongs;
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        CurrentPage = Math.Clamp(page, 1, TotalPages);
+    }
 
     private async Task BatchSetSubmittedBy()
     {

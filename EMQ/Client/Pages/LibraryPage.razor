@@ -411,9 +411,10 @@
                         }
 
                         <SongInfoCardWrapperComponent
-                            CurrentSongs="@(songFilterComponentRef.ApplyFilters(value))"
+                            CurrentSongs="@(songFilterComponentRef.ApplyFilters(value).ToList())"
                             NoSongsText="@NoSongsText"
-                            IsLibraryPage="true">
+                            IsLibraryPage="true"
+                            DoPaging="true">
                         </SongInfoCardWrapperComponent>
                     </Blazorise.TabPanel>
                 }
