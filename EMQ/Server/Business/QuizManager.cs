@@ -2871,7 +2871,14 @@ public class QuizManager
                     case ListDistributionKind.Balanced:
                         {
                             // todo tests
-                            // todo ignore lists with 0
+                            var emptyPlayerIds = validSourcesDict
+                                .Where(x => x.Value.Count == 0)
+                                .Select(x => x.Key).ToList();
+                            foreach (int emptyId in emptyPlayerIds)
+                            {
+                                validSourcesDict.Remove(emptyId);
+                            }
+
                             if (validSourcesDict.Count < 2)
                             {
                                 Quiz.Room.Log(

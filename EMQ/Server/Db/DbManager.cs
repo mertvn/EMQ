@@ -3090,10 +3090,10 @@ RETURNING id;",
                 SongSourceSongType? songSourceSongTypeKey = null;
                 if (doListReadKindFiltersCheck)
                 {
-                    string[] songSourceVndbUrls = song!.Sources
-                        .SelectMany(x => x.Links.Where(y => y.Type == SongSourceLinkType.VNDB))
+                    string[] songSourceUrls = song!.Sources
+                        .SelectMany(x => x.Links)
                         .Select(x => x.Url).ToArray();
-                    bool isRead = validSources != null && songSourceVndbUrls.Any(x => validSources.Contains(x));
+                    bool isRead = validSources != null && songSourceUrls.Any(x => validSources.Contains(x));
                     foreach ((ListReadKind key, int value) in listReadKindLeft!)
                     {
                         // Console.WriteLine($"{song.ToStringLatin()} isRead: {isRead} key: {key}");
