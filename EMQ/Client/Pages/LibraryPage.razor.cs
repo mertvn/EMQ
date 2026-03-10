@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Blazorise;
 using EMQ.Client.Components;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete;
@@ -26,6 +27,8 @@ public partial class LibraryPage
     public AutocompleteA? selectedArtist { get; set; }
 
     public string? selectedMusicTitle { get; set; }
+
+    public string? selectedMelUrl { get; set; }
 
     public List<Song> CurrentSongs { get; set; } = new();
 
@@ -169,6 +172,34 @@ public partial class LibraryPage
 
             await StateHasChangedAsync();
             await TabsComponentVndb!.SelectTab(FirstTabName);
+        }
+    }
+
+    public async Task SelectedResultChangedMel()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedMelUrl))
+        {
+            CurrentSongs = new List<Song>();
+            NoSongsText = "Loading...";
+            StateHasChanged();
+
+            selectedMelUrl = Utils.ParseMelId(selectedMelUrl);
+            var req = new Song() { Links = new List<SongLink>() { new() { Url = selectedMelUrl } } };
+            var res = await _client.PostAsJsonAsync("Library/GetSong", req);
+            if (res.IsSuccessStatusCode)
+            {
+                ResGetSong? songs = await res.Content.ReadFromJsonAsync<ResGetSong>().ConfigureAwait(false);
+                if (songs != null)
+                {
+                    CurrentSongs = new List<Song> { songs.Song };
+                    selectedMusicSourceTitle = null;
+                }
+
+                NoSongsText = "No results.";
+
+                await StateHasChangedAsync();
+                await TabsComponentVndb!.SelectTab(FirstTabName);
+            }
         }
     }
 
@@ -351,7 +382,8 @@ public partial class LibraryPage
             StateHasChanged();
 
             string[]? vndbUrls = await VndbMethods.GetVnUrlsMatchingAdvsearchStr(
-                ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.VNDB), VndbAdvsearchStr);
+                ClientState.VndbInfo.FirstOrDefault(x => x.DatabaseKind == UserListDatabaseKind.VNDB),
+                VndbAdvsearchStr);
             if (vndbUrls != null && vndbUrls.Any())
             {
                 var req = vndbUrls;

@@ -54,7 +54,7 @@ public partial class SongInfoCardWrapperComponent
 
     private int CurrentPage { get; set; } = 1;
 
-    private int PageSize { get; set; } = 50;
+    private int PageSize { get; set; } = 24;
 
     private List<Song>? PreviousSongs { get; set; }
 

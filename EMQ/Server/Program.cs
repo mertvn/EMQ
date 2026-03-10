@@ -259,7 +259,8 @@ app.UseStaticFiles(new StaticFileOptions
     {
         var maxAge = TimeSpan.FromDays(30);
         if (ctx.File.Name is "mst.json" or "mst_all.json" or "c.json" or "a.json" or "mt.json" or "mt_all.json"
-            or "developer.json" or "character.bin" or "illustrator.json" or "seiyuu.json" or "collection.json")
+            or "developer.json" or "character.bin" or "illustrator.json" or "seiyuu.json" or "collection.json"
+            or "mel.json")
         {
             maxAge = TimeSpan.FromHours(1);
         }

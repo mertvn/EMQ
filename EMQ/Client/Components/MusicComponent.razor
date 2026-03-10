@@ -83,7 +83,7 @@
     protected override async Task OnParametersSetAsync()
     {
         await _clientUtils.TryRestoreSession(); // needs to be here instead of the page otherwise it runs too late
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSong", new Song { Id = MusicId });
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSong", new Song { Id = MusicId, CommentCount = -78, });
         if (res1.IsSuccessStatusCode)
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSong>())!;

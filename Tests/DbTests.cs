@@ -168,6 +168,7 @@ public class DbTests
         var expected = new List<string>()
         {
             "https://vndb.org/v729",
+            "https://erogemusicquiz.com/ems540",
             "https://musicbrainz.org/release/60381854-ee11-41f7-89d8-a610df202fad",
             "https://vgmdb.net/album/13596"
         };

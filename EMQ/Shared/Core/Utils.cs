@@ -196,6 +196,22 @@ public static class Utils
         return result;
     }
 
+    public static string ParseMelId(string value)
+    {
+        string s = value;
+        if (Uri.IsWellFormedUriString(value, UriKind.Absolute))
+        {
+            s = s.LastSegment();
+        }
+
+        if (s.Contains('.'))
+        {
+            s = s.Split(".")[0];
+        }
+
+        return s;
+    }
+
     public class MyStopwatchSection
     {
         public string Name { get; set; } = "";

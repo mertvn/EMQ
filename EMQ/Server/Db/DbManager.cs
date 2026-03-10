@@ -267,6 +267,7 @@ ORDER BY music_id;";
         await File.WriteAllTextAsync($"{autocompleteFolder}/illustrator.json", await SelectAutocompleteIllustrator());
         await File.WriteAllTextAsync($"{autocompleteFolder}/seiyuu.json", await SelectAutocompleteSeiyuu());
         await File.WriteAllTextAsync($"{autocompleteFolder}/collection.json", await SelectAutocompleteCollection());
+        await File.WriteAllTextAsync($"{autocompleteFolder}/mel.json", await SelectAutocompleteMel());
 
         // enforce SelfSource link consistency
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
@@ -350,7 +351,7 @@ ORDER BY music_id;";
         stopWatch.StartSection("filters");
         var mIds = input.Select(x => x.Id).Where(x => x > 0).ToArray();
         var latinTitles = input.SelectMany(y => y.Titles.Select(x => x.LatinTitle)).ToList();
-        var links = input.SelectMany(y => y.Links.Select(x => x.Url)).ToList();
+        var links = input.SelectMany(y => y.Links.Select(x => $"%{x.Url}%")).ToList();
 
         // if (mIds.Any() && !latinTitles.Any() && !links.Any() && !selectCategories)
         // {
@@ -384,7 +385,7 @@ ORDER BY music_id;";
 
         if (links.Any())
         {
-            queryMusic.Where($"mel.url = ANY({links})");
+            queryMusic.Where($"mel.url ILIKE ANY({links})");
         }
 
         if (queryMusic.GetFilters() is null)
@@ -3531,6 +3532,20 @@ ORDER BY artist_id";
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         var res = await connection.QueryAsync<AutocompleteCollection>(
             "select distinct id as coid, name from collection WHERE id IN (SELECT collection_id FROM collection_entity) order by id");
+        string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
+        return autocomplete;
+    }
+
+    public static async Task<string> SelectAutocompleteMel()
+    {
+        const string sql = @"SELECT SPLIT_PART(SPLIT_PART(url, '/', -1),'.', 1) FROM music_external_link where type = 2";
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        AutocompleteMt[] res = (await connection.QueryAsync<string>(sql))
+            .Select(x => new AutocompleteMt(0, x))
+            .Where(x => x != null!)
+            .OrderBy(x => x.MTLatinTitle)
+            .ToArray();
+
         string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
         return autocomplete;
     }

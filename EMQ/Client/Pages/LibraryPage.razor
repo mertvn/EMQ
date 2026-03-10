@@ -192,10 +192,11 @@
     <Blazorise.Tabs @ref="@TabsComponent" @bind-SelectedTab="@_selectedTab" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
         <Items>
             <Blazorise.Tab Name="TabAutocompleteMst">Search by source</Blazorise.Tab>
-            <Blazorise.Tab Name="TabAutocompleteA">Search by artist</Blazorise.Tab>
-            <Blazorise.Tab Name="TabAutocompleteMt">Search by song title</Blazorise.Tab>
-            <Blazorise.Tab Name="TabVndbAdvsearch">Search by VNDB search</Blazorise.Tab>
-            <Blazorise.Tab Name="TabQuizSettings">Search by room settings</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteA">by artist</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteMt">by song title</Blazorise.Tab>
+            <Blazorise.Tab Name="TabVndbAdvsearch">by VNDB search</Blazorise.Tab>
+            <Blazorise.Tab Name="TabQuizSettings">by room settings</Blazorise.Tab>
+            <Blazorise.Tab Name="TabAutocompleteMel">by song link</Blazorise.Tab>
             <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
             <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
         </Items>
@@ -249,6 +250,13 @@
                 {
                     <p>You must be logged in to use this.</p>
                 }
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabAutocompleteMel">
+                <AutocompleteMelComponent Placeholder="Enter URL here"
+                                         IsDisabled="false"
+                                         @bind-Guess="@selectedMelUrl"
+                                         Callback="SelectedResultChangedMel">
+                </AutocompleteMelComponent>
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabMyList">
                 @if (ClientState.VndbInfo.Any(x => x.Labels != null))

@@ -1525,16 +1525,14 @@ public class EntryPoints_Encoding
     {
         var readerOptions = new ReaderOptions();
         var extractionOptions = new ExtractionOptions { Overwrite = true };
-        string[] strs = await File.ReadAllLinesAsync(
-                @"katakana_all_forms_combinations.txt");
+        string[] strs = await File.ReadAllLinesAsync(@"katakana_all_forms_combinations.txt");
         foreach (string str in strs)
         {
             readerOptions.Password = str;
             var archive = ArchiveFactory.Open(@"1.zip", readerOptions);
             try
             {
-                archive.Entries.First().WriteToDirectory(@"out",
-                    extractionOptions);
+                archive.Entries.First().WriteToDirectory(@"out", extractionOptions);
                 Console.WriteLine(str);
                 break;
             }
@@ -1547,5 +1545,82 @@ public class EntryPoints_Encoding
                 Console.WriteLine(str);
             }
         }
+    }
+
+    [Test, Explicit]
+    public async Task FindBadUploads()
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var urls = await connection.QueryAsync<string>(
+            "select url from music_external_link where music_id in (SELECT music_id FROM music_source_music msm WHERE type = any('{1,2,3}'))");
+        var guids = urls.Select(x => x.LastSegment().Split('.')[0]).ToHashSet();
+        var files = Directory.EnumerateFiles(@"K:\emq\emqsongsbackup2\selfhoststorage", "*",
+            SearchOption.AllDirectories);
+        var bad = new List<string>();
+        foreach (string file in files)
+        {
+            try
+            {
+                string? guid = guids.FirstOrDefault(x => file.Contains(x));
+                if (!string.IsNullOrEmpty(guid))
+                {
+                    IMediaAnalysis mediaInfo = await FFProbe.AnalyseAsync(file);
+                    if (mediaInfo.Format.Tags != null)
+                    {
+                        foreach ((string? key, string? value) in mediaInfo.Format.Tags)
+                        {
+                            if (value.Contains("bilibili", StringComparison.OrdinalIgnoreCase) ||
+                                value.Contains("google", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine(file);
+                                Console.WriteLine($"{key}: {value}");
+                                bad.Add(guid);
+                            }
+                        }
+
+                        foreach (VideoStream videoStream in mediaInfo.VideoStreams)
+                        {
+                            if (videoStream.Tags != null)
+                            {
+                                foreach ((string? key, string? value) in videoStream.Tags)
+                                {
+                                    if (value.Contains("bilibili", StringComparison.OrdinalIgnoreCase) ||
+                                        value.Contains("google", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        Console.WriteLine(file);
+                                        Console.WriteLine($"{key}: {value}");
+                                        bad.Add(guid);
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach (AudioStream audioStream in mediaInfo.AudioStreams)
+                        {
+                            if (audioStream.Tags != null)
+                            {
+                                foreach ((string? key, string? value) in audioStream.Tags)
+                                {
+                                    if (value.Contains("bilibili", StringComparison.OrdinalIgnoreCase) ||
+                                        value.Contains("google", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        Console.WriteLine(file);
+                                        Console.WriteLine($"{key}: {value}");
+                                        bad.Add(guid);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
+        string badStr = string.Join(',', bad.Select(x => $"\"%{x}%\""));
+        Console.WriteLine($"where url ilike any('{{{badStr}}}')");
     }
 }

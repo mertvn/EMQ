@@ -516,7 +516,7 @@ public class LibraryController : ControllerBase
     public async Task<ActionResult<ResGetSong>> GetSong(Song req)
     {
         var session = AuthStuff.GetSession(HttpContext.Items);
-        var res = await DbManager.GetSong(req, session, true);
+        var res = await DbManager.GetSong(req, session, req.CommentCount == -78);
         return res;
     }
 
