@@ -2,9 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using EMQ.Shared.Auth.Entities.Concrete;
@@ -14,6 +16,7 @@ using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Timer = System.Timers.Timer;
 
 namespace EMQ.Client.Components;
 
@@ -38,6 +41,16 @@ public partial class ChatComponent
     public ChatMessageSender? SelectedSender { get; set; }
 
     private ChatUserDetailComponent _modalRef = null!;
+
+    private ElementReference _chatInputRef;
+
+    private bool ShowEmojiPicker { get; set; }
+
+    private string EmojiSearchText { get; set; } = "";
+
+    private IEnumerable<KeyValuePair<string, string>> FilteredEmoji => string.IsNullOrWhiteSpace(EmojiSearchText)
+        ? EmojiData
+        : EmojiData.Where(kvp => kvp.Key.Contains(EmojiSearchText, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
@@ -244,5 +257,22 @@ public partial class ChatComponent
 
         SelectedSender = sender;
         _modalRef.Show(e.ClientX, e.ClientY + 30);
+    }
+
+    private async Task ToggleEmojiPicker()
+    {
+        ShowEmojiPicker = !ShowEmojiPicker;
+        EmojiSearchText = "";
+        StateHasChanged();
+        await Task.Delay(17);
+        await _jsRuntime.InvokeVoidAsync("setFocus", ".emoji-search-input");
+    }
+
+    private async Task InsertEmoji(string emoji)
+    {
+        ChatInputText += emoji;
+        ShowEmojiPicker = false;
+        StateHasChanged();
+        await _chatInputRef.FocusAsync(true);
     }
 }

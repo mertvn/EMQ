@@ -356,6 +356,11 @@
         return el;
     }
 
+    function setFocus(selector) {
+        let element = document.querySelector(selector);
+        if (element !== null) element.focus();
+    }
+
     function initAutoResize(elementId, containerSelector, minFontSize, maxFontSize) {
         const element = document.getElementById(elementId);
         if (!element) return;
