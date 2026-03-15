@@ -425,6 +425,25 @@ public partial class LibraryPage
         }
     }
 
+    private async Task Onclick_SearchByRecentlyAddedSongs()
+    {
+        var res = await _client.PostAsJsonAsync("Library/GetRecentlyAddedSongs", "");
+        if (res.IsSuccessStatusCode)
+        {
+            List<Song>? songs = await res.Content.ReadFromJsonAsync<List<Song>>().ConfigureAwait(false);
+            if (songs != null && songs.Any())
+            {
+                CurrentSongs = songs;
+                selectedMusicSourceTitle = null;
+            }
+
+            NoSongsText = "No results.";
+
+            await StateHasChangedAsync();
+            await TabsComponentVndb!.SelectTab(FirstTabName);
+        }
+    }
+
     private async Task GetUploadQueue()
     {
         ServerUploadQueue = (await _client.GetFromJsonAsync<string[]>("Library/GetUploadQueue"))!;

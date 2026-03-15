@@ -6788,4 +6788,12 @@ ORDER BY
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         return await SelectSongsMIds((await connection.QueryAsync<int>("select id from music")).ToArray(), false);
     }
+
+    public static async Task<IEnumerable<Song>> GetRecentlyAddedSongs(int limit)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        return (await SelectSongsMIds(
+            (await connection.QueryAsync<int>("select id from music order by id desc limit @limit", new { limit }))
+            .ToArray(), false)).OrderByDescending(x => x.Id);
+    }
 }

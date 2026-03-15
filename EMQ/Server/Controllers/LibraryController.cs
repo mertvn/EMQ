@@ -1056,6 +1056,15 @@ public class LibraryController : ControllerBase
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetRecentlyAddedSongs")]
+    public async Task<IEnumerable<Song>> GetRecentlyAddedSongs()
+    {
+        var songs = await DbManager.GetRecentlyAddedSongs(200);
+        return songs;
+    }
+
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpGet]
     [Route("GetMBArtists")]
     [OutputCache(Duration = 15, PolicyName = "MyOutputCachePolicy")]

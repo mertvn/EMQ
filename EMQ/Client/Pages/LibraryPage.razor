@@ -197,6 +197,7 @@
             <Blazorise.Tab Name="TabVndbAdvsearch">by VNDB search</Blazorise.Tab>
             <Blazorise.Tab Name="TabQuizSettings">by room settings</Blazorise.Tab>
             <Blazorise.Tab Name="TabAutocompleteMel">by song link</Blazorise.Tab>
+            <Blazorise.Tab Name="TabMisc">by misc.</Blazorise.Tab>
             <Blazorise.Tab Name="TabMyList">My list</Blazorise.Tab>
             <Blazorise.Tab Name="TabStats">Stats</Blazorise.Tab>
         </Items>
@@ -253,10 +254,13 @@
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabAutocompleteMel">
                 <AutocompleteMelComponent Placeholder="Enter URL here"
-                                         IsDisabled="false"
-                                         @bind-Guess="@selectedMelUrl"
-                                         Callback="SelectedResultChangedMel">
+                                          IsDisabled="false"
+                                          @bind-Guess="@selectedMelUrl"
+                                          Callback="SelectedResultChangedMel">
                 </AutocompleteMelComponent>
+            </Blazorise.TabPanel>
+            <Blazorise.TabPanel Name="TabMisc">
+                <button type="button" class="btn btn-primary" @onclick="Onclick_SearchByRecentlyAddedSongs" style="margin-bottom: 5px;">Show recently added songs</button>
             </Blazorise.TabPanel>
             <Blazorise.TabPanel Name="TabMyList">
                 @if (ClientState.VndbInfo.Any(x => x.Labels != null))
