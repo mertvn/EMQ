@@ -503,7 +503,7 @@ Please ignore this email if you did not initiate this action over at {websiteDom
             return false;
         }
 
-        var user = await DbManager_Auth.FindUserByUsername(session.Player.Username);
+        var user = await DbManager_Auth.GetEntity_Auth<User>(session.Player.Id);
         bool isValid = user is not null;
         if (isValid)
         {
