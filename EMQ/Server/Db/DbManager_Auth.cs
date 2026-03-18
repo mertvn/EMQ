@@ -82,10 +82,14 @@ public class DbManager_Auth
         string sqlForgottenPassword =
             $"DELETE FROM verification_forgottenpassword where created_at < (select now()) - interval '{AuthStuff.ResetPasswordTokenValidMinutes} minutes'";
 
+        string sqlUnregister =
+            $"DELETE FROM verification_unregister where created_at < (select now()) - interval '{AuthStuff.UnregisterTokenValidMinutes} minutes'";
+
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
         {
             totalAffectedRows += await connection.ExecuteAsync(sqlRegister);
             totalAffectedRows += await connection.ExecuteAsync(sqlForgottenPassword);
+            totalAffectedRows += await connection.ExecuteAsync(sqlUnregister);
         }
 
         return totalAffectedRows;
@@ -140,6 +144,27 @@ public class DbManager_Auth
         {
             return await connection.QuerySingleOrDefaultAsync<VerificationForgottenPassword?>(sql,
                 new { userId, token });
+        }
+    }
+
+    public static async Task<VerificationUnregister?> GetVerificationUnregister(int userId, string token)
+    {
+        const string sql =
+            "SELECT * from verification_unregister where user_id = @userId AND token = @token";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.QuerySingleOrDefaultAsync<VerificationUnregister?>(sql,
+                new { userId, token });
+        }
+    }
+
+    public static async Task<UnregisterQueue?> GetUnregisterQueue(string token)
+    {
+        const string sql = "SELECT * from unregister_queue where token = @token";
+        await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth()))
+        {
+            return await connection.QuerySingleOrDefaultAsync<UnregisterQueue?>(sql,
+                new { token });
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using EMQ.Shared.Core.SharedDbEntities;
+﻿using System.Data;
+using EMQ.Shared.Core.SharedDbEntities;
 using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Auth;
@@ -12,7 +13,7 @@ public class AddTableDonorBenefit : Migration
     public override void Up()
     {
         Create.Table(tableName)
-            .WithColumn("user_id").AsInt32().PrimaryKey().ForeignKey("users", "id")
+            .WithColumn("user_id").AsInt32().PrimaryKey().ForeignKey("users", "id").OnDelete(Rule.Cascade)
             .WithColumn("show_donor_badge").AsBoolean().NotNullable().WithDefaultValue(false)
             .WithColumn("username_color").AsString().NotNullable().WithDefaultValue("")
             .WithColumn("username_animation").AsInt32().NotNullable().WithDefaultValue((int)UsernameAnimationKind.none);

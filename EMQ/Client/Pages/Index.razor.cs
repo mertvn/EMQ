@@ -162,7 +162,7 @@ public partial class Index
                 switch (res.StatusCode)
                 {
                     case HttpStatusCode.Gone:
-                        LoginProgressDisplay.Add("You are banned.");
+                        LoginProgressDisplay.Add("You are either banned or your account is in the deletion queue.");
                         break;
                     case HttpStatusCode.TooManyRequests:
                         LoginProgressDisplay.Add(

@@ -86,6 +86,12 @@ public class AuthController : ControllerBase
             User? user = await AuthManager.Login(req.UsernameOrEmail, req.Password);
             if (user != null)
             {
+                // keep both of these 1/2
+                if (user.exc_perm?.Contains(PermissionKind.Login) ?? false)
+                {
+                    return StatusCode((int)HttpStatusCode.Gone);
+                }
+
                 Secret secret = await AuthManager.CreateSecret(user.id, ip);
                 username = user.username;
                 token = secret.token.ToString();
@@ -165,6 +171,7 @@ public class AuthController : ControllerBase
             IncludedPermissions = includedPermissions, ExcludedPermissions = excludedPermissions
         };
 
+        // keep both of these 2/2
         if (!AuthStuff.HasPermission(session, PermissionKind.Login))
         {
             return StatusCode((int)HttpStatusCode.Gone);
@@ -623,6 +630,64 @@ public class AuthController : ControllerBase
         var session = (await CreateSession(reqCreateSession)).Value!.Session;
 
         return session;
+    }
+
+    [EnableRateLimiting(RateLimitKind.ForgottenPassword)]
+    [CustomAuthorize(PermissionKind.User)]
+    [HttpPost]
+    [Route("StartUnregistration")]
+    public async Task<ActionResult> StartUnregistration()
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        bool isValid = await AuthManager.UnregisterStep1SendEmail(session);
+        if (!isValid)
+        {
+            return Unauthorized();
+        }
+
+        return Ok();
+    }
+
+    [EnableRateLimiting(RateLimitKind.Login)]
+    [CustomAuthorize(PermissionKind.User)]
+    [HttpPost]
+    [Route("Unregister")]
+    public async Task<ActionResult> Unregister([FromBody] string unregisterToken)
+    {
+        var session = AuthStuff.GetSession(HttpContext.Items);
+        if (session is null)
+        {
+            return Unauthorized();
+        }
+
+        int userId = await AuthManager.UnregisterStep2AddToUnregisterQueue(session.Player.Id, unregisterToken);
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        await RemoveSession(new ReqRemoveSession(session.Token));
+        return Ok();
+    }
+
+    [EnableRateLimiting(RateLimitKind.Register)]
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("CancelUnregister")]
+    public async Task<ActionResult> CancelUnregister([FromBody] string cancelUnregisterToken)
+    {
+        int userId = await AuthManager.UnregisterStep2Point5CancelUnregister(cancelUnregisterToken);
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        return Ok();
     }
 
     // todo publicly shared quiz settings presets

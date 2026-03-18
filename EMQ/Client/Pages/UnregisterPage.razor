@@ -1,0 +1,190 @@
+﻿@page "/UnregisterPage"
+@using System.Net
+@using EMQ.Shared.Auth.Entities.Concrete
+@inject HttpClient _client
+@inject ClientUtils _clientUtils
+
+<h3>Account deletion</h3>
+
+@if (!Done)
+{
+    @switch (Step)
+    {
+        case 0:
+            {
+                <p>The following will be permanently deleted if you delete your account:</p>
+                <ul>
+                    <li>User id, username, email, password, avatar, donation benefits</li>
+                    <li>List database connections (VNDB etc.)</li>
+                    <li>Song collections</li>
+                    <li>Song comments</li>
+                    <li>Song votes</li>
+                    <li>Quiz settings presets</li>
+                    <li>Quiz play history</li>
+                    <li>Erodle play history</li>
+                    <li>Spaced repetition history</li>
+                </ul>
+
+                <p>The following will NOT be deleted if you delete your account:</p>
+                <ul>
+                    <li>Database edits</li>
+                    <li>Song link uploads</li>
+                    <li>Song link reports</li>
+                </ul>
+
+                <button type="button" class="btn btn-primary" @onclick="@Onclick_SendStartUnregistrationReq" disabled="@(!Ready)">
+                    Click to start the account deletion process
+                </button>
+                break;
+            }
+        case 1:
+            {
+                <button type="button" class="btn btn-primary" @onclick="@Onclick_SendUnregisterReq" disabled="@(!Ready)">
+                    Click to continue the account deletion process
+                </button>
+                break;
+            }
+        case 2:
+            {
+                <button type="button" class="btn btn-primary" @onclick="@Onclick_SendCancelUnregisterReq" disabled="@(!Ready)">
+                    Click to stop the account deletion process
+                </button>
+                break;
+            }
+    }
+}
+
+<br/>
+@StatusText
+
+@code {
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Token { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int Step { get; set; }
+
+    private string StatusText { get; set; } = "Initializing...";
+
+    private bool Ready { get; set; } = true;
+
+    private bool Done { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Done = false;
+        Ready = false;
+        await _clientUtils.TryRestoreSession();
+        StatusText = "";
+        Ready = true;
+    }
+
+    private async Task Onclick_SendStartUnregistrationReq()
+    {
+        Ready = false;
+        StatusText = "Processing...";
+        StateHasChanged();
+
+        string req = "";
+        var res = await _client.PostAsJsonAsync("Auth/StartUnregistration", req);
+        if (res.IsSuccessStatusCode)
+        {
+            StatusText = "An email has been sent to the email address linked with your account. Please follow its instructions to continue deleting your account.";
+            Done = true;
+            StateHasChanged();
+        }
+        else
+        {
+            switch (res.StatusCode)
+            {
+                case HttpStatusCode.TooManyRequests:
+                    StatusText = "You have been rate-limited.";
+                    break;
+                default:
+                    StatusText = "Something went wrong.";
+                    break;
+            }
+        }
+
+        Ready = true;
+        StateHasChanged();
+    }
+
+    private async Task Onclick_SendUnregisterReq()
+    {
+        if (Token is null)
+        {
+            StatusText = "Could not get Token";
+            return;
+        }
+
+        Ready = false;
+        StatusText = "Processing...";
+        StateHasChanged();
+
+        string req = Token;
+        var res = await _client.PostAsJsonAsync("Auth/Unregister", req);
+        if (res.IsSuccessStatusCode)
+        {
+            StatusText = $"Successfully started the account deletion process. Your account will be deleted in {AuthStuff.UnregisterDays} days. You may now close this tab.";
+            Done = true;
+            StateHasChanged();
+        }
+        else
+        {
+            switch (res.StatusCode)
+            {
+                case HttpStatusCode.TooManyRequests:
+                    StatusText = "You have been rate-limited.";
+                    break;
+                default:
+                    StatusText = "Something went wrong.";
+                    break;
+            }
+        }
+
+        Ready = true;
+        StateHasChanged();
+    }
+
+    private async Task Onclick_SendCancelUnregisterReq()
+    {
+        if (Token is null)
+        {
+            StatusText = "Could not get Token";
+            return;
+        }
+
+        Ready = false;
+        StatusText = "Processing...";
+        StateHasChanged();
+
+        string req = Token;
+        var res = await _client.PostAsJsonAsync("Auth/CancelUnregister", req);
+        if (res.IsSuccessStatusCode)
+        {
+            StatusText = "Successfully stopped the account deletion process. You may now close this tab.";
+            Done = true;
+            StateHasChanged();
+        }
+        else
+        {
+            switch (res.StatusCode)
+            {
+                case HttpStatusCode.TooManyRequests:
+                    StatusText = "You have been rate-limited.";
+                    break;
+                default:
+                    StatusText = "Something went wrong.";
+                    break;
+            }
+        }
+
+        Ready = true;
+        StateHasChanged();
+    }
+
+}

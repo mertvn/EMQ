@@ -16,6 +16,10 @@ public static class AuthStuff // todo? find better name
 
     public const int ResetPasswordTokenValidMinutes = 60;
 
+    public const int UnregisterTokenValidMinutes = 60;
+
+    public const int UnregisterDays = 7;
+
     public static readonly TimeSpan MaxSessionAge = TimeSpan.FromDays(1);
 
     public static readonly string AuthorizationHeaderName = HttpRequestHeader.Authorization.ToString();

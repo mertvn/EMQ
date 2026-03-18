@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Auth;
 
@@ -12,7 +13,7 @@ public class AddTableUsersQuizSettings : Migration
     {
         Create.Table(tableName)
             .WithColumn("id").AsInt32().PrimaryKey().Identity()
-            .WithColumn("user_id").AsInt32().NotNullable().ForeignKey("users", "id")
+            .WithColumn("user_id").AsInt32().NotNullable().ForeignKey("users", "id").OnDelete(Rule.Cascade)
             .WithColumn("name").AsString().NotNullable()
             .WithColumn("b64").AsString().NotNullable()
             .WithColumn("created_at").AsDateTimeOffset().NotNullable();

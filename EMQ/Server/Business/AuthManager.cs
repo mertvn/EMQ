@@ -2,11 +2,15 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
+using Dapper.Database.Extensions;
 using EMQ.Server.Db;
 using EMQ.Server.Db.Entities.Auth;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using MimeKit;
+using Npgsql;
 
 namespace EMQ.Server.Business;
 
@@ -490,5 +494,286 @@ Please ignore this email if you did not initiate this action over at {websiteDom
             $"{true} {nameof(ForgottenPasswordStep2ResetPassword)} took {Math.Round(((stopWatch.ElapsedTicks * 1000.0) / Stopwatch.Frequency) / 1000, 2)}s (no random delay)");
 
         return ret;
+    }
+
+    public static async Task<bool> UnregisterStep1SendEmail(Session session)
+    {
+        if (!AuthStuff.HasPermission(session, PermissionKind.Login))
+        {
+            return false;
+        }
+
+        var user = await DbManager_Auth.FindUserByUsername(session.Player.Username);
+        bool isValid = user is not null;
+        if (isValid)
+        {
+            await SendEmail_UnregisterVerification(user!);
+        }
+
+        return true;
+    }
+
+    private static async Task SendEmail_UnregisterVerification(User user)
+    {
+        string toName = user.username;
+        string toAddress = user.email;
+        const string subject = "Confirm account deletion";
+        const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
+
+        var token = Guid.NewGuid();
+        int verificationId = (int)await DbManager_Auth.InsertEntity_Auth(
+            new VerificationUnregister { user_id = user.id, token = token.ToString(), created_at = DateTime.UtcNow });
+        if (verificationId <= 0)
+        {
+            throw new Exception("idk"); // todo?
+        }
+
+        string link = $"{Constants.WebsiteDomain}/UnregisterPage?token={token}&step=1";
+        string bodyText =
+            $@"Hello {user.username},
+
+Please click the link below to start the account deletion process:
+{link}
+
+{websiteDomainNoProtocol}
+";
+
+        var message = new MimeMessage();
+        message.To.Add(new MailboxAddress(toName, toAddress));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = bodyText };
+
+        ServerState.EmailQueue.Enqueue(new EmailQueueItem(message, "UnregisterVerification"));
+    }
+
+    public static async Task<int> UnregisterStep2AddToUnregisterQueue(int userId, string token)
+    {
+        int ret = -1;
+        VerificationUnregister? verification = await DbManager_Auth.GetVerificationUnregister(userId, token);
+        if (verification is null)
+        {
+            return ret;
+        }
+
+        if (!await DbManager_Auth.DeleteEntity_Auth(verification))
+        {
+            return ret;
+        }
+
+        if ((DateTime.UtcNow - verification.created_at) >
+            TimeSpan.FromMinutes(AuthStuff.UnregisterTokenValidMinutes))
+        {
+            return ret;
+        }
+
+        var user = await DbManager_Auth.GetEntity_Auth<User>(userId);
+        if (user is null)
+        {
+            throw new Exception("User doesn't exist.");
+        }
+
+        ret = user.id;
+        await SendEmail_UnregisterQueued(user);
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connectionAuth.OpenAsync();
+        await using var transactionAuth = await connectionAuth.BeginTransactionAsync();
+        int rows = await connectionAuth.ExecuteAsync(
+            "UPDATE users set exc_perm = array_append(exc_perm, @perm) where id = @uid",
+            new { uid = ret, perm = (int)PermissionKind.Login }, transactionAuth);
+        bool success = rows == 1;
+        if (!success)
+        {
+            throw new Exception("idk");
+        }
+
+        await transactionAuth.CommitAsync();
+        return ret;
+    }
+
+    private static async Task SendEmail_UnregisterQueued(User user)
+    {
+        string toName = user.username;
+        string toAddress = user.email;
+        const string subject = "Account marked for deletion";
+        const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
+
+        var token = Guid.NewGuid();
+        int unregisterId = (int)await DbManager_Auth.InsertEntity_Auth(
+            new UnregisterQueue { user_id = user.id, token = token.ToString(), created_at = DateTime.UtcNow });
+        if (unregisterId <= 0)
+        {
+            throw new Exception("idk"); // todo?
+        }
+
+        string link = $"{Constants.WebsiteDomain}/UnregisterPage?token={token}&step=2";
+        string bodyText =
+            $@"Hello {user.username},
+
+Your account has been marked for deletion, and will be deleted in {AuthStuff.UnregisterDays} days. If you change your mind please click the link below to stop the account deletion process:
+{link}
+
+{websiteDomainNoProtocol}
+";
+
+        var message = new MimeMessage();
+        message.To.Add(new MailboxAddress(toName, toAddress));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = bodyText };
+
+        ServerState.EmailQueue.Enqueue(new EmailQueueItem(message, "UnregisterQueued"));
+    }
+
+    public static async Task<int> UnregisterStep2Point5CancelUnregister(string token)
+    {
+        int ret = -1;
+        // surely it doesn't matter that we don't check for user_id here
+        UnregisterQueue? unregisterQueue = await DbManager_Auth.GetUnregisterQueue(token);
+        if (unregisterQueue is null)
+        {
+            return ret;
+        }
+
+        var user = await DbManager_Auth.GetEntity_Auth<User>(unregisterQueue.user_id);
+        if (user is null)
+        {
+            throw new Exception("User doesn't exist.");
+        }
+
+        if (!await DbManager_Auth.DeleteEntity_Auth(unregisterQueue))
+        {
+            return ret;
+        }
+
+        ret = user.id;
+        await SendEmail_UnregisterCanceled(user);
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connectionAuth.OpenAsync();
+        await using var transactionAuth = await connectionAuth.BeginTransactionAsync();
+        int rows = await connectionAuth.ExecuteAsync(
+            "UPDATE users set exc_perm = array_remove(exc_perm, @perm) where id = @uid",
+            new { uid = ret, perm = (int)PermissionKind.Login }, transactionAuth);
+        bool success = rows == 1;
+        if (!success)
+        {
+            throw new Exception("idk");
+        }
+
+        await transactionAuth.CommitAsync();
+        return ret;
+    }
+
+    private static async Task SendEmail_UnregisterCanceled(User user)
+    {
+        string toName = user.username;
+        string toAddress = user.email;
+        const string subject = "Account deletion canceled";
+        const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
+        string bodyText =
+            $@"Hello {user.username},
+
+Your account has been unmarked for deletion, and will no longer be deleted.
+
+{websiteDomainNoProtocol}
+";
+
+        var message = new MimeMessage();
+        message.To.Add(new MailboxAddress(toName, toAddress));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = bodyText };
+
+        ServerState.EmailQueue.Enqueue(new EmailQueueItem(message, "UnregisterCanceled"));
+    }
+
+    public static async Task UnregisterStep3DeleteAccount(UnregisterQueue unregisterQueue)
+    {
+        int uid = unregisterQueue.user_id;
+        Console.WriteLine($"unregistering account eu{uid}");
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        await connectionAuth.OpenAsync();
+        await using var transactionAuth = await connectionAuth.BeginTransactionAsync();
+
+        var user = await DbManager_Auth.GetEntity_Auth<User>(uid);
+        if (user == null)
+        {
+            throw new Exception($"user is null when unregistering account eu{uid}");
+        }
+
+        await connectionAuth.ExecuteAsync(
+            "DELETE FROM users_label where user_id = @uid",
+            new { uid }, transactionAuth);
+        await connectionAuth.ExecuteAsync(
+            "DELETE FROM users_label_preset where user_id = @uid",
+            new { uid }, transactionAuth);
+        await connection.ExecuteAsync(
+            "DELETE FROM collection_entity where modified_by = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            $"DELETE FROM collection where id in (select collection_id from collection_users where user_id = @uid and role = {(int)CollectionUsersRoleKind.Owner})",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM collection_users where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM music_vote where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM quiz_song_history where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM unique_quiz_plays where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM erodle_users where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM erodle_history where user_id = @uid",
+            new { uid }, transaction);
+        await connection.ExecuteAsync(
+            "DELETE FROM user_spaced_repetition where user_id = @uid",
+            new { uid }, transaction);
+
+        // Yes, I know that this is not the right way to handle transactions on two separate databases and might cause inconsistencies,
+        // but it's fine because the user wants their data gone anyways...
+        await transaction.CommitAsync();
+
+        bool successAuth = await connectionAuth.DeleteAsync(user, transactionAuth);
+        if (successAuth)
+        {
+            await transactionAuth.CommitAsync();
+            Console.WriteLine($"unregistered account eu{uid}");
+            await SendEmail_UnregisterSuccessful(user);
+        }
+        else
+        {
+            throw new Exception($"failed to unregister eu{uid}");
+        }
+    }
+
+    private static async Task SendEmail_UnregisterSuccessful(User user)
+    {
+        string toName = user.username;
+        string toAddress = user.email;
+        const string subject = "Account deleted";
+        const string websiteDomainNoProtocol = Constants.WebsiteDomainNoProtocol;
+        string bodyText =
+            $@"Hello {user.username},
+
+Your account has been successfully deleted.
+
+{websiteDomainNoProtocol}
+";
+
+        var message = new MimeMessage();
+        message.To.Add(new MailboxAddress(toName, toAddress));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = bodyText };
+
+        ServerState.EmailQueue.Enqueue(new EmailQueueItem(message, "UnregisterSuccessful"));
     }
 }
