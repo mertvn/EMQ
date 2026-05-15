@@ -31,6 +31,7 @@ using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
 using EMQ.Shared.MusicBrainz.Business;
 using EMQ.Shared.Quiz.Entities.Concrete;
+using EMQ.Shared.VNDB.Business;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
 using Microsoft.AspNetCore.Http;
@@ -2383,5 +2384,50 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
 
         await using var connectionEmq = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         await connectionEmq.InsertListAsync(list);
+    }
+
+    public class FetchCharForPairwiseRoot
+    {
+        public string id { get; set; } = "";
+        public string name { get; set; } = "";
+        public string description { get; set; } = "";
+        public string? image { get; set; }
+    }
+
+    [Test, Explicit]
+    public async Task FetchCharForPairwise()
+    {
+        string vndbAdvsearchStr = "03N48043gja0281UJ81X7x14c02c03c04c0180n4wf-122wprimary-2wmain-";
+        var validIds = (await VndbMethods.GetCharacterIdsMatchingAdvsearchStr(
+                            new PlayerVndbInfo() { VndbId = "u101804", VndbApiToken = "", },
+                            vndbAdvsearchStr) ??
+                        Array.Empty<string>()).ToList();
+        var list = new List<FetchCharForPairwiseRoot>();
+        foreach (string validId in validIds.Distinct())
+        {
+            var dto = new FetchCharForPairwiseRoot() { id = validId, description = validId.ToVndbUrl() };
+            const string sql = "SELECT c.image, c.name, c.latin from chars c where c.id = @id ";
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Vndb());
+            var res = (await connection.QueryAsync<(string?, string, string)>(sql, new { id = validId }))
+                .FirstOrDefault();
+            var emqName = Utils.VndbTitleToEmqTitle(res.Item2, res.Item3);
+            dto.name =
+                new Title() { LatinTitle = emqName.latinTitle, NonLatinTitle = emqName.nonLatinTitle }.ToString();
+            string? screenshot = res.Item1;
+            if (!string.IsNullOrEmpty(screenshot))
+            {
+                (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                dto.image = $"https://emqselfhost/selfhoststorage/vndb-img/ch/{modStr}/{number}.jpg"
+                    .ReplaceSelfhostLink();
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.id) && !string.IsNullOrWhiteSpace(dto.name))
+            {
+                list.Add(dto);
+            }
+        }
+
+        await File.WriteAllTextAsync(@"C:\Users\Mert\Desktop\pairwise_input.json",
+            JsonSerializer.Serialize(list, Utils.Jso));
     }
 }

@@ -2827,14 +2827,12 @@ public class QuizManager
                     {
                         case SpacedRepetitionKind.Review:
                             validMids =
-                                await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Concat(Quiz.Room.Spectators)
-                                    .Select(x => x.Id).ToList());
+                                await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
                             Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
                             break;
                         case SpacedRepetitionKind.NoIntervalOnly:
                             invalidMids =
-                                await DbManager.GetMidsWithIntervals(Quiz.Room.Players.Concat(Quiz.Room.Spectators)
-                                    .Select(x => x.Id).ToList());
+                                await DbManager.GetMidsWithIntervals(Quiz.Room.Players.Select(x => x.Id).ToList());
                             Quiz.Room.Log($"Excluding {invalidMids.Count} songs with intervals.", writeToChat: true);
                             break;
                         default:

@@ -166,6 +166,7 @@ public static class MediaAnalyser
                 }
             }
 
+            // detect volume
             try
             {
                 var process = new Process()
@@ -213,6 +214,7 @@ public static class MediaAnalyser
                 Console.WriteLine(e);
             }
 
+            // detect silence
             try
             {
                 (string ss, string to) = await GetSsAndTo(filePath, CancellationToken.None, false);
@@ -227,6 +229,7 @@ public static class MediaAnalyser
                 Console.WriteLine(e);
             }
 
+            // detect clipping
             try
             {
                 // idk if this is good
@@ -267,6 +270,7 @@ public static class MediaAnalyser
                 Console.WriteLine(e);
             }
 
+            // generate spectrogram
             if (!string.IsNullOrEmpty(guid))
             {
                 try

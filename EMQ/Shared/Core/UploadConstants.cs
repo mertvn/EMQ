@@ -167,6 +167,15 @@ public static class UploadConstants
             RequiresTranscode = true,
             RequiresEncode = false,
         },
+        new MediaTypeInfo
+        {
+            IsVideoFormat = false,
+            Extension = "wav",
+            MimeType = "audio/vnd.wave",
+            Signature = "",
+            RequiresTranscode = true,
+            RequiresEncode = false,
+        },
     };
 
     public static string ValidMediaTypesStr { get; set; } =
