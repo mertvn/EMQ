@@ -3351,7 +3351,11 @@ ORDER BY artist_id";
                 }
             }
 
-            AutocompleteDict[GuessKind.A] = res.Select(x => x.AALatinAlias).ToArray();
+            string[] d =  res.Select(x => x.AALatinAlias).ToArray();
+            AutocompleteDict[GuessKind.A] = d;
+            AutocompleteDict[GuessKind.Composer] = d;
+            AutocompleteDict[GuessKind.Arranger] = d;
+            AutocompleteDict[GuessKind.Lyricist] = d;
             string autocomplete = JsonSerializer.Serialize(res, Utils.JsoCompactAggressive);
             return autocomplete;
         }
