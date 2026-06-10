@@ -21,8 +21,10 @@ public class AddTableArtist_External_Link : Migration
         Create.UniqueConstraint().OnTable(tableName).Columns("url");
         Create.UniqueConstraint().OnTable(tableName).Columns("artist_id", "type");
 
-        // migrate old links
-        Execute.Sql(@"WITH cte AS (
+        if (false)
+        {
+            // migrate old links
+            Execute.Sql(@"WITH cte AS (
         SELECT id, vndb_id,
             CASE
         WHEN vndb_id LIKE 's%' THEN 1
@@ -33,7 +35,8 @@ public class AddTableArtist_External_Link : Migration
         INSERT INTO artist_external_link
         SELECT id,CASE WHEN linktype = 1 THEN 'https://vndb.org/'||vndb_id ELSE 'https://musicbrainz.org/artist/'||vndb_id END,linktype,''
         FROM cte");
-        Delete.Column("vndb_id").FromTable("artist").InSchema("public");
+            Delete.Column("vndb_id").FromTable("artist").InSchema("public");
+        }
     }
 
     public override void Down()
