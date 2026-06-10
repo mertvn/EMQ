@@ -4,6 +4,7 @@ namespace EMQ.Shared.Core;
 
 public readonly struct TimeRange
 {
+    [JsonConstructor]
     public TimeRange(double start, double end)
     {
         Start = start;

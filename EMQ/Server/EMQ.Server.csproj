@@ -6,6 +6,7 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <Nullable>enable</Nullable>
     <LangVersion>default</LangVersion>
+    <CETCompat>false</CETCompat>
   </PropertyGroup>
 
   <ItemGroup>

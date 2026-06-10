@@ -63,12 +63,12 @@ public sealed class ErodleService : BackgroundService
                         int[] possible = (await connection.QueryAsync<int>(
                             $"select id from music_source where type = {(int)SongSourceType.VN} and votecount >= @minVotes and not id = ANY(@previous)",
                             new { minVotes = Constants.ErodleMinVotes, previous })).ToArray();
-                        Console.WriteLine($"possible erodle remaining: {possible.Length}");
                         if (!possible.Any())
                         {
                             continue;
                         }
 
+                        Console.WriteLine($"possible erodle remaining: {possible.Length}");
                         correctAnswer = possible.Shuffle().First().ToString();
                         break;
                     case ErodleKind.None:
