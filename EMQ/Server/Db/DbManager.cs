@@ -3351,7 +3351,7 @@ ORDER BY artist_id";
                 }
             }
 
-            string[] d =  res.Select(x => x.AALatinAlias).ToArray();
+            string[] d = res.Select(x => x.AALatinAlias).ToArray();
             AutocompleteDict[GuessKind.A] = d;
             AutocompleteDict[GuessKind.Composer] = d;
             AutocompleteDict[GuessKind.Arranger] = d;
@@ -3542,7 +3542,8 @@ ORDER BY artist_id";
 
     public static async Task<string> SelectAutocompleteMel()
     {
-        const string sql = @"SELECT SPLIT_PART(SPLIT_PART(url, '/', -1),'.', 1) FROM music_external_link where type = 2";
+        const string sql =
+            @"SELECT SPLIT_PART(SPLIT_PART(url, '/', -1),'.', 1) FROM music_external_link where type = 2";
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         AutocompleteMt[] res = (await connection.QueryAsync<string>(sql))
             .Select(x => new AutocompleteMt(0, x))
@@ -5776,6 +5777,34 @@ LEFT JOIN artist a ON a.id = aa.artist_id
                                         ret = $"https://emqselfhost/selfhoststorage/mal-img/ch/{modStr}/{number}.webp"
                                             .ReplaceSelfhostLink();
                                     }
+                                }
+
+                                break;
+                            }
+                    }
+
+                    break;
+                }
+            case SongSourceType.Album:
+                {
+                    var externalLink =
+                        songSource.Links.FirstOrDefault(x => x.Type == SongSourceLinkType.MusicBrainzReleaseGroup);
+                    if (externalLink == null)
+                    {
+                        return ret;
+                    }
+
+                    string sourceExternalId = songSource.Id.ToString();
+                    switch (screenshotKind)
+                    {
+                        case ScreenshotKind.VNCover:
+                            {
+                                string screenshot = $"cv{sourceExternalId}";
+                                if (!exc.Contains(screenshot))
+                                {
+                                    (string modStr, int number) = Utils.ParseVndbScreenshotStr(screenshot);
+                                    ret = $"https://emqselfhost/selfhoststorage/mb-img/cv/{modStr}/{number}.jpg"
+                                        .ReplaceSelfhostLink();
                                 }
 
                                 break;
