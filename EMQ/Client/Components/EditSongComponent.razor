@@ -931,7 +931,7 @@
         await _autocompleteAComponentRef.ClearInputField();
         _autocompleteAComponentRef.CallClose();
 
-        await MusicBrainzMethods.ProcessMBRelations(Song, mbRecording.relations, _client, ClientState.MBArtistDict);
+        await MusicBrainzMethods.ProcessMBRelations(Song, mbRecording.relations, _client, ClientState.MBArtistDict, ClientState.ExternalClient);
         string joinedArtistCredit = "";
         foreach (MbArtistCredit mbArtistCredit in mbRecording.artistcredit)
         {

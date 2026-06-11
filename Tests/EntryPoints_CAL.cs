@@ -1010,7 +1010,7 @@ WHERE s.lang = 'ja'"))
             }
 
             bool addedSomething = await MusicBrainzMethods.ProcessMBRelations(song, mbRecording.relations,
-                internalClient, ClientState.MBArtistDict);
+                internalClient, ClientState.MBArtistDict, ServerUtils.Client);
 
             if (addedSomething)
             {

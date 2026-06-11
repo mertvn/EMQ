@@ -105,8 +105,8 @@ public class MbWork
     [JsonPropertyName("relations")]
     public List<MbRelation> relations { get; set; } = new();
 
-    // [JsonPropertyName("id")]
-    // public string id { get; set; }
+    [JsonPropertyName("id")]
+    public string id { get; set; } = "";
 }
 
 public class MbUrl

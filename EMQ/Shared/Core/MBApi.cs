@@ -72,4 +72,26 @@ public static class MBApi
             return null;
         }
     }
+
+    public static async Task<MbWork?> GetWork(HttpClient client, Guid id)
+    {
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return null;
+            }
+
+            // don't request work-rels here without making sure ProcessMBRelations() doesn't go into an infinite loop
+            string url = $"{BaseUrl}work/{id}?fmt=json&inc=artist-rels";
+            var res = await client.GetFromJsonAsync<MbWork>(url);
+            // Console.WriteLine(res);
+            return res;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return null;
+        }
+    }
 }

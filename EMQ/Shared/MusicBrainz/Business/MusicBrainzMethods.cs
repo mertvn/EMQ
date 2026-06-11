@@ -16,8 +16,9 @@ public class MusicBrainzMethods
     // todo? split into two (song, artist)
     // todo handle no-MBID-match case (requires some sort of queue for adding artists)
     public static async Task<bool> ProcessMBRelations(Song song, IEnumerable<MbRelation> relations,
-        HttpClient client, Dictionary<string, int> mbArtistDict)
+        HttpClient client, Dictionary<string, int> mbArtistDict, HttpClient? externalClient = null)
     {
+        List<string> arrangementOfWorkIds = new();
         bool addedSomething = false;
         foreach (MbRelation mbRelation in relations)
         {
@@ -128,8 +129,13 @@ public class MusicBrainzMethods
                                     song.Type &= ~SongType.Standard;
                                 }
 
-                                addedSomething |=
-                                    await ProcessMBRelations(song, mbRelation.work!.relations, client, mbArtistDict);
+                                addedSomething |= await ProcessMBRelations(song, mbRelation.work!.relations, client,
+                                    mbArtistDict, externalClient);
+                                break;
+                            }
+                        case "arrangement":
+                            {
+                                arrangementOfWorkIds.Add(mbRelation.work!.id);
                                 break;
                             }
                     }
@@ -173,6 +179,34 @@ public class MusicBrainzMethods
                     }
 
                     break;
+            }
+        }
+
+        if (externalClient != null)
+        {
+            bool hasComposer = song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Composer));
+            bool hasLyricist = song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Lyricist));
+            if (!hasComposer || !hasLyricist)
+            {
+                foreach (string arrangementOfWorkId in arrangementOfWorkIds)
+                {
+                    var mbWork = await MBApi.GetWork(externalClient, new Guid(arrangementOfWorkId));
+                    if (mbWork != null)
+                    {
+                        var search = new List<MbRelation>();
+                        if (!hasComposer)
+                        {
+                            search.AddRange(mbWork.relations.Where(x => x.type == "composer"));
+                        }
+
+                        if (!hasLyricist)
+                        {
+                            search.AddRange(mbWork.relations.Where(x => x.type == "lyricist"));
+                        }
+
+                        addedSomething |= await ProcessMBRelations(song, search, client, mbArtistDict);
+                    }
+                }
             }
         }
 
