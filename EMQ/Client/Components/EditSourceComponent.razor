@@ -136,7 +136,7 @@
                     <ul>
                         @foreach ((SongSourceLinkType key, Regex value) in RegexPatterns.SourceLinkRegex)
                         {
-                            if (key is not (SongSourceLinkType.Unknown or SongSourceLinkType.SelfSource))
+                            if (Constants.ValidLinkTypesForSourceTypeDict[Source.Type].Contains(key))
                             {
                                 <li>
                                     @key.GetDescription(): @value.ToString()

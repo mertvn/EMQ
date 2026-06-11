@@ -89,6 +89,7 @@ public enum SongSourceType
     Anime,
     Touhou,
     Game,
+    Album = 70,
 }
 
 public class SongSourceDeveloper

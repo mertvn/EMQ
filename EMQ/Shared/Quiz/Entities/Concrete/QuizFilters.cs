@@ -192,6 +192,7 @@ public class QuizFilters
             { SongSourceType.Anime, false },
             { SongSourceType.Touhou, false },
             { SongSourceType.Game, false },
+            { SongSourceType.Album, false },
         };
 
     [ProtoMember(30)]

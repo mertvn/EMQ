@@ -70,6 +70,7 @@ public static class Constants
         { SongSourceType.Anime, new[] { SongSourceLinkType.MyAnimeListAnime, SongSourceLinkType.AniListAnime, SongSourceLinkType.AniDBAnime } },
         { SongSourceType.Touhou, new[] { SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
         { SongSourceType.Game, new[] { SongSourceLinkType.ErogamescapeGame, SongSourceLinkType.WikidataItem } },
+        { SongSourceType.Album, new[] { SongSourceLinkType.MusicBrainzReleaseGroup } },
     };
 
     public static readonly HashSet<GuessKind> IgnoredGuessKinds = new()
