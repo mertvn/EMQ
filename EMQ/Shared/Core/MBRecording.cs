@@ -66,6 +66,9 @@ public class MbRelation
     [JsonPropertyName("type")]
     public string type { get; set; } = "";
 
+    [JsonPropertyName("direction")]
+    public string direction { get; set; } = "";
+
     [JsonPropertyName("target-type")]
     public string targettype { get; set; } = "";
 

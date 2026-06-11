@@ -135,7 +135,11 @@ public class MusicBrainzMethods
                             }
                         case "arrangement":
                             {
-                                arrangementOfWorkIds.Add(mbRelation.work!.id);
+                                if (mbRelation.direction == "backward")
+                                {
+                                    arrangementOfWorkIds.Add(mbRelation.work!.id);
+                                }
+
                                 break;
                             }
                     }
