@@ -18,6 +18,12 @@ public class MBMedium
 
 public class MBRelease
 {
+    // public string date { get; set; } = "";
+
+    public string country { get; set; } = "";
+
+    // public string title { get; set; } = "";
+
     [JsonPropertyName("media")]
     public List<MBMedium> media { get; set; } = new();
 }
@@ -32,4 +38,17 @@ public class MBTrack
 
     [JsonPropertyName("position")]
     public int position { get; set; }
+}
+
+public class MBReleaseGroup
+{
+    [JsonPropertyName("first-release-date")]
+    public string firstreleasedate { get; set; } = "";
+
+    public string title { get; set; } = "";
+
+    public List<MBRelease> releases { get; set; } = new();
+
+    [JsonPropertyName("artist-credit")]
+    public List<MbArtistCredit> artistcredit { get; set; } = new();
 }

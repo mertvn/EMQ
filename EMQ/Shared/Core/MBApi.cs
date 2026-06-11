@@ -31,6 +31,27 @@ public static class MBApi
         }
     }
 
+    public static async Task<MBReleaseGroup?> GetReleaseGroup(HttpClient client, Guid id)
+    {
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return null;
+            }
+
+            string url = $"{BaseUrl}release-group/{id}?fmt=json&inc=releases+artists";
+            var res = await client.GetFromJsonAsync<MBReleaseGroup>(url);
+            // Console.WriteLine(res);
+            return res;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return null;
+        }
+    }
+
     public static async Task<MBRecording?> GetRecording(HttpClient client, Guid id)
     {
         try

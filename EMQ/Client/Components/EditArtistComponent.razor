@@ -40,21 +40,21 @@
         <details style="padding: 5px;">
             <summary>VNDB seeder</summary>
             <p>Enter a VNDB staff id or URL to fill information automatically.</p>
-            <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 540px;"/>
+            <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 600px;"/>
             <br/>
         </details>
 
         <details style="padding: 5px;">
             <summary>MusicBrainz seeder</summary>
             <p>Enter a MusicBrainz artist id or URL to fill information automatically.</p>
-            <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 540px;"/>
+            <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 600px;"/>
             <br/>
         </details>
 
         <details style="padding: 5px;">
             <summary>MusicBrainz seeder (artists from release)</summary>
             <p>Enter a MusicBrainz release id or URL to fill information automatically.</p>
-            <input type="text" @bind:get="@MusicBrainzSeederReleaseInputText" @bind:set="@SeedArtistsFromMusicBrainzRelease" style="width: 540px;"/>
+            <input type="text" @bind:get="@MusicBrainzSeederReleaseInputText" @bind:set="@SeedArtistsFromMusicBrainzRelease" style="width: 600px;"/>
             <br/>
 
             <ul>
@@ -69,7 +69,7 @@
         @* <details style="padding: 5px;"> *@
         @*     <summary>EGS seeder</summary> *@
         @*     <p>Enter an EGS creater id or URL to fill information automatically. You must be able to access EGS to use this.</p> *@
-        @*     <input type="text" @bind:get="@EGSSeederInputText" @bind:set="@SeedFromEGS" style="width: 540px;"/> *@
+        @*     <input type="text" @bind:get="@EGSSeederInputText" @bind:set="@SeedFromEGS" style="width: 600px;"/> *@
         @*     <br/> *@
         @* </details> *@
 
@@ -448,11 +448,11 @@
             }
         }
 
-        if (isNew && artist.PrimaryLanguage != "ja")
-        {
-            ValidationMessages.Add("Currently we're only accepting Japanese artists.");
-            isValid = false;
-        }
+        // if (isNew && artist.PrimaryLanguage != "ja")
+        // {
+        //     ValidationMessages.Add("Currently we're only accepting Japanese artists.");
+        //     isValid = false;
+        // }
 
         if (!artist.Links.Any())
         {

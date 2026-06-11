@@ -7,242 +7,250 @@
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
 @using EMQ.Shared.VNDB.Business
+@using System.Globalization
 @inject HttpClient _client
 @inject IJSRuntime _jsRuntime
 
 <div style="border: 1px black solid; padding: 10px; max-width: 1400px;">
-    @if (IsNew)
-    {
-        <details style="padding: 5px;">
-            <summary>Guidelines for adding sources</summary>
-            <ul>
-                <li>Follow VNDB's guidelines on name order and romanization.</li>
-                <li>Currently we're only accepting Japanese sources.</li>
-            </ul>
-            <br/>
-        </details>
-    }
-    else
-    {
-        <details style="padding: 5px;">
-            <summary>Guidelines for editing sources</summary>
-            <ul>
-                <li>Follow VNDB's guidelines on name order and romanization.</li>
-            </ul>
-            <br/>
-        </details>
-    }
-
-    @if (IsNew)
-    {
-        <details style="padding: 5px;">
-            <summary>VNDB seeder</summary>
-            <p>Enter a VNDB VN id or URL to fill information automatically.</p>
-            <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 540px;"/>
-            <br/>
-        </details>
-
-        <details style="padding: 5px;">
-            <summary>MAL seeder</summary>
-            <p>Enter a MAL anime id or URL to fill information automatically.</p>
-            <input type="text" @bind:get="@MalSeederInputText" @bind:set="@SeedFromMal" style="width: 540px;"/>
-            <br/>
-        </details>
-
+@if (IsNew)
+{
+    <details style="padding: 5px;">
+        <summary>Guidelines for adding sources</summary>
+        <ul>
+            <li>Follow VNDB's guidelines on name order and romanization.</li>
+            <li>Currently we're only accepting Japanese sources.</li>
+        </ul>
         <br/>
-    }
+    </details>
+}
+else
+{
+    <details style="padding: 5px;">
+        <summary>Guidelines for editing sources</summary>
+        <ul>
+            <li>Follow VNDB's guidelines on name order and romanization.</li>
+        </ul>
+        <br/>
+    </details>
+}
 
-    <div style="display: flex; flex-wrap: wrap">
-        <div style="border: 1px black solid; padding: 10px; width: 970px;">
-            <div style="border: 1px black solid; padding: 10px;">
-                <span style="font-size: 1.25rem;">Aliases</span>
-                <button type="button" class="btn btn-primary" @onclick="AddAlias">Add alias</button>
-                <br/>
+@if (IsNew)
+{
+    <details style="padding: 5px;">
+        <summary>VNDB seeder</summary>
+        <p>Enter a VNDB VN id or URL to fill information automatically.</p>
+        <input type="text" @bind:get="@VndbSeederInputText" @bind:set="@SeedFromVndb" style="width: 600px;"/>
+        <br/>
+    </details>
 
-                @for (int index = 0; index < Source.Titles.Count; index++)
-                {
-                    var alias = Source.Titles[index];
-                    int indexCopy = index;
-                    <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))">🗑</span>
-                        <br/>
-                        <label style="padding: 4px;">
-                            <select id="AddTitleLang" style="margin: 5px" @bind="alias.Language">
-                                @foreach (var language in Enum.GetValues<Language>())
-                                {
-                                    @if (language != Language.allLanguages)
-                                    {
-                                        <option value="@language">@language.GetDisplayName()</option>
-                                    }
-                                }
-                            </select>
-                            Language
-                        </label>
-                        <br/>
+    <details style="padding: 5px;">
+        <summary>MusicBrainz seeder</summary>
+        <p>Enter a MusicBrainz release group id or URL to fill information automatically.</p>
+        <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 600px;"/>
+        <br/>
+    </details>
 
-                        <label style="padding: 4px;">
-                            <input type="text" @bind="alias.LatinTitle" style="width: 700px;"/>
-                            Latin name
-                        </label>
-                        <br/>
-                        <label style="padding: 4px;">
-                            <input type="text" @bind="alias.NonLatinTitle" style="width: 700px;"/>
-                            Non-Latin name
-                        </label>
-                        <br/>
+    <details style="padding: 5px;">
+        <summary>MAL seeder</summary>
+        <p>Enter a MAL anime id or URL to fill information automatically.</p>
+        <input type="text" @bind:get="@MalSeederInputText" @bind:set="@SeedFromMal" style="width: 600px;"/>
+        <br/>
+    </details>
 
-                        <label style="padding: 4px;">
-                            <input type="radio" class="form-check-input" name="radioIsMainTitle"
-                                   checked="@alias.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitle(indexCopy))"/>
-                            Primary alias
-                        </label>
-                        <br/>
-                    </div>
-                }
-            </div>
+    <br/>
+}
+
+<div style="display: flex; flex-wrap: wrap">
+    <div style="border: 1px black solid; padding: 10px; width: 970px;">
+        <div style="border: 1px black solid; padding: 10px;">
+            <span style="font-size: 1.25rem;">Aliases</span>
+            <button type="button" class="btn btn-primary" @onclick="AddAlias">Add alias</button>
             <br/>
 
-            <div style="border: 1px black solid; padding: 10px;">
-                <h5>General info</h5>
-                <label style="padding: 4px;">
-                    <select id="SongSourceType" style="margin: 5px" @bind="Source.Type">
-                        @foreach (var type in Enum.GetValues<SongSourceType>())
-                        {
-                            @if (type is not SongSourceType.Unknown)
+            @for (int index = 0; index < Source.Titles.Count; index++)
+            {
+                var alias = Source.Titles[index];
+                int indexCopy = index;
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAlias(indexCopy))">🗑</span>
+                    <br/>
+                    <label style="padding: 4px;">
+                        <select id="AddTitleLang" style="margin: 5px" @bind="alias.Language">
+                            @foreach (var language in Enum.GetValues<Language>())
                             {
-                                <option value="@type" disabled="@(type == SongSourceType.Other)">
-                                    @type.GetDisplayName()
-                                </option>
+                                @if (language != Language.allLanguages)
+                                {
+                                    <option value="@language">@language.GetDisplayName()</option>
+                                }
                             }
-                        }
-                    </select>
-                    Type
-                </label>
-                <br/>
+                        </select>
+                        Language
+                    </label>
+                    <br/>
 
-                <div id="AirDateStart" style="max-width: 130px; display: inline-block; margin-right: 5px;">
-                    <Blazorise.DatePicker TValue="DateTime" @bind-Date="@Source.AirDateStart" min="@DateTime.UnixEpoch" max="@DateTime.Parse(Constants.QFDateMax)"/>
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.LatinTitle" style="width: 700px;"/>
+                        Latin name
+                    </label>
+                    <br/>
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.NonLatinTitle" style="width: 700px;"/>
+                        Non-Latin name
+                    </label>
+                    <br/>
+
+                    <label style="padding: 4px;">
+                        <input type="radio" class="form-check-input" name="radioIsMainTitle"
+                               checked="@alias.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitle(indexCopy))"/>
+                        Primary alias
+                    </label>
+                    <br/>
                 </div>
-                <label for="AirDateStart">Start date</label>
-            </div>
-            <br/>
+            }
+        </div>
+        <br/>
 
-            <div style="border: 1px black solid; padding: 10px;">
-                <h5>External links</h5>
-                <details>
-                    <summary>
-                        Allowed link types
-                    </summary>
-                    <ul>
-                        @foreach ((SongSourceLinkType key, Regex value) in RegexPatterns.SourceLinkRegex)
-                        {
-                            if (Constants.ValidLinkTypesForSourceTypeDict[Source.Type].Contains(key))
-                            {
-                                <li>
-                                    @key.GetDescription(): @value.ToString()
-                                </li>
-                            }
-                        }
-                    </ul>
-                </details>
-                <table>
-                    @foreach (var link in Source.Links.Where(x => x.Type != SongSourceLinkType.SelfSource))
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>General info</h5>
+            <label style="padding: 4px;">
+                <select id="SongSourceType" style="margin: 5px" @bind="Source.Type">
+                    @foreach (var type in Enum.GetValues<SongSourceType>())
                     {
-                        <tr>
-                            <td>
-                                <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(_ => Source.Links.Remove(link))">🗑</span>
-                            </td>
-                            <td>
-                                <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
-                            </td>
-                            <td>
-                                @link.Url
-                            </td>
-                        </tr>
+                        @if (type is not SongSourceType.Unknown)
+                        {
+                            <option value="@type" disabled="@(type == SongSourceType.Other)">
+                                @type.GetDisplayName()
+                            </option>
+                        }
                     }
-                </table>
-                <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
-            </div>
+                </select>
+                Type
+            </label>
             <br/>
 
-            <div style="border: 1px black solid; padding: 10px;">
-                <span style="font-size: 1.25rem;">Developers</span>
-                <button type="button" class="btn btn-primary" @onclick="AddAliasDev">Add developer</button>
-                <br/>
+            <div id="AirDateStart" style="max-width: 130px; display: inline-block; margin-right: 5px;">
+                <Blazorise.DatePicker TValue="DateTime" @bind-Date="@Source.AirDateStart" min="@DateTime.UnixEpoch" max="@DateTime.Parse(Constants.QFDateMax)"/>
+            </div>
+            <label for="AirDateStart">Start date</label>
+        </div>
+        <br/>
 
-                @for (int index = 0; index < Source.Developers.Count; index++)
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>External links</h5>
+            <details>
+                <summary>
+                    Allowed link types
+                </summary>
+                <ul>
+                    @foreach ((SongSourceLinkType key, Regex value) in RegexPatterns.SourceLinkRegex)
+                    {
+                        if (Constants.ValidLinkTypesForSourceTypeDict[Source.Type].Contains(key))
+                        {
+                            <li>
+                                @key.GetDescription(): @value.ToString()
+                            </li>
+                        }
+                    }
+                </ul>
+            </details>
+            <table>
+                @foreach (var link in Source.Links.Where(x => x.Type != SongSourceLinkType.SelfSource))
                 {
-                    var alias = Source.Developers[index];
-                    int indexCopy = index;
-                    <div style="border: 1px black solid; padding: 10px;">
-                        <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAliasDev(indexCopy))">🗑</span>
-                        <br/>
-                        <label style="padding: 4px;">
-                            <select id="AddTitleLang" style="margin: 5px" @bind="alias.Title.Language">
-                                @foreach (var language in Enum.GetValues<Language>())
-                                {
-                                    @if (language != Language.allLanguages)
-                                    {
-                                        <option value="@language">@language.GetDisplayName()</option>
-                                    }
-                                }
-                            </select>
-                            Language
-                        </label>
-                        <br/>
-
-                        <label style="padding: 4px;">
-                            <input type="text" @bind="alias.Title.LatinTitle" style="width: 700px;"/>
-                            Latin name
-                        </label>
-                        <br/>
-                        <label style="padding: 4px;">
-                            <input type="text" @bind="alias.Title.NonLatinTitle" style="width: 700px;"/>
-                            Non-Latin name
-                        </label>
-                        <br/>
-
-                        <label style="padding: 4px;">
-                            <input type="radio" class="form-check-input" name="radioIsMainTitleDev"
-                                   checked="@alias.Title.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitleDev(indexCopy))"/>
-                            Primary alias
-                        </label>
-                        <br/>
-                    </div>
+                    <tr>
+                        <td>
+                            <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(_ => Source.Links.Remove(link))">🗑</span>
+                        </td>
+                        <td>
+                            <a href="@link.Url" target="_blank" style="margin-right: 4px;">@link.Type.GetDescription()</a>
+                        </td>
+                        <td>
+                            @link.Url
+                        </td>
+                    </tr>
                 }
-            </div>
+            </table>
+            <input type="text" placeholder="Add URL..." @bind:get="@ExternalLinksInputText" @bind:set="@AddNewExternalLink" @bind:event="oninput">
+        </div>
+        <br/>
+
+        <div style="border: 1px black solid; padding: 10px;">
+            <span style="font-size: 1.25rem;">Developers</span>
+            <button type="button" class="btn btn-primary" @onclick="AddAliasDev">Add developer</button>
             <br/>
 
-            <textarea id="note_user"
+            @for (int index = 0; index < Source.Developers.Count; index++)
+            {
+                var alias = Source.Developers[index];
+                int indexCopy = index;
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => await RemoveAliasDev(indexCopy))">🗑</span>
+                    <br/>
+                    <label style="padding: 4px;">
+                        <select id="AddTitleLang" style="margin: 5px" @bind="alias.Title.Language">
+                            @foreach (var language in Enum.GetValues<Language>())
+                            {
+                                @if (language != Language.allLanguages)
+                                {
+                                    <option value="@language">@language.GetDisplayName()</option>
+                                }
+                            }
+                        </select>
+                        Language
+                    </label>
+                    <br/>
+
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.Title.LatinTitle" style="width: 700px;"/>
+                        Latin name
+                    </label>
+                    <br/>
+                    <label style="padding: 4px;">
+                        <input type="text" @bind="alias.Title.NonLatinTitle" style="width: 700px;"/>
+                        Non-Latin name
+                    </label>
+                    <br/>
+
+                    <label style="padding: 4px;">
+                        <input type="radio" class="form-check-input" name="radioIsMainTitleDev"
+                               checked="@alias.Title.IsMainTitle" @onchange="@(() => OnChangeRadioIsMainTitleDev(indexCopy))"/>
+                        Primary alias
+                    </label>
+                    <br/>
+                </div>
+            }
+        </div>
+        <br/>
+
+        <textarea id="note_user"
                       rows="2"
                       cols="34"
                       maxlength="780"
                       placeholder="Summarize the changes you have made, including links to source(s)."
                       @bind="NoteUser">
             </textarea>
-            <br/>
+        <br/>
 
-            <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
-            <ul>
-                @foreach (string validationMessage in ValidationMessages)
-                {
-                    string color = validationMessage.StartsWith("Added") ? "green" : "red";
-                    <li style="color: @color;">@validationMessage</li>
-                }
-            </ul>
-            <br/>
-        </div>
-
-        <div style="border: 1px black solid; padding: 10px;">
-            <div style="margin: 16px; width: 330px; min-height:200px;">
-                <h4>Preview</h4>
-                @* todo? *@
-                <pre>@JsonSerializer.Serialize(Source, Utils.JsoIndented)</pre>
-                @* <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent> *@
-            </div>
-            <br/>
-        </div>
+        <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="OnclickSubmit">Submit</button>
+        <ul>
+            @foreach (string validationMessage in ValidationMessages)
+            {
+                string color = validationMessage.StartsWith("Added") ? "green" : "red";
+                <li style="color: @color;">@validationMessage</li>
+            }
+        </ul>
+        <br/>
     </div>
+
+    <div style="border: 1px black solid; padding: 10px;">
+        <div style="margin: 16px; width: 330px; min-height:200px;">
+            <h4>Preview</h4>
+            @* todo? *@
+            <pre>@JsonSerializer.Serialize(Source, Utils.JsoIndented)</pre>
+            @* <SongInfoCardComponent @ref="_songInfoCardComponentRef" Song="@Song" IsEditing="true"></SongInfoCardComponent> *@
+        </div>
+        <br/>
+    </div>
+</div>
 </div>
 
 @code {
@@ -264,6 +272,8 @@
     public string ExternalLinksInputText { get; set; } = "";
 
     private string VndbSeederInputText { get; set; } = "";
+
+    private string MusicBrainzSeederInputText { get; set; } = "";
 
     private string MalSeederInputText { get; set; } = "";
 
@@ -439,14 +449,14 @@
             ValidationMessages.Add("Original language must be set.");
             isValid = false;
         }
-        else
-        {
-            if (source.LanguageOriginal != "ja")
-            {
-                ValidationMessages.Add("Currently we're only accepting Japanese sources.");
-                isValid = false;
-            }
-        }
+    // else
+    // {
+    //     if (source.LanguageOriginal != "ja")
+    //     {
+    //         ValidationMessages.Add("Currently we're only accepting Japanese sources.");
+    //         isValid = false;
+    //     }
+    // }
 
         foreach (var title in source.Developers)
         {
@@ -474,7 +484,7 @@
             value += '/';
         }
 
-        // todo crop MAL/AniList links
+    // todo crop MAL/AniList links
         foreach ((SongSourceLinkType key, Regex regex) in RegexPatterns.SourceLinkRegex)
         {
             if (Source.Links.Any(x => x.Type == key))
@@ -530,6 +540,55 @@
 
         vn.Links = vn.Links.Where(x => x.Type != SongSourceLinkType.Unknown).ToList();
         Source = vn;
+    }
+
+    private async Task SeedFromMusicBrainz(string value)
+    {
+        MusicBrainzSeederInputText = value;
+        if (!Guid.TryParse(value.Replace("https://musicbrainz.org/release-group/", "").Replace("/", ""), out var guid))
+        {
+            MusicBrainzSeederInputText = "Invalid input.";
+            return;
+        }
+
+        var mbRg = await MBApi.GetReleaseGroup(ClientState.ExternalClient, guid);
+        if (mbRg == null)
+        {
+            MusicBrainzSeederInputText = "Error fetching information.";
+            return;
+        }
+
+        var firstRelease = mbRg.releases.First();
+        bool hasDate = DateTime.TryParseExact(mbRg.firstreleasedate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date);
+        string lang = "";
+        if (!string.IsNullOrWhiteSpace(firstRelease.country))
+        {
+            lang = firstRelease.country switch
+            {
+                "JP" => "ja",
+                "US" or "GB" or "CA" or "AU" or "NZ" => "en",
+                _ => ""
+                };
+        }
+
+        var source = new SongSource()
+        {
+            AirDateStart = hasDate ? date : DateTime.UnixEpoch,
+            LanguageOriginal = lang,
+            Titles = new List<Title>()
+            {
+                new() { LatinTitle = mbRg.title, Language = lang, IsMainTitle = true, },
+            },
+            Links = new List<SongSourceLink>()
+            {
+                new() { Type = SongSourceLinkType.MusicBrainzReleaseGroup, Url = $"https://musicbrainz.org/release-group/{guid}" }
+            },
+            Type = SongSourceType.Album,
+            Developers = mbRg.artistcredit?.Select(x =>
+                new SongSourceDeveloper { VndbId = x.artist.id?.ToString() ?? "", Title = new Title() { LatinTitle = x.artist.name ?? "" } }).ToList() ?? new List<SongSourceDeveloper>()
+        };
+
+        Source = source;
     }
 
     private async Task SeedFromMal(string value)
