@@ -531,7 +531,7 @@ public static class MediaAnalyser
             {
                 FileName = "ffmpeg",
                 Arguments =
-                    $"-i \"{filePath}\" " +
+                    $"-i \"{filePath}\" -vn " +
                     $"-ss {ss} " +
                     (to.Any() ? $"-to {to} " : "") +
                     $"-c:a {audioEncoderName} -b:a {bitrate}k -ac 2 -af \"volume={volumeAdjust.ToString(CultureInfo.InvariantCulture)}dB\" " +
