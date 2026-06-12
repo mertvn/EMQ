@@ -5382,6 +5382,33 @@ LIMIT @limit
         }
     }
 
+    public static async Task<HashSet<int>> FindEmqDevMsIdsByNames(List<string> artistNames)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        List<string> createrNames = artistNames.Select(x => x.NormalizeForAutocomplete()).ToList();
+        HashSet<int> ret = new();
+
+        var res = await connection.QueryAsync<(int, List<SongSourceDeveloper>)>(
+            "select id, developers from music_source where developers is not null");
+        foreach ((int msId, List<SongSourceDeveloper> devs) in res)
+        {
+            foreach (var dev in devs)
+            {
+                var lt = dev.Title.LatinTitle.NormalizeForAutocomplete();
+                var nlt = dev.Title.NonLatinTitle?.NormalizeForAutocomplete();
+                foreach (string createrName in createrNames)
+                {
+                    if (createrName == lt || createrName == nlt)
+                    {
+                        ret.Add(msId);
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
     public static async Task<HashSet<int>> FindMidsWithSoundLinks()
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
@@ -5479,7 +5506,8 @@ LIMIT @limit
         {
             await connection.ExecuteAsync("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
             HashSet<int> aIds = (await FindArtistIdsByArtistNames(artists)).Select(x => x.Item1).ToHashSet();
-            if (!aIds.Any())
+            HashSet<int> devMsIds = await FindEmqDevMsIdsByNames(artists);
+            if (!aIds.Any() && !devMsIds.Any())
             {
                 return ret;
             }
@@ -5498,7 +5526,7 @@ LEFT JOIN artist a ON a.id = aa.artist_id
 
             queryMusic.Where($"mst.is_main_title = true");
             queryMusic.Where($"(mt.latin_title % ANY({titles}) OR mt.non_latin_title % ANY({titles}))");
-            queryMusic.Where($"a.id = ANY({aIds.ToArray()})");
+            queryMusic.Where($"(a.id = ANY({aIds.ToArray()}) OR ms.id = ANY({devMsIds.ToArray()}))");
             queryMusic.Where($"msm.type = ANY({songSourceSongTypes.Cast<int>().ToArray()})");
 
             // Console.WriteLine(queryMusic.Sql);
