@@ -151,7 +151,7 @@
                         🗑
                     </span>
                     @source.ToString()
-                    <div>
+                    <div style="display: flex;">
                         @foreach (var key in Enum.GetValues<SongSourceSongType>())
                         {
                             if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
@@ -175,7 +175,7 @@
         </div>
         <br/>
 
-        <div style="border: 1px black solid; padding: 10px;">
+        <div style="border: 1px black solid; padding: 10px; display: flex;">
             <span style="font-size: 1.25rem;">Artists</span>
             @if (!IsNew)
             {
