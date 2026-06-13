@@ -258,7 +258,7 @@ public partial class UploadBatchComponent
                         continue;
                     }
 
-                    var mode = SongSourceSongTypeMode.Vocals;
+                    var mode = SongSourceSongTypeMode.All;
                     var res = await _client.PostAsJsonAsync("Library/FindSongsByTitleAndArtistFuzzy",
                         new ReqFindSongsByTitleAndArtistFuzzy(new List<string> { title }, artists, mode));
                     if (res.IsSuccessStatusCode)
