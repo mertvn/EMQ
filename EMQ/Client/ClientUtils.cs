@@ -373,7 +373,7 @@ public class ClientUtils
         return currentEqs;
     }
 
-    public static async void RefreshMbArtistsDict(HttpClient client)
+    public static async Task RefreshMbArtistsDict(HttpClient client)
     {
         HttpResponseMessage resMBArtists = await client.GetAsync("Library/GetMBArtists");
         if (resMBArtists.IsSuccessStatusCode)

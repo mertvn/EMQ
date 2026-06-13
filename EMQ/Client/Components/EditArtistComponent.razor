@@ -706,7 +706,7 @@
 
         if (!ClientState.MBArtistDict.Any())
         {
-            ClientUtils.RefreshMbArtistsDict(_client);
+            await ClientUtils.RefreshMbArtistsDict(_client);
         }
 
         MissingMbArtists.Clear();
