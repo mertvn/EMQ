@@ -372,4 +372,13 @@ public class ClientUtils
 
         return currentEqs;
     }
+
+    public static async void RefreshMbArtistsDict(HttpClient client)
+    {
+        HttpResponseMessage resMBArtists = await client.GetAsync("Library/GetMBArtists");
+        if (resMBArtists.IsSuccessStatusCode)
+        {
+            ClientState.MBArtistDict = (await resMBArtists.Content.ReadFromJsonAsync<Dictionary<string, int>>())!;
+        }
+    }
 }

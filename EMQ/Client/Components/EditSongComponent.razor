@@ -873,11 +873,7 @@
 
         if (!ClientState.MBArtistDict.Any())
         {
-            HttpResponseMessage resMBArtists = await _client.GetAsync("Library/GetMBArtists");
-            if (resMBArtists.IsSuccessStatusCode)
-            {
-                ClientState.MBArtistDict = (await resMBArtists.Content.ReadFromJsonAsync<Dictionary<string, int>>())!;
-            }
+            ClientUtils.RefreshMbArtistsDict(_client);
         }
 
         MBTracks.Clear();

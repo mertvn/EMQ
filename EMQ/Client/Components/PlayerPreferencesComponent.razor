@@ -33,6 +33,7 @@
         <Blazorise.Tab Name="TabLists">Lists</Blazorise.Tab>
         <Blazorise.Tab Name="TabAvatar">Avatar</Blazorise.Tab>
         <Blazorise.Tab Name="TabDonorBenefit">Donor Benefits</Blazorise.Tab>
+        <Blazorise.Tab Name="TabMisc">Misc.</Blazorise.Tab>
     </Items>
     <Content>
     <Blazorise.TabPanel Name="TabGeneral">
@@ -622,6 +623,9 @@
         {
             <p>You must be a registered user to use this feature.</p>
         }
+    </Blazorise.TabPanel>
+    <Blazorise.TabPanel Name="TabMisc">
+        <button type="button" class="btn btn-primary" @onclick="@(() => ClientUtils.RefreshMbArtistsDict(_client))">Refresh MusicBrainz artists cache</button>
     </Blazorise.TabPanel>
     </Content>
     </Blazorise.Tabs>
