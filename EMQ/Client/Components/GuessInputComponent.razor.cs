@@ -118,6 +118,7 @@ public partial class GuessInputComponent : IAutocompleteComponent
             SongSourceType.Anime => "assets/favicon/mal.ico",
             SongSourceType.Touhou => "assets/favicon/touhoudb.ico",
             SongSourceType.Game => null, // todo
+            SongSourceType.Album =>  "assets/favicon/musicbrainz.png",
             _ => null
         };
 
