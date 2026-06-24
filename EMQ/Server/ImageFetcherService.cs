@@ -21,7 +21,7 @@ public sealed class ImageFetcherService : BackgroundService
 #endif
 
         Console.WriteLine("ImageFetcherService is starting");
-        var timer = new PeriodicTimer(TimeSpan.FromMinutes(30));
+        var timer = new PeriodicTimer(TimeSpan.FromMinutes(360));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             await DoWork();

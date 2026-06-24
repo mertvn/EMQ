@@ -18,7 +18,6 @@ public class ReviewQueue
     [Required]
     public string url { get; set; } = "";
 
-    // todo remove because it's unused
     [Required]
     public SongLinkType type { get; set; }
 

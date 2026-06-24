@@ -42,7 +42,7 @@ var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
 NpgsqlLoggingConfiguration.InitializeLogging(loggerFactory, parameterLoggingEnabled: true);
 #endif
 
-// Console.WriteLine(Directory.GetCurrentDirectory());
+Console.WriteLine(Directory.GetCurrentDirectory());
 DotEnv.Load("../../.env");
 
 var builder = WebApplication.CreateBuilder(args);

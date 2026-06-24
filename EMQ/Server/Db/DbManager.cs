@@ -4472,7 +4472,7 @@ AND msm.type = ANY(@msmType)";
                     var songLink = new SongLink()
                     {
                         Url = rq.url,
-                        Type = (SongLinkType)rq.type,
+                        Type = rq.type,
                         IsVideo = rq.is_video,
                         Duration = rq.duration.Value,
                         SubmittedBy = rq.submitted_by,

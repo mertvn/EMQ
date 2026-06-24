@@ -131,7 +131,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
                     }
                 </details>
 
-                @if (canEditDetails && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+                @if (IsRQComp && canEditDetails && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
                 {
                     <button type="button" id="checkbox-ApplyDetailsToBGMBatch" class="btn btn-primary" style="margin-left: 15px; width: 120px; height: 100px;"
                             @onclick="ApplyDetailsToBGMBatch">
@@ -254,7 +254,7 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
                 </a>
             }
 
-            @if (reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
+            @if (IsRQComp && reviewingItem.Song.Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM)))
             {
                 <br/>
                 <input type="checkbox" id="checkbox-ApplyToBGMBatch" class="form-check-input" @bind="@ApplyStatusToBGMBatch"/>
