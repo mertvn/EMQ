@@ -4481,6 +4481,7 @@ AND msm.type = ANY(@msmType)";
                         Attributes = rq.attributes,
                         Lineage = rq.lineage,
                         Comment = rq.comment,
+                        VocalsRanges = rq.analysis_raw?.VocalsRanges!,
                     };
                     success = await InsertSongLink(rq.music_id, songLink, null);
                     break;

@@ -215,6 +215,16 @@ public class MediaAnalyserTests
         }
     }
 
+    [Test, Explicit]
+    public async Task Test_Analyse_VocalsRanges()
+    {
+        var result =
+            await MediaAnalyser.Analyse(@"", isVideoOverride: false);
+        bool isValid = result.IsValid;
+        Assert.That(isValid);
+        Assert.That(result.VocalsRanges != null);
+    }
+
     [Test]
     public async Task Test_GetVolumeAdjust_Inner()
     {

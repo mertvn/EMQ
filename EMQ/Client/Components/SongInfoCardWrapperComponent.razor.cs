@@ -130,7 +130,7 @@ public partial class SongInfoCardWrapperComponent
         StateHasChanged();
     }
 
-    private async Task OnclickAnalysis(int mId, SongLink soundLink)
+    private async Task OnclickAnalysis(int mId, SongLink soundLink, Song song)
     {
         CurrentRQs = new List<RQ>
         {
@@ -146,7 +146,7 @@ public partial class SongInfoCardWrapperComponent
                 status = ReviewQueueStatus.Pending,
                 reason = null,
                 analysis = string.Join(", ", soundLink.AnalysisRaw!.Warnings.Select(x => x.ToString())),
-                Song = new Song(),
+                Song = song,
                 duration = soundLink.Duration,
                 analysis_raw = soundLink.AnalysisRaw,
                 sha256 = soundLink.Sha256,

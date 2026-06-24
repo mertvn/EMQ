@@ -1878,12 +1878,11 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
             .ToHashSet();
 
         files = files.Where(x => validUrls.Any(y => x.Contains(y))).ToArray();
-        var options = new VocalDetectorOptions { EnergyThreshold = 0.1, MinSilenceDurationSec = 3, };
         await Parallel.ForEachAsync(files,
             new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount - 1 },
             async (file, _) =>
             {
-                var ranges = VocalDetector.Detect(file, options).Where(x => x.Duration > 3);
+                var ranges = VocalDetector.Detect(file).Where(x => x.Duration > 3);
                 await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
                 int rows = await connection.ExecuteAsync(
                     "update music_external_link SET vocals_ranges = @ranges WHERE url LIKE @url",

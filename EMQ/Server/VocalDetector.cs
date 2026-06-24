@@ -14,7 +14,7 @@ public class VocalDetectorOptions
     /// The energy threshold (0.0 to 1.0) to consider a frame as "active".
     /// A lower value is more sensitive. Default is 0.05.
     /// </summary>
-    public double EnergyThreshold { get; init; } = 0.05;
+    public double EnergyThreshold { get; init; } = 0.1;
 
     /// <summary>
     /// The duration of the analysis window (frame) in seconds.
@@ -33,7 +33,7 @@ public class VocalDetectorOptions
     /// Shorter silences will be merged into the vocal region.
     /// Default is 0.4s.
     /// </summary>
-    public double MinSilenceDurationSec { get; init; } = 0.4;
+    public double MinSilenceDurationSec { get; init; } = 3;
 }
 
 public static class VocalDetector

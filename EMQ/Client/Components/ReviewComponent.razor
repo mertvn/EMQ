@@ -188,6 +188,25 @@ URL: <a class="link-primary" href="@reviewingItem?.url" target="_blank"> @review
                         End silence: @reviewingItem.analysis_raw.EndSilence?.ToString("s\\.fff")s
                     </span>
                 </li>
+
+                @{
+                    var vocalsRanges = reviewingItem.Song.Links.FirstOrDefault(x => x.Url == reviewingItem.url)?.VocalsRanges ?? reviewingItem.analysis_raw.VocalsRanges;
+                }
+                @if (vocalsRanges?.Any(x => x.Duration > 0) ?? false)
+                {
+                    <li>
+                        <details>
+                            <summary>Vocals ranges</summary>
+                            <ul>
+                                @foreach (var range in vocalsRanges)
+                                {
+                                    <li>@(range.ToString())</li>
+                                }
+                            </ul>
+                        </details>
+                    </li>
+                }
+
                 <br/>
                 @if (reviewingItem.analysis_raw.VolumeDetect != null)
                 {

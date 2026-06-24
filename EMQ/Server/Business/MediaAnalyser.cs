@@ -318,6 +318,51 @@ public static class MediaAnalyser
                 }
             }
 
+            // analyze vocals ranges
+            if (!isVideo)
+            {
+                try
+                {
+                    string tempDir = Path.GetTempPath();
+                    var process = new Process()
+                    {
+                        StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "demucs",
+                            Arguments =
+                                $"--flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{filePath.Replace('\\', '/')}\"",
+                            CreateNoWindow = true,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            WorkingDirectory = tempDir,
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    string err = await process.StandardError.ReadToEndAsync();
+                    if (err.Any())
+                    {
+                        string htdemucsFolder = $"{tempDir}htdemucs";
+                        string songFolder = $"{htdemucsFolder}/{Path.GetFileNameWithoutExtension(filePath)}";
+                        string vocalsFile = $"{songFolder}/vocals.flac";
+                        if (File.Exists(vocalsFile))
+                        {
+                            result.VocalsRanges = VocalDetector.Detect(vocalsFile).Where(x => x.Duration > 3).ToArray();
+                        }
+                        else
+                        {
+                            Console.WriteLine($"vocalsFile doesn't exist: {vocalsFile}");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+
             if (!result.Warnings.Any())
             {
                 result.IsValid = true;

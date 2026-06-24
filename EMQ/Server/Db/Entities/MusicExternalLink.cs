@@ -44,5 +44,6 @@ public class MusicExternalLink
     [MaxLength(4096)]
     public string comment { get; set; } = "";
 
+    // null: unanalyzed, empty array: analyzed
     public TimeRange[]? vocals_ranges { get; set; }
 }

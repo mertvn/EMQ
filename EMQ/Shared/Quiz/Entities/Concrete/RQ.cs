@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using EMQ.Shared.Core;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
 
@@ -104,4 +105,6 @@ public class MediaAnalyserResult
     public TimeSpan? StartSilence { get; set; }
 
     public TimeSpan? EndSilence { get; set; }
+
+    public TimeRange[] VocalsRanges { get; set; } = Array.Empty<TimeRange>();
 }
