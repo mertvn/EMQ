@@ -20,6 +20,11 @@ public sealed class ImageFetcherService : BackgroundService
         return;
 #endif
 
+        if (!Constants.IsUra)
+        {
+            return;
+        }
+
         Console.WriteLine("ImageFetcherService is starting");
         var timer = new PeriodicTimer(TimeSpan.FromMinutes(360));
         while (await timer.WaitForNextTickAsync(stoppingToken))
@@ -38,6 +43,10 @@ public sealed class ImageFetcherService : BackgroundService
                 (await connection.QueryAsync<(int, string)>(
                     @"select ms.id, msel.url from music_source ms JOIN music_source_external_link msel ON msel.music_source_id = ms.id where ms.type = 70 and msel.type = 10"))
                 .ToDictionary(x => x.Item1, x => x.Item2);
+            if (!msIds.Any())
+            {
+                return;
+            }
 
             var connectionInfo =
                 new Renci.SshNet.ConnectionInfo(UploadConstants.SftpHost, UploadConstants.SftpUsername,

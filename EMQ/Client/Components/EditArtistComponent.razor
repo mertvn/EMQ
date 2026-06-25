@@ -448,11 +448,14 @@
             }
         }
 
-        // if (isNew && artist.PrimaryLanguage != "ja")
-        // {
-        //     ValidationMessages.Add("Currently we're only accepting Japanese artists.");
-        //     isValid = false;
-        // }
+        if (!Constants.IsUra)
+        {
+            if (isNew && artist.PrimaryLanguage != "ja")
+            {
+                ValidationMessages.Add("Currently we're only accepting Japanese artists.");
+                isValid = false;
+            }
+        }
 
         if (!artist.Links.Any())
         {

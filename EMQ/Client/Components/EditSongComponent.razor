@@ -7,6 +7,7 @@
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
 @using EMQ.Shared.Core.SharedDbEntities
+@using EMQ.Shared.Core.UI
 @using EMQ.Shared.MusicBrainz.Business
 @inject HttpClient _client
 @inject GlobalKeypressService GlobalKeypressService
@@ -151,7 +152,7 @@
                         🗑
                     </span>
                     @source.ToString()
-                    <div style="display: flex;">
+                    <div style="display: @UiHelpers.Bool2Flex(ClientState.Preferences.IsCompactEditingUi);">
                         @foreach (var key in Enum.GetValues<SongSourceSongType>())
                         {
                             if (key is not (SongSourceSongType.Unknown or SongSourceSongType.Random))
@@ -175,7 +176,7 @@
         </div>
         <br/>
 
-        <div style="border: 1px black solid; padding: 10px; display: flex;">
+        <div style="border: 1px black solid; padding: 10px; display: @UiHelpers.Bool2Flex(ClientState.Preferences.IsCompactEditingUi);">
             <span style="font-size: 1.25rem;">Artists</span>
             @if (!IsNew)
             {

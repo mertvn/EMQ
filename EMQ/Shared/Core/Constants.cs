@@ -9,6 +9,8 @@ public static class Constants
 {
     public static string? SelfhostAddress { get; set; } = Environment.GetEnvironmentVariable("EMQ_SELFHOST_ADDRESS");
 
+    public const bool IsUra = false;
+
     public const string WebsiteName = "Eroge Music Quiz";
 
     public const string WebsiteDomain = "https://erogemusicquiz.com";

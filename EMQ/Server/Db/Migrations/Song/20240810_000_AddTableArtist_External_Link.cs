@@ -21,7 +21,8 @@ public class AddTableArtist_External_Link : Migration
         Create.UniqueConstraint().OnTable(tableName).Columns("url");
         Create.UniqueConstraint().OnTable(tableName).Columns("artist_id", "type");
 
-        if (false)
+        bool b = false;
+        if (b)
         {
             // migrate old links
             Execute.Sql(@"WITH cte AS (

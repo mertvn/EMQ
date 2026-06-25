@@ -18,7 +18,11 @@ public sealed class ReviewQueueService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return;
+        if (Constants.IsUra)
+        {
+            return;
+        }
+
         Console.WriteLine("ReviewQueueService is starting");
         var timer = new PeriodicTimer(TimeSpan.FromMinutes(60));
         while (await timer.WaitForNextTickAsync(stoppingToken))

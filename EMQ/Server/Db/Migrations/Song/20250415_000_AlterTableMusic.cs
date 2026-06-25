@@ -9,7 +9,8 @@ public class AlterTableMusic : Migration
 {
     public override void Up()
     {
-        if (false)
+        bool b = false;
+        if (b)
         {
             Execute.Sql(@"INSERT INTO music_external_link (music_id, url, type, is_video, duration)
 SELECT

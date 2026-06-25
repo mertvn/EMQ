@@ -43,12 +43,15 @@ else
         <br/>
     </details>
 
-    <details style="padding: 5px;">
-        <summary>MusicBrainz seeder</summary>
-        <p>Enter a MusicBrainz release group id or URL to fill information automatically.</p>
-        <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 600px;"/>
-        <br/>
-    </details>
+    @if (Constants.IsUra)
+    {
+        <details style="padding: 5px;">
+            <summary>MusicBrainz seeder</summary>
+            <p>Enter a MusicBrainz release group id or URL to fill information automatically.</p>
+            <input type="text" @bind:get="@MusicBrainzSeederInputText" @bind:set="@SeedFromMusicBrainz" style="width: 600px;"/>
+            <br/>
+        </details>
+    }
 
     <details style="padding: 5px;">
         <summary>MAL seeder</summary>
@@ -116,7 +119,7 @@ else
                 <select id="SongSourceType" style="margin: 5px" @bind="Source.Type">
                     @foreach (var type in Enum.GetValues<SongSourceType>())
                     {
-                        @if (type is not SongSourceType.Unknown)
+                        @if (type is not SongSourceType.Unknown && (Constants.IsUra || type is not SongSourceType.Album))
                         {
                             <option value="@type" disabled="@(type == SongSourceType.Other)">
                                 @type.GetDisplayName()
@@ -449,14 +452,17 @@ else
             ValidationMessages.Add("Original language must be set.");
             isValid = false;
         }
-    // else
-    // {
-    //     if (source.LanguageOriginal != "ja")
-    //     {
-    //         ValidationMessages.Add("Currently we're only accepting Japanese sources.");
-    //         isValid = false;
-    //     }
-    // }
+        else
+        {
+            if (!Constants.IsUra)
+            {
+                if (source.LanguageOriginal != "ja")
+                {
+                    ValidationMessages.Add("Currently we're only accepting Japanese sources.");
+                    isValid = false;
+                }
+            }
+        }
 
         foreach (var title in source.Developers)
         {

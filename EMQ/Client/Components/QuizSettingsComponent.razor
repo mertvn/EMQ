@@ -873,7 +873,7 @@
                             <h5>Source types</h5>
                             @foreach (var key in ClientQuizSettings.Filters.SongSourceTypeFilter.Keys.ToList())
                             {
-                                if (true)
+                                if (Constants.IsUra || key is not SongSourceType.Album)
                                 {
                                     string id = $"SongSourceTypeFilter-{key}";
                                     <input type="checkbox" id="@id" class="form-check-input" @bind="@(ClientQuizSettings.Filters.SongSourceTypeFilter[key])" style="margin: 5px"/>

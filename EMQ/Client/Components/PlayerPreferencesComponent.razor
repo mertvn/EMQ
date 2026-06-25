@@ -96,6 +96,10 @@
         <label for="MuteWhenDuca">Mute when Duca</label>
         <br/>
 
+        <InputCheckbox id="IsCompactEditingUi" class="form-check-input" @bind-Value="ClientState.Preferences.IsCompactEditingUi" style="margin: 5px"></InputCheckbox>
+        <label for="IsCompactEditingUi">Compact editing UI</label>
+        <br/>
+
         @if (ClientState.ServerStats.Config.IsChristmasMode)
         {
             <InputCheckbox id="ShowSnowflakes" class="form-check-input" @bind-Value="ClientState.Preferences.ShowSnowflakes" style="margin: 5px"></InputCheckbox>

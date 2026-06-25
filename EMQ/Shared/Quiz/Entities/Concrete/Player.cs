@@ -255,6 +255,9 @@ public class PlayerPreferences
 
     [Required]
     public CdnEdgeKind CdnEdge { get; set; } = CdnEdgeKind.NaEast;
+
+    [Required]
+    public bool IsCompactEditingUi { get; set; } = false;
 }
 
 public enum CdnEdgeKind
