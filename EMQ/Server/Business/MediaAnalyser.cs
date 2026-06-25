@@ -349,7 +349,7 @@ public static class MediaAnalyser
                         string vocalsFile = $"{songFolder}/vocals.flac";
                         if (File.Exists(vocalsFile))
                         {
-                            result.VocalsRanges = VocalDetector.Detect(vocalsFile).Where(x => x.Duration > 3).ToArray();
+                            result.VocalsRanges = VocalDetector.Detect(vocalsFile).ToArray();
                         }
                         else
                         {

@@ -55,46 +55,102 @@ public static class ServerUtils
         // Console.WriteLine($"GC freed {(before - after) / 1000 / 1000} MB");
     }
 
+    // public static async Task RunAnalysis()
+    // {
+    //     // broken because reasons
+    //     bool b = true;
+    //     if (b)
+    //     {
+    //         return;
+    //     }
+    //
+    //     var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
+    //         SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
+    //         Enum.GetValues<ReviewQueueStatus>());
+    //     foreach (RQ rq in rqs)
+    //     {
+    //         if (rq.analysis == "Pending")
+    //         {
+    //             string filePath = Path.GetTempPath() + rq.url.LastSegment();
+    //             bool dlSuccess = await Client.DownloadFile(filePath, new Uri(rq.url));
+    //             if (dlSuccess)
+    //             {
+    //                 bool? isVideoOverride = null;
+    //                 if (filePath.EndsWith(".weba"))
+    //                 {
+    //                     isVideoOverride = false;
+    //                 }
+    //
+    //                 var analyserResult = await MediaAnalyser.Analyse(filePath, false, isVideoOverride);
+    //                 File.Delete(filePath);
+    //
+    //                 await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
+    //                     analyserResult: analyserResult);
+    //             }
+    //         }
+    //     }
+    //
+    //     int end = await DbManager.SelectCountUnsafe("music");
+    //     var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
+    //
+    //     foreach (Song song in songs)
+    //     {
+    //         foreach (SongLink songLink in song.Links.Where(x => x.Type == SongLinkType.Self))
+    //         {
+    //             string tempPath = $"{Path.GetTempPath()}/{songLink.Url.LastSegment()}";
+    //             try
+    //             {
+    //                 await Task.Delay(TimeSpan.FromSeconds(1));
+    //                 bool success = await Client.DownloadFile(tempPath, new Uri(songLink.Url));
+    //                 if (success)
+    //                 {
+    //                     bool? isVideoOverride = null;
+    //                     if (tempPath.EndsWith(".weba"))
+    //                     {
+    //                         isVideoOverride = false;
+    //                     }
+    //
+    //                     var analyserResult = await MediaAnalyser.Analyse(tempPath, false, isVideoOverride);
+    //                     await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+    //                     int rows = await connection.ExecuteAsync(
+    //                         "UPDATE music_external_link SET analysis_raw = @analyserResult WHERE url = @url",
+    //                         new { analyserResult, url = songLink.Url.UnReplaceSelfhostLink() });
+    //
+    //                     if (rows <= 0)
+    //                     {
+    //                         Console.WriteLine($"failed to set analysis_raw: {songLink.Url}");
+    //                     }
+    //                 }
+    //                 else
+    //                 {
+    //                     Console.WriteLine($"failed to download file: {songLink.Url}");
+    //                 }
+    //             }
+    //             finally
+    //             {
+    //                 if (File.Exists(tempPath))
+    //                 {
+    //                     File.Delete(tempPath);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
     public static async Task RunAnalysis()
     {
-        // broken because reasons
-        bool b = true;
-        if (b)
-        {
-            return;
-        }
-
-        var rqs = await DbManager.FindRQs(DateTime.MinValue, DateTime.MaxValue,
-            SongSourceSongTypeMode.All.ToSongSourceSongTypes(),
-            Enum.GetValues<ReviewQueueStatus>());
-        foreach (RQ rq in rqs)
-        {
-            if (rq.analysis == "Pending")
-            {
-                string filePath = Path.GetTempPath() + rq.url.LastSegment();
-                bool dlSuccess = await Client.DownloadFile(filePath, new Uri(rq.url));
-                if (dlSuccess)
-                {
-                    bool? isVideoOverride = null;
-                    if (filePath.EndsWith(".weba"))
-                    {
-                        isVideoOverride = false;
-                    }
-
-                    var analyserResult = await MediaAnalyser.Analyse(filePath, false, isVideoOverride);
-                    File.Delete(filePath);
-
-                    await DbManager.UpdateReviewQueueItem(rq.id, ReviewQueueStatus.Pending,
-                        analyserResult: analyserResult);
-                }
-            }
-        }
-
-        int end = await DbManager.SelectCountUnsafe("music");
-        var songs = await DbManager.SelectSongsMIds(Enumerable.Range(1, end).ToArray(), false);
-
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        int[] mids = (await connection.QueryAsync<int>(
+                "select music_id from music_external_link where type = 2 and vocals_ranges is null and not is_video"))
+            .ToArray();
+        var songs = await DbManager.SelectSongsMIds(mids, false);
         foreach (Song song in songs)
         {
+            if (!song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+            {
+                continue;
+            }
+
             foreach (SongLink songLink in song.Links.Where(x => x.Type == SongLinkType.Self))
             {
                 string tempPath = $"{Path.GetTempPath()}/{songLink.Url.LastSegment()}";
@@ -111,10 +167,13 @@ public static class ServerUtils
                         }
 
                         var analyserResult = await MediaAnalyser.Analyse(tempPath, false, isVideoOverride);
-                        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
                         int rows = await connection.ExecuteAsync(
                             "UPDATE music_external_link SET analysis_raw = @analyserResult WHERE url = @url",
                             new { analyserResult, url = songLink.Url.UnReplaceSelfhostLink() });
+
+                        await connection.ExecuteAsync(
+                            "UPDATE music_external_link SET vocals_ranges = @VocalsRanges WHERE url = @url",
+                            new { analyserResult.VocalsRanges, url = songLink.Url.UnReplaceSelfhostLink() });
 
                         if (rows <= 0)
                         {
