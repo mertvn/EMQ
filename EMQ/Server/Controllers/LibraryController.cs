@@ -1537,8 +1537,13 @@ ORDER BY c.id")).ToList();
     [CustomAuthorize(PermissionKind.Visitor)]
     [HttpPost]
     [Route("GetVocalsRangesBatch")]
-    public async Task<IEnumerable<string>> GetVocalsRangesBatch()
+    public async Task<ActionResult<IEnumerable<string>>> GetVocalsRangesBatch()
     {
+        if (await AuthController.CookieAuthInner(Request.Cookies) is not (202 or 203))
+        {
+            return Unauthorized();
+        }
+
         if (GetVocalsRangesBatchCache == null)
         {
             GetVocalsRangesBatchCache = new Queue<string>();
@@ -1562,7 +1567,7 @@ ORDER BY c.id")).ToList();
         }
 
         var res = new List<string>();
-        while (GetVocalsRangesBatchCache.Any() && res.Count < 50)
+        while (GetVocalsRangesBatchCache.Any() && res.Count < 25)
         {
             res.Add(GetVocalsRangesBatchCache.Dequeue());
         }
@@ -1577,6 +1582,11 @@ ORDER BY c.id")).ToList();
     [Route("SetVocalsRangesBatch")]
     public async Task<ActionResult> SetVocalsRangesBatch([FromBody] Dictionary<string, TimeRange[]?> req)
     {
+        if (await AuthController.CookieAuthInner(Request.Cookies) is not (202 or 203))
+        {
+            return Unauthorized();
+        }
+
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
         foreach ((string key, TimeRange[]? value) in req)
         {

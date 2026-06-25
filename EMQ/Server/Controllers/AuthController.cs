@@ -309,6 +309,32 @@ public class AuthController : ControllerBase
         return StatusCode(201);
     }
 
+    public static async Task<int> CookieAuthInner(IRequestCookieCollection cookies)
+    {
+        int res = 400;
+        if (cookies.TryGetValue("user-id", out string? userIdStr) &&
+            cookies.TryGetValue("session-token", out string? token))
+        {
+            if (int.TryParse(userIdStr, out int userIdInt))
+            {
+                var session =
+                    ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
+                if (session != null)
+                {
+                    res = 202;
+                }
+
+                var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
+                if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
+                {
+                    res = 203;
+                }
+            }
+        }
+
+        return res;
+    }
+
     // [EnableRateLimiting(RateLimitKind.ValidateSession)]
     [HttpGet]
     [Route("ValidateSessionWithCookieForShs/")]
@@ -323,27 +349,7 @@ public class AuthController : ControllerBase
             return StatusCode(205);
         }
 
-        if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) &&
-            Request.Cookies.TryGetValue("session-token", out string? token))
-        {
-            if (int.TryParse(userIdStr, out int userIdInt))
-            {
-                var session =
-                    ServerState.Sessions.FirstOrDefault(x => x.Player.Id == userIdInt && x.Token == token);
-                if (session != null)
-                {
-                    return StatusCode(202);
-                }
-
-                var secret = await DbManager_Auth.GetSecret(userIdInt, new Guid(token));
-                if (secret is not null && DateTime.UtcNow - secret.last_used_at < AuthStuff.MaxSessionAge * 3)
-                {
-                    return StatusCode(203);
-                }
-            }
-        }
-
-        return Unauthorized();
+        return new StatusCodeResult(await CookieAuthInner(Request.Cookies));
     }
 
     [CustomAuthorize(PermissionKind.UpdatePreferences)]

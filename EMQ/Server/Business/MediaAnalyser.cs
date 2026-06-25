@@ -319,7 +319,8 @@ public static class MediaAnalyser
             }
 
             // analyze vocals ranges
-            if (format is "mp3" or "ogg" or "weba")
+            bool b = false;
+            if (b && format is "mp3" or "ogg" or "weba")
             {
                 try
                 {

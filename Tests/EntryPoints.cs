@@ -2429,4 +2429,114 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         await File.WriteAllTextAsync(@"C:\Users\Mert\Desktop\pairwise_input.json",
             JsonSerializer.Serialize(list, Utils.Jso));
     }
+
+    [Test, Explicit]
+    public static async Task AnalyzeVocalsRangesRemotely()
+    {
+        string baseUrl = "https://erogemusicquiz.com";
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Cookie",
+            "");
+
+        bool more;
+        do
+        {
+            more = false;
+            Dictionary<string, TimeRange[]?> dict = new();
+            var res = await client.PostAsync($"{baseUrl}/Library/GetVocalsRangesBatch", null);
+            if (res.IsSuccessStatusCode)
+            {
+                var content = (await res.Content.ReadFromJsonAsync<List<string>>())!;
+                if (content.Any())
+                {
+                    foreach (string s in content)
+                    {
+                        dict[s] = null;
+                    }
+
+                    more = true;
+                }
+
+                foreach ((string key, TimeRange[]? _) in dict)
+                {
+                    string filePath = $"{Path.GetTempPath()}/{key.LastSegment()}";
+                    string songFolder = "";
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        bool success = await client.DownloadFile(filePath,
+                            new Uri(key.Replace("https://emqselfhost", "https://erogemusicquiz.com")));
+                        if (success)
+                        {
+                            string tempDir = Path.GetTempPath();
+                            var process = new Process()
+                            {
+                                StartInfo = new ProcessStartInfo()
+                                {
+                                    FileName = "python",
+                                    Arguments =
+                                        $"-m demucs --flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{filePath.Replace('\\', '/')}\"",
+                                    CreateNoWindow = true,
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true,
+                                    WorkingDirectory = tempDir,
+                                }
+                            };
+
+                            process.Start();
+                            process.BeginOutputReadLine();
+                            string err = await process.StandardError.ReadToEndAsync();
+                            if (err.Any())
+                            {
+                                string htdemucsFolder = $"{tempDir}htdemucs";
+                                songFolder = $"{htdemucsFolder}/{Path.GetFileNameWithoutExtension(filePath)}";
+                                string vocalsFile = $"{songFolder}/vocals.flac";
+                                if (File.Exists(vocalsFile))
+                                {
+                                    dict[key] = VocalDetector.Detect(vocalsFile).Where(x => x.Duration > 3).ToArray();
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"vocalsFile doesn't exist: {vocalsFile}");
+                                    Console.WriteLine(err);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"failed to download file: {key}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                    finally
+                    {
+                        if (File.Exists(filePath))
+                        {
+                            File.Delete(filePath);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(songFolder) && Directory.Exists(songFolder))
+                        {
+                            Directory.Delete(songFolder, true);
+                        }
+                    }
+                }
+
+                //Console.WriteLine(JsonSerializer.Serialize(dict));
+                var res2 = await client.PostAsJsonAsync($"{baseUrl}/Library/SetVocalsRangesBatch", dict);
+                if (!res2.IsSuccessStatusCode)
+                {
+                    throw new Exception();
+                }
+            }
+            else
+            {
+                throw new Exception();
+            }
+        } while (more);
+    }
 }
