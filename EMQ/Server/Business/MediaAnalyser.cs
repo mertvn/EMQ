@@ -354,6 +354,7 @@ public static class MediaAnalyser
                         else
                         {
                             Console.WriteLine($"vocalsFile doesn't exist: {vocalsFile}");
+                            Console.WriteLine(err);
                         }
                     }
                 }
