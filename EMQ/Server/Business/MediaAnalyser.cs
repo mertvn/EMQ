@@ -328,9 +328,9 @@ public static class MediaAnalyser
                     {
                         StartInfo = new ProcessStartInfo()
                         {
-                            FileName = "python -m demucs",
+                            FileName = "python",
                             Arguments =
-                                $"--flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{filePath.Replace('\\', '/')}\"",
+                                $"-m demucs --flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{filePath.Replace('\\', '/')}\"",
                             CreateNoWindow = true,
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
