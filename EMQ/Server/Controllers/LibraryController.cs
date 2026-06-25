@@ -1531,4 +1531,77 @@ ORDER BY c.id")).ToList();
 
         return res;
     }
+
+    private static Queue<string>? GetVocalsRangesBatchCache { get; set; }
+
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("GetVocalsRangesBatch")]
+    public async Task<IEnumerable<string>> GetVocalsRangesBatch()
+    {
+        if (GetVocalsRangesBatchCache == null)
+        {
+            GetVocalsRangesBatchCache = new Queue<string>();
+            await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+            int[] mids = (await connection.QueryAsync<int>(
+                    "select music_id from music_external_link where type = 2 and vocals_ranges is null and not is_video"))
+                .ToArray();
+            var songs = await DbManager.SelectSongsMIds(mids, false);
+            foreach (Song song in songs)
+            {
+                if (!song.Artists.Any(x => x.Roles.Contains(SongArtistRole.Vocals)))
+                {
+                    continue;
+                }
+
+                foreach (SongLink songLink in song.Links.Where(x => x.Type == SongLinkType.Self && !x.IsVideo))
+                {
+                    GetVocalsRangesBatchCache.Enqueue(songLink.Url);
+                }
+            }
+        }
+
+        var res = new List<string>();
+        while (GetVocalsRangesBatchCache.Any() && res.Count < 50)
+        {
+            res.Add(GetVocalsRangesBatchCache.Dequeue());
+        }
+
+        // Console.WriteLine(GetVocalsRangesBatchCache.Count);
+        // Console.WriteLine(JsonSerializer.Serialize(res));
+        return res;
+    }
+
+    [CustomAuthorize(PermissionKind.Visitor)]
+    [HttpPost]
+    [Route("SetVocalsRangesBatch")]
+    public async Task<ActionResult> SetVocalsRangesBatch([FromBody] Dictionary<string, TimeRange[]?> req)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        foreach ((string key, TimeRange[]? value) in req)
+        {
+            if (value is null)
+            {
+                continue; // processing error
+            }
+
+            int rows;
+            if (value.Any())
+            {
+                rows = await connection.ExecuteAsync(
+                    "UPDATE music_external_link SET vocals_ranges = @VocalsRanges WHERE REPLACE(url, @sh, 'https://emqselfhost') = @url",
+                    new { VocalsRanges = value, url = key.UnReplaceSelfhostLink(), sh = Constants.SelfhostAddress });
+            }
+            else
+            {
+                rows = await connection.ExecuteAsync(
+                    "UPDATE music_external_link SET vocals_ranges = '{}' WHERE REPLACE(url, @sh, 'https://emqselfhost') = @url",
+                    new { url = key.UnReplaceSelfhostLink(), sh = Constants.SelfhostAddress });
+            }
+
+            Console.WriteLine($"SetVocalsRangesBatch rows {rows}: {key} {JsonSerializer.Serialize(value)}");
+        }
+
+        return Ok();
+    }
 }
