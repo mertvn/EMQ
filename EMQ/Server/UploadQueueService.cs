@@ -293,7 +293,7 @@ public sealed class UploadQueueService : BackgroundService
 
             await fs.DisposeAsync(); // needed to able to get the SHA256 during analysis
             (MediaAnalyserResult? extractedAnalysis, int rqId) =
-                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, mediaTypeInfo.IsVideoFormat,
+                await ServerUtils.ImportSongLinkInner(mId, songLink, tempPath, null,
                     encodedByEmq, originalExtension: extension);
 
             if (songLink.IsVideo && extractedAnalysis != null)
