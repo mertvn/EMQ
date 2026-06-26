@@ -1539,7 +1539,7 @@ ORDER BY c.id")).ToList();
     [Route("GetVocalsRangesBatch")]
     public async Task<ActionResult<IEnumerable<string>>> GetVocalsRangesBatch()
     {
-        if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) && userIdStr == "7" &&
+        if (!Request.Cookies.TryGetValue("user-id", out string? userIdStr) || userIdStr != "7" ||
             await AuthController.CookieAuthInner(Request.Cookies) is not (202 or 203))
         {
             return Unauthorized();
@@ -1583,7 +1583,7 @@ ORDER BY c.id")).ToList();
     [Route("SetVocalsRangesBatch")]
     public async Task<ActionResult> SetVocalsRangesBatch([FromBody] Dictionary<string, TimeRange[]?> req)
     {
-        if (Request.Cookies.TryGetValue("user-id", out string? userIdStr) && userIdStr == "7" &&
+        if (!Request.Cookies.TryGetValue("user-id", out string? userIdStr) || userIdStr != "7" ||
             await AuthController.CookieAuthInner(Request.Cookies) is not (202 or 203))
         {
             return Unauthorized();
