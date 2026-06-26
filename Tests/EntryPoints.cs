@@ -2438,6 +2438,21 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
         client.DefaultRequestHeaders.Add("Cookie",
             "");
 
+        async Task<bool> DownloadFileAsync(string url, string path)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                return await client.DownloadFile(path,
+                    new Uri(url.Replace("https://emqselfhost", "https://erogemusicquiz.com")));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error downloading {url}: {e.Message}");
+                return false;
+            }
+        }
+
         bool more;
         do
         {
@@ -2455,73 +2470,97 @@ HAVING array_length(array_agg(DISTINCT aa.latin_alias), 1) = 1
                     }
 
                     more = true;
-                }
 
-                foreach ((string key, TimeRange[]? _) in dict)
-                {
-                    string filePath = $"{Path.GetTempPath()}/{key.LastSegment()}";
-                    string songFolder = "";
-                    try
+                    // 1. KICK OFF THE INITIAL DOWNLOAD
+                    string currentKey = content[0];
+                    string currentFilePath = $"{Path.GetTempPath()}/{currentKey.LastSegment()}";
+                    Task<bool> downloadTask = DownloadFileAsync(currentKey, currentFilePath);
+
+                    for (int i = 0; i < content.Count; i++)
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-                        bool success = await client.DownloadFile(filePath,
-                            new Uri(key.Replace("https://emqselfhost", "https://erogemusicquiz.com")));
-                        if (success)
-                        {
-                            string tempDir = Path.GetTempPath();
-                            var process = new Process()
-                            {
-                                StartInfo = new ProcessStartInfo()
-                                {
-                                    FileName = "python",
-                                    Arguments =
-                                        $"-m demucs --flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{filePath.Replace('\\', '/')}\"",
-                                    CreateNoWindow = true,
-                                    UseShellExecute = false,
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                    WorkingDirectory = tempDir,
-                                }
-                            };
+                        currentKey = content[i];
+                        currentFilePath = $"{Path.GetTempPath()}/{currentKey.LastSegment()}";
 
-                            process.Start();
-                            process.BeginOutputReadLine();
-                            string err = await process.StandardError.ReadToEndAsync();
-                            if (err.Any())
+                        // 2. WAIT FOR THE CURRENT DOWNLOAD TO FINISH
+                        bool success = await downloadTask;
+
+                        // 3. IMMEDIATELY START DOWNLOADING THE NEXT FILE (IF ANY) IN THE BACKGROUND
+                        if (i + 1 < content.Count)
+                        {
+                            string nextKey = content[i + 1];
+                            string nextFilePath = $"{Path.GetTempPath()}/{nextKey.LastSegment()}";
+                            downloadTask = DownloadFileAsync(nextKey, nextFilePath);
+                        }
+
+                        // 4. PROCESS THE CURRENT FILE (Python Demucs)
+                        string songFolder = "";
+                        try
+                        {
+                            if (success)
                             {
-                                string htdemucsFolder = $"{tempDir}htdemucs";
-                                songFolder = $"{htdemucsFolder}/{Path.GetFileNameWithoutExtension(filePath)}";
-                                string vocalsFile = $"{songFolder}/vocals.flac";
-                                if (File.Exists(vocalsFile))
+                                string tempDir = Path.GetTempPath();
+                                var process = new Process()
                                 {
-                                    dict[key] = VocalDetector.Detect(vocalsFile).Where(x => x.Duration > 3).ToArray();
-                                }
-                                else
+                                    StartInfo = new ProcessStartInfo()
+                                    {
+                                        FileName = "python",
+                                        Arguments =
+                                            $"-m demucs --flac --two-stems vocals -o \"{tempDir.Replace('\\', '/')}\" \"{currentFilePath.Replace('\\', '/')}\"",
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false,
+                                        RedirectStandardOutput = true,
+                                        RedirectStandardError = true,
+                                        WorkingDirectory = tempDir,
+                                    }
+                                };
+
+                                process.Start();
+                                process.BeginOutputReadLine();
+                                string err = await process.StandardError.ReadToEndAsync();
+
+                                // Highly recommended to explicitly wait for the process to exit to prevent zombie processes
+                                await process.WaitForExitAsync();
+
+                                if (err.Any())
                                 {
-                                    Console.WriteLine($"vocalsFile doesn't exist: {vocalsFile}");
-                                    Console.WriteLine(err);
+                                    string htdemucsFolder = $"{tempDir}htdemucs";
+                                    songFolder =
+                                        $"{htdemucsFolder}/{Path.GetFileNameWithoutExtension(currentFilePath)}";
+                                    string vocalsFile = $"{songFolder}/vocals.flac";
+                                    if (File.Exists(vocalsFile))
+                                    {
+                                        dict[currentKey] = VocalDetector.Detect(vocalsFile).Where(x => x.Duration > 3)
+                                            .ToArray();
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"vocalsFile doesn't exist: {vocalsFile}");
+                                        Console.WriteLine(err);
+                                    }
                                 }
                             }
+                            else
+                            {
+                                Console.WriteLine($"failed to download file: {currentKey}");
+                            }
                         }
-                        else
+                        catch (Exception e)
                         {
-                            Console.WriteLine($"failed to download file: {key}");
+                            Console.WriteLine(e);
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                    finally
-                    {
-                        if (File.Exists(filePath))
+                        finally
                         {
-                            File.Delete(filePath);
-                        }
+                            // 5. CLEANUP
+                            // This only cleans up the CURRENT file, while the NEXT file is safely downloading to a different path
+                            if (File.Exists(currentFilePath))
+                            {
+                                File.Delete(currentFilePath);
+                            }
 
-                        if (!string.IsNullOrWhiteSpace(songFolder) && Directory.Exists(songFolder))
-                        {
-                            Directory.Delete(songFolder, true);
+                            if (!string.IsNullOrWhiteSpace(songFolder) && Directory.Exists(songFolder))
+                            {
+                                Directory.Delete(songFolder, true);
+                            }
                         }
                     }
                 }
