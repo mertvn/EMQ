@@ -99,29 +99,35 @@
                     <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @(index + 1)
                     </td>
-                    <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        @if (song.Sources.Count == 1)
-                        {
-                            var firstSource = song.Sources.First();
-                            <span>@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
-                            <SourceFaviconsComponent Links="@(firstSource.Links)"/>
-                        }
-                        else
-                        {
-                            var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
-                            string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
-                            string tooltipText = $"<ul>{joined}</ul>";
+                    <td style="padding: 4px; max-width: 380px; overflow: hidden; white-space: nowrap;">
+                        <div style="display: flex; align-items: center; min-width: 0;">
+                            @if (song.Sources.Count == 1)
+                            {
+                                var firstSource = song.Sources.First();
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
+                                <div style="flex-shrink: 0;">
+                                    <SourceFaviconsComponent Links="@(firstSource.Links)"/>
+                                </div>
+                            }
+                            else
+                            {
+                                var otherSources = song.Sources.Where(x => x.Id != song.Sources.First().Id);
+                                string joined = string.Join("", otherSources.Select(x => Converters.GetSingleTitle(x.Titles)).Select(y => $"<li>{y.LatinTitle}</li>"));
+                                string tooltipText = $"<ul>{joined}</ul>";
 
-                            var firstSource = song.Sources.First();
-                            <span>@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
-                            <SourceFaviconsComponent Links="@(firstSource.Links)"/>
+                                var firstSource = song.Sources.First();
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">@Converters.GetSingleTitle(firstSource.Titles).LatinTitle</span>
+                                <div style="flex-shrink: 0;">
+                                    <SourceFaviconsComponent Links="@(firstSource.Links)"/>
+                                </div>
 
-                            <Blazorise.Tooltip
-                                Inline="true"
-                                Text="@tooltipText">
-                                <span style="margin-left: 8px;"> and @(song.Sources.Count - 1) more...</span>
-                            </Blazorise.Tooltip>
-                        }
+                                <Blazorise.Tooltip
+                                    Inline="true"
+                                    Text="@tooltipText">
+                                    <span style="margin-left: 8px;"> and @(song.Sources.Count - 1) more...</span>
+                                </Blazorise.Tooltip>
+                            }
+                        </div>
                     </td>
                     <td style="padding: 4px; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @* todo? *@

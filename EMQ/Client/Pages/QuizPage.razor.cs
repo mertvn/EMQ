@@ -16,6 +16,7 @@ using EMQ.Shared.Quiz.Entities.Concrete.Dto;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz.Entities.Concrete.Dto.Response;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -323,6 +324,7 @@ public partial class QuizPage
         if (firstRender)
         {
             _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+            GlobalKeypressService.OnKeypress += OnGlobalKeypress;
         }
     }
 
@@ -403,6 +405,7 @@ public partial class QuizPage
 
             _chatComponent?.Dispose();
             _locationChangingRegistration?.Dispose();
+            GlobalKeypressService.OnKeypress -= OnGlobalKeypress;
             PageState = null!;
             // Console.WriteLine("disposed quizpage");
         }
@@ -1012,6 +1015,20 @@ public partial class QuizPage
         if (Room is { Quiz.QuizState.QuizStatus: QuizStatus.Playing })
         {
             await ClientState.Session!.hubConnection!.SendAsync("SendToggleSkip");
+        }
+    }
+
+    private async void OnGlobalKeypress(KeyboardEventArgs arg)
+    {
+        if (arg.CtrlKey || arg.ShiftKey || arg.AltKey || arg.MetaKey) return;
+        switch (arg.Code)
+        {
+            case "KeyS":
+                await SendToggleSkip();
+                break;
+            case "KeyP":
+                await SendTogglePause();
+                break;
         }
     }
 
