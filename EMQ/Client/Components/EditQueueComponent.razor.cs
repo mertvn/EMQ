@@ -89,6 +89,24 @@ public partial class EditQueueComponent
         StateHasChanged();
     }
 
+    public async Task GotoEQ()
+    {
+        string? promptResult =
+            (await _jsRuntime.InvokeAsync<string?>("prompt", "Enter edit queue id"))?.Trim();
+        if (int.TryParse(promptResult, out int eqId))
+        {
+            var resFindEQ = await _client.PostAsJsonAsync("Library/FindEQ", eqId);
+            if (resFindEQ.IsSuccessStatusCode)
+            {
+                EditQueue eq = (await resFindEQ.Content.ReadFromJsonAsync<EditQueue>())!;
+                CurrentEQs = new List<EditQueue>() { eq }.AsQueryable();
+                StateHasChanged();
+                _reviewEditComponentRef.reviewingId = eqId;
+                _reviewEditComponentRef.Show();
+            }
+        }
+    }
+
     private async Task CallStateHasChanged()
     {
         StateHasChanged();

@@ -4362,7 +4362,7 @@ AND msm.type = ANY(@msmType)";
         }
     }
 
-    public static async Task<EditQueue> FindEQ(int eqId)
+    public static async Task<EditQueue?> FindEQ(int eqId)
     {
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {

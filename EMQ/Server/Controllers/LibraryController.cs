@@ -210,10 +210,10 @@ public class LibraryController : ControllerBase
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
     [Route("FindEQ")]
-    public async Task<EditQueue> FindEQ([FromBody] int eqId)
+    public async Task<ActionResult<EditQueue>> FindEQ([FromBody] int eqId)
     {
         var eq = await DbManager.FindEQ(eqId);
-        return eq;
+        return eq is null ? NotFound() : eq;
     }
 
     [CustomAuthorize(PermissionKind.SearchLibrary)]
