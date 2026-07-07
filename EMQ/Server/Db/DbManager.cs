@@ -155,24 +155,32 @@ FROM vn_seiyuu vs JOIN staff_alias sa on sa.aid = vs.aid WHERE vs.id = ANY(@vids
         }
 
         stopwatch.StartSection("McOptionsQshDict");
-        const string sqlMcOptionsQsh = @"WITH ranked_guesses AS (
+        const string sqlMcOptionsQsh = @"WITH bad_guesses_grouped AS (
+    -- STEP 1: Aggregate the history table FIRST to reduce rows
     SELECT
-        qsh.music_id,
-        ROW_NUMBER() OVER (PARTITION BY qsh.music_id ORDER BY COUNT(qsh.guess) DESC) AS rank,
-        mst.music_source_id
-    FROM quiz_song_history qsh
+        music_id,
+        guess,
+        COUNT(*) AS guess_count
+    FROM quiz_song_history
+    WHERE NOT is_correct
+    GROUP BY music_id, guess
+    HAVING COUNT(*) >= 3
+),
+ranked_guesses AS (
+    -- STEP 2: Now join ONLY the frequent bad guesses to the text table
+    SELECT
+        bg.music_id,
+        mst.music_source_id,
+        ROW_NUMBER() OVER (PARTITION BY bg.music_id ORDER BY bg.guess_count DESC) AS rank
+    FROM bad_guesses_grouped bg
     JOIN music_source_title mst
-        ON qsh.guess = mst.latin_title
-    WHERE
-        NOT qsh.is_correct
-        AND mst.is_main_title
-    GROUP BY qsh.music_id, qsh.guess, mst.music_source_id
-    HAVING count(qsh.guess) >= 3
-    ORDER BY rank
+        ON bg.guess = mst.latin_title
+    WHERE mst.is_main_title
 )
+-- STEP 3: Final array aggregation
 SELECT
     music_id,
-    array_agg(music_source_id)
+    array_agg(music_source_id ORDER BY rank) AS top_bad_guess_sources
 FROM ranked_guesses
 WHERE rank <= 3 -- todo increase after adding weights
 GROUP BY music_id

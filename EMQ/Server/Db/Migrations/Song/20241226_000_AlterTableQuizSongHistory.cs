@@ -15,6 +15,7 @@ public class AlterTableQuizSongHistory : Migration
 ALTER TABLE quiz_song_history ADD COLUMN guess_kind integer NOT NULL DEFAULT 0;
 ALTER TABLE quiz_song_history DROP CONSTRAINT ""PK_quiz_song_history"", ADD CONSTRAINT ""PK_quiz_song_history""  PRIMARY KEY (quiz_id, sp, user_id, guess_kind);
 create index idx_quiz_song_history_music_id on quiz_song_history (music_id);
+CREATE INDEX idx_qsh_music_guess_incorrect ON quiz_song_history (music_id, guess) WHERE NOT is_correct;
 drop index if exists quiz_song_history_played_at_idx;
 
 
