@@ -102,7 +102,7 @@ public class PlayerBotInfo
 
     public string MimickedUsername { get; set; } = "";
 
-    public float LastSongHitChance { get; set; }
+    public Dictionary<GuessKind, float> LastSongHitChance { get; set; } = new();
 
     public Dictionary<int, Dictionary<GuessKind, float>?> SongHitChanceDict { get; } = new();
 

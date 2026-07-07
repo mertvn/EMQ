@@ -69,8 +69,11 @@
         </label>
         <br/>
         <br/>
+        @foreach ((GuessKind key, float value) in Model.BotInfo.LastSongHitChance)
+        {
+            <p>Hit chance for the last song (@key.GetDescription()): @value.ToString("N2", CultureInfo.InvariantCulture)%</p>
+        }
 
-        <p>Hit chance for the last song (Source Title): @Model.BotInfo.LastSongHitChance.ToString("N2", CultureInfo.InvariantCulture)%</p>
     </div>
 }
 

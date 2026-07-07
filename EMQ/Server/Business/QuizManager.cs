@@ -355,12 +355,7 @@ public class QuizManager
                             }
 
                             hitChance = Math.Clamp(hitChance, 0, 100);
-
-                            // todo
-                            if (guessKind == GuessKind.Mst)
-                            {
-                                bot.BotInfo.LastSongHitChance = hitChance;
-                            }
+                            bot.BotInfo.LastSongHitChance[guessKind] = hitChance;
 
                             // bot.BotInfo.SongHitChanceDict[song.Id] = hitChance;
                             isCorrect = Random.Shared.NextDouble() * 100 <= hitChance;
@@ -374,12 +369,7 @@ public class QuizManager
                                 if (hitChanceDict != null && hitChanceDict.TryGetValue(guessKind, out hitChance))
                                 {
                                     hitChance = Math.Clamp(hitChance, 0, 100);
-
-                                    // todo
-                                    if (guessKind == GuessKind.Mst)
-                                    {
-                                        bot.BotInfo.LastSongHitChance = hitChance;
-                                    }
+                                    bot.BotInfo.LastSongHitChance[guessKind] = hitChance;
                                 }
                             }
 
