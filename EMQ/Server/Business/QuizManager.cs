@@ -3466,8 +3466,11 @@ GROUP BY start_time",
                 }
 
                 player.Guess ??= new PlayerGuess();
-                player.PlayerStatus = PlayerStatus.Guessed;
                 player.Guess.Dict[guessKind] = guess;
+                if (Quiz.Room.QuizSettings.IsShowGuessStatus)
+                {
+                    player.PlayerStatus = PlayerStatus.Guessed;
+                }
 
                 if (player.Guess.DictFirstGuessMs[guessKind] <= 0)
                 {

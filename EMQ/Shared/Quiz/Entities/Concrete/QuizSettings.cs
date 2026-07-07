@@ -352,6 +352,11 @@ public class QuizSettings
         set { MuteMs = value * 1000; }
     }
 
+    [ProtoMember(42)]
+    [Required]
+    [DefaultValue(true)]
+    public bool IsShowGuessStatus { get; set; } = true;
+
     public static ValidationResult ValidateSongSourceSongTypeFiltersSum(int sum, ValidationContext validationContext)
     {
         if (sum == 0)
@@ -849,6 +854,11 @@ public class QuizSettings
         if (o.UI_MuteMs != n.UI_MuteMs)
         {
             diff.Add($"Mute after: {o.UI_MuteMs} → {n.UI_MuteMs}");
+        }
+
+        if (o.IsShowGuessStatus != n.IsShowGuessStatus)
+        {
+            diff.Add($"Show player guess status: {o.IsShowGuessStatus} → {n.IsShowGuessStatus}");
         }
 
         return diff;
