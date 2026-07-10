@@ -77,7 +77,7 @@ Songs with at least one possible match: @HaveCount/@_uploadResults.Count
 
 @if (_uploadResults.Count > 0)
 {
-    <ul>
+    <ul style="display: @UiHelpers.Bool2Flex(ClientState.Preferences.IsCompactEditingUi); flex-wrap: wrap;">
         @foreach (var file in _uploadResults)
         {
             <li>
