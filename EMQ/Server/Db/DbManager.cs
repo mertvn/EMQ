@@ -1002,26 +1002,29 @@ group by entity_id",
 
                 // fill developers
                 var songSourceDevelopers = mIdSongSources[mId]![msId].Developers;
-                foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
-                             .Select(z => z.Url.ToVndbId()))
+                if (!songSourceDevelopers.Any())
                 {
-                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                    foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
+                                 .Select(z => z.Url.ToVndbId()))
                     {
-                        foreach ((string? _, string? pId, string? name, string? latin) in developers)
+                        if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
                         {
-                            (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
+                            foreach ((string? _, string? pId, string? name, string? latin) in developers)
                             {
-                                songSourceDevelopers.Add(new SongSourceDeveloper
+                                (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
+                                if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
                                 {
-                                    VndbId = pId,
-                                    Title = new Title
+                                    songSourceDevelopers.Add(new SongSourceDeveloper
                                     {
-                                        LatinTitle = latinTitle,
-                                        NonLatinTitle = nonLatinTitle,
-                                        IsMainTitle = true
-                                    }
-                                });
+                                        VndbId = pId,
+                                        Title = new Title
+                                        {
+                                            LatinTitle = latinTitle,
+                                            NonLatinTitle = nonLatinTitle,
+                                            IsMainTitle = true
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
@@ -1304,26 +1307,29 @@ group by entity_id",
 
                 // fill developers
                 var songSourceDevelopers = mIdSongSources[mId]![msId].Developers;
-                foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
-                             .Select(z => z.Url.ToVndbId()))
+                if (!songSourceDevelopers.Any())
                 {
-                    if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
+                    foreach (string vndbId in songSource.Links.Where(y => y.Type == SongSourceLinkType.VNDB)
+                                 .Select(z => z.Url.ToVndbId()))
                     {
-                        foreach ((string? _, string? pId, string? name, string? latin) in developers)
+                        if (DbManager.VnDevelopers.TryGetValue(vndbId, out var developers))
                         {
-                            (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
-                            if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
+                            foreach ((string? _, string? pId, string? name, string? latin) in developers)
                             {
-                                songSourceDevelopers.Add(new SongSourceDeveloper
+                                (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(name, latin);
+                                if (!songSourceDevelopers.Any(x => x.Title.LatinTitle == latinTitle))
                                 {
-                                    VndbId = pId,
-                                    Title = new Title
+                                    songSourceDevelopers.Add(new SongSourceDeveloper
                                     {
-                                        LatinTitle = latinTitle,
-                                        NonLatinTitle = nonLatinTitle,
-                                        IsMainTitle = true
-                                    }
-                                });
+                                        VndbId = pId,
+                                        Title = new Title
+                                        {
+                                            LatinTitle = latinTitle,
+                                            NonLatinTitle = nonLatinTitle,
+                                            IsMainTitle = true
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
