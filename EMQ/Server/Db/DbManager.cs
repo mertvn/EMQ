@@ -3422,23 +3422,39 @@ ORDER BY artist_id";
 
     public static async Task<string> SelectAutocompleteDeveloper()
     {
-        var res = VnDevelopers.SelectMany(x =>
-            x.Value.Select(y =>
-            {
-                (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
-                string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
-                string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
-                if (latinTitleNorm == nonLatinTitleNorm)
-                {
-                    nonLatinTitle = "";
-                    nonLatinTitleNorm = "";
-                }
-
-                return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
-                    latinTitleNorm, nonLatinTitleNorm);
-            }));
-
         await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        var overriddenVndbIds =
+            (await connection.QueryAsync<string>(
+                @"
+            select music_source_external_link.url
+            from music_source
+            inner join music_source_external_link
+                on music_source_external_link.music_source_id = music_source.id
+            where music_source.developers is not null
+              and jsonb_array_length(music_source.developers::jsonb) > 0
+              and music_source_external_link.type = @type
+            ", new { type = (int)SongSourceLinkType.VNDB }))
+            .Select(x => x.ToVndbId())
+            .ToHashSet();
+
+        var res = VnDevelopers
+            .Where(x => !overriddenVndbIds.Contains(x.Key))
+            .SelectMany(x =>
+                x.Value.Select(y =>
+                {
+                    (string? latinTitle, string? nonLatinTitle) = Utils.VndbTitleToEmqTitle(y.name, y.latin);
+                    string latinTitleNorm = latinTitle.NormalizeForAutocomplete();
+                    string nonLatinTitleNorm = nonLatinTitle?.NormalizeForAutocomplete() ?? "";
+                    if (latinTitleNorm == nonLatinTitleNorm)
+                    {
+                        nonLatinTitle = "";
+                        nonLatinTitleNorm = "";
+                    }
+
+                    return new AutocompleteMst(0, latinTitle, nonLatinTitle ?? "",
+                        latinTitleNorm, nonLatinTitleNorm);
+                }));
+
         var emq =
             (await connection.QueryAsync<string>("select developers from music_source WHERE developers is not null"))
             .SelectMany(x => JsonSerializer.Deserialize<SongSourceDeveloper[]>(x)!)
