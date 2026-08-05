@@ -79,11 +79,22 @@
         <span style="padding: 5px">Preferences</span>
     </button>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+    @if (BgPages.Contains(lastSegment))
+    {
+        <main style="background-image: url('Assets/bg.png'); background-repeat: no-repeat; background-position: center center">
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }
+    else
+    {
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }
 </div>
 
 <KeyCaptureComponent/>
@@ -95,6 +106,11 @@
     {
         "/", "HotelPage", "LibraryPage", "ErodlePage", "ModPage", "ImportPage", "RegisterPage",
         "ForgottenPasswordPage", "ServerStatsPage", "all", "votes", "comments",
+    };
+
+    public List<string> BgPages { get; } = new()
+    {
+        "/", "HotelPage",
     };
 
     private PlayerPreferencesComponent? _playerPreferencesComponent;
