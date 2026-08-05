@@ -189,6 +189,6 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        _ = BenchmarkRunner.Run<NormalizeBenchmarks>();
+        _ = BenchmarkRunner.Run<StartsWithContainsBenchmarks>();
     }
 }

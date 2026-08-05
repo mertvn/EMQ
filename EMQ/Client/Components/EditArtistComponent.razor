@@ -419,7 +419,7 @@
         ValidationMessages.Clear();
         bool isValid = true;
 
-        if (NoteUser.Contains("litter.catbox", StringComparison.OrdinalIgnoreCase))
+        if (NoteUser.Contains("catbox", StringComparison.OrdinalIgnoreCase))
         {
             ValidationMessages.Add("Do not use temporary file hosts in edit summaries.");
             isValid = false;

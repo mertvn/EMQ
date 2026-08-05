@@ -76,7 +76,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    [Benchmark]
+    // [Benchmark]
     public int Memory()
     {
         var valueSpan = value.NormalizeForAutocomplete().AsSpan();
@@ -134,7 +134,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
+    [Benchmark]
     public int rampaa()
     {
         var valueSpan = value.NormalizeForAutocomplete().AsSpan();
@@ -163,36 +163,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
-    public int rampaa2()
-    {
-        var valueSpan = value.NormalizeForAutocomplete().AsSpan();
-        bool hasNonAscii = !Ascii.IsValid(valueSpan);
-        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
-        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
-
-        foreach (AutocompleteMst d in _autocompleteData)
-        {
-            var matchLT = d.MSTLatinTitleNormalized.AsSpan().rampaa2(valueSpan);
-            if (matchLT > 0)
-            {
-                dictLT[d] = matchLT;
-            }
-
-            if (hasNonAscii)
-            {
-                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan().rampaa2(valueSpan);
-                if (matchNLT > 0)
-                {
-                    dictNLT[d] = matchNLT;
-                }
-            }
-        }
-
-        return dictLT.Count + dictNLT.Count;
-    }
-
-    // [Benchmark]
+    [Benchmark]
     public int Claude4Sonnet()
     {
         var valueSpan = value.NormalizeForAutocomplete().AsSpan();
@@ -221,7 +192,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
+    [Benchmark]
     public int DeepSeekV3()
     {
         var valueSpan = value.NormalizeForAutocomplete().AsSpan();
@@ -250,7 +221,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
+    [Benchmark]
     public int Gemini25Pro()
     {
         var valueSpan = value.NormalizeForAutocomplete().AsSpan();
@@ -279,7 +250,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
+    [Benchmark]
     // ReSharper disable once InconsistentNaming
     public int GPT4o()
     {
@@ -309,7 +280,7 @@ public class StartsWithContainsBenchmarks
         return dictLT.Count + dictNLT.Count;
     }
 
-    // [Benchmark]
+    [Benchmark]
     // ReSharper disable once InconsistentNaming
     public int GPTo4mini()
     {
@@ -329,6 +300,96 @@ public class StartsWithContainsBenchmarks
             if (hasNonAscii)
             {
                 var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan().GPTo4mini(valueSpan, StringComparison);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+            }
+        }
+
+        return dictLT.Count + dictNLT.Count;
+    }
+
+    [Benchmark]
+    // ReSharper disable once InconsistentNaming
+    public int GPT56solhigh()
+    {
+        var valueSpan = value.NormalizeForAutocomplete().AsSpan();
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
+        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
+
+        foreach (AutocompleteMst d in _autocompleteData)
+        {
+            var matchLT = d.MSTLatinTitleNormalized.AsSpan().GPT56solhigh(valueSpan, StringComparison);
+            if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+
+            if (hasNonAscii)
+            {
+                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan().GPT56solhigh(valueSpan, StringComparison);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+            }
+        }
+
+        return dictLT.Count + dictNLT.Count;
+    }
+
+    [Benchmark]
+    // ReSharper disable once InconsistentNaming
+    public int GPT56solxhigh()
+    {
+        var valueSpan = value.NormalizeForAutocomplete().AsSpan();
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
+        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
+
+        foreach (AutocompleteMst d in _autocompleteData)
+        {
+            var matchLT = d.MSTLatinTitleNormalized.AsSpan().GPT56solxhigh(valueSpan, StringComparison);
+            if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+
+            if (hasNonAscii)
+            {
+                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan().GPT56solxhigh(valueSpan, StringComparison);
+                if (matchNLT > 0)
+                {
+                    dictNLT[d] = matchNLT;
+                }
+            }
+        }
+
+        return dictLT.Count + dictNLT.Count;
+    }
+
+    [Benchmark]
+    // ReSharper disable once InconsistentNaming
+    public int GPT56solmax()
+    {
+        var valueSpan = value.NormalizeForAutocomplete().AsSpan();
+        bool hasNonAscii = !Ascii.IsValid(valueSpan);
+        var dictLT = new Dictionary<AutocompleteMst, StringMatch>();
+        var dictNLT = new Dictionary<AutocompleteMst, StringMatch>();
+
+        foreach (AutocompleteMst d in _autocompleteData)
+        {
+            var matchLT = d.MSTLatinTitleNormalized.AsSpan().GPT56solmax(valueSpan, StringComparison);
+            if (matchLT > 0)
+            {
+                dictLT[d] = matchLT;
+            }
+
+            if (hasNonAscii)
+            {
+                var matchNLT = d.MSTNonLatinTitleNormalized.AsSpan().GPT56solmax(valueSpan, StringComparison);
                 if (matchNLT > 0)
                 {
                     dictNLT[d] = matchNLT;

@@ -64,24 +64,6 @@ public static class StartsWithContainsImpl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static StringMatch rampaa2(this ReadOnlySpan<char> text, ReadOnlySpan<char> searchText)
-    {
-        if (searchText.IsEmpty)
-        {
-            return StringMatch.None;
-        }
-
-        int index = text.IndexOf(searchText);
-        return index < 0
-            ? StringMatch.None
-            : index is 0
-                ? text.Length != searchText.Length
-                    ? StringMatch.StartsWith
-                    : StringMatch.ExactMatch
-                : StringMatch.Contains;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static StringMatch Claude4Sonnet(this ReadOnlySpan<char> str, ReadOnlySpan<char> search,
         StringComparison stringComparison)
     {
@@ -228,5 +210,91 @@ public static class StartsWithContainsImpl
         return str.IndexOf(search, comparison) >= 0
             ? StringMatch.Contains
             : StringMatch.None;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch GPT56solhigh(
+        this ReadOnlySpan<char> str,
+        ReadOnlySpan<char> search,
+        StringComparison comparisonType)
+    {
+        if (str.IsEmpty || search.IsEmpty)
+            return StringMatch.None;
+
+        int index = str.IndexOf(search, comparisonType);
+
+        if (index != 0)
+            return index < 0
+                ? StringMatch.None
+                : StringMatch.Contains;
+
+        if (str.Length != search.Length)
+            return StringMatch.StartsWith;
+
+        // IndexOf == 0 plus equal lengths guarantees equality
+        // for ordinal comparisons.
+        if (comparisonType is StringComparison.Ordinal
+            or StringComparison.OrdinalIgnoreCase)
+        {
+            return StringMatch.ExactMatch;
+        }
+
+        // Preserve linguistic/culture-sensitive behavior.
+        return str.Equals(search, comparisonType)
+            ? StringMatch.ExactMatch
+            : StringMatch.StartsWith;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch GPT56solxhigh(
+        this ReadOnlySpan<char> str,
+        ReadOnlySpan<char> search,
+        StringComparison comparison)
+    {
+        int searchLength = search.Length;
+        int strLength = str.Length;
+
+        if (searchLength == 0 || searchLength > strLength)
+            return StringMatch.None;
+
+        int index = str.IndexOf(search, comparison);
+
+        if (index == 0)
+            return searchLength == strLength
+                ? StringMatch.ExactMatch
+                : StringMatch.StartsWith;
+
+        return index > 0
+            ? StringMatch.Contains
+            : StringMatch.None;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StringMatch GPT56solmax(
+        this ReadOnlySpan<char> str,
+        ReadOnlySpan<char> search,
+        StringComparison comparison)
+    {
+        if (search.IsEmpty)
+            return StringMatch.None;
+
+        int index = str.IndexOf(search, comparison);
+
+        if (index != 0)
+            return index < 0
+                ? StringMatch.None
+                : StringMatch.Contains;
+
+        if (str.Length != search.Length)
+            return StringMatch.StartsWith;
+
+        // IndexOf at zero plus equal lengths proves equality for ordinal comparisons.
+        if (comparison is StringComparison.Ordinal or StringComparison.OrdinalIgnoreCase)
+            return StringMatch.ExactMatch;
+
+        // Preserve culture-aware semantics.
+        return str.Equals(search, comparison)
+            ? StringMatch.ExactMatch
+            : StringMatch.StartsWith;
     }
 }
