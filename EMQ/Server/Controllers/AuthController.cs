@@ -856,6 +856,16 @@ public class AuthController : ControllerBase
         {
             req.Skin = await DbManager.GetCharacterImageId(req.Skin.ToVndbId(), req.Character);
         }
+        else if (req.Character is AvatarCharacter.UploadedImage)
+        {
+            if (!AuthStuff.HasDonorBenefit(session, DonorBenefitKind.UploadedImageAvatar))
+            {
+                return Unauthorized(
+                    $"Donate {DonorBenefitKind.UploadedImageAvatar.GetDisplayName()} or more to unlock this feature.");
+            }
+
+            req.Skin = Guid.TryParseExact(req.Skin, "D", out Guid imageId) ? imageId.ToString() : "";
+        }
         else
         {
             if (!req.IsValidSkinForCharacter())
@@ -903,6 +913,8 @@ public class AuthController : ControllerBase
                             dto.username_animation = req.username_animation;
                         }
 
+                        break;
+                    case DonorBenefitKind.UploadedImageAvatar:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

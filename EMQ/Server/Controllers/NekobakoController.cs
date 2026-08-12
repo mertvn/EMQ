@@ -222,5 +222,32 @@ public sealed class NekobakoController : ControllerBase
         return JsonSerializer.Serialize(userNekobakos, Utils.JsoCompactAggressive);
     }
 
+    [CustomAuthorize(PermissionKind.UseUploadedImageAvatar)]
+    [HttpPost]
+    [Route("ListAvatarImages")]
+    public async Task<ActionResult<UserNekobako[]>> ListAvatarImages()
+    {
+        Session? session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        const string sql = @"SELECT * FROM users_nekobako
+WHERE user_id = @userId AND extension = '.webp' AND size_bytes <= @maxSizeBytes
+ORDER BY uploaded_at DESC";
+
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var images = (await connectionAuth.QueryAsync<UserNekobako>(sql,
+            new { userId = session.Player.Id, maxSizeBytes = UploadConstants.AvatarMaxFilesizeBytes })).ToArray();
+        foreach (UserNekobako image in images)
+        {
+            image.user_id = default;
+            image.sha256 = default!;
+        }
+
+        return images;
+    }
+
     // todo ListAllFiles for admins
 }

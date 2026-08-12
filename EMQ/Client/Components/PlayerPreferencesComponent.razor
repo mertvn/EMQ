@@ -481,6 +481,42 @@
                 </label>
                 <br/>
             }
+            else if (ClientAvatar?.Character is AvatarCharacter.UploadedImage)
+            {
+                bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.UploadedImageAvatar);
+                @if (!hasPerms)
+                {
+                    <p>Donate a total of @DonorBenefitKind.UploadedImageAvatar.GetDisplayName() or more to unlock this feature.</p>
+                }
+                else
+                {
+                    if (UploadedAvatarImages.Count == 0)
+                    {
+                        <p>
+                            Upload an image no larger than @(UploadConstants.AvatarMaxFilesizeBytes / 1024) KiB to <a href="/Nekobako">Nekobako</a> first.
+                        </p>
+                    }
+                    else
+                    {
+                        <label>
+                            <select style="margin: 5px" @bind="@SelectedUploadedAvatarId" disabled="@InProgress">
+                                @foreach (UserNekobako image in UploadedAvatarImages)
+                                {
+                                    <option value="@image.id.ToString()">
+                                        @image.orig_name (@((image.size_bytes / 1024d).ToString("N1")) KiB)
+                                    </option>
+                                }
+                            </select>
+                            Image
+                        </label>
+                        <br/>
+                        <button type="button" class="btn btn-primary" @onclick="@SetUploadedImageAvatar"
+                                disabled="@(!hasPerms || InProgress || string.IsNullOrEmpty(SelectedUploadedAvatarId))">
+                            Use selected image as avatar
+                        </button>
+                    }
+                }
+            }
             else
             {
                 <select id="SelectSkin" style="margin: 5px" @bind:get="@ClientAvatar?.Skin" @bind:set="@OnSelectedSkinChanged" disabled="@InProgress">
@@ -539,7 +575,7 @@
                         bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.DonorBadge);
                         if (!hasPerms)
                         {
-                            <p>Donate a total of $1 or more to unlock this benefit.</p>
+                            <p>Donate a total of @SelectedDonorBenefitKind.GetDisplayName() or more to unlock this benefit.</p>
                         }
 
                         <label>
@@ -555,7 +591,7 @@
                         bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.UsernameColor);
                         if (!hasPerms)
                         {
-                            <p>Donate a total of $5 or more to unlock this benefit.</p>
+                            <p>Donate a total of @SelectedDonorBenefitKind.GetDisplayName() or more to unlock this benefit.</p>
                         }
 
                         <label>
@@ -570,7 +606,7 @@
                         bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session, DonorBenefitKind.UsernameAnimation);
                         if (!hasPerms)
                         {
-                            <p>Donate a total of $10 or more to unlock this benefit.</p>
+                            <p>Donate a total of @SelectedDonorBenefitKind.GetDisplayName() or more to unlock this benefit.</p>
                         }
 
                         <label>
@@ -589,6 +625,18 @@
                         <br/>
                         break;
                     }
+                case DonorBenefitKind.UploadedImageAvatar:
+                    {
+                        bool hasPerms = AuthStuff.HasDonorBenefit(ClientState.Session,
+                            DonorBenefitKind.UploadedImageAvatar);
+                        if (!hasPerms)
+                        {
+                            <p>Donate a total of @SelectedDonorBenefitKind.GetDisplayName() or more to unlock this benefit.</p>
+                        }
+
+                        <p>You can set your avatar to an image that you've uploaded to Nekobako, on the Avatar tab.</p>
+                        break;
+                    }
             }
 
             switch (SelectedDonorBenefitKind)
@@ -596,6 +644,7 @@
                 case DonorBenefitKind.DonorBadge:
                 case DonorBenefitKind.UsernameColor:
                 case DonorBenefitKind.UsernameAnimation:
+                case DonorBenefitKind.UploadedImageAvatar:
                     <div style="border: 1px solid black;">
                         Preview
 

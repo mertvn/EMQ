@@ -45,6 +45,10 @@ public partial class PlayerPreferencesComponent
 
     public DonorBenefit? ClientDonorBenefit { get; set; }
 
+    public List<UserNekobako> UploadedAvatarImages { get; set; } = new();
+
+    public string SelectedUploadedAvatarId { get; set; } = "";
+
     public Dictionary<string, LabelStats?> LabelStats { get; set; } = new();
 
     private GuessInputComponent _guessInputComponentRef = null!;
@@ -68,6 +72,19 @@ public partial class PlayerPreferencesComponent
 
         ClientAvatar = ClientState.Session.Player.Avatar;
         ClientDonorBenefit = ClientState.Session.Player.DonorBenefit;
+
+        HttpResponseMessage uploadedFilesResponse = await _client.PostAsJsonAsync("Nekobako/ListAvatarImages", "");
+        if (uploadedFilesResponse.IsSuccessStatusCode)
+        {
+            UploadedAvatarImages = await uploadedFilesResponse.Content.ReadFromJsonAsync<List<UserNekobako>>() ??
+                                   new List<UserNekobako>();
+            SelectedUploadedAvatarId =
+                ClientAvatar.Character is AvatarCharacter.UploadedImage && UploadedAvatarImages.Any(x =>
+                    x.id.ToString().Equals(ClientAvatar.Skin, StringComparison.OrdinalIgnoreCase))
+                    ? ClientAvatar.Skin
+                    : UploadedAvatarImages.FirstOrDefault()?.id.ToString() ?? "";
+        }
+
         await FetchMissingSongSourcesForEMQTab();
 
         InProgress = false;
@@ -475,6 +492,18 @@ public partial class PlayerPreferencesComponent
             await _jsRuntime.InvokeVoidAsync("alert",
                 $"Error: {res.StatusCode:D} {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
         }
+    }
+
+    private async Task SetUploadedImageAvatar()
+    {
+        InProgress = true;
+        if (!Guid.TryParseExact(SelectedUploadedAvatarId, "D", out Guid imageId))
+        {
+            return;
+        }
+
+        await SendSetAvatarReq(new Avatar(AvatarCharacter.UploadedImage, imageId.ToString()));
+        InProgress = false;
     }
 
     private async Task SendSetDonorBenefitReq(DonorBenefit donorBenefit)

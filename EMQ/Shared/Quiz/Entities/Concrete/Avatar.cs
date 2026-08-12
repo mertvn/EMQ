@@ -22,6 +22,7 @@ public class Avatar
         { AvatarCharacter.VNDBCharacterImage, new List<string> { "" } },
         { AvatarCharacter.ProcrasAndTina, new List<string> { "Default" } },
         { AvatarCharacter.MALCharacterImage, new List<string> { "" } },
+        { AvatarCharacter.UploadedImage, new List<string> { "" } },
     };
 
     public static Avatar DefaultAvatar { get; } = new(AvatarCharacter.Auu, "Default");
@@ -59,6 +60,8 @@ public class Avatar
                     databaseStr = "mal-img";
                     extensionStr = "webp";
                     break;
+                case AvatarCharacter.UploadedImage:
+                    return Utils.FormatNekobakoLink($"{avatar.Skin}.webp");
             }
 
             if (databaseStr != null)

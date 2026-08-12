@@ -14,4 +14,7 @@ public enum AvatarCharacter
 
     [Description("MAL")]
     MALCharacterImage,
+
+    [Description("Uploaded image")]
+    UploadedImage,
 }

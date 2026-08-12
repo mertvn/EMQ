@@ -19,6 +19,8 @@ public static class UploadConstants
 
     public const int NekobakoMaxFilesizeBytes = 17 * 1024 * 1024; // 17 MiB
 
+    public const int AvatarMaxFilesizeBytes = 512 * 1024; // 512 KiB
+
     public static string SftpHost { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_HOST")!;
 
     public static string SftpUsername { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_USERNAME")!;

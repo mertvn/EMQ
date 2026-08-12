@@ -369,7 +369,8 @@ public static class ExtensionMethods
 
     public static bool IsValidSkinForCharacter(this Avatar avatar)
     {
-        return (avatar.Character is AvatarCharacter.VNDBCharacterImage or AvatarCharacter.MALCharacterImage) ||
+        return (avatar.Character is AvatarCharacter.VNDBCharacterImage or AvatarCharacter.MALCharacterImage
+                   or AvatarCharacter.UploadedImage) ||
                Avatar.SkinsDict.TryGetValue(avatar.Character, out var skins) && skins.Contains(avatar.Skin);
     }
 

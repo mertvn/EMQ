@@ -134,6 +134,7 @@ public static class AuthStuff // todo? find better name
             DonorBenefitKind.DonorBadge => PermissionKind.Donor,
             DonorBenefitKind.UsernameColor => PermissionKind.ChangeUsernameColor,
             DonorBenefitKind.UsernameAnimation => PermissionKind.ChangeUsernameAnimation,
+            DonorBenefitKind.UploadedImageAvatar => PermissionKind.UseUploadedImageAvatar,
             _ => throw new ArgumentOutOfRangeException(nameof(benefitKind), benefitKind, null)
         };
 
@@ -192,6 +193,7 @@ public enum PermissionKind
     Donor = 3200,
     ChangeUsernameColor = 3201,
     ChangeUsernameAnimation = 3202,
+    UseUploadedImageAvatar = 3203,
 
     ImportHelper = 3700,
 
