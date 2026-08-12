@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using Microsoft.AspNetCore.Components.Forms;
@@ -45,6 +46,11 @@ public partial class NekobakoPage
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
+        if (!AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
+        {
+            return;
+        }
+
         await ClientUtils.SendPong(_navigation.Uri.LastSegment());
         AddActiveInput();
 
