@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 
 namespace EMQ.Server.Db.Migrations.Auth;
 
@@ -13,7 +14,7 @@ public class AddTableUsersNekobako : Migration
         Create.Table(tableName)
             .WithColumn("id").AsGuid().PrimaryKey()
             .WithColumn("extension").AsString(16).NotNullable()
-            .WithColumn("user_id").AsInt32().ForeignKey("users", "id")
+            .WithColumn("user_id").AsInt32().ForeignKey("users", "id").OnDelete(Rule.Cascade)
             .WithColumn("size_bytes").AsInt64().NotNullable()
             .WithColumn("sha256").AsString(64).NotNullable()
             .WithColumn("orig_name").AsString(256).NotNullable()
