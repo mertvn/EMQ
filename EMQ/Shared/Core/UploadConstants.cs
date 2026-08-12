@@ -5,7 +5,7 @@ namespace EMQ.Shared.Core;
 
 public static class UploadConstants
 {
-    public const int MaxFilesizeBytes = 1000 * 1024 * 1024; // 1000 MB
+    public const int MaxFilesizeBytes = 1000 * 1024 * 1024; // 1000 MiB
 
     public const int MaxFilesSpecificSongUpload = 20;
 
@@ -16,6 +16,8 @@ public static class UploadConstants
     public const int MaxConcurrentTranscodes = 3;
 
     public const int MaxConcurrentEncodes = 1;
+
+    public const int NekobakoMaxFilesizeBytes = 17 * 1024 * 1024; // 17 MiB
 
     public static string SftpHost { get; } = Environment.GetEnvironmentVariable("EMQ_SFTP_HOST")!;
 

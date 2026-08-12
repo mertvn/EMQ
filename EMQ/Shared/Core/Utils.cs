@@ -212,6 +212,11 @@ public static class Utils
         return s;
     }
 
+    public static string FormatNekobakoLink(string storedFileName)
+    {
+        return $"{Constants.WebsiteDomain}/selfhoststorage/userup/nekobako/{storedFileName}";
+    }
+
     public class MyStopwatchSection
     {
         public string Name { get; set; } = "";

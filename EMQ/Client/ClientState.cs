@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using EMQ.Client.Pages;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
@@ -50,4 +51,10 @@ public static class ClientState
     public static int SelectedCollectionId { get; set; }
 
     public static List<UserLabelPreset> Presets { get; set; } = new();
+
+    public static List<NekobakoPage.FileBatch> NekobakoBatches { get; } = new();
+
+    public static List<NekobakoPage.UploadItem> NekobakoUploads { get; } = new();
+
+    public static SemaphoreSlim NekobakoUploadSlots { get; } = new(2);
 }

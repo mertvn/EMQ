@@ -1,0 +1,366 @@
+﻿@page "/Nekobako"
+@using EMQ.Shared.Auth.Entities.Concrete
+@using EMQ.Shared.Core
+@using EMQ.Shared.Core.SharedDbEntities
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient _client
+@inject NavigationManager _navigation
+@inject ClientUtils _clientUtils
+
+<h3>Nekobako</h3>
+
+<p>
+    Nekobako is a file upload service for EMQ-related files. Uploads that are not relevant to EMQ will be deleted.
+    Max filesize: @(UploadConstants.NekobakoMaxFilesizeBytes / 1024 / 1024) MiB. Currently we are only accepting image files and UTF-8 text files.
+</p>
+
+@if (!AuthStuff.HasPermission(ClientState.Session, PermissionKind.User))
+{
+    <p>You must be logged in as a registered user to use Nekobako.</p>
+    return;
+}
+
+<Blazorise.Tabs @bind-SelectedTab="@SelectedTabNekobako" RenderMode="Blazorise.TabsRenderMode.LazyLoad">
+    <Items>
+        <Blazorise.Tab Name="TabUpload">Upload</Blazorise.Tab>
+        <Blazorise.Tab Name="TabMyFiles">My Files</Blazorise.Tab>
+        @if (ClientUtils.HasAdminPerms())
+        {
+            <Blazorise.Tab Name="TabOurFiles">Our Files</Blazorise.Tab>
+        }
+    </Items>
+    <Content>
+        <Blazorise.TabPanel Name="TabUpload">
+            @if (!AuthStuff.HasPermission(ClientState.Session, PermissionKind.NekobakoUpload))
+            {
+                <p> You do not have the required permissions.</p>
+            }
+            else
+            {
+                <div class="file-drop-upload">
+                    <div class="drop-zone">
+                        @foreach (var batch in ClientState.NekobakoBatches)
+                        {
+                            <InputFile @key="batch.Id"
+                                       OnChange="e => FilesSelectedAsync(batch, e)"
+                                       multiple
+                                       class="@(batch.IsActive ? "drop-zone-input" : "inactive-input")"/>
+                        }
+
+                        <div class="drop-zone-content">
+                            <div class="drop-zone-icon" aria-hidden="true">↑</div>
+                            <div class="drop-zone-title">Drop files here to upload</div>
+                            <div class="drop-zone-subtitle">or click to browse</div>
+                        </div>
+                    </div>
+
+                    @if (ClientState.NekobakoUploads.Count > 0)
+                    {
+                        <div class="upload-list" aria-live="polite">
+                            <div class="upload-list-header">
+                                <span>@ClientState.NekobakoUploads.Count file@(ClientState.NekobakoUploads.Count == 1 ? "" : "s")</span>
+
+                                @if (ClientState.NekobakoUploads.Any(x => x.Status is UploadStatus.Complete or UploadStatus.Failed))
+                                {
+                                    <button type="button"
+                                            class="clear-button"
+                                            @onclick="ClearFinished">
+                                        Clear finished
+                                    </button>
+                                }
+                            </div>
+
+                            @foreach (var item in ClientState.NekobakoUploads)
+                            {
+                                <div class="upload-item" @key="item.Id">
+                                    <div class="upload-file">
+                                        <div class="upload-file-name" title="@item.Name">@item.Name</div>
+                                        <div class="upload-file-size">@FormatSize(item.Size)</div>
+                                    </div>
+
+                                    <div class="upload-status @GetStatusClass(item.Status)">
+                                        @switch (item.Status)
+                                        {
+                                            case UploadStatus.Waiting:
+                                                <span>Queued</span>
+                                                break;
+                                            case UploadStatus.Reading:
+                                                <span>Preparing…</span>
+                                                break;
+                                            case UploadStatus.Uploading:
+                                                <span>Uploading…</span>
+                                                break;
+                                            case UploadStatus.Complete:
+                                                <span>✓ Complete</span>
+                                                <div>
+                                                    <a href="@item.Error" target="_blank">@item.Error</a>
+                                                </div>
+                                                break;
+                                            case UploadStatus.Failed:
+                                                <span>Failed</span>
+                                                <div>@item.Error</div>
+                                                break;
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+        </Blazorise.TabPanel>
+        <Blazorise.TabPanel Name="TabMyFiles">
+            <div class="grid" tabindex="-1">
+                <QuickGrid Items="@UserNekobakos">
+                    <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                    <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
+                    <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
+                    <TemplateColumn Title="Link">
+                        @if (true)
+                        {
+                            string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
+                            <a href="@href" target="_blank">@href</a>
+                        }
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+        </Blazorise.TabPanel>
+        @if (ClientUtils.HasAdminPerms())
+        {
+            <Blazorise.TabPanel Name="TabOurFiles">
+                <p>TODO</p>
+            </Blazorise.TabPanel>
+        }
+    </Content>
+</Blazorise.Tabs>
+
+<style>
+    .file-drop-upload {
+        width: 100%;
+    }
+
+    .drop-zone {
+        position: relative;
+        min-height: 400px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed var(--bs-border-color);
+        border-radius: var(--bs-border-radius-lg);
+        background: var(--bs-tertiary-bg);
+        color: var(--bs-body-color);
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+
+    .drop-zone:hover,
+    .drop-zone:focus-within {
+        border-color: var(--bs-primary);
+        background: var(--bs-secondary-bg);
+        box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .15);
+    }
+
+    .drop-zone-input {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .inactive-input {
+        display: none;
+    }
+
+    .drop-zone-content {
+        pointer-events: none;
+        padding: 40px;
+        text-align: center;
+        color: var(--bs-body-color);
+    }
+
+    .drop-zone-icon {
+        margin-bottom: 12px;
+        font-size: 48px;
+        line-height: 1;
+        color: var(--bs-primary);
+    }
+
+    .drop-zone-title {
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .drop-zone-subtitle {
+        margin-top: 6px;
+        color: var(--bs-secondary-color);
+    }
+
+    .upload-list {
+        margin-top: 18px;
+        overflow: hidden;
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius-lg);
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+    }
+
+    .upload-list-header,
+    .upload-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .upload-list-header {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        font-weight: 600;
+    }
+
+    .upload-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+        background: var(--bs-body-bg);
+    }
+
+    .upload-item:last-child {
+        border-bottom: 0;
+    }
+
+    .upload-file {
+        min-width: 0;
+    }
+
+    .upload-file-name {
+        overflow: hidden;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--bs-body-color);
+    }
+
+    .upload-file-size {
+        margin-top: 2px;
+        color: var(--bs-secondary-color);
+        font-size: .875rem;
+    }
+
+    .upload-status {
+        flex: 0 0 auto;
+        font-size: .9rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .status-failed {
+        color: var(--bs-danger) !important;
+    }
+
+    .status-complete {
+        color: var(--bs-success) !important;
+    }
+
+    .clear-button {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--bs-primary);
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .clear-button:hover {
+        color: var(--bs-link-hover-color);
+    }
+
+    .clear-button:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: 2px;
+        border-radius: var(--bs-border-radius-sm);
+    }
+
+    ::deep div.paginator {
+        flex-direction: row-reverse;
+    }
+
+    ::deep nav[role=navigation] {
+        margin-left: inherit !important;
+        margin-right: auto;
+    }
+
+    ::deep table.quickgrid > tbody > tr > td {
+        max-width: 420px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    ::deep .go-previous, ::deep .go-next {
+        background-image: none !important;
+    }
+
+    ::deep .go-previous::before, ::deep .go-next::before {
+        content: '‹' !important;
+        font-size: 20px !important;
+    }
+
+    ::deep .go-first, ::deep .go-last {
+        background-image: none !important;
+    }
+
+    ::deep .go-first::before, ::deep .go-last::before {
+        content: '«' !important;
+        font-size: 20px !important;
+    }
+
+    ::deep .col-sort-desc .sort-indicator {
+        background-image: none !important;
+    }
+
+    ::deep .col-sort-desc .sort-indicator::before {
+        content: '▼' !important;
+    }
+
+    ::deep .col-sort-asc .sort-indicator {
+        background-image: none !important;
+        align-self: normal;
+    }
+
+    ::deep .col-sort-asc .sort-indicator::before {
+        content: '▼' !important;
+    }
+
+    ::deep tr {
+        border-bottom: 1px solid rgb(73, 80, 87);
+    }
+
+    ::deep td {
+        padding: 8px !important;
+    }
+
+    .grid ::deep table {
+        min-width: 100%;
+    }
+
+    /* Fix height and enable scrolling */
+    .grid {
+        /*height: 75vh;*/
+        overflow-y: auto;
+    }
+
+    /*todo make this work*/
+    /* Sticky header while scrolling */
+    ::deep thead {
+        position: sticky;
+        top: 0;
+        /*background-color: #d8d8d8;*/
+        outline: 1px solid gray;
+        z-index: 1;
+    }
+
+</style>
