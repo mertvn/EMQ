@@ -222,18 +222,13 @@ public sealed class NekobakoController : ControllerBase
         return JsonSerializer.Serialize(userNekobakos, Utils.JsoCompactAggressive);
     }
 
-    [CustomAuthorize(PermissionKind.User)]
+    [CustomAuthorize(PermissionKind.UseUploadedImageAvatar)]
     [HttpPost]
     [Route("ListAvatarImages")]
     public async Task<ActionResult<UserNekobako[]>> ListAvatarImages()
     {
         Session? session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
-        {
-            return Unauthorized();
-        }
-
-        if (!AuthStuff.HasPermission(session, PermissionKind.UseUploadedImageAvatar))
         {
             return Unauthorized();
         }
@@ -254,5 +249,20 @@ ORDER BY uploaded_at DESC";
         return images;
     }
 
-    // todo ListAllFiles for admins
+    [CustomAuthorize(PermissionKind.Admin)]
+    [HttpPost]
+    [Route("ListAllFiles")]
+    public async Task<ActionResult<UserNekobako[]>> ListAllFiles()
+    {
+        Session? session = AuthStuff.GetSession(HttpContext.Items);
+        if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        const string sql = @"SELECT * FROM users_nekobako ORDER BY uploaded_at DESC";
+        await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+        var files = (await connectionAuth.QueryAsync<UserNekobako>(sql)).ToArray();
+        return files;
+    }
 }

@@ -43,6 +43,8 @@ public partial class NekobakoPage
 
     private IQueryable<UserNekobako>? UserNekobakos { get; set; }
 
+    private IQueryable<UserNekobako>? OurNekobakos { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await _clientUtils.TryRestoreSession();
@@ -58,6 +60,15 @@ public partial class NekobakoPage
         if (resListUserFiles.IsSuccessStatusCode)
         {
             UserNekobakos = (await resListUserFiles.Content.ReadFromJsonAsync<List<UserNekobako>>())!.AsQueryable();
+        }
+
+        if (ClientUtils.HasAdminPerms())
+        {
+            HttpResponseMessage resListAllFiles = await _client.PostAsJsonAsync("Nekobako/ListAllFiles", "");
+            if (resListAllFiles.IsSuccessStatusCode)
+            {
+                OurNekobakos = (await resListAllFiles.Content.ReadFromJsonAsync<List<UserNekobako>>())!.AsQueryable();
+            }
         }
     }
 

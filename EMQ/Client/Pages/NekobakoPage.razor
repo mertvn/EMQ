@@ -129,7 +129,23 @@
         @if (ClientUtils.HasAdminPerms())
         {
             <Blazorise.TabPanel Name="TabOurFiles">
-                <p>TODO</p>
+                <div class="grid" tabindex="-1">
+                    <QuickGrid Items="@OurNekobakos">
+                        <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                        <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
+                        <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
+                        <TemplateColumn Title="Link">
+                            @if (true)
+                            {
+                                string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
+                                <a href="@href" target="_blank">@href</a>
+                            }
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(x => x.extension)" Title="Extension" Sortable="true"/>
+                        <PropertyColumn Property="@(x => x.user_id)" Title="User" Sortable="true"/>
+                        <PropertyColumn Property="@(x => x.sha256)" Title="SHA-256" Sortable="true"/>
+                    </QuickGrid>
+                </div>
             </Blazorise.TabPanel>
         }
     </Content>
