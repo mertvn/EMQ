@@ -222,13 +222,18 @@ public sealed class NekobakoController : ControllerBase
         return JsonSerializer.Serialize(userNekobakos, Utils.JsoCompactAggressive);
     }
 
-    [CustomAuthorize(PermissionKind.UseUploadedImageAvatar)]
+    [CustomAuthorize(PermissionKind.User)]
     [HttpPost]
     [Route("ListAvatarImages")]
     public async Task<ActionResult<UserNekobako[]>> ListAvatarImages()
     {
         Session? session = AuthStuff.GetSession(HttpContext.Items);
         if (session == null)
+        {
+            return Unauthorized();
+        }
+
+        if (!AuthStuff.HasPermission(session, PermissionKind.UseUploadedImageAvatar))
         {
             return Unauthorized();
         }

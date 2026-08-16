@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Auth.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
@@ -73,16 +74,18 @@ public partial class PlayerPreferencesComponent
         ClientAvatar = ClientState.Session.Player.Avatar;
         ClientDonorBenefit = ClientState.Session.Player.DonorBenefit;
 
-        HttpResponseMessage uploadedFilesResponse = await _client.PostAsJsonAsync("Nekobako/ListAvatarImages", "");
-        if (uploadedFilesResponse.IsSuccessStatusCode)
+        if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.UseUploadedImageAvatar))
         {
-            UploadedAvatarImages = await uploadedFilesResponse.Content.ReadFromJsonAsync<List<UserNekobako>>() ??
-                                   new List<UserNekobako>();
-            SelectedUploadedAvatarId =
-                ClientAvatar.Character is AvatarCharacter.UploadedImage && UploadedAvatarImages.Any(x =>
-                    x.id.ToString().Equals(ClientAvatar.Skin, StringComparison.OrdinalIgnoreCase))
-                    ? ClientAvatar.Skin
-                    : UploadedAvatarImages.FirstOrDefault()?.id.ToString() ?? "";
+            HttpResponseMessage uploadedFilesResponse = await _client.PostAsJsonAsync("Nekobako/ListAvatarImages", "");
+            if (uploadedFilesResponse.IsSuccessStatusCode)
+            {
+                UploadedAvatarImages = (await uploadedFilesResponse.Content.ReadFromJsonAsync<List<UserNekobako>>())!;
+                SelectedUploadedAvatarId =
+                    ClientAvatar.Character is AvatarCharacter.UploadedImage && UploadedAvatarImages.Any(x =>
+                        x.id.ToString().Equals(ClientAvatar.Skin, StringComparison.OrdinalIgnoreCase))
+                        ? ClientAvatar.Skin
+                        : UploadedAvatarImages.FirstOrDefault()?.id.ToString() ?? "";
+            }
         }
 
         await FetchMissingSongSourcesForEMQTab();
