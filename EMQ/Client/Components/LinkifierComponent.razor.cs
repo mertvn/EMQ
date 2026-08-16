@@ -21,6 +21,10 @@ namespace EMQ.Client.Components
             @"|\|\|(.+?)\|\|",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
+        private static readonly Regex s_nekobakoImageRegex = new(
+            @"^https?://erogemusicquiz\.com/selfhoststorage/userup/nekobako/.+\.webp$",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             if (string.IsNullOrEmpty(Text))
@@ -54,6 +58,11 @@ namespace EMQ.Client.Components
                     builder.AddContent(sequence++, match.Groups[6].Value);
                     builder.CloseElement();
                 }
+                else if (IsNekobakoImage(match.Value))
+                {
+                    // Image link
+                    BuildImageTag(builder, ref sequence, match.Value);
+                }
                 else
                 {
                     // URL
@@ -79,6 +88,32 @@ namespace EMQ.Client.Components
             {
                 builder.AddMarkupContent(sequence, EscapeHtml(Text[lastIndex..]));
             }
+        }
+
+        private void BuildImageTag(RenderTreeBuilder builder, ref int sequence, string imageUrl)
+        {
+            builder.OpenElement(sequence++, "a");
+            builder.AddAttribute(sequence++, "href", imageUrl);
+            builder.AddAttribute(sequence++, "target", Target);
+            builder.AddAttribute(sequence++, "rel", "noopener noreferrer");
+
+            if (!string.IsNullOrEmpty(CssClass))
+            {
+                builder.AddAttribute(sequence++, "class", CssClass);
+            }
+
+            builder.OpenElement(sequence++, "img");
+            builder.AddAttribute(sequence++, "src", imageUrl);
+            builder.AddAttribute(sequence++, "alt", "Nekobako image");
+            builder.AddAttribute(sequence++, "loading", "lazy");
+            builder.AddAttribute(sequence++, "style", "max-width: 200px; max-height: 200px; object-fit: contain;");
+            builder.CloseElement();
+            builder.CloseElement();
+        }
+
+        private static bool IsNekobakoImage(string url)
+        {
+            return s_nekobakoImageRegex.IsMatch(url);
         }
 
         private static string EscapeHtml(string text)
