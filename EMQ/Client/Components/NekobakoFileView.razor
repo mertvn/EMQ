@@ -1,0 +1,63 @@
+﻿@using EMQ.Shared.Core
+
+<div class="file-view-toolbar">
+    <button type="button"
+            class="view-button @(!ShowThumbnails ? "active" : "")"
+            title="Grid view"
+            @onclick="() => ShowThumbnails = false">
+        ☰
+    </button>
+    <button type="button"
+            class="view-button @(ShowThumbnails ? "active" : "")"
+            title="Thumbnails view"
+            @onclick="() => ShowThumbnails = true">
+        ▦
+    </button>
+</div>
+
+@if (ShowThumbnails)
+{
+    <div class="thumbnail-grid">
+        @if (Items is not null)
+        {
+            @foreach (var file in Items.OrderByDescending(x => x.uploaded_at))
+            {
+                string href = Utils.FormatNekobakoLink($"{file.id}{file.extension}");
+                <a class="thumbnail-card"
+                   href="@href"
+                   target="_blank"
+                   title="@file.orig_name"
+                   @key="file.id">
+                    <div class="thumbnail-preview">
+                        @if (IsImage(file))
+                        {
+                            <img src="@href"
+                                 alt="@file.orig_name"
+                                 loading="lazy"/>
+                        }
+                        else
+                        {
+                            <div class="file-placeholder">
+                                @GetDisplayExtension(file)
+                            </div>
+                        }
+                    </div>
+                    <div class="thumbnail-info">
+                        <div class="thumbnail-name" title="@file.orig_name">@file.orig_name</div>
+                        <div class="thumbnail-meta">
+                            @FormatSize(file.size_bytes) · @file.uploaded_at.ToString("yyyy-MM-dd HH:mm")
+                        </div>
+                        @if (file.user_id != default)
+                        {
+                            <div class="thumbnail-meta">User: @file.user_id</div>
+                        }
+                    </div>
+                </a>
+            }
+        }
+    </div>
+}
+else
+{
+    @GridContent
+}

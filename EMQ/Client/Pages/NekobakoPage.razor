@@ -1,7 +1,7 @@
 ﻿@page "/Nekobako"
+@using EMQ.Client.Components
 @using EMQ.Shared.Auth.Entities.Concrete
 @using EMQ.Shared.Core
-@using EMQ.Shared.Core.SharedDbEntities
 @using Microsoft.AspNetCore.Components.QuickGrid
 @inject HttpClient _client
 @inject NavigationManager _navigation
@@ -111,41 +111,49 @@
 
         </Blazorise.TabPanel>
         <Blazorise.TabPanel Name="TabMyFiles">
-            <div class="grid" tabindex="-1">
-                <QuickGrid Items="@UserNekobakos">
-                    <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-                    <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
-                    <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
-                    <TemplateColumn Title="Link">
-                        @if (true)
-                        {
-                            string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
-                            <a href="@href" target="_blank">@href</a>
-                        }
-                    </TemplateColumn>
-                </QuickGrid>
-            </div>
+            <NekobakoFileView Items="@UserNekobakos">
+                <GridContent>
+                    <div class="grid" tabindex="-1">
+                        <QuickGrid Items="@UserNekobakos">
+                            <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                            <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
+                            <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
+                            <TemplateColumn Title="Link">
+                                @if (true)
+                                {
+                                    string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
+                                    <a href="@href" target="_blank">@href</a>
+                                }
+                            </TemplateColumn>
+                        </QuickGrid>
+                    </div>
+                </GridContent>
+            </NekobakoFileView>
         </Blazorise.TabPanel>
         @if (ClientUtils.HasAdminPerms())
         {
             <Blazorise.TabPanel Name="TabOurFiles">
-                <div class="grid" tabindex="-1">
-                    <QuickGrid Items="@OurNekobakos">
-                        <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
-                        <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
-                        <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
-                        <TemplateColumn Title="Link">
-                            @if (true)
-                            {
-                                string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
-                                <a href="@href" target="_blank">@href</a>
-                            }
-                        </TemplateColumn>
-                        <PropertyColumn Property="@(x => x.extension)" Title="Extension" Sortable="true"/>
-                        <PropertyColumn Property="@(x => x.user_id)" Title="User" Sortable="true"/>
-                        <PropertyColumn Property="@(x => x.sha256)" Title="SHA-256" Sortable="true"/>
-                    </QuickGrid>
-                </div>
+                <NekobakoFileView Items="@OurNekobakos">
+                    <GridContent>
+                        <div class="grid" tabindex="-1">
+                            <QuickGrid Items="@OurNekobakos">
+                                <PropertyColumn Property="@(x => x.uploaded_at)" Title="Date" Format="s" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                                <PropertyColumn Property="@(x => x.orig_name)" Title="Original filename" Sortable="true"/>
+                                <PropertyColumn Property="@(x => (double)x.size_bytes / 1024 / 1024)" Format="N4" Title="Size (MiB)" Sortable="true"/>
+                                <TemplateColumn Title="Link">
+                                    @if (true)
+                                    {
+                                        string href = Utils.FormatNekobakoLink($"{context.id}{context.extension}");
+                                        <a href="@href" target="_blank">@href</a>
+                                    }
+                                </TemplateColumn>
+                                <PropertyColumn Property="@(x => x.extension)" Title="Extension" Sortable="true"/>
+                                <PropertyColumn Property="@(x => x.user_id)" Title="User" Sortable="true"/>
+                                <PropertyColumn Property="@(x => x.sha256)" Title="SHA-256" Sortable="true"/>
+                            </QuickGrid>
+                        </div>
+                    </GridContent>
+                </NekobakoFileView>
             </Blazorise.TabPanel>
         }
     </Content>
