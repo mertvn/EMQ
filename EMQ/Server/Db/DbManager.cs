@@ -3340,7 +3340,7 @@ ORDER BY artist_id";
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
             var res = (await connection.QueryAsync<(int, string, string?, bool)>(sqlAutocompleteA))
-                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "", x.Item4)).ToArray();
+                .Select(x => new AutocompleteA(x.Item1, x.Item2, x.Item3 ?? "", x.Item4)).ToList();
 
             var artistRolesDict = (await connection.QueryAsync<(int, SongArtistRole)>(sqlArtistRoles))
                 .ToDictionary(x => x.Item1, x => x.Item2);
@@ -3364,6 +3364,18 @@ ORDER BY artist_id";
                     re.AANonLatinAliasNormalizedReversed = "";
                 }
             }
+
+            // @formatter:off
+            res.AddRange(new List<AutocompleteA>()
+            {
+                new() { MainRole = SongArtistRole.Vocals, AId = 22,  AALatinAlias = "Itou Kanako",       AALatinAliasNormalized = "it" },
+                new() { MainRole = SongArtistRole.Vocals, AId = 24,  AALatinAlias = "Hashimoto Miyuki",  AALatinAliasNormalized = "ha" },
+                new() { MainRole = SongArtistRole.Vocals, AId = 38,  AALatinAlias = "Shimotsuki Haruka", AALatinAliasNormalized = "sh" },
+                new() { MainRole = SongArtistRole.Vocals, AId = 39,  AALatinAlias = "Sakakibara Yui",    AALatinAliasNormalized = "yuis" },
+                new() { MainRole = SongArtistRole.Vocals, AId = 63,  AALatinAlias = "Satou Hiromi",      AALatinAliasNormalized = "sponsor" },
+                new() { MainRole = SongArtistRole.Vocals, AId = 299, AALatinAlias = "Sasaki Sayaka",     AALatinAliasNormalized = "sasasa" },
+            });
+            // @formatter:on
 
             string[] d = res.Select(x => x.AALatinAlias).ToArray();
             AutocompleteDict[GuessKind.A] = d;
