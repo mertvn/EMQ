@@ -151,13 +151,28 @@
                     <th class="libraryStatsHeader">Song</th>
                     <th class="libraryStatsHeader">Rating</th>
                     <th class="libraryStatsHeader">Vote count</th>
+                    <th class="libraryStatsHeader">My vote</th>
                 </tr>
                 @foreach (var song in libraryStats.HighlyRatedSongs)
                 {
                     <tr class="libraryStatsRow">
-                        <td>@song.ToStringLatin()</td>
+                        <td>
+                            @if (true)
+                            {
+                                string href = $"em{song.Id}";
+                                <a href="@href" target="_blank" style="color: inherit; text-decoration-line: inherit;">
+                                    @song.ToStringLatin()
+                                </a>
+                            }
+                        </td>
                         <td>@song.VoteAverage.ToString("F2", CultureInfo.InvariantCulture)</td>
                         <td>@song.VoteCount</td>
+                        <td>
+                            @if (ClientState.MusicVotes.TryGetValue(song.Id, out var myVote))
+                            {
+                                <span>@(((float)myVote.vote! / 10).ToString(CultureInfo.InvariantCulture))</span>
+                            }
+                        </td>
                     </tr>
                 }
             </table>
