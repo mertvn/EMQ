@@ -8,12 +8,16 @@ using System.Threading.Tasks;
 using EMQ.Shared.Auth.Entities.Concrete;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 
 namespace EMQ.Client.Pages;
 
-public partial class NekobakoPage
+public partial class NekobakoPage : IAsyncDisposable
 {
+    private ElementReference _dropZone;
+
     public sealed class FileBatch
     {
         public Guid Id { get; init; }
@@ -69,6 +73,14 @@ public partial class NekobakoPage
             {
                 OurNekobakos = (await resListAllFiles.Content.ReadFromJsonAsync<List<UserNekobako>>())!.AsQueryable();
             }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AuthStuff.HasPermission(ClientState.Session, PermissionKind.NekobakoUpload))
+        {
+            await _jsRuntime.InvokeVoidAsync("nekobakoClipboard.initialize", _dropZone);
         }
     }
 
@@ -218,5 +230,17 @@ public partial class NekobakoPage
             < 1024L * 1024 * 1024 => $"{bytes / 1024d / 1024d:0.#} MB",
             _ => $"{bytes / 1024d / 1024d / 1024d:0.#} GB"
         };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("nekobakoClipboard.dispose");
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser has already disconnected.
+        }
     }
 }

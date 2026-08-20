@@ -162,6 +162,45 @@
         event.preventDefault();
     };
 
+    window.nekobakoClipboard = {
+        pasteHandler: null,
+
+        initialize(dropZone) {
+            this.dispose();
+
+            this.pasteHandler = event => {
+                if (!dropZone.isConnected || dropZone.offsetParent === null || event.clipboardData.files.length === 0) {
+                    return;
+                }
+
+                const input = dropZone.querySelector(".drop-zone-input");
+                if (!input) {
+                    return;
+                }
+
+                const clipboardFiles = new DataTransfer();
+                for (const file of event.clipboardData.files) {
+                    clipboardFiles.items.add(file);
+                }
+
+                input.files = clipboardFiles.files;
+                input.dispatchEvent(new Event("change", {bubbles: true}));
+                event.preventDefault();
+            };
+
+            document.addEventListener("paste", this.pasteHandler);
+        },
+
+        dispose() {
+            if (!this.pasteHandler) {
+                return;
+            }
+
+            document.removeEventListener("paste", this.pasteHandler);
+            this.pasteHandler = null;
+        }
+    };
+
     function addQuizPageEventListeners() {
         addBeforeUnload();
 

@@ -6,6 +6,7 @@
 @inject HttpClient _client
 @inject NavigationManager _navigation
 @inject ClientUtils _clientUtils
+@inject IJSRuntime _jsRuntime
 
 <h3>Nekobako</h3>
 
@@ -38,7 +39,7 @@
             else
             {
                 <div class="file-drop-upload">
-                    <div class="drop-zone">
+                    <div class="drop-zone" @ref="_dropZone">
                         @foreach (var batch in ClientState.NekobakoBatches)
                         {
                             <InputFile @key="batch.Id"
@@ -49,7 +50,7 @@
 
                         <div class="drop-zone-content">
                             <div class="drop-zone-icon" aria-hidden="true">↑</div>
-                            <div class="drop-zone-title">Drop files here to upload</div>
+                            <div class="drop-zone-title">Drop or paste files here to upload</div>
                             <div class="drop-zone-subtitle">or click to browse</div>
                         </div>
                     </div>
