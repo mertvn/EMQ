@@ -213,19 +213,29 @@ public partial class ChatComponent
             }
         }
 
-        if (chat is not null)
+        if (chat is not null && HasChatChanged(chat, Chat))
         {
-            if (chat.Count > Chat.Count)
-            {
-                Chat = chat;
+            Chat = chat;
 
-                // need to call twice or it doesn't scroll all the way to the end /shrug
-                await ScrollToEnd();
-                StateHasChanged();
-                await ScrollToEnd();
-                StateHasChanged();
-            }
+            // need to call twice or it doesn't scroll all the way to the end /shrug
+            await ScrollToEnd();
+            StateHasChanged();
+            await ScrollToEnd();
+            StateHasChanged();
         }
+    }
+
+    private static bool HasChatChanged(ConcurrentQueue<ChatMessage> incomingChat,
+        ConcurrentQueue<ChatMessage> currentChat)
+    {
+        if (incomingChat.Count != currentChat.Count)
+        {
+            return true;
+        }
+
+        bool incomingHasMessage = incomingChat.TryPeek(out ChatMessage? incomingFirst);
+        bool currentHasMessage = currentChat.TryPeek(out ChatMessage? currentFirst);
+        return incomingHasMessage != currentHasMessage || incomingFirst?.Timestamp != currentFirst?.Timestamp;
     }
 
     public async Task ScrollToEnd()
