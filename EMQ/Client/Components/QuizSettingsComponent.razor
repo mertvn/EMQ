@@ -93,6 +93,13 @@
                         <label for="IsHotjoinEnabled">Enable hotjoin</label>
                         <br/>
 
+                        @if (AuthStuff.HasPermission(ClientState.Session, PermissionKind.Admin))
+                        {
+                            <InputCheckbox id="IsNoWaitMode" class="form-check-input" @bind-Value="ClientQuizSettings.IsNoWaitMode" style="margin: 5px"></InputCheckbox>
+                            <label for="IsNoWaitMode">No-wait mode</label>
+                            <br/>
+                        }
+
                         <InputCheckbox id="IsNoSoundMode" class="form-check-input" @bind-Value="ClientQuizSettings.IsNoSoundMode" style="margin: 5px"></InputCheckbox>
                         <label for="IsNoSoundMode">No sound mode</label>
                         <br/>

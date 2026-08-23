@@ -448,6 +448,11 @@ public class QuizSettings
             diff.Add($"Enable hotjoin: {o.IsHotjoinEnabled} → {n.IsHotjoinEnabled}");
         }
 
+        if (o.IsNoWaitMode != n.IsNoWaitMode)
+        {
+            diff.Add($"No-wait mode: {o.IsNoWaitMode} → {n.IsNoWaitMode}");
+        }
+
         if (o.TeamSize != n.TeamSize)
         {
             diff.Add($"Maximum team size: {o.TeamSize} → {n.TeamSize}");

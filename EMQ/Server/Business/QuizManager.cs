@@ -2526,6 +2526,12 @@ public class QuizManager
     // todo Exclude does nothing on its own
     public async Task<bool> PrimeQuiz()
     {
+        var ownerSession = ServerState.Sessions.FirstOrDefault(x => x.Player.Id == Quiz.Room.Owner.Id);
+        if (!AuthStuff.HasPermission(ownerSession, PermissionKind.Admin))
+        {
+            Quiz.Room.QuizSettings.IsNoWaitMode = false;
+        }
+
         var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToList();
         if (Quiz.Room.QuizSettings.TeamSize > 1)
         {
