@@ -223,6 +223,8 @@ public partial class QuizPage
 
     public bool IsDuca => (_currentSong?.IsDuca ?? false) || (_nextSong?.IsDuca ?? false);
 
+    private int? _pendingVideoSwapIndex;
+
     private bool IsInitialized { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -274,12 +276,11 @@ public partial class QuizPage
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Starting ||
             Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp == -1)
         {
-            Song? nextSong = await NextSong(0);
+            Song? nextSong = await LoadSongIntoCache(0);
             var startedAt = DateTime.UtcNow;
 
             if (nextSong is not null)
             {
-                _clientSongs[0] = nextSong;
                 bool success = false;
                 while (!success &&
                        DateTime.UtcNow - startedAt < TimeSpan.FromMilliseconds(room.QuizSettings.TimeoutMs))
@@ -303,12 +304,9 @@ public partial class QuizPage
         if (Room?.Quiz?.QuizState.QuizStatus == QuizStatus.Playing && Room?.Quiz?.QuizState.sp >= 0 &&
             _clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp) is null)
         {
-            Console.WriteLine($"LoadMissingSong1 @{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase}");
-            var song = await NextSong(Room.Quiz!.QuizState.sp);
-            if (song is not null)
-            {
-                _clientSongs[Room.Quiz!.QuizState.sp] = song;
-            }
+            int songIndex = Room.Quiz.QuizState.sp;
+            Console.WriteLine($"LoadMissingSong1 @{songIndex}{Room.Quiz.QuizState.Phase}");
+            await LoadSongIntoCache(songIndex);
         }
 
         // we want to send this message regardless of whether the preloading was successful or not
@@ -318,13 +316,26 @@ public partial class QuizPage
         IsInitialized = true;
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // Console.WriteLine("rendered qp");
         if (firstRender)
         {
             _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
             GlobalKeypressService.OnKeypress += OnGlobalKeypress;
+        }
+
+        if (_pendingVideoSwapIndex is not int songIndex)
+        {
+            return;
+        }
+
+        _pendingVideoSwapIndex = null;
+        if (Room?.Quiz?.QuizState.sp == songIndex &&
+            Room.Quiz.QuizState.Phase == QuizPhaseKind.Guess &&
+            _clientSongs.ElementAtOrDefault(songIndex) is not null)
+        {
+            await SwapSongs(songIndex);
         }
     }
 
@@ -415,7 +426,7 @@ public partial class QuizPage
         }
     }
 
-    public async Task<Song?> NextSong(int index)
+    public async Task<(int SongIndex, Song Song)?> NextSong(int index)
     {
         HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NextSong",
             new ReqNextSong(ClientState.Session!.Token, index, ClientState.Preferences.WantsVideo,
@@ -442,11 +453,37 @@ public partial class QuizPage
                     song.IsDuca = nextSong.IsDuca;
                 }
 
-                return song;
+                if (nextSong.SongIndex != index)
+                {
+                    _logger.LogError("Requested song {RequestedSongIndex}, but received song {ReceivedSongIndex}",
+                        index, nextSong.SongIndex);
+                    return null;
+                }
+
+                return (nextSong.SongIndex, song);
             }
         }
 
         return null;
+    }
+
+    private async Task<Song?> LoadSongIntoCache(int songIndex)
+    {
+        var loadedSong = await NextSong(songIndex);
+        if (loadedSong is not { } result)
+        {
+            return null;
+        }
+
+        if (result.SongIndex < 0 || result.SongIndex >= _clientSongs.Count)
+        {
+            _logger.LogError("Received out-of-range song index {SongIndex}; client cache size: {ClientSongCount}",
+                result.SongIndex, _clientSongs.Count);
+            return null;
+        }
+
+        _clientSongs[result.SongIndex] = result.Song;
+        return result.Song;
     }
 
     private void SetTimer()
@@ -653,6 +690,7 @@ public partial class QuizPage
         switch (phaseKind)
         {
             case QuizPhaseKind.Guess:
+                int songIndex = Room!.Quiz!.QuizState.sp;
                 foreach ((GuessKind key, string? _) in PageState.Guess.Dict)
                 {
                     PageState.Guess.Dict[key] = null;
@@ -668,7 +706,7 @@ public partial class QuizPage
                 }
 
                 PageState.ProgressValue = 0;
-                PageState.ProgressDivisor = Room!.QuizSettings.GuessMs;
+                PageState.ProgressDivisor = Room.QuizSettings.GuessMs;
                 PageState.VideoPlayerVisibility = false;
 
                 if (!(Room.QuizSettings.TeamSize > 1))
@@ -677,20 +715,22 @@ public partial class QuizPage
                         false; // todo: should be able to toggle players' guesses separately (for multi-team games)
                 }
 
-                PageState.Countdown = Room!.Quiz!.QuizState.RemainingMs;
+                PageState.Countdown = Room.Quiz.QuizState.RemainingMs;
                 StateHasChanged();
 
-                if (_clientSongs.ElementAtOrDefault(Room.Quiz.QuizState.sp) is null)
+                if (_clientSongs.ElementAtOrDefault(songIndex) is null)
                 {
-                    Console.WriteLine($"LoadMissingSong2 @{Room.Quiz.QuizState.sp}{Room.Quiz.QuizState.Phase}");
-                    var song = await NextSong(Room.Quiz!.QuizState.sp);
-                    if (song is not null)
-                    {
-                        _clientSongs[Room.Quiz!.QuizState.sp] = song;
-                    }
+                    Console.WriteLine($"LoadMissingSong2 @{songIndex}{Room.Quiz.QuizState.Phase}");
+                    await LoadSongIntoCache(songIndex);
                 }
 
-                await SwapSongs(Room.Quiz.QuizState.sp);
+                if (Room?.Quiz?.QuizState.sp != songIndex ||
+                    Room.Quiz.QuizState.Phase != QuizPhaseKind.Guess)
+                {
+                    return;
+                }
+
+                _pendingVideoSwapIndex = songIndex;
                 StateHasChanged();
 
                 string? focusedElementName = await _jsRuntime.InvokeAsync<string?>("getActiveElementName");
@@ -806,13 +846,10 @@ public partial class QuizPage
 
                 if (Room!.Quiz!.QuizState.sp + Room.QuizSettings.PreloadAmount < Room.Quiz.QuizState.NumSongs)
                 {
-                    if (Room.Quiz!.QuizState.sp + 1 < _clientSongs.Count)
+                    int nextSongIndex = Room.Quiz.QuizState.sp + 1;
+                    if (nextSongIndex < _clientSongs.Count)
                     {
-                        var song = await NextSong(Room.Quiz!.QuizState.sp + 1);
-                        if (song is not null)
-                        {
-                            _clientSongs[Room.Quiz!.QuizState.sp + 1] = song;
-                        }
+                        await LoadSongIntoCache(nextSongIndex);
                     }
                     else
                     {
@@ -963,36 +1000,37 @@ public partial class QuizPage
 
     private async Task SwapSongs(int index)
     {
-        if (index < _clientSongs.Count)
+        if (index >= 0 && index < _clientSongs.Count)
         {
+            Song? song = _clientSongs[index];
+            if (song is null)
+            {
+                return;
+            }
+
+            string visibleVideoElementId = index % 2 == 0 ? "video1" : "video2";
+            string hiddenVideoElementId = visibleVideoElementId == "video1" ? "video2" : "video1";
+            bool isDuca = song.IsDuca || (_clientSongs.ElementAtOrDefault(index + 1)?.IsDuca ?? false);
+
             PageState.DebugOut.Add("index: " + index);
             if (IsInitialized)
             {
-                if (ClientState.Preferences.MuteWhenDuca && IsDuca)
+                if (ClientState.Preferences.MuteWhenDuca && isDuca)
                 {
                     await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
                     await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
                 }
                 else
                 {
-                    if (VisibleVideoElementId == "video1")
-                    {
-                        LastSetVideoMuted = DateTime.UtcNow;
-                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "muted");
-                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "");
-                    }
-                    else
-                    {
-                        LastSetVideoMuted = DateTime.UtcNow;
-                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video1", "muted");
-                        await _jsRuntime.InvokeVoidAsync("setVideoMuted", "video2", "");
-                    }
+                    LastSetVideoMuted = DateTime.UtcNow;
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", hiddenVideoElementId, "muted");
+                    await _jsRuntime.InvokeVoidAsync("setVideoMuted", visibleVideoElementId, "");
                 }
             }
 
-            if (_currentSong != null)
+            if (Room?.Quiz?.QuizState.sp == index && Room.Quiz.QuizState.Phase == QuizPhaseKind.Guess)
             {
-                await _jsRuntime.InvokeAsync<string>("reloadVideo", VisibleVideoElementId, _currentSong.StartTime);
+                await _jsRuntime.InvokeAsync<string>("reloadVideo", visibleVideoElementId, song.StartTime);
             }
         }
         else
