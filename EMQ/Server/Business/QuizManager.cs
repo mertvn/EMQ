@@ -509,7 +509,11 @@ public class QuizManager
                         IEnumerable<SongArtist> artists = Quiz.Songs[Quiz.QuizState.sp].Artists;
                         if (!Quiz.Room.QuizSettings.IsTreatNonVocalsAsCorrect)
                         {
-                            artists = artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals));
+                            var vocals = artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals)).ToArray();
+                            if (vocals.Any())
+                            {
+                                artists = vocals;
+                            }
                         }
 
                         correctAnswers = new List<string>();
@@ -535,7 +539,11 @@ public class QuizManager
                         IEnumerable<SongArtist> artists = Quiz.Songs[Quiz.QuizState.sp].Artists;
                         if (!Quiz.Room.QuizSettings.IsTreatNonVocalsAsCorrect)
                         {
-                            artists = artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals));
+                            var vocals = artists.Where(x => x.Roles.Contains(SongArtistRole.Vocals)).ToArray();
+                            if (vocals.Any())
+                            {
+                                artists = vocals;
+                            }
                         }
 
                         var titles = artists.SelectMany(x => x.Titles).ToArray();
