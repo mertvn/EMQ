@@ -201,17 +201,8 @@ else
 
 app.UseHttpsRedirection();
 
-// todo automate hash
 // <!--    we have to use unsafe-eval because blazor wasm requires it (check again after .NET 8) -->
 // <!--    https://devblogs.microsoft.com/dotnet/asp-net-core-updates-in-dotnet-8-preview-5/#blazor-content-security-policy-csp-compatibility -->
-// <!--    we have to use unsafe-inline because unsafe-hashes is very new, -->
-// <!--    and we have to use unsafe-hashes because styles don't work otherwise -->
-// <!--    hashes for styles as of 2023-06-24 -->
-// <!--    'sha256-WH8R6xeOeuJVdbp+/qEeNlldljI6BQWXRzvQ3aY5WaI='-->
-// <!--    'sha256-LNyLHt0iPlXA2SjFUXL9wqxHp5dJGBldj7LSb1gNgjA='-->
-// <!--    'sha256-q37xv29FWTxrl539g+ajXTokv196Spat4bpoxeQqDTw='-->
-// <!--    'sha256-eznNOzOF8kRuSmqjmCsetTase4gDYgWA0sSMry6PUKY='-->
-// <!--    'sha256-KbrxNa5b5DaDi2OvquFvHtsYxspVRCBjG7Kek5I4mRI='-->
 string csp = @$"
                base-uri 'self';
                default-src 'self';
@@ -222,7 +213,6 @@ string csp = @$"
                object-src 'none';
                script-src 'self'
                           'unsafe-eval'
-                          'sha256-UFW4cTTqsrTdMa1KtfISxyOMe2S132qoWBqAG79E2MM='
                           ;
                style-src 'self'
                          'unsafe-inline'
@@ -267,7 +257,7 @@ app.UseStaticFiles(new StaticFileOptions
         }
 
         // todo investigate if we need /QuizPage etc. here
-        if (ctx.File.Name is "index.html" or "/" or "app.css")
+        if (ctx.File.Name is "index.html" or "/" or "app.css" or "app.js")
         {
             maxAge = TimeSpan.FromMinutes(1);
         }
