@@ -1389,6 +1389,8 @@ public class QuizManager
                         Guess = player.Guess?.Dict[key] ?? "",
                         FirstGuessMs = player.Guess?.DictFirstGuessMs[key] ?? 0,
                         IsGuessCorrect = player.IsGuessKindCorrectDict[key]!.Value,
+                        NGMCGuessesCurrent = player.NGMCGuessesCurrent,
+                        Lives = player.Lives,
                         Labels = key == GuessKind.Mst ? labels : null,
                         IsOnList = labels?.Any() ?? false,
                         PreviousUserSpacedRepetition = key == GuessKind.Mst ? previous : null,
