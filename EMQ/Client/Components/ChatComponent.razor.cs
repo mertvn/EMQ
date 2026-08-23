@@ -30,6 +30,8 @@ public partial class ChatComponent
 
     private ElementReference _chatHistoryRef;
 
+    public bool AutoScrollEnabled { get; set; } = true;
+
     private bool _preventDefault = false;
 
     public Timer Timer = new();
@@ -228,6 +230,11 @@ public partial class ChatComponent
 
     public async Task ScrollToEnd()
     {
+        if (!AutoScrollEnabled)
+        {
+            return;
+        }
+
         try
         {
             await _jsRuntime.InvokeVoidAsync("scrollToEnd", _chatHistoryRef);
@@ -236,6 +243,25 @@ public partial class ChatComponent
         catch (Exception e)
         {
             Console.WriteLine(e.ToString());
+        }
+    }
+
+    private async Task OnAutoScrollChanged(ChangeEventArgs e)
+    {
+        AutoScrollEnabled = e.Value is bool enabled && enabled;
+        if (AutoScrollEnabled)
+        {
+            await ScrollToEnd();
+        }
+    }
+
+    private async Task OnChatHistoryScroll()
+    {
+        bool isScrolledToEnd = await _jsRuntime.InvokeAsync<bool>("isScrolledToEnd", _chatHistoryRef);
+        if (AutoScrollEnabled != isScrolledToEnd)
+        {
+            AutoScrollEnabled = isScrolledToEnd;
+            StateHasChanged();
         }
     }
 

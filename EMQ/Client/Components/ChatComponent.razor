@@ -25,9 +25,14 @@
                       float: right;
                       position: relative;">
 
+    <label class="chat-auto-scroll-toggle" title="Automatically scroll to new messages">
+        <input type="checkbox" checked="@AutoScrollEnabled" @onchange="OnAutoScrollChanged"/>
+        <span>Auto-scroll</span>
+    </label>
+
     <button style="position: absolute; top: 0; right: 0; border-radius: 50%; width: 20px" @onclick="@(() => { ColumnsVw = ColumnsVw < 54 ? 54 : 14; })">&lt;</button>
 
-    <div id="chatHistory" @ref="_chatHistoryRef" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
+    <div id="chatHistory" @ref="_chatHistoryRef" @onscroll="OnChatHistoryScroll" style="overflow-x: visible; overflow-y: auto; word-wrap: anywhere">
         @foreach (ChatMessage chatMessage in Chat.Concat(ClientChat).OrderBy(x => x.Timestamp))
         {
             <ChatMessageComponent ChatMessage="chatMessage" IsChatMod="isChatMod" Onclick_Sender="Onclick_Sender"/>
@@ -83,6 +88,28 @@
 </div>
 
 <style>
+    .chat-auto-scroll-toggle {
+        position: absolute;
+        top: 2px;
+        right: 24px;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 4px;
+        background: rgba(74, 74, 74, 0.9);
+        border-radius: 3px;
+        font-size: 11px;
+        line-height: 16px;
+        cursor: pointer;
+    }
+
+    .chat-auto-scroll-toggle input {
+        width: 12px;
+        height: 12px;
+        margin: 0;
+    }
+
     .emoji-toggle-btn {
         width: 36px;
         background: #4a4a4a;
