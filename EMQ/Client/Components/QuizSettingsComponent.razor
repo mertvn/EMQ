@@ -252,14 +252,7 @@
                         <label for="GamemodeKind">Game mode</label>
                         <br/>
 
-                        @if (ClientQuizSettings.GamemodeKind == GamemodeKind.NGMC)
-                        {
-                            <InputCheckbox id="NGMCAllowBurning" class="form-check-input" @bind-Value="ClientQuizSettings.NGMCAllowBurning" style="margin: 5px"></InputCheckbox>
-                            <label for="NGMCAllowBurning">NGMC burning</label>
-                            <br/>
-                        }
-
-                        <details style="pointer-events: all; cursor: pointer;">
+                    <details style="pointer-events: all; cursor: pointer;">
                             <summary>Guess types</summary>
                             @foreach (var key in ClientQuizSettings.EnabledGuessKinds.Keys.ToList())
                             {

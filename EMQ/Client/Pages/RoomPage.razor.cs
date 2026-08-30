@@ -74,17 +74,6 @@ public partial class RoomPage
         }
     }
 
-    private async Task SetSelectedNGMCGuessesInitialAsync(int value, int userId)
-    {
-        var req = new ReqSetTeamId(value, userId);
-        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetNGMCGuessesInitial", req);
-        if (res1.IsSuccessStatusCode)
-        {
-            Room = await _clientUtils.SyncRoom();
-            StateHasChanged();
-        }
-    }
-
     private async Task SetAnsweringKindAsync(int value)
     {
         HttpResponseMessage res1 = await _client.PostAsJsonAsync("Quiz/SetAnsweringKind", value);

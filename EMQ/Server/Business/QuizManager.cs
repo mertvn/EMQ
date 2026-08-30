@@ -188,16 +188,6 @@ public class QuizManager
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        while (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC &&
-               Quiz.Room.Players.Any(x => x.NGMCMustPick || x.NGMCMustBurn))
-        {
-            Quiz.QuizState.ExtraInfo = "Waiting for NGMC decisions...";
-
-            TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
-                false);
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
         if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.Radio && Quiz.QuizState.sp >= 0)
         {
             Quiz.QuizState.RemainingMs = (float)((PreviousGuessPhaseStartedAt.AddMilliseconds(SongLink
@@ -1218,47 +1208,6 @@ public class QuizManager
                 false);
         }
 
-        if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
-        {
-            // bot picks/burns
-            var qm = ServerState.QuizManagers.First(x => x.Quiz.Id == Quiz.Id);
-            foreach (Player bot in Quiz.Room.Players.Where(x => x.IsBot && (x.NGMCMustPick || x.NGMCMustBurn)))
-            {
-                if (bot.NGMCMustPick)
-                {
-                    // todo? smarter algo
-                    var pickedPlayer = Quiz.Room.Players.Last(x => x.TeamId == bot.TeamId && x.NGMCCanBePicked);
-                    await qm.NGMCPickPlayer(pickedPlayer, bot, false);
-                }
-                else if (bot.NGMCMustBurn)
-                {
-                    // todo? smarter algo
-                    var halfGuessPlayer = Quiz.Room.Players.LastOrDefault(x =>
-                        x.TeamId == bot.TeamId && x.NGMCGuessesCurrent >= 0.5f &&
-                        (Math.Abs((int)x.NGMCGuessesCurrent - x.NGMCGuessesCurrent) > 0.01f));
-                    if (halfGuessPlayer != null)
-                    {
-                        await qm.NGMCBurnPlayer(halfGuessPlayer, bot);
-                    }
-                    else if (Random.Shared.NextSingle() < 0.5f)
-                    {
-                        var burnedPlayer = Quiz.Room.Players.Last(x =>
-                            x.TeamId == bot.TeamId && x.NGMCGuessesCurrent >= 0.5f);
-                        await qm.NGMCBurnPlayer(burnedPlayer, bot);
-                    }
-                    else
-                    {
-                        bot.NGMCCanBurn = false;
-                        bot.NGMCMustBurn = false;
-                        Quiz.Room.Log($"{bot.Username} skipped burning.", writeToChat: true);
-                        TypedQuizHub.ReceiveUpdateRoom(
-                            Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
-                            false);
-                    }
-                }
-            }
-        }
-
         if (Quiz.Room.QuizSettings.IsPauseAfterResults)
         {
             await OnSendTogglePause();
@@ -1337,7 +1286,6 @@ public class QuizManager
             {
                 switch (Quiz.Room.QuizSettings.GamemodeKind)
                 {
-                    case GamemodeKind.NGMC:
                     case GamemodeKind.EruMode:
                         break;
                     case GamemodeKind.Default:
@@ -1397,7 +1345,6 @@ public class QuizManager
                         Guess = player.Guess?.Dict[key] ?? "",
                         FirstGuessMs = player.Guess?.DictFirstGuessMs[key] ?? 0,
                         IsGuessCorrect = player.IsGuessKindCorrectDict[key]!.Value,
-                        NGMCGuessesCurrent = player.NGMCGuessesCurrent,
                         Lives = player.Lives,
                         Labels = key == GuessKind.Mst ? labels : null,
                         IsOnList = labels?.Any() ?? false,
@@ -1423,80 +1370,6 @@ public class QuizManager
 
         switch (Quiz.Room.QuizSettings.GamemodeKind)
         {
-            case GamemodeKind.NGMC:
-                {
-                    var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
-                    var team1 = teams.ElementAt(0);
-                    var team2 = teams.ElementAt(1);
-
-                    var team1CorrectPlayers = team1
-                        .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
-                        .ToArray();
-                    var team2CorrectPlayers = team2
-                        .Where(x => x.NGMCGuessesCurrent >= 1f && x.PlayerStatus == PlayerStatus.Correct)
-                        .ToArray();
-
-                    foreach (Player correctPlayer in team1CorrectPlayers.Concat(team2CorrectPlayers))
-                    {
-                        correctPlayer.NGMCCanBePicked = true;
-                    }
-
-                    int team1CorrectPlayersCount = team1CorrectPlayers.Length;
-                    int team2CorrectPlayersCount = team2CorrectPlayers.Length;
-                    var team1Captain = team1.First();
-                    var team2Captain = team2.First();
-
-                    if (team1CorrectPlayersCount > 0)
-                    {
-                        if (!team2CorrectPlayers.Any())
-                        {
-                            foreach (Player player in team2)
-                            {
-                                player.Lives -= 1;
-                            }
-                        }
-
-                        if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team1CorrectPlayersCount == 1)
-                        {
-                            await NGMCPickPlayer(team1CorrectPlayers.Single(), team1Captain, true);
-                        }
-                        else
-                        {
-                            team1Captain.NGMCMustPick = true;
-                        }
-                    }
-
-                    if (team2CorrectPlayersCount > 0)
-                    {
-                        if (!team1CorrectPlayers.Any())
-                        {
-                            foreach (Player player in team1)
-                            {
-                                player.Lives -= 1;
-                            }
-                        }
-
-                        if (Quiz.Room.QuizSettings.NGMCAutoPickOnlyCorrectPlayerInTeam && team2CorrectPlayersCount == 1)
-                        {
-                            await NGMCPickPlayer(team2CorrectPlayers.Single(), team2Captain, true);
-                        }
-                        else
-                        {
-                            team2Captain.NGMCMustPick = true;
-                        }
-                    }
-
-                    team1Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team1CorrectPlayers.Any();
-                    team2Captain.NGMCCanBurn = Quiz.Room.QuizSettings.NGMCAllowBurning && !team2CorrectPlayers.Any();
-                    team1Captain.NGMCMustBurn = team1Captain.NGMCCanBurn;
-                    team2Captain.NGMCMustBurn = team2Captain.NGMCCanBurn;
-
-                    string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-                    string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-                    Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
-                        writeToChat: true);
-                    break;
-                }
             case GamemodeKind.EruMode:
                 {
                     EruModeTick();
@@ -1582,166 +1455,6 @@ public class QuizManager
         }
 
         Quiz.Room.Log($"{string.Join("-", teams.Select(x => x.First().Lives))}", writeToChat: true);
-    }
-
-    public async Task NGMCBurnPlayer(Player burnedPlayer, Player requestingPlayer)
-    {
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
-        {
-            return;
-        }
-
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
-        {
-            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
-            if (!firstSec)
-            {
-                return;
-            }
-        }
-
-        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
-        {
-            return;
-        }
-
-        if (burnedPlayer.TeamId != requestingPlayer.TeamId)
-        {
-            return;
-        }
-
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
-        var team1 = teams.ElementAt(0);
-        var team2 = teams.ElementAt(1);
-
-        var burnedPlayerTeam = burnedPlayer.TeamId == 1 ? team1 : team2;
-        var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
-        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn && burnedPlayer.NGMCGuessesCurrent > 0)
-        {
-            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
-            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
-            burnedPlayer.NGMCGuessesCurrent -= 0.5f;
-            Quiz.Room.Log($"{requestingPlayer.Username} burned {burnedPlayer.Username}.", writeToChat: true);
-
-            if (burnedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
-            {
-                foreach (Player player in burnedPlayerTeam)
-                {
-                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-                }
-
-                Quiz.Room.Log($"Resetting guesses for team {burnedPlayer.TeamId}.", writeToChat: true);
-            }
-
-            string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-            string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-            Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
-                writeToChat: true);
-
-            TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
-                false);
-        }
-    }
-
-    public async Task NGMCDontBurn(Player requestingPlayer)
-    {
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
-        {
-            return;
-        }
-
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
-        {
-            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
-            if (!firstSec)
-            {
-                return;
-            }
-        }
-
-        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
-        {
-            return;
-        }
-
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
-        var burnedPlayerTeam = teams.ElementAt(requestingPlayer.TeamId - 1);
-        var burnedPlayerTeamFirstPlayer = burnedPlayerTeam.First();
-        if (burnedPlayerTeamFirstPlayer.NGMCCanBurn)
-        {
-            burnedPlayerTeamFirstPlayer.NGMCCanBurn = false;
-            burnedPlayerTeamFirstPlayer.NGMCMustBurn = false;
-
-            Quiz.Room.Log($"{requestingPlayer.Username} skipped burning.", writeToChat: true);
-            TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
-                false);
-        }
-    }
-
-    public async Task NGMCPickPlayer(Player pickedPlayer, Player requestingPlayer, bool isAutoPick)
-    {
-        if (!isAutoPick && Quiz.QuizState.Phase is QuizPhaseKind.Judgement or QuizPhaseKind.Looting)
-        {
-            return;
-        }
-
-        if (Quiz.QuizState.Phase is QuizPhaseKind.Guess)
-        {
-            bool firstSec = (Quiz.Room.QuizSettings.GuessMs - Quiz.QuizState.RemainingMs) < 1000;
-            if (!firstSec)
-            {
-                return;
-            }
-        }
-
-        if (Quiz.QuizState.QuizStatus != QuizStatus.Playing)
-        {
-            return;
-        }
-
-        if (pickedPlayer.TeamId != requestingPlayer.TeamId)
-        {
-            return;
-        }
-
-        var teams = Quiz.Room.Players.GroupBy(x => x.TeamId).ToArray();
-        var team1 = teams.ElementAt(0);
-        var team2 = teams.ElementAt(1);
-
-        var pickedPlayerTeam = pickedPlayer.TeamId == 1 ? team1 : team2;
-        var pickedPlayerTeamFirstPlayer = pickedPlayerTeam.First();
-        if (pickedPlayer.NGMCCanBePicked)
-        {
-            foreach (Player player in pickedPlayerTeam)
-            {
-                player.NGMCCanBePicked = false;
-            }
-
-            pickedPlayerTeamFirstPlayer.NGMCMustPick = false;
-            pickedPlayer.NGMCGuessesCurrent -= 1;
-            Quiz.Room.Log($"{requestingPlayer.Username} picked {pickedPlayer.Username}.", writeToChat: true);
-
-            if (pickedPlayerTeam.All(x => x.NGMCGuessesCurrent == 0))
-            {
-                foreach (Player player in pickedPlayerTeam)
-                {
-                    player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-                }
-
-                Quiz.Room.Log($"Resetting guesses for team {pickedPlayer.TeamId}.", writeToChat: true);
-            }
-
-            if (!isAutoPick)
-            {
-                string team1GuessesStr = string.Join(";", team1.Select(x => x.NGMCGuessesCurrent));
-                string team2GuessesStr = string.Join(";", team2.Select(x => x.NGMCGuessesCurrent));
-                Quiz.Room.Log($"{team1GuessesStr} | {team2GuessesStr} {team1.First().Lives}-{team2.First().Lives}",
-                    writeToChat: true);
-            }
-
-            TypedQuizHub.ReceiveUpdateRoom(Quiz.Room.Players.Concat(Quiz.Room.Spectators).Select(x => x.Id), Quiz.Room,
-                false);
-        }
     }
 
     public async Task EndQuiz()
@@ -2557,18 +2270,11 @@ public class QuizManager
             }
         }
 
-        if (Quiz.Room.QuizSettings.GamemodeKind is GamemodeKind.NGMC or GamemodeKind.EruMode)
+        if (Quiz.Room.QuizSettings.GamemodeKind is GamemodeKind.EruMode)
         {
             if (teams.Count < 2)
             {
                 Quiz.Room.Log($"Gamemode: There must be at least two teams.", writeToChat: true);
-                return false;
-            }
-
-            if (Quiz.Room.QuizSettings.GamemodeKind is GamemodeKind.NGMC &&
-                Quiz.Room.Players.Any(x => x.TeamId is < 1 or > 2))
-            {
-                Quiz.Room.Log($"Gamemode: The teams must use the team ids 1 and 2.", writeToChat: true);
                 return false;
             }
 
@@ -2590,15 +2296,6 @@ public class QuizManager
             {
                 Quiz.Room.Log($"Gamemode: The Lives setting must be greater than 0.", writeToChat: true);
                 return false;
-            }
-
-            if (Quiz.Room.QuizSettings.GamemodeKind == GamemodeKind.NGMC)
-            {
-                if (Quiz.Room.Players.Any(x => x.NGMCGuessesInitial < 1))
-                {
-                    Quiz.Room.Log($"NGMC: Every player must have at least 1 guess.", writeToChat: true);
-                    return false;
-                }
             }
 
             Quiz.Room.QuizSettings.IsHotjoinEnabled = false;
@@ -2678,11 +2375,6 @@ public class QuizManager
             // do not set player.IsReadiedUp to false here, because it would be annoying to ready up again if we return false
             player.PlayerStatus = PlayerStatus.Default;
             player.LootingInfo = new PlayerLootingInfo();
-            player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-            player.NGMCCanBurn = false;
-            player.NGMCMustPick = false;
-            player.NGMCCanBePicked = false;
-            player.NGMCMustBurn = false;
             player.BotInfo?.SongHitChanceDict.Clear();
 
             if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsAllRandom)
@@ -3406,11 +3098,6 @@ GROUP BY start_time",
             player.IsSkipping = false;
             player.IsReadiedUp = player.IsBot;
             player.PlayerStatus = PlayerStatus.Default;
-            player.NGMCGuessesCurrent = player.NGMCGuessesInitial;
-            player.NGMCCanBurn = false;
-            player.NGMCMustPick = false;
-            player.NGMCCanBePicked = false;
-            player.NGMCMustBurn = false;
 
             if (Quiz.Room.QuizSettings.TeamSize > 1)
             {
@@ -3420,8 +3107,7 @@ GROUP BY start_time",
                     player.Lives = teammate.Lives;
 
                     // don't think having these checks make much sense because you can't hotjoin those gamemodes anyways
-                    if (Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.NGMC &&
-                        Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.EruMode)
+                    if (Quiz.Room.QuizSettings.GamemodeKind != GamemodeKind.EruMode)
                     {
                         player.Score = teammate.Score;
                     }

@@ -56,18 +56,6 @@ public class Player
     public bool HasActiveConnectionQuiz =>
         IsBot || (DateTime.UtcNow - LastHeartbeatTimestampQuiz) < TimeSpan.FromSeconds(30);
 
-    public int NGMCGuessesInitial { get; set; }
-
-    public float NGMCGuessesCurrent { get; set; }
-
-    public bool NGMCCanBurn { get; set; }
-
-    public bool NGMCCanBePicked { get; set; }
-
-    public bool NGMCMustPick { get; set; }
-
-    public bool NGMCMustBurn { get; set; }
-
     public Dictionary<GuessKind, bool?>? IsGuessKindCorrectDict { get; set; }
 
     public AnsweringKind AnsweringKind { get; set; }

@@ -240,7 +240,7 @@ public static class ServerState
         room.Log($"{player.Username} left the room.", player.Id, true);
         if (room.Quiz != null && room.Quiz.QuizState.QuizStatus is not QuizStatus.Ended or QuizStatus.Canceled)
         {
-            if (room.QuizSettings.GamemodeKind is GamemodeKind.NGMC or GamemodeKind.EruMode)
+            if (room.QuizSettings.GamemodeKind is GamemodeKind.EruMode)
             {
                 var quizManager = QuizManagers.SingleOrDefault(x => x.Quiz.Id == room.Quiz.Id);
                 if (quizManager != null)

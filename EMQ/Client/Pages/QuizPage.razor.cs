@@ -1234,33 +1234,6 @@ public partial class QuizPage
         }
     }
 
-    private async Task NGMCBurnPlayer(int playerId)
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NGMCBurnPlayer", playerId);
-        if (res.IsSuccessStatusCode)
-        {
-            StateHasChanged();
-        }
-    }
-
-    private async Task NGMCPickPlayer(int playerId)
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NGMCPickPlayer", playerId);
-        if (res.IsSuccessStatusCode)
-        {
-            StateHasChanged();
-        }
-    }
-
-    private async Task NGMCDontBurn()
-    {
-        HttpResponseMessage res = await _client.PostAsJsonAsync("Quiz/NGMCDontBurn", "");
-        if (res.IsSuccessStatusCode)
-        {
-            StateHasChanged();
-        }
-    }
-
     private async Task Onclick_Username(int userId)
     {
         if (UserDetailsDict.TryGetValue(userId, out _))
