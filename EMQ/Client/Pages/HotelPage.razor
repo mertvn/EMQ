@@ -72,7 +72,7 @@
                             int botCount = room.Players.Count(x => x.IsBot);
                         }
                         <p> Owner: @room.Owner.Username</p>
-                        <p title="@(string.Join(", ", room.Players.Select(x => x.Username)))">
+                        <p title="@(string.Join(", ", room.Players.Where(x => !x.IsBot).Select(x => x.Username)))">
                             Players: @(room.Players.Count - botCount)
                         </p>
                         @if (room.Spectators.Count > 0)
@@ -84,12 +84,14 @@
 
                         @if (botCount > 0)
                         {
-                            <p> Bots: @botCount</p>
+                            <p title="@(string.Join(", ", room.Players.Where(x => x.IsBot).Select(x => x.Username)))">
+                                Bots: @botCount
+                            </p>
                         }
 
                         @if (room.Quiz != null)
                         {
-                            <p> Status: @room.Quiz?.QuizState.QuizStatus</p>
+                            <p> Status: @room.Quiz?.QuizState.QuizStatus @((room.Quiz?.QuizState.IsPaused ?? false) ? " (paused)" : "")</p>
                             <p> Progress: @(room.Quiz?.QuizState.sp + 1)/@(room.Quiz?.QuizState.NumSongs)</p>
                         }
                     </div>

@@ -8,6 +8,7 @@ public enum ScreenshotKind
     None,
 
     [Display(Name = "sf")]
+    [Description("Source")]
     VN,
 
     [Display(Name = "cv")]
