@@ -93,6 +93,7 @@
                         {
                             <p> Status: @room.Quiz?.QuizState.QuizStatus @((room.Quiz?.QuizState.IsPaused ?? false) ? " (paused)" : "")</p>
                             <p> Progress: @(room.Quiz?.QuizState.sp + 1)/@(room.Quiz?.QuizState.NumSongs)</p>
+                            <p> Gamemode: @(room.QuizSettings.GamemodeKind)</p>
                         }
                     </div>
                 </div>
