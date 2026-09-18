@@ -1,15 +1,27 @@
+#playersDiv {
+    display: flex;
+    align-items: flex-end;
+    max-width: 65vw;
+    overflow-x: auto;
+    /* Make room for bubbles inside the scroller without moving the player row down. */
+    padding: 152px 0 0 60px;
+    margin: -152px auto 0;
+}
+
+#quizGrid > :not(#playersDiv) {
+    /* Keep quiz controls clickable through the scroller's empty top padding. */
+    z-index: 1;
+}
+
 .playerDiv {
-    anchor-name: --quiz-player;
-    anchor-scope: --quiz-player;
+    position: relative;
+    z-index: 2;
 }
 
 .quiz-chat-bubble {
-    /* Viewport positioning lets the bubble escape the scrolling player row. */
-    position: fixed;
-    position-anchor: --quiz-player;
-    position-visibility: anchors-visible;
-    bottom: calc(anchor(top) + 15px);
-    left: calc(anchor(center) - 148px);
+    position: absolute;
+    bottom: calc(100% + 15px);
+    left: calc(50% - 148px);
     width: 216px;
     max-width: calc(100vw - 16px);
     z-index: 20;
