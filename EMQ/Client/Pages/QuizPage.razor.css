@@ -1,9 +1,18 @@
+.playerDiv {
+    anchor-name: --quiz-player;
+    anchor-scope: --quiz-player;
+}
+
 .quiz-chat-bubble {
-    position: absolute;
-    top: 6px;
-    left: 4px;
-    right: 4px;
-    z-index: 6;
+    /* Viewport positioning lets the bubble escape the scrolling player row. */
+    position: fixed;
+    position-anchor: --quiz-player;
+    position-visibility: anchors-visible;
+    bottom: calc(anchor(top) + 15px);
+    left: calc(anchor(center) - 148px);
+    width: 216px;
+    max-width: calc(100vw - 16px);
+    z-index: 20;
     padding: 12px 16px;
     border: 3px solid black;
     border-radius: 45% / 24px;
@@ -29,7 +38,8 @@
 .quiz-chat-bubble-tail {
     position: absolute;
     bottom: -24px;
-    right: 24px;
+    /* 3px border + 117px offset + the SVG's 28px tip aligns with the player center. */
+    left: 117px;
     width: 32px;
     height: 28px;
     pointer-events: none;
