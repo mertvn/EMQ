@@ -1,0 +1,54 @@
+.quiz-chat-bubble {
+    position: absolute;
+    top: 6px;
+    left: 4px;
+    right: 4px;
+    z-index: 6;
+    padding: 12px 16px;
+    border: 3px solid black;
+    border-radius: 45% / 24px;
+    background: white;
+    color: black;
+    box-shadow: 0 3px 8px rgb(0 0 0 / 20%);
+    font-size: 14px;
+    line-height: 1.35;
+    text-align: center;
+    animation: quiz-chat-bubble-dismiss 5s linear forwards;
+}
+
+.quiz-chat-bubble-text {
+    position: relative;
+    z-index: 1;
+    max-height: 108px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    scrollbar-width: thin;
+}
+
+.quiz-chat-bubble-tail {
+    position: absolute;
+    bottom: -24px;
+    right: 24px;
+    width: 32px;
+    height: 28px;
+    pointer-events: none;
+}
+
+@keyframes quiz-chat-bubble-dismiss {
+    0%, 90% {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quiz-chat-bubble {
+        animation-timing-function: steps(1, end);
+    }
+}
