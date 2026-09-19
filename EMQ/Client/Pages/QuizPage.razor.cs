@@ -162,10 +162,6 @@ public partial class QuizPage
 
     private ChatComponent? _chatComponent;
 
-    private readonly Dictionary<int, ChatMessage> _playerChatBubbles = new();
-
-    private DateTime? _lastChatMessageTimestamp;
-
     private QuizSettingsComponent? _quizSettingsComponent;
 
     private GenericModal? _leaveModalRef;
@@ -523,7 +519,6 @@ public partial class QuizPage
         {
             Room = room;
             LastSync = syncTime ?? DateTime.UtcNow;
-            UpdateChatBubbles(room);
             if (_chatComponent != null)
             {
                 _chatComponent.Chat = room.Chat;
@@ -541,14 +536,10 @@ public partial class QuizPage
                 LastSync = res.Time!.Value;
                 Console.WriteLine($"applied slow sync @ {LastSync:O}");
                 Room = res.Room;
-                if (Room != null)
+                if (_chatComponent != null && room != null)
                 {
-                    UpdateChatBubbles(Room);
-                    if (_chatComponent != null)
-                    {
-                        _chatComponent.Chat = Room.Chat;
-                        await _chatComponent.CallStateHasChanged();
-                    }
+                    _chatComponent.Chat = room.Chat;
+                    await _chatComponent.CallStateHasChanged();
                 }
             }
             else
@@ -620,40 +611,6 @@ public partial class QuizPage
         }
 
         StateHasChanged();
-    }
-
-    private void UpdateChatBubbles(Room room)
-    {
-        var messages = room.Chat.ToArray();
-        var latestTimestamp = messages.Select(x => x.Timestamp).DefaultIfEmpty(DateTime.MinValue).Max();
-        if (_lastChatMessageTimestamp is null)
-        {
-            // Establish a baseline so joining a quiz does not replay its chat history.
-            _lastChatMessageTimestamp = latestTimestamp;
-            return;
-        }
-
-        var playerIds = room.Players.Select(x => x.Id).ToHashSet();
-        foreach (int playerId in _playerChatBubbles.Keys.Where(x => !playerIds.Contains(x)).ToArray())
-        {
-            _playerChatBubbles.Remove(playerId);
-        }
-
-        foreach (var message in messages.Where(x => x.Timestamp > _lastChatMessageTimestamp.Value)
-                     .OrderBy(x => x.Timestamp))
-        {
-            if (message.Sender is { UserId: 1560 } && playerIds.Contains(message.Sender.UserId) &&
-                !string.IsNullOrWhiteSpace(message.Contents))
-            {
-                // A new keyed element restarts the bubble's five-second CSS animation.
-                _playerChatBubbles[message.Sender.UserId] = message;
-            }
-        }
-
-        if (latestTimestamp > _lastChatMessageTimestamp.Value)
-        {
-            _lastChatMessageTimestamp = latestTimestamp;
-        }
     }
 
     private async Task OnReceiveQuizStarted()
