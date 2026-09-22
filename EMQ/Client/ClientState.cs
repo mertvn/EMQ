@@ -32,6 +32,8 @@ public static class ClientState
 
     public static Dictionary<int, MusicVote> MusicVotes { get; set; } = new();
 
+    public static Dictionary<int, Song> SongsCache { get; } = new();
+
     public static Dictionary<int, SongArtist> ArtistsCache { get; } = new();
 
     public static Dictionary<int, SongSource> SourcesCache { get; } = new();

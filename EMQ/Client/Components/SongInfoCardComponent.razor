@@ -398,6 +398,37 @@
                         <br/>
                     </details>
                 }
+
+                @if (Song.MusicMusics.Any())
+                {
+                    <details open>
+                        <summary>Relationships</summary>
+                        <ul>
+                            @foreach (var rel in Song.MusicMusics)
+                            {
+                                bool forward = rel.source == Song.Id;
+                                int otherId = forward ? rel.target : rel.source;
+                                if (!ClientState.SongsCache.TryGetValue(otherId, out var other))
+                                {
+                                    other = new Song { Id = otherId, Titles = new List<Title> { new() { LatinTitle = $"em{otherId}" } } };
+                                }
+
+                                switch (rel.rel)
+                                {
+                                    case MusicMusicRelKind.AlternateVersion:
+                                        {
+                                            string href = $"em{other.Id}";
+                                            <li>Alt. ver.: <a href=@href target="_blank">@Converters.GetSingleTitle(other.Titles)</a> </li>
+                                            break;
+                                        }
+                                    default:
+                                        <li>Unknown relationship</li>
+                                        break;
+                                }
+                            }
+                        </ul>
+                    </details>
+                }
             }
             </div>
 

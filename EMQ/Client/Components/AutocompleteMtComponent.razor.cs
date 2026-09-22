@@ -49,6 +49,25 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
     [Parameter]
     public EventCallback<string> GuessChanged { get; set; }
 
+    private AutocompleteMt? _guessT;
+
+    [Parameter]
+    public AutocompleteMt? GuessT
+    {
+        get => _guessT;
+        set
+        {
+            if (_guessT != value)
+            {
+                _guessT = value;
+                GuessTChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<AutocompleteMt> GuessTChanged { get; set; }
+
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
@@ -74,6 +93,7 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
 #pragma warning disable CS4014
         AutocompleteComponent.Clear(false); // awaiting this causes signalr messages not to be processed in time (???)
 #pragma warning restore CS4014
+        GuessT = null;
         StateHasChanged();
     }
 
@@ -158,6 +178,7 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
         }
 
         Guess = s;
+        GuessT = value;
         // Console.WriteLine(Guess);
 
         if (IsQuizPage)

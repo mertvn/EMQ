@@ -431,6 +431,24 @@
                             </InputSelect>
                             <label for="VocalsFilter">Vocals</label>
                             <br/>
+
+                            <InputSelect id="MusicAlternateVersionsFilter" @bind-Value="ClientQuizSettings.Filters.MusicAlternateVersionsFilter" style="margin: 5px; width: 85px;">
+                                @foreach (LabelKind labelKind in Enum.GetValues<LabelKind>().Where(x => x != LabelKind.Include))
+                                {
+                                    <option value="@labelKind">
+                                        @if (!string.IsNullOrEmpty(labelKind.GetDescription()))
+                                        {
+                                            @labelKind.GetDescription()
+                                        }
+                                        else
+                                        {
+                                            @labelKind
+                                        }
+                                    </option>
+                                }
+                            </InputSelect>
+                            <label for="MusicAlternateVersionsFilter">Alt. ver.</label>
+                            <br/>
                         </div>
 
                         <div style="border: 1px black solid; margin: 10px; padding: 5px; width: 285px;">

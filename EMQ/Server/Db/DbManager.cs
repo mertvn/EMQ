@@ -573,6 +573,18 @@ ORDER BY music_id;";
             // }
         }
 
+        stopWatch.StartSection("musicMusics");
+        var musicMusics = (await connection.QueryAsync<MusicMusic>(
+            "select distinct * from music_music where source = any(@mIds) or target = any(@mIds)",
+            new { mIds }, transaction)).ToArray();
+        if (musicMusics.Any())
+        {
+            foreach ((int key, Song value) in songs)
+            {
+                value.MusicMusics = musicMusics.Where(x => x.source == key || x.target == key).ToList();
+            }
+        }
+
         stopWatch.StartSection("reports");
         var reportsLookup = (await connection.QueryAsync<Report>(
             "select * from report where music_id = any(@mIds) order by submitted_on",
@@ -1872,6 +1884,14 @@ GROUP BY artist_id";
             }
         }
 
+        foreach (MusicMusic rel in song.MusicMusics)
+        {
+            if (!await connection.UpsertAsync(rel, transaction))
+            {
+                throw new Exception("Failed to upsert rel");
+            }
+        }
+
         if (!song.Artists.Any())
         {
             throw new Exception("no artists");
@@ -3024,6 +3044,53 @@ RETURNING id;",
             ids = (await connection.QueryAsync<(int, int)>(queryMusicIds.Sql, queryMusicIds.Parameters))
                 .Shuffle().ToList();
             // Console.WriteLine(JsonSerializer.Serialize(ids.Select(x => x.Item1)));
+
+            if (filters is { MusicAlternateVersionsFilter: LabelKind.Exclude })
+            {
+                var idSet = ids.Select(x => x.Item1).ToHashSet();
+                var pairs = (await connection.GetListAsync<MusicMusic>())
+                    .Select(p => (Id1: Math.Min(p.source, p.target), Id2: Math.Max(p.source, p.target))).Distinct()
+                    .ToList();
+
+                // Union-Find / Disjoint Set
+                var parent = new Dictionary<int, int>();
+                int Find(int id)
+                {
+                    if (!parent.TryGetValue(id, out int p))
+                    {
+                        parent[id] = id;
+                        return id;
+                    }
+
+                    if (p != id)
+                    {
+                        parent[id] = Find(p);
+                    }
+
+                    return parent[id];
+                }
+
+                void Union(int a, int b)
+                {
+                    int rootA = Find(a);
+                    int rootB = Find(b);
+                    if (rootA != rootB)
+                        parent[rootB] = rootA;
+                }
+
+                foreach (var pair in pairs)
+                {
+                    Union(pair.Id1, pair.Id2);
+                }
+
+                var winners = idSet.GroupBy(Find)
+                    .Select(group =>
+                    {
+                        int[] candidates = group.ToArray();
+                        return candidates[Random.Shared.Next(candidates.Length)];
+                    }).ToHashSet();
+                ids = ids.Where(id => winners.Contains(id.Item1)).ToList();
+            }
 
             if (!ids.Any())
             {

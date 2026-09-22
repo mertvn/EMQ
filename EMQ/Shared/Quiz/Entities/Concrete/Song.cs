@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json.Serialization;
 using EMQ.Shared.Core;
+using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Quiz.Entities.Abstract;
 
 namespace EMQ.Shared.Quiz.Entities.Concrete;
@@ -90,6 +91,8 @@ public partial class Song : IEditQueueEntity
     [JsonIgnore]
     public bool IsBGM => Sources.Any(x => x.SongTypes.Contains(SongSourceSongType.BGM));
 
+    public List<MusicMusic> MusicMusics { get; set; } = new();
+
     public override string ToString()
     {
         var first = Titles.FirstOrDefault(x => x.Language == "ja" && x.IsMainTitle) ?? Titles.First();
@@ -139,6 +142,8 @@ public partial class Song : IEditQueueEntity
             songSource.Sort();
         }
 
+        MusicMusics = MusicMusics.OrderBy(x => x.source).ThenBy(x => x.target).ThenBy(x => x.rel).ToList();
+
         return this;
     }
 }
@@ -169,4 +174,10 @@ public enum SongType
 
     [Display(Name = "Self-explanatory.")]
     Cover = 16,
+}
+
+public enum MusicMusicRelKind
+{
+    [Display(Name = "Alternate version")]
+    AlternateVersion = 1,
 }

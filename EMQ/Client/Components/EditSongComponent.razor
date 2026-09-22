@@ -293,6 +293,84 @@
         </div>
         <br/>
 
+    @if (!IsNew)
+    {
+        <div style="border: 1px black solid; padding: 10px;">
+            <h5>Relationships (song-song)</h5>
+            <AutocompleteMtComponent @ref="_autocompleteMtComponentRef"
+                                    Placeholder="Enter song title here"
+                                    IsDisabled="false"
+                                    IsQuizPage="false"
+                                    @bind-GuessT="@SelectedSong"
+                                    Callback="SelectedResultChangedMt">
+            </AutocompleteMtComponent>
+            @foreach (var rel in Song.MusicMusics)
+            {
+                string sourceStr = rel.rel switch {
+                    MusicMusicRelKind.AlternateVersion => "Alt. ver.: ",
+                    _ => "Source: "
+                    };
+
+                string targetStr = rel.rel switch {
+                    MusicMusicRelKind.AlternateVersion => "Alt. ver.: ",
+                    _ => "Target: "
+                    };
+
+                <div style="border: 1px black solid; padding: 10px;">
+                    <span style="display: inline-block; cursor: pointer; margin-right: 4px;" @onclick="@(async () => { await RemoveMusicMusic(rel); })">
+                        🗑
+                    </span>
+
+                    <div>
+                        @sourceStr
+                        @if (ClientState.SongsCache.TryGetValue(rel.source, out var sourceMusic))
+                        {
+                            string href = $"em{rel.source}";
+                            <a href=@href>@Converters.GetSingleTitle(sourceMusic.Titles)</a>
+                        }
+                        else
+                        {
+                            @rel.source
+                        }
+                    </div>
+
+                    <div>
+                        @targetStr
+                        @if (ClientState.SongsCache.TryGetValue(rel.target, out var targetMusic))
+                        {
+                            string href = $"em{rel.target}";
+                            <a href=@href>@Converters.GetSingleTitle(targetMusic.Titles)</a>
+                        }
+                        else
+                        {
+                            @rel.target
+                        }
+                    </div>
+
+                    <div>
+                        Type:
+                        @if (true)
+                        {
+                            string id = $"select-MusicMusic-{rel.source}-{rel.target}-{rel.rel}";
+                            <select id="@id" style="margin: 5px" @bind="rel.rel">
+                                @foreach (var key in Enum.GetValues<MusicMusicRelKind>())
+                                {
+                                    <option value="@key">@key.GetDisplayName()</option>
+                                }
+                            </select>
+                            <br/>
+                        }
+                    </div>
+
+                    <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(() => (rel.source, rel.target) = (rel.target, rel.source))">
+                        Change direction
+                    </button>
+                </div>
+            }
+        </div>
+        <br/>
+    }
+
         @if (IsNew)
         {
             <label>
@@ -395,6 +473,8 @@
 
     public AutocompleteA? SelectedArtist { get; set; }
 
+    public AutocompleteMt? SelectedSong { get; set; }
+
     public List<string> ValidationMessages { get; } = new();
 
     private static Song GetNewSong => new() { DataSource = DataSourceKind.EMQ, Type = SongType.Standard, Titles = new List<Title> { new() { Language = "ja", IsMainTitle = true } } }; // todo lang
@@ -435,6 +515,9 @@
     private List<MBTrack> MBTracks { get; } = new();
 
     private int MBTracksIndex { get; set; } = -1;
+
+    public AutocompleteMtComponent _autocompleteMtComponentRef { get; set; }
+
 
     public void Dispose()
     {
@@ -535,6 +618,31 @@
     {
         await MusicBrainzMethods.AddArtist(Song, SelectedArtist, null, _client);
         await _autocompleteAComponentRef.ClearInputField();
+        await CallStateHasChanged();
+    }
+
+    private async Task SelectedResultChangedMt()
+    {
+        if (SelectedSong is null)
+        {
+            return;
+        }
+
+        if (Song.Id == SelectedSong.MId)
+        {
+            return;
+        }
+
+        var req = new Song() { Id = SelectedSong.MId };
+        HttpResponseMessage res1 = await _client.PostAsJsonAsync("Library/GetSong", req);
+        if (res1.IsSuccessStatusCode)
+        {
+            var content = (await res1.Content.ReadFromJsonAsync<ResGetSong>())!;
+            ClientState.SongsCache[content.Song.Id] = content.Song;
+            Song.MusicMusics.Add(new MusicMusic() { source = Song.Id, target = content.Song.Id });
+        }
+
+        await _autocompleteMtComponentRef.ClearInputField();
         await CallStateHasChanged();
     }
 
@@ -754,6 +862,39 @@
         {
             ValidationMessages.Add("Unknown link types are not allowed.");
             isValid = false;
+        }
+
+        foreach (MusicMusic rel in song.MusicMusics)
+        {
+            if (rel.source == rel.target)
+            {
+                ValidationMessages.Add("Selfcest is not allowed.");
+                isValid = false;
+            }
+
+            if (rel.source <= 0)
+            {
+                ValidationMessages.Add("Invalid relationship source.");
+                isValid = false;
+            }
+
+            if (rel.target <= 0)
+            {
+                ValidationMessages.Add("Invalid relationship target.");
+                isValid = false;
+            }
+
+            if (!Enum.IsDefined(typeof(MusicMusicRelKind), rel.rel))
+            {
+                ValidationMessages.Add("Invalid relationship type.");
+                isValid = false;
+            }
+
+            if (song.MusicMusics.Count(x => x.source == rel.source && x.target == rel.target && x.rel == rel.rel) != 1)
+            {
+                ValidationMessages.Add("Duplicate relationship detected.");
+                isValid = false;
+            }
         }
 
         return isValid;
@@ -1064,6 +1205,12 @@
         }
 
         StateHasChanged();
+    }
+
+    private async Task RemoveMusicMusic(MusicMusic rel)
+    {
+        Song.MusicMusics.Remove(rel);
+        await CallStateHasChanged();
     }
 
 }

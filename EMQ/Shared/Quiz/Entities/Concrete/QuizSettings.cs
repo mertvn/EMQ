@@ -861,6 +861,12 @@ public class QuizSettings
             diff.Add($"Show player guess status: {o.IsShowGuessStatus} → {n.IsShowGuessStatus}");
         }
 
+        if (o.Filters.MusicAlternateVersionsFilter != n.Filters.MusicAlternateVersionsFilter)
+        {
+            diff.Add(
+                $"Alternate song versions: {o.Filters.MusicAlternateVersionsFilter.GetDescription()} → {n.Filters.MusicAlternateVersionsFilter.GetDescription()}");
+        }
+
         return diff;
     }
 }
