@@ -594,7 +594,7 @@
             artistAlias.Titles = artistAlias.Titles.Where(y => y.LatinTitle == SelectedArtist.AALatinAlias && ((y.NonLatinTitle == null && SelectedArtist.AANonLatinAlias == "") || (y.NonLatinTitle == SelectedArtist.AANonLatinAlias))).ToList();
 
             ClientState.ArtistsCache[artistAlias.Id] = artistAlias;
-            Artist.ArtistArtists.Add(new ArtistArtist { source = Artist.Id, target = artistAlias.Id });
+            Artist.ArtistArtists.Add(new ArtistArtist { source = Artist.Id, target = artistAlias.Id, rel = ArtistArtistRelKind.MemberOfBand });
         }
 
         await _autocompleteAComponentRef.ClearInputField();

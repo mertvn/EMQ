@@ -321,25 +321,28 @@
                         🗑
                     </span>
 
-                    <div>
-                        @sourceStr
-                        @if (ClientState.SongsCache.TryGetValue(rel.source, out var sourceMusic))
-                        {
-                            string href = $"em{rel.source}";
-                            <a href=@href>@Converters.GetSingleTitle(sourceMusic.Titles)</a>
-                        }
-                        else
-                        {
-                            @rel.source
-                        }
-                    </div>
+                      @if (rel.rel != MusicMusicRelKind.AlternateVersion)
+                      {
+                          <div>
+                              @sourceStr
+                              @if (ClientState.SongsCache.TryGetValue(rel.source, out var sourceMusic))
+                              {
+                                  string href = $"em{rel.source}";
+                                  <a href=@href>@Converters.GetSingleTitle(sourceMusic.Titles)</a>
+                              }
+                              else
+                              {
+                                  @rel.source
+                              }
+                          </div>
+                      }
 
-                    <div>
+                      <div>
                         @targetStr
                         @if (ClientState.SongsCache.TryGetValue(rel.target, out var targetMusic))
                         {
                             string href = $"em{rel.target}";
-                            <a href=@href>@Converters.GetSingleTitle(targetMusic.Titles)</a>
+                            <span>@href</span> <a href=@href>@Converters.GetSingleTitle(targetMusic.Titles)</a>
                         }
                         else
                         {
@@ -362,9 +365,13 @@
                         }
                     </div>
 
-                    <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(() => (rel.source, rel.target) = (rel.target, rel.source))">
-                        Change direction
-                    </button>
+                    @if (rel.rel != MusicMusicRelKind.AlternateVersion)
+                    {
+                        <button type="button" class="btn btn-primary" disabled="@(!Ready)" @onclick="@(() => (rel.source, rel.target) = (rel.target, rel.source))">
+                            Change direction
+                        </button>
+                    }
+
                 </div>
             }
         </div>
@@ -639,7 +646,7 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSong>())!;
             ClientState.SongsCache[content.Song.Id] = content.Song;
-            Song.MusicMusics.Add(new MusicMusic() { source = Song.Id, target = content.Song.Id });
+            Song.MusicMusics.Add(new MusicMusic() { source = Song.Id, target = content.Song.Id, rel = MusicMusicRelKind.AlternateVersion });
         }
 
         await _autocompleteMtComponentRef.ClearInputField();
