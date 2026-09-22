@@ -2278,7 +2278,7 @@ RETURNING id;",
         List<int>? validMids = null, List<int>? invalidMids = null,
         Dictionary<SongSourceSongType, int>? songTypesLeft = null, int? ownerUserId = null,
         GamemodeKind? gamemodeKind = null, SongSelectionKind? songSelectionKind = null,
-        Dictionary<ListReadKind, int>? listReadKindLeft = null)
+        Dictionary<ListReadKind, int>? listReadKindLeft = null, IEnumerable<int>? selectedMids = null)
     {
         var stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -3083,7 +3083,10 @@ RETURNING id;",
                     Union(pair.Id1, pair.Id2);
                 }
 
+                // Earlier batches in a balanced quiz may already contain a version from this group.
+                var selectedGroups = selectedMids?.Select(Find).ToHashSet() ?? new HashSet<int>();
                 var winners = idSet.GroupBy(Find)
+                    .Where(group => !selectedGroups.Contains(group.Key))
                     .Select(group =>
                     {
                         int[] candidates = group.ToArray();
@@ -6006,6 +6009,10 @@ LEFT JOIN artist a ON a.id = aa.artist_id
         if (!isImport) // newSong won't contain Links if isImport
         {
             rowsDeletedMel = await connection.ExecuteAsync("DELETE FROM music_external_link where music_id = @mId",
+                new { mId = oldMid }, transaction);
+
+            // Manual edits replace relationships; imports do not contain this locally maintained data.
+            await connection.ExecuteAsync("DELETE FROM music_music where source = @mId or target = @mId",
                 new { mId = oldMid }, transaction);
         }
 

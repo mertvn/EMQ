@@ -2616,7 +2616,8 @@ public class QuizManager
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
                                     ownerUserId: Quiz.Room.Owner.Id,
                                     gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
-                                    listReadKindLeft: listReadKindLeft));
+                                    listReadKindLeft: listReadKindLeft,
+                                    selectedMids: dbSongs.Select(x => x.Id).ToArray()));
                                 invalidMids.AddRange(dbSongs.Select(x => x.Id));
                             }
 
@@ -2654,7 +2655,8 @@ public class QuizManager
                                     validMids: validMids, invalidMids: invalidMids, songTypesLeft: songTypesLeft,
                                     ownerUserId: Quiz.Room.Owner.Id,
                                     gamemodeKind: Quiz.Room.QuizSettings.GamemodeKind,
-                                    listReadKindLeft: listReadKindLeft));
+                                    listReadKindLeft: listReadKindLeft,
+                                    selectedMids: dbSongs.Select(x => x.Id).ToArray()));
                                 invalidMids.AddRange(dbSongs.Select(x => x.Id));
                             }
 
