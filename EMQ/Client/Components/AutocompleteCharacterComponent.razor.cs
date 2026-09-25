@@ -19,7 +19,13 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteCharacter[] AutocompleteData { get; set; } = Array.Empty<AutocompleteCharacter>();
+    private const string AutocompleteKey = "autocomplete/character.bin";
+
+    public AutocompleteCharacter[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<AutocompleteCharacter>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -54,14 +60,19 @@ public partial class AutocompleteCharacterComponent : IAutocompleteComponent
 
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        var res = await _client.GetAsync("autocomplete/character.bin");
-        if (res.IsSuccessStatusCode)
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync<AutocompleteCharacter>(AutocompleteKey, async () =>
         {
+            using var res = await _client.GetAsync(AutocompleteKey);
+            if (!res.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
             byte[] content = await res.Content.ReadAsByteArrayAsync();
-            AutocompleteData = AutocompleteCharacterSerializer.DeserializeArray(content);
-        }
+            return AutocompleteCharacterSerializer.DeserializeArray(content);
+        });
     }
 
     public void CallStateHasChanged()

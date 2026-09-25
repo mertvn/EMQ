@@ -19,7 +19,13 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteMt> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteMt[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMt>();
+    private string AutocompleteKey => UseBGM ? "autocomplete/mt_all.json" : "autocomplete/mt.json";
+
+    public AutocompleteMt[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<AutocompleteMt>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -76,11 +82,11 @@ public partial class AutocompleteMtComponent : IAutocompleteComponent
 
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnParametersSetAsync()
     {
-        AutocompleteData = UseBGM
-            ? (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt_all.json"))!
-            : (await _client.GetFromJsonAsync<AutocompleteMt[]>("autocomplete/mt.json"))!;
+        string key = AutocompleteKey;
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync(key,
+            () => _client.GetFromJsonAsync<AutocompleteMt[]>(key));
     }
 
     public void CallStateHasChanged()

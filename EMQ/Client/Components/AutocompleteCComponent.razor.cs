@@ -19,7 +19,13 @@ public partial class AutocompleteCComponent
 {
     public MyAutocompleteComponent<SongSourceCategory> AutocompleteComponent { get; set; } = null!;
 
-    public SongSourceCategory[] AutocompleteData { get; set; } = Array.Empty<SongSourceCategory>();
+    private const string AutocompleteKey = "autocomplete/c.json";
+
+    public SongSourceCategory[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<SongSourceCategory>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -52,9 +58,10 @@ public partial class AutocompleteCComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<SongSourceCategory[]>("autocomplete/c.json", Utils.Jso))!;
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync(AutocompleteKey,
+            () => _client.GetFromJsonAsync<SongSourceCategory[]>(AutocompleteKey, Utils.Jso));
     }
 
     public void CallStateHasChanged()

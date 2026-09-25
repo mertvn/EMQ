@@ -38,6 +38,8 @@ public static class ClientState
 
     public static Dictionary<int, SongSource> SourcesCache { get; } = new();
 
+    public static ConcurrentDictionary<string, Array> AutocompleteData { get; } = new();
+
     public static SongArtist[] CopiedCAL { get; set; } = Array.Empty<SongArtist>();
 
     public static SongSource[] CopiedSources { get; set; } = Array.Empty<SongSource>();

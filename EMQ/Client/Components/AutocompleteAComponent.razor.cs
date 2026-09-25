@@ -19,7 +19,13 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteA> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteA[] AutocompleteData { get; set; } = Array.Empty<AutocompleteA>();
+    private const string AutocompleteKey = "autocomplete/a.json";
+
+    public AutocompleteA[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<AutocompleteA>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -78,9 +84,10 @@ public partial class AutocompleteAComponent : IAutocompleteComponent
 
     private const string ShowAllResultsStr = "[Show all results]";
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        AutocompleteData = (await _client.GetFromJsonAsync<AutocompleteA[]>("autocomplete/a.json"))!;
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync(AutocompleteKey,
+            () => _client.GetFromJsonAsync<AutocompleteA[]>(AutocompleteKey));
     }
 
     public void CallStateHasChanged()

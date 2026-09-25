@@ -17,7 +17,13 @@ public partial class GuessInputComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteMst> AutocompleteComponent { get; set; } = null!;
 
-    public AutocompleteMst[] AutocompleteData { get; set; } = Array.Empty<AutocompleteMst>();
+    private string AutocompleteKey => UseAll ? "autocomplete/mst_all.json" : "autocomplete/mst.json";
+
+    public AutocompleteMst[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<AutocompleteMst>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -77,11 +83,11 @@ public partial class GuessInputComponent : IAutocompleteComponent
 
     public string? GetSelectedText() => AutocompleteComponent.SelectedText;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnParametersSetAsync()
     {
-        AutocompleteData = UseAll
-            ? (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst_all.json"))!
-            : (await _client.GetFromJsonAsync<AutocompleteMst[]>("autocomplete/mst.json"))!;
+        string key = AutocompleteKey;
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync(key,
+            () => _client.GetFromJsonAsync<AutocompleteMst[]>(key));
     }
 
     public void CallStateHasChanged()

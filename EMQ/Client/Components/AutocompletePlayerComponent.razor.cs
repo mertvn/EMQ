@@ -19,7 +19,11 @@ public partial class AutocompletePlayerComponent : IAutocompleteComponent
     public MyAutocompleteComponent<string> AutocompleteComponent { get; set; } = null!;
 
     [Parameter]
-    public string[] AutocompleteData { get; set; } = Array.Empty<string>();
+    public string[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<string>("players");
+        set => ClientState.AutocompleteData["players"] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";

@@ -20,7 +20,13 @@ public partial class AutocompleteCollectionComponent : IAutocompleteComponent
 {
     public MyAutocompleteComponent<AutocompleteCollection> AutocompleteComponent { get; set; } = null!;
 
-    public static AutocompleteCollection[] AutocompleteData { get; set; } = Array.Empty<AutocompleteCollection>();
+    private const string AutocompleteKey = "autocomplete/collection.json";
+
+    public static AutocompleteCollection[] AutocompleteData
+    {
+        get => AutocompleteDataLoader.GetAutocompleteData<AutocompleteCollection>(AutocompleteKey);
+        set => ClientState.AutocompleteData[AutocompleteKey] = value;
+    }
 
     [Parameter]
     public string Placeholder { get; set; } = "";
@@ -53,10 +59,10 @@ public partial class AutocompleteCollectionComponent : IAutocompleteComponent
     [Parameter]
     public Func<Task>? Callback { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
-        AutocompleteData =
-            (await _client.GetFromJsonAsync<AutocompleteCollection[]>("autocomplete/collection.json", Utils.Jso))!;
+        return AutocompleteDataLoader.EnsureAutocompleteDataAsync(AutocompleteKey,
+            () => _client.GetFromJsonAsync<AutocompleteCollection[]>(AutocompleteKey, Utils.Jso));
     }
 
     public void CallStateHasChanged()
