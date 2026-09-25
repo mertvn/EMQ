@@ -1,4 +1,5 @@
 @page "/DeveloperStats"
+@using EMQ.Client.Components
 @using EMQ.Shared.Library.Entities.Concrete.Dto
 @using EMQ.Shared.Library.Entities.Concrete.Dto.Request
 @using EMQ.Shared.Quiz.Entities.Concrete
@@ -19,9 +20,11 @@
                @bind="_search.DeveloperId" @bind:event="oninput" aria-describedby="developer-search-help"/>
     </div>
     <div class="search-field">
-        <label for="developer-name">Name</label>
-        <input id="developer-name" type="search" class="form-control" placeholder="Developer name"
-               @bind="_search.Name" @bind:event="oninput" aria-describedby="developer-search-help"/>
+        <label>Name</label>
+        <AutocompleteDeveloperComponent @ref="_developerAutocomplete"
+                                        Placeholder="Developer name"
+                                        IsQuizPage="false"
+                                        @bind-Guess="_search.Name"/>
     </div>
     <div class="search-field source-type">
         <label for="developer-source-type">Source type</label>
@@ -82,6 +85,7 @@ else if (_stats != null)
 
 @code {
     private readonly ReqGetDeveloperStats _search = new();
+    private AutocompleteDeveloperComponent? _developerAutocomplete;
     private ResGetDeveloperStats? _stats;
     private string? _searchedDeveloper;
     private string? _error;
@@ -98,7 +102,7 @@ else if (_stats != null)
         var req = new ReqGetDeveloperStats
         {
             DeveloperId = _search.DeveloperId.Trim(),
-            Name = _search.Name.Trim(),
+            Name = (_developerAutocomplete?.GetSelectedText() ?? _search.Name ?? "").Trim(),
             SourceType = _search.SourceType,
         };
         _stats = null;
