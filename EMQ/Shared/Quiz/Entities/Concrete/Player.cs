@@ -182,6 +182,9 @@ public class PlayerPreferences
     [Required]
     public int VolumeMaster { get; set; } = 70;
 
+    [Required]
+    public bool AutoReadyUp { get; set; } = false;
+
     // todo make these skip preferences not cause unskip
     [Required]
     public bool AutoSkipGuessPhase { get; set; } = false;

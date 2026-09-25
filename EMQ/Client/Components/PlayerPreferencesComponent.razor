@@ -60,6 +60,10 @@
         <label for="RestartSongsOnResultsPhase">Restart songs on Results Phase</label>
         <br/>
 
+        <InputCheckbox id="AutoReadyUp" class="form-check-input" @bind-Value="ClientState.Preferences.AutoReadyUp" style="margin: 5px"></InputCheckbox>
+        <label for="AutoReadyUp">Automatically ready up when entering or returning to a room</label>
+        <br/>
+
         <InputCheckbox id="AutoSkipGuessPhase" class="form-check-input" @bind-Value="ClientState.Preferences.AutoSkipGuessPhase" style="margin: 5px"></InputCheckbox>
         <label for="AutoSkipGuessPhase">Auto-skip Guess Phase</label>
         <br/>

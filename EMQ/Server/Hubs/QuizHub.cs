@@ -284,7 +284,7 @@ public class QuizHub : Hub
         }
     }
 
-    public async Task SendToggleReadiedUp()
+    public async Task SendSetReadiedUp(bool isReadiedUp)
     {
         var session = ServerUtils.GetSessionFromConnectionId(Context.ConnectionId);
         if (session != null)
@@ -292,7 +292,7 @@ public class QuizHub : Hub
             var room = ServerState.Rooms.SingleOrDefault(x => x.Players.Any(y => y.Id == session.Player.Id));
             if (room != null)
             {
-                session.Player.IsReadiedUp = !session.Player.IsReadiedUp;
+                session.Player.IsReadiedUp = isReadiedUp;
                 TypedQuizHub.ReceiveUpdateRoomForRoom(room.Players.Concat(room.Spectators).Select(x => x.Id), room);
             }
         }

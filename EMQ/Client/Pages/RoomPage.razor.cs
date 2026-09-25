@@ -102,6 +102,7 @@ public partial class RoomPage
         Room = await _clientUtils.SyncRoom();
         if (Room != null)
         {
+            await TryAutoReadyUp();
             StateHasChanged();
         }
         else
@@ -241,9 +242,27 @@ public partial class RoomPage
         StateHasChanged();
     }
 
+    private async Task TryAutoReadyUp()
+    {
+        if (!ClientState.Preferences.AutoReadyUp || Room == null ||
+            Room.Quiz?.QuizState.QuizStatus is QuizStatus.Starting or QuizStatus.Playing ||
+            !Room.Players.Any(x => x.Id == ClientState.Session?.Player.Id && !x.IsReadiedUp))
+        {
+            return;
+        }
+
+        await SendSetReadiedUp(true);
+    }
+
     private async Task SendToggleReadiedUp()
     {
-        await ClientState.Session!.hubConnection!.SendAsync("SendToggleReadiedUp");
+        var player = Room!.Players.Single(x => x.Id == ClientState.Session!.Player.Id);
+        await SendSetReadiedUp(!player.IsReadiedUp);
+    }
+
+    private async Task SendSetReadiedUp(bool isReadiedUp)
+    {
+        await ClientState.Session!.hubConnection!.SendAsync("SendSetReadiedUp", isReadiedUp);
     }
 
     private async Task OnclickChangeRoomNameAndPassword()
