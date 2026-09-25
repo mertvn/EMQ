@@ -2526,7 +2526,20 @@ public class QuizManager
                         case SpacedRepetitionKind.Review:
                             validMids =
                                 await DbManager.GetMidsWithReviewsDue(Quiz.Room.Players.Select(x => x.Id).ToList());
-                            Quiz.Room.Log($"{validMids.Count} songs are due for review.", writeToChat: true);
+                            int reviewCount = validMids.Distinct().Count();
+                            if (!Quiz.Room.QuizSettings.Filters.ListReadKindFiltersIsAllRandom ||
+                                !string.IsNullOrWhiteSpace(Quiz.Room.QuizSettings.Filters.VndbAdvsearchFilter))
+                            {
+                                var validSources = validSourcesDict.SelectMany(x => x.Value).Distinct().ToArray();
+                                reviewCount = await connection.QuerySingleAsync<int>(
+                                    @"SELECT COUNT(DISTINCT msm.music_id)
+FROM music_source_music msm
+JOIN music_source_external_link msel ON msel.music_source_id = msm.music_source_id
+WHERE msm.music_id = ANY(@validMids) AND msel.url = ANY(@validSources)",
+                                    new { validMids, validSources });
+                            }
+
+                            Quiz.Room.Log($"{reviewCount} songs are due for review.", writeToChat: true);
                             break;
                         case SpacedRepetitionKind.NoIntervalOnly:
                             invalidMids =
