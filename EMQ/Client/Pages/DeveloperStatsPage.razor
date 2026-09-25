@@ -6,20 +6,47 @@
 @inject HttpClient _client
 @inject ClientUtils _clientUtils
 
-<PageTitle>@DisplayName - Developer stats</PageTitle>
-<h3>@DisplayName</h3>
-<p>Player totals across this developer's songs.</p>
+<a class="link link-primary" href="/eu/all">Browse users</a>
+<br/>
+
+<h3>Developer stats</h3>
+<p>Search for player totals across a developer's songs.</p>
+
+<form class="developer-search" @onsubmit="Search" @onsubmit:preventDefault>
+    <div class="search-field">
+        <label for="developer-id">VNDB ID</label>
+        <input id="developer-id" type="search" class="form-control" placeholder="e.g. p123"
+               @bind="_search.DeveloperId" @bind:event="oninput" aria-describedby="developer-search-help"/>
+    </div>
+    <div class="search-field">
+        <label for="developer-name">Name</label>
+        <input id="developer-name" type="search" class="form-control" placeholder="Developer name"
+               @bind="_search.Name" @bind:event="oninput" aria-describedby="developer-search-help"/>
+    </div>
+    <div class="search-field source-type">
+        <label for="developer-source-type">Source type</label>
+        <select id="developer-source-type" class="form-select" @bind="_search.SourceType">
+            @foreach (var sourceType in Enum.GetValues<SongSourceType>())
+            {
+                <option value="@sourceType">@sourceType</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary" disabled="@_isLoading">Search</button>
+</form>
+<p id="developer-search-help">Enter a VNDB ID or an exact developer name. If both are entered, the ID is used.</p>
 
 @if (_error != null)
 {
     <p role="alert">@_error</p>
 }
-else if (_stats == null)
+else if (_isLoading)
 {
-    <p>Loading stats...</p>
+    <p role="status">Loading stats...</p>
 }
-else
+else if (_stats != null)
 {
+    <h4>@_searchedDeveloper</h4>
     <p>Songs: @_stats.SongCount</p>
     @if (_stats.PlayerSongStats.Length == 0)
     {
@@ -40,9 +67,7 @@ else
         <Paginator State="@_pagination"/>
         <div class="grid" tabindex="-1">
             <QuickGrid Items="@_stats.PlayerSongStats.AsQueryable()" Pagination="@_pagination">
-                <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.Username))">
-                    <a href="@($"eu{context.UserId}")">@context.Username</a>
-                </TemplateColumn>
+                <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
                 <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
                 <PropertyColumn Property="@(x => x.TimesCorrect)" Title="Correct" Sortable="true"/>
                 <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
@@ -56,40 +81,36 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery(Name = "developerId")]
-    public string? DeveloperId { get; set; }
-
-    [SupplyParameterFromQuery(Name = "name")]
-    public string? Name { get; set; }
-
-    [SupplyParameterFromQuery(Name = "sourceType")]
-    public int SourceType { get; set; } = (int)SongSourceType.VN;
-
-    private string DisplayName => string.IsNullOrWhiteSpace(Name) ? DeveloperId ?? "Developer stats" : Name;
-
+    private readonly ReqGetDeveloperStats _search = new();
     private ResGetDeveloperStats? _stats;
+    private string? _searchedDeveloper;
     private string? _error;
-    private int _requestVersion;
+    private bool _isLoading;
     private readonly PaginationState _pagination = new() { ItemsPerPage = 10 };
 
-    protected override async Task OnParametersSetAsync()
+    private async Task Search()
     {
-        int requestVersion = ++_requestVersion;
-        var req = new ReqGetDeveloperStats
+        if (_isLoading)
         {
-            DeveloperId = DeveloperId ?? "",
-            Name = Name ?? "",
-            SourceType = (SongSourceType)SourceType,
-        };
-        _stats = null;
-        _error = null;
-        if ((string.IsNullOrWhiteSpace(req.DeveloperId) && string.IsNullOrWhiteSpace(req.Name)) ||
-            !Enum.IsDefined(req.SourceType))
-        {
-            _error = "Open a developer's name from a song or source to view their stats.";
             return;
         }
 
+        var req = new ReqGetDeveloperStats
+        {
+            DeveloperId = _search.DeveloperId.Trim(),
+            Name = _search.Name.Trim(),
+            SourceType = _search.SourceType,
+        };
+        _stats = null;
+        _error = null;
+        if (string.IsNullOrWhiteSpace(req.DeveloperId) && string.IsNullOrWhiteSpace(req.Name))
+        {
+            _error = "Enter a VNDB ID or developer name.";
+            return;
+        }
+
+        _isLoading = true;
+        _searchedDeveloper = $"{(req.DeveloperId.Length > 0 ? req.DeveloperId : req.Name)} ({req.SourceType})";
         try
         {
             await _clientUtils.TryRestoreSession();
@@ -97,21 +118,17 @@ else
             var stats = response.IsSuccessStatusCode
                 ? await response.Content.ReadFromJsonAsync<ResGetDeveloperStats>()
                 : null;
-            if (requestVersion != _requestVersion)
-            {
-                return;
-            }
-
             _stats = stats;
             _error = stats == null ? "Could not load developer stats. Please try again." : null;
             await _pagination.SetCurrentPageIndexAsync(0);
         }
         catch (HttpRequestException)
         {
-            if (requestVersion == _requestVersion)
-            {
-                _error = "Could not load developer stats. Please try again.";
-            }
+            _error = "Could not load developer stats. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 }

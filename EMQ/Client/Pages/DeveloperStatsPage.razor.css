@@ -1,3 +1,24 @@
+.developer-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.search-field {
+    flex: 1 1 220px;
+}
+
+.search-field label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.source-type {
+    flex: 0 1 160px;
+}
+
 .grid {
     overflow-x: auto;
 }

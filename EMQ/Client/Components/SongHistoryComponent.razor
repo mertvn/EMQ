@@ -193,20 +193,10 @@
 
                             @if (true)
                             {
-                                var developers = song.Sources.SelectMany(source => source.Developers.Select(developer => (source.Type, Developer: developer)))
-                                    .DistinctBy(x => (x.Type, x.Developer.VndbId, x.Developer.Title.LatinTitle)).ToArray();
+                                var developers = song.Sources.SelectMany(x => x.Developers).DistinctBy(x => x.Title.LatinTitle).ToArray();
                                 if (developers.Any())
                                 {
-                                    <span>Developers: </span>
-                                    @for (int developerIndex = 0; developerIndex < developers.Length; developerIndex++)
-                                    {
-                                        if (developerIndex > 0)
-                                        {
-                                            <span>, </span>
-                                        }
-                                        var developer = developers[developerIndex];
-                                        <DeveloperLinkComponent Developer="developer.Developer" SourceType="developer.Type"/>
-                                    }
+                                    <span>Developers: @string.Join(", ", developers.Select(x => x.Title.LatinTitle))</span>
                                     <br/>
                                 }
                             }
