@@ -104,11 +104,20 @@ public partial class ChatComponent
                         string commandId = split[0].Replace("/", "").ToLowerInvariant();
                         switch (commandId)
                         {
+                            case "help":
+                                message = new ChatMessage("Available commands: " +
+                                    "/roll <number> (roll locally), " +
+                                    "/rollpublic <number> (roll in chat), " +
+                                    "/ping (show latency), " +
+                                    "/shrug (send a shrug), " +
+                                    "/help (show commands).");
+                                break;
                             case "roll":
+                            case "rollpublic":
                                 {
                                     if (split.Length != 2)
                                     {
-                                        message = new ChatMessage("Usage: /roll <number>");
+                                        message = new ChatMessage($"Usage: /{commandId} <number>");
                                     }
                                     else
                                     {
@@ -118,6 +127,13 @@ public partial class ChatComponent
                                             if (limit is > 0 and < int.MaxValue)
                                             {
                                                 int rolled = Random.Shared.Next(1, limit + 1);
+                                                if (commandId == "rollpublic")
+                                                {
+                                                    ChatInputText = $"{session.Player.Username} rolled {rolled}";
+                                                    await OnKeyDown(new KeyboardEventArgs() { Key = "Enter" });
+                                                    return;
+                                                }
+
                                                 message = new ChatMessage(rolled.ToString());
                                             }
                                         }
