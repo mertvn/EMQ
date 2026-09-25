@@ -1485,6 +1485,25 @@ public class QuizManager
         Quiz.QuizState.QuizStatus = QuizStatus.Ended;
         Quiz.Room.Log("Ended");
 
+        bool hasLives = Quiz.Room.QuizSettings.MaxLives > 0;
+        var finalResults = Quiz.Room.QuizSettings.TeamSize > 1
+            ? Quiz.Room.Players.GroupBy(player => player.TeamId).Select(team => (
+                Name: $"Team {team.Key}",
+                Score: Quiz.Room.QuizSettings.IsSharedGuessesTeams
+                    ? team.Max(player => player.Score)
+                    : team.Sum(player => player.Score),
+                Lives: team.First().Lives))
+            : Quiz.Room.Players.Select(player => (Name: player.Username, player.Score, player.Lives));
+        string finalScores = string.Join(", ", finalResults
+            .OrderByDescending(result => hasLives ? result.Lives : result.Score)
+            .ThenByDescending(result => result.Score)
+            .Select(result => $"{result.Name}: {result.Score}" +
+                              (hasLives ? $" ({result.Lives} lives)" : "")));
+        if (!string.IsNullOrEmpty(finalScores))
+        {
+            Quiz.Room.Log($"Final scores: {finalScores}", writeToChat: true);
+        }
+
         if (!Quiz.IsDisposed)
         {
             Quiz.IsTimerRunning = false;
