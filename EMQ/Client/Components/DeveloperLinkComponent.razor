@@ -1,0 +1,14 @@
+@using EMQ.Shared.Quiz.Entities.Concrete
+
+<a href="@Href" target="_blank">@Developer.Title.LatinTitle</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public SongSourceDeveloper Developer { get; set; } = null!;
+
+    [Parameter]
+    public SongSourceType SourceType { get; set; } = SongSourceType.VN;
+
+    private string Href => $"DeveloperStats?sourceType={(int)SourceType}" +
+        $"&developerId={Uri.EscapeDataString(Developer.VndbId)}&name={Uri.EscapeDataString(Developer.Title.LatinTitle)}";
+}

@@ -29,6 +29,8 @@ using EMQ.Shared.Auth.Entities.Concrete.Dto.Response;
 using EMQ.Shared.Core;
 using EMQ.Shared.Core.SharedDbEntities;
 using EMQ.Shared.Library.Entities.Concrete;
+using EMQ.Shared.Library.Entities.Concrete.Dto;
+using EMQ.Shared.Library.Entities.Concrete.Dto.Request;
 using EMQ.Shared.Quiz;
 using EMQ.Shared.Quiz.Entities.Abstract;
 using Microsoft.AspNetCore.Mvc;
@@ -6955,6 +6957,94 @@ ORDER BY
             SongArtists = artist.SelectMany(x => x.Value.Values).ToList(), // todo important distinct
             PlayerSongStats = playerSongStats,
         };
+        return res;
+    }
+
+    public static async Task<ResGetDeveloperStats> GetDeveloperStats(ReqGetDeveloperStats req)
+    {
+        string developerId = req.DeveloperId?.Trim() ?? "";
+        string name = req.Name?.Trim() ?? "";
+        // Match imported credits only for sources without an EMQ developer override.
+        string[] vnUrls = VnDevelopers.Where(x => x.Value.Any(developer =>
+                developerId.Length > 0
+                    ? developer.pId == developerId
+                    : (developer.latin ?? developer.name) == name || developer.name == name))
+            .Select(x => $"https://vndb.org/{x.Key}").ToArray();
+
+        await using var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString());
+        const string sqlMusicIds = @"
+SELECT DISTINCT msm.music_id
+FROM music_source_music msm
+JOIN music_source ms ON ms.id = msm.music_source_id
+WHERE ms.type = @sourceType
+AND (
+    EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(COALESCE(ms.developers::jsonb, '[]'::jsonb)) developer
+        WHERE CASE WHEN @developerId <> ''
+            THEN developer->>'VndbId' = @developerId
+            ELSE developer->'Title'->>'LatinTitle' = @name
+                OR developer->'Title'->>'NonLatinTitle' = @name
+        END
+    )
+    OR (
+        (ms.developers IS NULL OR jsonb_array_length(ms.developers::jsonb) = 0)
+        AND EXISTS (
+            SELECT 1 FROM music_source_external_link msel
+            WHERE msel.music_source_id = ms.id
+              AND msel.type = @vndbLinkType AND RTRIM(msel.url, '/') = ANY(@vnUrls)
+        )
+    )
+);";
+        int[] musicIds = (await connection.QueryAsync<int>(sqlMusicIds, new
+        {
+            sourceType = (int)req.SourceType,
+            developerId,
+            name,
+            vndbLinkType = (int)SongSourceLinkType.VNDB,
+            vnUrls,
+        })).ToArray();
+        var res = new ResGetDeveloperStats { SongCount = musicIds.Length };
+        if (musicIds.Length == 0)
+        {
+            return res;
+        }
+
+        // Use the same play history and guest exclusion as artist/source statistics.
+        // Filtering by distinct song IDs avoids counting shared songs more than once.
+        string sqlStats = $@"
+WITH PlayStats AS (
+    SELECT user_id, COUNT(*) AS TimesPlayed,
+           COUNT(*) FILTER (WHERE is_correct) AS TimesCorrect
+    FROM unique_quiz_plays
+    WHERE music_id = ANY(@musicIds) AND user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY user_id
+), VoteStats AS (
+    SELECT user_id, AVG(vote) / 10 AS AvgVote, COUNT(DISTINCT music_id) AS VoteCount
+    FROM music_vote
+    WHERE music_id = ANY(@musicIds) AND user_id < {Constants.PlayerIdGuestMin}
+    GROUP BY user_id
+)
+SELECT ps.user_id AS UserId, ps.TimesPlayed, ps.TimesCorrect,
+       COALESCE(ROUND(vs.AvgVote, 2), 0) AS VoteAverage,
+       COALESCE(vs.VoteCount, 0) AS VoteCount
+FROM PlayStats ps
+LEFT JOIN VoteStats vs ON vs.user_id = ps.user_id
+ORDER BY ps.TimesPlayed DESC;";
+        res.PlayerSongStats = (await connection.QueryAsync<PlayerSongStats>(sqlStats, new { musicIds })).ToArray();
+        if (res.PlayerSongStats.Length > 0)
+        {
+            await using var connectionAuth = new NpgsqlConnection(ConnectionHelper.GetConnectionString_Auth());
+            var usernames = (await connectionAuth.QueryAsync<(int, string)>(
+                "SELECT id, username FROM users WHERE id = ANY(@userIds)",
+                new { userIds = res.PlayerSongStats.Select(x => x.UserId).ToArray() }))
+                .ToDictionary(x => x.Item1, x => x.Item2);
+            foreach (PlayerSongStats stats in res.PlayerSongStats)
+            {
+                stats.Username = Utils.UserIdToUsername(usernames, stats.UserId);
+            }
+        }
+
         return res;
     }
 

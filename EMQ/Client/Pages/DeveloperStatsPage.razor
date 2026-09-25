@@ -1,0 +1,117 @@
+@page "/DeveloperStats"
+@using EMQ.Shared.Library.Entities.Concrete.Dto
+@using EMQ.Shared.Library.Entities.Concrete.Dto.Request
+@using EMQ.Shared.Quiz.Entities.Concrete
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject HttpClient _client
+@inject ClientUtils _clientUtils
+
+<PageTitle>@DisplayName - Developer stats</PageTitle>
+<h3>@DisplayName</h3>
+<p>Player totals across this developer's songs.</p>
+
+@if (_error != null)
+{
+    <p role="alert">@_error</p>
+}
+else if (_stats == null)
+{
+    <p>Loading stats...</p>
+}
+else
+{
+    <p>Songs: @_stats.SongCount</p>
+    @if (_stats.PlayerSongStats.Length == 0)
+    {
+        <p>No recorded plays for this developer.</p>
+    }
+    else
+    {
+        <div class="page-size-chooser">
+            Items per page:
+            <select @bind="@_pagination.ItemsPerPage">
+                <option>10</option>
+                <option>25</option>
+                <option>50</option>
+                <option>100</option>
+                <option>250</option>
+            </select>
+        </div>
+        <Paginator State="@_pagination"/>
+        <div class="grid" tabindex="-1">
+            <QuickGrid Items="@_stats.PlayerSongStats.AsQueryable()" Pagination="@_pagination">
+                <TemplateColumn Title="Username" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.Username))">
+                    <a href="@($"eu{context.UserId}")">@context.Username</a>
+                </TemplateColumn>
+                <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
+                <PropertyColumn Property="@(x => x.TimesCorrect)" Title="Correct" Sortable="true"/>
+                <TemplateColumn Title="Guess rate" Sortable="true" SortBy="@(GridSort<PlayerSongStats>.ByAscending(x => x.CorrectPercentage))">
+                    @(Math.Round(context.CorrectPercentage, 2))%
+                </TemplateColumn>
+                <PropertyColumn Property="@(x => x.VoteAverage)" Title="Vote avg." Sortable="true"/>
+                <PropertyColumn Property="@(x => x.VoteCount)" Title="Vote count" Sortable="true"/>
+            </QuickGrid>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "developerId")]
+    public string? DeveloperId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "name")]
+    public string? Name { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sourceType")]
+    public int SourceType { get; set; } = (int)SongSourceType.VN;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(Name) ? DeveloperId ?? "Developer stats" : Name;
+
+    private ResGetDeveloperStats? _stats;
+    private string? _error;
+    private int _requestVersion;
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 10 };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        int requestVersion = ++_requestVersion;
+        var req = new ReqGetDeveloperStats
+        {
+            DeveloperId = DeveloperId ?? "",
+            Name = Name ?? "",
+            SourceType = (SongSourceType)SourceType,
+        };
+        _stats = null;
+        _error = null;
+        if ((string.IsNullOrWhiteSpace(req.DeveloperId) && string.IsNullOrWhiteSpace(req.Name)) ||
+            !Enum.IsDefined(req.SourceType))
+        {
+            _error = "Open a developer's name from a song or source to view their stats.";
+            return;
+        }
+
+        try
+        {
+            await _clientUtils.TryRestoreSession();
+            using var response = await _client.PostAsJsonAsync("Library/GetDeveloperStats", req);
+            var stats = response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<ResGetDeveloperStats>()
+                : null;
+            if (requestVersion != _requestVersion)
+            {
+                return;
+            }
+
+            _stats = stats;
+            _error = stats == null ? "Could not load developer stats. Please try again." : null;
+            await _pagination.SetCurrentPageIndexAsync(0);
+        }
+        catch (HttpRequestException)
+        {
+            if (requestVersion == _requestVersion)
+            {
+                _error = "Could not load developer stats. Please try again.";
+            }
+        }
+    }
+}

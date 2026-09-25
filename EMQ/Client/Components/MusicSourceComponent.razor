@@ -22,6 +22,18 @@
     <SourceFaviconsComponent Links="ResGetSongSource.SongSource.Links"/>
     <br/>
 
+    @if (ResGetSongSource.SongSource.Developers.Any())
+    {
+        <span>Developers:</span>
+        @foreach (var developer in ResGetSongSource.SongSource.Developers)
+        {
+            <span style="margin-right: 8px;">
+                <DeveloperLinkComponent Developer="developer" SourceType="ResGetSongSource.SongSource.Type"/>
+            </span>
+        }
+        <br/>
+    }
+
     @if (ClientUtils.HasEditPerms())
     {
         <details>

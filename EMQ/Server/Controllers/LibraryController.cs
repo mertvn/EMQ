@@ -553,6 +553,20 @@ public class LibraryController : ControllerBase
         return res;
     }
 
+    [CustomAuthorize(PermissionKind.SearchLibrary)]
+    [HttpPost]
+    [Route("GetDeveloperStats")]
+    public async Task<ActionResult<ResGetDeveloperStats>> GetDeveloperStats(ReqGetDeveloperStats req)
+    {
+        if (!Enum.IsDefined(req.SourceType) ||
+            (string.IsNullOrWhiteSpace(req.DeveloperId) && string.IsNullOrWhiteSpace(req.Name)))
+        {
+            return BadRequest("A developer ID or name and a valid source type are required.");
+        }
+
+        return await DbManager.GetDeveloperStats(req);
+    }
+
     // the things a man does to avoid having to refactor the request object...
     [CustomAuthorize(PermissionKind.SearchLibrary)]
     [HttpPost]
