@@ -235,6 +235,20 @@ public class QuizFilters
     [DefaultValue(LabelKind.Maybe)]
     public LabelKind MusicAlternateVersionsFilter { get; set; } = LabelKind.Maybe;
 
+    [ProtoMember(39)]
+    [DefaultValue(Constants.QFSongLinkDurationMin)]
+    [Range(Constants.QFSongLinkDurationMin, Constants.QFSongLinkDurationMax)]
+    public int SongLinkDurationStart { get; set; } = Constants.QFSongLinkDurationMin;
+
+    [ProtoMember(40)]
+    [DefaultValue(Constants.QFSongLinkDurationMax)]
+    [Range(Constants.QFSongLinkDurationMin, Constants.QFSongLinkDurationMax)]
+    public int SongLinkDurationEnd { get; set; } = Constants.QFSongLinkDurationMax;
+
+    public bool IsSongLinkDurationFilterEnabled =>
+        SongLinkDurationStart != Constants.QFSongLinkDurationMin ||
+        SongLinkDurationEnd != Constants.QFSongLinkDurationMax;
+
     public bool ListReadKindFiltersIsOnlyRead =>
         ListReadKindFilters.TryGetValue(ListReadKind.Read, out var val) && val.Value > 0 &&
         !ListReadKindFilters.Where(x => x.Key != ListReadKind.Read).Any(x => x.Value.Value > 0);

@@ -3261,6 +3261,17 @@ RETURNING id;",
                 canAdd &= !isDuplicate || duplicates;
                 if (canAdd)
                 {
+                    if (filters?.IsSongLinkDurationFilterEnabled == true)
+                    {
+                        song!.Links = song.Links.Where(x => !x.IsFileLink ||
+                            (x.Duration.TotalSeconds >= filters.SongLinkDurationStart &&
+                             x.Duration.TotalSeconds <= filters.SongLinkDurationEnd)).ToList();
+                        if (!song.Links.Any(x => x.IsFileLink))
+                        {
+                            continue;
+                        }
+                    }
+
                     if (listReadKindKey != null)
                     {
                         listReadKindLeft![listReadKindKey.Value] -= 1;

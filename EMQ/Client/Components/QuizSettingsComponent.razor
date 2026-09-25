@@ -764,6 +764,20 @@
                         </div>
 
                     <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 235px;">
+                        <h5>Song link duration</h5>
+                        <div style="display: flex; align-items: center; justify-items: center; flex-direction:column;">
+                            <RangeControl @bind-ValueLow="@ClientQuizSettings.Filters.SongLinkDurationStart"
+                                          @bind-ValueHigh="@ClientQuizSettings.Filters.SongLinkDurationEnd"
+                                          MinValue="@Constants.QFSongLinkDurationMin" MaxValue="@Constants.QFSongLinkDurationMax">
+                            </RangeControl>
+                            <div style="display: inline-block">
+                                <InputNumber @bind-Value="ClientQuizSettings.Filters.SongLinkDurationStart" aria-label="Minimum song link duration in seconds" style="width: 60px;"></InputNumber> - <InputNumber @bind-Value="ClientQuizSettings.Filters.SongLinkDurationEnd" aria-label="Maximum song link duration in seconds" style="width: 60px;"></InputNumber>
+                            </div>
+                            <span>Seconds (min - max)</span>
+                        </div>
+                    </div>
+
+                    <div style="border: 1px black solid; margin: 10px; padding: 10px; width: 235px;">
                         <h5>Sample point</h5>
                         <InputSelect id="StartTimeKind" @bind-Value="ClientQuizSettings.Filters.StartTimeKind" style="margin: 5px">
                             @foreach (StartTimeKind startTimeKind in Enum.GetValues<StartTimeKind>())

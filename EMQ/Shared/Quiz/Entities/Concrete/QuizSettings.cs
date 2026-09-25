@@ -30,6 +30,7 @@ public class QuizSettings
         !Filters.CollectionFilters.Any() &&
         !Filters.VndbAdvsearchFilter.Any() &&
         !Filters.OnlyOwnUploads &&
+        !Filters.IsSongLinkDurationFilterEnabled &&
         !Filters.IsPreferLongLinks;
 
     // todo 1v1s?
@@ -795,6 +796,13 @@ public class QuizSettings
         if (o.Filters.IsPreferLongLinks != n.Filters.IsPreferLongLinks)
         {
             diff.Add($"Prefer long links: {o.Filters.IsPreferLongLinks} → {n.Filters.IsPreferLongLinks}");
+        }
+
+        if (o.Filters.SongLinkDurationStart != n.Filters.SongLinkDurationStart ||
+            o.Filters.SongLinkDurationEnd != n.Filters.SongLinkDurationEnd)
+        {
+            diff.Add(
+                $"Song link duration (seconds): {o.Filters.SongLinkDurationStart} - {o.Filters.SongLinkDurationEnd} → {n.Filters.SongLinkDurationStart} - {n.Filters.SongLinkDurationEnd}");
         }
 
         if (JsonSerializer.Serialize(o.Filters.SongSourceTypeFilter) !=

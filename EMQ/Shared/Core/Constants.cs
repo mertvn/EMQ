@@ -104,6 +104,10 @@ public static class Constants
 
     public const int QFStartTimePercentageMax = 100;
 
+    public const int QFSongLinkDurationMin = 0;
+
+    public const int QFSongLinkDurationMax = 1200;
+
     public const int QFSongRatingAverageMin = 100;
 
     public const int QFSongRatingAverageMax = 1000;
