@@ -25,7 +25,7 @@
            @bind:set="@(new Func<string, Task>(async value => await OnSetInputSearch(value)))"
            @bind:event="oninput"
            @onkeydown="OnKeyDown"
-           @onkeydown:preventDefault="PreventDefault"
+           @onkeydown:preventDefault="ClientState.Preferences.AutocompleteIsEnabled && PreventDefault"
            @onfocus="OnFocus"
            @onblur="OnBlur"/>
 

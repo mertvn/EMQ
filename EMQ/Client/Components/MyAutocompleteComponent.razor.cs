@@ -111,7 +111,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
     {
         switch (args.Key)
         {
-            case "ArrowUp":
+            case "ArrowUp" when ClientState.Preferences.AutocompleteIsEnabled:
                 {
                     PreventDefault = true; // prevent the input box cursor jumping to start
                     ShowDropdown = true;
@@ -120,7 +120,7 @@ public partial class MyAutocompleteComponent<TValue> where TValue : notnull
                     await ScrollItemIntoView(CurrentFocus);
                     break;
                 }
-            case "ArrowDown":
+            case "ArrowDown" when ClientState.Preferences.AutocompleteIsEnabled:
                 {
                     PreventDefault = true; // prevent the input box cursor jumping to end
                     ShowDropdown = true;
