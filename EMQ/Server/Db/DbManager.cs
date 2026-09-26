@@ -4932,80 +4932,71 @@ AND msm.type = ANY(@msmType)";
 
         await using (var connection = new NpgsqlConnection(ConnectionHelper.GetConnectionString()))
         {
-            const string sqlMids = "SELECT msm.music_id, msm.type FROM music_source_music msm order by msm.music_id";
-            Dictionary<int, HashSet<SongSourceSongType>> mids = (await connection.QueryAsync<(int, int)>(sqlMids))
-                .GroupBy(x => x.Item1)
-                .ToDictionary(y => y.Key, y => y.Select(z => (SongSourceSongType)z.Item2).ToHashSet());
-
-            List<int> validMids = mids
-                .Where(x => x.Value.Any(y => songSourceSongTypes.Contains(y)))
-                .Select(z => z.Key)
-                .ToList();
+            var ssst = songSourceSongTypes.Cast<int>().ToArray();
+            const string sqlMids = @"SELECT DISTINCT music_id FROM music_source_music
+WHERE type = ANY(@ssst) ORDER BY music_id";
+            var validMids = (await connection.QueryAsync<int>(sqlMids, new { ssst })).ToArray();
 
             stopWatch.StartSection("Song");
-            string sqlMusic =
-                $"SELECT COUNT(DISTINCT m.id) FROM music m LEFT JOIN music_external_link mel ON mel.music_id = m.id WHERE m.id = ANY(@validMids)";
-
-            string sqlMusicSource =
-                $"SELECT COUNT(DISTINCT ms.id) FROM music_source_music msm LEFT JOIN music_source ms ON ms.id = msm.music_source_id LEFT JOIN music_external_link mel ON mel.music_id = msm.music_id WHERE msm.music_id = ANY(@validMids)";
-
-            string sqlArtist =
-                $"SELECT COUNT(DISTINCT a.id) FROM artist_music am LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id LEFT JOIN artist a ON a.id = aa.artist_id LEFT JOIN music_external_link mel ON mel.music_id = am.music_id WHERE am.music_id = ANY(@validMids)";
-
-            const string sqlAndClause = $" AND mel.url is not null AND mel.type = ANY(@types)";
-
-
-            int totalMusicCount =
-                await connection.QuerySingleAsync<int>(sqlMusic, new { validMids });
-            int availableMusicCount =
-                await connection.QuerySingleAsync<int>(sqlMusic + sqlAndClause,
-                    new { validMids, types = SongLink.FileLinkTypes });
-
-            int totalMusicSourceCount =
-                await connection.QuerySingleAsync<int>(sqlMusicSource, new { validMids });
-            int availableMusicSourceCount =
-                await connection.QuerySingleAsync<int>(sqlMusicSource + sqlAndClause,
-                    new { validMids, types = SongLink.FileLinkTypes });
-
-            int totalArtistCount =
-                await connection.QuerySingleAsync<int>(sqlArtist, new { validMids });
-            int availableArtistCount =
-                await connection.QuerySingleAsync<int>(sqlArtist + sqlAndClause,
-                    new { validMids, types = SongLink.FileLinkTypes });
+            // Materialize availability once, without multiplying each song by all of its links.
+            const string sqlCounts = @"WITH available AS MATERIALIZED (
+    SELECT DISTINCT music_id FROM music_external_link WHERE url IS NOT NULL AND type = ANY(@types)
+), music_counts AS (
+    SELECT count(*) AS total, count(a.music_id) AS available
+    FROM music m LEFT JOIN available a ON a.music_id = m.id WHERE m.id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+), source_counts AS (
+    SELECT count(DISTINCT ms.id) AS total,
+           count(DISTINCT ms.id) FILTER (WHERE a.music_id IS NOT NULL) AS available
+    FROM music_source_music msm
+    LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+    LEFT JOIN available a ON a.music_id = msm.music_id WHERE msm.music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+), artist_counts AS (
+    SELECT count(DISTINCT a.id) AS total,
+           count(DISTINCT a.id) FILTER (WHERE av.music_id IS NOT NULL) AS available
+    FROM artist_music am
+    LEFT JOIN artist_alias aa ON aa.id = am.artist_alias_id
+    LEFT JOIN artist a ON a.id = aa.artist_id
+    LEFT JOIN available av ON av.music_id = am.music_id WHERE am.music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+)
+SELECT m.total, m.available, s.total, s.available, a.total, a.available
+FROM music_counts m CROSS JOIN source_counts s CROSS JOIN artist_counts a";
+            var (totalMusicCount, availableMusicCount, totalMusicSourceCount, availableMusicSourceCount,
+                totalArtistCount, availableArtistCount) = await connection.QuerySingleAsync<(int, int, int, int, int, int)>(
+                sqlCounts, new { ssst, types = SongLink.FileLinkTypes });
 
             string fileLinkTypesStr = string.Join(',', SongLink.FileLinkTypes);
-            string sqlMusicType =
-                @"SELECT msm.type as Type, COUNT(DISTINCT m.id) as MusicCount
+            stopWatch.StartSection("musicTypeCounts");
+            var musicTypeCounts = (await connection.QueryAsync<(SongSourceSongType type, int total, int available)>(@"
+WITH available AS (
+    SELECT DISTINCT music_id FROM music_external_link WHERE url IS NOT NULL AND type = ANY(@types)
+)
+SELECT msm.type, count(DISTINCT m.id),
+       count(DISTINCT m.id) FILTER (WHERE a.music_id IS NOT NULL)
 FROM music m
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-LEFT JOIN music_source_music msm ON msm.music_id = m.id
-/**where**/
-group by msm.type
-order by type";
-            var qMusicType = connection.QueryBuilder($"{sqlMusicType:raw}");
-            qMusicType.Where($"msm.music_id = ANY({validMids})");
-            stopWatch.StartSection("totalMusicTypeCount");
-            var totalMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
-            qMusicType.Where($"mel.url is not null");
-            qMusicType.Where($"mel.type IN ({fileLinkTypesStr:raw})");
-
-            stopWatch.StartSection("availableMusicTypeCount");
-            var availableMusicTypeCount = (await qMusicType.QueryAsync<LibraryStatsMusicType>()).ToList();
+JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN available a ON a.music_id = m.id
+WHERE msm.music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+GROUP BY msm.type ORDER BY msm.type", new { ssst, types = SongLink.FileLinkTypes })).ToArray();
+            var totalMusicTypeCount = musicTypeCounts.Select(x => new LibraryStatsMusicType
+                { Type = x.type, MusicCount = x.total }).ToList();
+            var availableMusicTypeCount = musicTypeCounts.Where(x => x.available > 0)
+                .Select(x => new LibraryStatsMusicType { Type = x.type, MusicCount = x.available }).ToList();
             stopWatch.StartSection("mels");
-            int videoLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id not in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
-                new { validMids, types = SongLink.FileLinkTypes }));
-            int soundLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where not is_video AND type = ANY(@types) and music_id not in (select music_id FROM music_external_link where is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
-                new { validMids, types = SongLink.FileLinkTypes }));
-            int bothLinkCount = (await connection.ExecuteScalarAsync<int>(
-                "SELECT count(distinct music_id) FROM music_external_link where is_video AND type = ANY(@types) and music_id in (select music_id FROM music_external_link where not is_video AND type = ANY(@types)) and music_id = ANY(@validMids)",
-                new { validMids, types = SongLink.FileLinkTypes }));
+            var (videoLinkCount, soundLinkCount, bothLinkCount) =
+                await connection.QuerySingleAsync<(int, int, int)>(@"SELECT
+    count(*) FILTER (WHERE video AND NOT sound),
+    count(*) FILTER (WHERE sound AND NOT video),
+    count(*) FILTER (WHERE video AND sound)
+FROM (
+    SELECT bool_or(is_video) AS video, bool_or(NOT is_video) AS sound
+    FROM music_external_link WHERE type = ANY(@types) AND music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+    GROUP BY music_id
+) links", new { ssst, types = SongLink.FileLinkTypes });
 
             stopWatch.StartSection("lineage select");
             var lineages = (await connection.QueryAsync<int>(
-                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(@validMids) and not (url like '%.weba' or submitted_by = @botName)",
-                new { validMids, types = SongLink.FileLinkTypes, botName = Constants.RobotName }));
+                "SELECT lineage FROM music_external_link where type = ANY(@types) and music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst)) and not (url like '%.weba' or submitted_by = @botName)",
+                new { ssst, types = SongLink.FileLinkTypes, botName = Constants.RobotName }));
 
             stopWatch.StartSection("lineage process");
             var lineageValues = Enum.GetValues<SongLinkLineage>();
@@ -5029,71 +5020,35 @@ order by type";
             }
 
             stopWatch.StartSection("CAL");
-            int composerCount = (await connection.ExecuteScalarAsync<int>(
-                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Composer} and music_id = ANY(@validMids)",
-                new { validMids }));
-            int arrangerCount = (await connection.ExecuteScalarAsync<int>(
-                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Arranger} and music_id = ANY(@validMids)",
-                new { validMids }));
-            int lyricistCount = (await connection.ExecuteScalarAsync<int>(
-                $"SELECT count(distinct music_id) FROM artist_music am WHERE am.role = {(int)SongArtistRole.Lyricist} and music_id = ANY(@validMids)",
-                new { validMids }));
+            var (composerCount, arrangerCount, lyricistCount) = await connection.QuerySingleAsync<(int, int, int)>($@"
+SELECT count(DISTINCT music_id) FILTER (WHERE role = {(int)SongArtistRole.Composer}),
+       count(DISTINCT music_id) FILTER (WHERE role = {(int)SongArtistRole.Arranger}),
+       count(DISTINCT music_id) FILTER (WHERE role = {(int)SongArtistRole.Lyricist})
+FROM artist_music WHERE music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))", new { ssst });
 
             stopWatch.StartSection("SelectLibraryStats_VN");
             (List<LibraryStatsMsm> _, List<LibraryStatsMsm> msmAvailable) =
                 await SelectLibraryStats_VN(connection, limit, songSourceSongTypes, fileLinkTypesStr);
 
-            // todo important do this in a single query
             stopWatch.StartSection("SelectLibraryStats_Artist");
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailable) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    null);
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableUnknown) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    SongArtistRole.Unknown);
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableVocals) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    SongArtistRole.Vocals);
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableComposer) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    SongArtistRole.Composer);
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableArranger) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    SongArtistRole.Arranger);
-            (List<LibraryStatsAm> _, List<LibraryStatsAm> amAvailableLyricist) =
-                await SelectLibraryStats_Artist(connection, limit, songSourceSongTypes,
-                    SongArtistRole.Lyricist);
+            var amAvailableDict = await SelectLibraryStats_Artists(connection, limit, songSourceSongTypes);
 
-            var amAvailableDict = new Dictionary<string, List<LibraryStatsAm>>()
-            {
-                { "All", amAvailable },
-                { SongArtistRole.Unknown.ToString(), amAvailableUnknown },
-                { SongArtistRole.Vocals.ToString(), amAvailableVocals },
-                { SongArtistRole.Composer.ToString(), amAvailableComposer },
-                { SongArtistRole.Arranger.ToString(), amAvailableArranger },
-                { SongArtistRole.Lyricist.ToString(), amAvailableLyricist },
-            };
-
-            string sqlMsYear =
-                @"SELECT date_trunc('year', ms.air_date_start) AS year, Count(DISTINCT m.id)
-FROM music m
-LEFT JOIN music_source_music msm ON msm.music_id = m.id
-LEFT JOIN music_source ms ON ms.id = msm.music_source_id
-LEFT JOIN music_external_link mel ON mel.music_id = m.id
-/**where**/
-group by year
-order by year";
-            var qMsYear = connection.QueryBuilder($"{sqlMsYear:raw}");
-            qMsYear.Where($"msm.music_id = ANY({validMids})");
             stopWatch.StartSection("msYear");
-            var msYear =
-                (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
-
-            qMsYear.Where($"mel.url is not null");
-            qMsYear.Where($"mel.type IN ({fileLinkTypesStr:raw})");
-            stopWatch.StartSection("msYearAvailable");
-            var msYearAvailable =
-                (await qMsYear.QueryAsync<(DateTime, int)>()).ToDictionary(x => x.Item1, x => x.Item2);
+            var yearCounts = (await connection.QueryAsync<(DateTime year, int total, int available)>(@"
+WITH available AS (
+    SELECT DISTINCT music_id FROM music_external_link WHERE url IS NOT NULL AND type = ANY(@types)
+)
+SELECT date_trunc('year', ms.air_date_start) AS year, count(DISTINCT m.id),
+       count(DISTINCT m.id) FILTER (WHERE a.music_id IS NOT NULL)
+FROM music m
+JOIN music_source_music msm ON msm.music_id = m.id
+LEFT JOIN music_source ms ON ms.id = msm.music_source_id
+LEFT JOIN available a ON a.music_id = m.id
+WHERE msm.music_id = ANY(SELECT music_id FROM music_source_music WHERE type = ANY(@ssst))
+GROUP BY year ORDER BY year", new { ssst, types = SongLink.FileLinkTypes })).ToArray();
+            var msYear = yearCounts.ToDictionary(x => x.year, x => x.total);
+            var msYearAvailable = yearCounts.Where(x => x.available > 0)
+                .ToDictionary(x => x.year, x => x.available);
 
             if (msYear.Keys.Count > msYearAvailable.Keys.Count)
             {
@@ -5292,35 +5247,25 @@ group by ms.id, mst.latin_title, msel.url ORDER BY COUNT(DISTINCT m.id) desc";
         return (msm, msmAvailable);
     }
 
-    public static async Task<(List<LibraryStatsAm> am, List<LibraryStatsAm> amAvailable)> SelectLibraryStats_Artist(
-        IDbConnection connection, int limit, SongSourceSongType[] songSourceSongTypes, SongArtistRole? role)
+    private static async Task<Dictionary<string, List<LibraryStatsAm>>> SelectLibraryStats_Artists(
+        IDbConnection connection, int limit, SongSourceSongType[] songSourceSongTypes)
     {
         int[] ssst = songSourceSongTypes.Cast<int>().ToArray();
-        const string sqlArtistMusic = @"WITH filtered_music AS (
-    SELECT DISTINCT m.id
-    FROM music m
-    JOIN music_source_music msm ON msm.music_id = m.id
-    WHERE msm.type = ANY(@ssst)
-),
-artist_music_links AS (
-    SELECT a.id AS artist_id,
-           COUNT(DISTINCT fm.id) AS music_count
-    FROM filtered_music fm
-    JOIN artist_music am ON am.music_id = fm.id
-    JOIN artist_alias aa ON aa.id = am.artist_alias_id
-    JOIN artist a ON a.id = aa.artist_id
-    WHERE ((@role::int IS NULL) or am.role = @role::int)
-    GROUP BY a.id
+        // Count each song once per artist/role and once across all roles in the same scan.
+        const string sqlTotals = @"WITH filtered_music AS (
+    SELECT DISTINCT m.id FROM music m
+    JOIN music_source_music msm ON msm.music_id = m.id WHERE msm.type = ANY(@ssst)
 )
-SELECT aml.artist_id AS AId,
-       aml.music_count AS MusicCount,
-       json_agg(DISTINCT ael.*) as LinksJson
-FROM artist_music_links aml
-LEFT JOIN artist_external_link ael ON ael.artist_id = aml.artist_id
-GROUP BY aml.artist_id, aml.music_count
-ORDER BY aml.music_count DESC
-";
+SELECT a.id, am.role, count(DISTINCT fm.id)
+FROM filtered_music fm
+JOIN artist_music am ON am.music_id = fm.id
+JOIN artist_alias aa ON aa.id = am.artist_alias_id
+JOIN artist a ON a.id = aa.artist_id
+GROUP BY GROUPING SETS ((a.id, am.role), (a.id))";
+        var totals = (await connection.QueryAsync<(int artistId, int? role, int count)>(sqlTotals, new { ssst }))
+            .ToDictionary(x => (x.artistId, x.role), x => x.count);
 
+        // Preserve the existing ranking query, including its ordering of tied counts.
         const string sqlArtistMusicAvailable = @"WITH filtered_music AS (
     SELECT DISTINCT m.id
     FROM music m
@@ -5349,70 +5294,43 @@ ORDER BY aml.music_count DESC
 LIMIT @limit
 ";
 
-        var am = (await connection.QueryAsync<LibraryStatsAm>(sqlArtistMusic, new { ssst, role })).ToList();
-        var amAvailable = (await connection.QueryAsync<LibraryStatsAm>(sqlArtistMusicAvailable,
-            new { ssst, role, melType = SongLink.FileLinkTypes, limit })).ToList();
-
-        var artistAliases = (await connection.QueryAsync<(int aId, string aaLatinAlias, bool aaIsMainName)>(
-                "select a.id, aa.latin_alias, aa.is_main_name from artist_alias aa LEFT JOIN artist a ON a.id = aa.artist_id"))
-            .ToList();
-        var aliasesDict = artistAliases.ToLookup(x => x.aId, x => x);
-
-        Dictionary<int, ArtistExternalLink[]> aelsDict = am.Where(x => x.LinksJson != null && x.LinksJson != "[null]")
-            .Select(x => JsonSerializer.Deserialize<ArtistExternalLink[]>(x.LinksJson!)!)
-            .ToDictionary(x => x.First().artist_id, x => x);
-
-        foreach (LibraryStatsAm libraryStatsAm in am)
+        var result = new Dictionary<string, List<LibraryStatsAm>>();
+        SongArtistRole?[] roles =
         {
-            libraryStatsAm.LinksJson = null;
-            var aliases = aliasesDict[libraryStatsAm.AId].ToArray();
-
-            try
+            null, SongArtistRole.Unknown, SongArtistRole.Vocals, SongArtistRole.Composer,
+            SongArtistRole.Arranger, SongArtistRole.Lyricist
+        };
+        foreach (var role in roles)
+        {
+            var available = (await connection.QueryAsync<LibraryStatsAm>(sqlArtistMusicAvailable,
+                new { ssst, role, melType = SongLink.FileLinkTypes, limit })).ToList();
+            foreach (var artist in available)
             {
-                var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
-                libraryStatsAm.AALatinAlias =
-                    mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
+                artist.AvailableMusicCount = artist.MusicCount;
+                artist.MusicCount = totals[(artist.AId, (int?)role)];
             }
-            catch (Exception)
-            {
-                Console.WriteLine($"aId: {libraryStatsAm.AId}");
-                throw;
-            }
+            result.Add(role?.ToString() ?? "All", available);
+        }
 
-            if (aelsDict.TryGetValue(libraryStatsAm.AId, out var aels))
+        // Resolve metadata only for the displayed artists, once for all six tabs.
+        var artistIds = result.Values.SelectMany(x => x).Select(x => x.AId).Distinct().ToArray();
+        var aliases = (await connection.QueryAsync<(int artistId, string latinAlias, bool isMainName)>(
+            "SELECT artist_id, latin_alias, is_main_name FROM artist_alias WHERE artist_id = ANY(@artistIds)",
+            new { artistIds })).ToLookup(x => x.artistId);
+        foreach (var artist in result.Values.SelectMany(x => x))
+        {
+            var names = aliases[artist.AId].ToArray();
+            var main = names.SingleOrDefault(x => x.isMainName);
+            artist.AALatinAlias = main != default ? main.latinAlias : names.First().latinAlias;
+            if (artist.LinksJson != null && artist.LinksJson != "[null]")
             {
-                libraryStatsAm.Links = aels
-                    .Select(x => new SongArtistLink { Url = x.url, Type = x.type, Name = x.name, })
+                artist.Links = JsonSerializer.Deserialize<ArtistExternalLink[]>(artist.LinksJson)!
+                    .Select(x => new SongArtistLink { Url = x.url, Type = x.type, Name = x.name })
                     .ToList();
             }
+            artist.LinksJson = null;
         }
-
-        foreach (LibraryStatsAm libraryStatsAm in amAvailable)
-        {
-            libraryStatsAm.LinksJson = null;
-            var aliases = aliasesDict[libraryStatsAm.AId].ToArray();
-            var mainAlias = aliases.SingleOrDefault(x => x.aaIsMainName);
-            libraryStatsAm.AALatinAlias =
-                mainAlias != default ? mainAlias.aaLatinAlias : aliases.First().aaLatinAlias;
-
-            if (aelsDict.TryGetValue(libraryStatsAm.AId, out var aels))
-            {
-                libraryStatsAm.Links = aels
-                    .Select(x => new SongArtistLink { Url = x.url, Type = x.type, Name = x.name, })
-                    .ToList();
-            }
-        }
-
-        for (int index = 0; index < amAvailable.Count; index++)
-        {
-            LibraryStatsAm amA = amAvailable[index];
-
-            amA.AvailableMusicCount = amA.MusicCount;
-            var match = am.Where(x => x.AId == amA.AId);
-            amA.MusicCount = match.Sum(x => x.MusicCount);
-        }
-
-        return (am, amAvailable);
+        return result;
     }
 
     private static async Task<Dictionary<SongDifficultyLevel, int>> GetSongDifficultyLevelCounts(int[] mIds)
