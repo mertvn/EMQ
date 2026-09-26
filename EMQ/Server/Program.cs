@@ -236,8 +236,8 @@ const string reportTo = @"
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["Content-Security-Policy"] = $"{csp.Replace("\n", " ")}";
-    context.Response.Headers["Report-To"] = $"{reportTo.Replace("\n", " ")}";
+    context.Response.Headers["Content-Security-Policy"] = csp.ReplaceLineEndings(" ");
+    context.Response.Headers["Report-To"] = reportTo.ReplaceLineEndings(" ");
     await next();
 });
 
@@ -270,7 +270,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Directory.Exists(Constants.LocalMusicLibraryPath))
 {
     app.UseStaticFiles(new StaticFileOptions
     {

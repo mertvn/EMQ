@@ -20,7 +20,7 @@ public class AddTableUsers : Migration
             .WithColumn("created_at").AsDateTimeOffset().NotNullable()
             .WithColumn("salt").AsString().NotNullable()
             .WithColumn("hash").AsString().NotNullable()
-            .WithColumn("avatar").AsInt32().NotNullable().WithDefaultValue(Avatar.DefaultAvatar.Character)
+            .WithColumn("avatar").AsInt32().NotNullable().WithDefaultValue((int)Avatar.DefaultAvatar.Character)
             .WithColumn("skin").AsString(36).NotNullable().WithDefaultValue(Avatar.DefaultAvatar.Skin)
             .WithColumn("ign_mv").AsBoolean().NotNullable().WithDefaultValue(false);
 
