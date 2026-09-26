@@ -8,4 +8,6 @@ public class ResGetDeveloperStats
     public int SongCount { get; set; }
 
     public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
+
+    public PlayerSongStats[] PlayerSongStatsOnlyStatsQuizzes { get; set; } = Array.Empty<PlayerSongStats>();
 }

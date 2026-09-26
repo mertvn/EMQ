@@ -50,6 +50,11 @@
 @if (PlayerSongStats != null)
 {
     <h5>Stats</h5>
+    <label class="form-check-label">
+        <input type="checkbox" class="form-check-input" @bind="_onlyStatsQuizzes"
+               @bind:after="@(() => _paginationPlayerSongStats.SetCurrentPageIndexAsync(0))"/>
+        Only quizzes that count for stats
+    </label>
     <div class="page-size-chooser">
         Items per page:
         <select @bind="@_paginationPlayerSongStats.ItemsPerPage">
@@ -84,7 +89,11 @@
 
     public ResGetSongSource? ResGetSongSource { get; set; }
 
-    private IQueryable<PlayerSongStats>? PlayerSongStats { get; set; }
+    private IQueryable<PlayerSongStats>? PlayerSongStats => (_onlyStatsQuizzes
+        ? ResGetSongSource?.PlayerSongStatsOnlyStatsQuizzes
+        : ResGetSongSource?.PlayerSongStats)?.AsQueryable();
+
+    private bool _onlyStatsQuizzes;
 
     private readonly PaginationState _paginationPlayerSongStats = new() { ItemsPerPage = 10 };
 
@@ -100,7 +109,6 @@
         {
             var content = (await res1.Content.ReadFromJsonAsync<ResGetSongSource>())!;
             ResGetSongSource = content;
-            PlayerSongStats = content.PlayerSongStats.AsQueryable();
         }
     }
 

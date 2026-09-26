@@ -47,6 +47,8 @@ public class ResGetSong
     public Song Song { get; set; } = new();
 
     public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
+
+    public PlayerSongStats[] PlayerSongStatsOnlyStatsQuizzes { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ResGetSongSource
@@ -54,6 +56,8 @@ public class ResGetSongSource
     public SongSource SongSource { get; set; } = new();
 
     public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
+
+    public PlayerSongStats[] PlayerSongStatsOnlyStatsQuizzes { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ResGetSongArtist
@@ -61,6 +65,8 @@ public class ResGetSongArtist
     public List<SongArtist> SongArtists { get; set; } = new();
 
     public PlayerSongStats[] PlayerSongStats { get; set; } = Array.Empty<PlayerSongStats>();
+
+    public PlayerSongStats[] PlayerSongStatsOnlyStatsQuizzes { get; set; } = Array.Empty<PlayerSongStats>();
 }
 
 public class ReqEditSong

@@ -39,6 +39,12 @@
 </form>
 <p id="developer-search-help">Enter a VNDB ID or an exact developer name. If both are entered, the ID is used.</p>
 
+<label class="form-check-label">
+    <input type="checkbox" class="form-check-input" @bind="_onlyStatsQuizzes"
+           @bind:after="@(() => _pagination.SetCurrentPageIndexAsync(0))" disabled="@_isLoading"/>
+    Only quizzes that count for stats
+</label>
+
 @if (_error != null)
 {
     <p role="alert">@_error</p>
@@ -49,9 +55,10 @@ else if (_isLoading)
 }
 else if (_stats != null)
 {
+    var playerSongStats = _onlyStatsQuizzes ? _stats.PlayerSongStatsOnlyStatsQuizzes : _stats.PlayerSongStats;
     <h4>@_searchedDeveloper</h4>
     <p>Songs: @_stats.SongCount</p>
-    @if (_stats.PlayerSongStats.Length == 0)
+    @if (playerSongStats.Length == 0)
     {
         <p>No recorded plays for this developer.</p>
     }
@@ -69,7 +76,7 @@ else if (_stats != null)
         </div>
         <Paginator State="@_pagination"/>
         <div class="grid" tabindex="-1">
-            <QuickGrid Items="@_stats.PlayerSongStats.AsQueryable()" Pagination="@_pagination">
+            <QuickGrid Items="@playerSongStats.AsQueryable()" Pagination="@_pagination">
                 <PropertyColumn Property="@(x => x.Username)" Title="Username" Sortable="true"/>
                 <PropertyColumn Property="@(x => x.TimesPlayed)" Title="Play count" Sortable="true" IsDefaultSortColumn="true" InitialSortDirection="SortDirection.Descending"/>
                 <PropertyColumn Property="@(x => x.TimesCorrect)" Title="Correct" Sortable="true"/>
@@ -90,6 +97,7 @@ else if (_stats != null)
     private string? _searchedDeveloper;
     private string? _error;
     private bool _isLoading;
+    private bool _onlyStatsQuizzes;
     private readonly PaginationState _pagination = new() { ItemsPerPage = 10 };
 
     private async Task Search()
